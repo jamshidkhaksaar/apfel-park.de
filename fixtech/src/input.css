@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-apfel-black text-gray-300;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-serif text-apfel-gold-500;
+    }
+    a {
+        @apply text-apfel-gold-500 hover:text-apfel-gold-300 transition-colors;
+    }
+}
+
+@layer components {
+    /* Service Cards */
+    .themetechmount-box-service .themetechmount-post-item {
+        @apply bg-apfel-card border-2 border-apfel-gold-500/30 rounded-lg p-6 animate-gold-pulse text-white transition-transform duration-300 hover:scale-105 shadow-gold-glow;
+    }
+
+    /* Buttons */
+    .tm-btn, 
+    .vc_btn3, 
+    .themetechmount-serviceboxbox-readmore a,
+    input[type="submit"] {
+        @apply bg-gradient-to-r from-apfel-gold-600 to-apfel-gold-500 text-black font-bold uppercase py-3 px-8 rounded-full border-none !important;
+        @apply hover:shadow-gold-glow hover:scale-105 transition-all duration-300;
+    }
+
+    /* Floating Bar / CTA */
+    .tm-phone-block {
+        @apply bg-apfel-card border border-apfel-gold-500 shadow-gold-glow-lg !important;
+    }
+    
+    /* Header/Footer overrides if needed */
+    .site-header, .site-footer {
+        @apply bg-apfel-black border-b border-apfel-gold-500/20;
+    }
+
+    /* Gold Texture Pattern */
+    .gold-texture {
+        background-color: #B8860B;
+        background-image: linear-gradient(135deg, #FCF6BA 0%, #B8860B 25%, #D4AF37 50%, #B8860B 75%, #FCF6BA 100%);
+        background-size: 400% 400%;
+        animation: goldFlow 15s ease infinite;
+    }
+
+    /* Glassmorphism Effect */
+    .glassmorphism {
+        @apply bg-black/40 backdrop-blur-md border border-white/10;
+    }
+
+    @keyframes goldFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+}
