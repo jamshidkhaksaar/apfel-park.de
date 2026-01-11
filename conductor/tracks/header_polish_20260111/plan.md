@@ -1,10 +1,10 @@
 # Plan: Header Polish (Dark Luxury)
 
 ## Phase 1: Foundation & Resources
-- [ ] Task: Audit existing header CSS and PHP structure.
-- [ ] Task: Ensure Tailwind config includes `apfel-gold` and `apfel-black` colors.
-- [ ] Task: Source or create CSS patterns for gold textures.
-- [ ] Task: Conductor - User Manual Verification 'Foundation & Resources' (Protocol in workflow.md)
+- [x] Task: Audit existing header CSS and PHP structure. f4537b0
+- [x] Task: Ensure Tailwind config includes `apfel-gold` and `apfel-black` colors. f4537b0
+- [x] Task: Source or create CSS patterns for gold textures. f4537b0
+- [~] Task: Conductor - User Manual Verification 'Foundation & Resources' (Protocol in workflow.md)
 
 ## Phase 2: Topbar Refinement
 - [ ] Task: Update Topbar background to `apfel-black`.
