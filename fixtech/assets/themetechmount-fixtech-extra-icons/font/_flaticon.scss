@@ -1,0 +1,138 @@
+    /*
+    Flaticon icon font: Flaticon
+    Creation date: 31/01/2019 12:23
+    */
+
+    @font-face {
+  font-family: "Flaticon";
+  src: url("./Flaticon.eot");
+  src: url("./Flaticon.eot?#iefix") format("embedded-opentype"),
+       url("./Flaticon.woff2") format("woff2"),
+       url("./Flaticon.woff") format("woff"),
+       url("./Flaticon.ttf") format("truetype"),
+       url("./Flaticon.svg#Flaticon") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: "Flaticon";
+    src: url("./Flaticon.svg#Flaticon") format("svg");
+  }
+}
+
+    .fi:before{
+        display: inline-block;
+  font-family: "Flaticon";
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  line-height: 1;
+  text-decoration: inherit;
+  text-rendering: optimizeLegibility;
+  text-transform: none;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased;
+    }
+
+    .flaticon-smartphone:before { content: "\f100"; }
+.flaticon-smartphone-1:before { content: "\f101"; }
+.flaticon-repair-mobile-phone:before { content: "\f102"; }
+.flaticon-smartphone-2:before { content: "\f103"; }
+.flaticon-wrench:before { content: "\f104"; }
+.flaticon-maintenance:before { content: "\f105"; }
+.flaticon-laptop:before { content: "\f106"; }
+.flaticon-robot:before { content: "\f107"; }
+.flaticon-maintenance-1:before { content: "\f108"; }
+.flaticon-robot-1:before { content: "\f109"; }
+.flaticon-settings:before { content: "\f10a"; }
+.flaticon-laptop-1:before { content: "\f10b"; }
+.flaticon-laptop-2:before { content: "\f10c"; }
+.flaticon-gear:before { content: "\f10d"; }
+.flaticon-tools:before { content: "\f10e"; }
+.flaticon-wrench-1:before { content: "\f10f"; }
+.flaticon-robot-2:before { content: "\f110"; }
+.flaticon-wrench-2:before { content: "\f111"; }
+.flaticon-responsive:before { content: "\f112"; }
+.flaticon-computer-tablet:before { content: "\f113"; }
+.flaticon-finger-touching-tablet-screen:before { content: "\f114"; }
+.flaticon-monitor-tablet-and-smartohone:before { content: "\f115"; }
+.flaticon-social-media:before { content: "\f116"; }
+.flaticon-smartphone-3:before { content: "\f117"; }
+.flaticon-smartphone-4:before { content: "\f118"; }
+.flaticon-smartphone-5:before { content: "\f119"; }
+.flaticon-hand-graving-smartphone:before { content: "\f11a"; }
+.flaticon-smartphone-6:before { content: "\f11b"; }
+.flaticon-smartphone-7:before { content: "\f11c"; }
+.flaticon-smartphone-8:before { content: "\f11d"; }
+.flaticon-keyboard:before { content: "\f11e"; }
+.flaticon-typing:before { content: "\f11f"; }
+.flaticon-memory-chip:before { content: "\f120"; }
+.flaticon-ram:before { content: "\f121"; }
+.flaticon-right-click-of-the-mouse:before { content: "\f122"; }
+.flaticon-chip:before { content: "\f123"; }
+.flaticon-cpu:before { content: "\f124"; }
+.flaticon-processor:before { content: "\f125"; }
+.flaticon-cpu-processor:before { content: "\f126"; }
+.flaticon-cpu-1:before { content: "\f127"; }
+.flaticon-server:before { content: "\f128"; }
+.flaticon-processor-1:before { content: "\f129"; }
+.flaticon-dram:before { content: "\f12a"; }
+.flaticon-chip-1:before { content: "\f12b"; }
+.flaticon-ipod:before { content: "\f12c"; }
+.flaticon-computer:before { content: "\f12d"; }
+.flaticon-notebook-computer:before { content: "\f12e"; }
+.flaticon-macbook:before { content: "\f12f"; }
+.flaticon-macbook-pro:before { content: "\f130"; }
+    
+    $font-Flaticon-smartphone: "\f100";
+    $font-Flaticon-smartphone-1: "\f101";
+    $font-Flaticon-repair-mobile-phone: "\f102";
+    $font-Flaticon-smartphone-2: "\f103";
+    $font-Flaticon-wrench: "\f104";
+    $font-Flaticon-maintenance: "\f105";
+    $font-Flaticon-laptop: "\f106";
+    $font-Flaticon-robot: "\f107";
+    $font-Flaticon-maintenance-1: "\f108";
+    $font-Flaticon-robot-1: "\f109";
+    $font-Flaticon-settings: "\f10a";
+    $font-Flaticon-laptop-1: "\f10b";
+    $font-Flaticon-laptop-2: "\f10c";
+    $font-Flaticon-gear: "\f10d";
+    $font-Flaticon-tools: "\f10e";
+    $font-Flaticon-wrench-1: "\f10f";
+    $font-Flaticon-robot-2: "\f110";
+    $font-Flaticon-wrench-2: "\f111";
+    $font-Flaticon-responsive: "\f112";
+    $font-Flaticon-computer-tablet: "\f113";
+    $font-Flaticon-finger-touching-tablet-screen: "\f114";
+    $font-Flaticon-monitor-tablet-and-smartohone: "\f115";
+    $font-Flaticon-social-media: "\f116";
+    $font-Flaticon-smartphone-3: "\f117";
+    $font-Flaticon-smartphone-4: "\f118";
+    $font-Flaticon-smartphone-5: "\f119";
+    $font-Flaticon-hand-graving-smartphone: "\f11a";
+    $font-Flaticon-smartphone-6: "\f11b";
+    $font-Flaticon-smartphone-7: "\f11c";
+    $font-Flaticon-smartphone-8: "\f11d";
+    $font-Flaticon-keyboard: "\f11e";
+    $font-Flaticon-typing: "\f11f";
+    $font-Flaticon-memory-chip: "\f120";
+    $font-Flaticon-ram: "\f121";
+    $font-Flaticon-right-click-of-the-mouse: "\f122";
+    $font-Flaticon-chip: "\f123";
+    $font-Flaticon-cpu: "\f124";
+    $font-Flaticon-processor: "\f125";
+    $font-Flaticon-cpu-processor: "\f126";
+    $font-Flaticon-cpu-1: "\f127";
+    $font-Flaticon-server: "\f128";
+    $font-Flaticon-processor-1: "\f129";
+    $font-Flaticon-dram: "\f12a";
+    $font-Flaticon-chip-1: "\f12b";
+    $font-Flaticon-ipod: "\f12c";
+    $font-Flaticon-computer: "\f12d";
+    $font-Flaticon-notebook-computer: "\f12e";
+    $font-Flaticon-macbook: "\f12f";
+    $font-Flaticon-macbook-pro: "\f130";

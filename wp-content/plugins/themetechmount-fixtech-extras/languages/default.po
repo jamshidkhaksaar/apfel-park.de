@@ -1,0 +1,1112 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: ThemeTechMount Extras for Remould Theme\n"
+"POT-Creation-Date: 2015-10-13 18:47+0530\n"
+"PO-Revision-Date: 2015-10-13 18:47+0530\n"
+"Last-Translator: \n"
+"Language-Team: ThemeTechMount Team <themetechmount@gmail.com>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.5\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;"
+"_n_noop:1,2;_c;_nc:4c,1,2;_x:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;_ex:1,2c;"
+"esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: codestar-framework/classes/framework.class.php:176
+msgid "Success. Imported backup options."
+msgstr ""
+
+#: codestar-framework/classes/framework.class.php:181
+msgid "Default options restored."
+msgstr ""
+
+#: codestar-framework/classes/framework.class.php:200
+msgid "Default options restored for only this section."
+msgstr ""
+
+#: codestar-framework/classes/framework.class.php:363
+msgid "Settings saved."
+msgstr ""
+
+#: codestar-framework/classes/framework.class.php:364
+msgid "Save"
+msgstr ""
+
+#: codestar-framework/classes/framework.class.php:364
+msgid "Saving..."
+msgstr ""
+
+#: codestar-framework/classes/framework.class.php:365
+msgid "Restore"
+msgstr ""
+
+#: codestar-framework/classes/framework.class.php:367
+msgid "show all options"
+msgstr ""
+
+#: codestar-framework/classes/options.class.php:125
+msgid "CONFIG"
+msgstr ""
+
+#: codestar-framework/classes/options.class.php:131
+msgid "USAGE"
+msgstr ""
+
+#: codestar-framework/classes/options.class.php:137
+msgid "VALUE"
+msgstr ""
+
+#: codestar-framework/classes/options.class.php:213
+#, php-format
+msgid "You are editing language: ( <strong>%s</strong> )"
+msgstr ""
+
+#: codestar-framework/classes/shortcode.class.php:82
+#: codestar-framework/classes/shortcode.class.php:90
+#: codestar-framework/fields/textarea/textarea.php:27
+msgid "Add Shortcode"
+msgstr ""
+
+#: codestar-framework/classes/shortcode.class.php:92
+msgid "Select a shortcode"
+msgstr ""
+
+#: codestar-framework/classes/shortcode.class.php:108
+msgid "Insert Shortcode"
+msgstr ""
+
+#: codestar-framework/fields/background/background.php:31
+#: codestar-framework/fields/background/background.php:32
+#: codestar-framework/fields/upload/upload.php:23
+#: codestar-framework/fields/upload/upload.php:24
+msgid "Upload"
+msgstr ""
+
+#: codestar-framework/fields/background/background.php:33
+#: codestar-framework/fields/upload/upload.php:25
+msgid "Use Image"
+msgstr ""
+
+#: codestar-framework/fields/backup/backup.php:21
+msgid "Import a Backup"
+msgstr ""
+
+#: codestar-framework/fields/backup/backup.php:22
+msgid "copy-paste your backup string here"
+msgstr ""
+
+#: codestar-framework/fields/backup/backup.php:27
+msgid "Export and Download Backup"
+msgstr ""
+
+#: codestar-framework/fields/backup/backup.php:28
+msgid "or"
+msgstr ""
+
+#: codestar-framework/fields/backup/backup.php:29
+msgid "!!! Reset All Options !!!"
+msgstr ""
+
+#: codestar-framework/fields/backup/backup.php:30
+msgid "Please be sure for reset all of framework options."
+msgstr ""
+
+#: codestar-framework/fields/gallery/gallery.php:21
+msgid "Add Gallery"
+msgstr ""
+
+#: codestar-framework/fields/gallery/gallery.php:22
+msgid "Edit Gallery"
+msgstr ""
+
+#: codestar-framework/fields/gallery/gallery.php:23
+msgid "Clear"
+msgstr ""
+
+#: codestar-framework/fields/group/group.php:21
+msgid "Adding"
+msgstr ""
+
+#: codestar-framework/fields/group/group.php:43
+#: codestar-framework/fields/group/group.php:75
+msgid "Remove"
+msgstr ""
+
+#: codestar-framework/fields/icon/icon.php:25
+#: codestar-framework/functions/actions.php:55
+msgid "Add Icon"
+msgstr ""
+
+#: codestar-framework/fields/icon/icon.php:26
+msgid "Remove Icon"
+msgstr ""
+
+#: codestar-framework/fields/image/image.php:22
+msgid "Add Image"
+msgstr ""
+
+#: codestar-framework/fields/sorter/sorter.php:24
+msgid "Enabled Modules"
+msgstr ""
+
+#: codestar-framework/fields/sorter/sorter.php:25
+msgid "Disabled Modules"
+msgstr ""
+
+#: codestar-framework/fields/switcher/switcher.php:20
+msgid "on"
+msgstr ""
+
+#: codestar-framework/fields/switcher/switcher.php:20
+msgid "off"
+msgstr ""
+
+#: codestar-framework/fields/typography/typography.php:73
+msgid "Web Safe Fonts"
+msgstr ""
+
+#: codestar-framework/fields/typography/typography.php:79
+msgid "Google Fonts"
+msgstr ""
+
+#: codestar-framework/fields/typography/typography.php:107
+#: codestar-framework/functions/actions.php:30
+msgid "Error! Can not load json file."
+msgstr ""
+
+#: codestar-framework/functions/actions.php:56
+msgid "Search a Icon..."
+msgstr ""
+
+#: codestar-framework/functions/actions.php:57
+msgid "Loading..."
+msgstr ""
+
+#: codestar-framework/functions/helpers.php:48
+msgid "This field class is not available!"
+msgstr ""
+
+#: codestar-framework/functions/validate.php:14
+msgid "Please write a valid email address!"
+msgstr ""
+
+#: codestar-framework/functions/validate.php:33
+msgid "Please write a numeric data!"
+msgstr ""
+
+#: codestar-framework/functions/validate.php:51
+msgid "Fatal Error! This field is required!"
+msgstr ""
+
+#: custom-post-types/tm-client.php:7
+msgctxt "post type general name"
+msgid "Clients"
+msgstr ""
+
+#: custom-post-types/tm-client.php:8
+msgctxt "post type singular name"
+msgid "Client"
+msgstr ""
+
+#: custom-post-types/tm-client.php:9
+msgctxt "admin menu"
+msgid "Client Logos"
+msgstr ""
+
+#: custom-post-types/tm-client.php:10
+msgctxt "add new on admin bar"
+msgid "Client"
+msgstr ""
+
+#: custom-post-types/tm-client.php:11
+msgctxt "client"
+msgid "Add New"
+msgstr ""
+
+#: custom-post-types/tm-client.php:12
+msgid "Add New Client"
+msgstr ""
+
+#: custom-post-types/tm-client.php:13
+msgid "New Client"
+msgstr ""
+
+#: custom-post-types/tm-client.php:14
+msgid "Edit Client"
+msgstr ""
+
+#: custom-post-types/tm-client.php:15
+msgid "View Client"
+msgstr ""
+
+#: custom-post-types/tm-client.php:16
+msgid "All Clients"
+msgstr ""
+
+#: custom-post-types/tm-client.php:17
+msgid "Search Client"
+msgstr ""
+
+#: custom-post-types/tm-client.php:18
+msgid "Parent Client:"
+msgstr ""
+
+#: custom-post-types/tm-client.php:19
+msgid "No client found."
+msgstr ""
+
+#: custom-post-types/tm-client.php:20
+msgid "No client found in Trash."
+msgstr ""
+
+#: custom-post-types/tm-client.php:48
+msgctxt "taxonomy general name"
+msgid "Client Group"
+msgstr ""
+
+#: custom-post-types/tm-client.php:49
+msgctxt "taxonomy singular name"
+msgid "Client Group"
+msgstr ""
+
+#: custom-post-types/tm-client.php:50
+msgid "Search Client Group"
+msgstr ""
+
+#: custom-post-types/tm-client.php:51
+msgid "All Client Groups"
+msgstr ""
+
+#: custom-post-types/tm-client.php:52 custom-post-types/tm-slides.php:63
+#: custom-post-types/tm-team.php:98 custom-post-types/tm-testimonial.php:54
+msgid "Parent Group"
+msgstr ""
+
+#: custom-post-types/tm-client.php:53 custom-post-types/tm-slides.php:64
+#: custom-post-types/tm-team.php:99 custom-post-types/tm-testimonial.php:55
+msgid "Parent Group:"
+msgstr ""
+
+#: custom-post-types/tm-client.php:54 custom-post-types/tm-slides.php:65
+#: custom-post-types/tm-team.php:100 custom-post-types/tm-testimonial.php:56
+msgid "Edit Group"
+msgstr ""
+
+#: custom-post-types/tm-client.php:55 custom-post-types/tm-slides.php:66
+#: custom-post-types/tm-team.php:101 custom-post-types/tm-testimonial.php:57
+msgid "Update Group"
+msgstr ""
+
+#: custom-post-types/tm-client.php:56
+msgid "Add New Client Group"
+msgstr ""
+
+#: custom-post-types/tm-client.php:57
+msgid "New Client Group Name"
+msgstr ""
+
+#: custom-post-types/tm-client.php:58
+msgid "Client Group"
+msgstr ""
+
+#: custom-post-types/tm-client.php:77
+msgid "Client Name"
+msgstr ""
+
+#: custom-post-types/tm-client.php:90
+msgid "Select/Upload Image of the Client"
+msgstr ""
+
+#: custom-post-types/tm-client.php:112
+msgid "Fixtech: Client Details"
+msgstr ""
+
+#: custom-post-types/tm-client.php:124 custom-post-types/tm-testimonial.php:123
+msgid "Website Link"
+msgstr ""
+
+#: custom-post-types/tm-client.php:125 custom-post-types/tm-testimonial.php:124
+msgid "(Optional) Please fill person or company's website link"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:11
+msgctxt "post type general name"
+msgid "Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:12
+msgctxt "post type singular name"
+msgid "Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:13
+msgctxt "admin menu"
+msgid "Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:14
+msgctxt "add new on admin bar"
+msgid "Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:15 custom-post-types/tm-portfolio.php:50
+msgctxt "portfolio"
+msgid "Add New"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:16
+msgid "Add New Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:17
+msgid "New Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:18
+msgid "Edit Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:19
+msgid "View Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:20
+msgid "All Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:21
+msgid "Search Portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:22
+msgid "Parent Portfolio:"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:23
+msgid "No portfolio found."
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:24
+msgid "No portfolio found in Trash."
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:51 custom-post-types/tm-team.php:55
+msgid "Add New "
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:52 custom-post-types/tm-team.php:56
+msgid "New "
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:53 custom-post-types/tm-team.php:57
+msgid "Edit "
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:54 custom-post-types/tm-team.php:58
+msgid "View "
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:55 custom-post-types/tm-team.php:59
+msgid "All "
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:56 custom-post-types/tm-team.php:60
+msgid "Search "
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:57 custom-post-types/tm-team.php:61
+msgid "Parent "
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:58 custom-post-types/tm-portfolio.php:59
+#: custom-post-types/tm-team.php:62 custom-post-types/tm-team.php:63
+msgid "No "
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:94 custom-post-types/tm-portfolio.php:95
+#: custom-post-types/tm-portfolio.php:104
+#: custom-post-types/tm-portfolio.php:110
+#: custom-post-types/tm-portfolio.php:115
+msgid "Portfolio Category"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:96
+msgid "Search Portfolio Category"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:97
+msgid "All Portfolio Category"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:98
+msgid "Parent Portfolio Category"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:99
+msgid "Parent Portfolio Category:"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:100
+msgid "Edit Portfolio Category"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:101
+msgid "Update Portfolio Category"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:102
+msgid "Add New Portfolio Category"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:103
+msgid "New Portfolio Category Name"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:118
+#: custom-post-types/tm-portfolio.php:119
+#: custom-post-types/tm-portfolio.php:128
+#, php-format
+msgid "%s"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:120
+#, php-format
+msgid "Search %s"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:121
+#, php-format
+msgid "All %s"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:122
+#, php-format
+msgid "Parent %s"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:123
+#, php-format
+msgid "Parent %s:"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:124
+#, php-format
+msgid "Edit %s"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:125
+#, php-format
+msgid "Update %s"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:126
+#, php-format
+msgid "Add New %s"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:127
+#, php-format
+msgid "New %s Name"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:161
+msgid "Fixtech: Featured Image / Video / Slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:173
+msgid "Featured Image / Video / Slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:175
+msgid "Featured Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:176
+msgid "Video (YouTube or Vimeo)"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:177
+msgid "Audio (SoundCloud embed code)"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:178
+msgid "Image Slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:181
+msgid "Select what you want to show as featured. Image or Video"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:187
+msgid "YouTube or Vimeo URL"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:189
+msgid "Paste YouTube or Vimeo URL here"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:195
+msgid "SoundCloud (or any other service) Embed Code"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:197
+msgid "Paste SoundCloud or any other service embed code here"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:203
+#: custom-post-types/tm-portfolio.php:206
+msgid "1st Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:205
+msgid ""
+"You can select your featured image here to show the featured image as first "
+"image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:211
+#: custom-post-types/tm-portfolio.php:214
+msgid "2nd Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:213
+msgid ""
+"You can select your featured image here to show the featured image as second "
+"image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:219
+#: custom-post-types/tm-portfolio.php:222
+msgid "3rd Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:221
+msgid ""
+"You can select your featured image here to show the featured image as third "
+"image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:227
+#: custom-post-types/tm-portfolio.php:230
+msgid "4th Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:229
+msgid ""
+"You can select your featured image here to show the featured image as fourth "
+"image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:235
+#: custom-post-types/tm-portfolio.php:238
+msgid "5th Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:237
+msgid ""
+"You can select your featured image here to show the featured image as fifth "
+"image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:243
+#: custom-post-types/tm-portfolio.php:246
+msgid "6th Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:245
+msgid ""
+"You can select your featured image here to show the featured image as sixth "
+"image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:251
+#: custom-post-types/tm-portfolio.php:254
+msgid "7th Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:253
+msgid ""
+"You can select your featured image here to show the featured image as "
+"seventh image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:259
+#: custom-post-types/tm-portfolio.php:262
+msgid "8th Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:261
+msgid ""
+"You can select your featured image here to show the featured image as eight "
+"image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:267
+#: custom-post-types/tm-portfolio.php:270
+msgid "9th Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:269
+msgid ""
+"You can select your featured image here to show the featured image as nineth "
+"image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:275
+#: custom-post-types/tm-portfolio.php:278
+msgid "10th Slider Image"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:277
+msgid ""
+"You can select your featured image here to show the featured image as tenth "
+"image in slider"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:292
+msgid "Fixtech: Portfolio View Style"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:304
+msgid "Portfolio View Style"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:306
+msgid "Global"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:307
+msgid "Left image and right content (default)"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:308
+msgid "Top image and bottom content"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:309
+msgid "No image and full-width content (without details box)"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:312
+msgid "Select view for single portfolio"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:324
+msgid "Fixtech: Portfolio Like Option"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:336
+msgid "Portfolio Reset Likes"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:338
+msgid "YES, Reset Likes"
+msgstr ""
+
+#: custom-post-types/tm-portfolio.php:340
+msgid ""
+"This will make the LIKE count to zero. For this portfolio only. If you like "
+"to reset LIKE for all portfolio than please go to \"Theme Options > Advanced "
+"Settings\" section"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:8
+msgctxt "post type general name"
+msgid "Slides"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:9
+msgctxt "post type singular name"
+msgid "Slide"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:10
+msgctxt "admin menu"
+msgid "Slides"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:11
+msgctxt "add new on admin bar"
+msgid "Slide"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:12
+msgctxt "slide"
+msgid "Add New"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:13
+msgid "Add New Slide"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:14
+msgid "New Slide"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:15
+msgid "Edit Slide"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:16
+msgid "View Slide"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:17
+msgid "All Slides"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:18
+msgid "Search Slide"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:19
+msgid "Parent Slide:"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:20
+msgid "No slide found."
+msgstr ""
+
+#: custom-post-types/tm-slides.php:21
+msgid "No slide found in Trash."
+msgstr ""
+
+#: custom-post-types/tm-slides.php:50
+msgid "Slide Image"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:59
+msgctxt "taxonomy general name"
+msgid "Slide Group"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:60
+msgctxt "taxonomy singular name"
+msgid "Slide Group"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:61 custom-post-types/tm-team.php:96
+#: custom-post-types/tm-testimonial.php:52
+msgid "Search Group"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:62 custom-post-types/tm-testimonial.php:53
+msgid "All Groups"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:67 custom-post-types/tm-team.php:102
+#: custom-post-types/tm-testimonial.php:58
+msgid "Add New Group"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:68 custom-post-types/tm-team.php:103
+#: custom-post-types/tm-testimonial.php:59
+msgid "New Group Name"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:69
+msgid "Slide Group"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:101
+msgid "Fixtech: Slide Options"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:113
+msgid "Description"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:114
+msgid "Add description text for this slide"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:119
+msgid "Button Text"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:120
+msgid "Add text for button"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:125
+msgid "Button Link"
+msgstr ""
+
+#: custom-post-types/tm-slides.php:126
+msgid "Add URL for button"
+msgstr ""
+
+#: custom-post-types/tm-team.php:15
+msgctxt "post type general name"
+msgid "Team Members"
+msgstr ""
+
+#: custom-post-types/tm-team.php:16
+msgctxt "post type singular name"
+msgid "Team Member"
+msgstr ""
+
+#: custom-post-types/tm-team.php:17
+msgctxt "admin menu"
+msgid "Team Members"
+msgstr ""
+
+#: custom-post-types/tm-team.php:18
+msgctxt "add new on admin bar"
+msgid "Team Member"
+msgstr ""
+
+#: custom-post-types/tm-team.php:19 custom-post-types/tm-team.php:54
+msgctxt "team member"
+msgid "Add New"
+msgstr ""
+
+#: custom-post-types/tm-team.php:20
+msgid "Add New Team Member"
+msgstr ""
+
+#: custom-post-types/tm-team.php:21
+msgid "New Team Member"
+msgstr ""
+
+#: custom-post-types/tm-team.php:22
+msgid "Edit Team Member"
+msgstr ""
+
+#: custom-post-types/tm-team.php:23
+msgid "View Team Member"
+msgstr ""
+
+#: custom-post-types/tm-team.php:24
+msgid "All Team Members"
+msgstr ""
+
+#: custom-post-types/tm-team.php:25
+msgid "Search Team Member"
+msgstr ""
+
+#: custom-post-types/tm-team.php:26
+msgid "Parent Team Member:"
+msgstr ""
+
+#: custom-post-types/tm-team.php:27
+msgid "No team member found."
+msgstr ""
+
+#: custom-post-types/tm-team.php:28
+msgid "No team member found in Trash."
+msgstr ""
+
+#: custom-post-types/tm-team.php:94
+msgctxt "taxonomy general name"
+msgid "Team Group"
+msgstr ""
+
+#: custom-post-types/tm-team.php:95
+msgctxt "taxonomy singular name"
+msgid "Team Group"
+msgstr ""
+
+#: custom-post-types/tm-team.php:97
+msgid "All Team Groups"
+msgstr ""
+
+#: custom-post-types/tm-team.php:104
+msgid "Team Group"
+msgstr ""
+
+#: custom-post-types/tm-team.php:125
+msgid "Member's Image"
+msgstr ""
+
+#: custom-post-types/tm-team.php:147
+msgid "Fixtech: Team Member's Details"
+msgstr ""
+
+#: custom-post-types/tm-team.php:154
+msgid "Team Member's Details"
+msgstr ""
+
+#: custom-post-types/tm-team.php:160
+msgid "Position"
+msgstr ""
+
+#: custom-post-types/tm-team.php:161
+msgid "(Optional) Add member's position. Example: <code>Project Manager</code>"
+msgstr ""
+
+#: custom-post-types/tm-team.php:166
+msgid "Email"
+msgstr ""
+
+#: custom-post-types/tm-team.php:167
+msgid ""
+"(Optional) Add member's email address. Example: <code>member@example.com</"
+"code>"
+msgstr ""
+
+#: custom-post-types/tm-team.php:172
+msgid "Phone"
+msgstr ""
+
+#: custom-post-types/tm-team.php:173
+msgid ""
+"(Optional) Add member's phone number. Example: <code>+91-0123-456789</code>"
+msgstr ""
+
+#: custom-post-types/tm-team.php:184
+msgid "Team Member's Social Links"
+msgstr ""
+
+#: custom-post-types/tm-team.php:190
+msgid "Facebook Link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:191
+msgid "(Optional) Please fill Facebook link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:196
+msgid "Twitter Link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:197
+msgid "(Optional) Please fill Twitter link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:202
+msgid "LinkedIn Link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:203
+msgid "(Optional) Please fill LinkedIn link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:208
+msgid "Google+ Link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:209
+msgid "(Optional) Please fill Google+ link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:214
+msgid "Instagram Link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:215
+msgid "(Optional) Please fill Instagram link"
+msgstr ""
+
+#: custom-post-types/tm-team.php:245
+msgid "Featured Image URL"
+msgstr ""
+
+#: custom-post-types/tm-team.php:249
+msgid ""
+"Paste featured image URL for this group. Please upload first in media "
+"section."
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:10
+msgctxt "Testimonials post type general name"
+msgid "Testimonials"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:11
+msgctxt "Testimonials post type singular name"
+msgid "Testimonial"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:12
+msgctxt "Testimonials post type admin menu"
+msgid "Testimonials"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:13
+msgctxt "Testimonials post type - add new on admin bar"
+msgid "Testimonial"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:14
+msgctxt "testimonial"
+msgid "Add New"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:15
+msgid "Add New Testimonial"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:16
+msgid "New Testimonial"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:17
+msgid "Edit Testimonial"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:18
+msgid "View Testimonial"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:19
+msgid "All Testimonials"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:20
+msgid "Search Testimonial"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:21
+msgid "Parent Testimonial:"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:22
+msgid "No testimonial found."
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:23
+msgid "No testimonial found in Trash."
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:50
+msgctxt "taxonomy general name"
+msgid "Testimonial Group"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:51
+msgctxt "taxonomy singular name"
+msgid "Testimonial Group"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:60
+msgid "Testimonial Group"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:84
+msgid "Person or Company Name"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:95
+msgid "Select/Upload Image of Person or Company"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:111
+msgid "Fixtech: Testimonial Details"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:129
+msgid "Person Designation or Company Name"
+msgstr ""
+
+#: custom-post-types/tm-testimonial.php:130
+msgid ""
+"(Optional) Please fill designation of the person. Fill Company name if it is "
+"a company"
+msgstr ""

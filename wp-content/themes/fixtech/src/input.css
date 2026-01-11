@@ -1,0 +1,1361 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-black text-gray-200 font-sans antialiased leading-relaxed !important;
+    }
+
+    h1,
+    h2 {
+        @apply font-serif font-bold tracking-widest uppercase !important;
+        background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 40%, #b38728 60%, #fbf5b7 100%);
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        text-shadow: 0px 0px 20px rgba(212, 175, 55, 0.3);
+    }
+
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-serif text-apfel-gold-500 tracking-wide uppercase font-semibold !important;
+        letter-spacing: 0.1em !important;
+    }
+
+    a {
+        @apply text-apfel-gold-500 hover:text-apfel-gold-300 transition-all duration-300 !important;
+    }
+
+    p,
+    li,
+    span {
+        @apply text-gray-300 font-light tracking-wide !important;
+        line-height: 1.8 !important;
+    }
+
+    /* Global Button Style - Ultra Premium */
+    button,
+    .tm-btn,
+    .vc_btn3,
+    input[type="submit"] {
+        background: linear-gradient(to bottom, #000, #111) !important;
+        color: #d4af37 !important;
+        border: 1px solid #d4af37 !important;
+        padding: 12px 30px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.1) !important;
+    }
+
+    button:hover,
+    .tm-btn:hover,
+    .vc_btn3:hover,
+    input[type="submit"]:hover {
+        background: #d4af37 !important;
+        color: #000 !important;
+        box-shadow: 0 0 25px rgba(212, 175, 55, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
+        border-color: #fcf6ba !important;
+        transform: translateY(-2px);
+    }
+}
+
+@layer components {
+
+    /* --- SHINING STARS ANIMATION SETUP --- */
+    @property --star-opacity-1 {
+        text-syntax: '<number>';
+        syntax: '<number>';
+        inherits: false;
+        initial-value: 1;
+    }
+
+    @property --star-opacity-2 {
+        text-syntax: '<number>';
+        syntax: '<number>';
+        inherits: false;
+        initial-value: 1;
+    }
+
+    @keyframes starShine1 {
+
+        0%,
+        100% {
+            --star-opacity-1: 0.2;
+        }
+
+        50% {
+            --star-opacity-1: 1;
+        }
+    }
+
+    @keyframes starShine2 {
+
+        0%,
+        100% {
+            --star-opacity-2: 0.1;
+        }
+
+        40% {
+            --star-opacity-2: 0.9;
+        }
+    }
+
+    /* --- DARK AND GOLD STARS PATTERN --- */
+    .dark-gold-dots-pattern,
+    .vc_row[data-vc-full-width],
+    .wpb_row,
+    [class*="vc_custom_"],
+    .tm-row,
+    .main-holder .vc_row {
+        background-color: #000000 !important;
+        /* Star Effect: Brighter, smaller, sharper dots */
+        background-image:
+            radial-gradient(circle, rgba(255, 230, 150, var(--star-opacity-1)) 1px, transparent 1px),
+            radial-gradient(circle, rgba(212, 175, 55, var(--star-opacity-2)) 1.5px, transparent 1.5px) !important;
+        background-size: 40px 40px, 70px 70px !important;
+        background-position: 0 0, 35px 35px !important;
+        animation: starShine1 3s ease-in-out infinite, starShine2 5s ease-in-out infinite alternate !important;
+    }
+
+    /* Hero Section / Slider - NO PATTERN (Solid Black) */
+    .tm-vc_general.tm-vc_cta3.tm-vc_cta3-style-custom,
+    .vc_row.wpb_row.vc_row-fluid,
+    .rev_slider_wrapper,
+    .rev_slider,
+    .rev_slider .tp-bgimg,
+    .rev_slider .slotholder,
+    .rev_slider .tp-bannertimer,
+    .rs-layer-wrap,
+    .tp-simpleresponsive,
+    .fullscreen-container,
+    .fullwidthbanner-container,
+    .tp-fullwidth-forcer,
+    #rev_slider_1_1,
+    #rev_slider_1_1_wrapper,
+    [id*="rev_slider"],
+    [class*="rev_slider"],
+    .tm-slider-container,
+    [class*="rev-slider"],
+    .tm-titlebar-wrapper,
+    .tm-hero-section,
+    .tp-static-layers,
+    .rs-parallax-wrap {
+        background-color: #000000 !important;
+        background-image: none !important;
+    }
+
+    /* Revolution Slider 6+ - Force dark backgrounds on ALL elements */
+    rs-module-wrap,
+    rs-module,
+    rs-slides,
+    rs-slide,
+    rs-sbg-wrap,
+    rs-sbg-px,
+    rs-sbg,
+    .rs-fullvideo-cover,
+    rs-progress,
+    [class*="rs-"],
+    [class*="tp-"] {
+        background-color: #000000 !important;
+    }
+
+    /* Target the slide background container - this is what shows the image */
+    rs-sbg-wrap,
+    rs-sbg-px,
+    rs-sbg {
+        background-color: #000000 !important;
+        background-image: none !important;
+    }
+
+    /* Apply dark overlay on slider images to blend with gold dots */
+    rs-sbg::after,
+    .rev_slider .tp-bgimg::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background-color: rgba(0, 0, 0, 0.75) !important;
+        background-image: none !important;
+        pointer-events: none !important;
+        z-index: 1 !important;
+    }
+
+    /* Ensure text layers are above the overlay */
+    rs-layer,
+    .rs-layer,
+    .tp-caption {
+        z-index: 10 !important;
+        position: relative !important;
+    }
+
+    /* Force slider text to be gold/white, never black */
+    rs-layer,
+    rs-layer *,
+    .rs-layer,
+    .tp-caption,
+    .tp-caption * {
+        color: #fcf6ba !important;
+    }
+
+    rs-layer h1,
+    rs-layer h2,
+    rs-layer h3,
+    rs-layer h4,
+    .tp-caption h1,
+    .tp-caption h2,
+    .tp-caption h3,
+    .tp-caption h4 {
+        color: #d4af37 !important;
+    }
+
+    /* Force Revolution Slider backgrounds to be dark */
+    .rev_slider .tp-dottedoverlay {
+        background-image: none !important;
+        background-color: rgba(0, 0, 0, 0.85) !important;
+    }
+
+    /* Override any slider background images */
+    .rev_slider .tp-bgimg.defaultimg {
+        background-color: #000000 !important;
+    }
+
+    /* Target slider slides with white/light backgrounds */
+    .tp-revslider-mainul>li,
+    .tp-revslider-slidesli,
+    .rev_slider li.tp-revslider-slidesli {
+        background-color: #000000 !important;
+        background-image: none !important;
+    }
+
+    /* Subtle Pattern for Content Areas */
+    .site-content,
+    .main-holder,
+    #content,
+    .tm-page-content {
+        background-color: #000000 !important;
+        background-image: radial-gradient(circle, rgba(212, 175, 55, 0.25) 1px, transparent 1px) !important;
+        background-size: 32px 32px !important;
+    }
+
+    /* White Background Sections Override - Force Dark with Gold Dots */
+    .tm-bgcolor-white,
+    .tm-bg.tm-bgcolor-white,
+    [class*="tm-bgcolor-white"],
+    .wpb_column.vc_column_container.vc_col-sm-12[style*="background"],
+    .vc_row[style*="background-color: rgb(255"],
+    .vc_row[style*="background-color: #fff"],
+    .vc_row[style*="background-color:#fff"],
+    .vc_row[style*="background: white"],
+    .wpb_row[style*="background-color: rgb(255"],
+    .wpb_row[style*="background-color: #fff"],
+    .wpb_row[style*="background:#fff"],
+    .vc_section[style*="background"] {
+        background-color: #000000 !important;
+        background-image: radial-gradient(circle, rgba(212, 175, 55, 0.3) 1px, transparent 1px) !important;
+        background-size: 28px 28px !important;
+    }
+
+    /* Remove any light/gray dot patterns */
+    [style*="background-image"][style*="data:image/svg+xml"],
+    [style*="background"][style*="repeating-linear"],
+    .tm-dotted-pattern {
+        background-image: radial-gradient(circle, rgba(212, 175, 55, 0.35) 1px, transparent 1px) !important;
+        background-color: #000000 !important;
+        background-size: 24px 24px !important;
+    }
+
+    /* Ensure all inline white/light backgrounds are overridden */
+    .vc_column-inner,
+    .wpb_wrapper {
+        background-color: transparent !important;
+    }
+
+    /* --- HEADER --- */
+    .tm-topbar,
+    .tm-header-top-wrapper {
+        @apply bg-black border-b border-gray-900 !important;
+    }
+
+    .themetechmount-topbar-wrapper,
+    .themetechmount-topbar-inner {
+        @apply bg-black border-b border-gray-900 !important;
+    }
+
+    .themetechmount-topbar-wrapper,
+    .themetechmount-topbar-wrapper a,
+    .themetechmount-topbar-wrapper li,
+    .themetechmount-topbar-wrapper span {
+        @apply text-apfel-gold-500 !important;
+    }
+
+    .themetechmount-topbar-wrapper a:hover {
+        @apply text-apfel-gold-300 !important;
+    }
+
+    .themetechmount-topbar-wrapper .social-icons li>a,
+    .themetechmount-topbar-wrapper .themetechmount-social-links-wrapper .social-icons li>a {
+        color: #d4af37 !important;
+        border-color: rgba(212, 175, 55, 0.5) !important;
+    }
+
+    .themetechmount-topbar-wrapper .social-icons li>a i,
+    .themetechmount-topbar-wrapper .social-icons li>a i:before {
+        color: #d4af37 !important;
+    }
+
+    .themetechmount-topbar-wrapper .social-icons li>a:hover,
+    .themetechmount-topbar-wrapper .social-icons li>a:hover i,
+    .themetechmount-topbar-wrapper .social-icons li>a:hover i:before {
+        color: #fcf6ba !important;
+        border-color: #fcf6ba !important;
+    }
+
+    .tm-header-style-classicinfo .tm-divcontent-wrapper {
+        @apply bg-black border-b border-gray-900 !important;
+    }
+
+    .tm-header-style-classicinfo .tm-divcontent-wrapper h3,
+    .tm-header-style-classicinfo .tm-divcontent-wrapper h5,
+    .tm-header-style-classicinfo .tm-divcontent-wrapper p,
+    .tm-header-style-classicinfo .tm-divcontent-wrapper span,
+    .tm-header-style-classicinfo .tm-divcontent-wrapper a {
+        @apply text-apfel-gold-500 !important;
+    }
+
+    .tm-header-style-classicinfo .header-widget h3,
+    .tm-header-style-classicinfo .header-widget h5,
+    .tm-header-style-classicinfo .header-widget .header-content,
+    .tm-header-style-infostack .header-widget h3,
+    .tm-header-style-infostack .header-widget h5,
+    .tm-header-style-infostack .header-widget .header-content {
+        color: #d4af37 !important;
+    }
+
+    .tm-header-style-classicinfo .header-widget .header-icon i,
+    .tm-header-style-infostack .header-widget .header-icon i {
+        color: #d4af37 !important;
+    }
+
+    .tm-header-style-classicinfo .header-widget .header-icon .icon,
+    .tm-header-style-infostack .header-widget .header-icon .icon {
+        border-color: rgba(212, 175, 55, 0.7) !important;
+        box-shadow: 0 0 12px rgba(212, 175, 55, 0.2) !important;
+    }
+
+    .tm-header-style-classicinfo .header-widget .header-content a,
+    .tm-header-style-infostack .header-widget .header-content a {
+        color: #d4af37 !important;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.45) !important;
+        text-decoration: none !important;
+    }
+
+    .tm-header-style-classicinfo .header-widget .header-content a:hover,
+    .tm-header-style-infostack .header-widget .header-content a:hover {
+        color: #fcf6ba !important;
+        border-bottom-color: #fcf6ba !important;
+        animation: goldTextPulse 1.8s ease-in-out infinite !important;
+    }
+
+    .tm-header-style-classicinfo .tm-divcontent-wrapper i,
+    .tm-header-style-classicinfo .tm-divcontent-wrapper i:before {
+        color: #d4af37 !important;
+    }
+
+    .tm-header-style-classicinfo .tm-divcontent-wrapper a:hover {
+        color: #fcf6ba !important;
+    }
+
+    .header-controls .search_box a,
+    .header-controls .search_box a>span,
+    .tm-header-search-link a,
+    .tm-header-search-link i,
+    .tm-header-search-link i:before {
+        color: #d4af37 !important;
+    }
+
+    .header-controls .search_box a:hover,
+    .header-controls .search_box a:hover>span,
+    .tm-header-search-link a:hover,
+    .tm-header-search-link a:hover i,
+    .tm-header-search-link a:hover i:before {
+        color: #fcf6ba !important;
+    }
+
+    header#masthead,
+    .tm-header-block,
+    .site-header,
+    .site-header-main,
+    .tm-header-style-classicinfo .site-header,
+    .tm-header-style-classicinfo .site-header-main,
+    .tm-header-style-classicinfo .tm-divcontent-wrapper,
+    .tm-header-style-classicinfo .tm-header-block,
+    .main-holder,
+    #page {
+        @apply bg-black !important;
+    }
+
+    .effect-pulse {
+        border: 2px solid rgba(212, 175, 55, 0.3) !important;
+        box-shadow: 0 0 5px rgba(212, 175, 55, 0.1) !important;
+        animation: goldPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+    }
+
+    @keyframes goldTextPulse {
+
+        0%,
+        100% {
+            text-shadow: 0 0 4px rgba(212, 175, 55, 0.35);
+        }
+
+        50% {
+            text-shadow: 0 0 12px rgba(212, 175, 55, 0.85);
+        }
+    }
+
+    @keyframes goldPulseStrong {
+
+        0%,
+        100% {
+            border-color: rgba(212, 175, 55, 0.2);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+        }
+
+        50% {
+            border-color: rgba(252, 246, 186, 0.65);
+            box-shadow: 0 0 26px rgba(212, 175, 55, 0.6);
+        }
+    }
+
+    .vc_custom_1553081315463,
+    .vc_custom_1553081391832,
+    .serviceboxes-with-banner {
+        @apply bg-black !important;
+    }
+
+    .vc_custom_1553081315463 .tm-heading h2,
+    .vc_custom_1553081315463 .tm-heading h4 {
+        @apply text-apfel-gold-500 !important;
+    }
+
+    .vc_custom_1553081315463 .tm-heading p,
+    .vc_custom_1553081315463 .tm-heading span {
+        @apply text-gray-400 !important;
+    }
+
+    .vc_custom_1553081315463 .tm-heading h4 {
+        margin: 0 0 8px 0 !important;
+        line-height: 1.15 !important;
+    }
+
+    .vc_custom_1553081315463 .tm-heading h2 {
+        margin: 0 0 10px 0 !important;
+        line-height: 1.15 !important;
+    }
+
+    .vc_custom_1553081315463 .tm-heading p {
+        margin-top: 6px !important;
+    }
+
+    .vc_custom_1553081315463 .tm-heading,
+    .vc_custom_1553081315463 .tm-heading .tm-heading-content {
+        position: relative !important;
+        z-index: 2 !important;
+    }
+
+    .vc_custom_1553081315463 .tm-element-heading-wrapper .tm-cta3-content-wrapper,
+    .vc_custom_1553081315463 .tm-element-heading-wrapper .tm-cta3-content-wrapper p {
+        color: #a79e8b !important;
+    }
+
+    .vc_custom_1553081315463 .tm-element-heading-wrapper .tm-vc_cta3-content-header>.tm-vc_cta3-headers h4,
+    .vc_custom_1553081315463 .tm-element-heading-wrapper.tm-overlay-subheading .tm-vc_cta3-content-header>.tm-vc_cta3-headers h4:nth-child(1),
+    .vc_custom_1553081315463 .tm-element-heading-wrapper.tm-overlay-subheading .tm-vc_cta3-content-header>.tm-vc_cta3-headers h4:nth-child(2) {
+        margin: 0 0 8px 0 !important;
+        line-height: 1.15 !important;
+    }
+
+    .vc_custom_1553081315463 .tm-element-heading-wrapper .tm-vc_cta3-content-header h2 {
+        margin: 0 0 12px 0 !important;
+        line-height: 1.15 !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox,
+    .serviceboxes-with-banner .tm-servicebox,
+    .serviceboxes-with-banner .tm-bgcolor-white {
+        background-color: #121212 !important;
+        border: 2px solid rgba(212, 175, 55, 0.25) !important;
+        border-radius: 14px !important;
+        padding: 26px !important;
+        color: #a79e8b !important;
+        box-shadow: 0 0 12px rgba(212, 175, 55, 0.18) !important;
+        transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease !important;
+        animation: goldPulseStrong 3.2s ease-in-out infinite !important;
+    }
+
+    .serviceboxes-with-banner.tm-servicebox-hover .tm-sbox:not(.tm-bgimage-yes) {
+        background-color: #121212 !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox:hover,
+    .serviceboxes-with-banner .tm-servicebox:hover {
+        background-color: #171717 !important;
+        transform: translateY(-4px) scale(1.02) !important;
+        border-color: rgba(252, 246, 186, 0.7) !important;
+        box-shadow: 0 0 28px rgba(212, 175, 55, 0.55) !important;
+    }
+
+    .serviceboxes-with-banner.tm-servicebox-hover .tm-sbox:not(.tm-bgimage-yes):hover {
+        background-color: #171717 !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox,
+    .serviceboxes-with-banner .tm-vc_cta3-container,
+    .serviceboxes-with-banner .tm-vc_general.tm-vc_cta3 {
+        height: 100% !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox {
+        display: flex !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox>.tm-vc_cta3-container {
+        flex: 1 1 auto !important;
+        display: flex !important;
+        background-color: #121212 !important;
+        border-radius: 14px !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox .tm-vc_general.tm-vc_cta3 {
+        flex: 1 1 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background-color: #121212 !important;
+        border-radius: 14px !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox .tm-vc_cta3_content-container {
+        flex: 1 1 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox .tm-cta3-desc-btn-wrapper {
+        flex: 1 1 auto !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox h3,
+    .serviceboxes-with-banner .tm-sbox h4,
+    .serviceboxes-with-banner .tm-servicebox h3,
+    .serviceboxes-with-banner .tm-servicebox h4 {
+        @apply text-apfel-gold-500 !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox .tm-vc_cta3-content-header h2,
+    .serviceboxes-with-banner .tm-sbox .tm-vc_cta3-content-header h4 {
+        color: #d4af37 !important;
+    }
+
+    .serviceboxes-with-banner .tm-sbox p,
+    .serviceboxes-with-banner .tm-sbox li,
+    .serviceboxes-with-banner .tm-servicebox p,
+    .serviceboxes-with-banner .tm-servicebox li {
+        color: #a79e8b !important;
+    }
+
+    .serviceboxes-with-banner .tm-cta3-description,
+    .serviceboxes-with-banner .tm-cta3-description p {
+        color: #a79e8b !important;
+    }
+
+    .serviceboxes-with-banner .tm-vc_cta3-icons i,
+    .serviceboxes-with-banner .tm-vc_icon_element i,
+    .serviceboxes-with-banner .tm-vc_icon_element .tm-vc_icon_element-icon {
+        @apply text-apfel-gold-500 !important;
+    }
+
+    .tm-header-top-wrapper h3,
+    .tm-header-top-wrapper h5 {
+        @apply text-gray-200 !important;
+    }
+
+    #tm-stickable-header-w,
+    .site-header-menu,
+    .site-header-menu-inner,
+    .tm-header-menu-container,
+    .site-header-menu-middle,
+    div[id*="stickable"] {
+        background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .main-navigation ul.menu>li>a,
+    .menu-item a {
+        color: #000000 !important;
+        font-family: 'Oswald', sans-serif !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        font-size: 14px !important;
+        text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.3) !important;
+    }
+
+    #tm-stickable-header-w a[href*="impressum"],
+    #tm-stickable-header-w a[href*="Impressum"],
+    .site-header-menu a[href*="impressum"],
+    .site-header-menu a[href*="Impressum"] {
+        background-color: #000000 !important;
+        color: #d4af37 !important;
+        border: 1px solid rgba(212, 175, 55, 0.6) !important;
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.2) !important;
+    }
+
+    #tm-stickable-header-w a[href*="impressum"]:hover,
+    #tm-stickable-header-w a[href*="Impressum"]:hover,
+    .site-header-menu a[href*="impressum"]:hover,
+    .site-header-menu a[href*="Impressum"]:hover {
+        color: #fcf6ba !important;
+        border-color: #fcf6ba !important;
+        box-shadow: 0 0 18px rgba(212, 175, 55, 0.45) !important;
+        background-color: #0a0a0a !important;
+    }
+
+    /* --- CONTENT --- */
+    #content,
+    .site-content,
+    .main-holder,
+    .tm-page-wrap {
+        @apply bg-black !important;
+    }
+
+    /* --- CARDS --- */
+    .themetechmount-box-service .themetechmount-post-item,
+    .tm-servicebox,
+    .tm-box-view-top-image {
+        @apply bg-apfel-card border-2 border-apfel-gold-500/30 rounded-lg p-6 animate-gold-pulse text-gray-300 transition-transform duration-300 hover:scale-105 shadow-gold-glow !important;
+    }
+
+    .themetechmount-box-service .themetechmount-box-bottom-content,
+    .themetechmount-box-service .themetechmount-post-item-inner {
+        @apply bg-transparent !important;
+    }
+
+    .themetechmount-box-service h4,
+    .tm-servicebox h4 {
+        @apply text-apfel-gold-500 font-serif text-xl mb-3 !important;
+    }
+
+    /* --- FOOTER: DARK LUXURY REFINEMENT --- */
+
+    /* Phase 1: Background & Text -> BLACK & GOLD */
+    footer#colophon,
+    .site-footer,
+    .footer_inner_wrapper,
+    .footer-inner-wrapper,
+    .footer-rows,
+    .footer-rows-inner,
+    .first-footer,
+    .second-footer,
+    .sidebar-footer {
+        background: #000000 !important;
+        border: none !important;
+    }
+
+    .site-footer-bg-layer,
+    .first-footer-bg-layer,
+    .second-footer-bg-layer,
+    .footer_inner_wrapper .tm-bg-layer {
+        background-color: #000000 !important;
+        opacity: 1 !important;
+    }
+
+    .tm-footer-cta-wrapper,
+    .tm-footer-cta-inner {
+        background-color: #000000 !important;
+    }
+
+    .site-footer .tm-newsletter-box,
+    .site-footer .newsletter-widget,
+    .site-footer .widget_newsletterwidget,
+    .site-footer .tm-newsletter-margin {
+        display: none !important;
+    }
+
+    .site-footer,
+    .site-footer p,
+    .site-footer li,
+    .site-footer span,
+    .site-footer a,
+    .site-footer .widget-title,
+    .site-footer h3,
+    .site-footer .widget ul li a {
+        color: #d4af37 !important;
+        /* Premium Gold */
+    }
+
+    .site-footer a:hover {
+        color: #fcf6ba !important;
+    }
+
+    /* Phase 2: Map Rounded Corners */
+    .site-footer iframe,
+    .site-footer .google-map,
+    .site-footer .tm-map-wrapper {
+        border-radius: 20px !important;
+        overflow: hidden !important;
+        border: 1px solid #333 !important;
+    }
+
+    /* Phase 3: Social Media Icons -> GOLD */
+    .site-footer .tm-social-links li a,
+    .site-footer .social-icons li a {
+        background-color: #d4af37 !important;
+        color: #000 !important;
+        border-radius: 50% !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .site-footer .tm-social-links li a:hover {
+        transform: translateY(-5px) !important;
+        background-color: #fcf6ba !important;
+    }
+
+    .site-footer .social-icons li a i,
+    .site-footer .social-icons li a i:before,
+    .site-footer .tm-socialbox-links-wrapper li a i,
+    .site-footer .tm-socialbox-links-wrapper li a i:before,
+    .site-footer .tm-social-links li a i,
+    .site-footer .tm-social-links li a i:before {
+        color: #000 !important;
+        opacity: 1 !important;
+    }
+
+    .site-footer .social-icons li a i,
+    .site-footer .tm-socialbox-links-wrapper li a i,
+    .site-footer .tm-social-links li a i {
+        font-size: 14px !important;
+        line-height: 1 !important;
+    }
+
+    .site-footer .social-icons li a svg,
+    .site-footer .tm-socialbox-links-wrapper li a svg,
+    .site-footer .tm-social-links li a svg {
+        fill: #000 !important;
+    }
+
+    /* Phase 4: To Top Button -> GOLD */
+    #totop {
+        background-color: #d4af37 !important;
+        color: #000 !important;
+        border: none !important;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.4) !important;
+    }
+
+    #totop:hover {
+        background-color: #fcf6ba !important;
+        transform: scale(1.1);
+    }
+
+    /* Phase 5: Copyright Section -> DARK & GOLD */
+    .site-info-wrapper,
+    .site-info {
+        background: #000000 !important;
+        border-top: 1px solid #222 !important;
+        padding: 30px 0 !important;
+    }
+
+    .site-info .copyright,
+    .site-info .copyright a {
+        color: #d4af37 !important;
+        font-size: 13px !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* CTA Box */
+    .tm-phone-block {
+        @apply bg-apfel-card border border-apfel-gold-500 shadow-gold-glow-lg !important;
+    }
+
+    .tm-phone-block h3 {
+        color: #fcf6ba !important;
+    }
+
+    /* ========================================
+       ULTRA POLISH - MIDDLE SECTIONS
+       ======================================== */
+
+    /* --- ICON GLOW EFFECT (All Icons) --- */
+    .serviceboxes-with-banner i,
+    .tm-servicebox i,
+    .tm-vc_icon_element i,
+    .tm-vc_cta3-icons i,
+    .tm-fbar-icon i,
+    .tm-ptable-icon i,
+    .themetechmount-box-service i {
+        color: #d4af37 !important;
+        filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.7)) !important;
+        transition: all 0.4s ease !important;
+    }
+
+    .serviceboxes-with-banner i:hover,
+    .tm-servicebox i:hover,
+    .tm-vc_icon_element i:hover {
+        color: #fcf6ba !important;
+        filter: drop-shadow(0 0 18px rgba(252, 246, 186, 0.9)) !important;
+        transform: scale(1.1);
+    }
+
+    /* --- SECTION TITLE GOLD GRADIENT (All content headings) --- */
+    .tm-heading h2,
+    .tm-heading h4,
+    .tm-vc_cta3-content-header h2,
+    .tm-vc_cta3-content-header h4,
+    .tm-element-heading-wrapper h2,
+    .tm-element-heading-wrapper h4,
+    .wpb_text_column h2,
+    .wpb_text_column h3,
+    .wpb_text_column h4,
+    .vc_row h2,
+    .vc_row h3 {
+        background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 40%, #b38728 60%, #fbf5b7 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        text-shadow: none !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.08em !important;
+    }
+
+    /* --- SECTION SEPARATORS (Gold Gradient Lines) --- */
+    .vc_row[data-vc-full-width]+.vc_row[data-vc-full-width]::before,
+    .wpb_row+.wpb_row::before {
+        content: '' !important;
+        display: block !important;
+        width: 50% !important;
+        max-width: 400px !important;
+        height: 1px !important;
+        margin: 60px auto !important;
+        background: linear-gradient(90deg, transparent, #d4af37 30%, #fcf6ba 50%, #d4af37 70%, transparent) !important;
+    }
+
+    /* --- DESCRIPTION TEXT REFINEMENT --- */
+    .tm-cta3-description p,
+    .tm-servicebox p,
+    .tm-sbox p,
+    .wpb_text_column p,
+    .serviceboxes-with-banner p {
+        color: #c0b090 !important;
+        font-size: 15px !important;
+        line-height: 1.85 !important;
+        letter-spacing: 0.02em !important;
+    }
+
+    /* --- FORCE BLACK BACKGROUND ON ALL SECTIONS --- */
+    .vc_row,
+    .wpb_row,
+    .tm-row,
+    [class*="vc_custom_"],
+    .vc_section,
+    .wpb_column,
+    .vc_column_container {
+        background-color: #000 !important;
+    }
+
+    /* --- SERVICE BOX ICON CONTAINER STYLING --- */
+    .tm-vc_cta3-icons,
+    .tm-vc_icon_element {
+        margin-bottom: 20px !important;
+    }
+
+    .tm-vc_cta3-icons i,
+    .tm-vc_icon_element i {
+        font-size: 48px !important;
+    }
+
+    /* --- SUBTLE CARD BORDER GLOW ON CONTENT BOXES --- */
+    .tm-sbox,
+    .tm-servicebox,
+    .tm-vc_general.tm-vc_cta3 {
+        position: relative !important;
+        overflow: hidden !important;
+    }
+
+    .tm-sbox::before,
+    .tm-servicebox::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 2px !important;
+        background: linear-gradient(90deg, transparent, #d4af37 40%, #fcf6ba, #d4af37 60%, transparent) !important;
+        opacity: 0.6 !important;
+    }
+
+    /* --- LINK STYLES IN CONTENT AREAS --- */
+    .tm-cta3-description a,
+    .wpb_text_column a,
+    .tm-servicebox a {
+        color: #d4af37 !important;
+        text-decoration: none !important;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .tm-cta3-description a:hover,
+    .wpb_text_column a:hover,
+    .tm-servicebox a:hover {
+        color: #fcf6ba !important;
+        border-bottom-color: #fcf6ba !important;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.5) !important;
+    }
+
+    /* --- SUBHEADINGS / LABELS --- */
+    .tm-vc_cta3-content-header h4,
+    .tm-heading h4,
+    .tm-element-heading-wrapper h4 {
+        font-size: 14px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.15em !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* ========================================
+       FINISHING TOUCHES - PREMIUM DETAILS
+       ======================================== */
+
+    /* --- CUSTOM SCROLLBAR --- */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #0a0a0a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #d4af37, #b38728);
+        border-radius: 5px;
+        border: 2px solid #0a0a0a;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #fcf6ba, #d4af37);
+    }
+
+    /* --- TEXT SELECTION --- */
+    ::selection {
+        background: rgba(212, 175, 55, 0.4);
+        color: #fcf6ba;
+    }
+
+    ::-moz-selection {
+        background: rgba(212, 175, 55, 0.4);
+        color: #fcf6ba;
+    }
+
+    /* --- FORM INPUTS --- */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    input[type="search"],
+    input[type="url"],
+    input[type="number"],
+    textarea,
+    select {
+        background: #0d0d0d !important;
+        border: 1px solid rgba(212, 175, 55, 0.3) !important;
+        color: #e0d5c0 !important;
+        padding: 14px 18px !important;
+        border-radius: 8px !important;
+        font-size: 15px !important;
+        transition: all 0.4s ease !important;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="tel"]:focus,
+    input[type="password"]:focus,
+    input[type="search"]:focus,
+    input[type="url"]:focus,
+    input[type="number"]:focus,
+    textarea:focus,
+    select:focus {
+        outline: none !important;
+        border-color: #d4af37 !important;
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.25) !important;
+        background: #111 !important;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #666 !important;
+        font-style: italic !important;
+    }
+
+    /* --- FORM LABELS --- */
+    label {
+        color: #d4af37 !important;
+        font-size: 13px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.1em !important;
+        margin-bottom: 8px !important;
+        display: block !important;
+    }
+
+    /* --- IMAGES - PREMIUM TREATMENT --- */
+    .wpb_single_image img,
+    .tm-servicebox img,
+    .vc_single_image-wrapper img,
+    article img {
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.1) !important;
+        transition: all 0.5s ease !important;
+    }
+
+    .wpb_single_image img:hover,
+    .tm-servicebox img:hover,
+    .vc_single_image-wrapper img:hover {
+        transform: scale(1.02) !important;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 0 30px rgba(212, 175, 55, 0.15) !important;
+    }
+
+    /* --- BLOCKQUOTES --- */
+    blockquote {
+        border-left: 3px solid #d4af37 !important;
+        background: rgba(212, 175, 55, 0.05) !important;
+        padding: 20px 25px !important;
+        margin: 30px 0 !important;
+        font-style: italic !important;
+        color: #c0b090 !important;
+        border-radius: 0 8px 8px 0 !important;
+    }
+
+    blockquote p {
+        color: #c0b090 !important;
+        font-size: 16px !important;
+        line-height: 1.8 !important;
+    }
+
+    /* --- LISTS IN CONTENT --- */
+    .wpb_text_column ul,
+    .tm-servicebox ul,
+    .entry-content ul {
+        list-style: none !important;
+        padding-left: 0 !important;
+    }
+
+    .wpb_text_column ul li,
+    .tm-servicebox ul li,
+    .entry-content ul li {
+        position: relative !important;
+        padding-left: 25px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .wpb_text_column ul li::before,
+    .tm-servicebox ul li::before,
+    .entry-content ul li::before {
+        content: '◆' !important;
+        position: absolute !important;
+        left: 0 !important;
+        color: #d4af37 !important;
+        font-size: 10px !important;
+    }
+
+    /* --- HR / DIVIDERS --- */
+    hr {
+        border: none !important;
+        height: 1px !important;
+        background: linear-gradient(90deg, transparent, #d4af37 30%, #fcf6ba 50%, #d4af37 70%, transparent) !important;
+        margin: 50px 0 !important;
+    }
+
+    /* --- TABLES --- */
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        background: #0a0a0a !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+    }
+
+    th {
+        background: linear-gradient(135deg, #1a1a1a, #0d0d0d) !important;
+        color: #d4af37 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.1em !important;
+        font-size: 13px !important;
+        padding: 16px !important;
+        border-bottom: 2px solid #d4af37 !important;
+    }
+
+    td {
+        padding: 14px 16px !important;
+        border-bottom: 1px solid #222 !important;
+        color: #c0b090 !important;
+    }
+
+    tr:hover td {
+        background: rgba(212, 175, 55, 0.05) !important;
+    }
+
+    /* --- LOADING / PRELOADER OVERRIDE --- */
+    .tm-loader,
+    .preloader,
+    #preloader {
+        background: #000 !important;
+    }
+
+    .tm-loader-inner,
+    .spinner {
+        border-color: rgba(212, 175, 55, 0.2) !important;
+        border-top-color: #d4af37 !important;
+    }
+
+    /* --- BADGE / TAG STYLES --- */
+    .tm-tag,
+    .tag-link,
+    .tagcloud a {
+        background: #111 !important;
+        color: #d4af37 !important;
+        border: 1px solid rgba(212, 175, 55, 0.4) !important;
+        padding: 6px 14px !important;
+        border-radius: 20px !important;
+        font-size: 12px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.08em !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .tm-tag:hover,
+    .tag-link:hover,
+    .tagcloud a:hover {
+        background: #d4af37 !important;
+        color: #000 !important;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.5) !important;
+    }
+
+    /* --- BREADCRUMBS --- */
+    .tm-breadcrumb,
+    .breadcrumbs,
+    .woocommerce-breadcrumb {
+        color: #888 !important;
+        font-size: 13px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.08em !important;
+    }
+
+    .tm-breadcrumb a,
+    .breadcrumbs a,
+    .woocommerce-breadcrumb a {
+        color: #d4af37 !important;
+    }
+
+    .tm-breadcrumb a:hover,
+    .breadcrumbs a:hover,
+    .woocommerce-breadcrumb a:hover {
+        color: #fcf6ba !important;
+    }
+
+    /* --- PAGINATION --- */
+    .pagination a,
+    .page-numbers,
+    .nav-links a {
+        background: #111 !important;
+        color: #d4af37 !important;
+        border: 1px solid rgba(212, 175, 55, 0.3) !important;
+        padding: 10px 16px !important;
+        border-radius: 6px !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .pagination a:hover,
+    .page-numbers:hover,
+    .nav-links a:hover,
+    .page-numbers.current {
+        background: #d4af37 !important;
+        color: #000 !important;
+        box-shadow: 0 0 18px rgba(212, 175, 55, 0.5) !important;
+    }
+
+    /* --- SMOOTH FOCUS STATES --- */
+    *:focus {
+        outline: none !important;
+    }
+
+    a:focus,
+    button:focus {
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.3) !important;
+    }
+
+    /* --- REDUCE MOTION FOR ACCESSIBILITY --- */
+    @media (prefers-reduced-motion: reduce) {
+
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+    /* ========================================
+       COMET GOLD - PROGRESS BARS / PERCENTAGES
+       ======================================== */
+
+    /* Comet trail animation */
+    @keyframes cometTrail {
+        0% {
+            left: -30%;
+            opacity: 0;
+        }
+
+        10% {
+            opacity: 1;
+        }
+
+        100% {
+            left: 100%;
+            opacity: 0;
+        }
+    }
+
+    @keyframes cometGlow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5), 0 0 30px rgba(252, 246, 186, 0.3);
+        }
+
+        50% {
+            box-shadow: 0 0 25px rgba(252, 246, 186, 0.8), 0 0 50px rgba(212, 175, 55, 0.5);
+        }
+    }
+
+    /* Progress Bar Container - TRACK */
+    .tm-fbar,
+    .vc_single_bar,
+    .tm-progress-bar .progress,
+    /* .tm-progress-bar might be the wrapper, but .progress usually track */
+    [class*="progress-bar"] .progress,
+    [class*="progress-bar"] .bar {
+        background: #0a0a0a !important;
+        border-radius: 25px !important;
+        overflow: hidden !important;
+        height: 12px !important;
+        border: 1px solid rgba(212, 175, 55, 0.2) !important;
+        position: relative !important;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Ensure the wrapper itself isn't clipped */
+    .vc_progress_bar,
+    .tm-vc_progress_bar {
+        height: auto !important;
+        overflow: visible !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    /* Progress Bar Fill - The Comet */
+    .tm-fbar .tm-fbar-bar,
+    .tm-fbar-bar,
+    .tm-progress-bar .progress,
+    .vc_single_bar .vc_bar,
+    .vc_progress_bar .vc_single_bar .vc_bar,
+    [class*="progress-bar"]>span,
+    [class*="progress-bar"]>div {
+        background: linear-gradient(90deg, #8b6914 0%, #d4af37 30%, #fcf6ba 50%, #d4af37 70%, #8b6914 100%) !important;
+        border-radius: 25px !important;
+        height: 100% !important;
+        width: 100% !important;
+        /* Force full width per user request */
+        position: relative !important;
+        overflow: hidden !important;
+        animation: cometGlow 2.5s ease-in-out infinite !important;
+    }
+
+    /* Comet Head / Trailing Shine */
+    .tm-fbar .tm-fbar-bar::after,
+    .tm-fbar-bar::after,
+    .tm-progress-bar .progress::after,
+    .vc_single_bar .vc_bar::after,
+    [class*="progress-bar"]>span::after,
+    [class*="progress-bar"]>div::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: -30% !important;
+        width: 30% !important;
+        height: 100% !important;
+        background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                rgba(255, 255, 255, 0.6),
+                rgba(252, 246, 186, 0.9),
+                rgba(255, 255, 255, 0.6),
+                rgba(255, 255, 255, 0.1),
+                transparent) !important;
+        animation: cometTrail 3s ease-in-out infinite !important;
+        border-radius: 50% !important;
+    }
+
+    /* Percentage Label - Make it Pop */
+    .tm-fbar .tm-fbar-label,
+    .tm-fbar-label,
+    .tm-fbar-title,
+    .tm-progress-label,
+    .vc_label,
+    .tm-fbar .tm-fbar-title {
+        color: #d4af37 !important;
+        font-size: 14px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.15em !important;
+        font-weight: 700 !important;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.3) !important;
+    }
+
+    /* Percentage Value - Gold Glow */
+    .tm-fbar .tm-fbar-percent,
+    .tm-fbar-percent,
+    .vc_label_units,
+    .tm-progress-percent,
+    [class*="percent"] {
+        color: #fcf6ba !important;
+        font-size: 18px !important;
+        font-weight: 800 !important;
+        text-shadow: 0 0 15px rgba(252, 246, 186, 0.6), 0 0 30px rgba(212, 175, 55, 0.4) !important;
+        animation: cometGlow 2s ease-in-out infinite !important;
+    }
+
+    /* Fact/Feature Boxes with Numbers */
+    .tm-fbox-number,
+    .tm-factbox-number,
+    .tm-funfact-number,
+    [class*="counter-number"],
+    [class*="funfact"] span {
+        background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 40%, #b38728 60%, #fbf5b7 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        font-weight: 900 !important;
+        text-shadow: none !important;
+        filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5)) !important;
+    }
+
+    /* Progress bar wrapper spacing */
+    .tm-fbar-wrapper,
+    .vc_progress_bar {
+        margin-bottom: 25px !important;
+    }
+}

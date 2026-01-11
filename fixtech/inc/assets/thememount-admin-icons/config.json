@@ -1,0 +1,24 @@
+{
+  "name": "themetechmount-admin-icon",
+  "css_prefix_text": "themetechmount-admin-icon-",
+  "css_use_suffix": false,
+  "hinting": true,
+  "units_per_em": 1000,
+  "ascent": 850,
+  "glyphs": [
+    {
+      "uid": "77fd2cd51b66b5beb4ba8d8d2e82a662",
+      "css": "logo",
+      "code": 59392,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M650.9 279.7L316.9 685.7H994ZM325.2 326.8L28.1 684H194.7L415.1 432.3Z",
+        "width": 1000
+      },
+      "search": [
+        "themetechmount-icon"
+      ]
+    }
+  ]
+}

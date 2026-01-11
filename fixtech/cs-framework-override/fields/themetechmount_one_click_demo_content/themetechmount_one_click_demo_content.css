@@ -1,0 +1,22 @@
+/* Error message box */
+.alert-info.tm-one-click-error-message {
+	border: 1px solid #ffdada;
+	padding: 15px;
+	margin-top: 25px;
+	background-color: #fff8f8;
+	position: relative;
+}
+.alert-info.tm-one-click-error-message ul{
+	list-style-type: disc;
+	padding: 6px;
+	padding-left: 25px;
+}
+
+a.tm-one-click-error-close {
+	top: 5px;
+	right: 10px;
+	color: #986c6c;
+}
+.import-demo-data-text a.tm-one-click-error-close {
+	position: relative;
+}

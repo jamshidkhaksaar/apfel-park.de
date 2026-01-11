@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Implement "Dark Luxury" visual polish for the Topbar, Header, and Navigation Bar
+## [~] Track: Implement "Dark Luxury" visual polish for the Topbar, Header, and Navigation Bar
 *Link: [./conductor/tracks/header_polish_20260111/](./conductor/tracks/header_polish_20260111/)*
