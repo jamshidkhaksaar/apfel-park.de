@@ -35,8 +35,8 @@
     }
     
     /* Header/Footer overrides if needed */
-    .site-header, .site-footer {
-        @apply bg-apfel-black border-b border-apfel-gold-500/20;
+    .site-header, .site-footer, .themetechmount-topbar-wrapper {
+        @apply bg-apfel-black border-b border-apfel-gold-500/20 !important;
     }
 
     /* Gold Texture Pattern */
