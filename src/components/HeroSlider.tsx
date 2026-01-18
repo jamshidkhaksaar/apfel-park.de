@@ -146,7 +146,7 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg text-white/80 md:text-xl">
+          <p className="text-lg text-gold-soft md:text-xl font-medium">
             {slide.subtitle[lang]}
           </p>
 

@@ -2,12 +2,12 @@
 
 :root {
   /* Modern Tech Dark Theme with Gold Pulse */
-  --background: #0a0a0a;
-  --foreground: #fafafa;
+  --background: #050505;
+  --foreground: #fefce8; /* Pale cream/gold for text */
   --surface: #141414;
   --surface-strong: #1f1f1f;
-  --muted: #a1a1aa;
-  --muted-strong: #71717a;
+  --muted: #eaddd0; /* Muted sand/gold */
+  --muted-strong: #a69076;
   
   /* Gold Pulse - Primary Accent */
   --gold: #f59e0b;
@@ -208,6 +208,14 @@
     background-clip: text;
     color: transparent;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+  }
+
+  .text-gold-cream {
+    color: #fceeb5;
+  }
+  
+  .text-gold-pale {
+    color: #fde68a;
   }
 
   /* Circuit Board Pattern with Gold */

@@ -83,20 +83,20 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <section className="section-pad">
         <div className="container-page">
           <div className="mb-16 text-center">
-            <span className="badge-cyan mb-4 inline-flex">
+            <span className="badge-gold mb-4 inline-flex">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               {lang === "de" ? "Schneller Ablauf" : "Fast Process"}
             </span>
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+            <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
               {dict.home.process.title}
             </h2>
           </div>
 
           <div className="relative">
             {/* Connection Line */}
-            <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-cyan via-blue to-purple md:block" />
+            <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-gold via-amber to-bronze md:block" />
             
             <div className="grid gap-8 md:grid-cols-3">
               {dict.home.process.steps.map((step, index) => (
@@ -104,10 +104,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                   {/* Step Number */}
                   <div className="mb-6 flex justify-center">
                     <div className="relative">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan to-blue text-2xl font-bold text-background">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold to-amber text-2xl font-bold text-background">
                         {index + 1}
                       </div>
-                      <div className="absolute -inset-2 -z-10 rounded-3xl bg-cyan/20 blur-xl" />
+                      <div className="absolute -inset-2 -z-10 rounded-3xl bg-gold/10 blur-xl" />
                     </div>
                   </div>
                   
@@ -116,7 +116,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                     <p className="mt-2 text-sm text-muted">{step.description}</p>
                     
                     {/* Time indicator */}
-                    <div className="mt-4 inline-flex items-center gap-1 text-xs text-cyan">
+                    <div className="mt-4 inline-flex items-center gap-1 text-xs text-gold">
                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -137,10 +137,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         <div className="container-page">
           <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
             <div>
-              <span className="badge-cyan mb-4 inline-flex">
+              <span className="badge-gold mb-4 inline-flex">
                 {lang === "de" ? "Unsere Services" : "Our Services"}
               </span>
-              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
                 {dict.home.services.title}
               </h2>
               <p className="mt-3 max-w-xl text-muted">{dict.home.services.subtitle}</p>
@@ -164,7 +164,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               
               return (
                 <div key={item.title} className="tech-card-hover rounded-2xl p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan/20 to-blue/20 text-cyan">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                     {icons[index]}
                   </div>
                   <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
@@ -180,7 +180,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <section className="section-pad">
         <div className="container-page">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+            <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
               {lang === "de" ? "Geräte & Zubehör" : "Devices & Accessories"}
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted">
@@ -213,7 +213,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                   <h3 className="text-lg font-semibold text-foreground">{card.title}</h3>
                   <p className="mt-1 text-sm text-muted">{card.description}</p>
                   
-                  <div className="mt-4 flex items-center gap-2 text-sm font-medium text-cyan transition group-hover:gap-3">
+                  <div className="mt-4 flex items-center gap-2 text-sm font-medium text-gold transition group-hover:gap-3">
                     {lang === "de" ? "Entdecken" : "Explore"}
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -242,8 +242,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               </div>
               {/* Floating badge */}
               <div className="absolute -bottom-4 -right-4 tech-card flex items-center gap-3 rounded-xl p-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green/20">
-                  <svg className="h-6 w-6 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10">
+                  <svg className="h-6 w-6 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
@@ -255,16 +255,16 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </div>
 
             <div className="space-y-6">
-              <span className="badge-cyan inline-flex">{dict.home.support.title}</span>
-              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              <span className="badge-gold inline-flex">{dict.home.support.title}</span>
+              <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
                 {dict.home.support.subtitle}
               </h2>
               
               <ul className="space-y-4">
                 {dict.home.support.bullets.map((item) => (
                   <li key={item} className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan/20">
-                      <svg className="h-4 w-4 text-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold/10">
+                      <svg className="h-4 w-4 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -289,10 +289,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         <div className="container-page">
           <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
             <div>
-              <span className="badge-cyan mb-4 inline-flex">
+              <span className="badge-gold mb-4 inline-flex">
                 {lang === "de" ? "Kundenstimmen" : "Testimonials"}
               </span>
-              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
                 {dict.home.testimonials.title}
               </h2>
             </div>
@@ -320,7 +320,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 </div>
                 <p className="text-muted">"{item.quote}"</p>
                 <div className="mt-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan to-blue text-sm font-bold text-background">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gold to-amber text-sm font-bold text-background">
                     {item.name[0]}
                   </div>
                   <div>
@@ -337,14 +337,14 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       {/* CTA Section */}
       <section className="section-pad">
         <div className="container-page">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan/20 via-blue/10 to-purple/20 p-10 md:p-16">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold/20 via-amber/10 to-bronze/20 p-10 md:p-16">
             {/* Background Effects */}
             <div className="absolute inset-0 circuit-pattern opacity-20" />
             <div className="absolute right-0 top-0 h-64 w-64 translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan/30 blur-[80px]" />
             
             <div className="relative flex flex-col items-center justify-between gap-8 text-center md:flex-row md:text-left">
               <div className="max-w-xl">
-                <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+                <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
                   {dict.home.cta.title}
                 </h2>
                 <p className="mt-3 text-muted">{dict.home.cta.description}</p>
