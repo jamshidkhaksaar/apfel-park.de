@@ -1,30 +1,273 @@
-# Repository Guidelines
+# AGENTS.md - AI Coding Agent Guidelines
 
-## Project Structure & Module Organization
-- `docker-compose.yml` and `wp-config.php` define the local WordPress stack.
-- `wp-content/` contains runtime content (themes, plugins, uploads).
-- `wp-content/themes/fixtech/` is the active theme with templates, `functions.php`, and assets.
-- `fixtech/` appears to be a parallel theme copy for asset work; keep it in sync with the active theme if you edit here.
-- `db_data/` and `db_dump.sql` hold local MariaDB data and the seed dump.
+This document provides guidelines for AI coding agents working in the Apfel Park codebase.
 
-## Build, Test, and Development Commands
-- `docker compose up` starts WordPress at `http://localhost:8000` and phpMyAdmin at `http://localhost:8080`.
-- `npm install` in `wp-content/themes/fixtech` (or `fixtech`) installs the Tailwind toolchain.
-- `npm run build` writes `assets/css/tailwind-build.css`; `npm run watch` rebuilds on changes.
+## Project Overview
 
-## Coding Style & Naming Conventions
-- Follow existing WordPress PHP style (tabs for indentation, spaces inside control parentheses).
-- Keep template naming consistent with the theme (`page.php`, `single-*.php`, `taxonomy-*.php`).
-- Prefer editing `src/input.css` and `tailwind.config.js` over direct edits to generated CSS.
+**Apfel Park** is a bilingual (German/English) Next.js website for a smartphone repair shop in Hamburg, Germany. The site features a modern tech aesthetic with gold accent colors, glass-morphism effects, and dark/light theme support.
 
-## Testing Guidelines
-- No automated test suite is present. Validate changes by running the site locally and checking relevant templates and WooCommerce flows.
-- If you add tests or scripts, document the commands here.
+## Tech Stack
 
-## Commit & Pull Request Guidelines
-- Git history is not available in this checkout; use short, imperative commit subjects (e.g., "Update header CTA styles").
-- PRs should include a brief summary, linked issues, and screenshots for UI changes. Call out any updates to `db_dump.sql`.
+| Category | Technology |
+|----------|------------|
+| Framework | Next.js 16.x (App Router) |
+| Language | TypeScript 5.x (strict mode) |
+| Runtime | Node.js 18+ |
+| UI | React 19.x |
+| Styling | Tailwind CSS 4.x |
+| Linting | ESLint 9 with Next.js + TypeScript presets |
+| Containerization | Docker (multi-stage build, standalone output) |
 
-## Configuration & Data
-- `wp-config.php` and `docker-compose.yml` contain local credentials; avoid committing real secrets.
-- Treat `db_data/` and `wp-content/uploads/` as environment data; edit them only when intentionally updating seed content.
+## Build/Lint/Test Commands
+
+```bash
+# Development
+npm run dev          # Start dev server at localhost:3000
+
+# Production
+npm run build        # Build for production
+npm run start        # Start production server
+
+# Linting
+npm run lint         # Run ESLint
+
+# Docker
+docker build -t apfel .                    # Build Docker image
+docker run -p 3000:3000 apfel              # Run container
+```
+
+### Running Tests
+
+No testing framework is currently configured. When adding tests:
+- Recommended: Vitest or Jest with React Testing Library
+- Place test files adjacent to source: `Component.test.tsx`
+- Run single test: `npx vitest run path/to/file.test.tsx`
+
+## Project Structure
+
+```
+src/
+├── app/                      # Next.js App Router
+│   ├── (site)/[lang]/        # Localized public pages (de/en)
+│   │   ├── about/
+│   │   ├── contact/
+│   │   ├── repairs/
+│   │   ├── services/
+│   │   ├── layout.tsx        # Site layout with header/footer
+│   │   └── page.tsx          # Homepage
+│   ├── admin/                # Admin dashboard (scaffold)
+│   ├── globals.css           # Tailwind + CSS variables + animations
+│   └── layout.tsx            # Root layout
+├── components/               # Shared React components
+│   ├── admin/                # Admin-specific components
+│   ├── SiteHeader.tsx
+│   ├── SiteFooter.tsx
+│   ├── ThemeToggle.tsx
+│   └── LocaleSwitcher.tsx
+└── lib/                      # Utilities and configuration
+    ├── i18n.ts               # Internationalization dictionaries
+    ├── metadata.ts           # SEO metadata helpers
+    └── site.ts               # Site info (name, address, contact)
+```
+
+## Code Style Guidelines
+
+### TypeScript
+
+- **Strict mode enabled** - No implicit `any`, strict null checks
+- Use explicit return types for exported functions
+- Prefer `type` over `interface` for object types
+- Use `as const` for literal type assertions
+
+```typescript
+// Good
+export type Locale = "de" | "en";
+export const locales: Locale[] = ["de", "en"];
+
+// Good - explicit return type
+export const createMetadata = (
+  locale: Locale,
+  title: string,
+  description: string,
+  path: string,
+): Metadata => { ... };
+```
+
+### Imports
+
+- Use path aliases: `@/*` maps to `./src/*`
+- Order imports: React/Next.js first, then external packages, then local modules
+- Use relative imports within the same directory tree
+- Separate import groups with blank lines
+
+```typescript
+// Good
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+
+import { getDictionary, type Locale } from "../lib/i18n";
+import { siteInfo } from "../lib/site";
+```
+
+### React Components
+
+- Use function components with `export default`
+- Client components must have `"use client"` directive at top
+- Props type defined inline or with explicit type
+- Destructure props in function signature
+
+```typescript
+// Good - Server Component (default)
+export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  // ...
+}
+
+// Good - Client Component
+"use client";
+
+export default function ThemeToggle() {
+  const [theme, setTheme] = useState<string>("dark");
+  // ...
+}
+```
+
+### Naming Conventions
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Components | PascalCase | `SiteHeader.tsx`, `ThemeToggle.tsx` |
+| Utilities | camelCase | `createMetadata`, `getDictionary` |
+| Constants | camelCase or SCREAMING_SNAKE | `siteInfo`, `locales` |
+| CSS Classes | kebab-case | `container-page`, `tech-card` |
+| Types | PascalCase | `Locale`, `Metadata` |
+
+### CSS & Styling
+
+- Use Tailwind CSS utility classes
+- Custom utilities defined in `globals.css`
+- CSS variables for theming (light/dark mode via `data-theme` attribute)
+- Prefer utility classes over custom CSS
+
+```tsx
+// Good - Tailwind utilities
+<div className="flex items-center gap-2 rounded-xl bg-surface p-4">
+
+// Available custom classes
+// .container-page - max-width container with padding
+// .section-pad - section vertical padding
+// .tech-card - glass-morphism card style
+// .tech-card-hover - card with hover effect
+// .btn-primary - gold gradient button
+// .btn-secondary - outlined button
+// .gradient-text - gold gradient text
+// .badge-gold, .badge-green - status badges
+```
+
+### Internationalization (i18n)
+
+- All user-facing text in `src/lib/i18n.ts`
+- Pages under `[lang]` dynamic route segment
+- Use `getDictionary(lang)` to access translations
+- Supported locales: `de` (German), `en` (English)
+
+```typescript
+// Good
+const dict = getDictionary(lang as Locale);
+return <h1>{dict.home.hero.title}</h1>;
+```
+
+### Error Handling
+
+- Use Next.js `notFound()` for 404 responses
+- Validate locale in layouts before rendering
+- Early returns for guard clauses
+
+```typescript
+// Good
+if (!locales.includes(locale)) {
+  notFound();
+}
+```
+
+### Metadata & SEO
+
+- Use `createMetadata()` helper from `src/lib/metadata.ts`
+- Export `generateMetadata` for dynamic metadata
+- Include OpenGraph and Twitter cards
+
+```typescript
+export const generateMetadata = async ({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> => {
+  const { lang } = await params;
+  const dict = getDictionary(lang as Locale);
+  return createMetadata(lang as Locale, dict.meta.home.title, dict.meta.home.description, "");
+};
+```
+
+## File Formatting
+
+- 2 spaces for indentation
+- No trailing whitespace
+- Single quotes for strings in TypeScript (except JSX attributes)
+- Semicolons required
+- Arrow functions for all function expressions
+- Trailing commas in multiline arrays/objects
+
+## Next.js Patterns
+
+### Static Generation
+
+Use `generateStaticParams` for static route generation:
+
+```typescript
+export const generateStaticParams = () =>
+  locales.map((lang) => ({ lang }));
+```
+
+### Async Server Components
+
+Next.js 16+ uses async params:
+
+```typescript
+export default async function Page({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  // ...
+}
+```
+
+## Important Files
+
+| File | Purpose |
+|------|---------|
+| `src/lib/i18n.ts` | All translations - edit for content changes |
+| `src/lib/site.ts` | Business info (address, phone, hours) |
+| `src/app/globals.css` | Theme variables, custom utilities, animations |
+| `next.config.ts` | Next.js config (standalone output mode) |
+| `eslint.config.mjs` | ESLint config |
+
+## Common Tasks
+
+### Add a new page
+
+1. Create directory under `src/app/(site)/[lang]/`
+2. Add `page.tsx` with metadata generation
+3. Add translations to `src/lib/i18n.ts` for both `de` and `en`
+4. Add navigation link to `dictionary.nav` in i18n.ts
+
+### Add a component
+
+1. Create file in `src/components/`
+2. Use PascalCase naming
+3. Add `"use client"` if using hooks or browser APIs
+4. Import using relative path from consuming file
+
+### Modify theme colors
+
+Edit CSS variables in `src/app/globals.css`:
+- `:root` for dark theme (default)
+- `[data-theme="light"]` for light theme
