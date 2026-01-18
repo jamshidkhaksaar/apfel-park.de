@@ -7,11 +7,13 @@ import { useState } from "react";
 import { getDictionary, type Locale } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
-import ThemeToggle from "./ThemeToggle";
 
 export default function SiteHeader({ lang }: { lang: Locale }) {
   const dict = getDictionary(lang);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Filter out Store from main nav to show as button
+  const navItems = dict.nav.filter((item) => item.path !== "/store");
 
   return (
     <header className="sticky top-0 z-50 transition-all duration-300" translate="no">
@@ -72,24 +74,13 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
         <div className="relative flex flex-1 items-center navbar-border">
           {/* Desktop Navigation */}
           <nav className="hidden flex-1 items-center justify-center gap-1 py-4 lg:flex">
-            {dict.nav.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.path}
                 href={`/${lang}${item.path}`}
-                className={`group relative px-4 py-2 text-sm font-medium transition ${
-                  item.path === "/store" 
-                    ? "text-gold hover:text-white" 
-                    : "text-muted hover:text-white"
-                }`}
+                className="group relative px-4 py-2 text-sm font-medium text-muted transition hover:text-white"
               >
-                <span className="flex items-center gap-1.5">
-                  {item.path === "/store" && (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                  )}
-                  {item.label}
-                </span>
+                {item.label}
                 <span className="absolute bottom-0 left-1/2 h-0.5 w-0 -translate-x-1/2 bg-gradient-to-r from-gold-soft to-gold-deep transition-all group-hover:w-full" />
               </Link>
             ))}
@@ -97,9 +88,19 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
 
           {/* Actions */}
           <div className="flex items-center gap-3 py-4">
-            <div className="hidden items-center gap-2 md:flex">
+            <div className="hidden items-center gap-3 md:flex">
               <LocaleSwitcher />
-              <ThemeToggle />
+              
+              <Link
+                href={`/${lang}/store`}
+                className="group relative flex h-8 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-br from-gold via-amber to-bronze pl-3 pr-4 text-xs font-bold uppercase tracking-wider text-black shadow-lg shadow-gold/20 transition-all hover:scale-105 hover:shadow-gold/40"
+              >
+                <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                <svg className="relative z-10 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <span className="relative z-10">{lang === "de" ? "Shop" : "Store"}</span>
+              </Link>
             </div>
             
             <Link
@@ -133,26 +134,29 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
       {mobileMenuOpen && (
         <div className="border-t border-white/5 bg-black/60 backdrop-blur-xl lg:hidden">
           <nav className="container-page flex flex-col gap-1 py-4">
-            {dict.nav.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.path}
                 href={`/${lang}${item.path}`}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-gold/5 hover:text-gold ${
-                  item.path === "/store" ? "text-gold bg-gold/5" : "text-muted"
-                }`}
+                className="rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-gold/5 hover:text-gold"
               >
-                {item.path === "/store" && (
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-                )}
                 {item.label}
               </Link>
             ))}
-            <div className="mt-4 flex items-center gap-2 border-t border-white/5 pt-4">
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/5 pt-4">
               <LocaleSwitcher />
-              <ThemeToggle />
+              
+              <Link
+                href={`/${lang}/store`}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-black shadow-lg"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <span>{lang === "de" ? "Shop" : "Store"}</span>
+              </Link>
             </div>
           </nav>
         </div>
