@@ -195,6 +195,21 @@
     color: transparent;
   }
 
+  .text-gold-metallic {
+    background: linear-gradient(
+      to bottom,
+      #bf953f 0%,
+      #fcf6ba 30%,
+      #b38728 60%,
+      #fbf5b7 85%,
+      #aa771c 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+  }
+
   /* Circuit Board Pattern with Gold */
   .circuit-pattern {
     background-image: 

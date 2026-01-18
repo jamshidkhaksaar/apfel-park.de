@@ -141,7 +141,7 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
           </div>
 
           {/* Title */}
-          <h1 className="text-4xl font-bold leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
+          <h1 className="text-gold-metallic text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl pb-2">
             {slide.title[lang]}
           </h1>
 
