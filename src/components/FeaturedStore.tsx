@@ -49,54 +49,44 @@ export default function FeaturedStore({
           {products.map((product) => (
             <div
               key={product.id}
-              className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-all duration-300 hover:border-gold/30 hover:bg-white/10 hover:shadow-2xl hover:shadow-gold/10"
+              className="group relative flex flex-col overflow-hidden rounded-3xl bg-neutral-900 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gold/10"
             >
-              {/* Image Container */}
-              <div className="relative aspect-square w-full overflow-hidden bg-white/5 p-6">
+              {/* Image Area - Taller & Cleaner */}
+              <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-800 p-8 transition-colors group-hover:bg-neutral-800/80">
                 <Image
                   src={product.image}
                   alt={product.title}
                   fill
-                  className="object-contain transition-transform duration-500 group-hover:scale-110"
+                  className="object-contain transition-transform duration-700 ease-out group-hover:scale-110"
                 />
                 
-                {/* Overlay Actions */}
-                <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100 bg-black/40">
-                  <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:scale-110 hover:bg-gold">
+                {/* Floating Badge */}
+                <span className="absolute left-4 top-4 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
+                  {product.category}
+                </span>
+
+                {/* Quick Action Overlay */}
+                <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:scale-110 hover:bg-gold">
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                  </button>
-                  <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:scale-110 hover:bg-gold">
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="flex flex-1 flex-col p-5">
-                <div className="mb-2 flex items-start justify-between gap-4">
-                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted">
-                    {product.category}
-                  </span>
-                </div>
-                
-                <h3 className="mb-2 text-lg font-bold leading-tight text-white group-hover:text-gold transition-colors line-clamp-1">
+              {/* Minimal Content */}
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="mb-1 text-lg font-bold leading-tight text-white transition-colors group-hover:text-gold line-clamp-2">
                   {product.title}
                 </h3>
+                <p className="text-xs text-neutral-400 line-clamp-1 mb-4">{product.description}</p>
                 
-                <p className="mb-4 text-sm text-muted line-clamp-2 flex-1">
-                  {product.description}
-                </p>
-                
-                <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-4">
-                  <span className="text-xl font-bold text-gold">
+                <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-4">
+                  <span className="text-lg font-bold text-white">
                     {product.price.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
                   </span>
-                  <span className="text-xs text-green font-medium flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-green animate-pulse" />
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-green-500">
                     {lang === 'de' ? 'Auf Lager' : 'In Stock'}
                   </span>
                 </div>
