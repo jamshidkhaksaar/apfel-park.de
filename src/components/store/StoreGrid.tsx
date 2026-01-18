@@ -110,26 +110,26 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
           {filteredProducts.map((product) => (
             <div
               key={product.id}
-              className="group relative flex flex-col overflow-hidden rounded-3xl bg-neutral-900 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gold/10"
+              className="group relative flex flex-col overflow-hidden rounded-3xl bg-neutral-900 shadow-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gold/20 hover:ring-1 hover:ring-gold/30"
             >
               {/* Image */}
-              <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-800 p-8 transition-colors group-hover:bg-neutral-800/80">
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-800 p-6 transition-colors group-hover:bg-neutral-800/80">
                 <Image
                   src={product.image}
                   alt={product.title}
                   fill
-                  className="object-contain transition-transform duration-700 ease-out group-hover:scale-110"
+                  className="object-contain transition-transform duration-700 ease-out group-hover:scale-105"
                 />
                 
                 {/* Badge */}
-                <span className="absolute left-4 top-4 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
+                <span className="absolute left-3 top-3 rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
                   {product.category}
                 </span>
 
                 {/* Quick Action Overlay */}
-                <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                  <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:scale-110 hover:bg-gold">
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="absolute bottom-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:scale-110 hover:bg-gold">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
@@ -137,19 +137,19 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
               </div>
 
               {/* Info */}
-              <div className="flex flex-1 flex-col p-6">
-                <h3 className="mb-1 text-lg font-bold leading-tight text-white transition-colors group-hover:text-gold line-clamp-2">
+              <div className="flex flex-1 flex-col p-4">
+                <h3 className="mb-1 text-base font-bold leading-tight text-white transition-colors group-hover:text-gold line-clamp-1">
                   {product.title}
                 </h3>
-                <p className="mb-4 text-xs text-neutral-400 line-clamp-1">
+                <p className="mb-3 text-[10px] text-neutral-400 line-clamp-1">
                   {product.description}
                 </p>
                 
-                <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-4">
-                  <span className="text-lg font-bold text-white">
+                <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-3">
+                  <span className="text-base font-bold text-white">
                     {product.price.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
                   </span>
-                  <button className="text-[10px] font-bold uppercase tracking-wider text-white hover:text-gold transition-colors">
+                  <button className="text-[9px] font-bold uppercase tracking-wider text-white hover:text-gold transition-colors">
                     {lang === "de" ? "Details" : "Details"} →
                   </button>
                 </div>
