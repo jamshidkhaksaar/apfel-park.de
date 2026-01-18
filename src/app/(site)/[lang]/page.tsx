@@ -101,39 +101,47 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </h2>
           </div>
 
-          <div className="relative">
-            {/* Connection Line */}
-            <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-gold via-amber to-bronze md:block" />
-            
-            <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+            {/* Left: Compact Timeline */}
+            <div className="relative space-y-10">
+              {/* Vertical Connection Line */}
+              <div className="absolute left-8 top-8 h-[calc(100%-64px)] w-px bg-gradient-to-b from-gold via-amber to-transparent opacity-50" />
+              
               {dict.home.process.steps.map((step, index) => (
-                <div key={step.title} className="relative">
+                <div key={step.title} className="relative flex items-start gap-6">
                   {/* Step Number */}
-                  <div className="mb-6 flex justify-center">
-                    <div className="relative">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold to-amber text-2xl font-bold text-background">
-                        {index + 1}
-                      </div>
-                      <div className="absolute -inset-2 -z-10 rounded-3xl bg-gold/10 blur-xl" />
-                    </div>
+                  <div className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-gold to-amber text-2xl font-bold text-black shadow-lg shadow-gold/20 transition-transform hover:scale-105">
+                    {index + 1}
                   </div>
                   
-                  <div className="tech-card rounded-2xl p-6 text-center">
-                    <h3 className="text-lg font-semibold text-foreground">{step.title}</h3>
-                    <p className="mt-2 text-sm text-muted">{step.description}</p>
+                  {/* Content */}
+                  <div className="pt-1">
+                    <h3 className="text-xl font-bold text-foreground">{step.title}</h3>
+                    <p className="mt-2 text-sm text-muted leading-relaxed">{step.description}</p>
                     
                     {/* Time indicator */}
-                    <div className="mt-4 inline-flex items-center gap-1 text-xs text-gold">
+                    <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-gold">
                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       {index === 0 && "~5 min"}
-                      {index === 1 && "~20 min"}
+                      {index === 1 && "~20-60 min"}
                       {index === 2 && "~5 min"}
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Right: Image Placeholder */}
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl lg:aspect-square">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-muted/30">
+                <svg className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-xs font-bold uppercase tracking-widest">Process Image Placeholder</span>
+              </div>
+              {/* Add <Image ... /> here later */}
             </div>
           </div>
         </div>
