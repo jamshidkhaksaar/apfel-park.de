@@ -25,11 +25,13 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
   const switchLanguage = async (newPath: string, newLocale: string) => {
     setIsSwitching(true);
     
-    // Start entrance animation
-    setTimeout(() => setShowContent(true), 50);
+    // Start entrance animation - sequence layers
+    requestAnimationFrame(() => {
+      setShowContent(true);
+    });
 
-    // Wait for full coverage
-    await new Promise(r => setTimeout(r, 800));
+    // Wait for animation to cover screen (longer for elegance)
+    await new Promise(r => setTimeout(r, 1000));
     
     // Update cookie and navigate
     document.cookie = `apfel-lang=${newLocale}; path=/; max-age=31536000`;
@@ -38,12 +40,12 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
 
   useEffect(() => {
     if (isSwitching) {
-      // Navigation happened, wait a bit then exit
+      // Navigation happened
       const timer = setTimeout(() => {
         setShowContent(false);
-        // Wait for exit animation to finish before removing from DOM
-        setTimeout(() => setIsSwitching(false), 800);
-      }, 500); // Keep showing for 500ms after nav
+        // Wait for exit animation to finish
+        setTimeout(() => setIsSwitching(false), 1000);
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [pathname]);
@@ -60,43 +62,74 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
     <LanguageContext.Provider value={{ switchLanguage }}>
       {children}
       
-      {/* Transition Overlay */}
-      <div className="fixed inset-0 z-[10000] flex items-center justify-center">
-        {/* Backdrop 1: Glass blur */}
-        <div 
-          className={`absolute inset-0 bg-background/80 backdrop-blur-xl transition-opacity duration-500 ease-out
-            ${showContent ? "opacity-100" : "opacity-0"}
-          `}
-        />
+      {/* Transition Overlay Container */}
+      <div className="fixed inset-0 z-[10000] pointer-events-none flex flex-col justify-end">
         
-        {/* Backdrop 2: Gold Wipe */}
+        {/* Layer 1: Dark Bronze (Background) */}
         <div 
-          className={`absolute inset-0 bg-gradient-to-br from-gold via-amber to-bronze transition-transform duration-700 ease-in-out
+          className={`absolute inset-0 bg-neutral-900 transition-transform duration-[800ms] ease-[cubic-bezier(0.65,0,0.35,1)]
             ${showContent ? "translate-y-0" : "translate-y-full"}
           `}
+          style={{ zIndex: 10001 }}
         />
 
-        {/* Content */}
+        {/* Layer 2: Deep Gold (Middle) */}
         <div 
-          className={`relative z-10 flex flex-col items-center gap-4 text-white transition-all duration-500 delay-300
-            ${showContent ? "opacity-100 scale-100" : "opacity-0 scale-90"}
+          className={`absolute inset-0 bg-[#b45309] transition-transform duration-[800ms] delay-[50ms] ease-[cubic-bezier(0.65,0,0.35,1)]
+            ${showContent ? "translate-y-0" : "translate-y-full"}
           `}
+          style={{ zIndex: 10002 }}
+        />
+
+        {/* Layer 3: Bright Gold (Foreground) */}
+        <div 
+          className={`absolute inset-0 flex items-center justify-center bg-[#f59e0b] transition-transform duration-[800ms] delay-[100ms] ease-[cubic-bezier(0.65,0,0.35,1)]
+            ${showContent ? "translate-y-0" : "translate-y-full"}
+          `}
+          style={{ zIndex: 10003 }}
         >
-          <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-white/10 p-4 shadow-2xl ring-1 ring-white/20 backdrop-blur-md">
-             <Image
-                src="/branding/logo.jpg"
-                alt="Switching..."
-                width={80}
-                height={80}
-                className="h-full w-full object-contain"
-             />
-             {/* Spinner ring */}
-             <div className="absolute inset-0 animate-spin rounded-2xl border-2 border-white/30 border-t-white" />
+          {/* Decorative Pattern on Top Layer */}
+          <div className="absolute inset-0 opacity-10" 
+               style={{ 
+                 backgroundImage: 'radial-gradient(circle at 50% 50%, #fff 2px, transparent 2px)', 
+                 backgroundSize: '40px 40px' 
+               }} 
+          />
+          
+          {/* Center Content */}
+          <div 
+            className={`relative flex flex-col items-center gap-6 transition-all duration-500 delay-300
+              ${showContent ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 translate-y-10"}
+            `}
+          >
+            {/* Logo Container */}
+            <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-black/10 p-5 shadow-2xl backdrop-blur-sm ring-1 ring-white/20">
+               <Image
+                  src="/branding/logo.jpg"
+                  alt="Apfel Park"
+                  width={96}
+                  height={96}
+                  className="h-full w-full object-contain drop-shadow-lg"
+               />
+               
+               {/* Shining Sheen Animation */}
+               <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            </div>
+
+            {/* Elegant Text */}
+            <div className="text-center">
+              <p className="font-display text-2xl font-bold tracking-widest text-white drop-shadow-sm">
+                APFEL PARK
+              </p>
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <span className="h-0.5 w-8 rounded-full bg-white/50" />
+                <span className="text-xs font-medium uppercase tracking-widest text-white/80">Loading</span>
+                <span className="h-0.5 w-8 rounded-full bg-white/50" />
+              </div>
+            </div>
           </div>
-          <p className="font-display text-xl font-bold tracking-widest uppercase text-white drop-shadow-md">
-            Switching Language
-          </p>
         </div>
+
       </div>
     </LanguageContext.Provider>
   );
