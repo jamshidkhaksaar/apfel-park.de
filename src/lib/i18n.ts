@@ -1,0 +1,948 @@
+export type Locale = "de" | "en";
+
+export const locales: Locale[] = ["de", "en"];
+
+export const dictionary = {
+  de: {
+    nav: [
+      { label: "Startseite", path: "" },
+      { label: "Services", path: "/services" },
+      { label: "Reparaturen", path: "/repairs" },
+      { label: "Zubehör", path: "/accessories" },
+      { label: "Smartphones", path: "/smartphones" },
+      { label: "Gaming", path: "/gaming" },
+      { label: "Kontakt", path: "/contact" },
+    ],
+    footer: {
+      headline: "Dein Premium-Shop für Smartphones & Reparaturen",
+      description:
+        "Im Apfel Park kombinieren wir Premium-Hardware, Zubehör und Sofort-Reparaturen unter einem Dach.",
+      quickLinks: [
+        { label: "Reparaturen", path: "/repairs" },
+        { label: "Zubehör", path: "/accessories" },
+        { label: "Smartphones", path: "/smartphones" },
+        { label: "Gaming", path: "/gaming" },
+      ],
+      companyLinks: [
+        { label: "Über uns", path: "/about" },
+        { label: "FAQ", path: "/faq" },
+        { label: "Datenschutz", path: "/privacy" },
+        { label: "AGB", path: "/terms" },
+      ],
+      support: [
+        "Sofort-Diagnose & transparente Preise",
+        "Express-Reparatur im Shop",
+        "Original- und Premium-Ersatzteile",
+        "Datenrettung & Geräteschutz",
+      ],
+    },
+    meta: {
+      home: {
+        title: "Apfel Park | Smartphone & Repair Studio",
+        description:
+          "Smart Phone. Smart Service. Smart Price. Premium Shop für Smartphones, Zubehör, Konsolen und Reparaturen in Hamburg.",
+      },
+      services: {
+        title: "Services",
+        description:
+          "Professionelle Services von Sofort-Reparatur bis Geräte-Setup – alles im Apfel Park Hamburg.",
+      },
+      repairs: {
+        title: "Reparaturen",
+        description:
+          "Smartphone-, Tablet- und Konsolenreparaturen mit Premium-Teilen, Garantie und Express-Service.",
+      },
+      accessories: {
+        title: "Zubehör",
+        description:
+          "Handy-Zubehör, Schutz, Ladegeräte und Audio – sorgfältig ausgewählte Marken im Apfel Park.",
+      },
+      smartphones: {
+        title: "Smartphones",
+        description:
+          "Neue und geprüfte Smartphones führender Marken – sofort verfügbar im Apfel Park.",
+      },
+      gaming: {
+        title: "Gaming & Konsolen",
+        description:
+          "PlayStation- und Gaming-Services, Reparaturen und Zubehör im Apfel Park.",
+      },
+      contact: {
+        title: "Kontakt",
+        description:
+          "Rufen Sie uns an oder besuchen Sie Apfel Park in Hamburg. Wir sind Montag bis Samstag für Sie da.",
+      },
+      about: {
+        title: "Über uns",
+        description:
+          "Erfahre mehr über Apfel Park – der Premium-Shop für Smartphones, Zubehör und Reparaturen.",
+      },
+      faq: {
+        title: "FAQ",
+        description:
+          "Antworten auf die häufigsten Fragen rund um Reparatur, Zubehör und Service im Apfel Park.",
+      },
+      privacy: {
+        title: "Datenschutz",
+        description:
+          "Datenschutzinformationen für Apfel Park – transparent, sicher und DSGVO-konform.",
+      },
+      terms: {
+        title: "AGB",
+        description:
+          "Allgemeine Geschäftsbedingungen für Reparaturen, Verkäufe und Services im Apfel Park.",
+      },
+    },
+    home: {
+      hero: {
+        eyebrow: "Hamburgs Premium-Mobilshop",
+        title: "Smart Phone. Smart Service. Smart Price.",
+        subtitle:
+          "Erlebe Premium-Smartphones, Zubehör und Express-Reparaturen im Apfel Park. Alles an einem Ort – schnell, transparent, professionell.",
+        primaryCta: "Reparatur starten",
+        secondaryCta: "Kontakt aufnehmen",
+        cards: [
+          {
+            title: "Shop & Beratung",
+            description: "Premium-Geräte, sofort verfügbar mit ehrlicher Beratung.",
+            path: "/smartphones",
+            image: "/images/hero-shop.svg",
+          },
+          {
+            title: "Zubehör",
+            description: "Cases, Schutz, Audio und Lifestyle-Accessories für dein Gerät.",
+            path: "/accessories",
+            image: "/images/hero-accessories.svg",
+          },
+          {
+            title: "Smartphones",
+            description: "Neue & geprüfte Geräte, Trade-In und Geräte-Setup.",
+            path: "/smartphones",
+            image: "/images/hero-smartphones.svg",
+          },
+          {
+            title: "Game Consoles",
+            description: "PlayStation-Reparaturen, Upgrades und Zubehör.",
+            path: "/gaming",
+            image: "/images/hero-console.svg",
+          },
+        ],
+      },
+      highlights: [
+        { label: "Sofort-Reparatur", value: "< 1 Std." },
+        { label: "Premium-Beratung", value: "100%" },
+        { label: "Garantie", value: "12 Monate" },
+      ],
+      services: {
+        title: "Reparaturen & Services",
+        subtitle:
+          "Von Display-Schäden bis Platinen-Reparatur – unser Team erledigt alles zuverlässig und schnell.",
+        items: [
+          {
+            title: "Display & Glas",
+            description: "Express-Displaytausch mit Premium-Ersatzteilen.",
+          },
+          {
+            title: "Wasserschaden",
+            description: "Spezialdiagnose, Reinigung und Datenrettung.",
+          },
+          {
+            title: "Platine & Chip",
+            description: "Reparatur auf Board-Level mit moderner Ausrüstung.",
+          },
+          {
+            title: "Batterie & Power",
+            description: "Akkutausch, Ladeanschluss und Power-Management.",
+          },
+        ],
+      },
+      support: {
+        title: "Premium Support",
+        subtitle:
+          "Wir begleiten dich vor, während und nach dem Kauf – mit persönlicher Betreuung.",
+        bullets: [
+          "Sofortdiagnose ohne Termin",
+          "Software-Setup und Datenübertragung",
+          "Sicherheitscheck & Virenentfernung",
+          "Finanzierung und Trade-In Beratung",
+        ],
+        image: "/images/repair-lab.svg",
+      },
+      repairFocus: {
+        title: "Smartphone- & Tablet-Reparaturen",
+        subtitle:
+          "Schnell, zuverlässig, transparent. Wir reparieren alle gängigen Marken und Geräte.",
+        items: [
+          {
+            title: "Smartphone Reparatur",
+            description: "Schneller Austausch, Originalteile, Service mit Garantie.",
+          },
+          {
+            title: "Tablet & iPad",
+            description: "Display, Akku und Board-Service für Tablets aller Marken.",
+          },
+          {
+            title: "Kamera & Sensoren",
+            description: "Front- und Hauptkamera, Face-ID und Sensorik.",
+          },
+        ],
+      },
+      process: {
+        title: "Dein Reparatur-Flow",
+        steps: [
+          {
+            title: "Check-in",
+            description: "Diagnose, Preis und Zeitrahmen in wenigen Minuten.",
+          },
+          {
+            title: "Sofort-Reparatur",
+            description: "Reparatur im Shop mit Premium-Werkstatt-Team.",
+          },
+          {
+            title: "Qualitätsprüfung",
+            description: "Testing, Reinigung und Übergabe inklusive Garantie.",
+          },
+        ],
+      },
+      testimonials: {
+        title: "Was unsere Kunden sagen",
+        subtitle:
+          "Google Reviews werden im Dashboard gepflegt und erscheinen hier automatisch.",
+        items: [
+          {
+            name: "Google Review",
+            role: "Kunde",
+            quote:
+              "Hier erscheinen bald echte Google-Bewertungen aus dem Admin-Dashboard.",
+            rating: 5,
+          },
+        ],
+      },
+      gallery: {
+        title: "Inside Apfel Park",
+        subtitle:
+          "Einblick in Shop, Werkstatt und Zubehörwelt – modern, schnell und premium.",
+        image: "/images/shop-gallery.svg",
+        features: [
+          "170 qm Showroom und Werkstatt",
+          "Direkt am Kunden, direkt verfügbar",
+          "Premium-Zubehör kuratiert",
+        ],
+      },
+      cta: {
+        title: "Bereit für Premium-Service?",
+        description:
+          "Hol dir dein neues Gerät oder sichere dir eine Express-Reparatur im Apfel Park.",
+        primary: "Jetzt anrufen",
+        secondary: "Reparatur buchen",
+      },
+    },
+    services: {
+      heroTitle: "Services für jedes Gerät",
+      heroSubtitle:
+        "Von Setup bis Sofort-Reparatur – wir liefern Premium-Service für Smartphone, Tablet und Konsole.",
+      categories: [
+        {
+          title: "Sofort-Reparatur",
+          description: "Display, Akku, Kamera oder Ladeanschluss – fertig in weniger als 1 Stunde.",
+        },
+        {
+          title: "Premium Setup",
+          description: "Datenübertragung, Backup, Schutz und persönliches Onboarding.",
+        },
+        {
+          title: "Geräteschutz",
+          description: "Schutzgläser, Cases, Versicherung und Beratung.",
+        },
+        {
+          title: "Business Service",
+          description: "Schnelle Reparaturen für Unternehmen und Teams.",
+        },
+      ],
+    },
+    repairs: {
+      heroTitle: "Reparaturen ohne Stress",
+      heroSubtitle:
+        "Unsere Werkstatt löst komplexe Schäden, inklusive Board-Level Reparaturen.",
+      highlights: [
+        "Express-Service in Hamburg",
+        "Original- und Premium-Ersatzteile",
+        "12 Monate Garantie",
+        "Faire Preise ohne Überraschungen",
+      ],
+      repairTypes: [
+        {
+          title: "Display & Glas",
+          description: "Präziser Austausch inklusive Dichtung und Kalibrierung.",
+        },
+        {
+          title: "Wasserschaden",
+          description: "Tiefenreinigung, Korrosionsschutz und Datenrettung.",
+        },
+        {
+          title: "Mainboard",
+          description: "Chip- und Platinenreparatur auf Profi-Niveau.",
+        },
+        {
+          title: "Audio & Mikrofon",
+          description: "Lautsprecher, Mikrofone und Audiochips perfekt abgestimmt.",
+        },
+      ],
+    },
+    accessories: {
+      heroTitle: "Zubehör, das dein Gerät schützt",
+      heroSubtitle:
+        "Premium-Cases, Audio, Power und Lifestyle-Accessories für jeden Stil.",
+      categories: [
+        "Cases & Schutzgläser",
+        "Ladegeräte & Powerbanks",
+        "Audio, Kopfhörer & Speaker",
+        "Smart Home & Lifestyle",
+      ],
+    },
+    smartphones: {
+      heroTitle: "Smartphones sofort verfügbar",
+      heroSubtitle:
+        "Neue und geprüfte Geräte, Trade-In und Setup-Services direkt im Shop.",
+      highlights: [
+        "Top-Marken & Premium-Modelle",
+        "Finanzierung und Trade-In",
+        "Geräte-Setup inklusive",
+      ],
+    },
+    gaming: {
+      heroTitle: "Gaming & Konsolen",
+      heroSubtitle:
+        "PlayStation- und Konsolenservice, Upgrades und Zubehör in Hamburg.",
+      highlights: [
+        "Konsole Reparatur und Reinigung",
+        "Lüfter- und Temperaturservice",
+        "Controller, Docking & Zubehör",
+      ],
+    },
+    contact: {
+      heroTitle: "Wir sind für dich da",
+      heroSubtitle:
+        "Ruf uns an oder komm vorbei – wir helfen sofort und persönlich.",
+      contactCards: [
+        {
+          title: "Besuche uns",
+          description: "Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
+        },
+        {
+          title: "Ruf uns an",
+          description: "040 58978787",
+        },
+        {
+          title: "Schreib uns",
+          description: "info@apfel-park.de",
+        },
+      ],
+    },
+    about: {
+      heroTitle: "Apfel Park – Premium seit Tag 1",
+      heroSubtitle:
+        "Smartphone-Shop, Zubehör-Paradies und Reparatur-Werkstatt in einem.",
+      story:
+        "Wir sind ein Team aus Technik-Experten, die Geräte lieben und Probleme schnell lösen. Unser Shop in Hamburg kombiniert Premium-Produkte mit transparenter Beratung und schneller Reparatur.",
+      values: [
+        "Transparenz bei Preis und Diagnose",
+        "Premium-Ersatzteile und Qualitätskontrolle",
+        "Persönliche Beratung statt Massenabfertigung",
+      ],
+    },
+    faq: {
+      heroTitle: "Häufige Fragen",
+      heroSubtitle: "Antworten rund um Service, Reparatur und Zubehör.",
+      items: [
+        {
+          question: "Wie schnell ist eine Reparatur?",
+          answer:
+            "Die meisten Reparaturen sind in weniger als einer Stunde erledigt. Bei komplexen Schäden informieren wir dich sofort über den Zeitrahmen.",
+        },
+        {
+          question: "Gibt es Garantie?",
+          answer:
+            "Ja, wir geben 12 Monate Garantie auf unsere Reparaturen und Premium-Ersatzteile.",
+        },
+        {
+          question: "Welche Marken repariert ihr?",
+          answer:
+            "Wir reparieren alle gängigen Marken – Apple, Samsung, Huawei, Xiaomi, Google Pixel und mehr.",
+        },
+        {
+          question: "Kann ich ohne Termin kommen?",
+          answer:
+            "Ja, unsere Sofort-Diagnose ist ohne Termin möglich. Bei hoher Auslastung vereinbaren wir kurzfristige Slots.",
+        },
+      ],
+    },
+    privacy: {
+      heroTitle: "Datenschutzerklärung",
+      intro:
+        "Wir nehmen den Schutz Ihrer Daten ernst. Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeitung personenbezogener Daten auf unserer Website und bei unseren Services.",
+      sections: [
+        {
+          title: "1. Verantwortlicher",
+          body: [
+            "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
+            "E-Mail: info@apfel-park.de | Telefon: 040 58978787",
+          ],
+        },
+        {
+          title: "2. Erhobene Daten",
+          body: [
+            "Kontakt- und Bestelldaten (Name, E-Mail, Telefonnummer, Adresse)",
+            "Geräteinformationen für Reparaturen und Service-Aufträge",
+            "Zahlungs- und Rechnungsdaten im Bestellprozess",
+          ],
+        },
+        {
+          title: "3. Zweck der Verarbeitung",
+          body: [
+            "Durchführung von Reparaturen, Bestellungen und Support",
+            "Kommunikation zu Angeboten, Terminen und Services",
+            "Erfüllung gesetzlicher Pflichten (z. B. Rechnungslegung)",
+          ],
+        },
+        {
+          title: "4. Weitergabe an Dritte",
+          body: [
+            "Zahlungsdienstleister (z. B. PayPal, Klarna, Sofort, Giropay, SEPA, Stripe)",
+            "Versand- und Logistikpartner bei Bestellungen",
+            "IT- und Hosting-Dienstleister (z. B. Vercel, Supabase)",
+          ],
+        },
+        {
+          title: "5. Cookies & Tracking",
+          body: [
+            "Wir verwenden technisch notwendige Cookies, um den Betrieb der Website zu gewährleisten.",
+            "Optionale Tracking- und SEO-Tools können im Admin-Dashboard aktiviert werden.",
+          ],
+        },
+        {
+          title: "6. Ihre Rechte",
+          body: [
+            "Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung",
+            "Widerspruch gegen die Verarbeitung und Datenübertragbarkeit",
+            "Beschwerde bei der zuständigen Datenschutzbehörde",
+          ],
+        },
+      ],
+    },
+    terms: {
+      heroTitle: "Allgemeine Geschäftsbedingungen",
+      intro:
+        "Diese AGB gelten für alle Reparatur-, Service- und Kaufverträge mit Apfel Park.",
+      sections: [
+        {
+          title: "1. Leistungen",
+          body: [
+            "Reparatur und Wartung von Smartphones, Tablets und Konsolen",
+            "Verkauf von Geräten, Zubehör und Dienstleistungen",
+          ],
+        },
+        {
+          title: "2. Reparaturablauf",
+          body: [
+            "Wir erstellen nach Diagnose einen Kostenvoranschlag.",
+            "Die Reparatur beginnt erst nach Ihrer Freigabe.",
+            "Bei nicht durchführbaren Reparaturen informieren wir Sie umgehend.",
+          ],
+        },
+        {
+          title: "3. Preise & Zahlung",
+          body: [
+            "Alle Preise verstehen sich inkl. gesetzlicher MwSt.",
+            "Zahlung per PayPal, Klarna, Sofort, Giropay, SEPA, Stripe oder Barzahlung vor Ort.",
+          ],
+        },
+        {
+          title: "4. Garantie",
+          body: [
+            "12 Monate Garantie auf Ersatzteile und Reparaturleistungen, sofern kein Fremdverschulden vorliegt.",
+          ],
+        },
+        {
+          title: "5. Haftung",
+          body: [
+            "Für Datenverlust haften wir nur bei grober Fahrlässigkeit oder Vorsatz.",
+            "Bitte sichern Sie Ihre Daten vor der Reparatur.",
+          ],
+        },
+      ],
+    },
+  },
+  en: {
+    nav: [
+      { label: "Home", path: "" },
+      { label: "Services", path: "/services" },
+      { label: "Repairs", path: "/repairs" },
+      { label: "Accessories", path: "/accessories" },
+      { label: "Smartphones", path: "/smartphones" },
+      { label: "Gaming", path: "/gaming" },
+      { label: "Contact", path: "/contact" },
+    ],
+    footer: {
+      headline: "Premium smartphones, accessories & repairs",
+      description:
+        "Apfel Park combines premium devices, accessories and express repairs in one modern studio.",
+      quickLinks: [
+        { label: "Repairs", path: "/repairs" },
+        { label: "Accessories", path: "/accessories" },
+        { label: "Smartphones", path: "/smartphones" },
+        { label: "Gaming", path: "/gaming" },
+      ],
+      companyLinks: [
+        { label: "About", path: "/about" },
+        { label: "FAQ", path: "/faq" },
+        { label: "Privacy", path: "/privacy" },
+        { label: "Terms", path: "/terms" },
+      ],
+      support: [
+        "Instant diagnostics with clear pricing",
+        "Express in-store repairs",
+        "Original & premium spare parts",
+        "Data recovery & device protection",
+      ],
+    },
+    meta: {
+      home: {
+        title: "Apfel Park | Smartphone & Repair Studio",
+        description:
+          "Smart Phone. Smart Service. Smart Price. Premium smartphones, accessories, gaming and repairs in Hamburg.",
+      },
+      services: {
+        title: "Services",
+        description:
+          "Professional services from instant repairs to device setup – all in one place in Hamburg.",
+      },
+      repairs: {
+        title: "Repairs",
+        description:
+          "Smartphone, tablet and console repairs with premium parts, warranty and express service.",
+      },
+      accessories: {
+        title: "Accessories",
+        description:
+          "Cases, protection, chargers and audio – curated accessories at Apfel Park.",
+      },
+      smartphones: {
+        title: "Smartphones",
+        description:
+          "New and certified smartphones from leading brands – ready today.",
+      },
+      gaming: {
+        title: "Gaming & Consoles",
+        description:
+          "PlayStation services, repairs and accessories at Apfel Park.",
+      },
+      contact: {
+        title: "Contact",
+        description:
+          "Call or visit Apfel Park in Hamburg. We are open Monday to Saturday.",
+      },
+      about: {
+        title: "About",
+        description:
+          "Learn more about Apfel Park – premium smartphones, accessories and repairs in Hamburg.",
+      },
+      faq: {
+        title: "FAQ",
+        description:
+          "Answers to the most common questions about repairs and services.",
+      },
+      privacy: {
+        title: "Privacy Policy",
+        description:
+          "Privacy policy for Apfel Park – transparent, secure and GDPR compliant.",
+      },
+      terms: {
+        title: "Terms & Conditions",
+        description:
+          "Terms and conditions for repairs, sales and services at Apfel Park.",
+      },
+    },
+    home: {
+      hero: {
+        eyebrow: "Hamburg’s premium mobile shop",
+        title: "Smart Phone. Smart Service. Smart Price.",
+        subtitle:
+          "Discover premium smartphones, accessories and express repairs at Apfel Park. Everything in one place – fast, transparent, professional.",
+        primaryCta: "Start a repair",
+        secondaryCta: "Contact us",
+        cards: [
+          {
+            title: "Shop & Advice",
+            description: "Premium devices, ready today with honest guidance.",
+            path: "/smartphones",
+            image: "/images/hero-shop.svg",
+          },
+          {
+            title: "Accessories",
+            description: "Cases, protection, audio and lifestyle accessories.",
+            path: "/accessories",
+            image: "/images/hero-accessories.svg",
+          },
+          {
+            title: "Smartphones",
+            description: "New & certified devices, trade-in and setup.",
+            path: "/smartphones",
+            image: "/images/hero-smartphones.svg",
+          },
+          {
+            title: "Game Consoles",
+            description: "PlayStation repairs, upgrades and accessories.",
+            path: "/gaming",
+            image: "/images/hero-console.svg",
+          },
+        ],
+      },
+      highlights: [
+        { label: "Express repair", value: "< 1 hr" },
+        { label: "Premium advice", value: "100%" },
+        { label: "Warranty", value: "12 months" },
+      ],
+      services: {
+        title: "Repairs & Services",
+        subtitle:
+          "From display damage to board-level repair – our team handles everything with care.",
+        items: [
+          {
+            title: "Display & Glass",
+            description: "Express screen replacement with premium parts.",
+          },
+          {
+            title: "Water Damage",
+            description: "Deep cleaning, corrosion control and data recovery.",
+          },
+          {
+            title: "Board & Chip",
+            description: "Advanced board-level repair with modern tooling.",
+          },
+          {
+            title: "Battery & Power",
+            description: "Battery swaps, charging port and power management.",
+          },
+        ],
+      },
+      support: {
+        title: "Professional Support",
+        subtitle:
+          "We support you before, during and after purchase with personal care.",
+        bullets: [
+          "Instant diagnostics without appointment",
+          "Device setup and data transfer",
+          "Security check & virus removal",
+          "Financing and trade-in advice",
+        ],
+        image: "/images/repair-lab.svg",
+      },
+      repairFocus: {
+        title: "Smartphone & Tablet Repairs",
+        subtitle:
+          "Fast, reliable, transparent. We repair all major brands and devices.",
+        items: [
+          {
+            title: "Smartphone Repair",
+            description: "Fast replacement, premium parts, warranty included.",
+          },
+          {
+            title: "Tablet & iPad",
+            description: "Display, battery and board service for every tablet.",
+          },
+          {
+            title: "Camera & Sensors",
+            description: "Front and main camera, Face ID and sensors.",
+          },
+        ],
+      },
+      process: {
+        title: "Your Repair Flow",
+        steps: [
+          {
+            title: "Check-in",
+            description: "Diagnosis, price and timeline in minutes.",
+          },
+          {
+            title: "Express Repair",
+            description: "In-store repair handled by our premium workshop team.",
+          },
+          {
+            title: "Quality Control",
+            description: "Testing, cleaning and handover with warranty.",
+          },
+        ],
+      },
+      testimonials: {
+        title: "What customers say",
+        subtitle:
+          "Google Reviews are managed in the dashboard and will appear here automatically.",
+        items: [
+          {
+            name: "Google Review",
+            role: "Customer",
+            quote:
+              "Real Google reviews will appear here after you add them in the admin dashboard.",
+            rating: 5,
+          },
+        ],
+      },
+      gallery: {
+        title: "Inside Apfel Park",
+        subtitle:
+          "A look into our shop, repair lab and accessory world – modern, fast and premium.",
+        image: "/images/shop-gallery.svg",
+        features: [
+          "170 sqm showroom and repair lab",
+          "Premium device wall and accessories",
+          "Hands-on service with real experts",
+        ],
+      },
+      cta: {
+        title: "Ready for premium service?",
+        description:
+          "Grab your next device or book an express repair at Apfel Park today.",
+        primary: "Call now",
+        secondary: "Book repair",
+      },
+    },
+    services: {
+      heroTitle: "Services for every device",
+      heroSubtitle:
+        "From setup to instant repairs – premium service for smartphones, tablets and consoles.",
+      categories: [
+        {
+          title: "Instant Repair",
+          description: "Display, battery, camera or charging port – ready in under an hour.",
+        },
+        {
+          title: "Premium Setup",
+          description: "Data transfer, backup and personal onboarding.",
+        },
+        {
+          title: "Device Protection",
+          description: "Screen protectors, cases, insurance and guidance.",
+        },
+        {
+          title: "Business Service",
+          description: "Fast repairs for companies and teams.",
+        },
+      ],
+    },
+    repairs: {
+      heroTitle: "Repairs without stress",
+      heroSubtitle:
+        "Our workshop resolves complex damage, including board-level repairs.",
+      highlights: [
+        "Express service in Hamburg",
+        "Original & premium parts",
+        "12-month warranty",
+        "Fair prices with clarity",
+      ],
+      repairTypes: [
+        {
+          title: "Display & Glass",
+          description: "Precise replacement with sealing and calibration.",
+        },
+        {
+          title: "Water Damage",
+          description: "Deep cleaning, corrosion control and data recovery.",
+        },
+        {
+          title: "Mainboard",
+          description: "Chip-level and board repair by specialists.",
+        },
+        {
+          title: "Audio & Microphone",
+          description: "Speakers, microphones and audio tuning.",
+        },
+      ],
+    },
+    accessories: {
+      heroTitle: "Accessories that protect your device",
+      heroSubtitle:
+        "Premium cases, audio, power and lifestyle accessories for every style.",
+      categories: [
+        "Cases & screen protection",
+        "Chargers & power banks",
+        "Audio, headphones & speakers",
+        "Smart home & lifestyle",
+      ],
+    },
+    smartphones: {
+      heroTitle: "Smartphones available today",
+      heroSubtitle:
+        "New and certified devices, trade-in and setup services in-store.",
+      highlights: [
+        "Top brands & flagship models",
+        "Financing and trade-in",
+        "Device setup included",
+      ],
+    },
+    gaming: {
+      heroTitle: "Gaming & consoles",
+      heroSubtitle:
+        "PlayStation service, repairs and accessories in Hamburg.",
+      highlights: [
+        "Console repair and cleaning",
+        "Cooling and temperature tuning",
+        "Controllers, docks & accessories",
+      ],
+    },
+    contact: {
+      heroTitle: "We’re here for you",
+      heroSubtitle:
+        "Call or visit – we help immediately and personally.",
+      contactCards: [
+        {
+          title: "Visit us",
+          description: "Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
+        },
+        {
+          title: "Call us",
+          description: "040 58978787",
+        },
+        {
+          title: "Write to us",
+          description: "info@apfel-park.de",
+        },
+      ],
+    },
+    about: {
+      heroTitle: "Apfel Park – premium from day one",
+      heroSubtitle:
+        "Smartphone shop, accessories paradise and repair lab in one place.",
+      story:
+        "We are a team of tech experts who love devices and solve problems fast. Our Hamburg shop combines premium products with transparent advice and quick repairs.",
+      values: [
+        "Transparent pricing and diagnostics",
+        "Premium parts and quality control",
+        "Personal service over mass handling",
+      ],
+    },
+    faq: {
+      heroTitle: "Frequently asked",
+      heroSubtitle: "Answers about service, repairs and accessories.",
+      items: [
+        {
+          question: "How fast is a repair?",
+          answer:
+            "Most repairs are completed in under one hour. For complex damage we immediately share the timeline.",
+        },
+        {
+          question: "Do you offer warranty?",
+          answer:
+            "Yes, we provide a 12-month warranty on our repairs and premium spare parts.",
+        },
+        {
+          question: "Which brands do you repair?",
+          answer:
+            "We repair all major brands – Apple, Samsung, Huawei, Xiaomi, Google Pixel and more.",
+        },
+        {
+          question: "Can I walk in without appointment?",
+          answer:
+            "Yes, instant diagnostics are available without appointment. During peak times we schedule quick slots.",
+        },
+      ],
+    },
+    privacy: {
+      heroTitle: "Privacy Policy",
+      intro:
+        "We take data protection seriously. This privacy policy explains the nature, scope and purpose of processing personal data on our website and services.",
+      sections: [
+        {
+          title: "1. Controller",
+          body: [
+            "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
+            "Email: info@apfel-park.de | Phone: 040 58978787",
+          ],
+        },
+        {
+          title: "2. Data collected",
+          body: [
+            "Contact and order data (name, email, phone, address)",
+            "Device information for repairs and service orders",
+            "Payment and invoice data during checkout",
+          ],
+        },
+        {
+          title: "3. Purpose of processing",
+          body: [
+            "Executing repairs, orders and customer support",
+            "Communication about appointments and services",
+            "Compliance with legal obligations (e.g., invoicing)",
+          ],
+        },
+        {
+          title: "4. Data sharing",
+          body: [
+            "Payment providers (PayPal, Klarna, Sofort, Giropay, SEPA, Stripe)",
+            "Shipping and logistics partners for orders",
+            "IT and hosting providers (e.g., Vercel, Supabase)",
+          ],
+        },
+        {
+          title: "5. Cookies & tracking",
+          body: [
+            "We use necessary cookies to run the website.",
+            "Optional tracking and SEO tools can be activated in the admin dashboard.",
+          ],
+        },
+        {
+          title: "6. Your rights",
+          body: [
+            "Access, correction, deletion and restriction of processing",
+            "Objection to processing and data portability",
+            "Complaint with the responsible data protection authority",
+          ],
+        },
+      ],
+    },
+    terms: {
+      heroTitle: "Terms & Conditions",
+      intro:
+        "These terms apply to all repairs, services and purchases with Apfel Park.",
+      sections: [
+        {
+          title: "1. Services",
+          body: [
+            "Repair and maintenance of smartphones, tablets and consoles",
+            "Sale of devices, accessories and services",
+          ],
+        },
+        {
+          title: "2. Repair process",
+          body: [
+            "We provide a cost estimate after diagnosis.",
+            "Repairs begin only after your approval.",
+            "If repairs are not possible, we will inform you immediately.",
+          ],
+        },
+        {
+          title: "3. Pricing & payment",
+          body: [
+            "All prices include statutory VAT.",
+            "Payment via PayPal, Klarna, Sofort, Giropay, SEPA, Stripe, or cash in store.",
+          ],
+        },
+        {
+          title: "4. Warranty",
+          body: [
+            "12-month warranty on spare parts and repair services unless third-party damage occurs.",
+          ],
+        },
+        {
+          title: "5. Liability",
+          body: [
+            "We are liable for data loss only in cases of gross negligence or intent.",
+            "Please back up your data before repair.",
+          ],
+        },
+      ],
+    },
+  },
+} as const;
+
+export const getDictionary = (locale: Locale) => dictionary[locale];

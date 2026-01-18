@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
+import AppWrapper from "../components/AppWrapper";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -52,7 +53,7 @@ export default async function RootLayout({
       <body
         className={`${inter.variable} ${spaceGrotesk.variable} bg-background font-sans text-foreground antialiased`}
       >
-        {children}
+        <AppWrapper>{children}</AppWrapper>
       </body>
     </html>
   );
