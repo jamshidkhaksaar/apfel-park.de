@@ -76,9 +76,20 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
               <Link
                 key={item.path}
                 href={`/${lang}${item.path}`}
-                className="group relative px-4 py-2 text-sm font-medium text-muted transition hover:text-white"
+                className={`group relative px-4 py-2 text-sm font-medium transition ${
+                  item.path === "/store" 
+                    ? "text-gold hover:text-white" 
+                    : "text-muted hover:text-white"
+                }`}
               >
-                {item.label}
+                <span className="flex items-center gap-1.5">
+                  {item.path === "/store" && (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  )}
+                  {item.label}
+                </span>
                 <span className="absolute bottom-0 left-1/2 h-0.5 w-0 -translate-x-1/2 bg-gradient-to-r from-gold-soft to-gold-deep transition-all group-hover:w-full" />
               </Link>
             ))}
@@ -127,8 +138,15 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
                 key={item.path}
                 href={`/${lang}${item.path}`}
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-gold/5 hover:text-gold"
+                className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-gold/5 hover:text-gold ${
+                  item.path === "/store" ? "text-gold bg-gold/5" : "text-muted"
+                }`}
               >
+                {item.path === "/store" && (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                )}
                 {item.label}
               </Link>
             ))}
