@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 import type { Locale } from "../lib/i18n";
 import { useLanguageSwitch } from "./LanguageTransition";
@@ -10,6 +11,12 @@ const locales: Locale[] = ["de", "en"];
 export default function LocaleSwitcher() {
   const pathname = usePathname();
   const { switchLanguage } = useLanguageSwitch();
+  const [optimisticLocale, setOptimisticLocale] = useState<Locale | null>(null);
+
+  useEffect(() => {
+    // Reset optimistic state when path changes (navigation complete)
+    setOptimisticLocale(null);
+  }, [pathname]);
 
   if (!pathname) {
     return null;
@@ -19,11 +26,20 @@ export default function LocaleSwitcher() {
   const activeLocale = locales.includes(parts[0] as Locale)
     ? (parts[0] as Locale)
     : "de";
-  const switchLocale = (targetLocale: Locale) => {
-    if (targetLocale === activeLocale) return;
     
-    const nextPath = `/${[targetLocale, ...parts.slice(1)].join("/")}`;
-    switchLanguage(nextPath, targetLocale);
+  const currentLocale = optimisticLocale || activeLocale;
+
+  const handleSwitch = (targetLocale: Locale) => {
+    if (targetLocale === activeLocale || optimisticLocale) return;
+    
+    // 1. Animate toggle immediately
+    setOptimisticLocale(targetLocale);
+    
+    // 2. Wait for toggle animation (400ms) before starting ocean wave
+    setTimeout(() => {
+      const nextPath = `/${[targetLocale, ...parts.slice(1)].join("/")}`;
+      switchLanguage(nextPath, targetLocale);
+    }, 400);
   };
 
   return (
@@ -31,16 +47,16 @@ export default function LocaleSwitcher() {
       {/* Sliding Indicator */}
       <div
         className={`absolute h-6 w-[34px] rounded-full bg-white/20 shadow-sm backdrop-blur-md transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]
-          ${activeLocale === "de" ? "translate-x-0" : "translate-x-[40px]"}
+          ${currentLocale === "de" ? "translate-x-0" : "translate-x-[40px]"}
         `}
       />
       
       {/* DE Button */}
       <button
         type="button"
-        onClick={() => switchLocale("de")}
+        onClick={() => handleSwitch("de")}
         className={`z-10 flex w-1/2 items-center justify-center text-[10px] font-bold transition-colors duration-300
-          ${activeLocale === "de" ? "text-white" : "text-muted hover:text-white/80"}
+          ${currentLocale === "de" ? "text-white" : "text-muted hover:text-white/80"}
         `}
       >
         DE
@@ -49,9 +65,9 @@ export default function LocaleSwitcher() {
       {/* EN Button */}
       <button
         type="button"
-        onClick={() => switchLocale("en")}
+        onClick={() => handleSwitch("en")}
         className={`z-10 flex w-1/2 items-center justify-center text-[10px] font-bold transition-colors duration-300
-          ${activeLocale === "en" ? "text-white" : "text-muted hover:text-white/80"}
+          ${currentLocale === "en" ? "text-white" : "text-muted hover:text-white/80"}
         `}
       >
         EN
