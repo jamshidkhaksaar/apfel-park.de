@@ -36,7 +36,7 @@ export default async function FaqPage({ params }: { params: Promise<{ lang: stri
           {dict.faq.items.map((item, index) => (
             <div key={item.question} className="tech-card rounded-2xl p-6">
               <div className="flex items-start gap-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan/20 text-sm font-bold text-cyan">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/20 text-sm font-bold text-gold">
                   {index + 1}
                 </span>
                 <div>

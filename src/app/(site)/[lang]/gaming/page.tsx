@@ -42,7 +42,7 @@ export default async function GamingPage({ params }: { params: Promise<{ lang: s
             
             return (
               <div key={item} className="tech-card-hover rounded-2xl p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple/20 to-blue/20 text-purple">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-bronze/20 to-amber/20 text-bronze">
                   {icons[index]}
                 </div>
                 <h2 className="text-lg font-semibold text-foreground">{item}</h2>

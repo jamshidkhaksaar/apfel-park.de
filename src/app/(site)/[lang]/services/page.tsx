@@ -44,13 +44,13 @@ export default async function ServicesPage({ params }: { params: Promise<{ lang:
           <div className="grid gap-6 md:grid-cols-2">
             {dict.services.categories.map((item, index) => (
               <div key={item.title} className="tech-card-hover group rounded-2xl p-8">
-                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan/20 to-blue/20 text-cyan transition group-hover:from-cyan/30 group-hover:to-blue/30">
+                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold transition group-hover:from-gold/30 group-hover:to-amber/30">
                   {serviceIcons[index]}
                 </div>
                 <h2 className="text-xl font-bold text-foreground">{item.title}</h2>
                 <p className="mt-3 text-muted">{item.description}</p>
                 
-                <div className="mt-6 flex items-center gap-2 text-sm font-medium text-cyan opacity-0 transition group-hover:opacity-100">
+                <div className="mt-6 flex items-center gap-2 text-sm font-medium text-gold opacity-0 transition group-hover:opacity-100">
                   {lang === "de" ? "Mehr erfahren" : "Learn more"}
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />

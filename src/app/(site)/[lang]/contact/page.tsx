@@ -46,7 +46,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
               return (
                 <div key={item.title} className="tech-card rounded-2xl p-6">
                   <div className="flex items-start gap-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan/20 text-cyan">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/20 text-gold">
                       {icons[index]}
                     </div>
                     <div>
@@ -61,8 +61,8 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
             {/* Opening Hours */}
             <div className="tech-card rounded-2xl p-6">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green/20">
-                  <svg className="h-5 w-5 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/20">
+                  <svg className="h-5 w-5 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
@@ -70,7 +70,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                   <p className="font-semibold text-foreground">{siteInfo.hours.days}</p>
                   <p className="text-sm text-muted">{siteInfo.hours.time}</p>
                 </div>
-                <span className="ml-auto flex items-center gap-2 text-xs text-green">
+                <span className="ml-auto flex items-center gap-2 text-xs text-gold">
                   <span className="flex h-2 w-2 animate-pulse rounded-full bg-green" />
                   {lang === "de" ? "Geöffnet" : "Open"}
                 </span>
@@ -92,7 +92,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                 <input
                   type="text"
                   placeholder={lang === "de" ? "Dein Name" : "Your name"}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-strong focus:border-cyan/50 focus:outline-none focus:ring-1 focus:ring-cyan/50"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-strong focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50"
                 />
               </div>
               <div>
@@ -102,7 +102,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                 <input
                   type="email"
                   placeholder="you@email.com"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-strong focus:border-cyan/50 focus:outline-none focus:ring-1 focus:ring-cyan/50"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-strong focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50"
                 />
               </div>
             </div>
@@ -114,7 +114,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
               <input
                 type="text"
                 placeholder={lang === "de" ? "z.B. iPhone 15 Pro" : "e.g. iPhone 15 Pro"}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-strong focus:border-cyan/50 focus:outline-none focus:ring-1 focus:ring-cyan/50"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-strong focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50"
               />
             </div>
             
@@ -125,7 +125,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
               <textarea
                 rows={4}
                 placeholder={lang === "de" ? "Beschreibe dein Anliegen..." : "Describe your request..."}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-strong focus:border-cyan/50 focus:outline-none focus:ring-1 focus:ring-cyan/50"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-strong focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50"
               />
             </div>
             

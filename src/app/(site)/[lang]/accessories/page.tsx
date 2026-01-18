@@ -46,7 +46,7 @@ export default async function AccessoriesPage({
         <div className="container-page grid gap-6 md:grid-cols-2">
           {dict.accessories.categories.map((item, index) => (
             <div key={item} className="tech-card-hover group rounded-2xl p-8">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan/20 to-blue/20 text-cyan">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                 {categoryIcons[index]}
               </div>
               <h2 className="text-xl font-bold text-foreground">{item}</h2>

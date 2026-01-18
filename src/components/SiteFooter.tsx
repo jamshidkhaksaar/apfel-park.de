@@ -18,7 +18,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
           {/* Brand Column */}
           <div className="space-y-6">
             <Link href={`/${lang}`} className="group inline-flex items-center gap-3">
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan/20 to-blue/20 ring-1 ring-white/10">
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold/20 to-amber/20 ring-1 ring-white/10">
                 <Image
                   src="/branding/logo.jpg"
                   alt="Apfel Park"
@@ -29,7 +29,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
               </div>
               <div>
                 <p className="text-lg font-semibold text-foreground">Apfel Park</p>
-                <p className="text-xs font-medium uppercase tracking-widest text-cyan">Tech & Repair</p>
+                <p className="text-xs font-medium uppercase tracking-widest text-gold">Tech & Repair</p>
               </div>
             </Link>
             
@@ -39,7 +39,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
             <div className="space-y-3">
               <a 
                 href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
-                className="flex items-center gap-3 text-sm text-muted transition hover:text-cyan"
+                className="flex items-center gap-3 text-sm text-muted transition hover:text-gold"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -51,7 +51,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
               
               <a 
                 href={`mailto:${siteInfo.email}`}
-                className="flex items-center gap-3 text-sm text-muted transition hover:text-cyan"
+                className="flex items-center gap-3 text-sm text-muted transition hover:text-gold"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -75,7 +75,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
           {/* Navigation Column */}
           <div>
             <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <span className="h-px w-4 bg-cyan" />
+              <span className="h-px w-4 bg-gold" />
               Navigation
             </h3>
             <ul className="mt-6 space-y-3">
@@ -85,7 +85,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
                     href={`/${lang}${item.path}`} 
                     className="group flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
                   >
-                    <svg className="h-3 w-3 text-cyan opacity-0 transition group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="h-3 w-3 text-gold opacity-0 transition group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                     {item.label}
@@ -98,7 +98,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
           {/* Info Column */}
           <div>
             <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <span className="h-px w-4 bg-blue" />
+              <span className="h-px w-4 bg-amber" />
               Info
             </h3>
             <ul className="mt-6 space-y-3">
@@ -108,7 +108,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
                     href={`/${lang}${item.path}`} 
                     className="group flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
                   >
-                    <svg className="h-3 w-3 text-blue opacity-0 transition group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="h-3 w-3 text-amber opacity-0 transition group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                     {item.label}
@@ -121,7 +121,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
           {/* Location Column */}
           <div className="space-y-4">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <span className="h-px w-4 bg-purple" />
+              <span className="h-px w-4 bg-bronze" />
               {lang === "de" ? "Standort" : "Location"}
             </h3>
             
@@ -145,7 +145,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
             <Link
               href={siteInfo.map.linkUrl}
               target="_blank"
-              className="inline-flex items-center gap-2 text-sm font-medium text-cyan transition hover:text-cyan-soft"
+              className="inline-flex items-center gap-2 text-sm font-medium text-gold transition hover:text-gold-soft"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

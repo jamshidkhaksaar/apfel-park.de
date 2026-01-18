@@ -43,7 +43,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
           <div className="space-y-4">
             {dict.about.values.map((value, index) => (
               <div key={value} className="tech-card-hover flex items-start gap-4 rounded-2xl p-5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan/20 to-blue/20 text-sm font-bold text-cyan">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold/20 to-amber/20 text-sm font-bold text-gold">
                   {index + 1}
                 </span>
                 <p className="text-muted">{value}</p>

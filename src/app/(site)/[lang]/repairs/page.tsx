@@ -45,7 +45,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
         <div className="container-page grid gap-12 lg:grid-cols-2">
           {/* Left: Highlights */}
           <div className="tech-card rounded-3xl p-8">
-            <span className="badge-cyan mb-4 inline-flex">
+            <span className="badge-gold mb-4 inline-flex">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
@@ -58,8 +58,8 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
             <ul className="mt-8 space-y-4">
               {dict.repairs.highlights.map((item) => (
                 <li key={item} className="flex items-start gap-4">
-                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green/20">
-                    <svg className="h-4 w-4 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold/20">
+                    <svg className="h-4 w-4 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -71,15 +71,15 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
             {/* Stats */}
             <div className="mt-8 grid grid-cols-3 gap-4 border-t border-white/10 pt-8">
               <div className="text-center">
-                <p className="text-2xl font-bold text-cyan">30</p>
+                <p className="text-2xl font-bold text-gold">30</p>
                 <p className="mt-1 text-xs text-muted">min</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue">12</p>
+                <p className="text-2xl font-bold text-amber">12</p>
                 <p className="mt-1 text-xs text-muted">{lang === "de" ? "Monate" : "months"}</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-purple">5K+</p>
+                <p className="text-2xl font-bold text-bronze">5K+</p>
                 <p className="mt-1 text-xs text-muted">{lang === "de" ? "Reparaturen" : "repairs"}</p>
               </div>
             </div>
@@ -89,7 +89,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
           <div className="grid gap-4 sm:grid-cols-2">
             {dict.repairs.repairTypes.map((item, index) => (
               <div key={item.title} className="tech-card-hover rounded-2xl p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan/20 to-blue/20 text-cyan">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                   {repairIcons[index]}
                 </div>
                 <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>

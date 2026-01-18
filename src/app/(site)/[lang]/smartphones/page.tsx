@@ -46,7 +46,7 @@ export default async function SmartphonesPage({
             
             return (
               <div key={item} className="tech-card-hover rounded-2xl p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan/20 to-blue/20 text-cyan">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                   {icons[index]}
                 </div>
                 <h2 className="text-lg font-semibold text-foreground">{item}</h2>
