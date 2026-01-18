@@ -66,13 +66,14 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <section className="border-y border-white/5 bg-surface/50 py-6">
         <div className="container-page">
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-            <span className="text-xs uppercase tracking-widest text-muted">
-              {lang === "de" ? "Wir reparieren" : "We repair"}
+            <span className="text-xs uppercase tracking-widest text-gold/80 font-semibold">
+              {lang === "de" ? "Verkauf & Reparatur" : "We Sell & Repair"}
             </span>
             {deviceBrands.map((brand) => (
-              <div key={brand.name} className="flex items-center gap-2 text-muted transition hover:text-foreground">
-                <span className="text-xl">{brand.icon}</span>
-                <span className="text-sm font-medium">{brand.name}</span>
+              <div key={brand.name} className="group flex items-center gap-2 transition hover:scale-105">
+                <span className="font-display text-lg font-bold tracking-tight text-muted/60 transition-colors group-hover:text-gold">
+                  {brand.name}
+                </span>
               </div>
             ))}
           </div>
