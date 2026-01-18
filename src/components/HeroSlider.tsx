@@ -156,9 +156,9 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
               href={`/${lang}${slide.path}`}
               className="btn-primary text-base"
             >
-              {slide.cta[lang]}
+              <span className="relative z-10">{slide.cta[lang]}</span>
               <svg
-                className="h-5 w-5"
+                className="relative z-10 h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
