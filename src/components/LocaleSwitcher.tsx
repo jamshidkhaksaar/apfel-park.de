@@ -19,23 +19,43 @@ export default function LocaleSwitcher() {
   const activeLocale = locales.includes(parts[0] as Locale)
     ? (parts[0] as Locale)
     : "de";
-  const nextLocale: Locale = activeLocale === "de" ? "en" : "de";
-  const nextPath = `/${[nextLocale, ...parts.slice(1)].join("/")}`;
-
-  const handleSwitch = () => {
-    switchLanguage(nextPath, nextLocale);
+  const switchLocale = (targetLocale: Locale) => {
+    if (targetLocale === activeLocale) return;
+    
+    const nextPath = `/${[targetLocale, ...parts.slice(1)].join("/")}`;
+    switchLanguage(nextPath, targetLocale);
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleSwitch}
-      className="flex items-center gap-2 rounded-full border border-border/60 bg-surface/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted transition hover:text-foreground"
-      aria-label="Switch language"
-    >
-      <span>{activeLocale.toUpperCase()}</span>
-      <span className="text-[10px] text-muted-strong">→</span>
-      <span>{nextLocale.toUpperCase()}</span>
-    </button>
+    <div className="relative flex h-8 w-20 items-center rounded-full bg-black/40 p-1 shadow-inner ring-1 ring-white/10 backdrop-blur-md">
+      {/* Sliding Indicator */}
+      <div
+        className={`absolute h-6 w-[34px] rounded-full bg-white/20 shadow-sm backdrop-blur-md transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]
+          ${activeLocale === "de" ? "translate-x-0" : "translate-x-[40px]"}
+        `}
+      />
+      
+      {/* DE Button */}
+      <button
+        type="button"
+        onClick={() => switchLocale("de")}
+        className={`z-10 flex w-1/2 items-center justify-center text-[10px] font-bold transition-colors duration-300
+          ${activeLocale === "de" ? "text-white" : "text-muted hover:text-white/80"}
+        `}
+      >
+        DE
+      </button>
+
+      {/* EN Button */}
+      <button
+        type="button"
+        onClick={() => switchLocale("en")}
+        className={`z-10 flex w-1/2 items-center justify-center text-[10px] font-bold transition-colors duration-300
+          ${activeLocale === "en" ? "text-white" : "text-muted hover:text-white/80"}
+        `}
+      >
+        EN
+      </button>
+    </div>
   );
 }
