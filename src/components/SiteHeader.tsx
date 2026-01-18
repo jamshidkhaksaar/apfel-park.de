@@ -17,11 +17,8 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
 
   return (
     <header className="sticky top-0 z-50 transition-all duration-300" translate="no">
-      {/* Background Glass Layer (Absolute to cover both bars) */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-xl backdrop-saturate-150 border-b border-white/10 shadow-lg shadow-black/20" />
-
       {/* Top Bar - Speed & Contact Info */}
-      <div className="relative z-10 border-b border-white/5 bg-white/5">
+      <div className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-sm">
         <div className="container-page flex items-center justify-between py-2 text-xs">
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 animate-gold-pulse rounded-full bg-gold" />
@@ -71,7 +68,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
         </div>
 
         {/* Navbar content */}
-        <div className="relative flex flex-1 items-center navbar-border">
+        <div className="relative flex flex-1 items-center navbar-border bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-lg">
           {/* Desktop Navigation */}
           <nav className="hidden flex-1 items-center justify-center gap-1 py-4 lg:flex">
             {navItems.map((item) => (
