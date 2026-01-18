@@ -6,6 +6,8 @@ import { getDictionary, type Locale } from "../../../lib/i18n";
 import { createMetadata } from "../../../lib/metadata";
 import { siteInfo } from "../../../lib/site";
 import HeroSlider from "../../../components/HeroSlider";
+import FeaturedStore from "../../../components/FeaturedStore";
+import { getFeaturedProducts } from "../../../lib/products";
 
 export const generateMetadata = async ({
   params,
@@ -25,6 +27,7 @@ export const generateMetadata = async ({
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const featuredProducts = await getFeaturedProducts();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -79,6 +82,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
         </div>
       </section>
+
+      {/* Featured Store */}
+      <FeaturedStore products={featuredProducts} lang={lang as Locale} />
 
       {/* Repair Process - Visual Timeline */}
       <section className="section-pad">
