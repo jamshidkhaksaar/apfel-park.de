@@ -25,13 +25,13 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
   const switchLanguage = async (newPath: string, newLocale: string) => {
     setIsSwitching(true);
     
-    // Start entrance animation - sequence layers
+    // Start wave animation
     requestAnimationFrame(() => {
       setShowContent(true);
     });
 
-    // Wait for animation to cover screen (longer for elegance)
-    await new Promise(r => setTimeout(r, 1000));
+    // Wait for waves to cover screen (1.2s for slow fluid feel)
+    await new Promise(r => setTimeout(r, 1200));
     
     // Update cookie and navigate
     document.cookie = `apfel-lang=${newLocale}; path=/; max-age=31536000`;
@@ -43,9 +43,9 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
       // Navigation happened
       const timer = setTimeout(() => {
         setShowContent(false);
-        // Wait for exit animation to finish
-        setTimeout(() => setIsSwitching(false), 1000);
-      }, 600);
+        // Wait for exit animation
+        setTimeout(() => setIsSwitching(false), 1200);
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [pathname]);
@@ -62,70 +62,78 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
     <LanguageContext.Provider value={{ switchLanguage }}>
       {children}
       
-      {/* Transition Overlay Container */}
-      <div className="fixed inset-0 z-[10000] pointer-events-none flex flex-col justify-end">
+      {/* Wave Transition Container */}
+      <div className="fixed inset-0 z-[10000] pointer-events-none flex flex-col justify-end overflow-hidden">
         
-        {/* Layer 1: Dark Bronze (Background) */}
+        {/* Wave 1: Deep Gold (Back) */}
         <div 
-          className={`absolute inset-0 bg-neutral-900 transition-transform duration-[800ms] ease-[cubic-bezier(0.65,0,0.35,1)]
-            ${showContent ? "translate-y-0" : "translate-y-full"}
+          className={`absolute inset-0 z-10 transition-transform duration-[1200ms] ease-in-out
+            ${showContent ? "translate-y-[-10%]" : "translate-y-[110%]"}
+            ${!isSwitching && !showContent ? "translate-y-[-200%]" : ""} 
           `}
-          style={{ zIndex: 10001 }}
-        />
-
-        {/* Layer 2: Deep Gold (Middle) */}
-        <div 
-          className={`absolute inset-0 bg-[#b45309] transition-transform duration-[800ms] delay-[50ms] ease-[cubic-bezier(0.65,0,0.35,1)]
-            ${showContent ? "translate-y-0" : "translate-y-full"}
-          `}
-          style={{ zIndex: 10002 }}
-        />
-
-        {/* Layer 3: Bright Gold (Foreground) */}
-        <div 
-          className={`absolute inset-0 flex items-center justify-center bg-[#f59e0b] transition-transform duration-[800ms] delay-[100ms] ease-[cubic-bezier(0.65,0,0.35,1)]
-            ${showContent ? "translate-y-0" : "translate-y-full"}
-          `}
-          style={{ zIndex: 10003 }}
+          // On exit (showContent false), we want it to continue moving UP? 
+          // Actually with translate-y-[110%] it goes back down.
+          // To make it go UP and away, we'd need a different class.
+          // For now, let's just make it go back down (tide recedes).
         >
-          {/* Decorative Pattern on Top Layer */}
-          <div className="absolute inset-0 opacity-10" 
-               style={{ 
-                 backgroundImage: 'radial-gradient(circle at 50% 50%, #fff 2px, transparent 2px)', 
-                 backgroundSize: '40px 40px' 
-               }} 
-          />
-          
-          {/* Center Content */}
-          <div 
-            className={`relative flex flex-col items-center gap-6 transition-all duration-500 delay-300
-              ${showContent ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 translate-y-10"}
-            `}
-          >
-            {/* Logo Container */}
-            <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-black/10 p-5 shadow-2xl backdrop-blur-sm ring-1 ring-white/20">
-               <Image
-                  src="/branding/logo.jpg"
-                  alt="Apfel Park"
-                  width={96}
-                  height={96}
-                  className="h-full w-full object-contain drop-shadow-lg"
-               />
-               
-               {/* Shining Sheen Animation */}
-               <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            </div>
+          {/* Wave Shape SVG */}
+          <div className="absolute -top-[120px] left-0 w-full h-[150px] rotate-180">
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" className="w-full h-full fill-[#b45309]">
+              <path fillOpacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,197.3C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+          </div>
+          <div className="h-full w-full bg-[#b45309]" />
+        </div>
 
-            {/* Elegant Text */}
-            <div className="text-center">
-              <p className="font-display text-2xl font-bold tracking-widest text-white drop-shadow-sm">
-                APFEL PARK
-              </p>
-              <div className="mt-2 flex items-center justify-center gap-2">
-                <span className="h-0.5 w-8 rounded-full bg-white/50" />
-                <span className="text-xs font-medium uppercase tracking-widest text-white/80">Loading</span>
-                <span className="h-0.5 w-8 rounded-full bg-white/50" />
+        {/* Wave 2: Bright Gold (Middle) */}
+        <div 
+          className={`absolute inset-0 z-20 transition-transform duration-[1200ms] delay-[100ms] ease-in-out
+            ${showContent ? "translate-y-0" : "translate-y-[110%]"}
+          `}
+        >
+           <div className="absolute -top-[120px] left-0 w-full h-[150px] rotate-180">
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" className="w-full h-full fill-[#f59e0b]">
+              <path fillOpacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+          </div>
+          <div className="h-full w-full bg-[#f59e0b]" />
+        </div>
+
+        {/* Wave 3: Black (Front/Main) */}
+        <div 
+          className={`absolute inset-0 z-30 transition-transform duration-[1200ms] delay-[200ms] ease-in-out
+            ${showContent ? "translate-y-0" : "translate-y-[110%]"}
+          `}
+        >
+           <div className="absolute -top-[120px] left-0 w-full h-[150px] rotate-180">
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" className="w-full h-full fill-[#050505]">
+              <path fillOpacity="1" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+          </div>
+          <div className="h-full w-full bg-[#050505] flex flex-col items-center justify-center relative">
+            
+            {/* Content on Black Background */}
+            <div 
+              className={`flex flex-col items-center gap-6 transition-all duration-700 delay-500
+                ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"}
+              `}
+            >
+              {/* Logo with Gold Ring */}
+              <div className="relative h-28 w-28 rounded-full border-4 border-[#f59e0b] bg-black p-4 shadow-[0_0_50px_rgba(245,158,11,0.4)]">
+                <Image
+                  src="/branding/logo.jpg"
+                  alt="Loading"
+                  width={100}
+                  height={100}
+                  className="h-full w-full rounded-full object-cover opacity-90"
+                />
+                <div className="absolute -inset-1 animate-spin rounded-full border-2 border-transparent border-t-[#f59e0b]" />
               </div>
+
+              {/* Text */}
+              <h2 className="text-3xl font-bold tracking-widest text-[#f59e0b] drop-shadow-md">
+                APFEL PARK
+              </h2>
             </div>
           </div>
         </div>
