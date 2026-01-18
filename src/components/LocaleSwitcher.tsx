@@ -1,14 +1,15 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import type { Locale } from "../lib/i18n";
+import { useLanguageSwitch } from "./LanguageTransition";
 
 const locales: Locale[] = ["de", "en"];
 
 export default function LocaleSwitcher() {
   const pathname = usePathname();
-  const router = useRouter();
+  const { switchLanguage } = useLanguageSwitch();
 
   if (!pathname) {
     return null;
@@ -22,8 +23,7 @@ export default function LocaleSwitcher() {
   const nextPath = `/${[nextLocale, ...parts.slice(1)].join("/")}`;
 
   const handleSwitch = () => {
-    document.cookie = `apfel-lang=${nextLocale}; path=/; max-age=31536000`;
-    router.push(nextPath);
+    switchLanguage(nextPath, nextLocale);
   };
 
   return (
