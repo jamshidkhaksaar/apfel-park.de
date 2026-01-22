@@ -239,6 +239,13 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
               </span>
               <span className="text-white/20">|</span>
               <span>{siteInfo.tagline}</span>
+              <span className="text-white/20">|</span>
+              <Link 
+                href="/login" 
+                className="transition hover:text-gold"
+              >
+                Admin
+              </Link>
             </div>
           </div>
         </div>
