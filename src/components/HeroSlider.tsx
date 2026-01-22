@@ -47,7 +47,7 @@ const slides: Slide[] = [
       de: "Laptops entdecken",
       en: "Explore Laptops",
     },
-    path: "/services",
+    path: "/laptops",
   },
   {
     image: "/images/slider_images/ps5.png",

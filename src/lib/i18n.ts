@@ -7,8 +7,8 @@ export const dictionary = {
     nav: [
       { label: "Startseite", path: "" },
       { label: "Online Shop", path: "/store" },
-      { label: "Services", path: "/services" },
-      { label: "Reparaturen", path: "/repairs" },
+      { label: "Reparatur & Service", path: "/repairs" },
+      { label: "Laptops", path: "/laptops" },
       { label: "Zubehör", path: "/accessories" },
       { label: "Smartphones", path: "/smartphones" },
       { label: "Gaming", path: "/gaming" },
@@ -19,8 +19,8 @@ export const dictionary = {
       description:
         "Im Apfel Park kombinieren wir Premium-Hardware, Zubehör und Sofort-Reparaturen unter einem Dach.",
       quickLinks: [
-        { label: "Reparaturen", path: "/repairs" },
-        { label: "Zubehör", path: "/accessories" },
+        { label: "Reparatur & Service", path: "/repairs" },
+        { label: "Laptops", path: "/laptops" },
         { label: "Smartphones", path: "/smartphones" },
         { label: "Gaming", path: "/gaming" },
       ],
@@ -67,6 +67,11 @@ export const dictionary = {
         title: "Gaming & Konsolen",
         description:
           "PlayStation- und Gaming-Services, Reparaturen und Zubehör im Apfel Park.",
+      },
+      laptops: {
+        title: "Laptops",
+        description:
+          "Neue und gebrauchte Laptops kaufen – MacBooks, Windows-Laptops mit Garantie und bestem Preis-Leistungs-Verhältnis.",
       },
       contact: {
         title: "Kontakt",
@@ -376,6 +381,54 @@ export const dictionary = {
         "Controller, Docking & Zubehör",
       ],
     },
+    laptops: {
+      heroTitle: "Laptops kaufen & reparieren",
+      heroSubtitle:
+        "MacBooks und Windows-Laptops – neu, gebraucht und professionell gewartet.",
+      sections: {
+        new: {
+          title: "Neue Laptops",
+          subtitle: "Premium-Geräte direkt verfügbar mit voller Herstellergarantie.",
+        },
+        refurbished: {
+          title: "Gebrauchte Laptops",
+          subtitle: "Geprüfte Qualität, wie neu – zu unschlagbaren Preisen.",
+        },
+        accessories: {
+          title: "Laptop Zubehör",
+          subtitle: "Ladegeräte, Taschen, Docking-Stations und mehr.",
+        },
+        store: {
+          title: "Verfügbare Laptops",
+          subtitle: "Unsere aktuellen Angebote – sofort abholbereit.",
+        },
+      },
+      highlights: [
+        "12 Monate Garantie auf alle Geräte",
+        "Professionelle Qualitätsprüfung",
+        "Beste Preise in Hamburg",
+        "Kostenlose Erstberatung",
+      ],
+      brands: ["Apple MacBook", "Lenovo", "HP", "Dell", "ASUS", "Acer"],
+      accessories: [
+        {
+          title: "Ladegeräte",
+          description: "Original und Universal-Netzteile für alle Laptop-Marken.",
+        },
+        {
+          title: "Laptop-Taschen",
+          description: "Schutz und Stil für unterwegs – von 13 bis 17 Zoll.",
+        },
+        {
+          title: "Docking-Stations",
+          description: "USB-C Hubs, Monitorkabel und Desktop-Setup.",
+        },
+        {
+          title: "Ersatzteile",
+          description: "Akkus, Tastaturen, Displays und mehr.",
+        },
+      ],
+    },
     contact: {
       heroTitle: "Wir sind für dich da",
       heroSubtitle:
@@ -533,8 +586,8 @@ export const dictionary = {
     nav: [
       { label: "Home", path: "" },
       { label: "Online Store", path: "/store" },
-      { label: "Services", path: "/services" },
-      { label: "Repairs", path: "/repairs" },
+      { label: "Repair & Service", path: "/repairs" },
+      { label: "Laptops", path: "/laptops" },
       { label: "Accessories", path: "/accessories" },
       { label: "Smartphones", path: "/smartphones" },
       { label: "Gaming", path: "/gaming" },
@@ -545,8 +598,8 @@ export const dictionary = {
       description:
         "Apfel Park combines premium devices, accessories and express repairs in one modern studio.",
       quickLinks: [
-        { label: "Repairs", path: "/repairs" },
-        { label: "Accessories", path: "/accessories" },
+        { label: "Repair & Service", path: "/repairs" },
+        { label: "Laptops", path: "/laptops" },
         { label: "Smartphones", path: "/smartphones" },
         { label: "Gaming", path: "/gaming" },
       ],
@@ -593,6 +646,11 @@ export const dictionary = {
         title: "Gaming & Consoles",
         description:
           "PlayStation services, repairs and accessories at Apfel Park.",
+      },
+      laptops: {
+        title: "Laptops",
+        description:
+          "Buy new and refurbished laptops – MacBooks, Windows laptops with warranty and best value.",
       },
       contact: {
         title: "Contact",
@@ -900,6 +958,54 @@ export const dictionary = {
         "Console repair and cleaning",
         "Cooling and temperature tuning",
         "Controllers, docks & accessories",
+      ],
+    },
+    laptops: {
+      heroTitle: "Buy & repair laptops",
+      heroSubtitle:
+        "MacBooks and Windows laptops – new, refurbished and professionally serviced.",
+      sections: {
+        new: {
+          title: "New Laptops",
+          subtitle: "Premium devices available now with full manufacturer warranty.",
+        },
+        refurbished: {
+          title: "Refurbished Laptops",
+          subtitle: "Certified quality, like new – at unbeatable prices.",
+        },
+        accessories: {
+          title: "Laptop Accessories",
+          subtitle: "Chargers, bags, docking stations and more.",
+        },
+        store: {
+          title: "Available Laptops",
+          subtitle: "Our current offers – ready for pickup today.",
+        },
+      },
+      highlights: [
+        "12-month warranty on all devices",
+        "Professional quality inspection",
+        "Best prices in Hamburg",
+        "Free initial consultation",
+      ],
+      brands: ["Apple MacBook", "Lenovo", "HP", "Dell", "ASUS", "Acer"],
+      accessories: [
+        {
+          title: "Chargers",
+          description: "Original and universal power adapters for all laptop brands.",
+        },
+        {
+          title: "Laptop Bags",
+          description: "Protection and style on the go – from 13 to 17 inches.",
+        },
+        {
+          title: "Docking Stations",
+          description: "USB-C hubs, monitor cables and desktop setup.",
+        },
+        {
+          title: "Spare Parts",
+          description: "Batteries, keyboards, displays and more.",
+        },
       ],
     },
     contact: {
