@@ -12,8 +12,8 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
   const dict = getDictionary(lang);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  // Filter out Store from main nav to show as button
-  const navItems = dict.nav.filter((item) => item.path !== "/store");
+  // Get nav items directly
+  const navItems = dict.nav;
 
   return (
     <header className="sticky top-0 z-50 transition-all duration-300" translate="no">

@@ -6,11 +6,10 @@ export const dictionary = {
   de: {
     nav: [
       { label: "Startseite", path: "" },
-      { label: "Online Shop", path: "/store" },
       { label: "Reparatur & Service", path: "/repairs" },
-      { label: "Laptops", path: "/laptops" },
-      { label: "Zubehör", path: "/accessories" },
       { label: "Smartphones", path: "/smartphones" },
+      { label: "Zubehör", path: "/accessories" },
+      { label: "Laptops", path: "/laptops" },
       { label: "Gaming", path: "/gaming" },
       { label: "Kontakt", path: "/contact" },
     ],
@@ -20,8 +19,9 @@ export const dictionary = {
         "Im Apfel Park kombinieren wir Premium-Hardware, Zubehör und Sofort-Reparaturen unter einem Dach.",
       quickLinks: [
         { label: "Reparatur & Service", path: "/repairs" },
-        { label: "Laptops", path: "/laptops" },
         { label: "Smartphones", path: "/smartphones" },
+        { label: "Zubehör", path: "/accessories" },
+        { label: "Laptops", path: "/laptops" },
         { label: "Gaming", path: "/gaming" },
       ],
       companyLinks: [
@@ -585,11 +585,10 @@ export const dictionary = {
   en: {
     nav: [
       { label: "Home", path: "" },
-      { label: "Online Store", path: "/store" },
       { label: "Repair & Service", path: "/repairs" },
-      { label: "Laptops", path: "/laptops" },
-      { label: "Accessories", path: "/accessories" },
       { label: "Smartphones", path: "/smartphones" },
+      { label: "Accessories", path: "/accessories" },
+      { label: "Laptops", path: "/laptops" },
       { label: "Gaming", path: "/gaming" },
       { label: "Contact", path: "/contact" },
     ],
@@ -599,8 +598,9 @@ export const dictionary = {
         "Apfel Park combines premium devices, accessories and express repairs in one modern studio.",
       quickLinks: [
         { label: "Repair & Service", path: "/repairs" },
-        { label: "Laptops", path: "/laptops" },
         { label: "Smartphones", path: "/smartphones" },
+        { label: "Accessories", path: "/accessories" },
+        { label: "Laptops", path: "/laptops" },
         { label: "Gaming", path: "/gaming" },
       ],
       companyLinks: [
