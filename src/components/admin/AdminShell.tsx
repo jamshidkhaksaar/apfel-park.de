@@ -5,18 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-
-const navItems = [
-  { label: "Dashboard", path: "/admin", icon: "dashboard" },
-  { label: "Produkte", path: "/admin/products", icon: "products" },
-  { label: "Bestellungen", path: "/admin/orders", icon: "orders" },
-  { label: "Reparaturen", path: "/admin/repairs", icon: "repairs" },
-  { label: "Bewertungen", path: "/admin/reviews", icon: "reviews" },
-  { label: "SEO & Keys", path: "/admin/seo", icon: "seo" },
-  { label: "Payments", path: "/admin/payments", icon: "payments" },
-  { label: "Branding", path: "/admin/branding", icon: "branding" },
-  { label: "Shop Settings", path: "/admin/settings", icon: "settings" },
-];
+import { useAdmin } from "@/lib/admin-context";
 
 const NavIcon = ({ type }: { type: string }) => {
   const icons: Record<string, ReactNode> = {
@@ -79,6 +68,7 @@ export default function AdminShell({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { dict, lang, setLang } = useAdmin();
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -86,6 +76,18 @@ export default function AdminShell({
     router.push("/login");
     router.refresh();
   };
+
+  const navItems = [
+    { label: dict.sidebar.dashboard, path: "/admin", icon: "dashboard" },
+    { label: dict.sidebar.products, path: "/admin/products", icon: "products" },
+    { label: dict.sidebar.orders, path: "/admin/orders", icon: "orders" },
+    { label: dict.sidebar.repairs, path: "/admin/repairs", icon: "repairs" },
+    { label: dict.sidebar.reviews, path: "/admin/reviews", icon: "reviews" },
+    { label: dict.sidebar.seo, path: "/admin/seo", icon: "seo" },
+    { label: dict.sidebar.payments, path: "/admin/payments", icon: "payments" },
+    { label: dict.sidebar.branding, path: "/admin/branding", icon: "branding" },
+    { label: dict.sidebar.settings, path: "/admin/settings", icon: "settings" },
+  ];
 
   return (
     <div className="min-h-screen bg-black text-foreground" translate="no">
@@ -102,7 +104,31 @@ export default function AdminShell({
             </Link>
             <div className="mt-4 flex items-center gap-2">
               <span className="flex h-2 w-2 rounded-full bg-green-500" />
-              <span className="text-xs text-muted">Authenticated</span>
+              <span className="text-xs text-muted">{dict.sidebar.authenticated}</span>
+            </div>
+            
+            {/* Language Toggle */}
+            <div className="mt-6 flex rounded-lg border border-white/10 bg-black/20 p-1">
+              <button
+                onClick={() => setLang("de")}
+                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
+                  lang === "de"
+                    ? "bg-white/10 text-gold"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                DE
+              </button>
+              <button
+                onClick={() => setLang("en")}
+                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
+                  lang === "en"
+                    ? "bg-white/10 text-gold"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                EN
+              </button>
             </div>
           </div>
           
@@ -135,7 +161,7 @@ export default function AdminShell({
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
               </svg>
-              Back to Website
+              {dict.sidebar.backToSite}
             </Link>
             <button
               onClick={handleLogout}
@@ -144,7 +170,7 @@ export default function AdminShell({
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
               </svg>
-              Logout
+              {dict.sidebar.logout}
             </button>
           </div>
         </aside>
@@ -153,7 +179,7 @@ export default function AdminShell({
           <div className="rounded-2xl border border-border/60 bg-surface/70 px-8 py-6">
             <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
             <p className="mt-2 text-sm text-muted">
-              Konfiguriere Inhalte, SEO, Zahlungen und Bestellungen.
+              {dict.dashboard.subtitle}
             </p>
           </div>
           {children}

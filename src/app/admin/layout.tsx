@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { AdminProvider } from "@/lib/admin-context";
+
 export const metadata: Metadata = {
   title: "Admin | Apfel Park",
   robots: {
@@ -10,5 +12,9 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return <div>{children}</div>;
+  return (
+    <AdminProvider>
+      {children}
+    </AdminProvider>
+  );
 }

@@ -1,0 +1,76 @@
+export type AdminLocale = "de" | "en";
+
+export const adminDictionary = {
+  de: {
+    sidebar: {
+      dashboard: "Dashboard",
+      products: "Produkte",
+      orders: "Bestellungen",
+      repairs: "Reparaturen",
+      reviews: "Bewertungen",
+      seo: "SEO & Keys",
+      payments: "Zahlungen",
+      branding: "Branding",
+      settings: "Einstellungen",
+      backToSite: "Zurück zur Website",
+      logout: "Abmelden",
+      authenticated: "Angemeldet",
+    },
+    dashboard: {
+      title: "Dashboard",
+      subtitle: "Willkommen im Admin-Bereich. Hier ist eine Übersicht.",
+      stats: {
+        repairs: "Offene Reparaturen",
+        orders: "Neue Bestellungen",
+        products: "Produkte aktiv",
+        reviews: "Bewertungen",
+      },
+      quickActions: {
+        title: "Schnellzugriff",
+        subtitle: "Häufig genutzte Funktionen.",
+        addProduct: "Produkt hinzufügen",
+        addProductDesc: "Neues Gerät oder Zubehör anlegen",
+        addRepair: "Reparatur erfassen",
+        addRepairDesc: "Neuen Service-Auftrag starten",
+        checkOrders: "Bestellungen prüfen",
+        checkOrdersDesc: "Offene Online-Bestellungen bearbeiten",
+      },
+    },
+  },
+  en: {
+    sidebar: {
+      dashboard: "Dashboard",
+      products: "Products",
+      orders: "Orders",
+      repairs: "Repairs",
+      reviews: "Reviews",
+      seo: "SEO & Keys",
+      payments: "Payments",
+      branding: "Branding",
+      settings: "Settings",
+      backToSite: "Back to Website",
+      logout: "Logout",
+      authenticated: "Authenticated",
+    },
+    dashboard: {
+      title: "Dashboard",
+      subtitle: "Welcome to the admin area. Here is an overview.",
+      stats: {
+        repairs: "Open Repairs",
+        orders: "New Orders",
+        products: "Active Products",
+        reviews: "Reviews",
+      },
+      quickActions: {
+        title: "Quick Actions",
+        subtitle: "Frequently used functions.",
+        addProduct: "Add Product",
+        addProductDesc: "Create new device or accessory",
+        addRepair: "Create Repair",
+        addRepairDesc: "Start new service ticket",
+        checkOrders: "Check Orders",
+        checkOrdersDesc: "Process open online orders",
+      },
+    },
+  },
+};
