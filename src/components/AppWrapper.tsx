@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import LoadingScreen from "./LoadingScreen";
+import WhatsAppFloat from "./WhatsAppFloat";
 
 type AppWrapperProps = {
   children: React.ReactNode;
+  lang: "de" | "en";
 };
 
-export default function AppWrapper({ children }: AppWrapperProps) {
+export default function AppWrapper({ children, lang }: AppWrapperProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
 
@@ -39,6 +41,7 @@ export default function AppWrapper({ children }: AppWrapperProps) {
       >
         {showContent && children}
       </div>
+      <WhatsAppFloat lang={lang} />
     </>
   );
 }

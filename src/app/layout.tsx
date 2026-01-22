@@ -55,7 +55,7 @@ export default async function RootLayout({
         className={`${inter.variable} ${spaceGrotesk.variable} bg-background font-sans text-foreground antialiased`}
       >
         <LanguageTransitionProvider>
-          <AppWrapper>{children}</AppWrapper>
+          <AppWrapper lang={lang as "de" | "en"}>{children}</AppWrapper>
         </LanguageTransitionProvider>
       </body>
     </html>

@@ -99,15 +99,18 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
                 <span className="relative z-10">{lang === "de" ? "Shop" : "Store"}</span>
               </Link>
             </div>
+            <div className="flex items-center gap-3 md:hidden">
+              <LocaleSwitcher />
+            </div>
             
             <Link
               href={`/${lang}/repairs`}
-              className="btn-primary !px-5 !py-2 !text-xs font-bold uppercase tracking-wide md:!text-sm"
+              className="btn-primary hidden md:inline-flex !px-5 !py-2 !text-xs font-bold uppercase tracking-wide md:!text-sm min-w-[160px] md:min-w-[180px] justify-center"
             >
-              <svg className="relative z-10 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="relative z-10 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <span className="relative z-10">{lang === "de" ? "Schnell-Reparatur" : "Quick Repair"}</span>
+              <span className="relative z-10 whitespace-nowrap">{lang === "de" ? "Schnell-Reparatur" : "Quick Repair"}</span>
             </Link>
 
             {/* Mobile Menu Button */}
@@ -141,18 +144,26 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
                 {item.label}
               </Link>
             ))}
-            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/5 pt-4">
-              <LocaleSwitcher />
-              
+            <div className="mt-4 flex flex-col gap-3 border-t border-white/5 pt-4">
+              <Link
+                href={`/${lang}/repairs`}
+                onClick={() => setMobileMenuOpen(false)}
+                className="btn-primary flex items-center justify-center gap-2 !py-3 text-sm font-bold uppercase tracking-wide"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>{lang === "de" ? "Schnell-Reparatur" : "Quick Repair"}</span>
+              </Link>
               <Link
                 href={`/${lang}/store`}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-black shadow-lg"
+                className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-3 text-sm font-bold uppercase tracking-wider text-black shadow-lg"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
-                <span>{lang === "de" ? "Shop" : "Store"}</span>
+                <span>{lang === "de" ? "Zum Online Shop" : "Go to Store"}</span>
               </Link>
             </div>
           </nav>

@@ -4,6 +4,7 @@ export const siteInfo = {
   tagline: "Smart Phone. Smart Service. Smart Price.",
   url: "https://apfel-park.de",
   phone: "040 58978787",
+  whatsapp: "494058978787", // WhatsApp Business number (without + sign) - Germany +49, Hamburg 40, number 58978787
   email: "info@apfel-park.de",
   address: {
     street: "Wilhelm-Strauß-Weg 2b",
@@ -14,6 +15,12 @@ export const siteInfo = {
   hours: {
     days: "Montag – Samstag",
     time: "09:30 – 20:00",
+  },
+  social: {
+    instagram: "https://www.instagram.com/apfelpark_harburg/",
+    facebook: "https://www.facebook.com/apfelpark.harburg",
+    tiktok: "https://www.tiktok.com/@apfelpark",
+    whatsapp: "https://wa.me/494058978787",
   },
   map: {
     query: "Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
