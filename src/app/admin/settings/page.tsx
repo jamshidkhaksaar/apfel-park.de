@@ -37,6 +37,10 @@ export default async function SettingsPage() {
     maintenance: {
       enabled: settingsMap.maintenance?.enabled || false,
     },
+    security: {
+      cfSiteKey: settingsMap.security?.cfSiteKey || "",
+      cfSecretKey: settingsMap.security?.cfSecretKey || "",
+    },
   };
 
   return (

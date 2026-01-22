@@ -24,11 +24,18 @@ type SettingsData = {
   maintenance: {
     enabled: boolean;
   };
+  security: {
+    cfSiteKey: string;
+    cfSecretKey: string;
+  };
 };
 
 export default function SettingsForm({ initialSettings }: { initialSettings: SettingsData }) {
   const router = useRouter();
-  const [settings, setSettings] = useState<SettingsData>(initialSettings);
+  const [settings, setSettings] = useState<SettingsData>({
+    ...initialSettings,
+    security: initialSettings.security || { cfSiteKey: "", cfSecretKey: "" }
+  });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -194,6 +201,36 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
             <span className="text-sm font-medium text-muted">
               {settings.maintenance.enabled ? "Active" : "Inactive"}
             </span>
+          </div>
+        </div>
+
+        {/* Security Settings (Cloudflare) */}
+        <div className="glass-panel rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-foreground">Security (Cloudflare)</h2>
+          <p className="mt-2 text-sm text-muted">
+            Configure Turnstile Captcha to protect forms.
+          </p>
+          <div className="mt-4 space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Site Key</label>
+              <input
+                type="text"
+                value={settings.security?.cfSiteKey || ""}
+                onChange={(e) => handleChange("security", "cfSiteKey", e.target.value)}
+                placeholder="0x4AAAA..."
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Secret Key</label>
+              <input
+                type="password"
+                value={settings.security?.cfSecretKey || ""}
+                onChange={(e) => handleChange("security", "cfSecretKey", e.target.value)}
+                placeholder="0x4AAAA..."
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
+              />
+            </div>
           </div>
         </div>
       </div>
