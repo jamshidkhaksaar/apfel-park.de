@@ -451,13 +451,57 @@ export const dictionary = {
     about: {
       heroTitle: "Apfel Park – Premium seit Tag 1",
       heroSubtitle:
-        "Smartphone-Shop, Zubehör-Paradies und Reparatur-Werkstatt in einem.",
-      story:
-        "Wir sind ein Team aus Technik-Experten, die Geräte lieben und Probleme schnell lösen. Unser Shop in Hamburg kombiniert Premium-Produkte mit transparenter Beratung und schneller Reparatur.",
-      values: [
-        "Transparenz bei Preis und Diagnose",
-        "Premium-Ersatzteile und Qualitätskontrolle",
-        "Persönliche Beratung statt Massenabfertigung",
+        "Dein vertrauenswürdiger Partner für Smartphones, Zubehör und Reparaturen in Hamburg.",
+      intro: "Willkommen bei Apfel Park – deinem Premium-Shop für Smartphones, Zubehör und professionelle Reparaturen im Herzen von Hamburg. Seit unserer Gründung setzen wir auf Qualität, Transparenz und persönlichen Service.",
+      story: {
+        title: "Unsere Geschichte",
+        content: "Was als kleine Werkstatt begann, ist heute einer der führenden Smartphone-Shops in Hamburg. Unser Gründer, selbst begeisterter Technik-Enthusiast, wollte einen Ort schaffen, an dem Kunden nicht nur hochwertige Produkte finden, sondern auch ehrliche Beratung und schnelle Hilfe bei Problemen. Dieser Traum ist Apfel Park.",
+      },
+      features: [
+        {
+          title: "100% Original-Produkte",
+          description: "Wir verkaufen ausschließlich Original-Geräte und zertifiziertes Zubehör. Keine Fälschungen, keine Kompromisse – nur Premium-Qualität von führenden Marken.",
+          icon: "genuine",
+        },
+        {
+          title: "12 Monate Garantie",
+          description: "Alle unsere Produkte und Reparaturen sind mit einer 12-monatigen Garantie abgesichert. Wir stehen hinter unserer Arbeit und unseren Produkten.",
+          icon: "warranty",
+        },
+        {
+          title: "Freundliches Team",
+          description: "Unser Team besteht aus leidenschaftlichen Technik-Experten, die dir mit Rat und Tat zur Seite stehen. Wir nehmen uns Zeit für dich und deine Fragen.",
+          icon: "team",
+        },
+        {
+          title: "Erstklassiger Support",
+          description: "Von der Beratung vor dem Kauf bis zur Unterstützung nach dem Kauf – wir sind für dich da. Schnelle Antworten, kompetente Hilfe, echte Lösungen.",
+          icon: "support",
+        },
+      ],
+      values: {
+        title: "Unsere Werte",
+        items: [
+          "Transparenz bei Preis und Diagnose",
+          "Premium-Ersatzteile und Qualitätskontrolle",
+          "Persönliche Beratung statt Massenabfertigung",
+          "Nachhaltigkeit durch Reparatur statt Wegwerfen",
+        ],
+      },
+      cta: {
+        title: "Entdecke unser Sortiment",
+        description: "Stöbere durch unsere Auswahl an Smartphones, Laptops und Zubehör – alles Original, alles mit Garantie.",
+        buttons: {
+          smartphones: "Smartphones entdecken",
+          accessories: "Zubehör ansehen",
+          contact: "Kontakt aufnehmen",
+        },
+      },
+      stats: [
+        { value: "5+", label: "Jahre Erfahrung" },
+        { value: "10.000+", label: "Zufriedene Kunden" },
+        { value: "15.000+", label: "Reparaturen" },
+        { value: "4.9", label: "Google Bewertung" },
       ],
     },
     faq: {
@@ -1028,15 +1072,59 @@ export const dictionary = {
       ],
     },
     about: {
-      heroTitle: "Apfel Park – premium from day one",
+      heroTitle: "Apfel Park – Premium from Day One",
       heroSubtitle:
-        "Smartphone shop, accessories paradise and repair lab in one place.",
-      story:
-        "We are a team of tech experts who love devices and solve problems fast. Our Hamburg shop combines premium products with transparent advice and quick repairs.",
-      values: [
-        "Transparent pricing and diagnostics",
-        "Premium parts and quality control",
-        "Personal service over mass handling",
+        "Your trusted partner for smartphones, accessories and repairs in Hamburg.",
+      intro: "Welcome to Apfel Park – your premium destination for smartphones, accessories and professional repairs in the heart of Hamburg. Since day one, we've focused on quality, transparency and personal service.",
+      story: {
+        title: "Our Story",
+        content: "What started as a small workshop is now one of Hamburg's leading smartphone shops. Our founder, a passionate tech enthusiast, wanted to create a place where customers not only find high-quality products but also honest advice and quick solutions to their problems. That dream is Apfel Park.",
+      },
+      features: [
+        {
+          title: "100% Genuine Products",
+          description: "We only sell original devices and certified accessories. No fakes, no compromises – just premium quality from leading brands.",
+          icon: "genuine",
+        },
+        {
+          title: "12-Month Warranty",
+          description: "All our products and repairs come with a 12-month warranty. We stand behind our work and our products.",
+          icon: "warranty",
+        },
+        {
+          title: "Friendly Team",
+          description: "Our team consists of passionate tech experts who are here to help you. We take time for you and your questions.",
+          icon: "team",
+        },
+        {
+          title: "Outstanding Support",
+          description: "From pre-purchase advice to after-sales support – we're here for you. Quick answers, expert help, real solutions.",
+          icon: "support",
+        },
+      ],
+      values: {
+        title: "Our Values",
+        items: [
+          "Transparent pricing and diagnostics",
+          "Premium parts and quality control",
+          "Personal service over mass handling",
+          "Sustainability through repair, not disposal",
+        ],
+      },
+      cta: {
+        title: "Explore Our Products",
+        description: "Browse our selection of smartphones, laptops and accessories – all genuine, all with warranty.",
+        buttons: {
+          smartphones: "Browse Smartphones",
+          accessories: "View Accessories",
+          contact: "Get in Touch",
+        },
+      },
+      stats: [
+        { value: "5+", label: "Years Experience" },
+        { value: "10,000+", label: "Happy Customers" },
+        { value: "15,000+", label: "Repairs Done" },
+        { value: "4.9", label: "Google Rating" },
       ],
     },
     faq: {
