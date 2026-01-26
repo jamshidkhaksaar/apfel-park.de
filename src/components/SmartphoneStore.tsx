@@ -390,10 +390,11 @@ export default function SmartphoneStore({ lang }: { lang: Locale }) {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <label className="text-sm text-muted">
+            <label htmlFor="sort-store" className="text-sm text-muted">
               {lang === "de" ? "Sortieren:" : "Sort by:"}
             </label>
             <select
+              id="sort-store"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
               className="rounded-lg border border-white/10 bg-surface px-3 py-2 text-sm text-foreground focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50"
@@ -411,6 +412,16 @@ export default function SmartphoneStore({ lang }: { lang: Locale }) {
             <button
               key={brand.id}
               onClick={() => setSelectedBrand(brand.id)}
+              aria-current={selectedBrand === brand.id ? "true" : undefined}
+              aria-label={
+                lang === "de"
+                  ? brand.id === "all"
+                    ? `Alle Marken anzeigen (${brandCount(brand.id)})`
+                    : `${brand.name} anzeigen (${brandCount(brand.id)})`
+                  : brand.id === "all"
+                    ? `Show all brands (${brandCount(brand.id)})`
+                    : `Show ${brand.name} (${brandCount(brand.id)})`
+              }
               className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
                 selectedBrand === brand.id
                   ? "bg-gold text-black"
