@@ -3,6 +3,8 @@ import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 
+import { createClient } from "@/lib/supabase/server";
+
 const BRANDING_DIR = path.join(process.cwd(), "public", "branding");
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 
@@ -30,6 +32,15 @@ const getExtension = (mimeType: string): string => {
 };
 
 export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const formData = await request.formData();
     const savedFiles: string[] = [];
