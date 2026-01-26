@@ -103,17 +103,32 @@ const slides: Slide[] = [
 export default function HeroSlider({ lang }: { lang: Locale }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  // Bolt: Lazy load images to improve initial load performance
+  const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set([0]));
 
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  const handleSlideChange = useCallback((index: number) => {
+    setCurrentSlide(index);
+    setLoadedIndices((prev) => {
+      const nextIndex = (index + 1) % slides.length;
+      if (prev.has(index) && prev.has(nextIndex)) return prev;
+
+      const next = new Set(prev);
+      next.add(index);
+      next.add(nextIndex);
+      return next;
+    });
   }, []);
 
+  const nextSlide = useCallback(() => {
+    handleSlideChange((currentSlide + 1) % slides.length);
+  }, [currentSlide, handleSlideChange]);
+
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    handleSlideChange((currentSlide - 1 + slides.length) % slides.length);
   };
 
   const goToSlide = (index: number) => {
-    setCurrentSlide(index);
+    handleSlideChange(index);
     setIsAutoPlaying(false);
     // Resume autoplay after 5 seconds
     setTimeout(() => setIsAutoPlaying(true), 5000);
@@ -137,13 +152,15 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
             index === currentSlide ? "opacity-100" : "opacity-0"
           }`}
         >
-          <Image
-            src={s.image}
-            alt={s.title[lang]}
-            fill
-            className="object-cover"
-            priority={index === 0}
-          />
+          {loadedIndices.has(index) && (
+            <Image
+              src={s.image}
+              alt={s.title[lang]}
+              fill
+              className="object-cover"
+              priority={index === 0}
+            />
+          )}
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
