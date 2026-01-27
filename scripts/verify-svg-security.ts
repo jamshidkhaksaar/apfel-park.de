@@ -41,6 +41,21 @@ const runTests = () => {
       name: "SVG with spaced event handler",
       input: `<svg><rect onmouseover  =  "alert(1)" /></svg>`,
       expected: false
+    },
+    {
+      name: "SVG with data:image/svg+xml",
+      input: `<svg><image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxzY3JpcHQ+YWxlcnQoMSk8L3NjcmlwdD48L3N2Zz4=" /></svg>`,
+      expected: false
+    },
+    {
+      name: "SVG with entity-encoded javascript:",
+      input: `<svg><a href="j&#97;vascript:alert(1)">link</a></svg>`,
+      expected: false
+    },
+    {
+      name: "SVG with hex entity-encoded javascript:",
+      input: `<svg><a href="j&#x61;vascript:alert(1)">link</a></svg>`,
+      expected: false
     }
   ];
 
