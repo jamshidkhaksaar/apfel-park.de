@@ -13,6 +13,10 @@ export const dictionary = {
       { label: "Gaming", path: "/gaming" },
       { label: "Kontakt", path: "/contact" },
     ],
+    header: {
+      openMenu: "Menü öffnen",
+      closeMenu: "Menü schließen",
+    },
     footer: {
       headline: "Dein Premium-Shop für Smartphones & Reparaturen",
       description:
@@ -636,6 +640,10 @@ export const dictionary = {
       { label: "Gaming", path: "/gaming" },
       { label: "Contact", path: "/contact" },
     ],
+    header: {
+      openMenu: "Open menu",
+      closeMenu: "Close menu",
+    },
     footer: {
       headline: "Premium smartphones, accessories & repairs",
       description:

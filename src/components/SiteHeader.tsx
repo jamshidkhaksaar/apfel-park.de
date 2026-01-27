@@ -30,17 +30,6 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
     }
   };
 
-  const menuLabels = {
-    de: {
-      open: "Menü öffnen",
-      close: "Menü schließen",
-    },
-    en: {
-      open: "Open menu",
-      close: "Close menu",
-    },
-  };
-
   return (
     <header className="sticky top-0 z-50 transition-all duration-300" translate="no">
       {/* Top Bar - Speed & Contact Info */}
@@ -146,7 +135,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden"
-              aria-label={menuLabels[lang][mobileMenuOpen ? "close" : "open"]}
+              aria-label={mobileMenuOpen ? dict.header.closeMenu : dict.header.openMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu-nav"
             >

@@ -18,8 +18,7 @@ export default function AppWrapper({ children, lang }: AppWrapperProps) {
     const hasLoaded = sessionStorage.getItem("apfel-loaded");
     
     if (hasLoaded) {
-      // Use setTimeout to avoid synchronous state update during effect
-      setTimeout(() => setIsLoading(false), 0);
+      setIsLoading(false);
     }
   }, []);
 
