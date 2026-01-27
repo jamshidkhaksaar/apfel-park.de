@@ -123,7 +123,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
             
             <Link
               href={`/${lang}/repairs`}
-              className="btn-primary !hidden lg:!inline-flex !px-5 !py-2 !text-sm font-bold uppercase tracking-wide min-w-[180px] justify-center"
+              className="btn-primary !hidden lg:!inline-flex !px-5 !py-2 uppercase tracking-wide min-w-[180px]"
             >
               <svg className="relative z-10 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
