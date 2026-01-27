@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import path from "path";
 
 import { createClient } from "@/lib/supabase/server";
+import { isSecureSvg } from "@/lib/security";
 
 const BRANDING_DIR = path.join(process.cwd(), "public", "branding");
 const PUBLIC_DIR = path.join(process.cwd(), "public");
@@ -82,6 +83,18 @@ export async function POST(request: NextRequest) {
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
+
+      // Validate SVG content for XSS
+      if (file.type === "image/svg+xml") {
+        const text = buffer.toString("utf-8");
+        if (!isSecureSvg(text)) {
+          return NextResponse.json(
+            { error: `Die SVG-Datei für ${fieldName} enthält unsicheren Code.` },
+            { status: 400 }
+          );
+        }
+      }
+
       const extension = getExtension(file.type);
       const baseName = FILE_NAMES[fieldName];
 
