@@ -10,12 +10,14 @@ const PUBLIC_DIR = path.join(process.cwd(), "public");
 
 const ALLOWED_TYPES: Record<string, string[]> = {
   logo: ["image/png", "image/jpeg", "image/svg+xml", "image/webp"],
+  "logo-white": ["image/png", "image/svg+xml", "image/webp"],
   favicon: ["image/x-icon", "image/png", "image/svg+xml"],
   "og-image": ["image/png", "image/jpeg", "image/webp"],
 };
 
 const FILE_NAMES: Record<string, string> = {
   logo: "logo",
+  "logo-white": "logo-white",
   favicon: "favicon",
   "og-image": "og-image",
 };
@@ -126,6 +128,13 @@ export async function GET() {
         ? "/branding/logo.jpg"
         : existsSync(path.join(BRANDING_DIR, "logo.svg"))
           ? "/branding/logo.svg"
+          : null,
+    logoWhite: existsSync(path.join(BRANDING_DIR, "logo-white.png"))
+      ? "/branding/logo-white.png"
+      : existsSync(path.join(BRANDING_DIR, "logo-white.svg"))
+        ? "/branding/logo-white.svg"
+        : existsSync(path.join(BRANDING_DIR, "logo-white.webp"))
+          ? "/branding/logo-white.webp"
           : null,
     favicon: existsSync(path.join(PUBLIC_DIR, "favicon.ico"))
       ? "/favicon.ico"

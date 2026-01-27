@@ -57,7 +57,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   ];
 
   return (
-    <div className="bg-background text-foreground">
+    <div className="page-surface text-foreground">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -67,7 +67,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <HeroSlider lang={lang as Locale} />
 
       {/* Brands Marquee */}
-      <section className="border-y border-white/5 bg-surface/50 py-6">
+      <section className="border-y border-white/5 ocean-surface py-6">
         <div className="container-page">
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
             <span className="text-xs uppercase tracking-widest text-gold/80 font-semibold">
@@ -88,7 +88,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <FeaturedStore products={featuredProducts} lang={lang as Locale} />
 
       {/* Repair Process - Visual Timeline */}
-      <section className="section-pad">
+      <section className="section-pad ocean-surface">
         <div className="container-page">
           <div className="mb-16 text-center">
             <span className="badge-gold mb-4 inline-flex">
@@ -127,7 +127,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 return (
                 <div key={step.title} className="relative flex items-start gap-6">
                   {/* Step Icon */}
-                  <div className="relative z-10 flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-gold to-amber text-black shadow-lg shadow-gold/20 transition-transform hover:scale-105">
+                  <div className="process-step-icon relative z-10 flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl shadow-lg transition-transform hover:scale-105">
                     {stepIcons[index]}
                     <span className="text-[10px] font-bold">{index + 1}</span>
                   </div>
@@ -155,12 +155,12 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             {/* Right: Repair Shop Diagnostic Frame */}
             <div className="relative aspect-[4/3] w-full lg:aspect-square">
               {/* Outer Frame - Workbench Style */}
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-zinc-800 via-zinc-900 to-black p-1 shadow-2xl">
+              <div className="diagnostic-frame absolute inset-0 rounded-3xl bg-gradient-to-br from-zinc-800 via-zinc-900 to-black p-1 shadow-2xl">
                 {/* Inner Frame with tech border */}
-                <div className="relative h-full w-full overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-br from-zinc-900 to-black">
+                <div className="diagnostic-frame-inner relative h-full w-full overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-br from-zinc-900 to-black">
                   
                   {/* Top Bar - Diagnostic Header */}
-                  <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-white/10 bg-black/80 px-4 py-2 backdrop-blur-sm">
+                  <div className="diagnostic-frame-bar absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-white/10 bg-black/80 px-4 py-2 backdrop-blur-sm">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 animate-pulse rounded-full bg-green-500 shadow-lg shadow-green-500/50" />
                       <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-green-400">
@@ -181,7 +181,15 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                       src="/images/ipad.png"
                       alt={lang === "de" ? "Beschädigte Geräte zur Reparatur" : "Damaged devices for repair"}
                       fill
-                      className="object-contain p-4 drop-shadow-2xl"
+                      className="ipad-default object-contain p-4 drop-shadow-2xl"
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      priority
+                    />
+                    <Image
+                      src="/images/ipad_ocean.png"
+                      alt={lang === "de" ? "Beschädigte Geräte zur Reparatur" : "Damaged devices for repair"}
+                      fill
+                      className="ipad-ocean object-contain p-4 drop-shadow-2xl"
                       sizes="(max-width: 1024px) 100vw, 50vw"
                       priority
                     />
@@ -197,13 +205,13 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                   <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.1)_50%)] bg-[length:100%_4px]" />
 
                   {/* Bottom Bar - Status */}
-                  <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between border-t border-white/10 bg-black/80 px-4 py-2 backdrop-blur-sm">
+                  <div className="diagnostic-frame-bar absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between border-t border-white/10 bg-black/80 px-4 py-2 backdrop-blur-sm">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5">
-                        <svg className="h-3.5 w-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="h-3.5 w-3.5 text-accent" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                         </svg>
-                        <span className="text-[10px] font-medium text-amber-500">
+                        <span className="text-[10px] font-medium text-accent">
                           {lang === "de" ? "Schaden erkannt" : "Damage detected"}
                         </span>
                       </div>
@@ -236,7 +244,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* Services Grid */}
-      <section className="section-pad bg-surface/30">
+      <section className="section-pad ocean-surface">
         <div className="container-page">
           <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
             <div>
@@ -280,7 +288,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* Device Categories */}
-      <section className="section-pad">
+      <section className="section-pad ocean-surface">
         <div className="container-page">
           <div className="mb-12 text-center">
             <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
@@ -297,12 +305,12 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             {dict.home.hero.cards.map((card, index) => {
               const cardIllustrations = [
                 // 1. Shop & Advice - Storefront/Interaction
-                <svg key="shop" className="h-full w-full p-8 text-gold transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.8}>
+                <svg key="shop" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
                 </svg>,
                 
                 // 2. Accessories - Headphones/Earbuds (Audio & Lifestyle)
-                <svg key="accessories" className="h-full w-full p-8 text-gold transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1}>
+                <svg key="accessories" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1}>
                    {/* Headphone Band */}
                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 18v-6a9 9 0 0 1 18 0v6" />
                    
@@ -314,12 +322,12 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 </svg>,
 
                 // 3. Smartphones - Modern Device
-                <svg key="smartphones" className="h-full w-full p-8 text-gold transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.8}>
+                <svg key="smartphones" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
                 </svg>,
 
                 // 4. Gaming - Game Controller (Tabler Icons)
-                <svg key="gaming" className="h-full w-full p-8 text-gold transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
+                <svg key="gaming" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
                    <path d="M12 5h3.5a5 5 0 0 1 0 10h-5.5l-4.015 4.227a2.3 2.3 0 0 1 -3.923 -2.035l1.634 -8.173a5 5 0 0 1 4.904 -4.019h3.4" />
                    <path d="M14 15l4.07 4.284a2.3 2.3 0 0 0 3.925 -2.023l-1.6 -8.232" />
                    <path d="M8 9v2" />
@@ -367,11 +375,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* Support Section - Redesigned with Illustration */}
-      <section className="section-pad relative overflow-hidden">
+      <section className="section-pad relative overflow-hidden ocean-surface">
         {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gold/5 via-transparent to-amber/5" />
-        <div className="absolute left-0 top-1/4 h-96 w-96 -translate-x-1/2 rounded-full bg-gold/10 blur-[120px]" />
-        <div className="absolute right-0 bottom-1/4 h-80 w-80 translate-x-1/2 rounded-full bg-amber/10 blur-[100px]" />
+        <div className="absolute inset-0 ocean-glow" />
+        <div className="absolute left-0 top-1/4 h-96 w-96 -translate-x-1/2 rounded-full ocean-glow-left blur-[120px]" />
+        <div className="absolute right-0 bottom-1/4 h-80 w-80 translate-x-1/2 rounded-full ocean-glow-right blur-[100px]" />
         
         <div className="container-page relative">
           {/* Section Header - Centered */}
@@ -499,11 +507,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* Testimonials - Professional Carousel */}
-      <section className="section-pad relative overflow-hidden">
+      <section className="section-pad relative overflow-hidden ocean-surface">
         {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gold/5 to-transparent" />
-        <div className="absolute left-1/4 top-0 h-64 w-64 rounded-full bg-gold/10 blur-[100px]" />
-        <div className="absolute right-1/4 bottom-0 h-64 w-64 rounded-full bg-amber/10 blur-[100px]" />
+        <div className="absolute inset-0 ocean-glow" />
+        <div className="absolute left-1/4 top-0 h-64 w-64 rounded-full ocean-glow-left blur-[100px]" />
+        <div className="absolute right-1/4 bottom-0 h-64 w-64 rounded-full ocean-glow-right blur-[100px]" />
         
         <div className="container-page relative">
           {/* Section Header */}
@@ -531,9 +539,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* CTA Section */}
-      <section className="section-pad">
+      <section className="section-pad ocean-surface">
         <div className="container-page">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold/20 via-amber/10 to-bronze/20 p-10 md:p-16">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold/20 via-amber/10 to-bronze/20 ocean-panel p-10 md:p-16">
             {/* Background Effects */}
             <div className="absolute inset-0 circuit-pattern opacity-20" />
             <div className="absolute right-0 top-0 h-64 w-64 translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan/30 blur-[80px]" />

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import LoadingScreen from "./LoadingScreen";
 import WhatsAppFloat from "./WhatsAppFloat";
+import OceanBackground from "./OceanBackground";
 
 type AppWrapperProps = {
   children: React.ReactNode;
@@ -33,9 +34,12 @@ export default function AppWrapper({ children, lang }: AppWrapperProps) {
 
   return (
     <>
+      {/* Ocean background effects (only visible on ocean theme) */}
+      <OceanBackground />
+      
       {isLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} minDisplayTime={2500} />}
       <div
-        className={`transition-opacity duration-500 ${
+        className={`relative z-10 transition-opacity duration-500 ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}
       >

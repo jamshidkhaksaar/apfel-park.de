@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import AppWrapper from "../components/AppWrapper";
 import LanguageTransitionProvider from "../components/LanguageTransition";
+import ThemeProvider, { ThemeScript } from "../components/ThemeProvider";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -50,13 +51,18 @@ export default async function RootLayout({
   const lang = langCookie?.value ?? "de";
 
   return (
-    <html lang={lang} data-theme="dark" translate="no" suppressHydrationWarning>
+    <html lang={lang} data-theme="ocean" translate="no" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body
         className={`${inter.variable} ${spaceGrotesk.variable} bg-background font-sans text-foreground antialiased`}
       >
-        <LanguageTransitionProvider>
-          <AppWrapper lang={lang as "de" | "en"}>{children}</AppWrapper>
-        </LanguageTransitionProvider>
+        <ThemeProvider>
+          <LanguageTransitionProvider>
+            <AppWrapper lang={lang as "de" | "en"}>{children}</AppWrapper>
+          </LanguageTransitionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

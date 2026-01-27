@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 
 import type { Locale } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
+import { useTheme } from "./ThemeProvider";
 
 type Slide = {
   image: string;
@@ -105,6 +106,15 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   // Bolt: Lazy load images to improve initial load performance
   const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set([0]));
+  const { theme } = useTheme();
+
+  const oceanImages = [
+    "/images/slider_ocean/iphones.png",
+    "/images/slider_ocean/laptop.png",
+    "/images/slider_ocean/console.png",
+    "/images/slider_ocean/accessories.png",
+    "/images/slider_ocean/iphones.png",
+  ];
 
   const handleSlideChange = useCallback((index: number) => {
     setCurrentSlide(index);
@@ -154,7 +164,7 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
         >
           {loadedIndices.has(index) && (
             <Image
-              src={s.image}
+              src={theme === "ocean" ? oceanImages[index] ?? s.image : s.image}
               alt={s.title[lang]}
               fill
               className="object-cover"
@@ -162,8 +172,8 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
             />
           )}
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+          <div className="absolute inset-0 hero-overlay-1" />
+          <div className="absolute inset-0 hero-overlay-2" />
         </div>
       ))}
 

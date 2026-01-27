@@ -8,7 +8,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
   const dict = getDictionary(lang);
 
   return (
-    <footer className="relative border-t border-white/5 bg-background overflow-hidden">
+    <footer className="relative border-t border-white/5 bg-background ocean-footer overflow-hidden">
       {/* Animated Background Effect */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gold/10 via-black to-black animate-pulse-glow" />
       
@@ -34,7 +34,14 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
                   alt="Apfel Park"
                   width={80}
                   height={80}
-                  className="h-20 w-20 rounded-2xl object-contain shadow-lg"
+                  className="logo-default h-20 w-20 rounded-2xl object-contain shadow-lg"
+                />
+                <Image
+                  src="/branding/apfel-park-white.png"
+                  alt="Apfel Park"
+                  width={80}
+                  height={80}
+                  className="logo-ocean h-20 w-20 rounded-2xl object-contain shadow-lg"
                 />
               </div>
               <div>

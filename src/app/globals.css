@@ -16,10 +16,10 @@
   --gold-glow: rgba(245, 158, 11, 0.5);
   --gold-pulse: rgba(245, 158, 11, 0.3);
   
-  /* Secondary Accents */
-  --amber: #f59e0b;
-  --orange: #ea580c;
-  --bronze: #b45309;
+  /* Secondary Accents (ocean) */
+  --amber: #7dd3fc;
+  --orange: #38bdf8;
+  --bronze: #0ea5e9;
   
   /* Status Colors */
   --green: #22c55e;
@@ -36,6 +36,82 @@
   
   --glow-gold: 0 0 40px rgba(245, 158, 11, 0.4), 0 0 80px rgba(245, 158, 11, 0.2);
   --glow-gold-soft: 0 0 20px rgba(245, 158, 11, 0.3);
+  
+  /* Ocean theme variables (defaults for dark) */
+  --ocean: #0ea5e9;
+  --ocean-light: #38bdf8;
+  --ocean-deep: #0369a1;
+  --ocean-glow: rgba(14, 165, 233, 0.5);
+  --ocean-pulse: rgba(56, 189, 248, 0.3);
+  
+  /* Theme accent (switches based on theme) */
+  --accent: var(--gold);
+  --accent-soft: var(--gold-soft);
+  --accent-deep: var(--gold-deep);
+  --accent-glow: var(--gold-glow);
+  --accent-pulse: var(--gold-pulse);
+}
+
+/* ========================================
+   OCEAN BLUE THEME
+   ======================================== */
+[data-theme="ocean"] {
+  /* Core Colors */
+  --background: #001233;
+  --foreground: #ffffff;
+  --surface: rgba(2, 18, 50, 0.55);
+  --surface-strong: rgba(1, 14, 38, 0.7);
+  
+  /* Text Colors */
+  --muted: #93c5fd;
+  --muted-strong: #60a5fa;
+  
+  /* Ocean Accent Colors */
+  --ocean: #0ea5e9;
+  --ocean-light: #38bdf8;
+  --ocean-deep: #0369a1;
+  --ocean-glow: rgba(14, 165, 233, 0.5);
+  --ocean-pulse: rgba(56, 189, 248, 0.3);
+  
+  /* Ocean-tinted accent for gold roles */
+  --gold: #e0f2fe;
+  --gold-soft: #bae6fd;
+  --gold-deep: #38bdf8;
+  --gold-glow: rgba(56, 189, 248, 0.5);
+  --gold-pulse: rgba(56, 189, 248, 0.3);
+  
+  /* Secondary Accents */
+  --amber: #f59e0b;
+  --orange: #ea580c;
+  --bronze: #b45309;
+  
+  /* Status Colors */
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  
+  /* Ocean gradient backgrounds */
+  --bg-gradient:
+    linear-gradient(180deg, 
+      rgba(56, 189, 248, 0.12) 0%, 
+      rgba(14, 165, 233, 0.06) 30%, 
+      transparent 60%
+    ),
+    radial-gradient(ellipse at 30% 20%, rgba(56, 189, 248, 0.08), transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(3, 105, 161, 0.06), transparent 50%);
+  
+  --border: rgba(147, 197, 253, 0.12);
+  --shadow: rgba(0, 0, 0, 0.5);
+  
+  --glow-gold: 0 0 40px rgba(14, 165, 233, 0.4), 0 0 80px rgba(14, 165, 233, 0.2);
+  --glow-gold-soft: 0 0 20px rgba(56, 189, 248, 0.3);
+  
+  /* Theme accent (ocean uses blue as primary) */
+  --accent: var(--ocean);
+  --accent-soft: var(--ocean-light);
+  --accent-deep: var(--ocean-deep);
+  --accent-glow: var(--ocean-glow);
+  --accent-pulse: var(--ocean-pulse);
 }
 
 
@@ -57,6 +133,12 @@
   --color-red: var(--red);
   --color-blue: var(--blue);
   --color-border: var(--border);
+  --color-ocean: var(--ocean);
+  --color-ocean-light: var(--ocean-light);
+  --color-ocean-deep: var(--ocean-deep);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-deep: var(--accent-deep);
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
 }
@@ -75,6 +157,15 @@
     color: var(--foreground);
     font-family: var(--font-sans);
     min-height: 100vh;
+  }
+
+  [data-theme="ocean"] body {
+    background:
+      radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.18), transparent 45%),
+      radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.12), transparent 50%),
+      radial-gradient(circle at 50% 80%, rgba(2, 132, 199, 0.1), transparent 55%),
+      linear-gradient(180deg, #031833 0%, #021429 45%, #010b1a 100%);
+    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -122,6 +213,15 @@
       0 4px 24px rgba(0, 0, 0, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
+  
+  /* Ocean theme tech-card */
+  [data-theme="ocean"] .tech-card {
+    border: 1px solid rgba(147, 197, 253, 0.12);
+    background: rgba(14, 165, 233, 0.08);
+    box-shadow: 
+      0 4px 24px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
 
   .tech-card-hover {
     position: relative;
@@ -142,6 +242,23 @@
       0 0 40px var(--gold-pulse),
       inset 0 1px 0 rgba(245, 158, 11, 0.1);
     transform: translateY(-4px);
+  }
+  
+  /* Ocean theme tech-card-hover */
+  [data-theme="ocean"] .tech-card-hover {
+    border: 1px solid rgba(147, 197, 253, 0.12);
+    background: rgba(14, 165, 233, 0.08);
+    box-shadow: 
+      0 4px 24px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  [data-theme="ocean"] .tech-card-hover:hover {
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 
+      0 8px 40px rgba(0, 0, 0, 0.4),
+      0 0 40px var(--ocean-pulse),
+      inset 0 1px 0 rgba(56, 189, 248, 0.1);
   }
 
   /* Gold Glow Effects */
@@ -172,6 +289,14 @@
     color: transparent;
   }
 
+  [data-theme="ocean"] .gradient-text {
+    background: linear-gradient(135deg, #e0f2fe 0%, #7dd3fc 50%, #38bdf8 100%);
+  }
+
+  [data-theme="ocean"] .gradient-text-gold {
+    background: linear-gradient(135deg, #e0f2fe 0%, #7dd3fc 50%, #38bdf8 100%);
+  }
+
   .text-gold-metallic {
     background: linear-gradient(
       to bottom,
@@ -187,12 +312,34 @@
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
   }
 
+  [data-theme="ocean"] .text-gold-metallic {
+    background: linear-gradient(
+      to bottom,
+      #e0f2fe 0%,
+      #bae6fd 35%,
+      #7dd3fc 70%,
+      #38bdf8 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 2px 6px rgba(2, 132, 199, 0.35));
+  }
+
   .text-gold-cream {
     color: #fceeb5;
   }
   
   .text-gold-pale {
     color: #fde68a;
+  }
+
+  [data-theme="ocean"] .text-gold-cream {
+    color: #e0f2fe;
+  }
+
+  [data-theme="ocean"] .text-gold-pale {
+    color: #bae6fd;
   }
 
   /* Circuit Board Pattern with Gold */
@@ -203,6 +350,14 @@
       radial-gradient(circle at 25% 25%, rgba(245, 158, 11, 0.04) 2px, transparent 2px),
       radial-gradient(circle at 75% 75%, rgba(217, 119, 6, 0.04) 2px, transparent 2px);
     background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
+  }
+
+  [data-theme="ocean"] .circuit-pattern {
+    background-image:
+      linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+      linear-gradient(rgba(14, 165, 233, 0.06) 1px, transparent 1px),
+      radial-gradient(circle at 25% 25%, rgba(56, 189, 248, 0.08) 2px, transparent 2px),
+      radial-gradient(circle at 75% 75%, rgba(2, 132, 199, 0.08) 2px, transparent 2px);
   }
 
   /* Dot Grid Pattern */
@@ -279,6 +434,274 @@
     box-shadow: 0 0 20px var(--gold-pulse);
   }
 
+  /* Ocean surface utilities */
+  .ocean-surface {
+    background: rgba(2, 16, 46, 0.55);
+    border: 1px solid rgba(56, 189, 248, 0.08);
+    backdrop-filter: blur(10px);
+  }
+
+  .ocean-surface-strong {
+    background: rgba(1, 14, 38, 0.72);
+    border: 1px solid rgba(56, 189, 248, 0.12);
+    backdrop-filter: blur(14px);
+  }
+
+  .ocean-panel {
+    background: rgba(1, 18, 48, 0.7);
+    border: 1px solid rgba(56, 189, 248, 0.14);
+    backdrop-filter: blur(16px);
+  }
+
+  .ocean-card {
+    background: rgba(1, 16, 46, 0.78);
+    border: 1px solid rgba(56, 189, 248, 0.16);
+    backdrop-filter: blur(18px);
+  }
+
+  .ocean-card-media {
+    background: rgba(2, 18, 50, 0.85);
+  }
+
+  .ocean-icon {
+    color: var(--gold);
+  }
+
+  .ocean-glow {
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.08), transparent 70%);
+  }
+
+  .ocean-glow-left {
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.15), transparent 65%);
+  }
+
+  .ocean-glow-right {
+    background: radial-gradient(circle, rgba(217, 119, 6, 0.12), transparent 60%);
+  }
+
+  .page-surface {
+    background: var(--background);
+  }
+
+  .hero-overlay-1 {
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.5), transparent);
+  }
+
+  .hero-overlay-2 {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 55%, rgba(0, 0, 0, 0.4));
+  }
+
+  .featured-store-scrim {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.9));
+  }
+
+  .ocean-footer {
+    background: rgba(6, 6, 6, 0.9);
+  }
+
+  /* Ocean theme buttons */
+  [data-theme="ocean"] .btn-primary {
+    background: linear-gradient(135deg, var(--ocean-light) 0%, var(--ocean) 50%, var(--ocean-deep) 100%);
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  [data-theme="ocean"] .btn-primary::before {
+    background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 50%, #bae6fd 100%);
+  }
+  
+  [data-theme="ocean"] .btn-primary:hover {
+    box-shadow: 0 0 30px var(--ocean-glow);
+    color: #001233;
+    text-shadow: none;
+  }
+  
+  [data-theme="ocean"] .btn-secondary {
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    background: rgba(14, 165, 233, 0.1);
+    color: #e0f2fe;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  [data-theme="ocean"] .btn-secondary:hover {
+    border-color: var(--ocean-light);
+    background: rgba(56, 189, 248, 0.2);
+    box-shadow: 0 0 20px var(--ocean-pulse);
+    color: #ffffff;
+  }
+
+  .process-step-icon {
+    background: linear-gradient(135deg, var(--gold-soft) 0%, var(--gold) 50%, var(--gold-deep) 100%);
+    color: #000000;
+    box-shadow: 0 0 20px var(--gold-pulse);
+  }
+
+  [data-theme="ocean"] .process-step-icon {
+    background: linear-gradient(135deg, var(--ocean-light) 0%, var(--ocean) 50%, var(--ocean-deep) 100%);
+    color: #e0f2fe;
+    box-shadow: 0 0 24px var(--ocean-pulse);
+  }
+
+  /* Ocean theme surface overrides */
+  [data-theme="ocean"] .ocean-surface {
+    background: linear-gradient(135deg, rgba(2, 18, 50, 0.45), rgba(1, 14, 38, 0.35));
+    border: 1px solid rgba(56, 189, 248, 0.12);
+  }
+
+  [data-theme="ocean"] .ocean-surface-strong {
+    background: linear-gradient(135deg, rgba(2, 18, 50, 0.65), rgba(1, 14, 38, 0.55));
+    border: 1px solid rgba(56, 189, 248, 0.16);
+  }
+
+  [data-theme="ocean"] .ocean-panel {
+    background: linear-gradient(135deg, rgba(2, 18, 50, 0.62), rgba(1, 14, 38, 0.52));
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    box-shadow: 0 14px 45px rgba(2, 132, 199, 0.18);
+  }
+
+  [data-theme="ocean"] .ocean-card {
+    background: linear-gradient(145deg, rgba(2, 18, 50, 0.75), rgba(1, 14, 38, 0.65));
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    box-shadow: 0 16px 46px rgba(2, 132, 199, 0.2);
+  }
+
+  [data-theme="ocean"] .ocean-card-media {
+    background: rgba(1, 16, 44, 0.82);
+  }
+
+  [data-theme="ocean"] .ocean-icon {
+    color: #e0f2fe;
+    filter: drop-shadow(0 6px 12px rgba(2, 132, 199, 0.35));
+  }
+
+  [data-theme="ocean"] .ocean-glow {
+    background: linear-gradient(180deg, rgba(56, 189, 248, 0.15), transparent 70%);
+  }
+
+  [data-theme="ocean"] .ocean-glow-left {
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.22), transparent 65%);
+  }
+
+  [data-theme="ocean"] .ocean-glow-right {
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.18), transparent 60%);
+  }
+
+  [data-theme="ocean"] .page-surface {
+    background: transparent;
+  }
+
+  [data-theme="ocean"] .bg-background {
+    background-color: transparent !important;
+  }
+
+  .logo-ocean {
+    display: none;
+  }
+
+  .ipad-ocean {
+    display: none;
+  }
+
+  [data-theme="ocean"] .logo-default {
+    display: none;
+  }
+
+  [data-theme="ocean"] .logo-ocean {
+    display: block;
+  }
+
+  [data-theme="ocean"] .ipad-default {
+    display: none;
+  }
+
+  [data-theme="ocean"] .ipad-ocean {
+    display: block;
+  }
+
+  [data-theme="ocean"] .text-black {
+    color: #e0f2fe !important;
+  }
+
+  [data-theme="ocean"] .text-black\/60 {
+    color: rgba(224, 242, 254, 0.7) !important;
+  }
+
+  [data-theme="ocean"] .ocean-keep-dark {
+    color: #0b1220 !important;
+  }
+
+  [data-theme="ocean"] .text-amber-500 {
+    color: var(--ocean-light) !important;
+  }
+
+  [data-theme="ocean"] .bg-amber-500 {
+    background-color: var(--ocean) !important;
+  }
+
+  [data-theme="ocean"] .from-amber-500 {
+    --tw-gradient-from: var(--ocean) !important;
+    --tw-gradient-to: rgba(14, 165, 233, 0) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  [data-theme="ocean"] .from-amber-400 {
+    --tw-gradient-from: var(--ocean-light) !important;
+    --tw-gradient-to: rgba(56, 189, 248, 0) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  [data-theme="ocean"] .to-orange-500 {
+    --tw-gradient-to: var(--ocean-deep) !important;
+  }
+
+  [data-theme="ocean"] .to-orange-400 {
+    --tw-gradient-to: var(--ocean) !important;
+  }
+
+  [data-theme="ocean"] .hero-overlay-1 {
+    background: linear-gradient(90deg, rgba(0, 18, 51, 0.5), rgba(3, 24, 64, 0.25), transparent);
+  }
+
+  [data-theme="ocean"] .hero-overlay-2 {
+    background: linear-gradient(180deg, rgba(0, 18, 51, 0.45), transparent 55%, rgba(3, 24, 64, 0.35));
+  }
+
+  [data-theme="ocean"] .featured-store-scrim {
+    background: linear-gradient(180deg, rgba(0, 18, 51, 0.4), rgba(1, 24, 64, 0.25), rgba(0, 18, 51, 0.45));
+  }
+
+  [data-theme="ocean"] .ocean-footer {
+    background: rgba(0, 18, 51, 0.65);
+  }
+
+  .diagnostic-frame {
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  .diagnostic-frame-inner {
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+  }
+
+  .diagnostic-frame-bar {
+    backdrop-filter: blur(10px);
+  }
+
+  [data-theme="ocean"] .diagnostic-frame {
+    background: linear-gradient(135deg, rgba(2, 18, 50, 0.9), rgba(1, 12, 32, 0.95));
+    box-shadow: 0 30px 70px rgba(2, 132, 199, 0.2), 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  [data-theme="ocean"] .diagnostic-frame-inner {
+    background: linear-gradient(135deg, rgba(1, 14, 38, 0.9), rgba(0, 10, 24, 0.95));
+    border-color: rgba(56, 189, 248, 0.2);
+    box-shadow: inset 0 0 50px rgba(2, 132, 199, 0.2);
+  }
+
+  [data-theme="ocean"] .diagnostic-frame-bar {
+    background: rgba(2, 18, 50, 0.8);
+    border-color: rgba(56, 189, 248, 0.2);
+  }
+
   /* Status Badges */
   .badge {
     display: inline-flex;
@@ -304,6 +727,13 @@
   .badge-orange {
     background: rgba(234, 88, 12, 0.15);
     color: var(--orange);
+  }
+  
+  /* Ocean theme badge */
+  [data-theme="ocean"] .badge-gold {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--ocean-light);
+    border: 1px solid rgba(56, 189, 248, 0.2);
   }
 
   /* Gold Pulse Animation */
@@ -829,6 +1259,203 @@
 }
 
 /* ========================================
+   OCEAN THEME LOADING SCREEN OVERRIDES
+   ======================================== */
+
+[data-theme="ocean"] .loading-glow-1 {
+  background: radial-gradient(circle, var(--ocean-pulse) 0%, transparent 70%);
+}
+
+[data-theme="ocean"] .loading-glow-2 {
+  background: radial-gradient(circle, var(--ocean-deep) 0%, transparent 70%);
+}
+
+[data-theme="ocean"] .loading-particles {
+  background-image: radial-gradient(circle at center, rgba(56, 189, 248, 0.12) 1px, transparent 1px);
+}
+
+[data-theme="ocean"] .loading-ring::before {
+  background: linear-gradient(135deg, var(--ocean-light), var(--ocean), var(--ocean-deep)) border-box;
+}
+
+[data-theme="ocean"] .loading-ring-shine {
+  background: radial-gradient(circle, var(--ocean-light) 0%, var(--ocean) 30%, transparent 70%);
+  box-shadow: 0 0 30px var(--ocean), 0 0 60px var(--ocean-glow);
+}
+
+[data-theme="ocean"] .loading-logo {
+  box-shadow: 
+    0 0 40px var(--ocean-pulse),
+    0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="ocean"] .loading-text {
+  background: linear-gradient(135deg, #ffffff 0%, var(--ocean-light) 50%, var(--ocean) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 0 40px var(--ocean-pulse);
+}
+
+[data-theme="ocean"] .loading-dot {
+  background: var(--ocean-light);
+  box-shadow: 0 0 10px var(--ocean-pulse);
+}
+
+/* ========================================
+   OCEAN BACKGROUND EFFECTS (for ocean theme)
+   ======================================== */
+
+.ocean-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 1;
+  filter: saturate(1.2) contrast(1.05);
+}
+
+/* Caustic light effect layer */
+.ocean-caustics {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 30% 10%, rgba(56, 189, 248, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 20%, rgba(14, 165, 233, 0.1) 0%, transparent 40%);
+  animation: caustics-shimmer 8s ease-in-out infinite;
+}
+
+.ocean-caustics::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: 
+    linear-gradient(180deg, 
+      rgba(56, 189, 248, 0.08) 0%, 
+      transparent 100%
+    );
+  animation: light-rays 6s ease-in-out infinite;
+}
+
+/* Light rays effect */
+.ocean-light-rays {
+  position: absolute;
+  top: -50%;
+  left: 50%;
+  width: 200%;
+  height: 100%;
+  transform: translateX(-50%);
+  background: 
+    conic-gradient(
+      from 180deg at 50% 0%,
+      transparent 0deg,
+      rgba(56, 189, 248, 0.03) 20deg,
+      transparent 40deg,
+      rgba(14, 165, 233, 0.02) 60deg,
+      transparent 80deg,
+      rgba(56, 189, 248, 0.03) 100deg,
+      transparent 120deg,
+      rgba(14, 165, 233, 0.02) 140deg,
+      transparent 160deg,
+      transparent 180deg
+    );
+  animation: rays-rotate 30s linear infinite;
+  opacity: 0.6;
+}
+
+/* Floating bubbles container */
+.ocean-bubbles {
+  position: absolute;
+  inset: 0;
+}
+
+/* Individual bubble styling */
+.ocean-bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(56, 189, 248, 0.2) 50%, 
+    rgba(14, 165, 233, 0.1) 100%
+  );
+  box-shadow: 
+    inset 0 0 10px rgba(255, 255, 255, 0.2),
+    0 0 20px rgba(56, 189, 248, 0.1);
+  animation: bubble-rise linear infinite;
+}
+
+/* Ambient particles layer */
+.ocean-particles {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(147, 197, 253, 0.3) 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, rgba(56, 189, 248, 0.2) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+  background-size: 100px 100px, 150px 150px, 80px 80px;
+  animation: particles-float 25s linear infinite;
+}
+
+/* Ocean background keyframes */
+@keyframes caustics-shimmer {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes light-rays {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes rays-rotate {
+  0% {
+    transform: translateX(-50%) rotate(0deg);
+  }
+  100% {
+    transform: translateX(-50%) rotate(360deg);
+  }
+}
+
+@keyframes bubble-rise {
+  0% {
+    transform: translateY(100vh) translateX(0) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100px) translateX(var(--drift, 20px)) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes particles-float {
+  0% {
+    background-position: 0 0, 0 0, 0 0;
+  }
+  100% {
+    background-position: 100px 100px, -150px 150px, 80px -80px;
+  }
+}
+
+/* ========================================
    END LOADING SCREEN STYLES
    ======================================== */
 
@@ -918,6 +1545,22 @@
   z-index: 5;
 }
 
+[data-theme="ocean"] .review-bubble:hover .review-bubble-card::before {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(56, 189, 248, 0.12) 25%,
+    rgba(56, 189, 248, 0.25) 50%,
+    rgba(56, 189, 248, 0.12) 75%,
+    transparent 100%
+  );
+}
+
+[data-theme="ocean"] .review-bubble:hover .review-bubble-shell {
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 20px 50px rgba(2, 132, 199, 0.35), 0 0 30px rgba(56, 189, 248, 0.2) !important;
+}
+
 /* Bubble pop effect on hover */
 @keyframes bubble-pop {
   0% {
@@ -938,6 +1581,18 @@
 /* Star twinkle on hover */
 .review-bubble:hover svg[viewBox="0 0 20 20"] {
   animation: star-sparkle 0.6s ease-out;
+}
+
+[data-theme="ocean"] .review-bubble-shell {
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: linear-gradient(135deg, rgba(2, 18, 50, 0.92), rgba(1, 16, 44, 0.85));
+  box-shadow: 0 16px 46px rgba(2, 132, 199, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="ocean"] .review-bubble-tail {
+  border-color: rgba(56, 189, 248, 0.2);
+  background: linear-gradient(135deg, rgba(2, 18, 50, 0.92), rgba(1, 16, 44, 0.85));
+  box-shadow: 0 10px 30px rgba(2, 132, 199, 0.2);
 }
 
 @keyframes star-sparkle {
@@ -1101,3 +1756,117 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gold);
 }
+
+
+/* ========================================
+   JELLYFISH ANIMATION STYLES
+   ======================================== */
+
+.jellyfish-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ocean-side {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ocean-side-left {
+  left: 0;
+}
+
+.ocean-side-right {
+  right: 0;
+}
+
+.ocean-side::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  pointer-events: none;
+}
+
+.ocean-side-left::after {
+  right: -24px;
+  background: linear-gradient(90deg, rgba(2, 18, 50, 0.7), transparent);
+}
+
+.ocean-side-right::after {
+  left: -24px;
+  background: linear-gradient(270deg, rgba(2, 18, 50, 0.7), transparent);
+}
+
+@media (max-width: 900px) {
+  .ocean-side {
+    width: 8%;
+  }
+
+  .jellyfish-svg {
+    max-width: 180px;
+    max-height: 180px;
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 640px) {
+  .ocean-side {
+    width: 6%;
+  }
+
+  .jellyfish-svg {
+    opacity: 0.45;
+  }
+}
+
+canvas#bubbles-canvas-left,
+canvas#bubbles-canvas-right {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  mix-blend-mode: screen;
+}
+
+.jellyfish-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 220px;
+  max-height: 220px;
+  position: absolute;
+  bottom: 8vh;
+  right: 8%;
+  transform: translateX(0);
+  overflow: visible;
+  opacity: 0.7;
+}
+
+/* Jellyfish Colors */
+.jellyfish-svg .cls-1{fill:#b2d1dc;}
+.jellyfish-svg .cls-2{fill:rgba(165, 191, 193, 0.5);}
+.jellyfish-svg .cls-3{fill:#d5a2a2;}
+.jellyfish-svg .cls-4{fill:rgba(148, 199, 204, 0.8);}
+.jellyfish-svg .cls-5{fill:rgba(147, 203, 223, 0.5);}
+.jellyfish-svg .cls-6{fill:#93b8c4;}
+.jellyfish-svg .cls-7{fill:#c9ecf8;}
+.jellyfish-svg .cls-8{fill:#dbf2f9;}
+.jellyfish-svg .cls-9{fill:#eea4a4;}
+
+/* Ocean Theme Overrides for Jellyfish */
+[data-theme="ocean"] .jellyfish-svg .cls-1 { fill: var(--ocean-light); opacity: 0.8; }
+[data-theme="ocean"] .jellyfish-svg .cls-3 { fill: #f0abfc; } /* Light purple/pink */
+[data-theme="ocean"] .jellyfish-svg .cls-9 { fill: #e879f9; } /* Brighter purple/pink */
+[data-theme="ocean"] .jellyfish-svg .cls-6 { fill: var(--ocean); }

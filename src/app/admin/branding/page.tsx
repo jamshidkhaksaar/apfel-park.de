@@ -17,11 +17,19 @@ type BrandingAsset = {
 const brandingAssets: BrandingAsset[] = [
   {
     name: "logo",
-    label: "Logo",
-    description: "Hauptlogo für Header und Footer. Wird auf allen Seiten angezeigt.",
+    label: "Logo (Dark Theme)",
+    description: "Hauptlogo für den dunklen Theme. Wird auf allen Seiten angezeigt.",
     currentSrc: "/branding/logo.jpg",
     accept: "image/png,image/jpeg,image/svg+xml,image/webp",
     dimensions: "Empfohlen: 512x512px oder quadratisch",
+  },
+  {
+    name: "logo-white",
+    label: "Logo (Ocean Theme)",
+    description: "Weißes Logo für den blauen Ocean-Theme. Sollte weiß/hell sein für gute Sichtbarkeit.",
+    currentSrc: "/branding/logo-white.png",
+    accept: "image/png,image/svg+xml,image/webp",
+    dimensions: "Empfohlen: 512x512px, PNG mit Transparenz",
   },
   {
     name: "favicon",

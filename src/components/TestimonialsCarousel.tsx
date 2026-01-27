@@ -86,12 +86,12 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {/* 3D Bubble Container */}
-              <div className="review-bubble-card relative overflow-visible">
+                <div className="review-bubble-card relative overflow-visible">
                 {/* Bubble Shadow - Creates 3D depth */}
                 <div className="absolute -bottom-3 left-4 right-4 h-8 rounded-[50%] bg-black/20 blur-xl transition-all duration-500 group-hover:-bottom-4 group-hover:bg-gold/20 group-hover:blur-2xl" />
                 
                 {/* Main Bubble Shape */}
-                <div className="relative rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1a1a1a] via-[#141414] to-[#0f0f0f] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-500 ease-out group-hover:-translate-y-2 group-hover:border-gold/30 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(245,158,11,0.15),inset_0_1px_0_rgba(245,158,11,0.1)]">
+                  <div className="review-bubble-shell relative rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1a1a1a] via-[#141414] to-[#0f0f0f] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-500 ease-out group-hover:-translate-y-2 group-hover:border-gold/30 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(245,158,11,0.15),inset_0_1px_0_rgba(245,158,11,0.1)]">
                   
                   {/* Inner Glow Effect */}
                   <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-br from-gold/5 via-transparent to-amber/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
@@ -154,7 +154,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
 
                 {/* Bubble Tail - Speech bubble pointer */}
                 <div className="absolute -bottom-3 left-10 h-6 w-6 overflow-hidden">
-                  <div className="absolute -top-3 left-0 h-6 w-6 rotate-45 border-b border-r border-white/10 bg-gradient-to-br from-[#141414] to-[#0f0f0f] shadow-lg transition-all duration-500 group-hover:border-gold/30 group-hover:shadow-gold/10" />
+                  <div className="review-bubble-tail absolute -top-3 left-0 h-6 w-6 rotate-45 border-b border-r border-white/10 bg-gradient-to-br from-[#141414] to-[#0f0f0f] shadow-lg transition-all duration-500 group-hover:border-gold/30 group-hover:shadow-gold/10" />
                 </div>
               </div>
             </div>

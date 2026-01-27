@@ -111,7 +111,7 @@ export default async function AccessoriesPage({
 
             {/* Headphones */}
             <div className="tech-card-hover group overflow-hidden rounded-2xl">
-              <div className="relative aspect-square bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-red-500/10 p-8">
+              <div className="relative aspect-square bg-gradient-to-br from-ocean-light/10 via-ocean/10 to-ocean-deep/10 p-8">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.5}>
                     <path d="M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM21 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />

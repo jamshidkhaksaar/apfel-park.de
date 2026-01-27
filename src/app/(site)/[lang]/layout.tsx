@@ -27,7 +27,7 @@ export default async function SiteLayout({
     <div className="min-h-screen">
       <LocaleSync locale={locale} />
       <SiteHeader lang={locale} />
-      <main>{children}</main>
+      <main className="page-surface">{children}</main>
       <SiteFooter lang={locale} />
     </div>
   );

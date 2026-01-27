@@ -7,13 +7,28 @@ import { useState } from "react";
 import { getDictionary, type Locale } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
+import ThemeToggle from "./ThemeToggle";
+import { useTheme } from "./ThemeProvider";
 
 export default function SiteHeader({ lang }: { lang: Locale }) {
   const dict = getDictionary(lang);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+  const { theme } = useTheme();
   
   // Get nav items directly
   const navItems = dict.nav;
+  
+  // Dynamic logo based on theme (fallback to regular logo if white version fails)
+  const logoSrc = theme === "ocean" && !logoError 
+    ? "/branding/apfel-park-white.png" 
+    : "/branding/logo.jpg";
+  
+  const handleLogoError = () => {
+    if (theme === "ocean") {
+      setLogoError(true);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 transition-all duration-300" translate="no">
@@ -56,12 +71,13 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
           <div className="logo-border-wrapper rounded-b-2xl p-2 bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-xl ring-1 ring-white/10">
             <Link href={`/${lang}`} className="block">
               <Image
-                src="/branding/logo.jpg"
+                src={logoSrc}
                 alt="Apfel Park"
                 width={108}
                 height={108}
                 className="rounded-xl object-contain shadow-lg"
                 style={{ width: '108px', height: '108px' }}
+                onError={handleLogoError}
               />
             </Link>
           </div>
@@ -87,6 +103,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
           <div className="flex items-center gap-3 py-4">
             <div className="hidden items-center gap-3 md:flex">
               <LocaleSwitcher />
+              <ThemeToggle />
               
               <Link
                 href={`/${lang}/store`}
@@ -101,6 +118,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
             </div>
             <div className="flex items-center gap-3 md:hidden">
               <LocaleSwitcher />
+              <ThemeToggle />
             </div>
             
             <Link
