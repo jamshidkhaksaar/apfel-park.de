@@ -101,7 +101,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
 
           {/* Actions */}
           <div className="flex items-center gap-3 py-4">
-            <div className="hidden items-center gap-3 md:flex">
+            <div className="hidden items-center gap-3 lg:flex">
               <LocaleSwitcher />
               <ThemeToggle />
               
@@ -116,14 +116,14 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
                 <span className="relative z-10">{lang === "de" ? "Shop" : "Store"}</span>
               </Link>
             </div>
-            <div className="flex items-center gap-3 md:hidden">
+            <div className="flex items-center gap-3 lg:hidden">
               <LocaleSwitcher />
               <ThemeToggle />
             </div>
             
             <Link
               href={`/${lang}/repairs`}
-              className="btn-primary hidden md:inline-flex !px-5 !py-2 !text-xs font-bold uppercase tracking-wide md:!text-sm min-w-[160px] md:min-w-[180px] justify-center"
+              className="btn-primary !hidden lg:!inline-flex !px-5 !py-2 uppercase tracking-wide min-w-[180px]"
             >
               <svg className="relative z-10 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
