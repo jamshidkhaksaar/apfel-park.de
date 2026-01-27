@@ -12,18 +12,14 @@ type AppWrapperProps = {
 
 export default function AppWrapper({ children, lang }: AppWrapperProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
     // Check if this is the first visit in this session
     const hasLoaded = sessionStorage.getItem("apfel-loaded");
     
     if (hasLoaded) {
-      setIsLoading(false);
-      setShowContent(true);
-    } else {
-      // First visit - show loading screen
-      setShowContent(true);
+      // Use setTimeout to avoid synchronous state update during effect
+      setTimeout(() => setIsLoading(false), 0);
     }
   }, []);
 
@@ -43,7 +39,7 @@ export default function AppWrapper({ children, lang }: AppWrapperProps) {
           isLoading ? "opacity-0" : "opacity-100"
         }`}
       >
-        {showContent && children}
+        {children}
       </div>
       <WhatsAppFloat lang={lang} />
     </>
