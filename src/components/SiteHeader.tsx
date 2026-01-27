@@ -30,6 +30,17 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
     }
   };
 
+  const menuLabels = {
+    de: {
+      open: "Menü öffnen",
+      close: "Menü schließen",
+    },
+    en: {
+      open: "Open menu",
+      close: "Close menu",
+    },
+  };
+
   return (
     <header className="sticky top-0 z-50 transition-all duration-300" translate="no">
       {/* Top Bar - Speed & Contact Info */}
@@ -135,8 +146,11 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden"
+              aria-label={menuLabels[lang][mobileMenuOpen ? "close" : "open"]}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu-nav"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 {mobileMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -150,7 +164,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="border-t border-white/5 bg-black/60 backdrop-blur-xl lg:hidden">
+        <div id="mobile-menu-nav" className="border-t border-white/5 bg-black/60 backdrop-blur-xl lg:hidden">
           <nav className="container-page flex flex-col gap-1 py-4">
             {navItems.map((item) => (
               <Link
