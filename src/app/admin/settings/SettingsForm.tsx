@@ -1,47 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
-type SettingsData = {
-  general: {
-    shopName: string;
-    owner: string;
-    address: string;
-    email: string;
-    phone: string;
-  };
-  hours: {
-    monday: string;
-    tuesday: string;
-    wednesday: string;
-    thursday: string;
-    friday: string;
-    saturday: string;
-    sunday: string;
-  };
-  maintenance: {
-    enabled: boolean;
-  };
-  security: {
-    cfSiteKey: string;
-    cfSecretKey: string;
-  };
-  recaptcha: {
-    enabled: boolean;
-    siteKey: string;
-    secretKey: string;
-    minScore: number;
-  };
-};
+import { saveSettings } from "./actions";
+import { type SettingsData } from "./types";
 
 export default function SettingsForm({ initialSettings }: { initialSettings: SettingsData }) {
   const router = useRouter();
   const [settings, setSettings] = useState<SettingsData>({
     ...initialSettings,
     security: initialSettings.security || { cfSiteKey: "", cfSecretKey: "" },
-    recaptcha: initialSettings.recaptcha || { enabled: false, siteKey: "", secretKey: "", minScore: 0.5 }
+    recaptcha: initialSettings.recaptcha || { enabled: false, siteKey: "", secretKey: "", minScore: 0.5 },
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -59,20 +29,16 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
   const handleSave = async () => {
     setLoading(true);
     setMessage(null);
-    const supabase = createClient();
 
     try {
-      // Update each section
-      const updates = Object.keys(settings).map((key) => 
-        supabase
-          .from("store_settings")
-          .upsert({ key, value: settings[key as keyof SettingsData], updated_at: new Date().toISOString() }, { onConflict: "key" })
-      );
-
-      await Promise.all(updates);
-      
-      setMessage({ type: "success", text: "Settings saved successfully!" });
-      router.refresh();
+      const result = await saveSettings(settings);
+      setMessage({
+        type: result.success ? "success" : "error",
+        text: result.message,
+      });
+      if (result.success) {
+        router.refresh();
+      }
     } catch (error) {
       console.error("Error saving settings:", error);
       setMessage({ type: "error", text: "Failed to save settings." });
@@ -237,6 +203,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
                 placeholder="0x4AAAA..."
                 className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
               />
+              <p className="text-xs text-muted/60">Leave blank to keep existing secret.</p>
             </div>
           </div>
         </div>
@@ -280,6 +247,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
                 placeholder="6Le..."
                 className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
               />
+              <p className="text-xs text-muted/60">Leave blank to keep existing secret.</p>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-semibold uppercase tracking-wider text-muted">

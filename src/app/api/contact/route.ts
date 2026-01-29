@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+
+import { sendContactNotificationEmail } from "@/lib/email";
 import { verifyReCaptcha } from "@/lib/recaptcha";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 type ContactFormData = {
   name: string;
@@ -44,11 +46,8 @@ export async function POST(request: NextRequest) {
 
     // Store the contact submission in database using Service Role (admin access)
     // This allows inserting even if RLS denies public inserts
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    
+    const supabase = createAdminClient();
+
     const { error: dbError } = await supabase.from("contact_submissions").insert({
       name: data.name,
       email: data.email,
@@ -69,8 +68,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Send email notification (implement when email service is configured)
-    // await sendContactNotificationEmail(data);
+    const emailResult = await sendContactNotificationEmail({
+      name: data.name,
+      email: data.email,
+      device: data.device,
+      message: data.message,
+      locale: data.locale,
+    });
+
+    if (!emailResult.success) {
+      console.warn("[Contact API] Email notification failed:", emailResult.error);
+    }
 
     return NextResponse.json({
       success: true,

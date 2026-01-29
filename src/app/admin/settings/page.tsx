@@ -1,14 +1,33 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import AdminShell from "../../../components/admin/AdminShell";
 import SettingsForm from "./SettingsForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  const { data: recaptchaRow } = await admin
+    .from("store_settings")
+    .select("key")
+    .eq("key", "recaptcha")
+    .limit(1);
+
+  if (!recaptchaRow || recaptchaRow.length === 0) {
+    await admin.from("store_settings").insert({
+      key: "recaptcha",
+      value: {
+        enabled: false,
+        siteKey: "",
+        secretKey: "",
+        minScore: 0.5,
+      },
+      updated_at: new Date().toISOString(),
+    });
+  }
 
   // Fetch all settings
-  const { data: settingsData } = await supabase.from("store_settings").select("*");
+  const { data: settingsData } = await admin.from("store_settings").select("*");
 
   // Transform array to object
   const settingsMap = settingsData?.reduce((acc, curr) => {
@@ -39,12 +58,12 @@ export default async function SettingsPage() {
     },
     security: {
       cfSiteKey: settingsMap.security?.cfSiteKey || "",
-      cfSecretKey: settingsMap.security?.cfSecretKey || "",
+      cfSecretKey: "",
     },
     recaptcha: {
       enabled: settingsMap.recaptcha?.enabled || false,
       siteKey: settingsMap.recaptcha?.siteKey || "",
-      secretKey: settingsMap.recaptcha?.secretKey || "",
+      secretKey: "",
       minScore: settingsMap.recaptcha?.minScore || 0.5,
     },
   };

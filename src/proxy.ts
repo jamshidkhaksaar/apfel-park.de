@@ -1,7 +1,8 @@
-import { updateSession } from "@/lib/supabase/middleware";
 import { type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+import { updateSession } from "@/lib/supabase/middleware";
+
+export async function proxy(request: NextRequest) {
   return await updateSession(request);
 }
 
@@ -15,6 +16,6 @@ export const config = {
      * - public folder
      * - api routes (except auth)
      */
-    "/((?!_next/static|_next/image|favicon.ico|images|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|images|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
