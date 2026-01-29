@@ -12,3 +12,8 @@
 **Vulnerability:** The Turnstile verification relied on `store_settings` being readable by the anonymous user, potentially exposing the Secret Key to the public if RLS was configured to allow this (which was necessary for the code to work).
 **Learning:** Storing sensitive infrastructure secrets in a table that must be publicly readable for unauthenticated flows (like login/captcha) creates a security paradox.
 **Prevention:** Use a Service Role client (`src/lib/supabase/admin.ts`) for server-side operations that need to access sensitive config, allowing the database table to be locked down (RLS restricted to authenticated users or admins).
+
+## 2025-02-24 - SVG Stored XSS via SMIL Animation
+**Vulnerability:** The regex-based `isSecureSvg` function failed to block SMIL animation tags (`<set>`, `<animate>`), allowing attackers to inject event handlers (e.g., `<set attributeName="onmouseover" to="alert(1)"/>`) without using explicit `on*` attributes or `javascript:` keywords directly in the tag body.
+**Learning:** Blacklisting event handlers (like `onmouseover=`) is insufficient because SMIL tags can dynamically set these attributes.
+**Prevention:** Explicitly block all SMIL animation tags (`set`, `animate`, `animateMotion`, `animateTransform`) and `<use>` in regex-based sanitizers, or switch to a robust parser-based sanitizer like `dompurify`.

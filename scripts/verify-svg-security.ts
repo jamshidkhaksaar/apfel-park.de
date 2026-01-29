@@ -56,6 +56,16 @@ const runTests = () => {
       name: "SVG with hex entity-encoded javascript:",
       input: `<svg><a href="j&#x61;vascript:alert(1)">link</a></svg>`,
       expected: false
+    },
+    {
+      name: "SVG with <set> tag (SMIL injection)",
+      input: `<svg><set attributeName="onmouseover" to="alert(1)" /></svg>`,
+      expected: false
+    },
+    {
+      name: "SVG with <animate> tag",
+      input: `<svg><animate attributeName="href" values="javascript:alert(1)" /></svg>`,
+      expected: false
     }
   ];
 

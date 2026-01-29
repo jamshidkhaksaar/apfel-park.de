@@ -4,6 +4,9 @@ export const isSecureSvg = (content: string): boolean => {
   if (/on\w+\s*=/i.test(content)) return false;
   if (/<foreignObject/i.test(content)) return false;
 
+  // Block SMIL animation tags and external references
+  if (/<(?:set|animate|animateMotion|animateTransform|use)/i.test(content)) return false;
+
   // Block dangerous data: URIs
   if (/data:(?:image\/svg\+xml|text\/html)/i.test(content)) return false;
 
