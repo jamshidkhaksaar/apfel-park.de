@@ -43,16 +43,14 @@ const buildEmailContent = (data: ContactNotificationData) => {
     data.message,
   ];
 
-  const text = textLines.join("
-");
+  const text = textLines.join("\n");
   const html = `
     <h2>${subject}</h2>
     <p><strong>Name:</strong> ${data.name}</p>
     <p><strong>Email:</strong> ${data.email}</p>
     <p><strong>Device:</strong> ${data.device || "-"}</p>
     <p><strong>Message:</strong></p>
-    <p>${data.message.replace(/
-/g, "<br/>")}</p>
+    <p>${data.message.replace(/\n/g, "<br/>")}</p>
   `;
 
   return { subject, text, html };
