@@ -41,6 +41,12 @@ export default async function SettingsPage() {
       cfSiteKey: settingsMap.security?.cfSiteKey || "",
       cfSecretKey: settingsMap.security?.cfSecretKey || "",
     },
+    recaptcha: {
+      enabled: settingsMap.recaptcha?.enabled || false,
+      siteKey: settingsMap.recaptcha?.siteKey || "",
+      secretKey: settingsMap.recaptcha?.secretKey || "",
+      minScore: settingsMap.recaptcha?.minScore || 0.5,
+    },
   };
 
   return (

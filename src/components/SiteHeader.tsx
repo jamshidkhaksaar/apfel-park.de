@@ -86,12 +86,12 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
         {/* Navbar content */}
         <div className="relative flex flex-1 items-center navbar-border bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-lg">
           {/* Desktop Navigation */}
-          <nav className="hidden flex-1 items-center justify-center gap-1 py-4 lg:flex">
+          <nav className="hidden flex-1 items-center justify-center gap-0.5 py-4 lg:flex">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 href={`/${lang}${item.path}`}
-                className="group relative px-4 py-2 text-sm font-medium text-muted transition hover:text-white"
+                className="group relative whitespace-nowrap px-3 py-2 text-sm font-medium text-muted transition hover:text-white"
               >
                 {item.label}
                 <span className="absolute bottom-0 left-1/2 h-0.5 w-0 -translate-x-1/2 bg-gradient-to-r from-gold-soft to-gold-deep transition-all group-hover:w-full" />

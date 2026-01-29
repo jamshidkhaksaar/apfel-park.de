@@ -539,8 +539,19 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* CTA Section */}
-      <section className="section-pad ocean-surface">
-        <div className="container-page">
+      <section className="relative section-pad overflow-hidden">
+        {/* Section Background Image */}
+        <Image
+          src="/images/footer-shop.png"
+          alt=""
+          fill
+          className="object-cover"
+          priority={false}
+        />
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/60" />
+        
+        <div className="container-page relative">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold/20 via-amber/10 to-bronze/20 ocean-panel p-10 md:p-16">
             {/* Background Effects */}
             <div className="absolute inset-0 circuit-pattern opacity-20" />

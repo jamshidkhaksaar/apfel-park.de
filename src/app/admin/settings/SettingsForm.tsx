@@ -28,18 +28,25 @@ type SettingsData = {
     cfSiteKey: string;
     cfSecretKey: string;
   };
+  recaptcha: {
+    enabled: boolean;
+    siteKey: string;
+    secretKey: string;
+    minScore: number;
+  };
 };
 
 export default function SettingsForm({ initialSettings }: { initialSettings: SettingsData }) {
   const router = useRouter();
   const [settings, setSettings] = useState<SettingsData>({
     ...initialSettings,
-    security: initialSettings.security || { cfSiteKey: "", cfSecretKey: "" }
+    security: initialSettings.security || { cfSiteKey: "", cfSecretKey: "" },
+    recaptcha: initialSettings.recaptcha || { enabled: false, siteKey: "", secretKey: "", minScore: 0.5 }
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const handleChange = (section: keyof SettingsData, field: string, value: string | boolean) => {
+  const handleChange = (section: keyof SettingsData, field: string, value: string | boolean | number) => {
     setSettings((prev) => ({
       ...prev,
       [section]: {
@@ -231,6 +238,79 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
                 className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Google reCAPTCHA Settings */}
+        <div className={`glass-panel rounded-2xl border p-6 transition-colors ${settings.recaptcha?.enabled ? "border-green-500/30 bg-green-950/10" : "border-white/10"}`}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Google reCAPTCHA v3</h2>
+            <button
+              onClick={() => handleChange("recaptcha", "enabled", !settings.recaptcha?.enabled)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${settings.recaptcha?.enabled ? "bg-green-500 focus:ring-green-600" : "bg-stone-700 focus:ring-stone-600"}`}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${settings.recaptcha?.enabled ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </div>
+          <p className="mt-2 text-sm text-muted">
+            Protect contact and repair forms from spam and bots.
+          </p>
+          {!settings.recaptcha?.enabled && (
+            <p className="mt-2 text-xs text-yellow-500/80">
+              Currently disabled for development. Enable for production.
+            </p>
+          )}
+          <div className="mt-4 space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Site Key</label>
+              <input
+                type="text"
+                value={settings.recaptcha?.siteKey || ""}
+                onChange={(e) => handleChange("recaptcha", "siteKey", e.target.value)}
+                placeholder="6Le..."
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Secret Key</label>
+              <input
+                type="password"
+                value={settings.recaptcha?.secretKey || ""}
+                onChange={(e) => handleChange("recaptcha", "secretKey", e.target.value)}
+                placeholder="6Le..."
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">
+                Min Score (0.0 - 1.0)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="1"
+                step="0.1"
+                value={settings.recaptcha?.minScore || 0.5}
+                onChange={(e) => handleChange("recaptcha", "minScore", parseFloat(e.target.value) || 0.5)}
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
+              />
+              <p className="text-xs text-muted/60">
+                Lower = more lenient, Higher = stricter (0.5 recommended)
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-lg bg-blue-950/20 border border-blue-500/20 p-3">
+            <p className="text-xs text-blue-400">
+              Get your keys from{" "}
+              <a 
+                href="https://www.google.com/recaptcha/admin" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-300"
+              >
+                Google reCAPTCHA Admin Console
+              </a>
+            </p>
           </div>
         </div>
       </div>

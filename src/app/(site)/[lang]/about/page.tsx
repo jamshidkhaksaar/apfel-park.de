@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -69,7 +70,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
                 key={stat.label}
                 className="tech-card flex flex-col items-center justify-center rounded-2xl p-6 text-center"
               >
-                <span className="text-3xl font-bold gradient-text md:text-4xl">{stat.value}</span>
+                <span className="text-3xl font-bold text-cyan-400 md:text-4xl">{stat.value}</span>
                 <span className="mt-1 text-sm text-muted">{stat.label}</span>
               </div>
             ))}
@@ -93,17 +94,17 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
         <div className="container-page">
           <div className="tech-card overflow-hidden rounded-3xl">
             <div className="grid gap-0 lg:grid-cols-2">
-              {/* Image/Visual Side */}
-              <div className="relative flex items-center justify-center bg-gradient-to-br from-gold/10 via-amber/5 to-transparent p-12">
-                <div className="relative">
-                  {/* Decorative elements */}
-                  <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-gold/20 to-amber/20 blur-2xl" />
-                  <div className="relative flex h-48 w-48 items-center justify-center rounded-full bg-gradient-to-br from-gold/20 to-amber/10 md:h-64 md:w-64">
-                    <svg className="h-24 w-24 text-gold md:h-32 md:w-32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
-                    </svg>
-                  </div>
-                </div>
+              {/* Image Side */}
+              <div className="relative min-h-[300px] lg:min-h-[400px]">
+                <Image
+                  src="/images/shop1.jpg"
+                  alt="Apfel Park Store"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+                {/* Subtle overlay for better blending */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-surface/20 lg:to-surface/40" />
               </div>
               
               {/* Content Side */}
