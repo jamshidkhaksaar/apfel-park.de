@@ -1,7 +1,7 @@
-import { createClient } from "./supabase/server";
+import { createAdminClient } from "./supabase/admin";
 
 export async function verifyTurnstile(token: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   
   // Get secret key from DB
   const { data } = await supabase
@@ -36,7 +36,7 @@ export async function verifyTurnstile(token: string) {
 }
 
 export async function getTurnstileSiteKey() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("store_settings")
     .select("value")

@@ -27,7 +27,8 @@ export async function loginAction(prevState: any, formData: FormData) {
   });
 
   if (error) {
-    return { error: error.message };
+    // Return generic error to prevent enumeration
+    return { error: "Invalid email or password" };
   }
 
   redirect(redirectTo);
