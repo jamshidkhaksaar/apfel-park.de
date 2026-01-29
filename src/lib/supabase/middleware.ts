@@ -30,12 +30,20 @@ export const updateSession = async (request: NextRequest) => {
   );
 
   // Refresh session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Optimization: Only call getUser on protected routes or login to avoid expensive API calls on public pages
+  let user = null;
+  const isProtected = request.nextUrl.pathname.startsWith("/admin");
+  const isLogin = request.nextUrl.pathname === "/login";
+
+  if (isProtected || isLogin) {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
+  }
 
   // Protect admin routes
-  if (request.nextUrl.pathname.startsWith("/admin")) {
+  if (isProtected) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
@@ -45,7 +53,7 @@ export const updateSession = async (request: NextRequest) => {
   }
 
   // Redirect logged in users away from login page
-  if (request.nextUrl.pathname === "/login" && user) {
+  if (isLogin && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin";
     return NextResponse.redirect(url);
