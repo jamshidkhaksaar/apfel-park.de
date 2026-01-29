@@ -5,11 +5,12 @@
  * - Contact form (/contact)
  * - Repair request form (/repairs) - when implemented
  * - Newsletter signup - when implemented
+ * - Admin login (optional)
  * 
  * Development mode: Set NEXT_PUBLIC_RECAPTCHA_ENABLED=false to skip verification
  */
 
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 // Types
 export type ReCaptchaSettings = {
@@ -40,10 +41,15 @@ const DEFAULT_SETTINGS: ReCaptchaSettings = {
 
 /**
  * Get reCAPTCHA settings from database (server-side)
+ * Uses Service Role key to access secure settings
  */
 export const getReCaptchaSettings = async (): Promise<ReCaptchaSettings> => {
   try {
-    const supabase = await createServerClient();
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
     const { data } = await supabase
       .from("store_settings")
       .select("value")

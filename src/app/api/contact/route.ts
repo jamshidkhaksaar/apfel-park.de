@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyReCaptcha } from "@/lib/recaptcha";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 type ContactFormData = {
   name: string;
@@ -42,8 +42,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store the contact submission in database
-    const supabase = await createClient();
+    // Store the contact submission in database using Service Role (admin access)
+    // This allows inserting even if RLS denies public inserts
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
     const { error: dbError } = await supabase.from("contact_submissions").insert({
       name: data.name,
       email: data.email,
