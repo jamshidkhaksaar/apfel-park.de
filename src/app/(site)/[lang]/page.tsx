@@ -256,7 +256,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               </h2>
               <p className="mt-3 max-w-xl text-muted">{dict.home.services.subtitle}</p>
             </div>
-            <Link href={`/${lang}/services`} className="btn-secondary">
+            <Link href={`/${lang}/repairs`} className="btn-secondary">
               {lang === "de" ? "Alle Services" : "All Services"}
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />

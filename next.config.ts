@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  
+  // Generate unique build IDs to help with cache invalidation
+  generateBuildId: async () => {
+    return `build-${Date.now()}`;
+  },
+  
   async headers() {
     return [
       {
@@ -30,6 +36,16 @@ const nextConfig: NextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin'
+          }
+        ]
+      },
+      // Ensure JS chunks are not aggressively cached
+      {
+        source: '/_next/static/chunks/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
           }
         ]
       }
