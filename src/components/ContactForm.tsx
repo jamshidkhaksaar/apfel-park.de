@@ -124,10 +124,11 @@ export default function ContactForm({ lang }: ContactFormProps) {
       
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+          <label htmlFor="contact-name" className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
             {lang === "de" ? "Name" : "Name"} *
           </label>
           <input
+            id="contact-name"
             type="text"
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
@@ -135,13 +136,15 @@ export default function ContactForm({ lang }: ContactFormProps) {
             className={inputClassName}
             disabled={status.type === "loading"}
             required
+            autoComplete="name"
           />
         </div>
         <div>
-          <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+          <label htmlFor="contact-email" className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
             {lang === "de" ? "E-Mail" : "Email"} *
           </label>
           <input
+            id="contact-email"
             type="email"
             value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
@@ -149,15 +152,17 @@ export default function ContactForm({ lang }: ContactFormProps) {
             className={inputClassName}
             disabled={status.type === "loading"}
             required
+            autoComplete="email"
           />
         </div>
       </div>
       
       <div>
-        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+        <label htmlFor="contact-device" className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
           {lang === "de" ? "Gerät" : "Device"}
         </label>
         <input
+          id="contact-device"
           type="text"
           value={formData.device}
           onChange={(e) => handleChange("device", e.target.value)}
@@ -168,10 +173,11 @@ export default function ContactForm({ lang }: ContactFormProps) {
       </div>
       
       <div>
-        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+        <label htmlFor="contact-message" className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
           {lang === "de" ? "Nachricht" : "Message"} *
         </label>
         <textarea
+          id="contact-message"
           rows={4}
           value={formData.message}
           onChange={(e) => handleChange("message", e.target.value)}
