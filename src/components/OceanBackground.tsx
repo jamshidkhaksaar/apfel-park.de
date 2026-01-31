@@ -137,9 +137,21 @@ export default function OceanBackground() {
     const right = initSystem(rightCanvas);
 
     let animationFrame = 0;
-    const loop = () => {
-      left.draw();
-      right.draw();
+
+    // Bolt Optimization: Throttle to 30fps and respect reduced motion
+    const fps = 30;
+    const interval = 1000 / fps;
+    let lastTime = 0;
+
+    const loop = (timestamp: number) => {
+      const deltaTime = timestamp - lastTime;
+
+      if (deltaTime >= interval) {
+        lastTime = timestamp - (deltaTime % interval);
+        left.draw();
+        right.draw();
+      }
+
       animationFrame = window.requestAnimationFrame(loop);
     };
 
@@ -149,7 +161,16 @@ export default function OceanBackground() {
     };
 
     window.addEventListener("resize", handleResize);
-    loop();
+
+    // Initial draw
+    left.draw();
+    right.draw();
+
+    // Only start animation loop if user doesn't prefer reduced motion
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!mediaQuery.matches) {
+      animationFrame = window.requestAnimationFrame(loop);
+    }
 
     const leftLeg = jellyfish.querySelector("#left-leg");
     const rightLeg = jellyfish.querySelector("#right-leg");
