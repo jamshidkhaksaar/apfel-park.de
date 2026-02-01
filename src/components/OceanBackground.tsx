@@ -137,22 +137,20 @@ export default function OceanBackground() {
     const right = initSystem(rightCanvas);
 
     let animationFrame = 0;
-
-    // Bolt Optimization: Throttle to 30fps and respect reduced motion
-    const fps = 30;
+    let lastFrameTime = 0;
+    const fps = 30; // Limit to 30 FPS to reduce CPU usage
     const interval = 1000 / fps;
-    let lastTime = 0;
 
     const loop = (timestamp: number) => {
-      const deltaTime = timestamp - lastTime;
+      animationFrame = window.requestAnimationFrame(loop);
 
-      if (deltaTime >= interval) {
-        lastTime = timestamp - (deltaTime % interval);
+      const delta = timestamp - lastFrameTime;
+      if (delta > interval) {
+        // Adjust for frame drop to keep smooth animation
+        lastFrameTime = timestamp - (delta % interval);
         left.draw();
         right.draw();
       }
-
-      animationFrame = window.requestAnimationFrame(loop);
     };
 
     const handleResize = () => {
@@ -162,14 +160,15 @@ export default function OceanBackground() {
 
     window.addEventListener("resize", handleResize);
 
-    // Initial draw
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Initial draw to prevent flash of blank content
     left.draw();
     right.draw();
 
-    // Only start animation loop if user doesn't prefer reduced motion
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!mediaQuery.matches) {
-      animationFrame = window.requestAnimationFrame(loop);
+    if (!prefersReducedMotion) {
+      loop(0);
     }
 
     const leftLeg = jellyfish.querySelector("#left-leg");
@@ -177,7 +176,7 @@ export default function OceanBackground() {
     const head = jellyfish.querySelector("#head");
 
     const timeline = gsap
-      .timeline({ repeat: -1, repeatDelay: 2 })
+      .timeline({ repeat: -1, repeatDelay: 2, paused: prefersReducedMotion })
       .to(
         jellyfish,
         {
