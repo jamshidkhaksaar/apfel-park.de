@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
 import { useTheme } from "./ThemeProvider";
@@ -49,19 +49,6 @@ export default function OceanBackground() {
   const leftCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const rightCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const jellyfishRef = useRef<SVGSVGElement | null>(null);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
 
   useEffect(() => {
     if (theme !== "ocean") return;
@@ -179,16 +166,12 @@ export default function OceanBackground() {
     left.draw();
     right.draw();
 
-    if (!prefersReducedMotion) {
-      loop(0);
-    }
-
     const leftLeg = jellyfish.querySelector("#left-leg");
     const rightLeg = jellyfish.querySelector("#right-leg");
     const head = jellyfish.querySelector("#head");
 
     const timeline = gsap
-      .timeline({ repeat: -1, repeatDelay: 2, paused: prefersReducedMotion })
+      .timeline({ repeat: -1, repeatDelay: 2, paused: true })
       .to(
         jellyfish,
         {
@@ -247,8 +230,29 @@ export default function OceanBackground() {
         1,
       );
 
+    // Handle reduced motion preference and listen for changes
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const handleMotionChange = () => {
+      if (mediaQuery.matches) {
+        if (animationFrame) {
+          window.cancelAnimationFrame(animationFrame);
+          animationFrame = 0;
+        }
+        timeline.pause();
+      } else if (!animationFrame) {
+        lastFrameTime = performance.now(); // Reset timer to avoid large jump
+        loop(lastFrameTime);
+        timeline.play();
+      }
+    };
+
+    mediaQuery.addEventListener("change", handleMotionChange);
+    handleMotionChange(); // Initial check
+
     return () => {
       window.removeEventListener("resize", handleResize);
+      mediaQuery.removeEventListener("change", handleMotionChange);
       if (animationFrame) {
         window.cancelAnimationFrame(animationFrame);
       }
