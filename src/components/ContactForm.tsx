@@ -28,6 +28,7 @@ export default function ContactForm({ lang }: ContactFormProps) {
     message: "",
   });
   const [status, setStatus] = useState<SubmitStatus>({ type: "idle" });
+  const id = useId();
   
   const { token: recaptchaToken, ReCaptchaComponent } = useReCaptcha("contact_form");
 
@@ -125,11 +126,14 @@ export default function ContactForm({ lang }: ContactFormProps) {
       
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor={`${formId}-name`} className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+          <label
+            htmlFor={`${id}-name`}
+            className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted"
+          >
             {lang === "de" ? "Name" : "Name"} *
           </label>
           <input
-            id={`${formId}-name`}
+            id={`${id}-name`}
             type="text"
             autoComplete="name"
             value={formData.name}
@@ -138,14 +142,18 @@ export default function ContactForm({ lang }: ContactFormProps) {
             className={inputClassName}
             disabled={status.type === "loading"}
             required
+            autoComplete="name"
           />
         </div>
         <div>
-          <label htmlFor={`${formId}-email`} className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+          <label
+            htmlFor={`${id}-email`}
+            className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted"
+          >
             {lang === "de" ? "E-Mail" : "Email"} *
           </label>
           <input
-            id={`${formId}-email`}
+            id={`${id}-email`}
             type="email"
             autoComplete="email"
             value={formData.email}
@@ -154,16 +162,20 @@ export default function ContactForm({ lang }: ContactFormProps) {
             className={inputClassName}
             disabled={status.type === "loading"}
             required
+            autoComplete="email"
           />
         </div>
       </div>
       
       <div>
-        <label htmlFor={`${formId}-device`} className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+        <label
+          htmlFor={`${id}-device`}
+          className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted"
+        >
           {lang === "de" ? "Gerät" : "Device"}
         </label>
         <input
-          id={`${formId}-device`}
+          id={`${id}-device`}
           type="text"
           value={formData.device}
           onChange={(e) => handleChange("device", e.target.value)}
@@ -174,11 +186,14 @@ export default function ContactForm({ lang }: ContactFormProps) {
       </div>
       
       <div>
-        <label htmlFor={`${formId}-message`} className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+        <label
+          htmlFor={`${id}-message`}
+          className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted"
+        >
           {lang === "de" ? "Nachricht" : "Message"} *
         </label>
         <textarea
-          id={`${formId}-message`}
+          id={`${id}-message`}
           rows={4}
           value={formData.message}
           onChange={(e) => handleChange("message", e.target.value)}
