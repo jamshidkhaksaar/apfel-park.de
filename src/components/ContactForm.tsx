@@ -21,7 +21,6 @@ type SubmitStatus = {
 };
 
 export default function ContactForm({ lang }: ContactFormProps) {
-  const formId = useId();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
