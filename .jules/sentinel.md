@@ -20,5 +20,5 @@
 
 ## 2026-02-01 - Middleware Misconfiguration
 **Vulnerability:** The authentication middleware was named `src/proxy.ts`, causing Next.js to potentially ignore it or fail to integrate with Supabase's expected flow, leaving admin routes potentially unprotected.
-**Learning:** Next.js 16's transition to `proxy` is confusing, but Supabase auth helpers often rely on `middleware.ts` conventions or specific execution contexts.
+**Learning:** Next.js middleware relies on specific file naming conventions (i.e., `middleware.ts`), which can be a source of configuration errors. Supabase auth helpers, in particular, depend on this convention for proper execution.
 **Prevention:** Ensure `src/middleware.ts` exists and is verified to run (e.g., by adding a log or checking headers) during deployment.
