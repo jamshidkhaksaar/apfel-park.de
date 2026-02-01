@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useId } from "react";
 import { useReCaptcha } from "./ReCaptcha";
 
 type ContactFormProps = {
@@ -27,6 +27,7 @@ export default function ContactForm({ lang }: ContactFormProps) {
     message: "",
   });
   const [status, setStatus] = useState<SubmitStatus>({ type: "idle" });
+  const id = useId();
   
   const { token: recaptchaToken, ReCaptchaComponent } = useReCaptcha("contact_form");
 
@@ -124,11 +125,14 @@ export default function ContactForm({ lang }: ContactFormProps) {
       
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="contact-name" className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+          <label
+            htmlFor={`${id}-name`}
+            className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted"
+          >
             {lang === "de" ? "Name" : "Name"} *
           </label>
           <input
-            id="contact-name"
+            id={`${id}-name`}
             type="text"
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
@@ -140,11 +144,14 @@ export default function ContactForm({ lang }: ContactFormProps) {
           />
         </div>
         <div>
-          <label htmlFor="contact-email" className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+          <label
+            htmlFor={`${id}-email`}
+            className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted"
+          >
             {lang === "de" ? "E-Mail" : "Email"} *
           </label>
           <input
-            id="contact-email"
+            id={`${id}-email`}
             type="email"
             value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
@@ -158,11 +165,14 @@ export default function ContactForm({ lang }: ContactFormProps) {
       </div>
       
       <div>
-        <label htmlFor="contact-device" className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+        <label
+          htmlFor={`${id}-device`}
+          className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted"
+        >
           {lang === "de" ? "Gerät" : "Device"}
         </label>
         <input
-          id="contact-device"
+          id={`${id}-device`}
           type="text"
           value={formData.device}
           onChange={(e) => handleChange("device", e.target.value)}
@@ -173,11 +183,14 @@ export default function ContactForm({ lang }: ContactFormProps) {
       </div>
       
       <div>
-        <label htmlFor="contact-message" className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+        <label
+          htmlFor={`${id}-message`}
+          className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted"
+        >
           {lang === "de" ? "Nachricht" : "Message"} *
         </label>
         <textarea
-          id="contact-message"
+          id={`${id}-message`}
           rows={4}
           value={formData.message}
           onChange={(e) => handleChange("message", e.target.value)}

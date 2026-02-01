@@ -137,10 +137,20 @@ export default function OceanBackground() {
     const right = initSystem(rightCanvas);
 
     let animationFrame = 0;
-    const loop = () => {
-      left.draw();
-      right.draw();
+    let lastFrameTime = 0;
+    const fps = 30; // Limit to 30 FPS to reduce CPU usage
+    const interval = 1000 / fps;
+
+    const loop = (timestamp: number) => {
       animationFrame = window.requestAnimationFrame(loop);
+
+      const delta = timestamp - lastFrameTime;
+      if (delta > interval) {
+        // Adjust for frame drop to keep smooth animation
+        lastFrameTime = timestamp - (delta % interval);
+        left.draw();
+        right.draw();
+      }
     };
 
     const handleResize = () => {
@@ -149,14 +159,24 @@ export default function OceanBackground() {
     };
 
     window.addEventListener("resize", handleResize);
-    loop();
+
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Initial draw to prevent flash of blank content
+    left.draw();
+    right.draw();
+
+    if (!prefersReducedMotion) {
+      loop(0);
+    }
 
     const leftLeg = jellyfish.querySelector("#left-leg");
     const rightLeg = jellyfish.querySelector("#right-leg");
     const head = jellyfish.querySelector("#head");
 
     const timeline = gsap
-      .timeline({ repeat: -1, repeatDelay: 2 })
+      .timeline({ repeat: -1, repeatDelay: 2, paused: prefersReducedMotion })
       .to(
         jellyfish,
         {
