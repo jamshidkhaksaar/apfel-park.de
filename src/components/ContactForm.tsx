@@ -20,6 +20,7 @@ type SubmitStatus = {
 };
 
 export default function ContactForm({ lang }: ContactFormProps) {
+  const formId = useId();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
@@ -102,7 +103,7 @@ export default function ContactForm({ lang }: ContactFormProps) {
       
       {/* Status Messages */}
       {status.type === "success" && (
-        <div className="rounded-xl bg-green-500/10 border border-green-500/30 p-4">
+        <div role="alert" className="rounded-xl bg-green-500/10 border border-green-500/30 p-4">
           <div className="flex items-center gap-2 text-green-400">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -113,7 +114,7 @@ export default function ContactForm({ lang }: ContactFormProps) {
       )}
       
       {status.type === "error" && (
-        <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-4">
+        <div role="alert" className="rounded-xl bg-red-500/10 border border-red-500/30 p-4">
           <div className="flex items-center gap-2 text-red-400">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -134,6 +135,7 @@ export default function ContactForm({ lang }: ContactFormProps) {
           <input
             id={`${id}-name`}
             type="text"
+            autoComplete="name"
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
             placeholder={lang === "de" ? "Dein Name" : "Your name"}
@@ -153,6 +155,7 @@ export default function ContactForm({ lang }: ContactFormProps) {
           <input
             id={`${id}-email`}
             type="email"
+            autoComplete="email"
             value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
             placeholder="you@email.com"
