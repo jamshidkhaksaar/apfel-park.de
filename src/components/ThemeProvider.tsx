@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useCallback, useSyncExternalStore } from "react";
 
-export type Theme = "dark" | "ocean";
+export type Theme = "dark" | "ocean" | "mono";
 
 type ThemeContextType = {
   theme: Theme;
@@ -45,7 +45,9 @@ export function ThemeScript() {
   const script = `
     (function() {
       try {
-        var theme = localStorage.getItem('${THEME_STORAGE_KEY}') || '${DEFAULT_THEME}';
+        var cookieMatch = document.cookie.match(/(?:^|; )apfel-theme=([^;]+)/);
+        var cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+        var theme = localStorage.getItem('${THEME_STORAGE_KEY}') || cookieTheme || '${DEFAULT_THEME}';
         document.documentElement.setAttribute('data-theme', theme);
       } catch (e) {
         document.documentElement.setAttribute('data-theme', '${DEFAULT_THEME}');
@@ -68,41 +70,42 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     themeStore.getServerSnapshot
   );
   
-  const [initialized, setInitialized] = useState(false);
-
   // Initialize theme from localStorage on mount (only once)
   useEffect(() => {
-    if (initialized) return;
-    
     try {
       const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      if (stored && (stored === "dark" || stored === "ocean")) {
-        themeStore.setTheme(stored);
-        document.documentElement.setAttribute("data-theme", stored);
+      const cookieMatch = document.cookie.match(/(?:^|; )apfel-theme=([^;]+)/);
+      const cookieTheme = cookieMatch ? (decodeURIComponent(cookieMatch[1]) as Theme) : null;
+      const initialTheme = stored || cookieTheme;
+      if (initialTheme && (initialTheme === "dark" || initialTheme === "ocean" || initialTheme === "mono")) {
+        themeStore.setTheme(initialTheme);
+        document.documentElement.setAttribute("data-theme", initialTheme);
       } else {
         document.documentElement.setAttribute("data-theme", DEFAULT_THEME);
         localStorage.setItem(THEME_STORAGE_KEY, DEFAULT_THEME);
+        document.cookie = `apfel-theme=${DEFAULT_THEME}; path=/; max-age=31536000`;
       }
     } catch {
       document.documentElement.setAttribute("data-theme", DEFAULT_THEME);
     }
-    
-    setInitialized(true);
-  }, [initialized]);
+  }, []);
 
   const setTheme = useCallback((newTheme: Theme) => {
     themeStore.setTheme(newTheme);
     document.documentElement.setAttribute("data-theme", newTheme);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+      document.cookie = `apfel-theme=${newTheme}; path=/; max-age=31536000`;
     } catch {
       // localStorage not available
     }
   }, []);
 
   const toggleTheme = useCallback(() => {
-    const newTheme = theme === "dark" ? "ocean" : "dark";
-    setTheme(newTheme);
+    const themeOrder: Theme[] = ["dark", "ocean", "mono"];
+    const currentIndex = themeOrder.indexOf(theme);
+    const nextTheme = themeOrder[(currentIndex + 1) % themeOrder.length];
+    setTheme(nextTheme);
   }, [theme, setTheme]);
 
   const value = {

@@ -20,12 +20,12 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
   const navItems = dict.nav;
   
   // Dynamic logo based on theme (fallback to regular logo if white version fails)
-  const logoSrc = theme === "ocean" && !logoError 
+  const logoSrc = (theme === "ocean" || theme === "mono") && !logoError 
     ? "/branding/apfel-park-white.png" 
     : "/branding/logo.jpg";
   
   const handleLogoError = () => {
-    if (theme === "ocean") {
+    if (theme === "ocean" || theme === "mono") {
       setLogoError(true);
     }
   };

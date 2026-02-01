@@ -164,7 +164,7 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
         >
           {loadedIndices.has(index) && (
             <Image
-              src={theme === "ocean" ? oceanImages[index] ?? s.image : s.image}
+              src={theme === "ocean" || theme === "mono" ? oceanImages[index] ?? s.image : s.image}
               alt={s.title[lang]}
               fill
               className="object-cover"
