@@ -142,7 +142,6 @@ export default function ContactForm({ lang }: ContactFormProps) {
             className={inputClassName}
             disabled={status.type === "loading"}
             required
-            autoComplete="name"
           />
         </div>
         <div>
@@ -162,7 +161,6 @@ export default function ContactForm({ lang }: ContactFormProps) {
             className={inputClassName}
             disabled={status.type === "loading"}
             required
-            autoComplete="email"
           />
         </div>
       </div>
