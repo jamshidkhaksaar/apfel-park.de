@@ -455,15 +455,15 @@ export default function GamingStore({ lang }: { lang: Locale }) {
               onClick={() => setSelectedCategory(cat.id)}
               className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
                 selectedCategory === cat.id
-                  ? "bg-gold text-black"
+                  ? "bg-gold text-contrast-adaptive"
                   : "border border-white/10 bg-white/5 text-muted hover:border-gold/30 hover:text-gold"
               }`}
             >
-              <span className={selectedCategory === cat.id ? "text-black" : ""}>
+              <span className={selectedCategory === cat.id ? "text-contrast-adaptive" : ""}>
                 {cat.icon}
               </span>
               <span>{lang === "de" ? cat.labelDe : cat.labelEn}</span>
-              <span className={`text-xs ${selectedCategory === cat.id ? "text-black/60" : "text-muted/60"}`}>
+              <span className={`text-xs ${selectedCategory === cat.id ? "text-contrast-adaptive opacity-60" : "text-muted/60"}`}>
                 ({categoryCount(cat.id)})
               </span>
             </button>
@@ -543,7 +543,7 @@ export default function GamingStore({ lang }: { lang: Locale }) {
                 {/* CTA */}
                 <Link
                   href={`/${lang}/contact`}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold to-amber px-4 py-3 text-sm font-bold text-black transition hover:shadow-lg hover:shadow-gold/20"
+                  className="btn-primary mt-4 w-full"
                 >
                   <span>{lang === "de" ? "Jetzt kaufen" : "Buy Now"}</span>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

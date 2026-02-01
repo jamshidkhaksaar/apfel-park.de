@@ -20,7 +20,7 @@ export default function ThemeToggle() {
         onClick={() => setTheme("dark")}
         className={`flex h-6 w-6 items-center justify-center rounded-full transition-all duration-300 ${
           isDark
-            ? "bg-gold text-black shadow-[0_0_12px_rgba(245,158,11,0.5)]"
+            ? "bg-gold text-contrast-adaptive shadow-[0_0_12px_rgba(245,158,11,0.5)]"
             : "text-muted-strong hover:text-muted"
         }`}
         aria-pressed={isDark}

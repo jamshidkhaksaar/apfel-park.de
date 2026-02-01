@@ -523,7 +523,7 @@ export default function SmartphoneStore({ lang }: { lang: Locale }) {
                 {/* CTA */}
                 <Link
                   href={`/${lang}/contact`}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold to-amber px-4 py-3 text-sm font-bold text-black transition hover:shadow-lg hover:shadow-gold/20"
+                  className="btn-primary mt-4 w-full"
                 >
                   <span>{lang === "de" ? "Jetzt kaufen" : "Buy Now"}</span>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
