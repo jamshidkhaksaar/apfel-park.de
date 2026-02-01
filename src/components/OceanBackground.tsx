@@ -169,6 +169,8 @@ export default function OceanBackground() {
     const handleResize = () => {
       left.resize();
       right.resize();
+      left.draw();
+      right.draw();
     };
 
     window.addEventListener("resize", handleResize);
