@@ -136,91 +136,123 @@ export default function OceanBackground() {
     const left = initSystem(leftCanvas);
     const right = initSystem(rightCanvas);
 
-    let animationFrame = 0;
-    const loop = () => {
-      left.draw();
-      right.draw();
-      animationFrame = window.requestAnimationFrame(loop);
-    };
+    // Check for reduced motion preference
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const prefersReducedMotion = mediaQuery.matches;
 
     const handleResize = () => {
       left.resize();
       right.resize();
+      if (prefersReducedMotion) {
+        left.draw();
+        right.draw();
+      }
     };
 
+    // Initial draw to ensure content is visible
+    left.draw();
+    right.draw();
+
     window.addEventListener("resize", handleResize);
-    loop();
 
-    const leftLeg = jellyfish.querySelector("#left-leg");
-    const rightLeg = jellyfish.querySelector("#right-leg");
-    const head = jellyfish.querySelector("#head");
+    let animationFrame = 0;
+    let cleanupGsap: (() => void) | undefined;
 
-    const timeline = gsap
-      .timeline({ repeat: -1, repeatDelay: 2 })
-      .to(
-        jellyfish,
-        {
-          duration: 2,
-          transformOrigin: "0% 0%",
-          xPercent: -6,
-          yPercent: -16,
-          ease: "power2.out",
-          rotation: -2,
-        },
-        0.5,
-      )
-      .to(jellyfish, {
-        duration: 4,
-        yPercent: 0,
-        xPercent: 0,
-        ease: "power1.inOut",
-        rotation: 0,
-      })
-      .to(
-        head,
-        {
-          duration: 1.5,
-          transformOrigin: "50% 50%",
-          scaleY: 1.2,
-          scaleX: 0.9,
-          yoyo: true,
-          repeat: 1,
-          yoyoEase: "power1.inOut",
-          ease: "power2.out",
-        },
-        0,
-      )
-      .to(
-        leftLeg,
-        {
-          transformOrigin: "100% 0",
-          duration: 2,
-          rotation: -25,
-          yoyo: true,
-          repeat: 1,
-          ease: "power3.out",
-        },
-        0.5,
-      )
-      .to(
-        rightLeg,
-        {
-          transformOrigin: "0 0",
-          duration: 2,
-          rotation: 25,
-          yoyo: true,
-          repeat: 1,
-          ease: "power3.out",
-        },
-        1,
-      );
+    if (!prefersReducedMotion) {
+      // Throttle frame rate to ~30fps to save battery/CPU
+      const fps = 30;
+      const interval = 1000 / fps;
+      let lastTime = 0;
+
+      const loop = (timestamp: number) => {
+        animationFrame = window.requestAnimationFrame(loop);
+
+        const elapsed = timestamp - lastTime;
+
+        if (elapsed > interval) {
+          lastTime = timestamp - (elapsed % interval);
+          left.draw();
+          right.draw();
+        }
+      };
+
+      animationFrame = window.requestAnimationFrame(loop);
+
+      const leftLeg = jellyfish.querySelector("#left-leg");
+      const rightLeg = jellyfish.querySelector("#right-leg");
+      const head = jellyfish.querySelector("#head");
+
+      const timeline = gsap
+        .timeline({ repeat: -1, repeatDelay: 2 })
+        .to(
+          jellyfish,
+          {
+            duration: 2,
+            transformOrigin: "0% 0%",
+            xPercent: -6,
+            yPercent: -16,
+            ease: "power2.out",
+            rotation: -2,
+          },
+          0.5,
+        )
+        .to(jellyfish, {
+          duration: 4,
+          yPercent: 0,
+          xPercent: 0,
+          ease: "power1.inOut",
+          rotation: 0,
+        })
+        .to(
+          head,
+          {
+            duration: 1.5,
+            transformOrigin: "50% 50%",
+            scaleY: 1.2,
+            scaleX: 0.9,
+            yoyo: true,
+            repeat: 1,
+            yoyoEase: "power1.inOut",
+            ease: "power2.out",
+          },
+          0,
+        )
+        .to(
+          leftLeg,
+          {
+            transformOrigin: "100% 0",
+            duration: 2,
+            rotation: -25,
+            yoyo: true,
+            repeat: 1,
+            ease: "power3.out",
+          },
+          0.5,
+        )
+        .to(
+          rightLeg,
+          {
+            transformOrigin: "0 0",
+            duration: 2,
+            rotation: 25,
+            yoyo: true,
+            repeat: 1,
+            ease: "power3.out",
+          },
+          1,
+        );
+
+      cleanupGsap = () => timeline.kill();
+    }
 
     return () => {
       window.removeEventListener("resize", handleResize);
       if (animationFrame) {
         window.cancelAnimationFrame(animationFrame);
       }
-      timeline.kill();
+      if (cleanupGsap) {
+        cleanupGsap();
+      }
     };
   }, [theme]);
 
