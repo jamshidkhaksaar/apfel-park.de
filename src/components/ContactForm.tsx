@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useId } from "react";
 import { useReCaptcha } from "./ReCaptcha";
 
 type ContactFormProps = {
@@ -20,6 +20,7 @@ type SubmitStatus = {
 };
 
 export default function ContactForm({ lang }: ContactFormProps) {
+  const formId = useId();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
@@ -101,7 +102,7 @@ export default function ContactForm({ lang }: ContactFormProps) {
       
       {/* Status Messages */}
       {status.type === "success" && (
-        <div className="rounded-xl bg-green-500/10 border border-green-500/30 p-4">
+        <div role="alert" className="rounded-xl bg-green-500/10 border border-green-500/30 p-4">
           <div className="flex items-center gap-2 text-green-400">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -112,7 +113,7 @@ export default function ContactForm({ lang }: ContactFormProps) {
       )}
       
       {status.type === "error" && (
-        <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-4">
+        <div role="alert" className="rounded-xl bg-red-500/10 border border-red-500/30 p-4">
           <div className="flex items-center gap-2 text-red-400">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -124,11 +125,13 @@ export default function ContactForm({ lang }: ContactFormProps) {
       
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+          <label htmlFor={`${formId}-name`} className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
             {lang === "de" ? "Name" : "Name"} *
           </label>
           <input
+            id={`${formId}-name`}
             type="text"
+            autoComplete="name"
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
             placeholder={lang === "de" ? "Dein Name" : "Your name"}
@@ -138,11 +141,13 @@ export default function ContactForm({ lang }: ContactFormProps) {
           />
         </div>
         <div>
-          <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+          <label htmlFor={`${formId}-email`} className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
             {lang === "de" ? "E-Mail" : "Email"} *
           </label>
           <input
+            id={`${formId}-email`}
             type="email"
+            autoComplete="email"
             value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
             placeholder="you@email.com"
@@ -154,10 +159,11 @@ export default function ContactForm({ lang }: ContactFormProps) {
       </div>
       
       <div>
-        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+        <label htmlFor={`${formId}-device`} className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
           {lang === "de" ? "Gerät" : "Device"}
         </label>
         <input
+          id={`${formId}-device`}
           type="text"
           value={formData.device}
           onChange={(e) => handleChange("device", e.target.value)}
@@ -168,10 +174,11 @@ export default function ContactForm({ lang }: ContactFormProps) {
       </div>
       
       <div>
-        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
+        <label htmlFor={`${formId}-message`} className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
           {lang === "de" ? "Nachricht" : "Message"} *
         </label>
         <textarea
+          id={`${formId}-message`}
           rows={4}
           value={formData.message}
           onChange={(e) => handleChange("message", e.target.value)}
