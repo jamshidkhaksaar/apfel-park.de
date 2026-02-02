@@ -73,9 +73,12 @@ export default function FeaturedStore({
                 </span>
 
                 {/* Quick Action Overlay */}
-                <div className="absolute bottom-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                  <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black ocean-keep-dark shadow-lg transition hover:scale-110 hover:bg-gold">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="absolute bottom-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus-within:translate-y-0 focus-within:opacity-100">
+                  <button
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black ocean-keep-dark shadow-lg transition hover:scale-110 hover:bg-gold"
+                    aria-label={lang === 'de' ? `Details zu ${product.title} anzeigen` : `View details for ${product.title}`}
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
