@@ -549,7 +549,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           priority={false}
         />
         {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 shop-footer-overlay" />
         
         <div className="container-page relative">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold/20 via-amber/10 to-bronze/20 ocean-panel p-10 md:p-16">
