@@ -160,6 +160,10 @@ export default function OceanBackground() {
       right.draw();
     };
 
+    // Initial draw to ensure content is visible
+    left.draw();
+    right.draw();
+
     window.addEventListener("resize", handleResize);
 
     // Initial draw to prevent flash of blank content
@@ -256,7 +260,9 @@ export default function OceanBackground() {
       if (animationFrame) {
         window.cancelAnimationFrame(animationFrame);
       }
-      timeline.kill();
+      if (cleanupGsap) {
+        cleanupGsap();
+      }
     };
   }, [theme]);
 
