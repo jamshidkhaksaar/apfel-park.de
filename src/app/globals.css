@@ -1059,11 +1059,11 @@
   }
 
   [data-theme="mono"] .hero-overlay-1 {
-    background: linear-gradient(90deg, rgba(245, 245, 245, 0.7), rgba(245, 245, 245, 0.45), transparent);
+    background: transparent;
   }
 
   [data-theme="mono"] .hero-overlay-2 {
-    background: linear-gradient(180deg, rgba(245, 245, 245, 0.55), transparent 55%, rgba(245, 245, 245, 0.5));
+    background: transparent;
   }
 
   [data-theme="mono"] .featured-store-scrim {
@@ -1071,7 +1071,7 @@
   }
 
   [data-theme="mono"] .shop-footer-overlay {
-    background: linear-gradient(180deg, rgba(245, 245, 245, 0.45), rgba(245, 245, 245, 0.3));
+    background: transparent;
   }
 
   [data-theme="mono"] .ocean-footer {
