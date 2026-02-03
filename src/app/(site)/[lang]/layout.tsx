@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import LocaleSync from "../../../components/LocaleSync";
 import SiteFooter from "../../../components/SiteFooter";
 import SiteHeader from "../../../components/SiteHeader";
-import { locales, type Locale } from "../../../lib/i18n";
+import { locales, getDictionary, type Locale } from "../../../lib/i18n";
 
 export const generateStaticParams = () =>
   locales.map((lang) => ({ lang }));
@@ -23,10 +23,12 @@ export default async function SiteLayout({
     notFound();
   }
 
+  const dict = getDictionary(locale);
+
   return (
     <div className="min-h-screen">
       <LocaleSync locale={locale} />
-      <SiteHeader lang={locale} />
+      <SiteHeader lang={locale} navItems={dict.nav} labels={dict.header} />
       <main className="page-surface">{children}</main>
       <SiteFooter lang={locale} />
     </div>
