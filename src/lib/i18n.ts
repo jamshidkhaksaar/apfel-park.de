@@ -17,6 +17,13 @@ export const dictionary = {
       openMenu: "Menü öffnen",
       closeMenu: "Menü schließen",
     },
+    featuredStore: {
+      eyebrow: "Online Shop",
+      title: "Aktuelle Angebote",
+      cta: "Zum Shop",
+      inStock: "Auf Lager",
+      detailsAriaLabel: "Details zu {{title}} anzeigen",
+    },
     footer: {
       headline: "Dein Premium-Shop für Smartphones & Reparaturen",
       description:
@@ -644,6 +651,13 @@ export const dictionary = {
       openMenu: "Open menu",
       closeMenu: "Close menu",
     },
+    featuredStore: {
+      eyebrow: "Online Store",
+      title: "Latest Arrivals",
+      cta: "Go to Store",
+      inStock: "In Stock",
+      detailsAriaLabel: "View details for {{title}}",
+    },
     footer: {
       headline: "Premium smartphones, accessories & repairs",
       description:
@@ -1258,6 +1272,8 @@ export const dictionary = {
     },
   },
 } as const;
+
+export type AboutStat = (typeof dictionary)[Locale]["about"]["stats"][number];
 
 export const getDictionary = (locale: Locale) => dictionary[locale];
 

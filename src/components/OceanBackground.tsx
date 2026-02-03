@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 import { useTheme } from "./ThemeProvider";
@@ -49,6 +49,19 @@ export default function OceanBackground() {
   const leftCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const rightCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const jellyfishRef = useRef<SVGSVGElement | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
+
+    updatePreference();
+    mediaQuery.addEventListener("change", updatePreference);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updatePreference);
+    };
+  }, []);
 
   useEffect(() => {
     if (theme !== "ocean") return;
@@ -160,10 +173,6 @@ export default function OceanBackground() {
       right.draw();
     };
 
-    // Initial draw to ensure content is visible
-    left.draw();
-    right.draw();
-
     window.addEventListener("resize", handleResize);
 
     // Initial draw to prevent flash of blank content
@@ -234,37 +243,22 @@ export default function OceanBackground() {
         1,
       );
 
-    // Handle reduced motion preference and listen for changes
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    const handleMotionChange = () => {
-      if (mediaQuery.matches) {
-        if (animationFrame) {
-          window.cancelAnimationFrame(animationFrame);
-          animationFrame = 0;
-        }
-        timeline.pause();
-      } else if (!animationFrame) {
-        lastFrameTime = performance.now(); // Reset timer to avoid large jump
-        loop(lastFrameTime);
-        timeline.play();
-      }
-    };
-
-    mediaQuery.addEventListener("change", handleMotionChange);
-    handleMotionChange(); // Initial check
+    if (!prefersReducedMotion) {
+      lastFrameTime = performance.now();
+      loop(lastFrameTime);
+      timeline.play();
+    } else {
+      timeline.pause(0);
+    }
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      mediaQuery.removeEventListener("change", handleMotionChange);
       if (animationFrame) {
         window.cancelAnimationFrame(animationFrame);
       }
-      if (cleanupGsap) {
-        cleanupGsap();
-      }
+      timeline.kill();
     };
-  }, [theme]);
+  }, [prefersReducedMotion, theme]);
 
   if (theme !== "ocean") return null;
 

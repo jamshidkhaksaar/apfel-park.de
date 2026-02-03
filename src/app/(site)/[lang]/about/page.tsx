@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import PageIntro from "../../../../components/PageIntro";
-import { getDictionary, type Locale } from "../../../../lib/i18n";
+import { getDictionary, type AboutStat, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 
 export const generateMetadata = async ({
@@ -65,7 +65,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
       <section className="relative -mt-8 z-10">
         <div className="container-page">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {dict.about.stats.map((stat: { value: string; label: string }) => (
+            {dict.about.stats.map((stat: AboutStat) => (
               <div
                 key={stat.label}
                 className="tech-card flex flex-col items-center justify-center rounded-2xl p-6 text-center"

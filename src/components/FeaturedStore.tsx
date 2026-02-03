@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { type Locale } from "../lib/i18n";
+
+import { getDictionary, type Locale } from "../lib/i18n";
 import { type Product } from "../lib/products";
 
 export default function FeaturedStore({
@@ -11,6 +12,9 @@ export default function FeaturedStore({
   products: Product[];
   lang: Locale;
 }) {
+  const dict = getDictionary(lang);
+  const featured = dict.featuredStore;
+
   return (
     <section className="section-pad relative overflow-hidden ocean-surface">
       {/* Background Decor */}
@@ -21,17 +25,17 @@ export default function FeaturedStore({
         <div className="mb-12 flex flex-col items-center justify-between gap-6 md:flex-row md:items-end">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-gold mb-2 block">
-              {lang === "de" ? "Online Shop" : "Online Store"}
+              {featured.eyebrow}
             </span>
             <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-              {lang === "de" ? "Aktuelle Angebote" : "Latest Arrivals"}
+              {featured.title}
             </h2>
           </div>
           <Link
             href={`/${lang}/store`}
             className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-2.5 text-sm font-medium text-white transition-all hover:border-gold/50 hover:bg-gold/10 hover:text-gold"
           >
-            {lang === "de" ? "Zum Shop" : "Go to Store"}
+            {featured.cta}
             <svg
               className="h-4 w-4 transition-transform group-hover:translate-x-1"
               fill="none"
@@ -76,7 +80,7 @@ export default function FeaturedStore({
                 <div className="absolute bottom-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus-within:translate-y-0 focus-within:opacity-100">
                   <button
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black ocean-keep-dark shadow-lg transition hover:scale-110 hover:bg-gold"
-                    aria-label={lang === 'de' ? `Details zu ${product.title} anzeigen` : `View details for ${product.title}`}
+                    aria-label={featured.detailsAriaLabel.replace("{{title}}", product.title)}
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -97,7 +101,7 @@ export default function FeaturedStore({
                     {product.price.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
                   </span>
                   <span className="text-[9px] font-medium uppercase tracking-wider text-green-500">
-                    {lang === 'de' ? 'Auf Lager' : 'In Stock'}
+                    {featured.inStock}
                   </span>
                 </div>
               </div>

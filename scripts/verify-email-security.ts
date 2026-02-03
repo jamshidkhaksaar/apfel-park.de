@@ -28,6 +28,12 @@ if (html.includes("&lt;script&gt;")) {
   errors.push("❌ Failed: Escaped <script> tag not found.");
 }
 
+if (html.includes("&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;")) {
+  console.log("✅ Passed: Malicious name was properly escaped.");
+} else {
+  errors.push("❌ Failed: Escaped malicious name not found in HTML.");
+}
+
 if (html.includes("<img src=x")) {
   errors.push("❌ Failed: <img src=x> found in HTML.");
 }
@@ -36,6 +42,12 @@ if (html.includes("&lt;img src=x")) {
   console.log("✅ Passed: <img> tag was properly escaped.");
 } else {
   errors.push("❌ Failed: Escaped <img> tag not found.");
+}
+
+if (html.includes("&lt;img src=x onerror=alert(1)&gt;")) {
+  console.log("✅ Passed: Malicious device string was properly escaped.");
+} else {
+  errors.push("❌ Failed: Escaped malicious device string not found in HTML.");
 }
 
 // Check message formatting
