@@ -17,3 +17,15 @@ export const isSecureSvg = (content: string): boolean => {
 
   return true;
 };
+
+/**
+ * Escapes HTML characters to prevent HTML injection and XSS
+ */
+export const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
