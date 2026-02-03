@@ -5,3 +5,7 @@
 ## 2026-01-30 - [Form Accessibility]
 **Learning:** Basic form inputs like Name and Email often lack programmatic association with their labels, making them inaccessible to screen readers and harder to click.
 **Action:** Use React's `useId` hook to generate unique IDs and strictly enforce `htmlFor`-`id` pairing on all form inputs.
+
+## 2026-03-01 - [Toggle Button Accessibility]
+**Learning:** Custom toggle buttons (like language switchers) often lack semantic grouping, confusing screen reader users about their mutual exclusivity.
+**Action:** Wrap toggle groups in a container with `role="group"` and `aria-label`, and use `aria-pressed` on the buttons to indicate state.
