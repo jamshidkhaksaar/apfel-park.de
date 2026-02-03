@@ -49,9 +49,13 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const langCookie = cookieStore.get("apfel-lang");
   const lang = langCookie?.value ?? "de";
+  const themeCookie = cookieStore.get("apfel-theme");
+  const theme = themeCookie?.value === "dark" || themeCookie?.value === "ocean" || themeCookie?.value === "mono"
+    ? themeCookie.value
+    : "ocean";
 
   return (
-    <html lang={lang} data-theme="ocean" translate="no" suppressHydrationWarning>
+    <html lang={lang} data-theme={theme} translate="no" suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>

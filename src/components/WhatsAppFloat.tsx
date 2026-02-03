@@ -86,7 +86,7 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
         </svg>
 
         {/* Notification Badge */}
-        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-black shadow-lg">
+        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-contrast-adaptive shadow-lg">
           1
         </span>
       </a>

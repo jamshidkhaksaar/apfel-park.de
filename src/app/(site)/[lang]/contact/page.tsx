@@ -85,19 +85,21 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
       </section>
 
       {/* Map */}
-      <section className="section-pad bg-surface/30">
-        <div className="container-page">
-          <div className="overflow-hidden rounded-3xl border border-white/10">
-            <iframe
-              title="Apfel Park Map"
-              src={siteInfo.map.embedUrl}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="h-96 w-full"
-            />
+      {siteInfo.map.embedUrl && (
+        <section className="section-pad bg-surface/30">
+          <div className="container-page">
+            <div className="overflow-hidden rounded-3xl border border-white/10">
+              <iframe
+                title="Apfel Park Map"
+                src={siteInfo.map.embedUrl}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="h-96 w-full"
+              />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

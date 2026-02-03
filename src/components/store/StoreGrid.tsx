@@ -51,7 +51,7 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
                 onClick={() => setActiveCategory(cat)}
                 className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all
                   ${activeCategory === cat 
-                    ? "bg-gold text-black font-bold" 
+                    ? "bg-gold text-contrast-adaptive font-bold" 
                     : "text-muted hover:bg-white/10 hover:text-white"
                   }
                 `}
@@ -68,7 +68,7 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
         </div>
 
         {/* Banner */}
-        <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-gold via-amber to-bronze p-6 text-black">
+        <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-gold via-amber to-bronze p-6 text-contrast-adaptive">
           <h3 className="text-lg font-bold leading-tight">
             {lang === "de" ? "Ankauf Service" : "Trade-In Service"}
           </h3>

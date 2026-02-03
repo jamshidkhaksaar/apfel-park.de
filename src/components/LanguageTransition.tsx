@@ -35,6 +35,14 @@ const themeColors = {
     accentGlow: "rgba(56, 189, 248, 0.4)",
     logo: "/branding/apfel-park-white.png",
   },
+  mono: {
+    wave1: "#0f0f0f",     // Deep gray
+    wave2: "#e5e5e5",     // Light gray
+    wave3: "#000000",     // Black
+    accent: "#f5f5f7",    // White accent
+    accentGlow: "rgba(255, 255, 255, 0.35)",
+    logo: "/branding/apfel-park-white.png",
+  },
 };
 
 export default function LanguageTransitionProvider({ children }: { children: React.ReactNode }) {

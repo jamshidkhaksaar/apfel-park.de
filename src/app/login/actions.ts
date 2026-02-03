@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { redirect } from "next/navigation";
 
-export async function loginAction(prevState: any, formData: FormData) {
+type LoginActionState = {
+  error?: string;
+};
+
+export async function loginAction(_prevState: LoginActionState | null, formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const token = formData.get("cf-turnstile-response") as string;
