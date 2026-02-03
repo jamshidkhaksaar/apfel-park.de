@@ -65,7 +65,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
       <section className="relative -mt-8 z-10">
         <div className="container-page">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {dict.about.stats.map((stat) => (
+            {dict.about.stats.map((stat: { value: string; label: string }) => (
               <div
                 key={stat.label}
                 className="tech-card flex flex-col items-center justify-center rounded-2xl p-6 text-center"
@@ -153,7 +153,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
           </div>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {dict.about.features.map((feature) => (
+            {dict.about.features.map((feature: { title: string; description: string; icon: string }) => (
               <div
                 key={feature.title}
                 className="tech-card-hover group rounded-2xl p-6 transition-all duration-300"
@@ -188,7 +188,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
               </p>
             </div>
             <div className="space-y-4">
-              {dict.about.values.items.map((value, index) => (
+              {dict.about.values.items.map((value: string, index: number) => (
                 <div
                   key={value}
                   className="tech-card-hover flex items-start gap-4 rounded-2xl p-5"

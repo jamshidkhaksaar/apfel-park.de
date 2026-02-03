@@ -108,7 +108,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               {/* Vertical Connection Line */}
               <div className="absolute left-8 top-8 h-[calc(100%-64px)] w-px bg-gradient-to-b from-gold via-amber to-transparent opacity-50" />
               
-              {dict.home.process.steps.map((step, index) => {
+              {dict.home.process.steps.map((step: { title: string; description: string }, index: number) => {
                 const stepIcons = [
                   // Step 1: Diagnostic / Inspection
                   <svg key="diagnose" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -265,7 +265,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {dict.home.services.items.map((item, index) => {
+            {dict.home.services.items.map((item: { title: string; description: string }, index: number) => {
               const icons = [
                 <svg key="display" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>,
                 <svg key="water" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21.5c-3.5 0-6.5-2.5-6.5-6.5 0-4.5 6.5-12 6.5-12s6.5 7.5 6.5 12c0 4-3 6.5-6.5 6.5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3 3 0 0 0 3-3c0-2-3-5-3-5s-3 3-3 5a3 3 0 0 0 3 3z" className="opacity-50" /></svg>,
@@ -302,7 +302,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {dict.home.hero.cards.map((card, index) => {
+            {dict.home.hero.cards.map((card: { title: string; description: string; path: string; image: string }, index: number) => {
               const cardIllustrations = [
                 // 1. Shop & Advice - Storefront/Interaction
                 <svg key="shop" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.8}>
@@ -446,7 +446,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <div className="order-1 space-y-8 lg:order-2">
               {/* Feature Cards */}
               <div className="grid gap-4 sm:grid-cols-2">
-                {dict.home.support.bullets.map((item, index) => {
+                {dict.home.support.bullets.map((item: string, index: number) => {
                   const featureIcons = [
                     <svg key="diag" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
                     <svg key="setup" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>,
