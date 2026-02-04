@@ -2,19 +2,18 @@
 
 import Link from "next/link";
 
-import { getDictionary, type Locale } from "../lib/i18n";
+import { type FeaturedStoreLabels, type Locale } from "../lib/i18n";
 import { type Product } from "../lib/products";
 
 export default function FeaturedStore({
   products,
   lang,
+  featured,
 }: {
   products: Product[];
   lang: Locale;
+  featured: FeaturedStoreLabels; // Optimization: Passed as prop to avoid bundling entire dictionary in client
 }) {
-  const dict = getDictionary(lang);
-  const featured = dict.featuredStore;
-
   return (
     <section className="section-pad relative overflow-hidden ocean-surface">
       {/* Background Decor */}
