@@ -1,4 +1,7 @@
 export const isSecureSvg = (content: string): boolean => {
+  // Prevent bypass via encoding (e.g. UTF-16) that leaves null bytes
+  if (content.includes("\0")) return false;
+
   if (/<script/i.test(content)) return false;
   if (/javascript:/i.test(content)) return false;
   if (/on\w+\s*=/i.test(content)) return false;
