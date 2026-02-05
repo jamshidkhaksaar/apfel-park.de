@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, FormEvent, useId } from "react";
+import { useState, FormEvent, useId, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useReCaptcha } from "./ReCaptcha";
 
 type ContactFormProps = {
@@ -20,11 +21,14 @@ type SubmitStatus = {
   errors?: Partial<Record<keyof FormData, string>>;
 };
 
-export default function ContactForm({ lang }: ContactFormProps) {
+function ContactFormContent({ lang }: ContactFormProps) {
+  const searchParams = useSearchParams();
+  const initialDevice = searchParams.get("device") || "";
+
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
-    device: "",
+    device: initialDevice,
     message: "",
   });
   const [status, setStatus] = useState<SubmitStatus>({ type: "idle" });
@@ -284,5 +288,13 @@ export default function ContactForm({ lang }: ContactFormProps) {
           : "This site is protected by reCAPTCHA. Google Privacy Policy and Terms of Service apply."}
       </p>
     </form>
+  );
+}
+
+export default function ContactForm(props: ContactFormProps) {
+  return (
+    <Suspense fallback={<div className="tech-card h-[600px] rounded-3xl p-8 animate-pulse bg-white/5" />}>
+      <ContactFormContent {...props} />
+    </Suspense>
   );
 }
