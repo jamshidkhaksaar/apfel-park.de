@@ -4,20 +4,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import { getDictionary, type Locale } from "../lib/i18n";
+import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import { useTheme } from "./ThemeProvider";
 
-export default function SiteHeader({ lang }: { lang: Locale }) {
-  const dict = getDictionary(lang);
+type SiteHeaderProps = {
+  lang: Locale;
+  navItems: NavItems;
+  labels: HeaderLabels;
+};
+
+export default function SiteHeader({
+  lang,
+  navItems,
+  labels,
+}: SiteHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const { theme } = useTheme();
-  
-  // Get nav items directly
-  const navItems = dict.nav;
   
   // Dynamic logo based on theme (fallback to regular logo if white version fails)
   const logoSrc = (theme === "ocean" || theme === "mono") && !logoError 
@@ -135,7 +141,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden"
-              aria-label={mobileMenuOpen ? dict.header.closeMenu : dict.header.openMenu}
+              aria-label={mobileMenuOpen ? labels.closeMenu : labels.openMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu-nav"
             >

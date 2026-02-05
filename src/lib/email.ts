@@ -30,7 +30,7 @@ const getContactRecipient = async (): Promise<string | null> => {
   return process.env.CONTACT_NOTIFICATION_EMAIL || null;
 };
 
-const buildEmailContent = (data: ContactNotificationData) => {
+export const buildEmailContent = (data: ContactNotificationData) => {
   const subject =
     data.locale === "de"
       ? "Neue Kontaktanfrage"

@@ -5,3 +5,7 @@
 ## 2026-01-30 - [Form Accessibility]
 **Learning:** Basic form inputs like Name and Email often lack programmatic association with their labels, making them inaccessible to screen readers and harder to click.
 **Action:** Use React's `useId` hook to generate unique IDs and strictly enforce `htmlFor`-`id` pairing on all form inputs.
+
+## 2026-01-30 - [Hover-Only Interactive Overlays]
+**Learning:** Elements that appear only on hover (like "Quick View" buttons) create keyboard traps where users tab into invisible elements. `opacity-0` hides visuals but not focus.
+**Action:** Ensure overlay containers have `focus-within:opacity-100` (or similar) so interactive children become visible when focused via keyboard.

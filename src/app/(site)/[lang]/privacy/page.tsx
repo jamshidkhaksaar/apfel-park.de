@@ -33,11 +33,11 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
 
       <section className="section-pad">
         <div className="container-page max-w-4xl space-y-6">
-          {dict.privacy.sections.map((section) => (
+          {dict.privacy.sections.map((section: { title: string; body: readonly string[] }) => (
             <div key={section.title} className="tech-card rounded-2xl p-6">
               <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
               <ul className="mt-4 space-y-2 text-sm text-muted">
-                {section.body.map((item) => (
+                {section.body.map((item: string) => (
                   <li key={item} className="flex items-start gap-2">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan" />
                     {item}

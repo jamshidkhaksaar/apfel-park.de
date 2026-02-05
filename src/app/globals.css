@@ -624,6 +624,10 @@
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 55%, rgba(0, 0, 0, 0.4));
   }
 
+  .shop-footer-overlay {
+    background: rgba(0, 0, 0, 0.6);
+  }
+
   .featured-store-scrim {
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.9));
   }
@@ -796,8 +800,23 @@
   }
 
   [data-theme="mono"] .ocean-icon {
-    color: #000000;
+    color: #ffffff;
     filter: none;
+  }
+
+  [data-theme="mono"] .logo-border-wrapper {
+    animation: none;
+  }
+
+  [data-theme="mono"] .logo-border-wrapper::before,
+  [data-theme="mono"] .logo-border-wrapper::after {
+    display: none;
+  }
+
+  [data-theme="mono"] .navbar-border::after {
+    display: none;
+    animation: none;
+    box-shadow: none;
   }
 
   [data-theme="mono"] .ocean-glow {
@@ -1040,15 +1059,19 @@
   }
 
   [data-theme="mono"] .hero-overlay-1 {
-    background: linear-gradient(90deg, rgba(245, 245, 245, 0.95), rgba(245, 245, 245, 0.7), transparent);
+    background: transparent;
   }
 
   [data-theme="mono"] .hero-overlay-2 {
-    background: linear-gradient(180deg, rgba(245, 245, 245, 0.8), transparent 55%, rgba(245, 245, 245, 0.7));
+    background: transparent;
   }
 
   [data-theme="mono"] .featured-store-scrim {
     background: linear-gradient(180deg, rgba(245, 245, 245, 0.9), rgba(245, 245, 245, 0.85), rgba(245, 245, 245, 0.95));
+  }
+
+  [data-theme="mono"] .shop-footer-overlay {
+    background: transparent;
   }
 
   [data-theme="mono"] .ocean-footer {

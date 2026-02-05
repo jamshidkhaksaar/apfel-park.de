@@ -33,7 +33,7 @@ export default async function FaqPage({ params }: { params: Promise<{ lang: stri
 
       <section className="section-pad">
         <div className="container-page max-w-3xl space-y-4">
-          {dict.faq.items.map((item, index) => (
+          {dict.faq.items.map((item: { question: string; answer: string }, index: number) => (
             <div key={item.question} className="tech-card rounded-2xl p-6">
               <div className="flex items-start gap-4">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/20 text-sm font-bold text-gold">
