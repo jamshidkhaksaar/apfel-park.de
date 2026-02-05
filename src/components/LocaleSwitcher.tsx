@@ -71,7 +71,7 @@ export default function LocaleSwitcher() {
           ${currentLocale === "de" ? "text-white" : "text-muted hover:text-white/80"}
         `}
         aria-pressed={currentLocale === "de"}
-        aria-label="Switch to German"
+        aria-label="Deutsch"
         title="Deutsch"
       >
         DE

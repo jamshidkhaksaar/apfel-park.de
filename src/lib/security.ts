@@ -1,32 +1,26 @@
-export const isSecureSvg = (content: string): boolean => {
-  // Prevent bypass via encoding (e.g. UTF-16) that leaves null bytes
-  if (content.includes("\0")) return false;
+import he from "he";
 
-  if (/<script/i.test(content)) return false;
-  if (/javascript:/i.test(content)) return false;
-  if (/on\w+\s*=/i.test(content)) return false;
-  if (/<foreignObject/i.test(content)) return false;
+export const isSecureSvg = (content: string): boolean => {
+  const decodedContent = he.decode(content);
+
+  // Prevent bypass via encoding (e.g. UTF-16) that leaves null bytes
+  if (decodedContent.includes("\0")) return false;
+
+  if (/<script/i.test(decodedContent)) return false;
+  if (/javascript:/i.test(decodedContent)) return false;
+  if (/on\w+\s*=/i.test(decodedContent)) return false;
+  if (/<foreignObject/i.test(decodedContent)) return false;
 
   // Block SMIL animation tags and external references
-  if (/<(?:set|animate|animateMotion|animateTransform|use)/i.test(content)) return false;
+  if (/<(?:set|animate|animateMotion|animateTransform|use)/i.test(decodedContent)) return false;
 
   // Block dangerous data: URIs
-  if (/data:(?:image\/svg\+xml|text\/html)/i.test(content)) return false;
-
-  // Check for entity-encoded javascript:
-  const decodedContent = content.replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)))
-                                .replace(/&#([0-9]+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
-  if (/javascript:/i.test(decodedContent)) return false;
+  if (/data:(?:image\/svg\+xml|text\/html)/i.test(decodedContent)) return false;
 
   return true;
 };
 
 export const escapeHtml = (str: string): string => {
   if (!str) return "";
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return he.encode(str, { useNamedReferences: true });
 };

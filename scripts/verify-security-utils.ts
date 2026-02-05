@@ -5,7 +5,7 @@ console.log("Running security verification...");
 const testCases = [
   { input: '<script>', expected: '&lt;script&gt;' },
   { input: 'Hello "World"', expected: 'Hello &quot;World&quot;' },
-  { input: "It's me", expected: "It&#039;s me" },
+  { input: "It's me", expected: "It&apos;s me" },
   { input: 'a & b', expected: 'a &amp; b' },
   { input: '<div>\n</div>', expected: '&lt;div&gt;\n&lt;/div&gt;' },
 ];
@@ -29,11 +29,17 @@ testCases.forEach(({ input, expected }, index) => {
 console.log("\nTesting isSecureSvg...");
 const svgCases = [
   { input: '<svg><script>alert(1)</script></svg>', secure: false },
+  { input: '<svg><rect onclick="alert(1)" /></svg>', secure: false },
+  { input: '<svg><foreignObject>test</foreignObject></svg>', secure: false },
   { input: '<svg><animate attributeName="x" to="100" /></svg>', secure: false },
   { input: '<svg><use href="external.svg#icon" /></svg>', secure: false },
   { input: '<svg width="100" height="100"><rect /></svg>', secure: true },
   // check javascript: in attribute
   { input: '<svg><a href="javascript:alert(1)">link</a></svg>', secure: false },
+  // check entity-encoded javascript:
+  { input: '<svg><a href="&#x6A;avascript:alert(1)">link</a></svg>', secure: false },
+  // check entity-encoded script tag
+  { input: '<svg><scr&#105;pt>alert(1)</scr&#105;pt></svg>', secure: false },
 ];
 
 svgCases.forEach(({ input, secure }, index) => {

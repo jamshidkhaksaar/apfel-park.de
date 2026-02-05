@@ -1279,7 +1279,7 @@ export type AboutStat = (typeof dictionary)[Locale]["about"]["stats"][number];
 
 export const getDictionary = (locale: Locale) => dictionary[locale];
 
-export type NavItems = typeof dictionary.de.nav | typeof dictionary.en.nav;
-export type HeaderLabels = typeof dictionary.de.header | typeof dictionary.en.header;
+export type NavItems = (typeof dictionary)[Locale]["nav"];
+export type HeaderLabels = (typeof dictionary)[Locale]["header"];
 
 export type FeaturedStoreLabels = (typeof dictionary)[Locale]["featuredStore"];
