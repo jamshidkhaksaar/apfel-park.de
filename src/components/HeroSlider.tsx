@@ -71,7 +71,8 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
   const content = heroCopy[lang];
 
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative min-h-[85vh] overflow-hidden">
+      {/* Background Image */}
       <div className="absolute inset-0">
         <Image
           src="/images/slider_images/iphone.png"
@@ -80,68 +81,117 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
           className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-surface/50" />
-        <div className="absolute inset-0 hero-overlay-1" />
-        <div className="absolute inset-0 hero-overlay-2" />
+        {/* Professional Gradient Overlays */}
+        <div className="hero-gradient-overlay" />
+        <div className="hero-vignette" />
       </div>
 
-      <div className="container-page relative z-10 grid gap-12 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:py-24">
-        <div className="flex flex-col justify-center gap-6">
-          <div className="inline-flex items-center gap-2 self-start rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-gold">
-            {content.eyebrow}
-          </div>
-
-          <h1 className="hero-headline text-4xl font-semibold leading-tight text-heading md:text-5xl lg:text-6xl">
-            <span className="gradient-text">{content.titlePrefix}</span>
-            <span className="text-heading"> {content.titleSuffix}</span>
-          </h1>
-
-          <p className="text-base font-medium uppercase tracking-[0.08em] text-muted-strong md:text-lg">
-            {content.subtitle}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {content.pills.map((pill) => (
-              <span key={pill} className="chip">
-                {pill}
+      {/* Content */}
+      <div className="container-page relative z-10 flex min-h-[85vh] items-center py-16 lg:py-24">
+        <div className="grid w-full gap-8 lg:grid-cols-[1fr_auto] lg:gap-16">
+          {/* Left Column - Main Content */}
+          <div className="flex max-w-2xl flex-col justify-center gap-6">
+            {/* Eyebrow Badge */}
+            <div className="inline-flex items-center gap-2 self-start">
+              <span className="h-px w-8 bg-gold/60" />
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+                {content.eyebrow}
               </span>
-            ))}
+            </div>
+
+            {/* Main Headline */}
+            <h1 className="text-4xl font-semibold leading-[1.15] text-heading md:text-5xl lg:text-6xl">
+              <span className="gradient-text">{content.titlePrefix}</span>
+              <span className="block text-heading">{content.titleSuffix}</span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className="max-w-xl text-base font-medium uppercase tracking-[0.08em] text-muted-strong md:text-lg">
+              {content.subtitle}
+            </p>
+
+            {/* Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              {content.pills.map((pill) => (
+                <span 
+                  key={pill} 
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur-sm transition-colors hover:border-gold/30 hover:bg-gold/10"
+                >
+                  {pill}
+                </span>
+              ))}
+            </div>
+
+            {/* CTAs */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link href={`/${lang}/repairs`} className="btn-primary">
+                {content.primaryCta}
+              </Link>
+              <Link href={`/${lang}/store`} className="btn-secondary">
+                {content.secondaryCta}
+              </Link>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="flex flex-wrap items-center gap-2 pt-4">
+              {content.trust.map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted backdrop-blur-sm"
+                >
+                  <svg className="h-3.5 w-3.5 text-gold" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <Link href={`/${lang}/repairs`} className="btn-primary">
-              {content.primaryCta}
-            </Link>
-            <Link href={`/${lang}/store`} className="btn-secondary">
-              {content.secondaryCta}
-            </Link>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-muted">
-            {content.trust.map((item) => (
-              <span
-                key={item}
-                className="rounded-full border border-white/10 bg-surface/70 px-3 py-1"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="w-full max-w-xl self-start rounded-3xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-xl md:max-w-2xl md:p-8 lg:max-w-md xl:max-w-lg">
-          <div className="space-y-6">
-            {content.highlights.map((item, index) => (
-              <div key={item.title} className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/15 text-gold">
-                  {highlightIcons[index]}
+          {/* Right Column - Glass Card */}
+          <div className="flex items-center lg:justify-end">
+            <div className="hero-glass-card w-full max-w-md rounded-2xl border border-white/15 bg-white/8 p-6 shadow-2xl backdrop-blur-2xl md:p-8">
+              {/* Card Header */}
+              <div className="mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/20 text-gold">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                  </svg>
                 </div>
                 <div>
-                  <p className="text-base font-semibold text-foreground">{item.title}</p>
-                  <p className="mt-1 text-sm text-muted">{item.description}</p>
+                  <p className="text-sm font-semibold text-foreground">{lang === "de" ? "Warum Apfel Park?" : "Why Apfel Park?"}</p>
+                  <p className="text-xs text-muted">{lang === "de" ? "Dein vertrauenswürdiger Partner" : "Your trusted partner"}</p>
                 </div>
               </div>
-            ))}
+
+              {/* Highlights List */}
+              <div className="space-y-5">
+                {content.highlights.map((item, index) => (
+                  <div key={item.title} className="group flex items-start gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold transition-all duration-300 group-hover:bg-gold/25 group-hover:scale-105">
+                      {highlightIcons[index]}
+                    </div>
+                    <div className="pt-0.5">
+                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                      <p className="mt-0.5 text-sm leading-relaxed text-muted">{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Card Footer */}
+              <div className="mt-6 border-t border-white/10 pt-4">
+                <Link 
+                  href={`/${lang}/repairs`}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-gold/20 py-3 text-sm font-semibold text-gold transition-all duration-300 hover:bg-gold hover:text-background"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  {lang === "de" ? "Jetzt Termin vereinbaren" : "Book appointment now"}
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
