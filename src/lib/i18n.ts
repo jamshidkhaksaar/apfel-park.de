@@ -16,6 +16,7 @@ export const dictionary = {
     header: {
       openMenu: "Menü öffnen",
       closeMenu: "Menü schließen",
+      skipToContent: "Zum Inhalt springen",
     },
     featuredStore: {
       eyebrow: "Online Shop",
@@ -650,6 +651,7 @@ export const dictionary = {
     header: {
       openMenu: "Open menu",
       closeMenu: "Close menu",
+      skipToContent: "Skip to content",
     },
     featuredStore: {
       eyebrow: "Online Store",

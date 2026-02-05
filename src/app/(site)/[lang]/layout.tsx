@@ -34,7 +34,7 @@ export default async function SiteLayout({
         navItems={dict.nav}
         labels={dict.header}
       />
-      <main className="page-surface">{children}</main>
+      <main id="main-content" tabIndex={-1} className="page-surface">{children}</main>
       <SiteFooter lang={locale} />
     </div>
   );
