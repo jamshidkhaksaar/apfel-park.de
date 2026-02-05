@@ -6,6 +6,7 @@ import SmartphoneStore from "../../../../components/SmartphoneStore";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
+import { smartphones } from "../../../../lib/smartphones";
 
 export const generateMetadata = async ({
   params,
@@ -98,7 +99,7 @@ export default async function SmartphonesPage({
       </section>
 
       {/* Smartphone Store */}
-      <SmartphoneStore lang={lang as Locale} />
+      <SmartphoneStore lang={lang as Locale} phones={smartphones} />
 
       {/* Warranty Info Section */}
       <section className="section-pad bg-surface/30">

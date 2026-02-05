@@ -9,3 +9,7 @@
 ## 2026-02-02 - Client Bundle Optimization
 **Learning:** Importing large configuration objects (like the i18n dictionary) directly into Client Components bundles the entire object into the client-side JavaScript, significantly increasing bundle size.
 **Action:** Move data access to Server Components and pass only the necessary data slices as props to Client Components.
+
+## 2026-02-04 - Hardcoded Data in Client Components
+**Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
+**Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
