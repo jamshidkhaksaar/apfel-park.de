@@ -24,8 +24,6 @@ export default async function SiteLayout({
     notFound();
   }
 
-  const dict = getDictionary(locale);
-
   return (
     <div className="min-h-screen">
       <LocaleSync locale={locale} />
