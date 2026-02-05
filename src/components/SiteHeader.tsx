@@ -45,7 +45,7 @@ export default function SiteHeader({
         {labels.skipToContent}
       </a>
       {/* Top Bar - Speed & Contact Info */}
-      <div className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-sm">
+      <div className="top-bar relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-sm">
         <div className="container-page flex items-center justify-between py-2 text-xs">
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 animate-gold-pulse rounded-full bg-gold" />

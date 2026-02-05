@@ -685,6 +685,48 @@
     background: var(--background);
   }
 
+  /* Mono theme - Top bar (express repair banner) */
+  [data-theme="mono"] .top-bar {
+    background: linear-gradient(180deg, #ffffff 0%, #f7f4ee 100%) !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  [data-theme="mono"] .top-bar .text-muted\/60,
+  [data-theme="mono"] .top-bar .text-muted\/80,
+  [data-theme="mono"] .top-bar .text-white\/10 {
+    color: #6d6d6f !important;
+  }
+
+  [data-theme="mono"] .top-bar .text-gold {
+    color: #b5842f !important;
+  }
+
+  [data-theme="mono"] .top-bar svg {
+    stroke: #3a3a3c;
+  }
+
+  /* Mono theme - Contact form inputs */
+  [data-theme="mono"] input,
+  [data-theme="mono"] textarea,
+  [data-theme="mono"] select {
+    background: #fafafa !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    color: #1a1a1a !important;
+  }
+
+  [data-theme="mono"] input::placeholder,
+  [data-theme="mono"] textarea::placeholder,
+  [data-theme="mono"] select::placeholder {
+    color: #6d6d6f !important;
+  }
+
+  [data-theme="mono"] input:focus,
+  [data-theme="mono"] textarea:focus,
+  [data-theme="mono"] select:focus {
+    border-color: #d49e42 !important;
+    box-shadow: 0 0 0 2px rgba(212, 158, 66, 0.2) !important;
+  }
 
   /* Cleaned up mono theme overrides */
   [data-theme="mono"] .text-amber-500 {
