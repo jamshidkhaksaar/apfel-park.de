@@ -115,8 +115,10 @@ export default function ThemeProvider({
   }, []);
 
   const setTheme = useCallback((newTheme: Theme) => {
-    themeStore.setTheme(newTheme);
+    // Update DOM first so getSnapshot reads the new value immediately
     document.documentElement.setAttribute("data-theme", newTheme);
+    // Then update store to trigger re-renders
+    themeStore.setTheme(newTheme);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, newTheme);
       document.cookie = `apfel-theme=${newTheme}; path=/; max-age=31536000`;

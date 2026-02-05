@@ -1,14 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
 import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
+import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
-import { useTheme } from "./ThemeProvider";
 
 type SiteHeaderProps = {
   lang: Locale;
@@ -22,19 +21,6 @@ export default function SiteHeader({
   labels,
 }: SiteHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [logoError, setLogoError] = useState(false);
-  const { theme } = useTheme();
-  
-  // Dynamic logo based on theme (fallback to regular logo if white version fails)
-  const logoSrc = theme === "dark" && !logoError
-    ? "/branding/apfel-park-white.png"
-    : "/branding/logo.jpg";
-  
-  const handleLogoError = () => {
-    if (theme === "dark") {
-      setLogoError(true);
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 transition-all duration-300" translate="no">
@@ -78,20 +64,10 @@ export default function SiteHeader({
       {/* Main Navigation with Logo Notch */}
       <div className="container-page relative z-10 flex items-start">
         {/* Logo with notch border - wraps around logo */}
-        <div className="relative z-10 shrink-0">
-          {/* Animated border wrapper */}
-          <div className="logo-border-wrapper rounded-b-2xl p-2 bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-xl ring-1 ring-white/10">
-            <Link href={`/${lang}`} className="block">
-              <Image
-                src={logoSrc}
-                alt="Apfel Park"
-                width={108}
-                height={108}
-                className="rounded-xl object-contain shadow-lg"
-                style={{ width: '108px', height: '108px' }}
-                onError={handleLogoError}
-              />
-            </Link>
+          <div className="relative z-10 shrink-0" suppressHydrationWarning>
+            {/* Animated border wrapper */}
+            <div className="logo-border-wrapper rounded-b-2xl p-2 bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-xl ring-1 ring-white/10">
+            <Logo href={`/${lang}`} size="xl" priority />
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 
 import LocaleSync from "../../../components/LocaleSync";
+import PageTransition from "../../../components/PageTransition";
 import SiteFooter from "../../../components/SiteFooter";
 import SiteHeader from "../../../components/SiteHeader";
 import { locales, getDictionary, type Locale } from "../../../lib/i18n";
@@ -32,7 +33,9 @@ export default async function SiteLayout({
         navItems={dict.nav}
         labels={dict.header}
       />
-      <main id="main-content" tabIndex={-1} className="page-surface">{children}</main>
+      <main id="main-content" tabIndex={-1} className="page-surface">
+        <PageTransition>{children}</PageTransition>
+      </main>
       <SiteFooter lang={locale} />
     </div>
   );

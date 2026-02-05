@@ -7,6 +7,18 @@ const nextConfig: NextConfig = {
   generateBuildId: async () => {
     return `build-${Date.now()}`;
   },
+
+  // Image optimization settings
+  images: {
+    // Enable modern image formats for better compression
+    formats: ['image/avif', 'image/webp'],
+    // Device sizes for responsive images
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    // Image sizes for next/image
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Minimum cache TTL for optimized images (1 year)
+    minimumCacheTTL: 31536000,
+  },
   
   async headers() {
     return [
@@ -42,6 +54,16 @@ const nextConfig: NextConfig = {
       // Ensure JS chunks are not aggressively cached
       {
         source: '/_next/static/chunks/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
+      },
+      // Cache optimized images aggressively
+      {
+        source: '/_next/image/:path*',
         headers: [
           {
             key: 'Cache-Control',

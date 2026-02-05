@@ -9,6 +9,7 @@ import HeroSlider from "../../../components/HeroSlider";
 import FeaturedStore from "../../../components/FeaturedStore";
 import TestimonialsCarousel from "../../../components/TestimonialsCarousel";
 import { getFeaturedProducts } from "../../../lib/products";
+import AnimatedSection from "../../../components/AnimatedSection";
 
 export const generateMetadata = async ({
   params,
@@ -123,7 +124,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <FeaturedStore products={featuredProducts} lang={lang as Locale} featured={dict.featuredStore} />
 
       {/* Repair Process - Visual Timeline */}
-      <section className="section-pad bg-surface-strong">
+      <AnimatedSection as="section" animation="fade-up" className="section-pad bg-surface-strong">
         <div className="container-page">
           <div className="mb-16 text-center">
             <span className="badge-gold mb-4 inline-flex">
@@ -268,10 +269,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </div>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Services Grid */}
-      <section className="section-pad bg-surface-strong">
+      <AnimatedSection as="section" animation="fade-up" delay={100} className="section-pad bg-surface-strong">
         <div className="container-page">
           <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
             <div>
@@ -312,10 +313,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             })}
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Device Categories */}
-      <section className="section-pad bg-surface-strong">
+      <AnimatedSection as="section" animation="fade-up" delay={100} className="section-pad bg-surface-strong">
         <div className="container-page">
           <div className="mb-12 text-center">
             <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
@@ -398,10 +399,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             })}
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Support Section - Redesigned with Illustration */}
-      <section className="section-pad relative overflow-hidden bg-surface-strong">
+      <AnimatedSection as="section" animation="fade-up" delay={100} className="section-pad relative overflow-hidden bg-surface-strong">
         <div className="container-page relative">
           {/* Section Header - Centered */}
           <div className="mb-16 text-center">
@@ -544,10 +545,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </div>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Testimonials - Professional Carousel */}
-      <section className="section-pad relative overflow-hidden bg-surface-strong">
+      <AnimatedSection as="section" animation="fade-up" delay={100} className="section-pad relative overflow-hidden bg-surface-strong">
         <div className="container-page relative">
           {/* Section Header */}
           <div className="mb-16 text-center">
@@ -571,10 +572,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             lang={lang as "de" | "en"} 
           />
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* CTA Section */}
-      <section className="relative section-pad overflow-hidden">
+      <AnimatedSection as="section" animation="fade-up" delay={100} className="relative section-pad overflow-hidden">
         {/* Section Background Image */}
         <Image
           src="/images/footer-shop.png"
@@ -617,7 +618,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </div>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
     </div>
   );
 }

@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { getDictionary, type Locale } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
 import BackToTopButton from "./BackToTopButton";
+import Logo from "./Logo";
 
 export default function SiteFooter({ lang }: { lang: Locale }) {
   const dict = getDictionary(lang);
@@ -17,13 +17,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
           <div className="space-y-6">
             <Link href={`/${lang}`} className="group inline-flex items-center gap-5">
               <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-gold/15 to-amber/10 ring-1 ring-white/10 transition-transform duration-300 group-hover:scale-105 shadow-xl">
-                <Image
-                  src="/branding/logo.jpg"
-                  alt="Apfel Park"
-                  width={80}
-                  height={80}
-                  className="h-20 w-20 rounded-2xl object-contain shadow-lg"
-                />
+                <Logo size="lg" priority />
               </div>
               <div>
                 <p className="text-3xl font-bold text-foreground tracking-tight">Apfel Park</p>

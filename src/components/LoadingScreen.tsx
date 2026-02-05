@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
+import Logo from "./Logo";
 
 type LoadingScreenProps = {
   onLoadingComplete?: () => void;
@@ -45,14 +45,9 @@ export default function LoadingScreen({
           
           {/* Logo with flip animation */}
           <div className="loading-logo-flipper">
-            <Image
-              src="/branding/logo.jpg"
-              alt="Apfel Park"
-              width={140}
-              height={140}
-              className="loading-logo"
-              priority
-            />
+            <div className="loading-logo">
+              <Logo size="xl" priority />
+            </div>
           </div>
         </div>
 

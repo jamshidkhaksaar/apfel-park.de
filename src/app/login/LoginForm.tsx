@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useActionState, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { loginAction } from "./actions";
+import Logo from "@/components/Logo";
 
 export default function LoginForm({ siteKey }: { siteKey: string | null }) {
   const searchParams = useSearchParams();
@@ -18,9 +19,10 @@ export default function LoginForm({ siteKey }: { siteKey: string | null }) {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/de" className="inline-block">
-            <h1 className="text-3xl font-bold gradient-text">Apfel Park</h1>
-          </Link>
+          <div className="flex justify-center mb-4">
+            <Logo href="/de" size="lg" priority />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">Apfel Park</h1>
           <p className="mt-2 text-muted">Admin Login</p>
         </div>
 
