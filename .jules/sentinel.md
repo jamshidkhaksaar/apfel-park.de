@@ -23,7 +23,7 @@
 **Learning:** Next.js middleware relies on specific file naming conventions (i.e., `middleware.ts`), which can be a source of configuration errors. Supabase auth helpers, in particular, depend on this convention for proper execution.
 **Prevention:** Ensure `src/middleware.ts` exists and is verified to run (e.g., by adding a log or checking headers) during deployment.
 
-## 2026-02-02 - SVG Stored XSS via UTF-16 Encoding Bypass
-**Vulnerability:** The `isSecureSvg` function relied on `buffer.toString("utf-8")` to inspect file content. UTF-16 encoded files with malicious scripts (e.g. `<script>`) produced valid strings with interspersed null characters when decoded as UTF-8, which bypassed regex checks but could still be executed by browsers sniffing the encoding.
-**Learning:** Regex-based sanitization on strings decoded with the wrong encoding is ineffective. UTF-16 encoding is a common bypass vector for ASCII/UTF-8 based filters.
-**Prevention:** In `isSecureSvg`, explicit rejection of strings containing null characters (`\0`) effectively blocks UTF-16/32 encoded content from passing as UTF-8.
+## 2026-02-15 - HTML Injection in Transactional Emails
+**Vulnerability:** User-submitted contact form data was interpolated directly into the HTML body of notification emails, allowing attackers to inject malicious HTML/scripts (Reflected XSS in email clients).
+**Learning:** Even internal notification emails are an attack vector if they render user input as HTML. Template literals are not safe for HTML generation with untrusted input.
+**Prevention:** Introduced `escapeHtml` utility in `src/lib/security.ts` and enforced its usage for all user-controlled variables (including those that seem "safe" like dynamic subjects) in email templates.
