@@ -85,7 +85,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* Featured Store */}
-      <FeaturedStore products={featuredProducts} lang={lang as Locale} />
+      <FeaturedStore products={featuredProducts} lang={lang as Locale} featured={dict.featuredStore} />
 
       {/* Repair Process - Visual Timeline */}
       <section className="section-pad ocean-surface">
