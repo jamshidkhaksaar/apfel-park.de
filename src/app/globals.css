@@ -2,20 +2,21 @@
 
 :root {
   /* Dark Theme - Brand Gold */
-  --background: #0b0b0e;
+  --background: #0b0b0c;
+  --background-alt: #121214;
   --foreground: #f5f5f6;
   --heading: #ffffff;
-  --surface: #151519;
-  --surface-strong: #1d1d22;
+  --surface: #1a1a1d;
+  --surface-strong: #121214;
   --muted: #d1d1d3;
   --muted-strong: #8d8d91;
 
   /* Gold Primary */
-  --gold: #ebc378;
-  --gold-soft: #f3ddb0;
-  --gold-deep: #d6a95e;
-  --gold-glow: rgba(235, 195, 120, 0.35);
-  --gold-pulse: rgba(235, 195, 120, 0.2);
+  --gold: #d49e42;
+  --gold-soft: #e4b15a;
+  --gold-deep: #b5842f;
+  --gold-glow: rgba(212, 158, 66, 0.35);
+  --gold-pulse: rgba(212, 158, 66, 0.2);
 
   /* Secondary Accents */
   --amber: #e6c27a;
@@ -30,7 +31,7 @@
   --border: rgba(255, 255, 255, 0.08);
   --shadow: rgba(0, 0, 0, 0.6);
 
-  --bg-gradient: linear-gradient(180deg, rgba(235, 195, 120, 0.06) 0%, transparent 45%);
+  --bg-gradient: linear-gradient(180deg, rgba(212, 158, 66, 0.08) 0%, transparent 45%);
   --glow-gold: 0 0 30px rgba(235, 195, 120, 0.25);
   --glow-gold-soft: 0 0 18px rgba(235, 195, 120, 0.18);
 
@@ -47,22 +48,23 @@
    ======================================== */
 [data-theme="mono"] {
   /* Core Colors - Light Theme */
-  --background: #fcfbf9;
+  --background: #ffffff;
+  --background-alt: #f9f6f0;
   --foreground: #3a3a3c;
   --heading: #000000;
   --surface: #ffffff;
-  --surface-strong: #f3f1ed;
+  --surface-strong: #f9f6f0;
 
   /* Text Colors */
   --muted: #6d6d6f;
   --muted-strong: #3a3a3c;
 
   /* Gold Accent for light mode */
-  --gold: #d6a95e;
-  --gold-soft: #e8c78a;
-  --gold-deep: #b88744;
-  --gold-glow: rgba(214, 169, 94, 0.2);
-  --gold-pulse: rgba(214, 169, 94, 0.12);
+  --gold: #e4b15a;
+  --gold-soft: #f1d8a6;
+  --gold-deep: #c7923a;
+  --gold-glow: rgba(228, 177, 90, 0.2);
+  --gold-pulse: rgba(228, 177, 90, 0.12);
 
   /* Secondary Accents */
   --amber: #e0e0e3;
@@ -92,6 +94,9 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-alt: var(--background-alt);
+  --color-bg-light: var(--background);
+  --color-bg-dark: var(--background);
   --color-foreground: var(--foreground);
   --color-heading: var(--heading);
   --color-surface: var(--surface);
@@ -99,6 +104,8 @@
   --color-muted: var(--muted);
   --color-muted-strong: var(--muted-strong);
   --color-gold: var(--gold);
+  --color-primary: var(--gold);
+  --color-primary-dark: var(--gold-deep);
   --color-gold-soft: var(--gold-soft);
   --color-gold-deep: var(--gold-deep);
   --color-amber: var(--amber);
@@ -182,10 +189,9 @@
     border-radius: 1rem;
     border: 1px solid var(--border);
     background: var(--surface);
-    backdrop-filter: blur(18px);
     box-shadow:
-      0 8px 30px rgba(0, 0, 0, 0.22),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      0 10px 28px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   /* Mono theme tech-card */
@@ -200,17 +206,16 @@
     border-radius: 1rem;
     border: 1px solid var(--border);
     background: var(--surface);
-    backdrop-filter: blur(18px);
     box-shadow:
-      0 8px 30px rgba(0, 0, 0, 0.22),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      0 10px 28px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
     transition: all 0.3s ease;
   }
   
   .tech-card-hover:hover {
     border-color: rgba(235, 195, 120, 0.4);
     box-shadow:
-      0 12px 40px rgba(0, 0, 0, 0.4),
+      0 14px 34px rgba(0, 0, 0, 0.28),
       0 0 30px var(--gold-pulse),
       inset 0 1px 0 rgba(235, 195, 120, 0.1);
     transform: translateY(-4px);
@@ -259,7 +264,7 @@
 
   [data-theme="mono"] .gradient-text,
   [data-theme="mono"] .gradient-text-gold {
-    background: linear-gradient(135deg, #cfa85b 0%, #d6a95e 50%, #b88744 100%);
+    background: linear-gradient(135deg, #e4b15a 0%, #d49e42 50%, #b5842f 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -268,11 +273,11 @@
   .text-gold-metallic {
     background: linear-gradient(
       to bottom,
-      #cfa85b 0%,
-      #f1ddb0 30%,
-      #d6a95e 60%,
+      #d49e42 0%,
+      #f1d8a6 30%,
+      #e4b15a 60%,
       #f3ddb0 85%,
-      #b88744 100%
+      #b5842f 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -283,10 +288,10 @@
   [data-theme="mono"] .text-gold-metallic {
     background: linear-gradient(
       to bottom,
-      #b88744 0%,
-      #e8c78a 35%,
-      #d6a95e 70%,
-      #cfa85b 100%
+      #c7923a 0%,
+      #f1d8a6 35%,
+      #e4b15a 70%,
+      #c7923a 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -344,11 +349,11 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.75rem;
-    background: linear-gradient(135deg, var(--gold-soft) 0%, var(--gold) 50%, var(--gold-deep) 100%);
-    padding: 0.75rem 1.5rem;
-    font-size: 0.875rem;
-    font-weight: 700;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, var(--gold-soft) 0%, var(--gold) 55%, var(--gold-deep) 100%);
+    padding: 0.85rem 1.75rem;
+    font-size: 0.95rem;
+    font-weight: 600;
     color: #1f1f23;
     text-shadow: 0 1px 0 rgba(255,255,255,0.15);
     transition: all 0.2s ease;
@@ -356,6 +361,7 @@
     overflow: hidden;
     /* Ensure text is always on top */
     isolation: isolate;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
   }
   
   .btn-primary::before {
@@ -374,6 +380,11 @@
     color: #000000;
     text-shadow: none;
   }
+
+  .btn-primary:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
   
   .btn-primary:hover::before {
     opacity: 1;
@@ -389,11 +400,11 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.75rem;
-    border: 1px solid rgba(235, 195, 120, 0.4);
+    border-radius: 9999px;
+    border: 1px solid rgba(212, 158, 66, 0.6);
     background: transparent;
-    padding: 0.75rem 1.5rem;
-    font-size: 0.875rem;
+    padding: 0.85rem 1.6rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--gold);
     backdrop-filter: blur(8px);
@@ -402,21 +413,50 @@
   
   .btn-secondary:hover {
     border-color: var(--gold);
-    background: rgba(235, 195, 120, 0.12);
+    background: rgba(212, 158, 66, 0.12);
     box-shadow: 0 0 18px var(--gold-pulse);
+  }
+
+  .btn-secondary:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: var(--surface-strong);
+    padding: 0.35rem 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted-strong);
+    transition: all 0.2s ease;
+  }
+
+  .chip:hover,
+  .chip-active {
+    background: var(--gold);
+    border-color: transparent;
+    color: #1f1f23;
+  }
+
+  [data-theme="dark"] .chip:hover,
+  [data-theme="dark"] .chip-active {
+    color: #ffffff;
   }
 
   /* Ocean surface utilities */
   .ocean-surface {
-    background: var(--surface);
+    background: var(--surface-strong);
     border: 1px solid var(--border);
-    backdrop-filter: blur(12px);
   }
 
   .ocean-surface-strong {
-    background: var(--surface-strong);
+    background: var(--surface);
     border: 1px solid var(--border);
-    backdrop-filter: blur(12px);
   }
 
   .ocean-panel {
@@ -456,11 +496,25 @@
   }
 
   .hero-overlay-1 {
-    background: linear-gradient(90deg, rgba(11, 11, 14, 0.8), rgba(11, 11, 14, 0.45), transparent);
+    background: linear-gradient(90deg, rgba(11, 11, 12, 0.7), rgba(11, 11, 12, 0.4), transparent);
   }
 
   .hero-overlay-2 {
-    background: linear-gradient(180deg, rgba(11, 11, 14, 0.55), transparent 55%, rgba(11, 11, 14, 0.35));
+    background: linear-gradient(180deg, rgba(11, 11, 12, 0.45), transparent 55%, rgba(11, 11, 12, 0.25));
+  }
+
+  .hero-headline {
+    position: relative;
+    display: inline-block;
+  }
+
+  [data-theme="mono"] .hero-headline::before {
+    content: "";
+    position: absolute;
+    inset: -0.2em -0.6em;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 100%);
+    border-radius: 1rem;
+    z-index: -1;
   }
 
   .shop-footer-overlay {
@@ -475,9 +529,17 @@
     background: rgba(6, 6, 6, 0.9);
   }
 
+  .footer-top {
+    border-top-color: var(--border);
+  }
+
+  [data-theme="dark"] .footer-top {
+    border-top-color: rgba(212, 158, 66, 0.45);
+  }
+
   /* Mono theme buttons - Apple Style */
   [data-theme="mono"] .btn-primary {
-    background: linear-gradient(135deg, #e8c78a 0%, #d6a95e 50%, #b88744 100%);
+    background: linear-gradient(90deg, #f1d8a6 0%, #e4b15a 55%, #c7923a 100%);
     color: #1f1f23;
     text-shadow: none;
     border: none;
@@ -489,7 +551,7 @@
   }
 
   [data-theme="mono"] .btn-primary:hover {
-    background: linear-gradient(135deg, #f1ddb0 0%, #e0b86a 50%, #c39148 100%);
+    background: linear-gradient(90deg, #f6e4bb 0%, #e7b868 55%, #cf9a3e 100%);
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
     transform: translateY(-2px);
     color: #1f1f23;
@@ -498,14 +560,14 @@
   [data-theme="mono"] .btn-secondary {
     border: 1px solid rgba(0, 0, 0, 0.2);
     background: #ffffff;
-    color: #b88744;
+    color: #c7923a;
     text-shadow: none;
   }
 
   [data-theme="mono"] .btn-secondary:hover {
     border-color: rgba(0, 0, 0, 0.4);
-    background: rgba(214, 169, 94, 0.08);
-    color: #b88744;
+    background: rgba(228, 177, 90, 0.08);
+    color: #c7923a;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
   }
 
@@ -516,21 +578,20 @@
   }
 
   [data-theme="mono"] .process-step-icon {
-    background: linear-gradient(135deg, #e8c78a 0%, #d6a95e 50%, #b88744 100%);
+    background: linear-gradient(135deg, #f1d8a6 0%, #e4b15a 50%, #c7923a 100%);
     color: #1f1f23;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   }
 
   /* Mono theme surface overrides - Apple Style */
   [data-theme="mono"] .ocean-surface {
-    background: rgba(255, 255, 255, 0.7);
-    border: none;
-    backdrop-filter: blur(20px);
+    background: var(--surface-strong);
+    border: 1px solid rgba(0, 0, 0, 0.04);
   }
 
   [data-theme="mono"] .ocean-surface-strong {
-    background: #ffffff;
-    border: none;
+    background: var(--surface);
+    border: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   [data-theme="mono"] .ocean-panel {
@@ -713,15 +774,15 @@
   }
 
   [data-theme="mono"] .hero-overlay-1 {
-    background: transparent;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.2) 45%, transparent 70%);
   }
 
   [data-theme="mono"] .hero-overlay-2 {
-    background: transparent;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), transparent 60%, rgba(0, 0, 0, 0.1));
   }
 
   [data-theme="mono"] .featured-store-scrim {
-    background: linear-gradient(180deg, rgba(245, 245, 245, 0.9), rgba(245, 245, 245, 0.85), rgba(245, 245, 245, 0.95));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(249, 246, 240, 0.85), rgba(255, 255, 255, 0.96));
   }
 
   [data-theme="mono"] .shop-footer-overlay {
@@ -776,9 +837,9 @@
   }
   
   .badge-gold {
-    background: rgba(245, 158, 11, 0.15);
+    background: rgba(212, 158, 66, 0.18);
     color: var(--gold);
-    border: 1px solid rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(212, 158, 66, 0.3);
   }
   
   .badge-green {
@@ -792,9 +853,9 @@
   }
   
   [data-theme="mono"] .badge-gold {
-    background: rgba(214, 169, 94, 0.12);
-    color: #b88744;
-    border: 1px solid rgba(214, 169, 94, 0.3);
+    background: rgba(228, 177, 90, 0.12);
+    color: #c7923a;
+    border: 1px solid rgba(228, 177, 90, 0.3);
   }
 
   /* Gold Pulse Animation */
@@ -1539,9 +1600,20 @@
 
 /* Floating animation for characters */
 .support-illustration {
-  --illustration-gold: #f59e0b;
-  --illustration-gold-light: #fbbf24;
-  --illustration-gold-dark: #d97706;
+  --illustration-gold: #d49e42;
+  --illustration-gold-light: #e4b15a;
+  --illustration-gold-dark: #b5842f;
+}
+
+.support-illustration-panel {
+  background: radial-gradient(120% 120% at 20% 20%, rgba(212, 158, 66, 0.12), transparent 60%), var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="mono"] .support-illustration-panel {
+  background: radial-gradient(120% 120% at 20% 20%, rgba(0, 0, 0, 0.06), transparent 60%), var(--surface);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
 }
 
 .support-illustration :is(#freepik--Character-1--inject-61, #freepik--character-1--inject-61) {

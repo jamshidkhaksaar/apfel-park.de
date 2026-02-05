@@ -138,7 +138,7 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
 
               {/* Info */}
               <div className="flex flex-1 flex-col p-4">
-                <h3 className="mb-1 text-base font-semibold leading-tight text-foreground transition-colors group-hover:text-gold line-clamp-1">
+                <h3 className="mb-1 text-base font-bold leading-tight text-foreground transition-colors group-hover:text-gold line-clamp-1">
                   {product.title}
                 </h3>
                 <p className="mb-3 text-[10px] text-muted line-clamp-1">

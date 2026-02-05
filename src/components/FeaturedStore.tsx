@@ -15,7 +15,10 @@ export default function FeaturedStore({
   featured: FeaturedStoreLabels; // Optimization: Passed as prop to avoid bundling entire dictionary in client
 }) {
   return (
-    <section className="section-pad relative overflow-hidden ocean-surface">
+    <section
+      className="section-pad relative overflow-hidden bg-surface-strong"
+      suppressHydrationWarning
+    >
       {/* Background Decor */}
       <div className="absolute inset-0 featured-store-scrim pointer-events-none" />
       <div className="absolute top-0 right-0 h-96 w-96 translate-x-1/3 -translate-y-1/3 rounded-full bg-gold/5 blur-[100px]" />
@@ -32,7 +35,7 @@ export default function FeaturedStore({
           </div>
           <Link
             href={`/${lang}/store`}
-            className="btn-secondary"
+            className="btn-secondary group"
           >
             {featured.cta}
             <svg
@@ -90,7 +93,7 @@ export default function FeaturedStore({
 
               {/* Minimal Content */}
               <div className="flex flex-1 flex-col p-4">
-                <h3 className="mb-1 text-base font-semibold leading-tight text-foreground transition-colors group-hover:text-gold line-clamp-1">
+                <h3 className="mb-1 text-base font-bold leading-tight text-foreground transition-colors group-hover:text-gold line-clamp-1">
                   {product.title}
                 </h3>
                 <p className="text-[10px] text-muted line-clamp-1 mb-3">{product.description}</p>

@@ -19,7 +19,6 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [direction, setDirection] = useState<"next" | "prev">("next");
-
   const reviewsPerPage = 3;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
 
@@ -27,7 +26,11 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
     if (isAnimating) return;
     setIsAnimating(true);
     setDirection("next");
-    setCurrentIndex((prev) => (prev + 1) % totalPages);
+    setCurrentIndex((prev) => {
+      if (totalPages === 0) return 0;
+      const normalized = prev >= totalPages ? 0 : prev;
+      return (normalized + 1) % totalPages;
+    });
     setTimeout(() => setIsAnimating(false), 600);
   }, [isAnimating, totalPages]);
 
@@ -35,7 +38,11 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
     if (isAnimating) return;
     setIsAnimating(true);
     setDirection("prev");
-    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages);
+    setCurrentIndex((prev) => {
+      if (totalPages === 0) return 0;
+      const normalized = prev >= totalPages ? 0 : prev;
+      return (normalized - 1 + totalPages) % totalPages;
+    });
     setTimeout(() => setIsAnimating(false), 600);
   }, [isAnimating, totalPages]);
 
@@ -45,9 +52,11 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
     return () => clearInterval(interval);
   }, [goToNext]);
 
+  const normalizedIndex = totalPages === 0 ? 0 : Math.min(currentIndex, totalPages - 1);
+
   const currentReviews = reviews.slice(
-    currentIndex * reviewsPerPage,
-    currentIndex * reviewsPerPage + reviewsPerPage
+    normalizedIndex * reviewsPerPage,
+    normalizedIndex * reviewsPerPage + reviewsPerPage
   );
 
   // Get initials from name
@@ -67,11 +76,11 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   };
 
   return (
-    <div className="relative">
+    <div className="relative" suppressHydrationWarning>
       {/* Reviews Grid */}
       <div className="relative overflow-hidden">
         <div
-          className={`grid gap-6 md:grid-cols-3 transition-all duration-500 ease-out ${
+          className={`grid gap-6 md:grid-cols-2 lg:grid-cols-3 transition-all duration-500 ease-out ${
             isAnimating
               ? direction === "next"
                 ? "opacity-0 translate-x-8"
@@ -82,16 +91,22 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
           {currentReviews.map((review, index) => (
             <div
               key={`${currentIndex}-${index}`}
-              className="review-bubble group relative"
+              className={`review-bubble group relative ${
+                index === 0
+                  ? "block"
+                  : index === 1
+                    ? "hidden md:block"
+                    : "hidden lg:block"
+              }`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {/* 3D Bubble Container */}
                 <div className="review-bubble-card relative overflow-visible">
-                {/* Bubble Shadow - Creates 3D depth */}
-                <div className="absolute -bottom-3 left-4 right-4 h-8 rounded-[50%] bg-black/20 blur-xl transition-all duration-500 group-hover:-bottom-4 group-hover:bg-gold/20 group-hover:blur-2xl" />
+                  {/* Bubble Shadow - Creates 3D depth */}
+                <div className="absolute -bottom-3 left-4 right-4 h-8 rounded-[50%] bg-black/15 blur-xl transition-all duration-500 group-hover:-bottom-4 group-hover:bg-gold/20 group-hover:blur-2xl" />
                 
                 {/* Main Bubble Shape */}
-                  <div className="review-bubble-shell relative rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1a1a1a] via-[#141414] to-[#0f0f0f] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-500 ease-out group-hover:-translate-y-2 group-hover:border-gold/30 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(245,158,11,0.15),inset_0_1px_0_rgba(245,158,11,0.1)]">
+                  <div className="review-bubble-shell relative rounded-[2rem] border border-border bg-gradient-to-br from-surface to-surface-strong p-6 shadow-[0_10px_32px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-500 ease-out group-hover:-translate-y-2 group-hover:border-gold/30 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.3),0_0_30px_rgba(212,158,66,0.18),inset_0_1px_0_rgba(212,158,66,0.08)]">
                   
                   {/* Inner Glow Effect */}
                   <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-br from-gold/5 via-transparent to-amber/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
@@ -108,7 +123,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
                       {[...Array(5)].map((_, i) => (
                         <svg
                           key={i}
-                          className={`h-4 w-4 transition-transform duration-300 ${i < review.rating ? "text-gold" : "text-white/20"}`}
+                          className={`h-4 w-4 transition-transform duration-300 ${i < review.rating ? "text-gold" : "text-muted/40"}`}
                           style={{ transitionDelay: `${i * 50}ms` }}
                           fill="currentColor"
                           viewBox="0 0 20 20"
@@ -125,7 +140,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
                       <svg className="absolute -left-1 -top-2 h-8 w-8 text-gold/20 transition-all duration-500 group-hover:scale-110 group-hover:text-gold/40" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                       </svg>
-                      <p className="pl-6 text-sm leading-relaxed text-foreground/90 transition-colors duration-300 group-hover:text-foreground">
+                      <p className="pl-6 text-sm leading-relaxed text-foreground transition-colors duration-300 group-hover:text-foreground">
                         {truncateQuote(review.quote)}
                       </p>
                     </div>
@@ -154,7 +169,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
 
                 {/* Bubble Tail - Speech bubble pointer */}
                 <div className="absolute -bottom-3 left-10 h-6 w-6 overflow-hidden">
-                  <div className="review-bubble-tail absolute -top-3 left-0 h-6 w-6 rotate-45 border-b border-r border-white/10 bg-gradient-to-br from-[#141414] to-[#0f0f0f] shadow-lg transition-all duration-500 group-hover:border-gold/30 group-hover:shadow-gold/10" />
+                  <div className="review-bubble-tail absolute -top-3 left-0 h-6 w-6 rotate-45 border-b border-r border-border bg-gradient-to-br from-surface to-surface-strong shadow-lg transition-all duration-500 group-hover:border-gold/30 group-hover:shadow-gold/10" />
                 </div>
               </div>
             </div>
@@ -168,7 +183,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
         <button
           onClick={goToPrev}
           disabled={isAnimating}
-          className="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-surface/80 backdrop-blur-sm transition-all hover:border-gold/50 hover:bg-gold/10 disabled:opacity-50"
+          className="group flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface transition-all hover:border-gold/50 hover:bg-gold/10 disabled:opacity-50"
           aria-label={lang === "de" ? "Vorherige" : "Previous"}
         >
           <svg className="h-5 w-5 text-muted transition-colors group-hover:text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -184,14 +199,14 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
               onClick={() => {
                 if (isAnimating) return;
                 setIsAnimating(true);
-                setDirection(i > currentIndex ? "next" : "prev");
+                setDirection(i > normalizedIndex ? "next" : "prev");
                 setCurrentIndex(i);
                 setTimeout(() => setIsAnimating(false), 600);
               }}
               className={`h-2 rounded-full transition-all duration-300 ${
-                i === currentIndex
+                i === normalizedIndex
                   ? "w-8 bg-gradient-to-r from-gold to-amber"
-                  : "w-2 bg-white/20 hover:bg-white/40"
+                  : "w-2 bg-border hover:bg-gold/30"
               }`}
               aria-label={`${lang === "de" ? "Seite" : "Page"} ${i + 1}`}
             />
@@ -202,7 +217,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
         <button
           onClick={goToNext}
           disabled={isAnimating}
-          className="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-surface/80 backdrop-blur-sm transition-all hover:border-gold/50 hover:bg-gold/10 disabled:opacity-50"
+          className="group flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface transition-all hover:border-gold/50 hover:bg-gold/10 disabled:opacity-50"
           aria-label={lang === "de" ? "Nächste" : "Next"}
         >
           <svg className="h-5 w-5 text-muted transition-colors group-hover:text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

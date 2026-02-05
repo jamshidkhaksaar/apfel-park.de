@@ -91,21 +91,18 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
             {content.eyebrow}
           </div>
 
-          <h1 className="text-4xl font-semibold leading-tight text-heading md:text-5xl lg:text-6xl">
+          <h1 className="hero-headline text-4xl font-semibold leading-tight text-heading md:text-5xl lg:text-6xl">
             <span className="gradient-text">{content.titlePrefix}</span>
             <span className="text-heading"> {content.titleSuffix}</span>
           </h1>
 
-          <p className="text-lg text-muted md:text-xl">
+          <p className="text-base font-medium uppercase tracking-[0.08em] text-muted-strong md:text-lg">
             {content.subtitle}
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
             {content.pills.map((pill) => (
-              <span
-                key={pill}
-                className="rounded-full border border-white/10 bg-surface/70 px-3 py-1 text-xs font-medium text-muted-strong"
-              >
+              <span key={pill} className="chip">
                 {pill}
               </span>
             ))}

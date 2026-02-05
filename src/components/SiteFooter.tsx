@@ -3,12 +3,13 @@ import Link from "next/link";
 
 import { getDictionary, type Locale } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
+import BackToTopButton from "./BackToTopButton";
 
 export default function SiteFooter({ lang }: { lang: Locale }) {
   const dict = getDictionary(lang);
 
   return (
-    <footer className="relative border-t border-white/5 bg-surface">
+    <footer className="footer-top relative border-t-2 border-border bg-surface">
       <div className="container-page">
         {/* Main Footer Content */}
         <div className="grid gap-12 py-16 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
@@ -156,7 +157,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
         </div>
 
         {/* Social Media & Bottom Bar */}
-          <div className="border-t border-white/5 py-8">
+          <div className="border-t border-border py-8">
           {/* Social Media Icons */}
           <div className="mb-8 flex flex-col items-center gap-6">
             <p className="text-sm font-medium text-muted">
@@ -168,7 +169,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
                 href={siteInfo.social.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-surface/70 transition-all duration-300 hover:border-gold/50 hover:shadow-[0_0_20px_rgba(214,169,94,0.2)]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-gold/30 bg-surface/80 transition-all duration-300 hover:border-gold hover:shadow-[0_0_20px_rgba(212,158,66,0.2)]"
                 aria-label="Instagram"
               >
                 <svg className="h-5 w-5 text-muted transition-colors duration-300 group-hover:text-gold" viewBox="0 0 24 24" fill="currentColor">
@@ -181,7 +182,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
                 href={siteInfo.social.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-surface/70 transition-all duration-300 hover:border-gold/50 hover:shadow-[0_0_20px_rgba(214,169,94,0.2)]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-gold/30 bg-surface/80 transition-all duration-300 hover:border-gold hover:shadow-[0_0_20px_rgba(212,158,66,0.2)]"
                 aria-label="Facebook"
               >
                 <svg className="h-5 w-5 text-muted transition-colors duration-300 group-hover:text-gold" viewBox="0 0 24 24" fill="currentColor">
@@ -194,7 +195,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
                 href={siteInfo.social.tiktok}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-surface/70 transition-all duration-300 hover:border-gold/50 hover:shadow-[0_0_20px_rgba(214,169,94,0.2)]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-gold/30 bg-surface/80 transition-all duration-300 hover:border-gold hover:shadow-[0_0_20px_rgba(212,158,66,0.2)]"
                 aria-label="TikTok"
               >
                 <svg className="h-5 w-5 text-muted transition-colors duration-300 group-hover:text-gold" viewBox="0 0 24 24" fill="currentColor">
@@ -207,7 +208,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
                 href={siteInfo.social.whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-surface/70 transition-all duration-300 hover:border-gold/50 hover:shadow-[0_0_20px_rgba(214,169,94,0.2)]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-gold/30 bg-surface/80 transition-all duration-300 hover:border-gold hover:shadow-[0_0_20px_rgba(212,158,66,0.2)]"
                 aria-label="WhatsApp"
               >
                 <svg className="h-5 w-5 text-muted transition-colors duration-300 group-hover:text-gold" viewBox="0 0 24 24" fill="currentColor">
@@ -218,7 +219,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
           </div>
 
           {/* Copyright Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-6 text-xs text-muted">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6 text-xs text-muted">
             <p>© 2026 Apfel Park. {lang === "de" ? "Alle Rechte vorbehalten." : "All rights reserved."}</p>
             
             <div className="flex items-center gap-4">
@@ -239,6 +240,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
           </div>
         </div>
       </div>
+      <BackToTopButton label={lang === "de" ? "Nach oben" : "Back to top"} />
     </footer>
   );
 }
