@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
@@ -21,9 +21,23 @@ export default function SiteHeader({
   labels,
 }: SiteHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 12);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 transition-all duration-300" translate="no">
+    <header
+      className={`site-header sticky top-0 z-50 transition-all duration-300 ${isScrolled ? "is-scrolled" : ""}`}
+      translate="no"
+    >
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-md focus:bg-white focus:text-black focus:dark:bg-zinc-900 focus:dark:text-white focus:ring-2 focus:ring-gold shadow-lg"
@@ -61,20 +75,14 @@ export default function SiteHeader({
         </div>
       </div>
 
-      {/* Main Navigation with Logo Notch */}
+      {/* Main Navigation */}
       <div className="container-page relative z-10 flex items-start">
-        {/* Logo with notch border - wraps around logo */}
-          <div className="relative z-10 shrink-0" suppressHydrationWarning>
-            {/* Animated border wrapper */}
-            <div className="logo-border-wrapper rounded-b-2xl p-2 bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-xl ring-1 ring-white/10">
-            <Logo href={`/${lang}`} size="xl" priority />
+        <div className="relative flex flex-1 items-center navbar-border navbar-shell bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-lg">
+          <div className="navbar-logo-slot flex items-center justify-center pl-1" suppressHydrationWarning>
+            <Logo href={`/${lang}`} size="xl" className="navbar-logo" priority />
           </div>
-        </div>
-
-        {/* Navbar content */}
-        <div className="relative flex flex-1 items-center navbar-border bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-lg">
           {/* Desktop Navigation */}
-          <nav className="hidden flex-1 items-center justify-center gap-0.5 py-4 lg:flex">
+          <nav className="hidden h-full flex-1 items-center justify-center gap-0.5 lg:flex">
             {navItems.map((item) => (
               <Link
                 key={item.path}
@@ -88,7 +96,7 @@ export default function SiteHeader({
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 py-4">
+          <div className="flex h-full items-center gap-3 pr-4">
             <div className="hidden items-center gap-3 lg:flex">
               <LocaleSwitcher />
               <ThemeToggle />

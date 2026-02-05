@@ -1,7 +1,7 @@
 "use client";
 
-import { type ReactNode, type HTMLAttributes } from "react";
-import { useAnimateOnScroll } from "../hooks/useInView";
+import { type ReactNode, type HTMLAttributes, type Key, isValidElement } from "react";
+import { animationClasses, useAnimateOnScroll, useInView } from "../hooks/useInView";
 
 type AnimationVariant =
   | "fade-up"
@@ -44,7 +44,7 @@ export default function AnimatedSection({
   className = "",
   ...props
 }: AnimatedSectionProps) {
-  const [ref, animationClass] = useAnimateOnScroll(animation, {
+  const [ref, , animationClass] = useAnimateOnScroll(animation, {
     delay,
     threshold,
     rootMargin,
@@ -72,6 +72,8 @@ type AnimatedListProps = {
   className?: string;
   /** Wrapper element for each item */
   itemWrapper?: "div" | "li" | "article";
+  /** Provide stable keys for dynamic lists */
+  getKey?: (child: ReactNode, index: number) => Key;
 };
 
 /**
@@ -88,21 +90,29 @@ export function AnimatedList({
   staggerDelay = 100,
   className = "",
   itemWrapper: ItemWrapper = "div",
+  getKey,
 }: AnimatedListProps) {
-  const [ref, inView] = useAnimateOnScroll(animation, {
+  const [ref, inView] = useInView({
     threshold: 0.05,
     rootMargin: "0px 0px -20px 0px",
   });
+  const itemAnimation = animationClasses[animation];
 
   return (
     <div ref={ref} className={className}>
       {children.map((child, index) => (
         <ItemWrapper
-          key={index}
+          key={
+            (isValidElement(child) && child.key != null)
+              ? child.key
+              : getKey
+                ? getKey(child, index)
+                : index
+          }
           className={`transition-all duration-500 ease-out ${
             inView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
+              ? itemAnimation.visible
+              : itemAnimation.hidden
           }`}
           style={{
             transitionDelay: inView ? `${index * staggerDelay}ms` : "0ms",

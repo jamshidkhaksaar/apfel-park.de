@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
 
 type LogoProps = {
   /** Size variant */
@@ -24,11 +23,6 @@ const sizeMap = {
   xl: { width: 108, height: 108, containerClass: "h-[108px] w-[108px]" },
 } as const;
 
-// External store for mount state to avoid hydration mismatch
-const subscribe = () => () => {};
-const getSnapshot = () => true;
-const getServerSnapshot = () => false;
-
 /**
  * Unified Logo component with theme-aware rendering.
  * 
@@ -45,13 +39,11 @@ export default function Logo({
   showText = false,
   priority = false,
 }: LogoProps) {
-  // Use useSyncExternalStore to safely detect client-side mounting
-  const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const { width, height, containerClass } = sizeMap[size];
 
   const logoImage = (
-    <div 
-      className={`relative ${containerClass} ${className}`}
+    <div
+      className={`logo-stack relative ${containerClass} ${className}`}
       suppressHydrationWarning
     >
       <Image
@@ -59,9 +51,17 @@ export default function Logo({
         alt="Apfel Park"
         width={width}
         height={height}
-        className={`logo-theme rounded-xl object-contain shadow-lg transition-opacity duration-300 ${
-          isMounted ? "opacity-100" : "opacity-100"
-        }`}
+        className="logo-image logo-image-default rounded-xl object-contain shadow-lg"
+        style={{ width: "100%", height: "100%" }}
+        priority={priority}
+        suppressHydrationWarning
+      />
+      <Image
+        src="/branding/apfel-park-white.png"
+        alt="Apfel Park"
+        width={width}
+        height={height}
+        className="logo-image logo-image-mono rounded-xl object-contain shadow-lg"
         style={{ width: "100%", height: "100%" }}
         priority={priority}
         suppressHydrationWarning

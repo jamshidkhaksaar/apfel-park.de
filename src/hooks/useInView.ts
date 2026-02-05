@@ -80,7 +80,6 @@ export function useInView<T extends HTMLElement = HTMLDivElement>({
  * Hook to stagger animations for multiple elements
  */
 export function useStaggeredInView<T extends HTMLElement = HTMLDivElement>(
-  _itemCount: number,
   options: UseInViewOptions & { staggerDelay?: number } = {}
 ): [RefObject<T | null>, boolean, (index: number) => string] {
   const { staggerDelay = 100, ...inViewOptions } = options;
@@ -108,7 +107,7 @@ type AnimationVariant =
   | "scale-up"
   | "blur-in";
 
-const animationClasses: Record<AnimationVariant, { hidden: string; visible: string }> = {
+export const animationClasses: Record<AnimationVariant, { hidden: string; visible: string }> = {
   "fade-up": {
     hidden: "opacity-0 translate-y-8",
     visible: "opacity-100 translate-y-0",
@@ -141,7 +140,7 @@ const animationClasses: Record<AnimationVariant, { hidden: string; visible: stri
 export function useAnimateOnScroll<T extends HTMLElement = HTMLDivElement>(
   variant: AnimationVariant = "fade-up",
   options: UseInViewOptions & { delay?: number } = {}
-): [RefObject<T | null>, string] {
+): [RefObject<T | null>, boolean, string] {
   const { delay = 0, ...inViewOptions } = options;
   const [ref, inView] = useInView<T>(inViewOptions);
 
@@ -153,5 +152,5 @@ export function useAnimateOnScroll<T extends HTMLElement = HTMLDivElement>(
     ? `${classes.visible} ${baseTransition} ${delayStyle}`
     : `${classes.hidden} ${baseTransition} ${delayStyle}`;
 
-  return [ref, animationClass];
+  return [ref, inView, animationClass];
 }
