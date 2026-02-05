@@ -13,3 +13,7 @@
 ## 2024-01-31 - [Skip to Content Navigation]
 **Learning:** Single Page Applications (or similar Next.js apps) often reset focus or keep it at the top on navigation. Without a "Skip to Content" link, keyboard users must tab through the entire navigation menu on every page load.
 **Action:** Implement a hidden-until-focused "Skip to Content" link as the first focusable element in the DOM, targeting the main content wrapper (e.g. `main` tag with an id).
+
+## 2026-02-12 - [Context-Aware Form Pre-filling]
+**Learning:** Users often click "Buy Now" on a specific item but land on a generic contact form, causing friction as they must manually re-enter the product name.
+**Action:** Pass context (like product names) via URL query parameters and use them to auto-populate form fields, ensuring the receiving component handles the parameters safely (e.g. via Suspense boundaries in Next.js).

@@ -522,7 +522,10 @@ export default function SmartphoneStore({ lang }: { lang: Locale }) {
 
                 {/* CTA */}
                 <Link
-                  href={`/${lang}/contact`}
+                  href={{
+                    pathname: `/${lang}/contact`,
+                    query: { device: phone.name },
+                  }}
                   className="btn-primary mt-4 w-full"
                 >
                   <span>{lang === "de" ? "Jetzt kaufen" : "Buy Now"}</span>
