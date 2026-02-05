@@ -75,10 +75,10 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="/images/slider_images/iphone.png"
-          alt={lang === "de" ? "Apfel Park Geraete und Reparaturen" : "Apfel Park devices and repairs"}
+          src="/images/shop1.jpg"
+          alt={lang === "de" ? "Apfel Park Store in Hamburg" : "Apfel Park Store in Hamburg"}
           fill
-          className="object-cover"
+          className="object-cover object-center"
           priority
         />
         {/* Professional Gradient Overlays */}

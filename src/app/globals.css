@@ -743,6 +743,26 @@
     stroke: #3a3a3c;
   }
 
+  /* Mono theme - Mobile menu */
+  [data-theme="mono"] #mobile-menu-nav {
+    background: linear-gradient(180deg, #ffffff 0%, #f9f6f0 100%) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  [data-theme="mono"] #mobile-menu-nav a {
+    color: #3a3a3c !important;
+  }
+
+  [data-theme="mono"] #mobile-menu-nav a:hover {
+    background: rgba(212, 158, 66, 0.1) !important;
+    color: #b5842f !important;
+  }
+
+  [data-theme="mono"] #mobile-menu-nav .border-t {
+    border-color: rgba(0, 0, 0, 0.08) !important;
+  }
+
   /* Mono theme - Contact form inputs */
   [data-theme="mono"] input,
   [data-theme="mono"] textarea,
