@@ -498,12 +498,12 @@
   /* Professional Hero Overlays */
   .hero-gradient-overlay {
     background: 
-      linear-gradient(135deg, rgba(11, 11, 14, 0.95) 0%, rgba(11, 11, 14, 0.85) 30%, rgba(11, 11, 14, 0.6) 60%, rgba(11, 11, 14, 0.3) 100%);
+      linear-gradient(135deg, rgba(11, 11, 16, 0.98) 0%, rgba(11, 11, 16, 0.92) 25%, rgba(11, 11, 16, 0.75) 50%, rgba(11, 11, 16, 0.4) 80%, rgba(11, 11, 16, 0.15) 100%);
   }
 
   .hero-vignette {
     background: 
-      radial-gradient(ellipse at 30% 50%, transparent 30%, rgba(11, 11, 14, 0.5) 70%, rgba(11, 11, 14, 0.8) 100%);
+      radial-gradient(ellipse at 30% 40%, transparent 25%, rgba(11, 11, 16, 0.4) 60%, rgba(11, 11, 16, 0.85) 100%);
   }
 
   .hero-overlay-1 {
@@ -832,12 +832,12 @@
   /* Mono theme - Hero section */
   [data-theme="mono"] .hero-gradient-overlay {
     background: 
-      linear-gradient(135deg, rgba(249, 246, 240, 0.98) 0%, rgba(249, 246, 240, 0.92) 30%, rgba(249, 246, 240, 0.75) 60%, rgba(249, 246, 240, 0.5) 100%);
+      linear-gradient(135deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.9) 25%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0.4) 80%, rgba(255, 255, 255, 0.2) 100%);
   }
 
   [data-theme="mono"] .hero-vignette {
     background: 
-      radial-gradient(ellipse at 30% 50%, transparent 30%, rgba(249, 246, 240, 0.6) 70%, rgba(249, 246, 240, 0.9) 100%);
+      radial-gradient(ellipse at 30% 40%, transparent 25%, rgba(255, 255, 255, 0.5) 60%, rgba(255, 255, 255, 0.92) 100%);
   }
 
   [data-theme="mono"] .hero-glass-card {

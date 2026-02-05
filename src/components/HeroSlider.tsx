@@ -75,7 +75,7 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="/images/shop1.jpg"
+          src="/images/shop2.jpg"
           alt={lang === "de" ? "Apfel Park Store in Hamburg" : "Apfel Park Store in Hamburg"}
           fill
           className="object-cover object-center"
