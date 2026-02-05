@@ -20,7 +20,13 @@ let currentTheme: Theme = DEFAULT_THEME;
 const listeners = new Set<() => void>();
 
 const themeStore = {
-  getSnapshot: () => currentTheme,
+  getSnapshot: () => {
+    if (typeof document !== "undefined") {
+      const attr = document.documentElement.getAttribute("data-theme");
+      if (attr === "dark" || attr === "mono") return attr;
+    }
+    return currentTheme;
+  },
   getServerSnapshot: () => DEFAULT_THEME,
   subscribe: (listener: () => void) => {
     listeners.add(listener);
@@ -45,11 +51,19 @@ export function ThemeScript() {
   const script = `
     (function() {
       try {
-        var cookieMatch = document.cookie.match(/(?:^|; )apfel-theme=([^;]+)/);
-        var cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-        var stored = localStorage.getItem('${THEME_STORAGE_KEY}') || cookieTheme || '${DEFAULT_THEME}';
-        var theme = stored === 'dark' || stored === 'mono' ? stored : '${DEFAULT_THEME}';
-        document.documentElement.setAttribute('data-theme', theme);
+        var existing = document.documentElement.getAttribute('data-theme');
+        var theme = existing && (existing === 'dark' || existing === 'mono') ? existing : null;
+        if (!theme) {
+          var cookieMatch = document.cookie.match(/(?:^|; )apfel-theme=([^;]+)/);
+          var cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+          var stored = cookieTheme || localStorage.getItem('${THEME_STORAGE_KEY}') || '${DEFAULT_THEME}';
+          theme = stored === 'dark' || stored === 'mono' ? stored : '${DEFAULT_THEME}';
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+        try {
+          localStorage.setItem('${THEME_STORAGE_KEY}', theme);
+          document.cookie = 'apfel-theme=' + theme + '; path=/; max-age=31536000';
+        } catch (e) {}
       } catch (e) {
         document.documentElement.setAttribute('data-theme', '${DEFAULT_THEME}');
       }
@@ -64,23 +78,32 @@ export function ThemeScript() {
   );
 }
 
-export default function ThemeProvider({ children }: { children: React.ReactNode }) {
+export default function ThemeProvider({
+  children,
+  initialTheme,
+}: {
+  children: React.ReactNode;
+  initialTheme: Theme;
+}) {
   const theme = useSyncExternalStore(
     themeStore.subscribe,
     themeStore.getSnapshot,
-    themeStore.getServerSnapshot
+    () => initialTheme
   );
   
   // Initialize theme from localStorage on mount (only once)
   useEffect(() => {
     try {
+      const attr = document.documentElement.getAttribute("data-theme") as Theme | null;
       const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
       const cookieMatch = document.cookie.match(/(?:^|; )apfel-theme=([^;]+)/);
       const cookieTheme = cookieMatch ? (decodeURIComponent(cookieMatch[1]) as Theme) : null;
-      const initialTheme = stored || cookieTheme;
+      const initialTheme = attr || cookieTheme || stored;
       if (initialTheme && (initialTheme === "dark" || initialTheme === "mono")) {
         themeStore.setTheme(initialTheme);
         document.documentElement.setAttribute("data-theme", initialTheme);
+        localStorage.setItem(THEME_STORAGE_KEY, initialTheme);
+        document.cookie = `apfel-theme=${initialTheme}; path=/; max-age=31536000`;
       } else {
         document.documentElement.setAttribute("data-theme", DEFAULT_THEME);
         localStorage.setItem(THEME_STORAGE_KEY, DEFAULT_THEME);

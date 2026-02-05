@@ -62,7 +62,7 @@ export default async function RootLayout({
       <body
         className={`${inter.variable} ${interDisplay.variable} bg-background font-sans text-foreground antialiased`}
       >
-        <ThemeProvider>
+        <ThemeProvider initialTheme={theme}>
           <LanguageTransitionProvider>
             <AppWrapper lang={lang as "de" | "en"}>{children}</AppWrapper>
           </LanguageTransitionProvider>
