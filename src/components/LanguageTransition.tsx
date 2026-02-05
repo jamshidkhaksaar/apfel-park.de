@@ -20,28 +20,20 @@ export const useLanguageSwitch = () => {
 // Theme-specific colors
 const themeColors = {
   dark: {
-    wave1: "#b45309",     // Deep gold
-    wave2: "#f59e0b",     // Bright gold
-    wave3: "#050505",     // Black
-    accent: "#f59e0b",    // Gold accent
-    accentGlow: "rgba(245, 158, 11, 0.4)",
-    logo: "/branding/logo.jpg",
-  },
-  ocean: {
-    wave1: "#0369a1",     // Deep blue
-    wave2: "#0ea5e9",     // Ocean blue
-    wave3: "#001233",     // Navy
-    accent: "#38bdf8",    // Cyan accent
-    accentGlow: "rgba(56, 189, 248, 0.4)",
+    wave1: "#b88744",
+    wave2: "#ebc378",
+    wave3: "#0b0b0e",
+    accent: "#ebc378",
+    accentGlow: "rgba(235, 195, 120, 0.35)",
     logo: "/branding/apfel-park-white.png",
   },
   mono: {
-    wave1: "#0f0f0f",     // Deep gray
-    wave2: "#e5e5e5",     // Light gray
-    wave3: "#000000",     // Black
-    accent: "#f5f5f7",    // White accent
-    accentGlow: "rgba(255, 255, 255, 0.35)",
-    logo: "/branding/apfel-park-white.png",
+    wave1: "#3a3a3c",
+    wave2: "#e0e0e3",
+    wave3: "#fcfbf9",
+    accent: "#d6a95e",
+    accentGlow: "rgba(214, 169, 94, 0.25)",
+    logo: "/branding/logo.jpg",
   },
 };
 

@@ -185,14 +185,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                       sizes="(max-width: 1024px) 100vw, 50vw"
                       priority
                     />
-                    <Image
-                      src="/images/ipad_ocean.png"
-                      alt={lang === "de" ? "Beschädigte Geräte zur Reparatur" : "Damaged devices for repair"}
-                      fill
-                      className="ipad-ocean object-contain p-4 drop-shadow-2xl"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      priority
-                    />
                   </div>
 
                   {/* Corner Brackets - Tech aesthetic */}

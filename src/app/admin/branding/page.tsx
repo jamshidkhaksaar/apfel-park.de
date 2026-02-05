@@ -136,10 +136,10 @@ export default function BrandingPage() {
     <AdminShell title="Branding">
       <div className="space-y-6">
         {/* Info Banner */}
-        <div className="glass-panel flex items-start gap-4 rounded-2xl border-blue-500/20 bg-blue-950/10 p-6">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/20">
+        <div className="glass-panel flex items-start gap-4 rounded-2xl border-gold/20 bg-gold/5 p-6">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/15">
             <svg
-              className="h-5 w-5 text-blue-400"
+              className="h-5 w-5 text-gold"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -153,8 +153,8 @@ export default function BrandingPage() {
             </svg>
           </div>
           <div>
-            <h3 className="font-semibold text-blue-400">Branding Assets</h3>
-            <p className="mt-1 text-sm text-blue-400/80">
+            <h3 className="font-semibold text-gold">Branding Assets</h3>
+            <p className="mt-1 text-sm text-muted">
               Lade dein Logo, Favicon und Social Media Vorschaubild hoch. Die Dateien werden im
               public-Ordner gespeichert und sofort auf der Website angezeigt.
             </p>

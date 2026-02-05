@@ -26,12 +26,12 @@ export default function SiteHeader({
   const { theme } = useTheme();
   
   // Dynamic logo based on theme (fallback to regular logo if white version fails)
-  const logoSrc = (theme === "ocean" || theme === "mono") && !logoError 
-    ? "/branding/apfel-park-white.png" 
+  const logoSrc = theme === "dark" && !logoError
+    ? "/branding/apfel-park-white.png"
     : "/branding/logo.jpg";
   
   const handleLogoError = () => {
-    if (theme === "ocean" || theme === "mono") {
+    if (theme === "dark") {
       setLogoError(true);
     }
   };

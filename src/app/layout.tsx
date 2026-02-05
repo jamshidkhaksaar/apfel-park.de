@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
 import AppWrapper from "../components/AppWrapper";
@@ -11,7 +11,7 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const spaceGrotesk = Space_Grotesk({
+const interDisplay = Inter({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -50,9 +50,9 @@ export default async function RootLayout({
   const langCookie = cookieStore.get("apfel-lang");
   const lang = langCookie?.value ?? "de";
   const themeCookie = cookieStore.get("apfel-theme");
-  const theme = themeCookie?.value === "dark" || themeCookie?.value === "ocean" || themeCookie?.value === "mono"
+  const theme = themeCookie?.value === "dark" || themeCookie?.value === "mono"
     ? themeCookie.value
-    : "ocean";
+    : "mono";
 
   return (
     <html lang={lang} data-theme={theme} translate="no" suppressHydrationWarning>
@@ -60,7 +60,7 @@ export default async function RootLayout({
         <ThemeScript />
       </head>
       <body
-        className={`${inter.variable} ${spaceGrotesk.variable} bg-background font-sans text-foreground antialiased`}
+        className={`${inter.variable} ${interDisplay.variable} bg-background font-sans text-foreground antialiased`}
       >
         <ThemeProvider>
           <LanguageTransitionProvider>

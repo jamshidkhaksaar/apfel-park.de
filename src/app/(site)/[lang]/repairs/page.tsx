@@ -170,7 +170,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
 
             {/* Samsung */}
             <div className="tech-card-hover group rounded-2xl p-6">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue/10 to-cyan/10 text-blue transition group-hover:from-blue/20 group-hover:to-cyan/20">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/10 to-amber/10 text-gold transition group-hover:from-gold/20 group-hover:to-amber/20">
                 <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
                   <rect x="4" y="2" width="16" height="20" rx="2" />
                   <path d="M8 19h8" />
@@ -184,7 +184,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
 
             {/* iPad & Tablets */}
             <div className="tech-card-hover group rounded-2xl p-6">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple/10 to-pink/10 text-purple transition group-hover:from-purple/20 group-hover:to-pink/20">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/10 to-amber/10 text-gold transition group-hover:from-gold/20 group-hover:to-amber/20">
                 <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
                   <rect x="3" y="4" width="18" height="16" rx="2" />
                   <circle cx="12" cy="12" r="1" />
@@ -198,7 +198,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
 
             {/* Game Consoles */}
             <div className="tech-card-hover group rounded-2xl p-6">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-green/10 to-emerald/10 text-green transition group-hover:from-green/20 group-hover:to-emerald/20">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/10 to-amber/10 text-gold transition group-hover:from-gold/20 group-hover:to-amber/20">
                 <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
                   <path d="M6 11h4M8 9v4M15 12h.01M18 10h.01" strokeLinecap="round" />
                   <rect x="2" y="6" width="20" height="12" rx="3" />

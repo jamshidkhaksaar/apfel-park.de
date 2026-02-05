@@ -267,14 +267,14 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
               </p>
             </div>
           </div>
-          <div className="mt-4 rounded-lg bg-blue-950/20 border border-blue-500/20 p-3">
-            <p className="text-xs text-blue-400">
+          <div className="mt-4 rounded-lg border border-gold/20 bg-gold/5 p-3">
+            <p className="text-xs text-muted">
               Get your keys from{" "}
               <a 
                 href="https://www.google.com/recaptcha/admin" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="underline hover:text-blue-300"
+                className="underline hover:text-gold"
               >
                 Google reCAPTCHA Admin Console
               </a>

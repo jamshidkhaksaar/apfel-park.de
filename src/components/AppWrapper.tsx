@@ -3,7 +3,6 @@
 import { useEffect, useSyncExternalStore } from "react";
 import LoadingScreen from "./LoadingScreen";
 import WhatsAppFloat from "./WhatsAppFloat";
-import OceanBackground from "./OceanBackground";
 
 type AppWrapperProps = {
   children: React.ReactNode;
@@ -36,6 +35,28 @@ export default function AppWrapper({ children, lang }: AppWrapperProps) {
 
   useEffect(() => {
     try {
+      const buildId = (window as { __NEXT_DATA__?: { buildId?: string } }).__NEXT_DATA__?.buildId;
+      if (!buildId) return;
+
+      const storageKey = "apfel-build-id";
+      const stored = localStorage.getItem(storageKey);
+
+      if (stored && stored !== buildId) {
+        localStorage.setItem(storageKey, buildId);
+        window.location.reload();
+        return;
+      }
+
+      if (!stored) {
+        localStorage.setItem(storageKey, buildId);
+      }
+    } catch {
+      // localStorage not available
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
       const stored = sessionStorage.getItem("apfel-loaded");
       loadingStore.setHasLoaded(Boolean(stored));
     } catch {
@@ -56,9 +77,6 @@ export default function AppWrapper({ children, lang }: AppWrapperProps) {
 
   return (
     <>
-      {/* Ocean background effects (only visible on ocean theme) */}
-      <OceanBackground />
-      
       {isLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} minDisplayTime={2500} />}
       <div
         className={`relative z-10 transition-opacity duration-500 ${

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useCallback, useSyncExternalStore } from "react";
 
-export type Theme = "dark" | "ocean" | "mono";
+export type Theme = "dark" | "mono";
 
 type ThemeContextType = {
   theme: Theme;
@@ -13,7 +13,7 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 const THEME_STORAGE_KEY = "apfel-theme";
-const DEFAULT_THEME: Theme = "ocean"; // Ocean is now default
+const DEFAULT_THEME: Theme = "mono";
 
 // External store for theme (avoids setState in effect)
 let currentTheme: Theme = DEFAULT_THEME;
@@ -47,7 +47,8 @@ export function ThemeScript() {
       try {
         var cookieMatch = document.cookie.match(/(?:^|; )apfel-theme=([^;]+)/);
         var cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-        var theme = localStorage.getItem('${THEME_STORAGE_KEY}') || cookieTheme || '${DEFAULT_THEME}';
+        var stored = localStorage.getItem('${THEME_STORAGE_KEY}') || cookieTheme || '${DEFAULT_THEME}';
+        var theme = stored === 'dark' || stored === 'mono' ? stored : '${DEFAULT_THEME}';
         document.documentElement.setAttribute('data-theme', theme);
       } catch (e) {
         document.documentElement.setAttribute('data-theme', '${DEFAULT_THEME}');
@@ -77,7 +78,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       const cookieMatch = document.cookie.match(/(?:^|; )apfel-theme=([^;]+)/);
       const cookieTheme = cookieMatch ? (decodeURIComponent(cookieMatch[1]) as Theme) : null;
       const initialTheme = stored || cookieTheme;
-      if (initialTheme && (initialTheme === "dark" || initialTheme === "ocean" || initialTheme === "mono")) {
+      if (initialTheme && (initialTheme === "dark" || initialTheme === "mono")) {
         themeStore.setTheme(initialTheme);
         document.documentElement.setAttribute("data-theme", initialTheme);
       } else {
@@ -102,7 +103,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }, []);
 
   const toggleTheme = useCallback(() => {
-    const themeOrder: Theme[] = ["dark", "ocean", "mono"];
+    const themeOrder: Theme[] = ["dark", "mono"];
     const currentIndex = themeOrder.indexOf(theme);
     const nextTheme = themeOrder[(currentIndex + 1) % themeOrder.length];
     setTheme(nextTheme);

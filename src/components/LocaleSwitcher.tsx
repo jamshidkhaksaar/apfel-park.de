@@ -39,7 +39,7 @@ export default function LocaleSwitcher() {
     // 1. Animate toggle immediately
     setOptimisticLocale(targetLocale);
     
-    // 2. Wait for toggle animation (400ms) before starting ocean wave
+    // 2. Wait for toggle animation (400ms) before starting page transition
     if (timeoutRef.current) {
       window.clearTimeout(timeoutRef.current);
     }

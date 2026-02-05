@@ -15,10 +15,10 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
   const { dict } = useAdmin();
 
   const statItems = [
-    { label: dict.dashboard.stats.repairs, value: stats.repairs, color: "text-blue-400" },
-    { label: dict.dashboard.stats.orders, value: stats.orders, color: "text-green-400" },
-    { label: dict.dashboard.stats.products, value: stats.products, color: "text-gold" },
-    { label: dict.dashboard.stats.reviews, value: stats.reviews, color: "text-purple-400" },
+    { label: dict.dashboard.stats.repairs, value: stats.repairs, color: "text-gold" },
+    { label: dict.dashboard.stats.orders, value: stats.orders, color: "text-green" },
+    { label: dict.dashboard.stats.products, value: stats.products, color: "text-gold-soft" },
+    { label: dict.dashboard.stats.reviews, value: stats.reviews, color: "text-muted-strong" },
   ];
 
   const quickActions = [

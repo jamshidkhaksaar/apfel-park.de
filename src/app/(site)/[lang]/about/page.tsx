@@ -70,7 +70,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
                 key={stat.label}
                 className="tech-card flex flex-col items-center justify-center rounded-2xl p-6 text-center"
               >
-                <span className="text-3xl font-bold text-cyan-400 md:text-4xl">{stat.value}</span>
+                <span className="text-3xl font-bold text-gold md:text-4xl">{stat.value}</span>
                 <span className="mt-1 text-sm text-muted">{stat.label}</span>
               </div>
             ))}
