@@ -9,21 +9,22 @@ export default function ThemeToggle() {
 
   return (
     <div
-      role="group"
-      className="relative flex h-8 items-center gap-1 rounded-full border border-white/10 bg-surface/80 px-1 backdrop-blur-sm transition-all hover:border-accent/30 hover:bg-surface-strong/80"
+      role="radiogroup"
+      className="relative flex h-9 items-center gap-1 rounded-full border border-white/10 bg-surface/80 px-1 backdrop-blur-sm transition-all hover:border-accent/30 hover:bg-surface-strong/80 focus-within:ring-2 focus-within:ring-gold focus-within:ring-offset-2 focus-within:ring-offset-background"
       aria-label="Theme selector"
     >
       {/* Dark/Gold */}
       <button
         type="button"
+        role="radio"
         onClick={() => setTheme("dark")}
-        className={`flex h-6 w-6 items-center justify-center rounded-full transition-all duration-300 ${
+        className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1 focus-visible:ring-offset-surface ${
           isDark
             ? "bg-gold text-contrast-adaptive shadow-[0_0_12px_rgba(245,158,11,0.5)]"
-            : "text-muted-strong hover:text-muted"
+            : "text-muted-strong hover:text-muted hover:bg-white/5"
         }`}
-        aria-pressed={isDark}
-        aria-label="Switch to dark theme"
+        aria-checked={isDark}
+        aria-label="Dark theme with gold accents"
         title="Dark (Gold)"
       >
         <svg
@@ -32,6 +33,7 @@ export default function ThemeToggle() {
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={2}
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -44,14 +46,15 @@ export default function ThemeToggle() {
       {/* Mono/Black-White */}
       <button
         type="button"
+        role="radio"
         onClick={() => setTheme("mono")}
-        className={`flex h-6 w-6 items-center justify-center rounded-full transition-all duration-300 ${
+        className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1 focus-visible:ring-offset-surface ${
           isMono
             ? "bg-foreground text-background shadow-[0_0_12px_rgba(255,255,255,0.2)]"
-            : "text-muted-strong hover:text-muted"
+            : "text-muted-strong hover:text-muted hover:bg-white/5"
         }`}
-        aria-pressed={isMono}
-        aria-label="Switch to black and white theme"
+        aria-checked={isMono}
+        aria-label="Light theme with black and white"
         title="Black & White"
       >
         <svg
@@ -60,6 +63,7 @@ export default function ThemeToggle() {
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={2}
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"

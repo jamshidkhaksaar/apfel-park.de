@@ -19,7 +19,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [direction, setDirection] = useState<"next" | "prev">("next");
-  const reviewsPerPage = 3;
+  const reviewsPerPage = 1;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
 
   const goToNext = useCallback(() => {
@@ -78,9 +78,9 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   return (
     <div className="relative" suppressHydrationWarning>
       {/* Reviews Grid */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden flex justify-center">
         <div
-          className={`grid gap-6 md:grid-cols-2 lg:grid-cols-3 transition-all duration-500 ease-out ${
+          className={`grid grid-cols-1 w-full max-w-2xl transition-all duration-500 ease-out ${
             isAnimating
               ? direction === "next"
                 ? "opacity-0 translate-x-8"
@@ -91,13 +91,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
           {currentReviews.map((review, index) => (
             <div
               key={`${currentIndex}-${index}`}
-              className={`review-bubble group relative ${
-                index === 0
-                  ? "block"
-                  : index === 1
-                    ? "hidden md:block"
-                    : "hidden lg:block"
-              }`}
+              className="review-bubble group relative block"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {/* 3D Bubble Container */}

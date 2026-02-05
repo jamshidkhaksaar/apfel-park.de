@@ -129,7 +129,7 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
           </div>
         </div>
 
-        <div className="tech-card rounded-3xl p-6 md:p-8">
+        <div className="tech-card w-full max-w-xl self-start rounded-3xl p-6 md:max-w-2xl md:p-8 lg:max-w-md xl:max-w-lg">
           <div className="space-y-6">
             {content.highlights.map((item, index) => (
               <div key={item.title} className="flex items-start gap-4">
