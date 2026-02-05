@@ -4,29 +4,23 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import { type Locale } from "../lib/i18n";
+import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import { useTheme } from "./ThemeProvider";
 
-type NavItem = {
-  readonly label: string;
-  readonly path: string;
-};
-
-type HeaderLabels = {
-  readonly openMenu: string;
-  readonly closeMenu: string;
-};
-
 type SiteHeaderProps = {
   lang: Locale;
-  navItems: readonly NavItem[];
+  navItems: NavItems;
   labels: HeaderLabels;
 };
 
-export default function SiteHeader({ lang, navItems, labels }: SiteHeaderProps) {
+export default function SiteHeader({
+  lang,
+  navItems,
+  labels,
+}: SiteHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const { theme } = useTheme();

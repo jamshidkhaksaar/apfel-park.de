@@ -18,6 +18,7 @@ export default async function SiteLayout({
 }) {
   const { lang } = await params;
   const locale = lang as Locale;
+  const dict = getDictionary(locale);
 
   if (!locales.includes(locale)) {
     notFound();
@@ -28,7 +29,11 @@ export default async function SiteLayout({
   return (
     <div className="min-h-screen">
       <LocaleSync locale={locale} />
-      <SiteHeader lang={locale} navItems={dict.nav} labels={dict.header} />
+      <SiteHeader
+        lang={locale}
+        navItems={dict.nav}
+        labels={dict.header}
+      />
       <main className="page-surface">{children}</main>
       <SiteFooter lang={locale} />
     </div>
