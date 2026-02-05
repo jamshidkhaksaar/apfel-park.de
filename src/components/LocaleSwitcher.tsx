@@ -85,7 +85,7 @@ export default function LocaleSwitcher() {
           ${currentLocale === "en" ? "text-white" : "text-muted hover:text-white/80"}
         `}
         aria-pressed={currentLocale === "en"}
-        aria-label="Switch to English"
+        aria-label="English"
         title="English"
       >
         EN
