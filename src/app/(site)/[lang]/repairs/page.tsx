@@ -63,7 +63,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
             </h2>
             
             <ul className="mt-8 space-y-4">
-              {dict.repairs.highlights.map((item) => (
+              {dict.repairs.highlights.map((item: string) => (
                 <li key={item} className="flex items-start gap-4">
                   <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold/20">
                     <svg className="h-4 w-4 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -94,7 +94,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
 
           {/* Right: Repair Types Grid */}
           <div className="grid gap-4 sm:grid-cols-2">
-            {dict.repairs.repairTypes.map((item, index) => (
+            {dict.repairs.repairTypes.map((item: { title: string; description: string }, index: number) => (
               <div key={item.title} className="tech-card-hover rounded-2xl p-6">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                   {repairIcons[index]}
@@ -126,7 +126,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {dict.services.categories.map((item, index) => (
+            {dict.services.categories.map((item: { title: string; description: string }, index: number) => (
               <div key={item.title} className="tech-card-hover group rounded-2xl p-6 text-center">
                 <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold transition group-hover:from-gold/30 group-hover:to-amber/30">
                   {serviceIcons[index]}
