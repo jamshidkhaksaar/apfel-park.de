@@ -3,26 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Locale } from "../lib/i18n";
+import type { Smartphone } from "../lib/smartphones";
 
 type Brand = {
   id: string;
   name: string;
   logo: React.ReactNode;
-};
-
-type Smartphone = {
-  id: number;
-  name: string;
-  brand: string;
-  specs: { de: string; en: string };
-  storage: string;
-  color: { de: string; en: string };
-  price: number;
-  originalPrice?: number;
-  warranty: number; // months
-  badge?: { de: string; en: string };
-  isNew: boolean;
-  inStock: boolean;
 };
 
 const brands: Brand[] = [
@@ -82,288 +68,11 @@ const brands: Brand[] = [
   },
 ];
 
-const smartphones: Smartphone[] = [
-  // Apple iPhones
-  {
-    id: 1,
-    name: "iPhone 16 Pro Max",
-    brand: "apple",
-    specs: { de: "A18 Pro Chip • 48MP Kamera • Titan", en: "A18 Pro Chip • 48MP Camera • Titanium" },
-    storage: "256GB",
-    color: { de: "Titan Natur", en: "Natural Titanium" },
-    price: 1449,
-    warranty: 24,
-    badge: { de: "Neueste", en: "Latest" },
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: "iPhone 16 Pro",
-    brand: "apple",
-    specs: { de: "A18 Pro Chip • 48MP Kamera • Titan", en: "A18 Pro Chip • 48MP Camera • Titanium" },
-    storage: "128GB",
-    color: { de: "Schwarz Titan", en: "Black Titanium" },
-    price: 1199,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 3,
-    name: "iPhone 16",
-    brand: "apple",
-    specs: { de: "A18 Chip • 48MP Kamera • Action Button", en: "A18 Chip • 48MP Camera • Action Button" },
-    storage: "128GB",
-    color: { de: "Blau", en: "Blue" },
-    price: 949,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 4,
-    name: "iPhone 15 Pro Max",
-    brand: "apple",
-    specs: { de: "A17 Pro Chip • 48MP Kamera • USB-C", en: "A17 Pro Chip • 48MP Camera • USB-C" },
-    storage: "256GB",
-    color: { de: "Titan Blau", en: "Blue Titanium" },
-    price: 1299,
-    originalPrice: 1449,
-    warranty: 24,
-    badge: { de: "Angebot", en: "Deal" },
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 5,
-    name: "iPhone 15",
-    brand: "apple",
-    specs: { de: "A16 Chip • 48MP Kamera • Dynamic Island", en: "A16 Chip • 48MP Camera • Dynamic Island" },
-    storage: "128GB",
-    color: { de: "Pink", en: "Pink" },
-    price: 799,
-    originalPrice: 899,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 6,
-    name: "iPhone SE (2024)",
-    brand: "apple",
-    specs: { de: "A15 Chip • 12MP Kamera • Touch ID", en: "A15 Chip • 12MP Camera • Touch ID" },
-    storage: "64GB",
-    color: { de: "Mitternacht", en: "Midnight" },
-    price: 529,
-    warranty: 24,
-    badge: { de: "Preis-Tipp", en: "Value Pick" },
-    isNew: true,
-    inStock: true,
-  },
-
-  // Samsung
-  {
-    id: 7,
-    name: "Samsung Galaxy S24 Ultra",
-    brand: "samsung",
-    specs: { de: "Snapdragon 8 Gen 3 • 200MP • S Pen", en: "Snapdragon 8 Gen 3 • 200MP • S Pen" },
-    storage: "256GB",
-    color: { de: "Titan Grau", en: "Titanium Gray" },
-    price: 1299,
-    warranty: 24,
-    badge: { de: "Bestseller", en: "Bestseller" },
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 8,
-    name: "Samsung Galaxy S24+",
-    brand: "samsung",
-    specs: { de: "Snapdragon 8 Gen 3 • 50MP • 120Hz", en: "Snapdragon 8 Gen 3 • 50MP • 120Hz" },
-    storage: "256GB",
-    color: { de: "Kobalt Violett", en: "Cobalt Violet" },
-    price: 999,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 9,
-    name: "Samsung Galaxy S24",
-    brand: "samsung",
-    specs: { de: "Exynos 2400 • 50MP • Kompakt", en: "Exynos 2400 • 50MP • Compact" },
-    storage: "128GB",
-    color: { de: "Bernstein Gelb", en: "Amber Yellow" },
-    price: 799,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 10,
-    name: "Samsung Galaxy Z Fold 6",
-    brand: "samsung",
-    specs: { de: "Faltbar • 7.6\" Display • S Pen", en: "Foldable • 7.6\" Display • S Pen" },
-    storage: "256GB",
-    color: { de: "Silber Schatten", en: "Silver Shadow" },
-    price: 1899,
-    warranty: 24,
-    badge: { de: "Faltbar", en: "Foldable" },
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 11,
-    name: "Samsung Galaxy Z Flip 6",
-    brand: "samsung",
-    specs: { de: "Faltbar • Kompakt • FlexCam", en: "Foldable • Compact • FlexCam" },
-    storage: "256GB",
-    color: { de: "Mint", en: "Mint" },
-    price: 1099,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 12,
-    name: "Samsung Galaxy A55 5G",
-    brand: "samsung",
-    specs: { de: "Exynos 1480 • 50MP • IP67", en: "Exynos 1480 • 50MP • IP67" },
-    storage: "128GB",
-    color: { de: "Eisblau", en: "Ice Blue" },
-    price: 399,
-    warranty: 24,
-    badge: { de: "Preis-Tipp", en: "Value Pick" },
-    isNew: true,
-    inStock: true,
-  },
-
-  // Google Pixel
-  {
-    id: 13,
-    name: "Google Pixel 9 Pro XL",
-    brand: "google",
-    specs: { de: "Tensor G4 • 50MP • 7 Jahre Updates", en: "Tensor G4 • 50MP • 7 Years Updates" },
-    storage: "256GB",
-    color: { de: "Porzellan", en: "Porcelain" },
-    price: 1149,
-    warranty: 24,
-    badge: { de: "Neu", en: "New" },
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 14,
-    name: "Google Pixel 9 Pro",
-    brand: "google",
-    specs: { de: "Tensor G4 • Triple Kamera • AI", en: "Tensor G4 • Triple Camera • AI" },
-    storage: "128GB",
-    color: { de: "Obsidian", en: "Obsidian" },
-    price: 999,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 15,
-    name: "Google Pixel 9",
-    brand: "google",
-    specs: { de: "Tensor G4 • 50MP • Kompakt", en: "Tensor G4 • 50MP • Compact" },
-    storage: "128GB",
-    color: { de: "Pfingstrose", en: "Peony" },
-    price: 799,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 16,
-    name: "Google Pixel 8a",
-    brand: "google",
-    specs: { de: "Tensor G3 • 64MP • 7 Jahre Updates", en: "Tensor G3 • 64MP • 7 Years Updates" },
-    storage: "128GB",
-    color: { de: "Aloe", en: "Aloe" },
-    price: 499,
-    warranty: 24,
-    badge: { de: "Preis-Tipp", en: "Value Pick" },
-    isNew: true,
-    inStock: true,
-  },
-
-  // Xiaomi
-  {
-    id: 17,
-    name: "Xiaomi 14 Ultra",
-    brand: "xiaomi",
-    specs: { de: "Snapdragon 8 Gen 3 • Leica Kamera", en: "Snapdragon 8 Gen 3 • Leica Camera" },
-    storage: "256GB",
-    color: { de: "Schwarz", en: "Black" },
-    price: 1199,
-    warranty: 24,
-    badge: { de: "Kamera-König", en: "Camera King" },
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 18,
-    name: "Xiaomi 14",
-    brand: "xiaomi",
-    specs: { de: "Snapdragon 8 Gen 3 • Leica • Kompakt", en: "Snapdragon 8 Gen 3 • Leica • Compact" },
-    storage: "256GB",
-    color: { de: "Weiß", en: "White" },
-    price: 799,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 19,
-    name: "Xiaomi Redmi Note 13 Pro+",
-    brand: "xiaomi",
-    specs: { de: "Dimensity 7200 • 200MP • 120W Laden", en: "Dimensity 7200 • 200MP • 120W Charging" },
-    storage: "256GB",
-    color: { de: "Aurora Purple", en: "Aurora Purple" },
-    price: 399,
-    warranty: 24,
-    badge: { de: "Bestseller", en: "Bestseller" },
-    isNew: true,
-    inStock: true,
-  },
-
-  // Huawei
-  {
-    id: 20,
-    name: "Huawei Pura 70 Pro",
-    brand: "huawei",
-    specs: { de: "Kirin 9010 • 50MP XMAGE • 100W", en: "Kirin 9010 • 50MP XMAGE • 100W" },
-    storage: "256GB",
-    color: { de: "Schwarz", en: "Black" },
-    price: 999,
-    warranty: 24,
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 21,
-    name: "Huawei Mate 60 Pro",
-    brand: "huawei",
-    specs: { de: "Kirin 9000S • Satellitenverbindung", en: "Kirin 9000S • Satellite Connection" },
-    storage: "256GB",
-    color: { de: "Weiß", en: "White" },
-    price: 1099,
-    warranty: 24,
-    badge: { de: "Premium", en: "Premium" },
-    isNew: true,
-    inStock: true,
-  },
-];
-
-export default function SmartphoneStore({ lang }: { lang: Locale }) {
+export default function SmartphoneStore({ lang, phones }: { lang: Locale; phones: Smartphone[] }) {
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc">("default");
 
-  const filteredPhones = smartphones
+  const filteredPhones = phones
     .filter((p) => selectedBrand === "all" || p.brand === selectedBrand)
     .sort((a, b) => {
       if (sortBy === "price-asc") return a.price - b.price;
@@ -372,8 +81,8 @@ export default function SmartphoneStore({ lang }: { lang: Locale }) {
     });
 
   const brandCount = (brandId: string) => {
-    if (brandId === "all") return smartphones.length;
-    return smartphones.filter((p) => p.brand === brandId).length;
+    if (brandId === "all") return phones.length;
+    return phones.filter((p) => p.brand === brandId).length;
   };
 
   return (
