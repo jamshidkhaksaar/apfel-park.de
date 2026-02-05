@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+
 import AdminShell from "../../../components/admin/AdminShell";
 import SettingsForm from "./SettingsForm";
+import { type SettingsData } from "./types";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +33,9 @@ export default async function SettingsPage() {
 
   // Transform array to object
   const settingsMap = settingsData?.reduce((acc, curr) => {
-    acc[curr.key] = curr.value;
+    acc[curr.key as keyof SettingsData] = curr.value as SettingsData[keyof SettingsData];
     return acc;
-  }, {} as Record<string, any>) || {};
+  }, {} as Partial<SettingsData>) || {};
 
   // Default values fallback
   const initialSettings = {

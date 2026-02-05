@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 
 import type { Locale } from "../lib/i18n";
 import { useLanguageSwitch } from "./LanguageTransition";
@@ -12,11 +12,15 @@ export default function LocaleSwitcher() {
   const pathname = usePathname();
   const { switchLanguage } = useLanguageSwitch();
   const [optimisticLocale, setOptimisticLocale] = useState<Locale | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Reset optimistic state when path changes (navigation complete)
-    setOptimisticLocale(null);
-  }, [pathname]);
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!pathname) {
     return null;
@@ -36,9 +40,13 @@ export default function LocaleSwitcher() {
     setOptimisticLocale(targetLocale);
     
     // 2. Wait for toggle animation (400ms) before starting ocean wave
-    setTimeout(() => {
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = window.setTimeout(() => {
       const nextPath = `/${[targetLocale, ...parts.slice(1)].join("/")}`;
       switchLanguage(nextPath, targetLocale);
+      window.setTimeout(() => setOptimisticLocale(null), 1400);
     }, 400);
   };
 

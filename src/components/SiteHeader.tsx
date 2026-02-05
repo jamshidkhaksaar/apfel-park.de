@@ -4,28 +4,34 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import { getDictionary, type Locale } from "../lib/i18n";
+import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import { useTheme } from "./ThemeProvider";
 
-export default function SiteHeader({ lang }: { lang: Locale }) {
-  const dict = getDictionary(lang);
+type SiteHeaderProps = {
+  lang: Locale;
+  navItems: NavItems;
+  labels: HeaderLabels;
+};
+
+export default function SiteHeader({
+  lang,
+  navItems,
+  labels,
+}: SiteHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const { theme } = useTheme();
   
-  // Get nav items directly
-  const navItems = dict.nav;
-  
   // Dynamic logo based on theme (fallback to regular logo if white version fails)
-  const logoSrc = theme === "ocean" && !logoError 
+  const logoSrc = (theme === "ocean" || theme === "mono") && !logoError 
     ? "/branding/apfel-park-white.png" 
     : "/branding/logo.jpg";
   
   const handleLogoError = () => {
-    if (theme === "ocean") {
+    if (theme === "ocean" || theme === "mono") {
       setLogoError(true);
     }
   };
@@ -91,7 +97,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
               <Link
                 key={item.path}
                 href={`/${lang}${item.path}`}
-                className="group relative whitespace-nowrap px-3 py-2 text-sm font-medium text-muted transition hover:text-white"
+                className="group relative whitespace-nowrap px-3 py-2 text-sm font-medium text-muted transition hover:text-foreground"
               >
                 {item.label}
                 <span className="absolute bottom-0 left-1/2 h-0.5 w-0 -translate-x-1/2 bg-gradient-to-r from-gold-soft to-gold-deep transition-all group-hover:w-full" />
@@ -107,7 +113,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
               
               <Link
                 href={`/${lang}/store`}
-                className="group relative flex h-8 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-br from-gold via-amber to-bronze pl-3 pr-4 text-xs font-bold uppercase tracking-wider text-black shadow-lg shadow-gold/20 transition-all hover:scale-105 hover:shadow-gold/40"
+                className="group relative flex h-8 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-br from-gold via-amber to-bronze pl-3 pr-4 text-xs font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg shadow-gold/20 transition-all hover:scale-105 hover:shadow-gold/40"
               >
                 <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
                 <svg className="relative z-10 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -135,7 +141,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden"
-              aria-label={mobileMenuOpen ? dict.header.closeMenu : dict.header.openMenu}
+              aria-label={mobileMenuOpen ? labels.closeMenu : labels.openMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu-nav"
             >
@@ -179,7 +185,7 @@ export default function SiteHeader({ lang }: { lang: Locale }) {
               <Link
                 href={`/${lang}/store`}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-3 text-sm font-bold uppercase tracking-wider text-black shadow-lg"
+                className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-3 text-sm font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />

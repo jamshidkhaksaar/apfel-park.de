@@ -96,7 +96,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
               Navigation
             </h3>
             <ul className="mt-6 space-y-3">
-              {dict.footer.quickLinks.map((item) => (
+              {dict.footer.quickLinks.map((item: { label: string; path: string }) => (
                 <li key={item.path}>
                   <Link 
                     href={`/${lang}${item.path}`} 
@@ -119,7 +119,7 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
               Info
             </h3>
             <ul className="mt-6 space-y-3">
-              {dict.footer.companyLinks.map((item) => (
+              {dict.footer.companyLinks.map((item: { label: string; path: string }) => (
                 <li key={item.path}>
                   <Link 
                     href={`/${lang}${item.path}`} 
@@ -143,15 +143,17 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
             </h3>
             
             {/* Map */}
-            <div className="overflow-hidden rounded-2xl border border-white/10">
-              <iframe
-                title="Apfel Park Map"
-                src={siteInfo.map.embedUrl}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="h-44 w-full grayscale transition hover:grayscale-0"
-              />
-            </div>
+            {siteInfo.map.embedUrl && (
+              <div className="overflow-hidden rounded-2xl border border-white/10">
+                <iframe
+                  title="Apfel Park Map"
+                  src={siteInfo.map.embedUrl}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="h-44 w-full grayscale transition hover:grayscale-0"
+                />
+              </div>
+            )}
             
             {/* Address */}
             <div className="text-sm text-muted">

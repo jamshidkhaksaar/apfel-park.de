@@ -101,7 +101,7 @@ export default async function LaptopsPage({ params }: { params: Promise<{ lang: 
       <section className="section-pad">
         <div className="container-page">
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {dict.laptops.highlights.map((item, index) => (
+            {dict.laptops.highlights.map((item: string, index: number) => (
               <div key={item} className="tech-card-hover group rounded-2xl p-6 text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                   {index === 0 && (
@@ -156,7 +156,7 @@ export default async function LaptopsPage({ params }: { params: Promise<{ lang: 
 
           {/* Brand Logos */}
           <div className="mb-12 flex flex-wrap items-center gap-6">
-            {dict.laptops.brands.map((brand) => (
+            {dict.laptops.brands.map((brand: string) => (
               <div key={brand} className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-muted">
                 {brand}
               </div>
@@ -345,7 +345,7 @@ export default async function LaptopsPage({ params }: { params: Promise<{ lang: 
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {dict.laptops.accessories.map((item, index) => (
+            {dict.laptops.accessories.map((item: { title: string; description: string }, index: number) => (
               <div key={item.title} className="tech-card-hover group rounded-2xl p-6 text-center">
                 <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/10 to-amber/10 text-gold transition group-hover:from-gold/20 group-hover:to-amber/20">
                   {index === 0 && (

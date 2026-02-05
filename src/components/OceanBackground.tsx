@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 import { useTheme } from "./ThemeProvider";
@@ -49,6 +49,19 @@ export default function OceanBackground() {
   const leftCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const rightCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const jellyfishRef = useRef<SVGSVGElement | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
+
+    updatePreference();
+    mediaQuery.addEventListener("change", updatePreference);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updatePreference);
+    };
+  }, []);
 
   useEffect(() => {
     if (theme !== "ocean") return;
@@ -137,26 +150,41 @@ export default function OceanBackground() {
     const right = initSystem(rightCanvas);
 
     let animationFrame = 0;
-    const loop = () => {
-      left.draw();
-      right.draw();
+    let lastFrameTime = 0;
+    const fps = 30; // Limit to 30 FPS to reduce CPU usage
+    const interval = 1000 / fps;
+
+    const loop = (timestamp: number) => {
       animationFrame = window.requestAnimationFrame(loop);
+
+      const delta = timestamp - lastFrameTime;
+      if (delta > interval) {
+        // Adjust for frame drop to keep smooth animation
+        lastFrameTime = timestamp - (delta % interval);
+        left.draw();
+        right.draw();
+      }
     };
 
     const handleResize = () => {
       left.resize();
       right.resize();
+      left.draw();
+      right.draw();
     };
 
     window.addEventListener("resize", handleResize);
-    loop();
+
+    // Initial draw to prevent flash of blank content
+    left.draw();
+    right.draw();
 
     const leftLeg = jellyfish.querySelector("#left-leg");
     const rightLeg = jellyfish.querySelector("#right-leg");
     const head = jellyfish.querySelector("#head");
 
     const timeline = gsap
-      .timeline({ repeat: -1, repeatDelay: 2 })
+      .timeline({ repeat: -1, repeatDelay: 2, paused: true })
       .to(
         jellyfish,
         {
@@ -215,6 +243,14 @@ export default function OceanBackground() {
         1,
       );
 
+    if (!prefersReducedMotion) {
+      lastFrameTime = performance.now();
+      loop(lastFrameTime);
+      timeline.play();
+    } else {
+      timeline.pause(0);
+    }
+
     return () => {
       window.removeEventListener("resize", handleResize);
       if (animationFrame) {
@@ -222,7 +258,7 @@ export default function OceanBackground() {
       }
       timeline.kill();
     };
-  }, [theme]);
+  }, [prefersReducedMotion, theme]);
 
   if (theme !== "ocean") return null;
 

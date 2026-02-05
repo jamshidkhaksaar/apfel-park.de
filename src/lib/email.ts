@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { escapeHtml } from "@/lib/security";
 
 type ContactNotificationData = {
   name: string;
@@ -29,7 +30,7 @@ const getContactRecipient = async (): Promise<string | null> => {
   return process.env.CONTACT_NOTIFICATION_EMAIL || null;
 };
 
-const buildEmailContent = (data: ContactNotificationData) => {
+export const buildEmailContent = (data: ContactNotificationData) => {
   const subject =
     data.locale === "de"
       ? "Neue Kontaktanfrage"
@@ -45,12 +46,12 @@ const buildEmailContent = (data: ContactNotificationData) => {
 
   const text = textLines.join("\n");
   const html = `
-    <h2>${subject}</h2>
-    <p><strong>Name:</strong> ${data.name}</p>
-    <p><strong>Email:</strong> ${data.email}</p>
-    <p><strong>Device:</strong> ${data.device || "-"}</p>
+    <h2>${escapeHtml(subject)}</h2>
+    <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
+    <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+    <p><strong>Device:</strong> ${escapeHtml(data.device || "-")}</p>
     <p><strong>Message:</strong></p>
-    <p>${data.message.replace(/\n/g, "<br/>")}</p>
+    <p>${escapeHtml(data.message).replace(/\n/g, "<br/>")}</p>
   `;
 
   return { subject, text, html };

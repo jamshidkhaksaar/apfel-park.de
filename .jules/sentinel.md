@@ -17,3 +17,8 @@
 **Vulnerability:** The regex-based `isSecureSvg` function failed to block SMIL animation tags (`<set>`, `<animate>`), allowing attackers to inject event handlers (e.g., `<set attributeName="onmouseover" to="alert(1)"/>`) without using explicit `on*` attributes or `javascript:` keywords directly in the tag body.
 **Learning:** Blacklisting event handlers (like `onmouseover=`) is insufficient because SMIL tags can dynamically set these attributes.
 **Prevention:** Explicitly block all SMIL animation tags (`set`, `animate`, `animateMotion`, `animateTransform`) and `<use>` in regex-based sanitizers, or switch to a robust parser-based sanitizer like `dompurify`.
+
+## 2026-02-01 - Middleware Misconfiguration
+**Vulnerability:** The authentication middleware was named `src/proxy.ts`, causing Next.js to potentially ignore it or fail to integrate with Supabase's expected flow, leaving admin routes potentially unprotected.
+**Learning:** Next.js middleware relies on specific file naming conventions (i.e., `middleware.ts`), which can be a source of configuration errors. Supabase auth helpers, in particular, depend on this convention for proper execution.
+**Prevention:** Ensure `src/middleware.ts` exists and is verified to run (e.g., by adding a log or checking headers) during deployment.

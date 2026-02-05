@@ -12,10 +12,18 @@ type SaveSettingsResult = {
 
 const mergeSecretValues = (
   settings: SettingsData,
-  existing: Record<string, any>,
+  existing: Record<string, unknown>,
 ): SettingsData => {
-  const existingSecurity = existing.security ?? {};
-  const existingRecaptcha = existing.recaptcha ?? {};
+  const existingSecurity = (existing.security as SettingsData["security"] | undefined) ?? {
+    cfSiteKey: "",
+    cfSecretKey: "",
+  };
+  const existingRecaptcha = (existing.recaptcha as SettingsData["recaptcha"] | undefined) ?? {
+    enabled: false,
+    siteKey: "",
+    secretKey: "",
+    minScore: 0.5,
+  };
 
   return {
     ...settings,
@@ -52,9 +60,9 @@ export const saveSettings = async (
 
     const existingMap =
       existingRows?.reduce((acc, curr) => {
-        acc[curr.key] = curr.value;
+        acc[curr.key] = curr.value as SettingsData[keyof SettingsData];
         return acc;
-      }, {} as Record<string, any>) || {};
+      }, {} as Record<string, SettingsData[keyof SettingsData]>) || {};
 
     const mergedSettings = mergeSecretValues(settings, existingMap);
 
