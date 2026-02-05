@@ -119,12 +119,12 @@ export default function SiteHeader({
             
             <Link
               href={`/${lang}/repairs`}
-              className="btn-primary !hidden lg:!inline-flex !px-5 !py-2 uppercase tracking-wide min-w-[180px]"
+              className="btn-primary !hidden lg:!inline-flex !px-3 !py-1.5 text-xs uppercase tracking-wide"
             >
-              <svg className="relative z-10 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="relative z-10 h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <span className="relative z-10 whitespace-nowrap">{lang === "de" ? "Schnell-Reparatur" : "Quick Repair"}</span>
+              <span className="relative z-10 whitespace-nowrap">{lang === "de" ? "Reparatur" : "Repair"}</span>
             </Link>
 
             {/* Mobile Menu Button */}
