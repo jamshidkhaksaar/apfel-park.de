@@ -148,44 +148,50 @@ export default function SiteHeader({
       </div>
 
       {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div id="mobile-menu-nav" className="border-t border-white/5 bg-black/60 backdrop-blur-xl lg:hidden">
-          <nav className="container-page flex flex-col gap-1 py-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                href={`/${lang}${item.path}`}
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-gold/5 hover:text-gold"
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="mt-4 flex flex-col gap-3 border-t border-white/5 pt-4">
-              <Link
-                href={`/${lang}/repairs`}
-                onClick={() => setMobileMenuOpen(false)}
-                className="btn-primary flex items-center justify-center gap-2 !py-3 text-sm font-bold uppercase tracking-wide"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span>{lang === "de" ? "Schnell-Reparatur" : "Quick Repair"}</span>
-              </Link>
-              <Link
-                href={`/${lang}/store`}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-3 text-sm font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                <span>{lang === "de" ? "Zum Online Shop" : "Go to Store"}</span>
-              </Link>
-            </div>
-          </nav>
-        </div>
-      )}
+      <div
+        id="mobile-menu-nav"
+        aria-hidden={!mobileMenuOpen}
+        className={`lg:hidden transition-all duration-300 ease-out origin-top border-t border-white/5 bg-black/60 backdrop-blur-xl ${
+          mobileMenuOpen
+            ? "max-h-[520px] opacity-100 translate-y-0"
+            : "max-h-0 opacity-0 -translate-y-2 pointer-events-none"
+        }`}
+      >
+        <nav className="container-page flex flex-col gap-1 py-4">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              href={`/${lang}${item.path}`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-gold/5 hover:text-gold"
+            >
+              {item.label}
+            </Link>
+          ))}
+          <div className="mt-4 flex flex-col gap-3 border-t border-white/5 pt-4">
+            <Link
+              href={`/${lang}/repairs`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="btn-primary flex items-center justify-center gap-2 !py-3 text-sm font-bold uppercase tracking-wide"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>{lang === "de" ? "Schnell-Reparatur" : "Quick Repair"}</span>
+            </Link>
+            <Link
+              href={`/${lang}/store`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-3 text-sm font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+              <span>{lang === "de" ? "Zum Online Shop" : "Go to Store"}</span>
+            </Link>
+          </div>
+        </nav>
+      </div>
     </header>
   );
 }

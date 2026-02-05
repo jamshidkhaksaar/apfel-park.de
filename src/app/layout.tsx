@@ -55,7 +55,13 @@ export default async function RootLayout({
     : "mono";
 
   return (
-    <html lang={lang} data-theme={theme} translate="no" suppressHydrationWarning>
+    <html
+      lang={lang}
+      data-theme={theme}
+      data-scroll-behavior="smooth"
+      translate="no"
+      suppressHydrationWarning
+    >
       <head>
         <ThemeScript />
       </head>

@@ -90,7 +90,7 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
       <div className="container-page relative z-10 flex min-h-[85vh] items-center py-16 lg:py-24">
         <div className="grid w-full gap-8 lg:grid-cols-[1fr_auto] lg:gap-16">
           {/* Left Column - Main Content */}
-          <div className="flex max-w-2xl flex-col justify-center gap-6">
+          <div className="hero-content-panel flex max-w-2xl flex-col justify-center gap-6 rounded-3xl px-6 py-8 md:px-8">
             {/* Eyebrow Badge */}
             <div className="inline-flex items-center gap-2 self-start">
               <span className="h-px w-8 bg-gold/60" />
@@ -150,7 +150,7 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
 
           {/* Right Column - Glass Card */}
           <div className="flex items-center lg:justify-end">
-            <div className="hero-glass-card w-full max-w-md rounded-2xl border border-white/15 bg-white/8 p-6 shadow-2xl backdrop-blur-2xl md:p-8">
+            <div className="hero-glass-card hero-right-card w-full max-w-md rounded-2xl p-6 md:p-8">
               {/* Card Header */}
               <div className="mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/20 text-gold">
