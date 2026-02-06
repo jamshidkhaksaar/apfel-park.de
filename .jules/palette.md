@@ -17,3 +17,7 @@
 ## 2026-02-12 - [Context-Aware Form Pre-filling]
 **Learning:** Users often click "Buy Now" on a specific item but land on a generic contact form, causing friction as they must manually re-enter the product name.
 **Action:** Pass context (like product names) via URL query parameters and use them to auto-populate form fields, ensuring the receiving component handles the parameters safely (e.g. via Suspense boundaries in Next.js).
+
+## 2026-02-13 - [Mobile Menu Keyboard Trap]
+**Learning:** Using `opacity-0` and `pointer-events-none` to hide mobile menus leaves interactive elements focusable, creating a "keyboard trap" where users tab through invisible links.
+**Action:** Always add `invisible` (visibility: hidden) to the closed state of transitions, as it removes elements from the focus order while still allowing `transition-all` to animate opacity (transitions handle visibility flipping automatically).
