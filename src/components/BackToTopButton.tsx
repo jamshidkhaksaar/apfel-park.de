@@ -7,8 +7,9 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
 
   useEffect(() => {
     const onScroll = () => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      setVisible(window.scrollY > maxScroll * 0.5);
+      // Optimization: Avoid reading scrollHeight which causes reflow on every scroll event
+      // Use fixed threshold (500px) instead of percentage
+      setVisible(window.scrollY > 500);
     };
 
     onScroll();
