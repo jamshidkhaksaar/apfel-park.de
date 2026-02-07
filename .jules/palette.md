@@ -17,3 +17,7 @@
 ## 2026-02-12 - [Context-Aware Form Pre-filling]
 **Learning:** Users often click "Buy Now" on a specific item but land on a generic contact form, causing friction as they must manually re-enter the product name.
 **Action:** Pass context (like product names) via URL query parameters and use them to auto-populate form fields, ensuring the receiving component handles the parameters safely (e.g. via Suspense boundaries in Next.js).
+
+## 2026-05-24 - [Floating Action Button Overlap & Accessibility]
+**Learning:** Floating action buttons (FABs) often overlap if not managed with a stacking context or explicit vertical offsets. Tooltips on FABs must be visible on keyboard focus, not just hover, and linked via `aria-describedby`.
+**Action:** Stack FABs vertically using distinct `bottom` values (e.g., `bottom-6`, `bottom-28`) and implement `onFocus`/`onBlur` handlers for tooltips.
