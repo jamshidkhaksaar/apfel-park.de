@@ -10,6 +10,7 @@ type WhatsAppFloatProps = {
 export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
   // Show button after a short delay for better UX
@@ -43,8 +44,10 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
     >
       {/* Tooltip */}
       <div 
+        id="whatsapp-tooltip"
+        role="tooltip"
         className={`absolute bottom-full right-0 mb-3 transition-all duration-300 ${
-          (showTooltip || isHovered) ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0 pointer-events-none"
+          (showTooltip || isHovered || isFocused) ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0 pointer-events-none"
         }`}
       >
         <div className="relative rounded-2xl border border-white/10 bg-surface/95 px-4 py-3 shadow-xl backdrop-blur-xl">
@@ -70,8 +73,11 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
         rel="noopener noreferrer"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-500/30 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-green-500/40"
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-500/30 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-green-500/40 focus:outline-none focus-visible:ring-4 focus-visible:ring-green-500/50"
         aria-label="Chat on WhatsApp"
+        aria-describedby="whatsapp-tooltip"
       >
         {/* Inner Glow */}
         <div className="absolute inset-1 rounded-full bg-gradient-to-br from-green-400/30 to-transparent" />

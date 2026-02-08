@@ -17,3 +17,7 @@
 ## 2026-02-12 - [Context-Aware Form Pre-filling]
 **Learning:** Users often click "Buy Now" on a specific item but land on a generic contact form, causing friction as they must manually re-enter the product name.
 **Action:** Pass context (like product names) via URL query parameters and use them to auto-populate form fields, ensuring the receiving component handles the parameters safely (e.g. via Suspense boundaries in Next.js).
+
+## 2026-02-13 - [Floating Button Overlap & Tooltips]
+**Learning:** Fixed-position floating buttons (like "Back to Top" and "Chat") often compete for the same screen real estate (e.g., `bottom-6 right-6`), creating click-masking issues. Additionally, tooltips on these buttons often rely solely on hover, ignoring keyboard focus.
+**Action:** Stagger floating elements vertically (e.g., `bottom-28` vs `bottom-6`) and enforce `onFocus`/`onBlur` visibility toggles for associated tooltips to ensure keyboard accessibility.
