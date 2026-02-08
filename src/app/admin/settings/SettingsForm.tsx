@@ -12,7 +12,6 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
   const { dict, lang } = useAdmin();
   const [settings, setSettings] = useState<SettingsData>({
     ...initialSettings,
-    security: initialSettings.security || { cfSiteKey: "", cfSecretKey: "" },
     recaptcha: initialSettings.recaptcha || { enabled: false, siteKey: "", secretKey: "", minScore: 0.5 },
   });
   const [loading, setLoading] = useState(false);
@@ -176,37 +175,6 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
             <span className="text-sm font-medium text-muted">
               {settings.maintenance.enabled ? dict.settingsForm.active : dict.settingsForm.inactive}
             </span>
-          </div>
-        </div>
-
-        {/* Security Settings (Cloudflare) */}
-        <div className="glass-panel rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-foreground">{dict.settingsForm.securityTitle}</h2>
-          <p className="mt-2 text-sm text-muted">
-            {dict.settingsForm.securityDesc}
-          </p>
-          <div className="mt-4 space-y-3">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.siteKey}</label>
-              <input
-                type="text"
-                value={settings.security?.cfSiteKey || ""}
-                onChange={(e) => handleChange("security", "cfSiteKey", e.target.value)}
-                placeholder="0x4AAAA..."
-                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.secretKey}</label>
-              <input
-                type="password"
-                value={settings.security?.cfSecretKey || ""}
-                onChange={(e) => handleChange("security", "cfSecretKey", e.target.value)}
-                placeholder="0x4AAAA..."
-                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
-              />
-              <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
-            </div>
           </div>
         </div>
 

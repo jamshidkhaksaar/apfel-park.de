@@ -18,10 +18,6 @@ export type SettingsData = {
   maintenance: {
     enabled: boolean;
   };
-  security: {
-    cfSiteKey: string;
-    cfSecretKey: string;
-  };
   recaptcha: {
     enabled: boolean;
     siteKey: string;

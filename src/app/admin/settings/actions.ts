@@ -15,10 +15,6 @@ const mergeSecretValues = (
   settings: SettingsData,
   existing: Record<string, unknown>,
 ): SettingsData => {
-  const existingSecurity = (existing.security as SettingsData["security"] | undefined) ?? {
-    cfSiteKey: "",
-    cfSecretKey: "",
-  };
   const existingRecaptcha = (existing.recaptcha as SettingsData["recaptcha"] | undefined) ?? {
     enabled: false,
     siteKey: "",
@@ -28,11 +24,6 @@ const mergeSecretValues = (
 
   return {
     ...settings,
-    security: {
-      ...settings.security,
-      cfSecretKey:
-        settings.security.cfSecretKey || existingSecurity.cfSecretKey || "",
-    },
     recaptcha: {
       ...settings.recaptcha,
       secretKey: settings.recaptcha.secretKey || existingRecaptcha.secretKey || "",

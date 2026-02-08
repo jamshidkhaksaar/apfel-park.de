@@ -61,10 +61,6 @@ export default async function SettingsPage() {
     maintenance: {
       enabled: settingsMap.maintenance?.enabled || false,
     },
-    security: {
-      cfSiteKey: settingsMap.security?.cfSiteKey || "",
-      cfSecretKey: "",
-    },
     recaptcha: {
       enabled: settingsMap.recaptcha?.enabled || false,
       siteKey: settingsMap.recaptcha?.siteKey || "",

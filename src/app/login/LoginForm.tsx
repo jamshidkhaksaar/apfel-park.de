@@ -3,13 +3,17 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useActionState, useState } from "react";
-import { Turnstile } from "@marsidev/react-turnstile";
+
+import { useReCaptcha } from "@/components/ReCaptcha";
+
 import { loginAction } from "./actions";
 import Logo from "@/components/Logo";
 
-export default function LoginForm({ siteKey }: { siteKey: string | null }) {
+export default function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/admin";
+  const { token: recaptchaToken, isLoading: recaptchaLoading, error: recaptchaError, ReCaptchaComponent } =
+    useReCaptcha("admin_login");
   
   const [state, action, isPending] = useActionState(loginAction, null);
   const [showPassword, setShowPassword] = useState(false);
@@ -30,6 +34,7 @@ export default function LoginForm({ siteKey }: { siteKey: string | null }) {
         <div className="tech-card rounded-2xl p-8">
           <form action={action} className="space-y-6">
             <input type="hidden" name="redirectTo" value={redirectTo} />
+            <input type="hidden" name="recaptchaToken" value={recaptchaToken} />
             
             {state?.error && (
               <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
@@ -84,23 +89,14 @@ export default function LoginForm({ siteKey }: { siteKey: string | null }) {
               </div>
             </div>
 
-            {/* Turnstile Captcha */}
-            {siteKey ? (
-               <div className="flex justify-center overflow-hidden">
-                <Turnstile 
-                  siteKey={siteKey} 
-                  options={{ theme: 'dark' }}
-                />
-              </div>
-            ) : (
-              <p className="text-xs text-yellow-500 text-center">
-                Security check disabled (Site Key not configured)
-              </p>
+            <ReCaptchaComponent />
+            {recaptchaError && (
+              <p className="text-xs text-red-400 text-center">{recaptchaError}</p>
             )}
 
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || recaptchaLoading || Boolean(recaptchaError)}
               className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending ? (

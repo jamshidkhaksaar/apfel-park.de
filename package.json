@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@marsidev/react-turnstile": "^1.4.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.91.0",
     "@vercel/blob": "^2.2.0",

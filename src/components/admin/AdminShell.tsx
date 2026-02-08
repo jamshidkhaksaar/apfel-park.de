@@ -95,7 +95,7 @@ export default function AdminShell({
   ];
 
   return (
-    <div className="min-h-screen bg-black text-foreground" translate="no">
+    <div className="min-h-screen bg-background text-foreground" translate="no">
       <div className="mx-auto grid max-w-7xl gap-6 px-6 py-10 lg:grid-cols-[260px_1fr]">
         <aside className="space-y-6">
           <div className="rounded-2xl border border-border/60 bg-surface/70 p-6">
@@ -113,7 +113,7 @@ export default function AdminShell({
             </div>
             
             {/* Language Toggle */}
-            <div className="mt-6 flex rounded-lg border border-white/10 bg-black/20 p-1">
+            <div className="mt-6 flex rounded-lg border border-border/60 bg-surface-strong/50 p-1">
               <button
                 onClick={() => handleLangChange("de")}
                 className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
