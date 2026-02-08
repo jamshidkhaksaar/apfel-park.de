@@ -151,10 +151,10 @@ export default function SiteHeader({
       <div
         id="mobile-menu-nav"
         aria-hidden={!mobileMenuOpen}
-        className={`lg:hidden transition-all duration-300 ease-out origin-top border-t border-white/5 bg-black/60 backdrop-blur-xl ${
+        className={`lg:hidden overflow-hidden transition-all duration-300 ease-out origin-top border-t border-white/5 bg-black/60 backdrop-blur-xl ${
           mobileMenuOpen
             ? "max-h-[520px] opacity-100 translate-y-0"
-            : "max-h-0 opacity-0 -translate-y-2 pointer-events-none"
+            : "max-h-0 opacity-0 -translate-y-2 pointer-events-none invisible"
         }`}
       >
         <nav className="container-page flex flex-col gap-1 py-4">
