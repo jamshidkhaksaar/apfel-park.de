@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
+
+import { createAdminClient } from "@/lib/supabase/admin";
+
 import "./globals.css";
 import AppWrapper from "../components/AppWrapper";
 import LanguageTransitionProvider from "../components/LanguageTransition";
@@ -41,6 +44,29 @@ export const metadata: Metadata = {
   },
 };
 
+const getFaviconHref = async (): Promise<string> => {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("store_settings")
+      .select("value, updated_at")
+      .eq("key", "branding_assets")
+      .maybeSingle();
+
+    const value = (data?.value as { favicon?: string } | null) ?? null;
+    const favicon = value?.favicon;
+    if (!favicon) return "/favicon.ico";
+
+    const updatedAt = data?.updated_at ? new Date(data.updated_at).getTime() : null;
+    if (!updatedAt) return favicon;
+
+    const separator = favicon.includes("?") ? "&" : "?";
+    return `${favicon}${separator}v=${updatedAt}`;
+  } catch {
+    return "/favicon.ico";
+  }
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -53,6 +79,7 @@ export default async function RootLayout({
   const theme = themeCookie?.value === "dark" || themeCookie?.value === "mono"
     ? themeCookie.value
     : "mono";
+  const faviconHref = await getFaviconHref();
 
   return (
     <html
@@ -64,6 +91,7 @@ export default async function RootLayout({
     >
       <head>
         <ThemeScript />
+        <link rel="icon" href={faviconHref} sizes="any" />
       </head>
       <body
         className={`${inter.variable} ${interDisplay.variable} bg-background font-sans text-foreground antialiased`}
