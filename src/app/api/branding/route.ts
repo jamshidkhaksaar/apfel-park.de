@@ -8,7 +8,13 @@ import { isSecureSvg } from "@/lib/security";
 const ALLOWED_TYPES: Record<string, string[]> = {
   logo: ["image/png", "image/jpeg", "image/svg+xml", "image/webp"],
   "logo-white": ["image/png", "image/svg+xml", "image/webp"],
-  favicon: ["image/x-icon", "image/vnd.microsoft.icon", "image/png", "image/svg+xml"],
+  favicon: [
+    "image/x-icon",
+    "image/vnd.microsoft.icon",
+    "application/octet-stream",
+    "image/png",
+    "image/svg+xml",
+  ],
   "og-image": ["image/png", "image/jpeg", "image/webp"],
 };
 
@@ -34,6 +40,7 @@ const getExtension = (mimeType: string): string => {
     "image/webp": ".webp",
     "image/x-icon": ".ico",
     "image/vnd.microsoft.icon": ".ico",
+    "application/octet-stream": ".ico",
   };
   return extensions[mimeType] || ".png";
 };
@@ -123,13 +130,22 @@ export async function POST(request: NextRequest) {
       const extension = getExtension(normalizedType);
       const baseName = FILE_NAMES[fieldName];
 
-      const blob = await put(`branding/${baseName}${extension}`, buffer, {
-        access: "public",
-        contentType: normalizedType,
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-        addRandomSuffix: false,
-        allowOverwrite: true,
-      });
+      let blob;
+      try {
+        blob = await put(`branding/${baseName}${extension}`, buffer, {
+          access: "public",
+          contentType:
+            fieldName === "favicon" && normalizedType === "application/octet-stream"
+              ? "image/x-icon"
+              : normalizedType,
+          token: process.env.BLOB_READ_WRITE_TOKEN,
+          addRandomSuffix: false,
+          allowOverwrite: true,
+        });
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : "Unknown upload error";
+        throw new Error(`${fieldName}: ${detail}`);
+      }
 
       if (fieldName === "logo") uploadedUrls.logo = blob.url;
       if (fieldName === "logo-white") uploadedUrls.logoWhite = blob.url;
@@ -190,8 +206,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Branding upload error:", error);
+    const detail = error instanceof Error ? error.message : messages.saveError;
     return NextResponse.json(
-      { error: messages.saveError },
+      { error: `${messages.saveError} (${detail})` },
       { status: 500 }
     );
   }
