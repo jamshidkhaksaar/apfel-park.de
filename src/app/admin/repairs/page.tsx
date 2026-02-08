@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAdminDictionary } from "@/lib/admin-i18n-server";
+import type { AdminDictionary } from "@/lib/admin-i18n";
 import AdminShell from "../../../components/admin/AdminShell";
 
 export const dynamic = "force-dynamic";
@@ -11,19 +13,29 @@ type RepairRow = {
   status: string | null;
 };
 
-const formatStatus = (status: string | null): string => {
-  if (!status) return "Unbekannt";
-  if (status === "new") return "Neu";
-  if (status === "in_progress") return "In Arbeit";
-  if (status === "waiting_for_parts") return "Warten auf Teile";
-  if (status === "ready") return "Abholbereit";
-  if (status === "completed") return "Abgeschlossen";
-  if (status === "cancelled") return "Storniert";
+const formatStatus = (status: string | null, dict: AdminDictionary): string => {
+  if (!status) return dict.repairsPage.status.unknown;
+  const normalized = status.toLowerCase().trim();
+  if (normalized === "new" || normalized === "neu") return dict.repairsPage.status.new;
+  if (normalized === "in_progress" || normalized === "in arbeit") {
+    return dict.repairsPage.status.in_progress;
+  }
+  if (normalized === "waiting_for_parts" || normalized === "warten auf teile") {
+    return dict.repairsPage.status.waiting_for_parts;
+  }
+  if (normalized === "ready" || normalized === "abholbereit") return dict.repairsPage.status.ready;
+  if (normalized === "completed" || normalized === "abgeschlossen") {
+    return dict.repairsPage.status.completed;
+  }
+  if (normalized === "cancelled" || normalized === "storniert") {
+    return dict.repairsPage.status.cancelled;
+  }
   return status;
 };
 
 export default async function RepairsPage() {
   const supabase = await createClient();
+  const dict = await getAdminDictionary();
   const { data } = await supabase
     .from("repairs")
     .select("id,ticket_number,device_model,issue_description,status")
@@ -33,29 +45,29 @@ export default async function RepairsPage() {
   const repairs = (data ?? []) as RepairRow[];
 
   return (
-    <AdminShell title="Reparaturaufträge">
+    <AdminShell title={dict.repairsPage.title}>
       <div className="glass-panel rounded-2xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-              Werkstatt-Workflow
+              {dict.repairsPage.eyebrow}
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-foreground">
-              Reparaturstatus
+              {dict.repairsPage.heading}
             </h2>
           </div>
           <button className="rounded-full bg-brand-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-black">
-            Neuer Auftrag
+            {dict.repairsPage.create}
           </button>
         </div>
         <div className="mt-6 overflow-hidden rounded-xl border border-border/60">
           <table className="w-full text-left text-sm">
             <thead className="bg-surface-strong/60 text-xs uppercase tracking-[0.2em] text-muted">
               <tr>
-                <th className="px-4 py-3">Ticket</th>
-                <th className="px-4 py-3">Gerät</th>
-                <th className="px-4 py-3">Problem</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">{dict.repairsPage.table.ticket}</th>
+                <th className="px-4 py-3">{dict.repairsPage.table.device}</th>
+                <th className="px-4 py-3">{dict.repairsPage.table.issue}</th>
+                <th className="px-4 py-3">{dict.repairsPage.table.status}</th>
               </tr>
             </thead>
             <tbody>
@@ -70,13 +82,13 @@ export default async function RepairsPage() {
                     </td>
                     <td className="px-4 py-3 text-muted">{repair.device_model}</td>
                     <td className="px-4 py-3 text-muted">{repair.issue_description ?? "-"}</td>
-                    <td className="px-4 py-3 text-muted">{formatStatus(repair.status)}</td>
+                    <td className="px-4 py-3 text-muted">{formatStatus(repair.status, dict)}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-muted">
-                    Noch keine Reparaturauftrage vorhanden.
+                    {dict.repairsPage.empty}
                   </td>
                 </tr>
               )}

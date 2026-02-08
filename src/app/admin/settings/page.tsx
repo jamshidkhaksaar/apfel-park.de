@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
 
 import AdminShell from "../../../components/admin/AdminShell";
 import SettingsForm from "./SettingsForm";
@@ -8,6 +9,8 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const admin = createAdminClient();
+  const dict = await getAdminDictionary();
+  const locale = await getAdminLocale();
 
   const { data: recaptchaRow } = await admin
     .from("store_settings")
@@ -53,7 +56,7 @@ export default async function SettingsPage() {
       thursday: settingsMap.hours?.thursday || "09:00 - 18:00",
       friday: settingsMap.hours?.friday || "09:00 - 18:00",
       saturday: settingsMap.hours?.saturday || "10:00 - 16:00",
-      sunday: settingsMap.hours?.sunday || "Closed",
+      sunday: settingsMap.hours?.sunday || (locale === "en" ? "Closed" : "Geschlossen"),
     },
     maintenance: {
       enabled: settingsMap.maintenance?.enabled || false,
@@ -71,7 +74,7 @@ export default async function SettingsPage() {
   };
 
   return (
-    <AdminShell title="Shop Settings">
+    <AdminShell title={dict.settingsPage.title}>
       <SettingsForm initialSettings={initialSettings} />
     </AdminShell>
   );

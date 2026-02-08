@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useRef } from "react";
 
 import AdminShell from "../../../components/admin/AdminShell";
+import { useAdmin } from "@/lib/admin-context";
 
 type BrandingAsset = {
   name: string;
@@ -14,42 +15,44 @@ type BrandingAsset = {
   dimensions: string;
 };
 
-const brandingAssets: BrandingAsset[] = [
-  {
-    name: "logo",
-    label: "Logo (Dark Theme)",
-    description: "Hauptlogo für den dunklen Theme. Wird auf allen Seiten angezeigt.",
-    currentSrc: "/branding/logo.jpg",
-    accept: "image/png,image/jpeg,image/svg+xml,image/webp",
-    dimensions: "Empfohlen: 512x512px oder quadratisch",
-  },
-  {
-    name: "logo-white",
-    label: "Logo (Ocean Theme)",
-    description: "Weißes Logo für den blauen Ocean-Theme. Sollte weiß/hell sein für gute Sichtbarkeit.",
-    currentSrc: "/branding/logo-white.png",
-    accept: "image/png,image/svg+xml,image/webp",
-    dimensions: "Empfohlen: 512x512px, PNG mit Transparenz",
-  },
-  {
-    name: "favicon",
-    label: "Favicon",
-    description: "Browser-Tab Icon. Wird als ICO oder PNG hochgeladen.",
-    currentSrc: "/favicon.ico",
-    accept: "image/x-icon,image/png,image/svg+xml",
-    dimensions: "Empfohlen: 32x32px oder 64x64px",
-  },
-  {
-    name: "og-image",
-    label: "Social Preview (OG Image)",
-    description: "Vorschaubild für Social Media Links (Facebook, LinkedIn, Twitter).",
-    currentSrc: "/branding/og-image.png",
-    accept: "image/png,image/jpeg,image/webp",
-    dimensions: "Empfohlen: 1200x630px",
-  },
-];
-
 export default function BrandingPage() {
+  const { dict } = useAdmin();
+
+  const brandingAssets: BrandingAsset[] = [
+    {
+      name: "logo",
+      label: dict.brandingPage.assets.logo.label,
+      description: dict.brandingPage.assets.logo.description,
+      currentSrc: "/branding/logo.jpg",
+      accept: "image/png,image/jpeg,image/svg+xml,image/webp",
+      dimensions: dict.brandingPage.assets.logo.dimensions,
+    },
+    {
+      name: "logo-white",
+      label: dict.brandingPage.assets.logoWhite.label,
+      description: dict.brandingPage.assets.logoWhite.description,
+      currentSrc: "/branding/logo-white.png",
+      accept: "image/png,image/svg+xml,image/webp",
+      dimensions: dict.brandingPage.assets.logoWhite.dimensions,
+    },
+    {
+      name: "favicon",
+      label: dict.brandingPage.assets.favicon.label,
+      description: dict.brandingPage.assets.favicon.description,
+      currentSrc: "/favicon.ico",
+      accept: "image/x-icon,image/png,image/svg+xml",
+      dimensions: dict.brandingPage.assets.favicon.dimensions,
+    },
+    {
+      name: "og-image",
+      label: dict.brandingPage.assets.ogImage.label,
+      description: dict.brandingPage.assets.ogImage.description,
+      currentSrc: "/branding/og-image.png",
+      accept: "image/png,image/jpeg,image/webp",
+      dimensions: dict.brandingPage.assets.ogImage.dimensions,
+    },
+  ];
+
   const [uploads, setUploads] = useState<Record<string, File | null>>({});
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -78,7 +81,7 @@ export default function BrandingPage() {
   const handleSave = async () => {
     const filesToUpload = Object.entries(uploads).filter(([, file]) => file !== null);
     if (filesToUpload.length === 0) {
-      setMessage({ type: "error", text: "Keine Dateien zum Hochladen ausgewahlt." });
+      setMessage({ type: "error", text: dict.brandingPage.noFiles });
       return;
     }
 
@@ -99,16 +102,16 @@ export default function BrandingPage() {
       });
 
       if (response.ok) {
-        setMessage({ type: "success", text: "Branding erfolgreich aktualisiert!" });
+        setMessage({ type: "success", text: dict.brandingPage.success });
         setUploads({});
         // Force reload to show new images
         window.location.reload();
       } else {
         const data = await response.json();
-        setMessage({ type: "error", text: data.error || "Fehler beim Speichern." });
+        setMessage({ type: "error", text: data.error || dict.brandingPage.saveError });
       }
     } catch {
-      setMessage({ type: "error", text: "Netzwerkfehler. Bitte erneut versuchen." });
+      setMessage({ type: "error", text: dict.brandingPage.networkError });
     } finally {
       setSaving(false);
     }
@@ -133,7 +136,7 @@ export default function BrandingPage() {
   const hasChanges = Object.keys(uploads).length > 0;
 
   return (
-    <AdminShell title="Branding">
+    <AdminShell title={dict.brandingPage.title}>
       <div className="space-y-6">
         {/* Info Banner */}
         <div className="glass-panel flex items-start gap-4 rounded-2xl border-gold/20 bg-gold/5 p-6">
@@ -153,10 +156,9 @@ export default function BrandingPage() {
             </svg>
           </div>
           <div>
-            <h3 className="font-semibold text-gold">Branding Assets</h3>
+            <h3 className="font-semibold text-gold">{dict.brandingPage.heading}</h3>
             <p className="mt-1 text-sm text-muted">
-              Lade dein Logo, Favicon und Social Media Vorschaubild hoch. Die Dateien werden im
-              public-Ordner gespeichert und sofort auf der Website angezeigt.
+              {dict.brandingPage.info}
             </p>
           </div>
         </div>
@@ -211,7 +213,7 @@ export default function BrandingPage() {
                           d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
                         />
                       </svg>
-                      <p className="mt-2 text-xs text-muted">Klicken oder Datei hierher ziehen</p>
+                      <p className="mt-2 text-xs text-muted">{dict.brandingPage.clickOrDrop}</p>
                     </div>
                   </div>
                 )}
@@ -219,7 +221,7 @@ export default function BrandingPage() {
                 {/* New badge if file selected */}
                 {uploads[asset.name] && (
                   <div className="absolute right-2 top-2 rounded-full bg-green-500 px-2 py-1 text-xs font-semibold text-white">
-                    Neu
+                      {dict.brandingPage.badgeNew}
                   </div>
                 )}
               </div>
@@ -261,7 +263,7 @@ export default function BrandingPage() {
                   onClick={() => fileInputRefs.current[asset.name]?.click()}
                   className="w-full rounded-xl border border-border/60 bg-surface-strong/50 px-4 py-2 text-sm font-medium text-foreground transition hover:bg-surface-strong"
                 >
-                  Datei auswahlen
+                  {dict.brandingPage.chooseFile}
                 </button>
               </div>
             </div>
@@ -281,9 +283,9 @@ export default function BrandingPage() {
               </p>
             )}
             {!message && hasChanges && (
-              <p className="text-sm text-muted">
-                {Object.keys(uploads).length} Datei(en) zum Hochladen bereit
-              </p>
+                <p className="text-sm text-muted">
+                  {Object.keys(uploads).length} {dict.brandingPage.filesReady}
+                </p>
             )}
           </div>
 
@@ -314,10 +316,10 @@ export default function BrandingPage() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                   />
                 </svg>
-                Speichern...
+                {dict.brandingPage.saving}
               </span>
             ) : (
-              "Anderungen speichern"
+              dict.brandingPage.save
             )}
           </button>
         </div>

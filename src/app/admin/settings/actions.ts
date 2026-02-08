@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { AdminLocale } from "@/lib/admin-i18n";
 
 import { type SettingsData } from "./types";
 
@@ -41,7 +42,10 @@ const mergeSecretValues = (
 
 export const saveSettings = async (
   settings: SettingsData,
+  lang: AdminLocale,
 ): Promise<SaveSettingsResult> => {
+  const isEnglish = lang === "en";
+
   try {
     const supabase = await createClient();
     const {
@@ -50,7 +54,7 @@ export const saveSettings = async (
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return { success: false, message: "Unauthorized" };
+      return { success: false, message: isEnglish ? "Unauthorized" : "Nicht autorisiert" };
     }
 
     const admin = createAdminClient();
@@ -83,12 +87,21 @@ export const saveSettings = async (
     const failed = results.find((result) => result.error);
     if (failed) {
       console.error("Error saving settings:", failed.error);
-      return { success: false, message: "Failed to save settings." };
+      return {
+        success: false,
+        message: isEnglish ? "Failed to save settings." : "Einstellungen konnten nicht gespeichert werden.",
+      };
     }
 
-    return { success: true, message: "Settings saved successfully!" };
+    return {
+      success: true,
+      message: isEnglish ? "Settings saved successfully!" : "Einstellungen erfolgreich gespeichert!",
+    };
   } catch (error) {
     console.error("Error saving settings:", error);
-    return { success: false, message: "Failed to save settings." };
+    return {
+      success: false,
+      message: isEnglish ? "Failed to save settings." : "Einstellungen konnten nicht gespeichert werden.",
+    };
   }
 };

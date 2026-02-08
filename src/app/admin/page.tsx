@@ -13,8 +13,14 @@ export default async function AdminPage() {
     { count: productsCount },
     { count: reviewsCount },
   ] = await Promise.all([
-    supabase.from("repairs").select("*", { count: "exact", head: true }).eq("status", "new"),
-    supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase
+      .from("repairs")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["new", "neu", "Neu"]),
+    supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["pending", "ausstehend", "neu", "Ausstehend", "Neu"]),
     supabase.from("products").select("*", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("reviews").select("*", { count: "exact", head: true }),
   ]);

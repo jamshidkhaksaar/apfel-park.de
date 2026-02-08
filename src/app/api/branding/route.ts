@@ -35,13 +35,25 @@ const getExtension = (mimeType: string): string => {
 };
 
 export async function POST(request: NextRequest) {
+  const isEnglish = request.cookies.get("admin-lang")?.value === "en";
+  const messages = {
+    unauthorized: isEnglish ? "Unauthorized" : "Nicht autorisiert",
+    unknownField: isEnglish ? "Unknown field" : "Unbekanntes Feld",
+    invalidType: isEnglish ? "Invalid file type for" : "Ungultiger Dateityp fur",
+    tooLarge: isEnglish ? "File is too large (max 5MB)" : "Datei ist zu gross (max 5MB)",
+    unsafeSvg: isEnglish ? "The SVG file contains unsafe code." : "Die SVG-Datei enthalt unsicheren Code.",
+    noFiles: isEnglish ? "No files uploaded" : "Keine Dateien hochgeladen",
+    saved: isEnglish ? "Saved successfully" : "Erfolgreich gespeichert",
+    saveError: isEnglish ? "Failed to save files" : "Fehler beim Speichern der Dateien",
+  };
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: messages.unauthorized }, { status: 401 });
   }
 
   try {
@@ -59,9 +71,9 @@ export async function POST(request: NextRequest) {
       }
 
       // Validate field name
-      if (!ALLOWED_TYPES[fieldName]) {
-        return NextResponse.json(
-          { error: `Unbekanntes Feld: ${fieldName}` },
+        if (!ALLOWED_TYPES[fieldName]) {
+          return NextResponse.json(
+          { error: `${messages.unknownField}: ${fieldName}` },
           { status: 400 }
         );
       }
@@ -69,7 +81,7 @@ export async function POST(request: NextRequest) {
       // Validate file type
       if (!ALLOWED_TYPES[fieldName].includes(file.type)) {
         return NextResponse.json(
-          { error: `Ungultiger Dateityp fur ${fieldName}: ${file.type}` },
+          { error: `${messages.invalidType} ${fieldName}: ${file.type}` },
           { status: 400 }
         );
       }
@@ -77,7 +89,7 @@ export async function POST(request: NextRequest) {
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         return NextResponse.json(
-          { error: `Datei ${fieldName} ist zu gros (max 5MB)` },
+          { error: `${fieldName} ${messages.tooLarge}` },
           { status: 400 }
         );
       }
@@ -89,7 +101,7 @@ export async function POST(request: NextRequest) {
         const text = buffer.toString("utf-8");
         if (!isSecureSvg(text)) {
           return NextResponse.json(
-            { error: `Die SVG-Datei für ${fieldName} enthält unsicheren Code.` },
+            { error: `${fieldName}: ${messages.unsafeSvg}` },
             { status: 400 }
           );
         }
@@ -113,20 +125,20 @@ export async function POST(request: NextRequest) {
 
     if (savedFiles.length === 0) {
       return NextResponse.json(
-        { error: "Keine Dateien hochgeladen" },
+        { error: messages.noFiles },
         { status: 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: `Erfolgreich gespeichert: ${savedFiles.join(", ")}`,
+      message: `${messages.saved}: ${savedFiles.join(", ")}`,
       files: savedFiles,
     });
   } catch (error) {
     console.error("Branding upload error:", error);
     return NextResponse.json(
-      { error: "Fehler beim Speichern der Dateien" },
+      { error: messages.saveError },
       { status: 500 }
     );
   }

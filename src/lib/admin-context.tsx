@@ -2,12 +2,12 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 import Cookies from "js-cookie";
-import { adminDictionary, type AdminLocale } from "./admin-i18n";
+import { adminDictionary, type AdminDictionary, type AdminLocale } from "./admin-i18n";
 
 type AdminContextType = {
   lang: AdminLocale;
   setLang: (lang: AdminLocale) => void;
-  dict: typeof adminDictionary.de;
+  dict: AdminDictionary;
 };
 
 const AdminContext = createContext<AdminContextType | null>(null);

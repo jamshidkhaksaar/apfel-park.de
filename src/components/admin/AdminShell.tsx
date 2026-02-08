@@ -70,6 +70,11 @@ export default function AdminShell({
   const pathname = usePathname();
   const { dict, lang, setLang } = useAdmin();
 
+  const handleLangChange = (nextLang: "de" | "en") => {
+    setLang(nextLang);
+    router.refresh();
+  };
+
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -110,7 +115,7 @@ export default function AdminShell({
             {/* Language Toggle */}
             <div className="mt-6 flex rounded-lg border border-white/10 bg-black/20 p-1">
               <button
-                onClick={() => setLang("de")}
+                onClick={() => handleLangChange("de")}
                 className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
                   lang === "de"
                     ? "bg-white/10 text-gold"
@@ -120,7 +125,7 @@ export default function AdminShell({
                 DE
               </button>
               <button
-                onClick={() => setLang("en")}
+                onClick={() => handleLangChange("en")}
                 className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
                   lang === "en"
                     ? "bg-white/10 text-gold"
@@ -155,7 +160,7 @@ export default function AdminShell({
           {/* Logout & Back to Site */}
           <div className="space-y-2 rounded-2xl border border-border/60 bg-surface/70 p-3">
             <Link
-              href="/de"
+              href={`/${lang}`}
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-muted transition hover:bg-surface-strong/70 hover:text-foreground"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

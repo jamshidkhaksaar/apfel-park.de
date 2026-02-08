@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useAdmin } from "@/lib/admin-context";
 import { saveSettings } from "./actions";
 import { type SettingsData } from "./types";
 
 export default function SettingsForm({ initialSettings }: { initialSettings: SettingsData }) {
   const router = useRouter();
+  const { dict, lang } = useAdmin();
   const [settings, setSettings] = useState<SettingsData>({
     ...initialSettings,
     security: initialSettings.security || { cfSiteKey: "", cfSecretKey: "" },
@@ -31,7 +33,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
     setMessage(null);
 
     try {
-      const result = await saveSettings(settings);
+      const result = await saveSettings(settings, lang);
       setMessage({
         type: result.success ? "success" : "error",
         text: result.message,
@@ -41,7 +43,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
       }
     } catch (error) {
       console.error("Error saving settings:", error);
-      setMessage({ type: "error", text: "Failed to save settings." });
+      setMessage({ type: "error", text: dict.settingsForm.saveFailed });
     } finally {
       setLoading(false);
     }
@@ -53,15 +55,15 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
         {/* General Information */}
         <div className="glass-panel rounded-2xl p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">General Information</h2>
+            <h2 className="text-lg font-semibold text-foreground">{dict.settingsForm.generalTitle}</h2>
           </div>
           <p className="mt-2 text-sm text-muted">
-            Business details that appear on invoices and in the footer.
+            {dict.settingsForm.generalDesc}
           </p>
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Shop Name</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.labels.shopName}</label>
               <input
                 type="text"
                 value={settings.general.shopName}
@@ -70,7 +72,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Owner</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.labels.owner}</label>
               <input
                 type="text"
                 value={settings.general.owner}
@@ -79,7 +81,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Address</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.labels.address}</label>
               <input
                 type="text"
                 value={settings.general.address}
@@ -88,7 +90,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Email (Support)</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.labels.email}</label>
               <input
                 type="email"
                 value={settings.general.email}
@@ -97,7 +99,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Phone</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.labels.phone}</label>
               <input
                 type="text"
                 value={settings.general.phone}
@@ -129,7 +131,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             )}
-            Save Changes
+            {dict.settingsForm.saveChanges}
           </button>
         </div>
       </div>
@@ -137,14 +139,14 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
       {/* Sidebar: Opening Hours */}
       <div className="space-y-6">
         <div className="glass-panel rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-foreground">Opening Hours</h2>
+          <h2 className="text-lg font-semibold text-foreground">{dict.settingsForm.openingHoursTitle}</h2>
           <p className="mt-2 text-sm text-muted">
-            Displayed in footer and contact page.
+            {dict.settingsForm.openingHoursDesc}
           </p>
           <div className="mt-6 space-y-3">
             {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
               <div key={day} className="grid grid-cols-[100px_1fr] items-center gap-2">
-                <span className="text-sm text-muted capitalize">{day}</span>
+                <span className="text-sm text-muted capitalize">{dict.settingsForm.days[day as keyof typeof dict.settingsForm.days]}</span>
                 <input
                   type="text"
                   value={settings.hours[day as keyof typeof settings.hours]}
@@ -159,10 +161,10 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
         {/* Maintenance Mode */}
         <div className={`glass-panel rounded-2xl border p-6 transition-colors ${settings.maintenance.enabled ? "border-red-500/50 bg-red-950/10" : "border-yellow-500/20 bg-yellow-950/5"}`}>
           <h2 className={`text-lg font-semibold ${settings.maintenance.enabled ? "text-red-500" : "text-yellow-500"}`}>
-            Maintenance Mode
+            {dict.settingsForm.maintenanceTitle}
           </h2>
           <p className={`mt-2 text-xs ${settings.maintenance.enabled ? "text-red-400" : "text-yellow-500/80"}`}>
-            {settings.maintenance.enabled ? "Shop is currently offline." : "Blocks public access to shop. Admin area remains accessible."}
+            {settings.maintenance.enabled ? dict.settingsForm.maintenanceOn : dict.settingsForm.maintenanceOff}
           </p>
           <div className="mt-4 flex items-center gap-3">
             <button
@@ -172,20 +174,20 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
               <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${settings.maintenance.enabled ? "translate-x-5" : "translate-x-0"}`} />
             </button>
             <span className="text-sm font-medium text-muted">
-              {settings.maintenance.enabled ? "Active" : "Inactive"}
+              {settings.maintenance.enabled ? dict.settingsForm.active : dict.settingsForm.inactive}
             </span>
           </div>
         </div>
 
         {/* Security Settings (Cloudflare) */}
         <div className="glass-panel rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-foreground">Security (Cloudflare)</h2>
+          <h2 className="text-lg font-semibold text-foreground">{dict.settingsForm.securityTitle}</h2>
           <p className="mt-2 text-sm text-muted">
-            Configure Turnstile Captcha to protect forms.
+            {dict.settingsForm.securityDesc}
           </p>
           <div className="mt-4 space-y-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Site Key</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.siteKey}</label>
               <input
                 type="text"
                 value={settings.security?.cfSiteKey || ""}
@@ -195,7 +197,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Secret Key</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.secretKey}</label>
               <input
                 type="password"
                 value={settings.security?.cfSecretKey || ""}
@@ -203,7 +205,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
                 placeholder="0x4AAAA..."
                 className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
               />
-              <p className="text-xs text-muted/60">Leave blank to keep existing secret.</p>
+              <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
             </div>
           </div>
         </div>
@@ -211,7 +213,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
         {/* Google reCAPTCHA Settings */}
         <div className={`glass-panel rounded-2xl border p-6 transition-colors ${settings.recaptcha?.enabled ? "border-green-500/30 bg-green-950/10" : "border-white/10"}`}>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Google reCAPTCHA v3</h2>
+            <h2 className="text-lg font-semibold text-foreground">{dict.settingsForm.recaptchaTitle}</h2>
             <button
               onClick={() => handleChange("recaptcha", "enabled", !settings.recaptcha?.enabled)}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${settings.recaptcha?.enabled ? "bg-green-500 focus:ring-green-600" : "bg-stone-700 focus:ring-stone-600"}`}
@@ -220,16 +222,16 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
             </button>
           </div>
           <p className="mt-2 text-sm text-muted">
-            Protect contact and repair forms from spam and bots.
+            {dict.settingsForm.recaptchaDesc}
           </p>
           {!settings.recaptcha?.enabled && (
             <p className="mt-2 text-xs text-yellow-500/80">
-              Currently disabled for development. Enable for production.
+              {dict.settingsForm.recaptchaDisabled}
             </p>
           )}
           <div className="mt-4 space-y-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Site Key</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.siteKey}</label>
               <input
                 type="text"
                 value={settings.recaptcha?.siteKey || ""}
@@ -239,7 +241,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted">Secret Key</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.secretKey}</label>
               <input
                 type="password"
                 value={settings.recaptcha?.secretKey || ""}
@@ -247,11 +249,11 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
                 placeholder="6Le..."
                 className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
               />
-              <p className="text-xs text-muted/60">Leave blank to keep existing secret.</p>
+              <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Min Score (0.0 - 1.0)
+                {dict.settingsForm.minScore}
               </label>
               <input
                 type="number"
@@ -262,21 +264,19 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
                 onChange={(e) => handleChange("recaptcha", "minScore", parseFloat(e.target.value) || 0.5)}
                 className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
               />
-              <p className="text-xs text-muted/60">
-                Lower = more lenient, Higher = stricter (0.5 recommended)
-              </p>
+              <p className="text-xs text-muted/60">{dict.settingsForm.minScoreHint}</p>
             </div>
           </div>
           <div className="mt-4 rounded-lg border border-gold/20 bg-gold/5 p-3">
             <p className="text-xs text-muted">
-              Get your keys from{" "}
+              {dict.settingsForm.getKeysFrom}{" "}
               <a 
                 href="https://www.google.com/recaptcha/admin" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="underline hover:text-gold"
               >
-                Google reCAPTCHA Admin Console
+                {dict.settingsForm.recaptchaConsole}
               </a>
             </p>
           </div>

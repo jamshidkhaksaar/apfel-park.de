@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { useAdmin } from "@/lib/admin-context";
+
 type FormState = {
   title: string;
   description: string;
@@ -25,6 +27,7 @@ const initialState: FormState = {
 
 export default function ProductCreateForm() {
   const router = useRouter();
+  const { dict } = useAdmin();
   const [state, setState] = useState<FormState>(initialState);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -49,7 +52,7 @@ export default function ProductCreateForm() {
 
         const uploadPayload = await uploadResponse.json();
         if (!uploadResponse.ok) {
-          throw new Error(uploadPayload.error || "Image upload failed");
+          throw new Error(uploadPayload.error || dict.productForm.uploadFailed);
         }
 
         imageUrl = uploadPayload.url as string;
@@ -74,13 +77,13 @@ export default function ProductCreateForm() {
 
       const createPayload = await createResponse.json();
       if (!createResponse.ok) {
-        throw new Error(createPayload.error || "Product creation failed");
+        throw new Error(createPayload.error || dict.productForm.createFailed);
       }
 
       router.push("/admin/products");
       router.refresh();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unknown error");
+      setError(submitError instanceof Error ? submitError.message : dict.productForm.unknownError);
     } finally {
       setSubmitting(false);
     }
@@ -89,7 +92,7 @@ export default function ProductCreateForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Titel</label>
+        <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.productForm.title}</label>
         <input
           required
           type="text"
@@ -100,7 +103,7 @@ export default function ProductCreateForm() {
       </div>
 
       <div>
-        <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Beschreibung</label>
+        <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.productForm.description}</label>
         <textarea
           rows={3}
           value={state.description}
@@ -111,7 +114,7 @@ export default function ProductCreateForm() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Kategorie</label>
+          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.productForm.category}</label>
           <select
             value={state.category}
             onChange={(event) =>
@@ -122,15 +125,15 @@ export default function ProductCreateForm() {
             }
             className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
           >
-            <option value="smartphones">Smartphones</option>
-            <option value="accessories">Accessories</option>
-            <option value="consoles">Consoles / Gaming</option>
-            <option value="laptops">Laptops</option>
+            <option value="smartphones">{dict.productForm.categories.smartphones}</option>
+            <option value="accessories">{dict.productForm.categories.accessories}</option>
+            <option value="consoles">{dict.productForm.categories.consoles}</option>
+            <option value="laptops">{dict.productForm.categories.laptops}</option>
           </select>
         </div>
 
         <div>
-          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Marke</label>
+          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.productForm.brand}</label>
           <input
             type="text"
             value={state.brand}
@@ -140,7 +143,7 @@ export default function ProductCreateForm() {
         </div>
 
         <div>
-          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Preis (EUR)</label>
+          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.productForm.price}</label>
           <input
             required
             type="number"
@@ -153,7 +156,7 @@ export default function ProductCreateForm() {
         </div>
 
         <div>
-          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Lager</label>
+          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.productForm.stock}</label>
           <input
             required
             type="number"
@@ -168,7 +171,7 @@ export default function ProductCreateForm() {
 
       <div>
         <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-          Produktbild (Vercel Blob)
+          {dict.productForm.image}
         </label>
         <input
           type="file"
@@ -184,7 +187,7 @@ export default function ProductCreateForm() {
           checked={state.isActive}
           onChange={(event) => setState((prev) => ({ ...prev, isActive: event.target.checked }))}
         />
-        Produkt ist aktiv
+        {dict.productForm.isActive}
       </label>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -194,7 +197,7 @@ export default function ProductCreateForm() {
         disabled={submitting}
         className="rounded-full bg-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-black hover:bg-gold-deep disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {submitting ? "Speichern..." : "Produkt erstellen"}
+        {submitting ? dict.productForm.submitting : dict.productForm.submit}
       </button>
     </form>
   );
