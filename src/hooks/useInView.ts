@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, useCallback, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 
 type UseInViewOptions = {
   /** Threshold for triggering (0-1) */
@@ -12,35 +13,6 @@ type UseInViewOptions = {
   /** Initial state (for SSR) */
   initialInView?: boolean;
 };
-
-// Singleton MediaQueryList to avoid creating new instances repeatedly
-let reducedMotionQuery: MediaQueryList | null = null;
-
-function getReducedMotionQuery() {
-  if (typeof window === "undefined") return null;
-  if (!reducedMotionQuery) {
-    reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-  }
-  return reducedMotionQuery;
-}
-
-/**
- * Hook to get reduced motion preference (hydration-safe)
- */
-function usePrefersReducedMotion(): boolean {
-  const subscribe = useCallback((callback: () => void) => {
-    const mq = getReducedMotionQuery();
-    if (!mq) return () => {};
-    mq.addEventListener("change", callback);
-    return () => mq.removeEventListener("change", callback);
-  }, []);
-
-  const getSnapshot = () => getReducedMotionQuery()?.matches ?? false;
-
-  const getServerSnapshot = () => false;
-
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-}
 
 /**
  * Hook to detect when an element enters the viewport
