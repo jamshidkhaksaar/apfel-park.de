@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import AdminShell from "../../../components/admin/AdminShell";
 import { useAdmin } from "@/lib/admin-context";
@@ -18,12 +18,19 @@ type BrandingAsset = {
 export default function BrandingPage() {
   const { dict } = useAdmin();
 
+  const [currentBranding, setCurrentBranding] = useState({
+    logo: "/branding/logo.jpg",
+    logoWhite: "/branding/apfel-park-white.png",
+    favicon: "/favicon.ico",
+    ogImage: "/images/shop2.jpg",
+  });
+
   const brandingAssets: BrandingAsset[] = [
     {
       name: "logo",
       label: dict.brandingPage.assets.logo.label,
       description: dict.brandingPage.assets.logo.description,
-      currentSrc: "/branding/logo.jpg",
+      currentSrc: currentBranding.logo,
       accept: "image/png,image/jpeg,image/svg+xml,image/webp",
       dimensions: dict.brandingPage.assets.logo.dimensions,
     },
@@ -31,7 +38,7 @@ export default function BrandingPage() {
       name: "logo-white",
       label: dict.brandingPage.assets.logoWhite.label,
       description: dict.brandingPage.assets.logoWhite.description,
-      currentSrc: "/branding/logo-white.png",
+      currentSrc: currentBranding.logoWhite,
       accept: "image/png,image/svg+xml,image/webp",
       dimensions: dict.brandingPage.assets.logoWhite.dimensions,
     },
@@ -39,7 +46,7 @@ export default function BrandingPage() {
       name: "favicon",
       label: dict.brandingPage.assets.favicon.label,
       description: dict.brandingPage.assets.favicon.description,
-      currentSrc: "/favicon.ico",
+      currentSrc: currentBranding.favicon,
       accept: "image/x-icon,image/png,image/svg+xml",
       dimensions: dict.brandingPage.assets.favicon.dimensions,
     },
@@ -47,7 +54,7 @@ export default function BrandingPage() {
       name: "og-image",
       label: dict.brandingPage.assets.ogImage.label,
       description: dict.brandingPage.assets.ogImage.description,
-      currentSrc: "/branding/og-image.png",
+      currentSrc: currentBranding.ogImage,
       accept: "image/png,image/jpeg,image/webp",
       dimensions: dict.brandingPage.assets.ogImage.dimensions,
     },
@@ -58,6 +65,24 @@ export default function BrandingPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  useEffect(() => {
+    const loadBranding = async () => {
+      try {
+        const response = await fetch("/api/branding", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = (await response.json()) as Partial<typeof currentBranding>;
+        setCurrentBranding((prev) => ({
+          ...prev,
+          ...data,
+        }));
+      } catch {
+        // Keep defaults if API is unavailable.
+      }
+    };
+
+    loadBranding();
+  }, []);
 
   const handleFileSelect = (assetName: string, file: File | null) => {
     if (file) {
@@ -102,10 +127,15 @@ export default function BrandingPage() {
       });
 
       if (response.ok) {
+        const data = (await response.json()) as {
+          branding?: Partial<typeof currentBranding>;
+        };
         setMessage({ type: "success", text: dict.brandingPage.success });
+        if (data.branding) {
+          setCurrentBranding((prev) => ({ ...prev, ...data.branding }));
+        }
         setUploads({});
-        // Force reload to show new images
-        window.location.reload();
+        setPreviews({});
       } else {
         const data = await response.json();
         setMessage({ type: "error", text: data.error || dict.brandingPage.saveError });
@@ -133,7 +163,7 @@ export default function BrandingPage() {
     }
   };
 
-  const hasChanges = Object.keys(uploads).length > 0;
+  const hasChanges = Object.values(uploads).some(Boolean);
 
   return (
     <AdminShell title={dict.brandingPage.title}>

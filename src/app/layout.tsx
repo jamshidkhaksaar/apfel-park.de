@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   description: "Express Smartphone Repairs. Premium Accessories. Expert Service.",
   icons: {
-    icon: "/branding/favicon.jpg",
+    icon: "/favicon.ico",
   },
   openGraph: {
     title: "Apfel Park | Smartphone Repair & Tech Store",

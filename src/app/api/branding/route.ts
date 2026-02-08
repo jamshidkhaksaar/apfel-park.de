@@ -1,18 +1,14 @@
+import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isSecureSvg } from "@/lib/security";
-
-const BRANDING_DIR = path.join(process.cwd(), "public", "branding");
-const PUBLIC_DIR = path.join(process.cwd(), "public");
 
 const ALLOWED_TYPES: Record<string, string[]> = {
   logo: ["image/png", "image/jpeg", "image/svg+xml", "image/webp"],
   "logo-white": ["image/png", "image/svg+xml", "image/webp"],
-  favicon: ["image/x-icon", "image/png", "image/svg+xml"],
+  favicon: ["image/x-icon", "image/vnd.microsoft.icon", "image/png", "image/svg+xml"],
   "og-image": ["image/png", "image/jpeg", "image/webp"],
 };
 
@@ -23,6 +19,13 @@ const FILE_NAMES: Record<string, string> = {
   "og-image": "og-image",
 };
 
+const DEFAULT_BRANDING = {
+  logo: "/branding/logo.jpg",
+  logoWhite: "/branding/apfel-park-white.png",
+  favicon: "/favicon.ico",
+  ogImage: "/images/shop2.jpg",
+} as const;
+
 const getExtension = (mimeType: string): string => {
   const extensions: Record<string, string> = {
     "image/png": ".png",
@@ -30,6 +33,7 @@ const getExtension = (mimeType: string): string => {
     "image/svg+xml": ".svg",
     "image/webp": ".webp",
     "image/x-icon": ".ico",
+    "image/vnd.microsoft.icon": ".ico",
   };
   return extensions[mimeType] || ".png";
 };
@@ -45,6 +49,10 @@ export async function POST(request: NextRequest) {
     noFiles: isEnglish ? "No files uploaded" : "Keine Dateien hochgeladen",
     saved: isEnglish ? "Saved successfully" : "Erfolgreich gespeichert",
     saveError: isEnglish ? "Failed to save files" : "Fehler beim Speichern der Dateien",
+    blobMissing:
+      isEnglish
+        ? "BLOB_READ_WRITE_TOKEN is not configured"
+        : "BLOB_READ_WRITE_TOKEN ist nicht konfiguriert",
   };
 
   const supabase = await createClient();
@@ -56,14 +64,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: messages.unauthorized }, { status: 401 });
   }
 
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json({ error: messages.blobMissing }, { status: 500 });
+  }
+
   try {
+    const admin = createAdminClient();
     const formData = await request.formData();
     const savedFiles: string[] = [];
-
-    // Ensure branding directory exists
-    if (!existsSync(BRANDING_DIR)) {
-      await mkdir(BRANDING_DIR, { recursive: true });
-    }
+    const uploadedUrls: Partial<Record<"logo" | "logoWhite" | "favicon" | "ogImage", string>> = {};
 
     for (const [fieldName, file] of formData.entries()) {
       if (!(file instanceof File)) {
@@ -78,10 +87,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const normalizedType =
+        fieldName === "favicon" && !file.type && file.name.toLowerCase().endsWith(".ico")
+          ? "image/x-icon"
+          : file.type;
+
       // Validate file type
-      if (!ALLOWED_TYPES[fieldName].includes(file.type)) {
+      if (!ALLOWED_TYPES[fieldName].includes(normalizedType)) {
         return NextResponse.json(
-          { error: `${messages.invalidType} ${fieldName}: ${file.type}` },
+          { error: `${messages.invalidType} ${fieldName}: ${normalizedType || "unknown"}` },
           { status: 400 }
         );
       }
@@ -107,19 +121,20 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const extension = getExtension(file.type);
+      const extension = getExtension(normalizedType);
       const baseName = FILE_NAMES[fieldName];
 
-      // Favicon goes to public root, others to branding folder
-      let filePath: string;
-      if (fieldName === "favicon") {
-        // For favicon, save as favicon.ico in public root
-        filePath = path.join(PUBLIC_DIR, "favicon.ico");
-      } else {
-        filePath = path.join(BRANDING_DIR, `${baseName}${extension}`);
-      }
+      const blob = await put(`branding/${baseName}${extension}`, buffer, {
+        access: "public",
+        contentType: normalizedType,
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+        addRandomSuffix: false,
+      });
 
-      await writeFile(filePath, buffer);
+      if (fieldName === "logo") uploadedUrls.logo = blob.url;
+      if (fieldName === "logo-white") uploadedUrls.logoWhite = blob.url;
+      if (fieldName === "favicon") uploadedUrls.favicon = blob.url;
+      if (fieldName === "og-image") uploadedUrls.ogImage = blob.url;
       savedFiles.push(fieldName);
     }
 
@@ -130,10 +145,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { data: existingRow } = await admin
+      .from("store_settings")
+      .select("value")
+      .eq("key", "branding_assets")
+      .maybeSingle();
+
+    const existingValue = (existingRow?.value as Record<string, string> | null) ?? null;
+    const mergedBranding = {
+      ...DEFAULT_BRANDING,
+      ...(existingValue ?? {}),
+      ...uploadedUrls,
+    };
+
+    const { error: saveSettingsError } = await admin.from("store_settings").upsert(
+      {
+        key: "branding_assets",
+        value: mergedBranding,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
+
+    if (saveSettingsError) {
+      console.error("Failed to save branding asset settings:", saveSettingsError);
+    }
+
     return NextResponse.json({
       success: true,
       message: `${messages.saved}: ${savedFiles.join(", ")}`,
       files: savedFiles,
+      branding: mergedBranding,
     });
   } catch (error) {
     console.error("Branding upload error:", error);
@@ -145,31 +187,20 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  // Return current branding configuration
-  const brandingConfig = {
-    logo: existsSync(path.join(BRANDING_DIR, "logo.png"))
-      ? "/branding/logo.png"
-      : existsSync(path.join(BRANDING_DIR, "logo.jpg"))
-        ? "/branding/logo.jpg"
-        : existsSync(path.join(BRANDING_DIR, "logo.svg"))
-          ? "/branding/logo.svg"
-          : null,
-    logoWhite: existsSync(path.join(BRANDING_DIR, "logo-white.png"))
-      ? "/branding/logo-white.png"
-      : existsSync(path.join(BRANDING_DIR, "logo-white.svg"))
-        ? "/branding/logo-white.svg"
-        : existsSync(path.join(BRANDING_DIR, "logo-white.webp"))
-          ? "/branding/logo-white.webp"
-          : null,
-    favicon: existsSync(path.join(PUBLIC_DIR, "favicon.ico"))
-      ? "/favicon.ico"
-      : null,
-    ogImage: existsSync(path.join(BRANDING_DIR, "og-image.png"))
-      ? "/branding/og-image.png"
-      : existsSync(path.join(BRANDING_DIR, "og-image.jpg"))
-        ? "/branding/og-image.jpg"
-        : null,
-  };
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("store_settings")
+      .select("value")
+      .eq("key", "branding_assets")
+      .maybeSingle();
 
-  return NextResponse.json(brandingConfig);
+    const stored = (data?.value as Record<string, string> | null) ?? null;
+    return NextResponse.json({
+      ...DEFAULT_BRANDING,
+      ...(stored ?? {}),
+    });
+  } catch {
+    return NextResponse.json(DEFAULT_BRANDING);
+  }
 }

@@ -29,7 +29,7 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
     },
     { 
       title: dict.dashboard.quickActions.addRepair, 
-      path: "/admin/repairs/new", 
+      path: "/admin/repairs", 
       desc: dict.dashboard.quickActions.addRepairDesc 
     },
     { 
