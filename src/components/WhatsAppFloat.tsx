@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useId, useState } from "react";
 import { siteInfo } from "../lib/site";
 
 type WhatsAppFloatProps = {
@@ -11,6 +11,7 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipId = useId();
 
   // Show button after a short delay for better UX
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
     >
       {/* Tooltip */}
       <div 
+        id={tooltipId}
         className={`absolute bottom-full right-0 mb-3 transition-all duration-300 ${
           (showTooltip || isHovered) ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0 pointer-events-none"
         }`}
@@ -71,7 +73,8 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-500/30 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-green-500/40"
-        aria-label="Chat on WhatsApp"
+        aria-label={lang === "de" ? "Chatte auf WhatsApp" : "Chat on WhatsApp"}
+        aria-describedby={tooltipId}
       >
         {/* Inner Glow */}
         <div className="absolute inset-1 rounded-full bg-gradient-to-br from-green-400/30 to-transparent" />
