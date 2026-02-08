@@ -27,9 +27,6 @@ export const metadata: Metadata = {
     template: "%s | Apfel Park",
   },
   description: "Express Smartphone Repairs. Premium Accessories. Expert Service.",
-  icons: {
-    icon: "/favicon.ico",
-  },
   openGraph: {
     title: "Apfel Park | Smartphone Repair & Tech Store",
     description: "Express Smartphone Repairs. Premium Accessories. Expert Service.",
@@ -92,6 +89,7 @@ export default async function RootLayout({
       <head>
         <ThemeScript />
         <link rel="icon" href={faviconHref} sizes="any" />
+        <link rel="shortcut icon" href={faviconHref} />
       </head>
       <body
         className={`${inter.variable} ${interDisplay.variable} bg-background font-sans text-foreground antialiased`}

@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const admin = createAdminClient();
     const formData = await request.formData();
     const savedFiles: string[] = [];
     const uploadedUrls: Partial<Record<"logo" | "logoWhite" | "favicon" | "ogImage", string>> = {};
@@ -129,6 +128,7 @@ export async function POST(request: NextRequest) {
         contentType: normalizedType,
         token: process.env.BLOB_READ_WRITE_TOKEN,
         addRandomSuffix: false,
+        allowOverwrite: true,
       });
 
       if (fieldName === "logo") uploadedUrls.logo = blob.url;
@@ -145,30 +145,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: existingRow } = await admin
-      .from("store_settings")
-      .select("value")
-      .eq("key", "branding_assets")
-      .maybeSingle();
+    let existingValue: Record<string, string> | null = null;
+    try {
+      const admin = createAdminClient();
+      const { data: existingRow } = await admin
+        .from("store_settings")
+        .select("value")
+        .eq("key", "branding_assets")
+        .maybeSingle();
+      existingValue = (existingRow?.value as Record<string, string> | null) ?? null;
+    } catch (error) {
+      console.error("Failed to read existing branding settings:", error);
+    }
 
-    const existingValue = (existingRow?.value as Record<string, string> | null) ?? null;
     const mergedBranding = {
       ...DEFAULT_BRANDING,
       ...(existingValue ?? {}),
       ...uploadedUrls,
     };
 
-    const { error: saveSettingsError } = await admin.from("store_settings").upsert(
-      {
-        key: "branding_assets",
-        value: mergedBranding,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "key" },
-    );
+    try {
+      const admin = createAdminClient();
+      const { error: saveSettingsError } = await admin.from("store_settings").upsert(
+        {
+          key: "branding_assets",
+          value: mergedBranding,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
 
-    if (saveSettingsError) {
-      console.error("Failed to save branding asset settings:", saveSettingsError);
+      if (saveSettingsError) {
+        console.error("Failed to save branding asset settings:", saveSettingsError);
+      }
+    } catch (error) {
+      console.error("Failed to persist branding asset settings:", error);
     }
 
     return NextResponse.json({
