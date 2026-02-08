@@ -51,7 +51,7 @@ export const getReCaptchaSettings = async (): Promise<ReCaptchaSettings> => {
       .from("store_settings")
       .select("value")
       .eq("key", "recaptcha")
-      .single();
+      .maybeSingle();
 
     if (data?.value) {
       return {

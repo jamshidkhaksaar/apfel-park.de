@@ -8,7 +8,7 @@ export async function verifyTurnstile(token: string) {
     .from("store_settings")
     .select("value")
     .eq("key", "security")
-    .single();
+    .maybeSingle();
     
   const secretKey = data?.value?.cfSecretKey;
 
@@ -41,7 +41,7 @@ export async function getTurnstileSiteKey() {
     .from("store_settings")
     .select("value")
     .eq("key", "security")
-    .single();
+    .maybeSingle();
     
   return data?.value?.cfSiteKey || null;
 }

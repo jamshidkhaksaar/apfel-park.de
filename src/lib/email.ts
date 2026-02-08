@@ -20,7 +20,7 @@ const getContactRecipient = async (): Promise<string | null> => {
     .from("store_settings")
     .select("value")
     .eq("key", "general")
-    .single();
+    .maybeSingle();
 
   const settingsEmail = data?.value?.email?.trim();
   if (settingsEmail) {

@@ -30,7 +30,7 @@ const getReCaptchaSiteKey = async (): Promise<{ siteKey: string; enabled: boolea
       .from("store_settings")
       .select("value")
       .eq("key", "recaptcha")
-      .single();
+      .maybeSingle();
 
     if (data?.value) {
       return {
