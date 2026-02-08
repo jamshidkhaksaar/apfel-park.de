@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-02-06 - Fixed Scroll Threshold in BackToTopButton Rejected
+**Learning:** Replacing dynamic `scrollHeight` calculation with a fixed pixel threshold (e.g., 500px) in `BackToTopButton` was rejected because it causes regressions on short pages where 500px might never be reached. The relative calculation (`maxScroll * 0.5`) ensures the button appears even on shorter scrollable content.
+**Action:** When optimizing scroll listeners, consider edge cases like short pages. Use `IntersectionObserver` or throttled/debounced listeners instead of hardcoded thresholds if dynamic behavior is required.
