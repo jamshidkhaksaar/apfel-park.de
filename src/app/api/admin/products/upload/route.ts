@@ -7,6 +7,13 @@ import { createClient } from "@/lib/supabase/server";
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
+const ALLOWED_EXTENSIONS: Record<string, string[]> = {
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/webp": [".webp"],
+  "image/svg+xml": [".svg"],
+};
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -27,6 +34,18 @@ export async function POST(request: NextRequest) {
 
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json({ error: `Unsupported file type: ${file.type}` }, { status: 400 });
+    }
+
+    // Validate file extension matches content type (prevent XSS via file upload spoofing)
+    const validExtensions = ALLOWED_EXTENSIONS[file.type] || [];
+    const fileName = file.name.toLowerCase();
+    const hasValidExtension = validExtensions.some((ext) => fileName.endsWith(ext));
+
+    if (!hasValidExtension) {
+      return NextResponse.json(
+        { error: `File extension does not match content type ${file.type}` },
+        { status: 400 }
+      );
     }
 
     if (file.size > MAX_FILE_SIZE) {
