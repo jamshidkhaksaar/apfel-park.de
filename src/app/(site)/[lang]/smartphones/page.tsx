@@ -5,8 +5,8 @@ import PageIntro from "../../../../components/PageIntro";
 import SmartphoneStore from "../../../../components/SmartphoneStore";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+import { getProducts } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
-import { smartphones } from "../../../../lib/smartphones";
 
 export const generateMetadata = async ({
   params,
@@ -30,6 +30,7 @@ export default async function SmartphonesPage({
 }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const smartphones = await getProducts("smartphones");
 
   return (
     <div className="bg-background">

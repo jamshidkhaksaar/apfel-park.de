@@ -6,71 +6,74 @@ export type Product = {
   category: "smartphones" | "accessories" | "consoles" | "laptops";
   image: string;
   isFeatured?: boolean;
+  brand?: string;
+  stock?: number;
 };
 
-export const products: Product[] = [
-  {
-    id: "1",
-    title: "iPhone 15 Pro Max - 256GB",
-    description: "Titanium Blue, Excellent Condition, 1 Year Warranty",
-    price: 1199,
-    category: "smartphones",
-    image: "/images/slider_images/iphone.png",
-    isFeatured: true,
-  },
-  {
-    id: "2",
-    title: "PlayStation 5 Slim",
-    description: "Digital Edition, New sealed box",
-    price: 449,
-    category: "consoles",
-    image: "/images/slider_images/ps5.png",
-    isFeatured: true,
-  },
-  {
-    id: "3",
-    title: "MacBook Air M2",
-    description: "13-inch, Midnight, 8GB/256GB",
-    price: 1099,
-    category: "laptops",
-    image: "/images/slider_images/laptop.png",
-    isFeatured: true,
-  },
-  {
-    id: "4",
-    title: "MagSafe Charger",
-    description: "Original Apple MagSafe Charger, Fast Wireless Charging",
-    price: 39,
-    category: "accessories",
-    image: "/images/slider_images/accessories.png",
-    isFeatured: true,
-  },
-  {
-    id: "5",
-    title: "Samsung Galaxy S24 Ultra",
-    description: "Titanium Gray, 512GB, Like New",
-    price: 1249,
-    category: "smartphones",
-    image: "/images/slider_images/iphone.png", // Placeholder
-  },
-  {
-    id: "6",
-    title: "AirPods Pro 2",
-    description: "USB-C Case, Noise Cancellation",
-    price: 239,
-    category: "accessories",
-    image: "/images/slider_images/accessories.png", // Placeholder
-  },
-];
+type DbProduct = {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number | string;
+  category: string;
+  brand: string | null;
+  stock: number | null;
+  images: string[] | null;
+};
 
-export async function getProducts(category?: string) {
-  // Simulate DB fetch
-  if (category) {
-    return products.filter((p) => p.category === category);
-  }
-  return products;
+const normalizeCategory = (category: string): Product["category"] | null => {
+  const value = category.toLowerCase().trim();
+  if (value === "smartphone" || value === "smartphones") return "smartphones";
+  if (value === "accessory" || value === "accessories") return "accessories";
+  if (value === "console" || value === "consoles" || value === "gaming") return "consoles";
+  if (value === "laptop" || value === "laptops") return "laptops";
+  return null;
+};
+
+const fallbackImageByCategory: Record<Product["category"], string> = {
+  smartphones: "/images/slider_images/iphone.png",
+  accessories: "/images/slider_images/accessories.png",
+  consoles: "/images/slider_images/ps5.png",
+  laptops: "/images/slider_images/laptop.png",
+};
+
+const mapProduct = (row: DbProduct): Product | null => {
+  const category = normalizeCategory(row.category);
+  if (!category) return null;
+
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? "",
+    price: typeof row.price === "string" ? Number(row.price) : row.price,
+    category,
+    image: row.images?.[0] ?? fallbackImageByCategory[category],
+    brand: row.brand ?? undefined,
+    stock: row.stock ?? undefined,
+  };
+};
+
+export async function getProducts(category?: Product["category"]): Promise<Product[]> {
+  const { createClient } = await import("./supabase/server");
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("id,title,description,price,category,brand,stock,images")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  const products = (data as DbProduct[])
+    .map(mapProduct)
+    .filter((item): item is Product => item !== null);
+
+  if (!category) return products;
+  return products.filter((product) => product.category === category);
 }
 
-export async function getFeaturedProducts() {
-  return products.filter((p) => p.isFeatured);
+export async function getFeaturedProducts(): Promise<Product[]> {
+  const products = await getProducts();
+  return products.slice(0, 4).map((product) => ({ ...product, isFeatured: true }));
 }

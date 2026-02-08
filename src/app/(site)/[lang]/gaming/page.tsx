@@ -5,6 +5,7 @@ import PageIntro from "../../../../components/PageIntro";
 import GamingStore from "../../../../components/GamingStore";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+import { getProducts } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 
 export const generateMetadata = async ({
@@ -25,6 +26,7 @@ export const generateMetadata = async ({
 export default async function GamingPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const products = await getProducts("consoles");
 
   return (
     <div className="bg-background">
@@ -72,7 +74,7 @@ export default async function GamingPage({ params }: { params: Promise<{ lang: s
       </section>
 
       {/* Gaming Store */}
-      <GamingStore lang={lang as Locale} />
+      <GamingStore lang={lang as Locale} products={products} />
 
       {/* Repair Services */}
       <section className="section-pad bg-surface/30">

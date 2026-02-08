@@ -1,19 +1,26 @@
+import { createClient } from "@/lib/supabase/server";
 import AdminShell from "../../../components/admin/AdminShell";
 
-const reviews = [
-  {
-    name: "Thomas W.",
-    rating: 5,
-    text: "Toller Kundenservice, super schnelle Lieferung und sehr gute Kommunikation.",
-  },
-  {
-    name: "Alex N.",
-    rating: 5,
-    text: "Top Reparatur innerhalb einer Stunde – fairer Preis und freundliches Team.",
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function ReviewsPage() {
+type ReviewRow = {
+  id: string;
+  author_name: string;
+  rating: number;
+  content: string | null;
+  is_published: boolean;
+};
+
+export default async function ReviewsPage() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("reviews")
+    .select("id,author_name,rating,content,is_published")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const reviews = (data ?? []) as ReviewRow[];
+
   return (
     <AdminShell title="Google Reviews">
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
@@ -66,17 +73,24 @@ export default function ReviewsPage() {
         <div className="glass-panel rounded-2xl p-6">
           <h2 className="text-lg font-semibold text-foreground">Aktive Reviews</h2>
           <div className="mt-6 space-y-4">
-            {reviews.map((review) => (
-              <div key={review.name} className="rounded-xl border border-border/60 p-4">
-                <div className="flex items-center justify-between text-sm">
-                  <p className="font-semibold text-foreground">{review.name}</p>
-                  <span className="text-brand-gold">
-                    {"★".repeat(review.rating)}
-                  </span>
+            {reviews.length > 0 ? (
+              reviews.map((review) => (
+                <div key={review.id} className="rounded-xl border border-border/60 p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <p className="font-semibold text-foreground">{review.author_name}</p>
+                    <span className="text-brand-gold">{"★".repeat(review.rating)}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-muted">{review.content ?? "-"}</p>
+                  <p className="mt-2 text-xs text-muted">
+                    {review.is_published ? "Veroffentlicht" : "Nicht veroffentlicht"}
+                  </p>
                 </div>
-                <p className="mt-2 text-sm text-muted">{review.text}</p>
+              ))
+            ) : (
+              <div className="rounded-xl border border-border/60 p-6 text-sm text-muted">
+                Noch keine Reviews vorhanden.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

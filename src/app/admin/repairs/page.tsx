@@ -1,27 +1,37 @@
+import { createClient } from "@/lib/supabase/server";
 import AdminShell from "../../../components/admin/AdminShell";
 
-const repairs = [
-  {
-    ticket: "R-204",
-    device: "iPhone 14 Pro",
-    issue: "Display",
-    status: "Diagnose",
-  },
-  {
-    ticket: "R-203",
-    device: "Samsung S23",
-    issue: "Wasserschaden",
-    status: "In Arbeit",
-  },
-  {
-    ticket: "R-202",
-    device: "iPad Air",
-    issue: "Akku",
-    status: "Fertig",
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function RepairsPage() {
+type RepairRow = {
+  id: string;
+  ticket_number: number | null;
+  device_model: string;
+  issue_description: string | null;
+  status: string | null;
+};
+
+const formatStatus = (status: string | null): string => {
+  if (!status) return "Unbekannt";
+  if (status === "new") return "Neu";
+  if (status === "in_progress") return "In Arbeit";
+  if (status === "waiting_for_parts") return "Warten auf Teile";
+  if (status === "ready") return "Abholbereit";
+  if (status === "completed") return "Abgeschlossen";
+  if (status === "cancelled") return "Storniert";
+  return status;
+};
+
+export default async function RepairsPage() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("repairs")
+    .select("id,ticket_number,device_model,issue_description,status")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const repairs = (data ?? []) as RepairRow[];
+
   return (
     <AdminShell title="Reparaturaufträge">
       <div className="glass-panel rounded-2xl p-6">
@@ -49,16 +59,27 @@ export default function RepairsPage() {
               </tr>
             </thead>
             <tbody>
-              {repairs.map((repair) => (
-                <tr key={repair.ticket} className="border-t border-border/50">
-                  <td className="px-4 py-3 font-semibold text-foreground">
-                    {repair.ticket}
+              {repairs.length > 0 ? (
+                repairs.map((repair) => (
+                  <tr
+                    key={repair.id}
+                    className="border-t border-border/50"
+                  >
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      {repair.ticket_number ? `R-${repair.ticket_number}` : `R-${repair.id.slice(0, 6)}`}
+                    </td>
+                    <td className="px-4 py-3 text-muted">{repair.device_model}</td>
+                    <td className="px-4 py-3 text-muted">{repair.issue_description ?? "-"}</td>
+                    <td className="px-4 py-3 text-muted">{formatStatus(repair.status)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-muted">
+                    Noch keine Reparaturauftrage vorhanden.
                   </td>
-                  <td className="px-4 py-3 text-muted">{repair.device}</td>
-                  <td className="px-4 py-3 text-muted">{repair.issue}</td>
-                  <td className="px-4 py-3 text-muted">{repair.status}</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

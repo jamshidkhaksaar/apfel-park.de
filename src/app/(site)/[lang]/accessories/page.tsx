@@ -5,6 +5,7 @@ import PageIntro from "../../../../components/PageIntro";
 import AccessoriesStore from "../../../../components/AccessoriesStore";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+import { getProducts } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 
 export const generateMetadata = async ({
@@ -29,6 +30,7 @@ export default async function AccessoriesPage({
 }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const products = await getProducts("accessories");
 
   return (
     <div className="bg-background">
@@ -67,7 +69,7 @@ export default async function AccessoriesPage({
       </section>
 
       {/* Accessories Store with Filters */}
-      <AccessoriesStore lang={lang as Locale} />
+      <AccessoriesStore lang={lang as Locale} products={products} />
 
       {/* Featured Categories */}
       <section className="section-pad bg-surface/30">

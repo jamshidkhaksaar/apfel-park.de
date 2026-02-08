@@ -1,12 +1,36 @@
+import { createClient } from "@/lib/supabase/server";
 import AdminShell from "../../../components/admin/AdminShell";
 
-const orders = [
-  { id: "#A-1023", customer: "Lena S.", status: "Neu", total: "289 €" },
-  { id: "#A-1022", customer: "Tim B.", status: "In Bearbeitung", total: "99 €" },
-  { id: "#A-1021", customer: "Maya K.", status: "Abgeschlossen", total: "149 €" },
-];
+export const dynamic = "force-dynamic";
 
-export default function OrdersPage() {
+type OrderRow = {
+  id: string;
+  order_number: number | null;
+  customer_name: string | null;
+  status: string | null;
+  total_amount: number | string;
+};
+
+const formatStatus = (status: string | null): string => {
+  if (!status) return "Unbekannt";
+  if (status === "pending") return "Ausstehend";
+  if (status === "paid") return "Bezahlt";
+  if (status === "shipped") return "Versendet";
+  if (status === "delivered") return "Abgeschlossen";
+  if (status === "cancelled") return "Storniert";
+  return status;
+};
+
+export default async function OrdersPage() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("orders")
+    .select("id,order_number,customer_name,status,total_amount")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const orders = (data ?? []) as OrderRow[];
+
   return (
     <AdminShell title="Bestellungen">
       <div className="glass-panel rounded-2xl p-6">
@@ -34,16 +58,29 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-t border-border/50">
-                  <td className="px-4 py-3 font-semibold text-foreground">
-                    {order.id}
+              {orders.length > 0 ? (
+                orders.map((order) => (
+                  <tr key={order.id} className="border-t border-border/50">
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      {order.order_number ? `#A-${order.order_number}` : `#${order.id.slice(0, 8)}`}
+                    </td>
+                    <td className="px-4 py-3 text-muted">{order.customer_name ?? "-"}</td>
+                    <td className="px-4 py-3 text-muted">{formatStatus(order.status)}</td>
+                    <td className="px-4 py-3 text-muted">
+                      {new Intl.NumberFormat("de-DE", {
+                        style: "currency",
+                        currency: "EUR",
+                      }).format(Number(order.total_amount))}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-muted">
+                    Noch keine Bestellungen vorhanden.
                   </td>
-                  <td className="px-4 py-3 text-muted">{order.customer}</td>
-                  <td className="px-4 py-3 text-muted">{order.status}</td>
-                  <td className="px-4 py-3 text-muted">{order.total}</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

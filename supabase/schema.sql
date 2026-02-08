@@ -89,18 +89,5 @@ create policy "Public can view published reviews" on public.reviews
 create policy "Admins can do everything on reviews" on public.reviews
   for all using (auth.role() = 'authenticated');
 
--- STORAGE BUCKETS
--- You'll need to create a storage bucket named 'products' in the Supabase dashboard
-insert into storage.buckets (id, name, public) values ('products', 'products', true);
-
-create policy "Public Access" on storage.objects for select
-  using ( bucket_id = 'products' );
-
-create policy "Auth Upload" on storage.objects for insert
-  with check ( bucket_id = 'products' and auth.role() = 'authenticated' );
-
-create policy "Auth Update" on storage.objects for update
-  with check ( bucket_id = 'products' and auth.role() = 'authenticated' );
-
-create policy "Auth Delete" on storage.objects for delete
-  using ( bucket_id = 'products' and auth.role() = 'authenticated' );
+-- Product images are stored in Vercel Blob.
+-- The products.images column should contain public Blob URLs.
