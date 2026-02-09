@@ -7,8 +7,9 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
 
   useEffect(() => {
     const onScroll = () => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      setVisible(window.scrollY > maxScroll * 0.5);
+      // Show button after scrolling down 1 viewport height
+      // Optimized to avoid reading scrollHeight which causes layout thrashing
+      setVisible(window.scrollY > window.innerHeight);
     };
 
     onScroll();

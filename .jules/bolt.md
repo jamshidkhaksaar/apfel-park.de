@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-02-18 - Scroll Layout Thrashing
+**Learning:** Calculating `scrollHeight` inside a scroll event listener triggers a synchronous reflow (layout thrashing) on every frame, significantly impacting scroll performance.
+**Action:** Use fixed or viewport-relative thresholds (like `window.scrollY > window.innerHeight`) that don't require layout recalculation for visibility toggles.
