@@ -24,3 +24,23 @@ export const escapeHtml = (str: string): string => {
   if (!str) return "";
   return he.encode(str, { useNamedReferences: true });
 };
+
+export const validateFileExtension = (fileName: string, mimeType: string): boolean => {
+  const normalizedMime = mimeType.toLowerCase();
+  const normalizedName = fileName.toLowerCase();
+
+  const extensions: Record<string, string[]> = {
+    "image/png": [".png"],
+    "image/jpeg": [".jpg", ".jpeg"],
+    "image/webp": [".webp"],
+    "image/svg+xml": [".svg"],
+    "image/x-icon": [".ico"],
+    "image/vnd.microsoft.icon": [".ico"],
+    "application/octet-stream": [".ico"],
+  };
+
+  const allowedExtensions = extensions[normalizedMime];
+  if (!allowedExtensions) return false;
+
+  return allowedExtensions.some(ext => normalizedName.endsWith(ext));
+};

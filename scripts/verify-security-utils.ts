@@ -1,4 +1,4 @@
-import { escapeHtml, isSecureSvg } from "../src/lib/security";
+import { escapeHtml, isSecureSvg, validateFileExtension } from "../src/lib/security";
 
 console.log("Running security verification...");
 
@@ -52,6 +52,41 @@ svgCases.forEach(({ input, secure }, index) => {
     failed = true;
   } else {
     console.log(`✅ SVG case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting validateFileExtension...");
+const extensionCases = [
+  { name: "image.png", type: "image/png", valid: true },
+  { name: "image.PNG", type: "image/png", valid: true },
+  { name: "image.jpg", type: "image/jpeg", valid: true },
+  { name: "image.jpeg", type: "image/jpeg", valid: true },
+  { name: "image.webp", type: "image/webp", valid: true },
+  { name: "image.svg", type: "image/svg+xml", valid: true },
+  { name: "favicon.ico", type: "image/x-icon", valid: true },
+
+  // Mismatches
+  { name: "image.png", type: "image/jpeg", valid: false },
+  { name: "image.jpg", type: "image/png", valid: false },
+  { name: "script.html", type: "image/png", valid: false },
+  { name: "script.js", type: "image/png", valid: false },
+  { name: "image.php", type: "image/jpeg", valid: false },
+
+  // Unknown types
+  { name: "file.xyz", type: "application/xyz", valid: false },
+];
+
+extensionCases.forEach(({ name, type, valid }, index) => {
+  const result = validateFileExtension(name, type);
+  if (result !== valid) {
+    console.error(`❌ Extension case ${index + 1} failed:`);
+    console.error(`   Name:   ${name}`);
+    console.error(`   Type:   ${type}`);
+    console.error(`   Expected: ${valid}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ Extension case ${index + 1} passed`);
   }
 });
 
