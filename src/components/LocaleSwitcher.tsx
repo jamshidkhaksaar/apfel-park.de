@@ -52,7 +52,7 @@ export default function LocaleSwitcher() {
 
   return (
     <div
-      role="group"
+      role="radiogroup"
       aria-label="Language switcher"
       className="relative flex h-8 w-20 items-center rounded-full bg-black/40 p-1 shadow-inner ring-1 ring-white/10 backdrop-blur-md"
     >
@@ -66,11 +66,12 @@ export default function LocaleSwitcher() {
       {/* DE Button */}
       <button
         type="button"
+        role="radio"
         onClick={() => handleSwitch("de")}
-        className={`z-10 flex w-1/2 items-center justify-center text-[10px] font-bold transition-colors duration-300
+        className={`z-10 flex w-1/2 items-center justify-center rounded-full text-[10px] font-bold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1 focus-visible:ring-offset-surface
           ${currentLocale === "de" ? "text-white" : "text-muted hover:text-white/80"}
         `}
-        aria-pressed={currentLocale === "de"}
+        aria-checked={currentLocale === "de"}
         aria-label="Deutsch"
         title="Deutsch"
       >
@@ -80,11 +81,12 @@ export default function LocaleSwitcher() {
       {/* EN Button */}
       <button
         type="button"
+        role="radio"
         onClick={() => handleSwitch("en")}
-        className={`z-10 flex w-1/2 items-center justify-center text-[10px] font-bold transition-colors duration-300
+        className={`z-10 flex w-1/2 items-center justify-center rounded-full text-[10px] font-bold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1 focus-visible:ring-offset-surface
           ${currentLocale === "en" ? "text-white" : "text-muted hover:text-white/80"}
         `}
-        aria-pressed={currentLocale === "en"}
+        aria-checked={currentLocale === "en"}
         aria-label="English"
         title="English"
       >

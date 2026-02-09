@@ -21,3 +21,7 @@
 ## 2026-02-13 - [Mobile Menu Keyboard Trap]
 **Learning:** Using `opacity-0` and `pointer-events-none` to hide mobile menus leaves interactive elements focusable, creating a "keyboard trap" where users tab through invisible links.
 **Action:** Always add `invisible` (visibility: hidden) to the closed state of transitions, as it removes elements from the focus order while still allowing `transition-all` to animate opacity (transitions handle visibility flipping automatically).
+
+## 2026-02-14 - [Accessible Toggle Groups]
+**Learning:** Mutually exclusive toggle buttons (like language switchers) often lack semantic clarity with just `aria-pressed`. Standard focus rings also look boxy on rounded containers.
+**Action:** Use `role="radiogroup"` and `role="radio"` with `aria-checked`. Apply `rounded-full` and custom `focus-visible` ring offsets to match the container shape.
