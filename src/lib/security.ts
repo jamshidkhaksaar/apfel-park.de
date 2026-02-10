@@ -24,3 +24,24 @@ export const escapeHtml = (str: string): string => {
   if (!str) return "";
   return he.encode(str, { useNamedReferences: true });
 };
+
+/**
+ * Validates that the file extension matches the provided MIME type.
+ * This prevents MIME type spoofing (e.g., uploading .html as image/png).
+ */
+export const validateImageFileExtension = (filename: string, mimeType: string): boolean => {
+  const normalizedMime = mimeType.toLowerCase();
+  const normalizedFilename = filename.toLowerCase();
+
+  const mimeToExt: Record<string, string[]> = {
+    "image/png": [".png"],
+    "image/jpeg": [".jpg", ".jpeg"],
+    "image/webp": [".webp"],
+    "image/svg+xml": [".svg"],
+  };
+
+  const allowedExtensions = mimeToExt[normalizedMime];
+  if (!allowedExtensions) return false;
+
+  return allowedExtensions.some((ext) => normalizedFilename.endsWith(ext));
+};
