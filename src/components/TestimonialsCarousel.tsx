@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 
 type Review = {
   readonly name: string;
@@ -19,8 +20,30 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [direction, setDirection] = useState<"next" | "prev">("next");
+
+  // Performance & Accessibility Optimization:
+  // Only auto-play when visible and user hasn't requested reduced motion
+  const [isInView, setIsInView] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   const reviewsPerPage = 1;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.2 } // Trigger when 20% visible
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   const goToNext = useCallback(() => {
     if (isAnimating) return;
@@ -46,11 +69,13 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
     setTimeout(() => setIsAnimating(false), 600);
   }, [isAnimating, totalPages]);
 
-  // Auto-slide every 6 seconds
+  // Auto-slide every 6 seconds if visible and motion enabled
   useEffect(() => {
+    if (!isInView || prefersReducedMotion) return;
+
     const interval = setInterval(goToNext, 6000);
     return () => clearInterval(interval);
-  }, [goToNext]);
+  }, [goToNext, isInView, prefersReducedMotion]);
 
   const normalizedIndex = totalPages === 0 ? 0 : Math.min(currentIndex, totalPages - 1);
 
@@ -76,7 +101,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   };
 
   return (
-    <div className="relative" suppressHydrationWarning>
+    <div ref={containerRef} className="relative" suppressHydrationWarning>
       {/* Reviews Grid */}
       <div className="relative overflow-hidden flex justify-center">
         <div

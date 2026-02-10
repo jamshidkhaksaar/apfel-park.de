@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-02-10 - Carousel Performance
+**Learning:** Infinite loops (like `setInterval` in carousels) continue running even when components are off-screen or in background tabs, consuming CPU.
+**Action:** Use `IntersectionObserver` to pause animations/timers when elements are not in the viewport. Also respect `prefers-reduced-motion` to disable auto-play.
