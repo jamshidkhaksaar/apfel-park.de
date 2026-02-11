@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { isSecureSvg } from "@/lib/security";
+import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
 import { uploadProductImage } from "@/lib/blob";
 import { createClient } from "@/lib/supabase/server";
 
@@ -43,7 +43,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: messages.tooLarge }, { status: 400 });
     }
 
-    if (file.type === "image/svg+xml") {
+    if (!validateImageFileExtension(file.name, file.type)) {
+      return NextResponse.json({ error: `${messages.unsupported}: ${file.name} / ${file.type}` }, { status: 400 });
+    }
+
+    if (file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg")) {
       const svgText = await file.text();
       if (!isSecureSvg(svgText)) {
         return NextResponse.json({ error: messages.unsafeSvg }, { status: 400 });

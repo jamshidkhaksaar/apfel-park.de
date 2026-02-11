@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { isSecureSvg } from "@/lib/security";
+import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
 
 const ALLOWED_TYPES: Record<string, string[]> = {
   logo: ["image/png", "image/jpeg", "image/svg+xml", "image/webp"],
@@ -114,10 +114,17 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (!validateImageFileExtension(file.name, normalizedType)) {
+        return NextResponse.json(
+          { error: `${messages.invalidType} ${fieldName}: ${file.name} / ${normalizedType}` },
+          { status: 400 }
+        );
+      }
+
       const buffer = Buffer.from(await file.arrayBuffer());
 
       // Validate SVG content for XSS
-      if (file.type === "image/svg+xml") {
+      if (normalizedType === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg")) {
         const text = buffer.toString("utf-8");
         if (!isSecureSvg(text)) {
           return NextResponse.json(
