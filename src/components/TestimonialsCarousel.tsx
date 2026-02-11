@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 
 type Review = {
   readonly name: string;
@@ -21,6 +22,25 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   const [direction, setDirection] = useState<"next" | "prev">("next");
   const reviewsPerPage = 1;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
+
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const [isInView, setIsInView] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   const goToNext = useCallback(() => {
     if (isAnimating) return;
@@ -48,9 +68,11 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
 
   // Auto-slide every 6 seconds
   useEffect(() => {
+    if (prefersReducedMotion || !isInView) return;
+
     const interval = setInterval(goToNext, 6000);
     return () => clearInterval(interval);
-  }, [goToNext]);
+  }, [goToNext, prefersReducedMotion, isInView]);
 
   const normalizedIndex = totalPages === 0 ? 0 : Math.min(currentIndex, totalPages - 1);
 
@@ -76,7 +98,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   };
 
   return (
-    <div className="relative" suppressHydrationWarning>
+    <div ref={containerRef} className="relative" suppressHydrationWarning>
       {/* Reviews Grid */}
       <div className="relative overflow-hidden flex justify-center">
         <div
