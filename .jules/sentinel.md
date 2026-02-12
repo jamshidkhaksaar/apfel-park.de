@@ -27,3 +27,8 @@
 **Vulnerability:** User-submitted contact form data was interpolated directly into the HTML body of notification emails, allowing attackers to inject malicious HTML/scripts (Reflected XSS in email clients).
 **Learning:** Even internal notification emails are an attack vector if they render user input as HTML. Template literals are not safe for HTML generation with untrusted input.
 **Prevention:** Introduced `escapeHtml` utility in `src/lib/security.ts` and enforced its usage for all user-controlled variables (including those that seem "safe" like dynamic subjects) in email templates.
+
+## 2026-03-01 - Open Redirect in Login Flow
+**Vulnerability:** The `redirectTo` parameter in the login form was passed directly to `redirect()` without validation, allowing attackers to construct phishing links (e.g., `/login?redirectTo=https://evil.com`) that redirect users after successful authentication.
+**Learning:** Next.js `redirect()` function allows external URLs by default.
+**Prevention:** Validated `redirectTo` using `isSafeRedirect` helper to enforce relative paths (starting with `/` and not `//`) before redirecting.
