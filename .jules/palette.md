@@ -21,3 +21,7 @@
 ## 2026-02-13 - [Mobile Menu Keyboard Trap]
 **Learning:** Using `opacity-0` and `pointer-events-none` to hide mobile menus leaves interactive elements focusable, creating a "keyboard trap" where users tab through invisible links.
 **Action:** Always add `invisible` (visibility: hidden) to the closed state of transitions, as it removes elements from the focus order while still allowing `transition-all` to animate opacity (transitions handle visibility flipping automatically).
+
+## 2026-02-13 - [Auto-Rotating Carousel Accessibility]
+**Learning:** Auto-rotating content can cause motion sickness and frustration for users who need more time to read.
+**Action:** Always respect `prefers-reduced-motion` to disable auto-rotation, and implement pause-on-hover/focus behavior to give users control over the content flow.

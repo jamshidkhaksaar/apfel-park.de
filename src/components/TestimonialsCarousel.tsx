@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+
 type Review = {
   readonly name: string;
   readonly badge: string;
@@ -18,7 +20,9 @@ type TestimonialsCarouselProps = {
 export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [direction, setDirection] = useState<"next" | "prev">("next");
+  const prefersReducedMotion = usePrefersReducedMotion();
   const reviewsPerPage = 1;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
 
@@ -48,9 +52,11 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
 
   // Auto-slide every 6 seconds
   useEffect(() => {
+    if (prefersReducedMotion || isPaused) return;
+
     const interval = setInterval(goToNext, 6000);
     return () => clearInterval(interval);
-  }, [goToNext]);
+  }, [goToNext, prefersReducedMotion, isPaused]);
 
   const normalizedIndex = totalPages === 0 ? 0 : Math.min(currentIndex, totalPages - 1);
 
@@ -76,7 +82,21 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   };
 
   return (
-    <div className="relative" suppressHydrationWarning>
+    <div
+      className="relative"
+      suppressHydrationWarning
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={(e) => {
+        if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsPaused(false);
+        }
+      }}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={lang === "de" ? "Kundenbewertungen" : "Customer Reviews"}
+    >
       {/* Reviews Grid */}
       <div className="relative overflow-hidden flex justify-center">
         <div
