@@ -24,3 +24,38 @@ export const escapeHtml = (str: string): string => {
   if (!str) return "";
   return he.encode(str, { useNamedReferences: true });
 };
+
+/**
+ * Validates that the file extension matches the provided MIME type.
+ * This prevents MIME type spoofing (e.g. uploading a .exe as image/png).
+ */
+export const validateImageFileExtension = (filename: string, mimeType: string): boolean => {
+  if (!filename || !mimeType) return false;
+
+  const parts = filename.toLowerCase().split('.');
+  if (parts.length < 2) return false;
+
+  const ext = parts.pop();
+  if (!ext) return false;
+
+  switch (mimeType.toLowerCase()) {
+    case 'image/png':
+      return ext === 'png';
+    case 'image/jpeg':
+      return ext === 'jpg' || ext === 'jpeg';
+    case 'image/webp':
+      return ext === 'webp';
+    case 'image/svg+xml':
+      return ext === 'svg';
+    case 'image/gif':
+      return ext === 'gif';
+    case 'image/x-icon':
+    case 'image/vnd.microsoft.icon':
+      return ext === 'ico';
+    case 'application/octet-stream':
+      // Often used for .ico files when mime type detection fails or is generic
+      return ext === 'ico';
+    default:
+      return false;
+  }
+};

@@ -1,4 +1,4 @@
-import { escapeHtml, isSecureSvg } from "../src/lib/security";
+import { escapeHtml, isSecureSvg, validateImageFileExtension } from "../src/lib/security";
 
 console.log("Running security verification...");
 
@@ -52,6 +52,38 @@ svgCases.forEach(({ input, secure }, index) => {
     failed = true;
   } else {
     console.log(`✅ SVG case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting validateImageFileExtension...");
+const extensionCases = [
+  { name: 'logo.png', type: 'image/png', valid: true },
+  { name: 'logo.jpg', type: 'image/jpeg', valid: true },
+  { name: 'logo.jpeg', type: 'image/jpeg', valid: true },
+  { name: 'logo.webp', type: 'image/webp', valid: true },
+  { name: 'icon.svg', type: 'image/svg+xml', valid: true },
+  { name: 'favicon.ico', type: 'image/x-icon', valid: true },
+  { name: 'favicon.ico', type: 'image/vnd.microsoft.icon', valid: true },
+  { name: 'favicon.ico', type: 'application/octet-stream', valid: true },
+  { name: 'script.php', type: 'image/png', valid: false },
+  { name: 'malware.exe', type: 'image/jpeg', valid: false },
+  { name: 'malware.html', type: 'image/png', valid: false },
+  { name: 'image', type: 'image/png', valid: false }, // No extension
+  { name: 'image.png', type: 'text/html', valid: false },
+  { name: 'image.gif', type: 'image/gif', valid: true },
+];
+
+extensionCases.forEach(({ name, type, valid }, index) => {
+  const result = validateImageFileExtension(name, type);
+  if (result !== valid) {
+    console.error(`❌ Extension case ${index + 1} failed:`);
+    console.error(`   Name:     ${name}`);
+    console.error(`   Type:     ${type}`);
+    console.error(`   Expected: ${valid}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ Extension case ${index + 1} passed`);
   }
 });
 

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { isSecureSvg } from "@/lib/security";
+import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
 
 const ALLOWED_TYPES: Record<string, string[]> = {
   logo: ["image/png", "image/jpeg", "image/svg+xml", "image/webp"],
@@ -97,6 +97,14 @@ export async function POST(request: NextRequest) {
         fieldName === "favicon" && !file.type && file.name.toLowerCase().endsWith(".ico")
           ? "image/x-icon"
           : file.type;
+
+      // Validate file extension matches MIME type
+      if (!validateImageFileExtension(file.name, normalizedType)) {
+        return NextResponse.json(
+          { error: `${messages.invalidType} ${fieldName}: ${file.name}` },
+          { status: 400 },
+        );
+      }
 
       // Validate file type
       if (!ALLOWED_TYPES[fieldName].includes(normalizedType)) {
