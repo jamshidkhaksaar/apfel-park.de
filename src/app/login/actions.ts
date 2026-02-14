@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { redirect } from "next/navigation";
+import { isSafeRedirect } from "@/lib/security";
 
 type LoginActionState = {
   error?: string;
@@ -12,7 +13,10 @@ export async function loginAction(_prevState: LoginActionState | null, formData:
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const token = formData.get("recaptchaToken") as string;
-  const redirectTo = formData.get("redirectTo") as string || "/admin";
+
+  // Validate redirect URL to prevent Open Redirect vulnerabilities
+  const rawRedirectTo = formData.get("redirectTo") as string;
+  const redirectTo = isSafeRedirect(rawRedirectTo) ? rawRedirectTo : "/admin";
 
   if (!email || !password) {
     return { error: "Email and password are required" };

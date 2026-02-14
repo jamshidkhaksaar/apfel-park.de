@@ -24,3 +24,22 @@ export const escapeHtml = (str: string): string => {
   if (!str) return "";
   return he.encode(str, { useNamedReferences: true });
 };
+
+/**
+ * Validates if a redirect URL is safe (relative path only).
+ * Prevents Open Redirect vulnerabilities.
+ */
+export const isSafeRedirect = (url: string | null | undefined): boolean => {
+  if (!url || typeof url !== "string") return false;
+
+  // Must start with / to be a relative path
+  if (!url.startsWith("/")) return false;
+
+  // Prevent protocol-relative URLs (e.g. //evil.com)
+  if (url.startsWith("//")) return false;
+
+  // Prevent backslash bypasses (e.g. /\evil.com)
+  if (url.includes("\\")) return false;
+
+  return true;
+};
