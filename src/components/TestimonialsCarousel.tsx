@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useInView } from "../hooks/useInView";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 
 type Review = {
   readonly name: string;
@@ -15,10 +17,31 @@ type TestimonialsCarouselProps = {
   lang: "de" | "en";
 };
 
+// Get initials from name
+const getInitials = (name: string) => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+};
+
+// Truncate long quotes
+const truncateQuote = (quote: string, maxLength: number = 180) => {
+  if (quote.length <= maxLength) return quote;
+  return quote.slice(0, maxLength).trim() + "...";
+};
+
 export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [direction, setDirection] = useState<"next" | "prev">("next");
+  const [isHovered, setIsHovered] = useState(false);
+
+  const [ref, inView] = useInView({ triggerOnce: false, threshold: 0.1 });
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   const reviewsPerPage = 1;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
 
@@ -48,9 +71,12 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
 
   // Auto-slide every 6 seconds
   useEffect(() => {
+    // Pause if user prefers reduced motion, element is not in view (and reduced motion is false), or element is hovered
+    if (prefersReducedMotion || (!inView && !prefersReducedMotion) || isHovered) return;
+
     const interval = setInterval(goToNext, 6000);
     return () => clearInterval(interval);
-  }, [goToNext]);
+  }, [goToNext, inView, isHovered, prefersReducedMotion]);
 
   const normalizedIndex = totalPages === 0 ? 0 : Math.min(currentIndex, totalPages - 1);
 
@@ -59,24 +85,20 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
     normalizedIndex * reviewsPerPage + reviewsPerPage
   );
 
-  // Get initials from name
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  };
-
-  // Truncate long quotes
-  const truncateQuote = (quote: string, maxLength: number = 180) => {
-    if (quote.length <= maxLength) return quote;
-    return quote.slice(0, maxLength).trim() + "...";
-  };
-
   return (
-    <div className="relative" suppressHydrationWarning>
+    <div
+      className="relative"
+      suppressHydrationWarning
+      ref={ref}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsHovered(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+           setIsHovered(false);
+        }
+      }}
+    >
       {/* Reviews Grid */}
       <div className="relative overflow-hidden flex justify-center">
         <div
