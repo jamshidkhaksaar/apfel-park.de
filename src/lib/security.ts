@@ -24,3 +24,23 @@ export const escapeHtml = (str: string): string => {
   if (!str) return "";
   return he.encode(str, { useNamedReferences: true });
 };
+
+export const isSafeRedirect = (to: string): boolean => {
+  if (!to || typeof to !== "string") {
+    return false;
+  }
+
+  // Prevent open redirects (//, http:, https:, /\)
+  if (
+    to.startsWith("//") ||
+    to.startsWith("http:") ||
+    to.startsWith("https:") ||
+    to.startsWith("/\\") ||
+    to.trim() !== to // Prevent whitespace bypasses
+  ) {
+    return false;
+  }
+
+  // Must start with /
+  return to.startsWith("/");
+};
