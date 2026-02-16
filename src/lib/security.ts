@@ -24,3 +24,28 @@ export const escapeHtml = (str: string): string => {
   if (!str) return "";
   return he.encode(str, { useNamedReferences: true });
 };
+
+/**
+ * Validates that the file extension matches the MIME type.
+ * This prevents extension spoofing (e.g. uploading .html as image/png).
+ */
+export const validateImageFileExtension = (file: File): boolean => {
+  const type = file.type.toLowerCase();
+  const name = file.name.toLowerCase();
+
+  const allowedExtensions: Record<string, string[]> = {
+    "image/png": [".png"],
+    "image/jpeg": [".jpg", ".jpeg"],
+    "image/webp": [".webp"],
+    "image/svg+xml": [".svg"],
+    "image/x-icon": [".ico"],
+    "image/vnd.microsoft.icon": [".ico"],
+    // Allow octet-stream for .ico as it's common for favicons
+    "application/octet-stream": [".ico"],
+  };
+
+  const extensions = allowedExtensions[type];
+  if (!extensions) return false;
+
+  return extensions.some(ext => name.endsWith(ext));
+};

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { isSecureSvg } from "@/lib/security";
+import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
 
 const ALLOWED_TYPES: Record<string, string[]> = {
   logo: ["image/png", "image/jpeg", "image/svg+xml", "image/webp"],
@@ -60,6 +60,10 @@ export async function POST(request: NextRequest) {
       isEnglish
         ? "BLOB_READ_WRITE_TOKEN is not configured"
         : "BLOB_READ_WRITE_TOKEN ist nicht konfiguriert",
+    extensionMismatch:
+      isEnglish
+        ? "File extension does not match content type for"
+        : "Dateiendung passt nicht zum Inhaltstyp fur",
   };
 
   const supabase = await createClient();
@@ -102,6 +106,21 @@ export async function POST(request: NextRequest) {
       if (!ALLOWED_TYPES[fieldName].includes(normalizedType)) {
         return NextResponse.json(
           { error: `${messages.invalidType} ${fieldName}: ${normalizedType || "unknown"}` },
+          { status: 400 }
+        );
+      }
+
+      // Validate file extension matches content type
+      let isValidExtension = false;
+      if (fieldName === "favicon" && !file.type && file.name.toLowerCase().endsWith(".ico")) {
+        isValidExtension = true;
+      } else {
+        isValidExtension = validateImageFileExtension(file);
+      }
+
+      if (!isValidExtension) {
+        return NextResponse.json(
+          { error: `${messages.extensionMismatch} ${fieldName}` },
           { status: 400 }
         );
       }
