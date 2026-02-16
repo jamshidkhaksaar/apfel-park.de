@@ -21,3 +21,7 @@
 ## 2026-02-13 - [Mobile Menu Keyboard Trap]
 **Learning:** Using `opacity-0` and `pointer-events-none` to hide mobile menus leaves interactive elements focusable, creating a "keyboard trap" where users tab through invisible links.
 **Action:** Always add `invisible` (visibility: hidden) to the closed state of transitions, as it removes elements from the focus order while still allowing `transition-all` to animate opacity (transitions handle visibility flipping automatically).
+
+## 2026-02-14 - [Radio Group Pattern]
+**Learning:** When offering mutually exclusive choices (like languages), use the Radio Group pattern (`role='radiogroup'` + `aria-checked`) instead of Toggle Buttons (`aria-pressed`), as it better communicates the 'one-of-many' selection model to assistive technologies.
+**Action:** Use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` on options for exclusive selections.
