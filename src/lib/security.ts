@@ -25,6 +25,14 @@ export const escapeHtml = (str: string): string => {
   return he.encode(str, { useNamedReferences: true });
 };
 
+export const isSafeRedirect = (value: string | null | undefined): boolean => {
+  if (!value) return false;
+  if (!value.startsWith("/")) return false;
+  if (value.startsWith("//")) return false;
+  if (/[\u0000-\u001F\u007F]/.test(value)) return false;
+  return true;
+};
+
 /**
  * Validates that the file extension matches the MIME type.
  * This prevents extension spoofing (e.g. uploading .html as image/png).

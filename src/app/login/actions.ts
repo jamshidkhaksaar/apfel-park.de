@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { verifyReCaptcha } from "@/lib/recaptcha";
+import { isSafeRedirect } from "@/lib/security";
 import { redirect } from "next/navigation";
 
 type LoginActionState = {
@@ -34,5 +35,5 @@ export async function loginAction(_prevState: LoginActionState | null, formData:
     return { error: "Invalid email or password" };
   }
 
-  redirect(redirectTo);
+  redirect(isSafeRedirect(redirectTo) ? redirectTo : "/admin");
 }
