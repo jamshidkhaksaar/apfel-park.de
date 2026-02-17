@@ -24,35 +24,3 @@ export const escapeHtml = (str: string): string => {
   if (!str) return "";
   return he.encode(str, { useNamedReferences: true });
 };
-
-/**
- * Validates a redirect URL to prevent Open Redirect vulnerabilities.
- * Ensures the URL is a relative path starting with / and not // or containing \.
- */
-export const isSafeRedirect = (to: string | null | undefined): boolean => {
-  if (!to || typeof to !== "string") {
-    return false;
-  }
-
-  // Must start with /
-  if (!to.startsWith("/")) {
-    return false;
-  }
-
-  // Prevent double slashes (protocol relative URLs)
-  if (to.startsWith("//")) {
-    return false;
-  }
-
-  // Prevent backslashes which can be interpreted as slashes by some browsers
-  if (to.includes("\\")) {
-    return false;
-  }
-
-  // Prevent control characters (e.g. newline, null byte)
-  if (/[\x00-\x1F\x7F]/.test(to)) {
-    return false;
-  }
-
-  return true;
-};
