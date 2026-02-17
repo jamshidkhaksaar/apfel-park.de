@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import { useState, useEffect, useCallback } from "react";
 
 type Review = {
   readonly name: string;
@@ -22,26 +21,6 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   const [direction, setDirection] = useState<"next" | "prev">("next");
   const reviewsPerPage = 1;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
-
-  const prefersReducedMotion = usePrefersReducedMotion();
-  const [isVisible, setIsVisible] = useState(false);
-  const carouselRef = useRef<HTMLDivElement>(null);
-
-  // Track visibility to pause auto-rotation when off-screen
-  useEffect(() => {
-    const element = carouselRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
 
   const goToNext = useCallback(() => {
     if (isAnimating) return;
@@ -67,13 +46,11 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
     setTimeout(() => setIsAnimating(false), 600);
   }, [isAnimating, totalPages]);
 
-  // Auto-slide every 6 seconds (only when visible and motion is allowed)
+  // Auto-slide every 6 seconds
   useEffect(() => {
-    if (prefersReducedMotion || !isVisible) return;
-
     const interval = setInterval(goToNext, 6000);
     return () => clearInterval(interval);
-  }, [goToNext, isVisible, prefersReducedMotion]);
+  }, [goToNext]);
 
   const normalizedIndex = totalPages === 0 ? 0 : Math.min(currentIndex, totalPages - 1);
 
@@ -99,7 +76,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   };
 
   return (
-    <div ref={carouselRef} className="relative" suppressHydrationWarning>
+    <div className="relative" suppressHydrationWarning>
       {/* Reviews Grid */}
       <div className="relative overflow-hidden flex justify-center">
         <div
