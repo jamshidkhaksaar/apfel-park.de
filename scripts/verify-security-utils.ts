@@ -1,4 +1,4 @@
-import { escapeHtml, isSecureSvg } from "../src/lib/security";
+import { escapeHtml, isSecureSvg, isSafeRedirect } from "../src/lib/security";
 
 console.log("Running security verification...");
 
@@ -52,6 +52,41 @@ svgCases.forEach(({ input, secure }, index) => {
     failed = true;
   } else {
     console.log(`✅ SVG case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting isSafeRedirect...");
+const redirectCases = [
+  // Valid cases
+  { input: "/admin", expected: true },
+  { input: "/dashboard?q=1", expected: true },
+  { input: "/user/profile", expected: true },
+
+  // Invalid cases (Open Redirect)
+  { input: "https://evil.com", expected: false },
+  { input: "http://evil.com", expected: false },
+  { input: "//evil.com", expected: false },
+  { input: "javascript:alert(1)", expected: false },
+  { input: "data:text/html,<script>alert(1)</script>", expected: false },
+  { input: "google.com", expected: false },
+  { input: "\\evil.com", expected: false },
+  { input: "/\\evil.com", expected: false }, // Backslash
+
+  // Control characters
+  { input: "/admin\n", expected: false },
+  { input: "/admin\t", expected: false },
+];
+
+redirectCases.forEach(({ input, expected }, index) => {
+  const result = isSafeRedirect(input);
+  if (result !== expected) {
+    console.error(`❌ Redirect case ${index + 1} failed:`);
+    console.error(`   Input:    ${input}`);
+    console.error(`   Expected: ${expected}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ Redirect case ${index + 1} passed`);
   }
 });
 
