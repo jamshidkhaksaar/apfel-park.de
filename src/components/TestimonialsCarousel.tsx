@@ -2,9 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-import { useInView } from "../hooks/useInView";
-import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
-
 type Review = {
   readonly name: string;
   readonly badge: string;
@@ -21,11 +18,7 @@ type TestimonialsCarouselProps = {
 export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [direction, setDirection] = useState<"next" | "prev">("next");
-  const [ref, inView] = useInView<HTMLDivElement>({ threshold: 0.2, triggerOnce: false });
-  const prefersReducedMotion = usePrefersReducedMotion();
-
   const reviewsPerPage = 1;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
 
@@ -55,15 +48,9 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
 
   // Auto-slide every 6 seconds
   useEffect(() => {
-    // Pause if:
-    // 1. User prefers reduced motion
-    // 2. Component is not in view
-    // 3. User is interacting (hover/focus)
-    if (prefersReducedMotion || !inView || isPaused) return;
-
     const interval = setInterval(goToNext, 6000);
     return () => clearInterval(interval);
-  }, [goToNext, prefersReducedMotion, inView, isPaused]);
+  }, [goToNext]);
 
   const normalizedIndex = totalPages === 0 ? 0 : Math.min(currentIndex, totalPages - 1);
 
@@ -89,19 +76,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   };
 
   return (
-    <div
-      ref={ref}
-      className="relative"
-      suppressHydrationWarning
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onFocus={() => setIsPaused(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setIsPaused(false);
-        }
-      }}
-    >
+    <div className="relative" suppressHydrationWarning>
       {/* Reviews Grid */}
       <div className="relative overflow-hidden flex justify-center">
         <div
