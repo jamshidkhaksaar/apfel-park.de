@@ -23,7 +23,7 @@ export const dictionary = {
       title: "Aktuelle Angebote",
       cta: "Zum Shop",
       inStock: "Auf Lager",
-      detailsAriaLabel: "Details zu {{title}} anzeigen",
+      detailsAriaLabel: "Anfrage zu {{title}} starten",
     },
     footer: {
       headline: "Dein Premium-Shop für Smartphones & Reparaturen",
@@ -658,7 +658,7 @@ export const dictionary = {
       title: "Latest Arrivals",
       cta: "Go to Store",
       inStock: "In Stock",
-      detailsAriaLabel: "View details for {{title}}",
+      detailsAriaLabel: "Start inquiry for {{title}}",
     },
     footer: {
       headline: "Premium smartphones, accessories & repairs",
