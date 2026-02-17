@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import { useState, useEffect, useCallback } from "react";
 
 type Review = {
   readonly name: string;
@@ -20,12 +19,6 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [direction, setDirection] = useState<"next" | "prev">("next");
-  const [isInView, setIsInView] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const prefersReducedMotion = usePrefersReducedMotion();
-
   const reviewsPerPage = 1;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
 
@@ -53,33 +46,11 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
     setTimeout(() => setIsAnimating(false), 600);
   }, [isAnimating, totalPages]);
 
-  // Handle visibility changes
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsInView(entry.isIntersecting);
-      },
-      { threshold: 0.1 } // Start when 10% visible
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
   // Auto-slide every 6 seconds
-  // Only auto-slide if:
-  // 1. Component is in view (save resources)
-  // 2. User prefers motion (accessibility)
-  // 3. User is not interacting (hover/focus)
   useEffect(() => {
-    if (!isInView || prefersReducedMotion || isHovered || isFocused) return;
-
     const interval = setInterval(goToNext, 6000);
     return () => clearInterval(interval);
-  }, [goToNext, isInView, prefersReducedMotion, isHovered, isFocused]);
+  }, [goToNext]);
 
   const normalizedIndex = totalPages === 0 ? 0 : Math.min(currentIndex, totalPages - 1);
 
@@ -105,20 +76,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="relative"
-      suppressHydrationWarning
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onFocus={() => setIsFocused(true)}
-      onBlur={(e) => {
-        // Only consider focus lost if moving outside the container
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setIsFocused(false);
-        }
-      }}
-    >
+    <div className="relative" suppressHydrationWarning>
       {/* Reviews Grid */}
       <div className="relative overflow-hidden flex justify-center">
         <div
