@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { isSecureSvg } from "@/lib/security";
+import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
 import { uploadProductImage } from "@/lib/blob";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     unsupported: isEnglish ? "Unsupported file type" : "Nicht unterstutzter Dateityp",
     tooLarge: isEnglish ? "File exceeds 5MB limit" : "Datei uberschreitet 5MB Limit",
     unsafeSvg: isEnglish ? "Unsafe SVG content detected" : "Unsicherer SVG-Inhalt erkannt",
+    extensionMismatch: isEnglish ? "File extension does not match content type" : "Dateiendung passt nicht zum Inhaltstyp",
     uploadFailed: isEnglish ? "Upload failed" : "Upload fehlgeschlagen",
   };
 
@@ -37,6 +38,10 @@ export async function POST(request: NextRequest) {
 
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json({ error: `${messages.unsupported}: ${file.type}` }, { status: 400 });
+    }
+
+    if (!validateImageFileExtension(file)) {
+      return NextResponse.json({ error: messages.extensionMismatch }, { status: 400 });
     }
 
     if (file.size > MAX_FILE_SIZE) {

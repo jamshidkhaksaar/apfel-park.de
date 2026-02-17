@@ -1,4 +1,4 @@
-import { escapeHtml, isSecureSvg } from "../src/lib/security";
+import { escapeHtml, isSecureSvg, validateImageFileExtension } from "../src/lib/security";
 
 console.log("Running security verification...");
 
@@ -52,6 +52,41 @@ svgCases.forEach(({ input, secure }, index) => {
     failed = true;
   } else {
     console.log(`✅ SVG case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting validateImageFileExtension...");
+const fileCases = [
+  { name: "test.png", type: "image/png", expected: true },
+  { name: "test.jpg", type: "image/jpeg", expected: true },
+  { name: "test.jpeg", type: "image/jpeg", expected: true },
+  { name: "test.webp", type: "image/webp", expected: true },
+  { name: "test.svg", type: "image/svg+xml", expected: true },
+  { name: "favicon.ico", type: "image/x-icon", expected: true },
+  { name: "favicon.ico", type: "image/vnd.microsoft.icon", expected: true },
+  { name: "favicon.ico", type: "application/octet-stream", expected: true },
+  // Invalid cases
+  { name: "malicious.html", type: "image/png", expected: false },
+  { name: "malicious.exe", type: "image/jpeg", expected: false },
+  { name: "test.png", type: "text/plain", expected: false },
+  { name: "test.txt", type: "image/png", expected: false },
+  { name: "test", type: "image/png", expected: false },
+];
+
+fileCases.forEach(({ name, type, expected }, index) => {
+  // Mock File object since we only need name and type properties
+  const file = { name, type } as unknown as File;
+  const result = validateImageFileExtension(file);
+
+  if (result !== expected) {
+    console.error(`❌ File case ${index + 1} failed:`);
+    console.error(`   Name:     ${name}`);
+    console.error(`   Type:     ${type}`);
+    console.error(`   Expected: ${expected}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ File case ${index + 1} passed`);
   }
 });
 
