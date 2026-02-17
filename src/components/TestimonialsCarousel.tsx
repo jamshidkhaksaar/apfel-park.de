@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+import { useInView } from "../hooks/useInView";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+
 type Review = {
   readonly name: string;
   readonly badge: string;
@@ -19,6 +22,12 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [direction, setDirection] = useState<"next" | "prev">("next");
+
+  // Optimization: Pause when not in view, user prefers reduced motion, or interacting
+  const [ref, inView] = useInView<HTMLDivElement>({ triggerOnce: false });
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const [isPaused, setIsPaused] = useState(false);
+
   const reviewsPerPage = 1;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
 
@@ -48,9 +57,19 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
 
   // Auto-slide every 6 seconds
   useEffect(() => {
+    // Performance: Don't run interval if off-screen, reduced motion, or paused
+    if (!inView || prefersReducedMotion || isPaused) return;
+
     const interval = setInterval(goToNext, 6000);
     return () => clearInterval(interval);
-  }, [goToNext]);
+  }, [goToNext, inView, prefersReducedMotion, isPaused]);
+
+  const handleBlur = (e: React.FocusEvent) => {
+    // Only resume if focus leaves the component entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsPaused(false);
+    }
+  };
 
   const normalizedIndex = totalPages === 0 ? 0 : Math.min(currentIndex, totalPages - 1);
 
@@ -76,7 +95,15 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
   };
 
   return (
-    <div className="relative" suppressHydrationWarning>
+    <div
+      className="relative"
+      suppressHydrationWarning
+      ref={ref}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={handleBlur}
+    >
       {/* Reviews Grid */}
       <div className="relative overflow-hidden flex justify-center">
         <div
