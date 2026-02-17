@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
+import { isSecureSvg } from "@/lib/security";
 import { uploadProductImage } from "@/lib/blob";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,14 +37,6 @@ export async function POST(request: NextRequest) {
 
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json({ error: `${messages.unsupported}: ${file.type}` }, { status: 400 });
-    }
-
-    // Validate that the file extension matches the MIME type to prevent spoofing
-    if (!validateImageFileExtension(file.name, file.type)) {
-      return NextResponse.json(
-        { error: `${messages.unsupported}: ${file.name}` },
-        { status: 400 },
-      );
     }
 
     if (file.size > MAX_FILE_SIZE) {

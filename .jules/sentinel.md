@@ -27,8 +27,3 @@
 **Vulnerability:** User-submitted contact form data was interpolated directly into the HTML body of notification emails, allowing attackers to inject malicious HTML/scripts (Reflected XSS in email clients).
 **Learning:** Even internal notification emails are an attack vector if they render user input as HTML. Template literals are not safe for HTML generation with untrusted input.
 **Prevention:** Introduced `escapeHtml` utility in `src/lib/security.ts` and enforced its usage for all user-controlled variables (including those that seem "safe" like dynamic subjects) in email templates.
-
-## 2026-03-05 - File Extension Spoofing in API Uploads
-**Vulnerability:** The `/api/admin/products/upload` endpoint validated `file.type` (MIME type) but not the file extension, allowing attackers to upload `malicious.html` disguised as `image/png` (MIME spoofing). If served with an incorrect Content-Type or sniffed by browsers, this could lead to Stored XSS.
-**Learning:** `file.type` is client-controlled and unreliable. Relying solely on it allows bypassing extension-based security controls.
-**Prevention:** Implemented strict extension validation (`validateImageFileExtension`) in `src/lib/security.ts` to ensure the file extension matches the claimed MIME type (allowlist approach).
