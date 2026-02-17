@@ -53,15 +53,29 @@ const mapProduct = (row: DbProduct): Product | null => {
   };
 };
 
-export async function getProducts(category?: Product["category"]): Promise<Product[]> {
+/**
+ * Fetches products from the database.
+ *
+ * Note: If both `category` and `limit` are provided, the limit is applied to the initial query
+ * BEFORE category filtering (which happens in-memory due to normalization).
+ * This means you might get fewer than `limit` items of a specific category.
+ * Currently, `limit` is only used by `getFeaturedProducts` where category is undefined.
+ */
+export async function getProducts(category?: Product["category"], limit?: number): Promise<Product[]> {
   const { createClient } = await import("./supabase/server");
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("products")
     .select("id,title,description,price,category,brand,stock,images")
     .eq("is_active", true)
     .order("created_at", { ascending: false });
+
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data) return [];
 
@@ -74,6 +88,6 @@ export async function getProducts(category?: Product["category"]): Promise<Produ
 }
 
 export async function getFeaturedProducts(): Promise<Product[]> {
-  const products = await getProducts();
-  return products.slice(0, 4).map((product) => ({ ...product, isFeatured: true }));
+  const products = await getProducts(undefined, 4);
+  return products.map((product) => ({ ...product, isFeatured: true }));
 }
