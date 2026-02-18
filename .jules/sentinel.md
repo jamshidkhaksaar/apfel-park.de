@@ -27,3 +27,8 @@
 **Vulnerability:** User-submitted contact form data was interpolated directly into the HTML body of notification emails, allowing attackers to inject malicious HTML/scripts (Reflected XSS in email clients).
 **Learning:** Even internal notification emails are an attack vector if they render user input as HTML. Template literals are not safe for HTML generation with untrusted input.
 **Prevention:** Introduced `escapeHtml` utility in `src/lib/security.ts` and enforced its usage for all user-controlled variables (including those that seem "safe" like dynamic subjects) in email templates.
+
+## 2026-02-18 - Admin API Routes Missing Middleware Protection
+**Vulnerability:** The `/api/admin` routes were accessible without authentication because the middleware's `startsWith("/admin")` check did not match `/api/admin` (which is a sibling path in the URL structure, not a child).
+**Learning:** Next.js route matching in middleware is strict on path prefixes. Assuming `/admin` covers everything related to admin functionality is dangerous if API routes are namespaced differently (e.g., `/api/admin`).
+**Prevention:** Explicitly include all sensitive path prefixes (e.g., `/api/admin`) in middleware protection logic, or use a regex that covers all admin-related paths. Defense in depth (checking auth in route handlers) prevented immediate exploitation, but middleware should be the first line of defense.
