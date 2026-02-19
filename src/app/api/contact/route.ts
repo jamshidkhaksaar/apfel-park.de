@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendContactNotificationEmail } from "@/lib/email";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { escapeHtml } from "@/lib/security";
+import { locales } from "@/lib/i18n";
 
 type ContactFormData = {
   name: string;
@@ -26,7 +28,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Strict regex to prevent injection attacks via email field
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(data.email)) {
       return NextResponse.json(
         { success: false, error: "Invalid email format" },
@@ -44,16 +47,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate locale
+    const validLocale = (locales as string[]).includes(data.locale) ? data.locale : "en";
+
     // Store the contact submission in database using Service Role (admin access)
     // This allows inserting even if RLS denies public inserts
     const supabase = createAdminClient();
 
     const { error: dbError } = await supabase.from("contact_submissions").insert({
-      name: data.name,
-      email: data.email,
-      device: data.device || null,
-      message: data.message,
-      locale: data.locale || "en",
+      name: escapeHtml(data.name),
+      email: data.email, // Validated by strict regex
+      device: data.device ? escapeHtml(data.device) : null,
+      message: escapeHtml(data.message),
+      locale: validLocale,
       recaptcha_score: captchaResult.score,
       status: "new",
       created_at: new Date().toISOString(),
@@ -73,7 +79,7 @@ export async function POST(request: NextRequest) {
       email: data.email,
       device: data.device,
       message: data.message,
-      locale: data.locale,
+      locale: validLocale,
     });
 
     if (!emailResult.success) {
@@ -82,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: data.locale === "de" 
+      message: validLocale === "de"
         ? "Nachricht erfolgreich gesendet!" 
         : "Message sent successfully!",
     });
