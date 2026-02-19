@@ -53,23 +53,46 @@ const mapProduct = (row: DbProduct): Product | null => {
   };
 };
 
+const categoryVariations: Record<Product["category"], string[]> = {
+  smartphones: ["smartphone", "smartphones"],
+  accessories: ["accessory", "accessories"],
+  consoles: ["console", "consoles", "gaming"],
+  laptops: ["laptop", "laptops"],
+};
+
 /**
  * Fetches products from the database.
  *
- * Note: If both `category` and `limit` are provided, the limit is applied to the initial query
- * BEFORE category filtering (which happens in-memory due to normalization).
- * This means you might get fewer than `limit` items of a specific category.
- * Currently, `limit` is only used by `getFeaturedProducts` where category is undefined.
+ * Optimization: If `category` is provided, we filter at the database level using `category.ilike`
+ * for known variations. This significantly reduces data transfer and ensures `limit` is applied
+ * correctly to the filtered dataset.
  */
-export async function getProducts(category?: Product["category"], limit?: number): Promise<Product[]> {
-  const { createClient } = await import("./supabase/server");
-  const supabase = await createClient();
+export async function getProducts(
+  category?: Product["category"],
+  limit?: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mockClient?: any,
+): Promise<Product[]> {
+  let supabase;
+  if (mockClient) {
+    supabase = mockClient;
+  } else {
+    const { createClient } = await import("./supabase/server");
+    supabase = await createClient();
+  }
 
   let query = supabase
     .from("products")
     .select("id,title,description,price,category,brand,stock,images")
     .eq("is_active", true)
     .order("created_at", { ascending: false });
+
+  if (category) {
+    const variations = categoryVariations[category];
+    // Create an OR filter for variations (case-insensitive via ilike)
+    const filterString = variations.map((v) => `category.ilike.${v}`).join(",");
+    query = query.or(filterString);
+  }
 
   if (limit) {
     query = query.limit(limit);
