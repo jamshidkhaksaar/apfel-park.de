@@ -37,6 +37,13 @@ const fallbackImageByCategory: Record<Product["category"], string> = {
   laptops: "/images/slider_images/laptop.png",
 };
 
+const categoryFilters: Record<Product["category"], string> = {
+  smartphones: "category.ilike.smartphone,category.ilike.smartphones",
+  accessories: "category.ilike.accessory,category.ilike.accessories",
+  consoles: "category.ilike.console,category.ilike.consoles,category.ilike.gaming",
+  laptops: "category.ilike.laptop,category.ilike.laptops",
+};
+
 const mapProduct = (row: DbProduct): Product | null => {
   const category = normalizeCategory(row.category);
   if (!category) return null;
@@ -56,10 +63,9 @@ const mapProduct = (row: DbProduct): Product | null => {
 /**
  * Fetches products from the database.
  *
- * Note: If both `category` and `limit` are provided, the limit is applied to the initial query
- * BEFORE category filtering (which happens in-memory due to normalization).
- * This means you might get fewer than `limit` items of a specific category.
- * Currently, `limit` is only used by `getFeaturedProducts` where category is undefined.
+ * Optimization: If `category` is provided, we filter in the database query using `.or()` with common variations.
+ * This significantly reduces data transfer and parsing overhead.
+ * Limit is applied AFTER category filtering, ensuring you get up to `limit` items of the requested category.
  */
 export async function getProducts(category?: Product["category"], limit?: number): Promise<Product[]> {
   const { createClient } = await import("./supabase/server");
@@ -70,6 +76,13 @@ export async function getProducts(category?: Product["category"], limit?: number
     .select("id,title,description,price,category,brand,stock,images")
     .eq("is_active", true)
     .order("created_at", { ascending: false });
+
+  if (category) {
+    const filter = categoryFilters[category];
+    if (filter) {
+      query = query.or(filter);
+    }
+  }
 
   if (limit) {
     query = query.limit(limit);
@@ -84,6 +97,7 @@ export async function getProducts(category?: Product["category"], limit?: number
     .filter((item): item is Product => item !== null);
 
   if (!category) return products;
+  // Redundant in-memory check for safety (handles potential normalizeCategory logic not covered by DB query)
   return products.filter((product) => product.category === category);
 }
 
