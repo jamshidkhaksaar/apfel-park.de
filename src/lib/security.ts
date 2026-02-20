@@ -57,3 +57,56 @@ export const validateImageFileExtension = (file: File): boolean => {
 
   return extensions.some(ext => name.endsWith(ext));
 };
+
+export interface ContactFormInput {
+  name: string;
+  email: string;
+  device?: string;
+  message: string;
+}
+
+export const validateContactForm = (
+  data: ContactFormInput,
+): { isValid: boolean; error?: string } => {
+  if (!data.name || !data.email || !data.message) {
+    return { isValid: false, error: "Missing required fields" };
+  }
+
+  // Max lengths to prevent DoS/Storage exhaustion
+  const MAX_NAME_LENGTH = 100;
+  const MAX_EMAIL_LENGTH = 254;
+  const MAX_DEVICE_LENGTH = 100;
+  const MAX_MESSAGE_LENGTH = 5000;
+
+  if (data.name.length > MAX_NAME_LENGTH) {
+    return {
+      isValid: false,
+      error: `Name is too long (max ${MAX_NAME_LENGTH} chars)`,
+    };
+  }
+  if (data.email.length > MAX_EMAIL_LENGTH) {
+    return {
+      isValid: false,
+      error: `Email is too long (max ${MAX_EMAIL_LENGTH} chars)`,
+    };
+  }
+  if (data.device && data.device.length > MAX_DEVICE_LENGTH) {
+    return {
+      isValid: false,
+      error: `Device name is too long (max ${MAX_DEVICE_LENGTH} chars)`,
+    };
+  }
+  if (data.message.length > MAX_MESSAGE_LENGTH) {
+    return {
+      isValid: false,
+      error: `Message is too long (max ${MAX_MESSAGE_LENGTH} chars)`,
+    };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(data.email)) {
+    return { isValid: false, error: "Invalid email format" };
+  }
+
+  return { isValid: true };
+};
