@@ -57,3 +57,10 @@ export const validateImageFileExtension = (file: File): boolean => {
 
   return extensions.some(ext => name.endsWith(ext));
 };
+
+export const isValidEmail = (email: string): boolean => {
+  if (!email || email.length > 254) return false;
+  // Standard email regex
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
