@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendContactNotificationEmail } from "@/lib/email";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isValidEmail, isValidInputLength, sanitizeInput } from "@/lib/security";
 
 type ContactFormData = {
   name: string;
@@ -15,7 +16,17 @@ type ContactFormData = {
 
 export async function POST(request: NextRequest) {
   try {
-    const data: ContactFormData = await request.json();
+    const rawData: ContactFormData = await request.json();
+
+    // Sanitize inputs
+    const data = {
+      name: sanitizeInput(rawData.name),
+      email: sanitizeInput(rawData.email),
+      device: sanitizeInput(rawData.device),
+      message: sanitizeInput(rawData.message),
+      recaptchaToken: rawData.recaptchaToken,
+      locale: rawData.locale === "de" ? "de" : "en", // Whitelist locale
+    };
 
     // Validate required fields
     if (!data.name || !data.email || !data.message) {
@@ -25,9 +36,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate lengths
+    if (
+      !isValidInputLength(data.name, 100) ||
+      !isValidInputLength(data.device, 100) ||
+      !isValidInputLength(data.message, 5000)
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Input exceeds maximum length" },
+        { status: 400 }
+      );
+    }
+
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
+    if (!isValidEmail(data.email)) {
       return NextResponse.json(
         { success: false, error: "Invalid email format" },
         { status: 400 }

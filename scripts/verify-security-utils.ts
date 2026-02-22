@@ -1,4 +1,11 @@
-import { escapeHtml, isSecureSvg, validateImageFileExtension } from "../src/lib/security";
+import {
+  escapeHtml,
+  isSecureSvg,
+  validateImageFileExtension,
+  isValidEmail,
+  isValidInputLength,
+  sanitizeInput
+} from "../src/lib/security";
 
 console.log("Running security verification...");
 
@@ -52,6 +59,79 @@ svgCases.forEach(({ input, secure }, index) => {
     failed = true;
   } else {
     console.log(`✅ SVG case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting isValidEmail...");
+const emailCases = [
+  { email: "test@example.com", expected: true },
+  { email: "user.name+tag@example.co.uk", expected: true },
+  { email: "plainaddress", expected: false },
+  { email: "@missingusername.com", expected: false },
+  { email: "username@.com", expected: false },
+  { email: "username@com", expected: false }, // Needs at least one dot
+  { email: "user@domain.c", expected: false }, // TLD too short (min 2)
+  { email: "user@localhost", expected: false }, // No TLD/dot not allowed for public web
+  { email: "".padEnd(255, "a") + "@example.com", expected: false }, // Too long
+  { email: "test@example.com\n", expected: false }, // Newline not allowed
+];
+
+emailCases.forEach(({ email, expected }, index) => {
+  const result = isValidEmail(email);
+  if (result !== expected) {
+    console.error(`❌ Email case ${index + 1} failed:`);
+    console.error(`   Email:    ${email.length > 50 ? email.substring(0, 20) + "..." : email}`);
+    console.error(`   Expected: ${expected}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ Email case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting isValidInputLength...");
+const lengthCases = [
+  { input: "short", max: 10, expected: true },
+  { input: "exactlength", max: 11, expected: true },
+  { input: "too long string", max: 5, expected: false },
+  { input: 12345, max: 10, expected: false }, // Not a string
+  { input: null, max: 10, expected: false },
+  { input: undefined, max: 10, expected: false },
+];
+
+lengthCases.forEach(({ input, max, expected }, index) => {
+  const result = isValidInputLength(input, max);
+  if (result !== expected) {
+    console.error(`❌ Length case ${index + 1} failed:`);
+    console.error(`   Input:    ${input}`);
+    console.error(`   Max:      ${max}`);
+    console.error(`   Expected: ${expected}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ Length case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting sanitizeInput...");
+const sanitizeCases = [
+  { input: "  hello  ", expected: "hello" },
+  { input: "hello\0world", expected: "helloworld" },
+  { input: 123, expected: "" },
+  { input: null, expected: "" },
+  { input: "  \0  test  \0  ", expected: "test" },
+];
+
+sanitizeCases.forEach(({ input, expected }, index) => {
+  const result = sanitizeInput(input);
+  if (result !== expected) {
+    console.error(`❌ Sanitize case ${index + 1} failed:`);
+    console.error(`   Input:    ${input}`);
+    console.error(`   Expected: '${expected}'`);
+    console.error(`   Actual:   '${result}'`);
+    failed = true;
+  } else {
+    console.log(`✅ Sanitize case ${index + 1} passed`);
   }
 });
 

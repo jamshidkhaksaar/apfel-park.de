@@ -27,3 +27,8 @@
 **Vulnerability:** User-submitted contact form data was interpolated directly into the HTML body of notification emails, allowing attackers to inject malicious HTML/scripts (Reflected XSS in email clients).
 **Learning:** Even internal notification emails are an attack vector if they render user input as HTML. Template literals are not safe for HTML generation with untrusted input.
 **Prevention:** Introduced `escapeHtml` utility in `src/lib/security.ts` and enforced its usage for all user-controlled variables (including those that seem "safe" like dynamic subjects) in email templates.
+
+## 2026-03-01 - Missing Input Validation on Contact Form
+**Vulnerability:** The contact form API endpoint accepted unbounded string inputs, potentially allowing Denial of Service (DoS) attacks or database bloat via massive payloads.
+**Learning:** Framework-level body parsing limits (e.g., Next.js 4MB default) are insufficient for application-level logic; specific fields must have length constraints.
+**Prevention:** Implemented `isValidInputLength` and strict `isValidEmail` utilities in `src/lib/security.ts` and applied them to all contact form inputs.

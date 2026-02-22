@@ -34,6 +34,35 @@ export const isSafeRedirect = (value: string | null | undefined): boolean => {
 };
 
 /**
+ * Validates email format and length.
+ */
+export const isValidEmail = (email: string): boolean => {
+  if (!email || email.length > 254) return false;
+  // Standard email regex for web applications
+  // Enforces at least one dot in domain and 2+ char TLD
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
+
+/**
+ * Validates that the input is a string and does not exceed the maximum length.
+ */
+export const isValidInputLength = (input: unknown, maxLength: number): boolean => {
+  if (typeof input !== "string") return false;
+  return input.length <= maxLength;
+};
+
+/**
+ * Sanitizes input string by trimming whitespace and removing null bytes.
+ * Returns empty string if input is not a string.
+ */
+export const sanitizeInput = (input: unknown): string => {
+  if (typeof input !== "string") return "";
+  // Remove null bytes and trim
+  return input.replace(/\0/g, "").trim();
+};
+
+/**
  * Validates that the file extension matches the MIME type.
  * This prevents extension spoofing (e.g. uploading .html as image/png).
  */
