@@ -109,13 +109,16 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <span className="text-xs uppercase tracking-widest text-gold/80 font-semibold">
               {lang === "de" ? "Verkauf & Reparatur" : "We Sell & Repair"}
             </span>
-            {deviceBrands.map((brand) => (
-              <div key={brand.name} className="group flex items-center gap-2 transition hover:scale-105">
-                <span className="font-display text-lg font-bold tracking-tight text-muted/60 transition-colors group-hover:text-gold">
-                  {brand.name}
-                </span>
-              </div>
-            ))}
+            <ul className="flex flex-wrap items-center justify-center gap-8 md:gap-12" role="list">
+              {deviceBrands.map((brand) => (
+                <li key={brand.name} className="group flex items-center gap-2 transition hover:scale-105">
+                  <span className="font-display text-lg font-bold tracking-tight text-muted/60 transition-colors group-hover:text-gold flex items-center gap-2">
+                    <span aria-hidden="true" className="text-base opacity-70 transition-opacity group-hover:opacity-100 filter grayscale group-hover:grayscale-0">{brand.icon}</span>
+                    {brand.name}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
