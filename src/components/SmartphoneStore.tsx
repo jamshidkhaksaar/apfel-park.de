@@ -42,10 +42,16 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
         </div>
 
         {brands.length > 1 && (
-          <div className="mb-8 flex flex-wrap gap-2">
+          <div
+            className="mb-8 flex flex-wrap gap-2"
+            role="radiogroup"
+            aria-label={lang === "de" ? "Nach Marke filtern" : "Filter by brand"}
+          >
             {brands.map((brand) => (
               <button
                 key={brand}
+                role="radio"
+                aria-checked={activeBrand === brand}
                 onClick={() => setActiveBrand(brand)}
                 className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                   activeBrand === brand
