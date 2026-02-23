@@ -1,4 +1,11 @@
-import { escapeHtml, isSecureSvg, validateImageFileExtension } from "../src/lib/security";
+import {
+  escapeHtml,
+  isSecureSvg,
+  validateImageFileExtension,
+  isValidEmail,
+  isValidInputLength,
+  sanitizeInput
+} from "../src/lib/security";
 
 console.log("Running security verification...");
 
@@ -87,6 +94,87 @@ fileCases.forEach(({ name, type, expected }, index) => {
     failed = true;
   } else {
     console.log(`✅ File case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting isValidEmail...");
+const emailCases = [
+  { input: "user@example.com", expected: true },
+  { input: "user.name@example.co.uk", expected: true },
+  { input: "user+tag@example.com", expected: true },
+  { input: "invalid-email", expected: false },
+  { input: "user@domain", expected: false },
+  { input: "@example.com", expected: false },
+  { input: "user@", expected: false },
+  { input: "user@.com", expected: false },
+  { input: "user@example.", expected: false },
+  // Max length check (255 chars is > 254)
+  { input: "a".repeat(255) + "@example.com", expected: false },
+  // Length 254 should pass if format is valid (simplified check, but practically strict enough)
+  { input: "a".repeat(240) + "@example.com", expected: true },
+  { input: "a@b.c", expected: true },
+];
+
+emailCases.forEach(({ input, expected }, index) => {
+  const result = isValidEmail(input);
+  if (result !== expected) {
+    console.error(`❌ Email case ${index + 1} failed:`);
+    console.error(`   Input:    ${input.length > 50 ? input.substring(0, 50) + "..." : input}`);
+    console.error(`   Expected: ${expected}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ Email case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting isValidInputLength...");
+const lengthCases = [
+  { input: "test", max: 10, expected: true },
+  { input: "test", max: 4, expected: true },
+  { input: "test", max: 3, expected: false },
+  { input: "", max: 0, expected: true }, // Empty string is length 0
+  { input: null, max: 10, expected: true }, // Null input treated as valid (not too long)
+];
+
+lengthCases.forEach(({ input, max, expected }, index) => {
+  // @ts-expect-error Testing invalid inputs
+  const result = isValidInputLength(input, max);
+  if (result !== expected) {
+    console.error(`❌ Length case ${index + 1} failed:`);
+    console.error(`   Input:    ${input}`);
+    console.error(`   Max:      ${max}`);
+    console.error(`   Expected: ${expected}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ Length case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting sanitizeInput...");
+const sanitizeCases = [
+  { input: "  test  ", expected: "test" },
+  { input: "\t test \n", expected: "test" },
+  { input: "test", expected: "test" },
+  { input: "", expected: "" },
+  { input: null, expected: "" },
+  // Non-string cases
+  { input: 123, expected: "" },
+  { input: true, expected: "" },
+  { input: {}, expected: "" },
+];
+
+sanitizeCases.forEach(({ input, expected }, index) => {
+  const result = sanitizeInput(input);
+  if (result !== expected) {
+    console.error(`❌ Sanitize case ${index + 1} failed:`);
+    console.error(`   Input:    ${input}`);
+    console.error(`   Expected: '${expected}'`);
+    console.error(`   Actual:   '${result}'`);
+    failed = true;
+  } else {
+    console.log(`✅ Sanitize case ${index + 1} passed`);
   }
 });
 

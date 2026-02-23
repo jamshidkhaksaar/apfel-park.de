@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { sendContactNotificationEmail } from "@/lib/email";
 import { verifyReCaptcha } from "@/lib/recaptcha";
+import { isValidEmail, isValidInputLength, sanitizeInput } from "@/lib/security";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type ContactFormData = {
@@ -15,27 +16,42 @@ type ContactFormData = {
 
 export async function POST(request: NextRequest) {
   try {
-    const data: ContactFormData = await request.json();
+    const payload: ContactFormData = await request.json();
+
+    // Sanitize inputs
+    const name = sanitizeInput(payload.name);
+    const email = sanitizeInput(payload.email);
+    const device = payload.device ? sanitizeInput(payload.device) : undefined;
+    const message = sanitizeInput(payload.message);
 
     // Validate required fields
-    if (!data.name || !data.email || !data.message) {
+    if (!name || !email || !message) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
+    // Validate email format and length
+    if (!isValidEmail(email)) {
       return NextResponse.json(
         { success: false, error: "Invalid email format" },
         { status: 400 }
       );
     }
 
+    // Validate input lengths (prevention of DoS/Storage spam)
+    if (!isValidInputLength(name, 100) ||
+        !isValidInputLength(device || "", 100) ||
+        !isValidInputLength(message, 5000)) {
+      return NextResponse.json(
+        { success: false, error: "Input too long" },
+        { status: 400 }
+      );
+    }
+
     // Verify reCAPTCHA token
-    const captchaResult = await verifyReCaptcha(data.recaptchaToken, "contact_form");
+    const captchaResult = await verifyReCaptcha(payload.recaptchaToken, "contact_form");
     if (!captchaResult.success) {
       console.error("[Contact API] reCAPTCHA verification failed:", captchaResult.error);
       return NextResponse.json(
@@ -49,11 +65,11 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient();
 
     const { error: dbError } = await supabase.from("contact_submissions").insert({
-      name: data.name,
-      email: data.email,
-      device: data.device || null,
-      message: data.message,
-      locale: data.locale || "en",
+      name,
+      email,
+      device: device || null,
+      message,
+      locale: payload.locale || "en",
       recaptcha_score: captchaResult.score,
       status: "new",
       created_at: new Date().toISOString(),
@@ -69,11 +85,11 @@ export async function POST(request: NextRequest) {
     }
 
     const emailResult = await sendContactNotificationEmail({
-      name: data.name,
-      email: data.email,
-      device: data.device,
-      message: data.message,
-      locale: data.locale,
+      name,
+      email,
+      device,
+      message,
+      locale: payload.locale,
     });
 
     if (!emailResult.success) {
@@ -82,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: data.locale === "de" 
+      message: payload.locale === "de"
         ? "Nachricht erfolgreich gesendet!" 
         : "Message sent successfully!",
     });

@@ -57,3 +57,32 @@ export const validateImageFileExtension = (file: File): boolean => {
 
   return extensions.some(ext => name.endsWith(ext));
 };
+
+/**
+ * Validates email format and length.
+ * Enforces a reasonable length limit (254 chars) and standard format.
+ */
+export const isValidEmail = (email: string): boolean => {
+  if (!email || email.length > 254) return false;
+
+  // Standard email regex that doesn't allow spaces and requires domain part
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+/**
+ * Validates input length to prevent DoS via massive payloads.
+ */
+export const isValidInputLength = (input: string, maxLength: number): boolean => {
+  if (!input) return true; // Empty input is valid for length check (validation logic handles required fields)
+  return input.length <= maxLength;
+};
+
+/**
+ * Sanitizes input by trimming whitespace.
+ * Handles non-string inputs by returning empty string.
+ */
+export const sanitizeInput = (input: unknown): string => {
+  if (typeof input !== "string") return "";
+  return input.trim();
+};
