@@ -15,6 +15,7 @@ export const adminDictionary = {
       backToSite: "Zuruck zur Website",
       logout: "Abmelden",
       authenticated: "Angemeldet",
+      language: "Sprache",
     },
     dashboard: {
       title: "Dashboard",
@@ -281,6 +282,7 @@ export const adminDictionary = {
       backToSite: "Back to Website",
       logout: "Logout",
       authenticated: "Authenticated",
+      language: "Language",
     },
     dashboard: {
       title: "Dashboard",

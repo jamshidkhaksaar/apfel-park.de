@@ -113,11 +113,17 @@ export default function AdminShell({
             </div>
             
             {/* Language Toggle */}
-            <div className="mt-6 flex rounded-lg border border-border/60 bg-surface-strong/50 p-1">
+            <div
+              className="mt-6 flex rounded-lg border border-border/60 bg-surface-strong/50 p-1"
+              role="radiogroup"
+              aria-label={dict.sidebar.language}
+            >
               <button
+                type="button"
+                role="radio"
                 onClick={() => handleLangChange("de")}
-                aria-pressed={lang === "de"}
-                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
+                aria-checked={lang === "de"}
+                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition focus-visible:ring-2 focus-visible:ring-gold focus-visible:outline-none ${
                   lang === "de"
                     ? "bg-white/10 text-gold"
                     : "text-muted hover:text-foreground"
@@ -126,9 +132,11 @@ export default function AdminShell({
                 DE
               </button>
               <button
+                type="button"
+                role="radio"
                 onClick={() => handleLangChange("en")}
-                aria-pressed={lang === "en"}
-                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
+                aria-checked={lang === "en"}
+                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition focus-visible:ring-2 focus-visible:ring-gold focus-visible:outline-none ${
                   lang === "en"
                     ? "bg-white/10 text-gold"
                     : "text-muted hover:text-foreground"
@@ -154,6 +162,7 @@ export default function AdminShell({
                       ? "bg-gold/10 text-gold"
                       : "hover:bg-surface-strong/70 hover:text-foreground"
                   }`}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   <NavIcon type={item.icon} />
                   {item.label}
