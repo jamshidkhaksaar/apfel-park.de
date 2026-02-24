@@ -21,6 +21,14 @@ type DbProduct = {
   images: string[] | null;
 };
 
+// Map high-level categories to database string variations for querying
+const dbCategories: Record<Product["category"], string[]> = {
+  smartphones: ["smartphone", "smartphones"],
+  accessories: ["accessory", "accessories"],
+  consoles: ["console", "consoles", "gaming"],
+  laptops: ["laptop", "laptops"],
+};
+
 const normalizeCategory = (category: string): Product["category"] | null => {
   const value = category.toLowerCase().trim();
   if (value === "smartphone" || value === "smartphones") return "smartphones";
@@ -56,10 +64,10 @@ const mapProduct = (row: DbProduct): Product | null => {
 /**
  * Fetches products from the database.
  *
- * Note: If both `category` and `limit` are provided, the limit is applied to the initial query
- * BEFORE category filtering (which happens in-memory due to normalization).
- * This means you might get fewer than `limit` items of a specific category.
- * Currently, `limit` is only used by `getFeaturedProducts` where category is undefined.
+ * Performance optimization:
+ * - If `category` is provided, we filter at the database level using `.or()` with all valid variations.
+ * - This reduces data transfer and server processing compared to fetching all items and filtering in JS.
+ * - `limit` is applied after the category filter, ensuring we get the correct number of items for that category.
  */
 export async function getProducts(category?: Product["category"], limit?: number): Promise<Product[]> {
   const { createClient } = await import("./supabase/server");
@@ -70,6 +78,13 @@ export async function getProducts(category?: Product["category"], limit?: number
     .select("id,title,description,price,category,brand,stock,images")
     .eq("is_active", true)
     .order("created_at", { ascending: false });
+
+  if (category) {
+    // Filter by category at the database level using known variations
+    // This uses ILIKE for case-insensitive matching, mirroring the logic in normalizeCategory
+    const filters = dbCategories[category].map((c) => `category.ilike.${c}`).join(",");
+    query = query.or(filters);
+  }
 
   if (limit) {
     query = query.limit(limit);
@@ -83,6 +98,9 @@ export async function getProducts(category?: Product["category"], limit?: number
     .map(mapProduct)
     .filter((item): item is Product => item !== null);
 
+  // If we filtered by category in the DB, this JS filter is redundant but safe.
+  // It handles any edge cases where DB ILIKE might match something normalizeCategory rejects
+  // (though with the current mapping they should be identical).
   if (!category) return products;
   return products.filter((product) => product.category === category);
 }
