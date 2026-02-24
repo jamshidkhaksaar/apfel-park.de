@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-02-14 - Superseded Performance Optimization
+**Learning:** Performance optimizations, especially popular ones like throttling scroll handlers, are common targets. It's possible to submit a PR for an optimization that is already merged or superseded by another PR concurrently.
+**Action:** Before implementing common optimizations, check recent commits and PRs to avoid duplicate work. Acknowledging superseded PRs promptly is part of good collaboration.
