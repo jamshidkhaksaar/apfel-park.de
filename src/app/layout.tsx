@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { cookies } from "next/headers";
 
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,10 +15,11 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const interDisplay = Inter({
+const voiganteDisplay = localFont({
+  src: "../../public/fonts/VoiganteDisplay.ttf",
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -92,7 +94,7 @@ export default async function RootLayout({
         <link rel="shortcut icon" href={faviconHref} />
       </head>
       <body
-        className={`${inter.variable} ${interDisplay.variable} bg-background font-sans text-foreground antialiased`}
+        className={`${inter.variable} ${voiganteDisplay.variable} bg-background font-sans text-foreground antialiased`}
       >
         <ThemeProvider initialTheme={theme}>
           <LanguageTransitionProvider>
