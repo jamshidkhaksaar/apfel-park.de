@@ -37,6 +37,13 @@ const fallbackImageByCategory: Record<Product["category"], string> = {
   laptops: "/images/slider_images/laptop.png",
 };
 
+const categoryFilters: Record<Product["category"], string> = {
+  smartphones: "category.ilike.smartphone,category.ilike.smartphones",
+  accessories: "category.ilike.accessory,category.ilike.accessories",
+  consoles: "category.ilike.console,category.ilike.consoles,category.ilike.gaming",
+  laptops: "category.ilike.laptop,category.ilike.laptops",
+};
+
 const mapProduct = (row: DbProduct): Product | null => {
   const category = normalizeCategory(row.category);
   if (!category) return null;
@@ -56,10 +63,8 @@ const mapProduct = (row: DbProduct): Product | null => {
 /**
  * Fetches products from the database.
  *
- * Note: If both `category` and `limit` are provided, the limit is applied to the initial query
- * BEFORE category filtering (which happens in-memory due to normalization).
- * This means you might get fewer than `limit` items of a specific category.
- * Currently, `limit` is only used by `getFeaturedProducts` where category is undefined.
+ * If `category` is provided, filtering is applied in the database query to reduce payload size.
+ * A final in-memory filter still runs after normalization for safety.
  */
 export async function getProducts(category?: Product["category"], limit?: number): Promise<Product[]> {
   const { createClient } = await import("./supabase/server");
@@ -70,6 +75,11 @@ export async function getProducts(category?: Product["category"], limit?: number
     .select("id,title,description,price,category,brand,stock,images")
     .eq("is_active", true)
     .order("created_at", { ascending: false });
+
+  if (category) {
+    const filter = categoryFilters[category];
+    query = query.or(filter);
+  }
 
   if (limit) {
     query = query.limit(limit);

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { isAdminUser } from "@/lib/admin-auth";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { isSafeRedirect } from "@/lib/security";
 import { redirect } from "next/navigation";
@@ -33,6 +34,15 @@ export async function loginAction(_prevState: LoginActionState | null, formData:
   if (error) {
     // Return generic error to prevent enumeration
     return { error: "Invalid email or password" };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!isAdminUser(user)) {
+    await supabase.auth.signOut();
+    return { error: "Access denied" };
   }
 
   redirect(isSafeRedirect(redirectTo) ? redirectTo : "/admin");

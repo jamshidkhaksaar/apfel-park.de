@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import { getAdminDictionary, getAdminNumberLocale } from "@/lib/admin-i18n-server";
 import type { AdminDictionary } from "@/lib/admin-i18n";
 import AdminShell from "../../../components/admin/AdminShell";
@@ -54,9 +55,12 @@ export default async function OrdersPage() {
               {dict.ordersPage.heading}
             </h2>
           </div>
-          <button className="rounded-full border border-border/60 px-6 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-muted">
+          <Link
+            href="/api/admin/orders/export"
+            className="rounded-full border border-border/60 px-6 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-muted"
+          >
             {dict.ordersPage.export}
-          </button>
+          </Link>
         </div>
         <div className="mt-6 overflow-hidden rounded-xl border border-border/60">
           <table className="w-full text-left text-sm">
@@ -78,10 +82,17 @@ export default async function OrdersPage() {
                     <td className="px-4 py-3 text-muted">{order.customer_name ?? "-"}</td>
                     <td className="px-4 py-3 text-muted">{formatStatus(order.status, dict)}</td>
                     <td className="px-4 py-3 text-muted">
-                      {new Intl.NumberFormat(numberLocale, {
-                        style: "currency",
-                        currency: "EUR",
-                      }).format(Number(order.total_amount))}
+                      {(() => {
+                        const amount = Number(order.total_amount);
+                        if (!Number.isFinite(amount)) {
+                          return "-";
+                        }
+
+                        return new Intl.NumberFormat(numberLocale, {
+                          style: "currency",
+                          currency: "EUR",
+                        }).format(amount);
+                      })()}
                     </td>
                   </tr>
                 ))

@@ -1,6 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
+import { isAdminUser } from "@/lib/admin-auth";
+
+const isMaintenanceEnabled = async (
+  supabase: ReturnType<typeof createServerClient>,
+): Promise<boolean> => {
+  const { data } = await supabase
+    .from("store_settings")
+    .select("value")
+    .eq("key", "maintenance")
+    .maybeSingle();
+
+  const value = (data?.value as { enabled?: boolean } | null) ?? null;
+  return Boolean(value?.enabled);
+};
+
 export const updateSession = async (request: NextRequest) => {
   let supabaseResponse = NextResponse.next({
     request,
@@ -34,6 +49,8 @@ export const updateSession = async (request: NextRequest) => {
   let user = null;
   const isProtected = request.nextUrl.pathname.startsWith("/admin");
   const isLogin = request.nextUrl.pathname === "/login";
+  const isMaintenancePage = request.nextUrl.pathname === "/maintenance";
+  const isApi = request.nextUrl.pathname.startsWith("/api");
 
   if (isProtected || isLogin) {
     const {
@@ -48,6 +65,22 @@ export const updateSession = async (request: NextRequest) => {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirectTo", request.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
+
+    if (!isAdminUser(user)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "forbidden");
+      return NextResponse.redirect(url);
+    }
+  }
+
+  if (!isProtected && !isLogin && !isMaintenancePage && !isApi) {
+    const maintenanceEnabled = await isMaintenanceEnabled(supabase);
+    if (maintenanceEnabled) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/maintenance";
       return NextResponse.redirect(url);
     }
   }

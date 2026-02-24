@@ -12,25 +12,6 @@ export default async function SettingsPage() {
   const dict = await getAdminDictionary();
   const locale = await getAdminLocale();
 
-  const { data: recaptchaRow } = await admin
-    .from("store_settings")
-    .select("key")
-    .eq("key", "recaptcha")
-    .limit(1);
-
-  if (!recaptchaRow || recaptchaRow.length === 0) {
-    await admin.from("store_settings").insert({
-      key: "recaptcha",
-      value: {
-        enabled: false,
-        siteKey: "",
-        secretKey: "",
-        minScore: 0.5,
-      },
-      updated_at: new Date().toISOString(),
-    });
-  }
-
   // Fetch all settings
   const { data: settingsData } = await admin.from("store_settings").select("*");
 

@@ -228,8 +228,11 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
                 min="0"
                 max="1"
                 step="0.1"
-                value={settings.recaptcha?.minScore || 0.5}
-                onChange={(e) => handleChange("recaptcha", "minScore", parseFloat(e.target.value) || 0.5)}
+                value={settings.recaptcha?.minScore ?? 0.5}
+                onChange={(e) => {
+                  const nextValue = Number.parseFloat(e.target.value);
+                  handleChange("recaptcha", "minScore", Number.isNaN(nextValue) ? 0.5 : nextValue);
+                }}
                 className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
               />
               <p className="text-xs text-muted/60">{dict.settingsForm.minScoreHint}</p>

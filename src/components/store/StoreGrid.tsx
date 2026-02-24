@@ -41,13 +41,15 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
       <aside className="w-full shrink-0 space-y-8 lg:w-64">
         {/* Categories */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-white">
+          <h3 id="store-categories-heading" className="mb-4 text-sm font-bold uppercase tracking-wider text-white">
             {lang === "de" ? "Kategorien" : "Categories"}
           </h3>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby="store-categories-heading">
             {categories.map((cat) => (
               <button
                 key={cat}
+                role="radio"
+                aria-checked={activeCategory === cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all
                   ${activeCategory === cat 
@@ -97,6 +99,7 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
+            aria-label={lang === "de" ? "Sortieren nach" : "Sort by"}
             className="rounded-lg border border-white/10 bg-black px-3 py-1.5 text-sm text-white focus:border-gold focus:outline-none"
           >
             <option value="featured">{lang === "de" ? "Empfohlen" : "Featured"}</option>
@@ -128,11 +131,15 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
 
                 {/* Quick Action Overlay */}
                 <div className="absolute bottom-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                  <button className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-foreground shadow-lg transition hover:scale-110 hover:bg-gold">
+                  <Link
+                    href={`/${lang}/contact?device=${encodeURIComponent(product.title)}`}
+                    aria-label={lang === "de" ? `Anfragen: ${product.title}` : `Inquire about ${product.title}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-foreground shadow-lg transition hover:scale-110 hover:bg-gold"
+                  >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                  </button>
+                  </Link>
                 </div>
               </div>
 
@@ -149,9 +156,13 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
                   <span className="text-base font-semibold text-foreground">
                     {product.price.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
                   </span>
-                  <button className="text-[9px] font-bold uppercase tracking-wider text-muted-strong hover:text-gold transition-colors">
+                  <Link
+                    href={`/${lang}/contact?device=${encodeURIComponent(product.title)}`}
+                    aria-label={lang === "de" ? `Details zu ${product.title}` : `Details for ${product.title}`}
+                    className="text-[9px] font-bold uppercase tracking-wider text-muted-strong transition-colors hover:text-gold"
+                  >
                     {lang === "de" ? "Details" : "Details"} →
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

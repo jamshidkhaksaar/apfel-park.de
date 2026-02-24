@@ -1,6 +1,7 @@
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 
+import { isAdminUser } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!isAdminUser(user)) {
     return NextResponse.json({ error: messages.unauthorized }, { status: 401 });
   }
 
@@ -211,10 +212,14 @@ export async function POST(request: NextRequest) {
       );
 
       if (saveSettingsError) {
-        console.error("Failed to save branding asset settings:", saveSettingsError);
+        return NextResponse.json(
+          { error: saveSettingsError.message || messages.saveError },
+          { status: 500 },
+        );
       }
     } catch (error) {
-      console.error("Failed to persist branding asset settings:", error);
+      const detail = error instanceof Error ? error.message : messages.saveError;
+      return NextResponse.json({ error: `${messages.saveError} (${detail})` }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -234,6 +239,15 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!isAdminUser(user)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const admin = createAdminClient();
     const { data } = await admin

@@ -28,7 +28,7 @@
 **Learning:** Even internal notification emails are an attack vector if they render user input as HTML. Template literals are not safe for HTML generation with untrusted input.
 **Prevention:** Introduced `escapeHtml` utility in `src/lib/security.ts` and enforced its usage for all user-controlled variables (including those that seem "safe" like dynamic subjects) in email templates.
 
-## 2026-03-01 - Missing Input Validation on Contact Form
-**Vulnerability:** The contact form API endpoint accepted unbounded string inputs, potentially allowing Denial of Service (DoS) attacks or database bloat via massive payloads.
-**Learning:** Framework-level body parsing limits (e.g., Next.js 4MB default) are insufficient for application-level logic; specific fields must have length constraints.
-**Prevention:** Implemented `isValidInputLength` and strict `isValidEmail` utilities in `src/lib/security.ts` and applied them to all contact form inputs.
+## 2026-03-03 - DoS via Unvalidated Input
+**Vulnerability:** The Contact API (`/api/contact`) accepted arbitrary-length strings for `name` and `message` without sanitization, exposing the database and application to potential Denial of Service (DoS) or storage exhaustion.
+**Learning:** `request.json()` can return any JSON type (including massive strings or non-string primitives), bypassing naive type assumptions in validation logic.
+**Prevention:** Implemented strict input length validation (`isValidInputLength`) and type-safe sanitization (`sanitizeInput` handling non-string inputs) for all public API endpoints.

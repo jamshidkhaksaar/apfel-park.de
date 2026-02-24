@@ -34,35 +34,6 @@ export const isSafeRedirect = (value: string | null | undefined): boolean => {
 };
 
 /**
- * Validates email format and length.
- */
-export const isValidEmail = (email: string): boolean => {
-  if (!email || email.length > 254) return false;
-  // Standard email regex for web applications
-  // Enforces at least one dot in domain and 2+ char TLD
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return emailRegex.test(email);
-};
-
-/**
- * Validates that the input is a string and does not exceed the maximum length.
- */
-export const isValidInputLength = (input: unknown, maxLength: number): boolean => {
-  if (typeof input !== "string") return false;
-  return input.length <= maxLength;
-};
-
-/**
- * Sanitizes input string by trimming whitespace and removing null bytes.
- * Returns empty string if input is not a string.
- */
-export const sanitizeInput = (input: unknown): string => {
-  if (typeof input !== "string") return "";
-  // Remove null bytes and trim
-  return input.replace(/\0/g, "").trim();
-};
-
-/**
  * Validates that the file extension matches the MIME type.
  * This prevents extension spoofing (e.g. uploading .html as image/png).
  */
@@ -85,4 +56,33 @@ export const validateImageFileExtension = (file: File): boolean => {
   if (!extensions) return false;
 
   return extensions.some(ext => name.endsWith(ext));
+};
+
+/**
+ * Validates email format and length.
+ * Enforces a reasonable length limit (254 chars) and standard format.
+ */
+export const isValidEmail = (email: string): boolean => {
+  if (!email || email.length > 254) return false;
+
+  // Standard email regex that doesn't allow spaces and requires domain part
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+/**
+ * Validates input length to prevent DoS via massive payloads.
+ */
+export const isValidInputLength = (input: string, maxLength: number): boolean => {
+  if (!input) return true; // Empty input is valid for length check (validation logic handles required fields)
+  return input.length <= maxLength;
+};
+
+/**
+ * Sanitizes input by trimming whitespace.
+ * Handles non-string inputs by returning empty string.
+ */
+export const sanitizeInput = (input: unknown): string => {
+  if (typeof input !== "string") return "";
+  return input.trim();
 };

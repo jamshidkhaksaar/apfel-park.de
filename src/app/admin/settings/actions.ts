@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminUser } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminLocale } from "@/lib/admin-i18n";
 
@@ -44,7 +45,7 @@ export const saveSettings = async (
       error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
+    if (authError || !isAdminUser(user)) {
       return { success: false, message: isEnglish ? "Unauthorized" : "Nicht autorisiert" };
     }
 
