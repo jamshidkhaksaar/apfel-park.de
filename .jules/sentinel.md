@@ -27,3 +27,8 @@
 **Vulnerability:** User-submitted contact form data was interpolated directly into the HTML body of notification emails, allowing attackers to inject malicious HTML/scripts (Reflected XSS in email clients).
 **Learning:** Even internal notification emails are an attack vector if they render user input as HTML. Template literals are not safe for HTML generation with untrusted input.
 **Prevention:** Introduced `escapeHtml` utility in `src/lib/security.ts` and enforced its usage for all user-controlled variables (including those that seem "safe" like dynamic subjects) in email templates.
+
+## 2026-03-03 - DoS via Unvalidated Input
+**Vulnerability:** The Contact API (`/api/contact`) accepted arbitrary-length strings for `name` and `message` without sanitization, exposing the database and application to potential Denial of Service (DoS) or storage exhaustion.
+**Learning:** `request.json()` can return any JSON type (including massive strings or non-string primitives), bypassing naive type assumptions in validation logic.
+**Prevention:** Implemented strict input length validation (`isValidInputLength`) and type-safe sanitization (`sanitizeInput` handling non-string inputs) for all public API endpoints.
