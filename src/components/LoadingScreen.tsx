@@ -46,7 +46,7 @@ export default function LoadingScreen({
           {/* Logo with flip animation */}
           <div className="loading-logo-flipper">
             <div className="loading-logo">
-              <Logo size="xl" priority />
+              <Logo size="xl" className="h-[140px] w-[140px]" priority />
             </div>
           </div>
         </div>
