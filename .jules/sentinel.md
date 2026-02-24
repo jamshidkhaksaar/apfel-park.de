@@ -32,3 +32,8 @@
 **Vulnerability:** The Contact API (`/api/contact`) accepted arbitrary-length strings for `name` and `message` without sanitization, exposing the database and application to potential Denial of Service (DoS) or storage exhaustion.
 **Learning:** `request.json()` can return any JSON type (including massive strings or non-string primitives), bypassing naive type assumptions in validation logic.
 **Prevention:** Implemented strict input length validation (`isValidInputLength`) and type-safe sanitization (`sanitizeInput` handling non-string inputs) for all public API endpoints.
+
+## 2026-03-05 - Stored XSS via JSON-LD Injection
+**Vulnerability:** The `HomePage` component injected `JSON.stringify(jsonLd)` directly into a `<script type="application/ld+json">` tag using `dangerouslySetInnerHTML`. Malicious product data containing `</script>` could close the tag prematurely and execute arbitrary JavaScript.
+**Learning:** `JSON.stringify` does not escape HTML characters by default, making it unsafe for direct embedding in HTML script contexts even if the JSON structure itself is valid.
+**Prevention:** Use a dedicated serializer (like `safeJsonStringify`) that escapes `<` and `>` to unicode sequences (`\u003c`, `\u003e`) when embedding JSON in HTML.

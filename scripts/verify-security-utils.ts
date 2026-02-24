@@ -4,7 +4,8 @@ import {
   validateImageFileExtension,
   isValidEmail,
   isValidInputLength,
-  sanitizeInput
+  sanitizeInput,
+  safeJsonStringify
 } from "../src/lib/security";
 
 console.log("Running security verification...");
@@ -175,6 +176,39 @@ sanitizeCases.forEach(({ input, expected }, index) => {
     failed = true;
   } else {
     console.log(`✅ Sanitize case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting safeJsonStringify...");
+const jsonCases = [
+  {
+    input: { key: "<script>alert(1)</script>" },
+    expected: '{"key":"\\u003cscript\\u003ealert(1)\\u003c/script\\u003e"}'
+  },
+  {
+    input: { key: "foo\u2028bar" },
+    expected: '{"key":"foo\\u2028bar"}'
+  },
+  {
+    input: { key: "foo\u2029bar" },
+    expected: '{"key":"foo\\u2029bar"}'
+  },
+  {
+    input: { key: "normal text" },
+    expected: '{"key":"normal text"}'
+  }
+];
+
+jsonCases.forEach(({ input, expected }, index) => {
+  const result = safeJsonStringify(input);
+  if (result !== expected) {
+    console.error(`❌ JSON case ${index + 1} failed:`);
+    console.error(`   Input:    ${JSON.stringify(input)}`);
+    console.error(`   Expected: ${expected}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ JSON case ${index + 1} passed`);
   }
 });
 

@@ -86,3 +86,19 @@ export const sanitizeInput = (input: unknown): string => {
   if (typeof input !== "string") return "";
   return input.trim();
 };
+
+/**
+ * Safely serializes JSON for embedding in HTML <script> tags.
+ * Escapes characters that can break out of the script tag context (<, >, U+2028, U+2029).
+ */
+export const safeJsonStringify = (value: unknown): string => {
+  return JSON.stringify(value).replace(/[<>\u2028\u2029]/g, (char) => {
+    switch (char) {
+      case "<": return "\\u003c";
+      case ">": return "\\u003e";
+      case "\u2028": return "\\u2028";
+      case "\u2029": return "\\u2029";
+      default: return char;
+    }
+  });
+};
