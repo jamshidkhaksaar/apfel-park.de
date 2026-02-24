@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { siteInfo } from "../lib/site";
 
 type WhatsAppFloatProps = {
@@ -12,7 +12,7 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
-  const tooltipId = useId();
+  const tooltipId = `whatsapp-tooltip-${lang}`;
 
   // Show button after a short delay for better UX
   useEffect(() => {
