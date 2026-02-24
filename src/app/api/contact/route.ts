@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendContactNotificationEmail } from "@/lib/email";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isValidEmail } from "@/lib/security";
-import { locales, type Locale } from "@/lib/i18n";
 
 type ContactFormData = {
   name: string;
@@ -14,10 +12,6 @@ type ContactFormData = {
   recaptchaToken: string;
   locale: string;
 };
-
-const MAX_NAME_LENGTH = 100;
-const MAX_DEVICE_LENGTH = 100;
-const MAX_MESSAGE_LENGTH = 5000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,40 +25,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Security: Validate input lengths to prevent DoS/Storage exhaustion
-    if (data.name.length > MAX_NAME_LENGTH) {
-      return NextResponse.json(
-        { success: false, error: "Name exceeds maximum length" },
-        { status: 400 }
-      );
-    }
-
-    if (data.device && data.device.length > MAX_DEVICE_LENGTH) {
-      return NextResponse.json(
-        { success: false, error: "Device name exceeds maximum length" },
-        { status: 400 }
-      );
-    }
-
-    if (data.message.length > MAX_MESSAGE_LENGTH) {
-      return NextResponse.json(
-        { success: false, error: "Message exceeds maximum length" },
-        { status: 400 }
-      );
-    }
-
-    // Security: Validate email format strictly
-    if (!isValidEmail(data.email)) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
       return NextResponse.json(
         { success: false, error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
-    // Security: Validate locale to prevent injection of invalid values
-    if (data.locale && !locales.includes(data.locale as Locale)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid locale" },
         { status: 400 }
       );
     }
