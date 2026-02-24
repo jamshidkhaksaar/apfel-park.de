@@ -145,6 +145,7 @@ export default function AdminShell({
                 item.path === "/admin"
                   ? pathname === item.path
                   : pathname === item.path || pathname.startsWith(`${item.path}/`);
+              const isExactMatch = pathname === item.path;
               return (
                 <Link
                   key={item.path}
@@ -154,6 +155,7 @@ export default function AdminShell({
                       ? "bg-gold/10 text-gold"
                       : "hover:bg-surface-strong/70 hover:text-foreground"
                   }`}
+                  aria-current={isExactMatch ? "page" : undefined}
                 >
                   <NavIcon type={item.icon} />
                   {item.label}

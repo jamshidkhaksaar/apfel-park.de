@@ -25,7 +25,7 @@ const normalizeCategory = (category: string): Product["category"] | null => {
   const value = category.toLowerCase().trim();
   if (value === "smartphone" || value === "smartphones") return "smartphones";
   if (value === "accessory" || value === "accessories") return "accessories";
-  if (value === "console" || value === "consoles" || value === "gaming") return "consoles";
+  if (value === "console" || value === "consoles" || value === "gaming" || value === "game") return "consoles";
   if (value === "laptop" || value === "laptops") return "laptops";
   return null;
 };
@@ -38,10 +38,10 @@ const fallbackImageByCategory: Record<Product["category"], string> = {
 };
 
 const categoryFilters: Record<Product["category"], string> = {
-  smartphones: "category.ilike.smartphone,category.ilike.smartphones",
-  accessories: "category.ilike.accessory,category.ilike.accessories",
-  consoles: "category.ilike.console,category.ilike.consoles,category.ilike.gaming",
-  laptops: "category.ilike.laptop,category.ilike.laptops",
+  smartphones: "category.ilike.*smartphone*,category.ilike.*smartphones*",
+  accessories: "category.ilike.*accessory*,category.ilike.*accessories*",
+  consoles: "category.ilike.*console*,category.ilike.*consoles*,category.ilike.*gaming*,category.ilike.*game*",
+  laptops: "category.ilike.*laptop*,category.ilike.*laptops*",
 };
 
 const mapProduct = (row: DbProduct): Product | null => {

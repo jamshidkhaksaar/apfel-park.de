@@ -9,6 +9,7 @@ import HeroSlider from "../../../components/HeroSlider";
 import FeaturedStore from "../../../components/FeaturedStore";
 import TestimonialsCarousel from "../../../components/TestimonialsCarousel";
 import { getFeaturedProducts } from "../../../lib/products";
+import { safeJsonStringify } from "../../../lib/security";
 import AnimatedSection from "../../../components/AnimatedSection";
 
 export const generateMetadata = async ({
@@ -96,7 +97,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     <div className="page-surface text-foreground">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonStringify(jsonLd) }}
       />
 
       {/* Hero Slider */}

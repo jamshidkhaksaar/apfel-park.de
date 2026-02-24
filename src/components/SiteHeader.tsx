@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
@@ -20,6 +21,7 @@ export default function SiteHeader({
   navItems,
   labels,
 }: SiteHeaderProps) {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -83,16 +85,31 @@ export default function SiteHeader({
           </div>
           {/* Desktop Navigation */}
           <nav className="hidden h-full flex-1 items-center justify-center gap-0.5 lg:flex">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                href={`/${lang}${item.path}`}
-                className="group relative whitespace-nowrap px-3 py-2 text-sm font-medium text-muted transition hover:text-foreground"
-              >
-                {item.label}
-                <span className="absolute bottom-0 left-1/2 h-0.5 w-0 -translate-x-1/2 bg-gradient-to-r from-gold-soft to-gold-deep transition-all group-hover:w-full" />
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const fullPath = `/${lang}${item.path}`;
+              const isActive = item.path === ""
+                ? pathname === fullPath
+                : pathname === fullPath || pathname.startsWith(`${fullPath}/`);
+              const isExactMatch = pathname === fullPath;
+
+              return (
+                <Link
+                  key={item.path}
+                  href={fullPath}
+                  className={`group relative whitespace-nowrap px-3 py-2 text-sm font-medium transition hover:text-foreground ${
+                    isActive ? "text-foreground" : "text-muted"
+                  }`}
+                  aria-current={isExactMatch ? "page" : undefined}
+                >
+                  {item.label}
+                  <span
+                    className={`absolute bottom-0 left-1/2 h-0.5 -translate-x-1/2 bg-gradient-to-r from-gold-soft to-gold-deep transition-all ${
+                      isActive ? "w-full" : "w-0 group-hover:w-full"
+                    }`}
+                  />
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Actions */}
@@ -158,16 +175,27 @@ export default function SiteHeader({
         }`}
       >
         <nav className="container-page flex flex-col gap-1 py-4">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              href={`/${lang}${item.path}`}
-              onClick={() => setMobileMenuOpen(false)}
-              className="rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-gold/5 hover:text-gold"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const fullPath = `/${lang}${item.path}`;
+            const isActive = item.path === ""
+              ? pathname === fullPath
+              : pathname === fullPath || pathname.startsWith(`${fullPath}/`);
+            const isExactMatch = pathname === fullPath;
+
+            return (
+              <Link
+                key={item.path}
+                href={fullPath}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-gold/5 hover:text-gold ${
+                  isActive ? "bg-gold/5 text-gold" : "text-muted"
+                }`}
+                aria-current={isExactMatch ? "page" : undefined}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
           <div className="mt-4 flex flex-col gap-3 border-t border-white/5 pt-4">
             <Link
               href={`/${lang}/repairs`}
