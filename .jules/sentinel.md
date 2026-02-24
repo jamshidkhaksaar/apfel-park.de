@@ -28,7 +28,7 @@
 **Learning:** Even internal notification emails are an attack vector if they render user input as HTML. Template literals are not safe for HTML generation with untrusted input.
 **Prevention:** Introduced `escapeHtml` utility in `src/lib/security.ts` and enforced its usage for all user-controlled variables (including those that seem "safe" like dynamic subjects) in email templates.
 
-## 2026-03-01 - Missing Input Validation on Public API
+## 2026-03-01 - Missing Input Validation on Public API (SUPERSEDED)
 **Vulnerability:** The `/api/contact` endpoint accepted unlimited input length for `message` and other fields, exposing the database to storage exhaustion (DoS) and potential processing overhead.
 **Learning:** Using `createAdminClient` (Service Role) bypasses RLS, making the API route the *sole* guardian of data integrity. Without explicit validation, no limits are enforced.
-**Prevention:** Implemented strict length limits and type validation in `src/lib/security.ts` (`validateContactForm`) and applied it to the contact route. Always validate input size before processing or storing.
+**Prevention:** Implemented strict length limits and type validation in `src/lib/security.ts` (`validateContactForm`) and applied it to the contact route. Always validate input size before processing or storing. (Note: Fix implementation was superseded by upstream changes).

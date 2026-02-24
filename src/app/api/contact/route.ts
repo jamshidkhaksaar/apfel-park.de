@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendContactNotificationEmail } from "@/lib/email";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { validateContactForm } from "@/lib/security";
 
 type ContactFormData = {
   name: string;
@@ -18,18 +17,20 @@ export async function POST(request: NextRequest) {
   try {
     const data: ContactFormData = await request.json();
 
-    // Validate form data (required fields, format, length limits)
-    const validation = validateContactForm({
-      name: data.name,
-      email: data.email,
-      device: data.device,
-      message: data.message,
-    });
-
-    if (!validation.isValid) {
+    // Validate required fields
+    if (!data.name || !data.email || !data.message) {
       return NextResponse.json(
-        { success: false, error: validation.error },
-        { status: 400 },
+        { success: false, error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid email format" },
+        { status: 400 }
       );
     }
 
