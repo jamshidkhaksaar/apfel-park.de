@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isAdminUser } from "@/lib/admin-auth";
 import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
 import { uploadProductImage } from "@/lib/blob";
 import { createClient } from "@/lib/supabase/server";
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!isAdminUser(user)) {
     return NextResponse.json({ error: messages.unauthorized }, { status: 401 });
   }
 

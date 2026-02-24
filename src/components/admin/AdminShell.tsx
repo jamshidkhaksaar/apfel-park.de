@@ -116,6 +116,7 @@ export default function AdminShell({
             <div className="mt-6 flex rounded-lg border border-border/60 bg-surface-strong/50 p-1">
               <button
                 onClick={() => handleLangChange("de")}
+                aria-pressed={lang === "de"}
                 className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
                   lang === "de"
                     ? "bg-white/10 text-gold"
@@ -126,6 +127,7 @@ export default function AdminShell({
               </button>
               <button
                 onClick={() => handleLangChange("en")}
+                aria-pressed={lang === "en"}
                 className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
                   lang === "en"
                     ? "bg-white/10 text-gold"
@@ -139,7 +141,10 @@ export default function AdminShell({
           
           <nav className="space-y-1 rounded-2xl border border-border/60 bg-surface/70 p-3 text-sm text-muted">
             {navItems.map((item) => {
-              const isActive = pathname === item.path;
+              const isActive =
+                item.path === "/admin"
+                  ? pathname === item.path
+                  : pathname === item.path || pathname.startsWith(`${item.path}/`);
               return (
                 <Link
                   key={item.path}

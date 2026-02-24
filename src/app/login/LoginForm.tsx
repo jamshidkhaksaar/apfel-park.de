@@ -12,6 +12,7 @@ import Logo from "@/components/Logo";
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/admin";
+  const routeError = searchParams.get("error") === "forbidden" ? "Access denied" : null;
   const { token: recaptchaToken, isLoading: recaptchaLoading, error: recaptchaError, ReCaptchaComponent } =
     useReCaptcha("admin_login");
   
@@ -36,9 +37,9 @@ export default function LoginForm() {
             <input type="hidden" name="redirectTo" value={redirectTo} />
             <input type="hidden" name="recaptchaToken" value={recaptchaToken} />
             
-            {state?.error && (
+            {(state?.error || routeError) && (
               <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
-                {state.error}
+                {state?.error ?? routeError}
               </div>
             )}
 
