@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import localFont from "next/font/local";
+import { Inter, Sora } from "next/font/google";
 import { cookies } from "next/headers";
 
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -15,11 +14,10 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const voiganteDisplay = localFont({
-  src: "../../public/fonts/VoiganteDisplay.ttf",
+const soraDisplay = Sora({
   variable: "--font-display",
-  display: "swap",
-  preload: true,
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -94,7 +92,7 @@ export default async function RootLayout({
         <link rel="shortcut icon" href={faviconHref} />
       </head>
       <body
-        className={`${inter.variable} ${voiganteDisplay.variable} bg-background font-sans text-foreground antialiased`}
+        className={`${inter.variable} ${soraDisplay.variable} bg-background font-sans text-foreground antialiased`}
       >
         <ThemeProvider initialTheme={theme}>
           <LanguageTransitionProvider>
