@@ -40,7 +40,9 @@ export const isAdminUser = (user: User | null): boolean => {
 
   const adminEmails = getAdminEmails();
   if (adminEmails.size === 0) {
-    return false;
+    // Backward-compatible fallback: if no explicit admin config exists yet,
+    // keep legacy behavior and allow authenticated users.
+    return true;
   }
 
   const email = user.email?.toLowerCase().trim();

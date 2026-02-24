@@ -51,6 +51,7 @@ export const updateSession = async (request: NextRequest) => {
   const isLogin = request.nextUrl.pathname === "/login";
   const isMaintenancePage = request.nextUrl.pathname === "/maintenance";
   const isApi = request.nextUrl.pathname.startsWith("/api");
+  const enforceMaintenanceMode = process.env.ENABLE_MAINTENANCE_MODE === "true";
 
   if (isProtected || isLogin) {
     const {
@@ -76,7 +77,7 @@ export const updateSession = async (request: NextRequest) => {
     }
   }
 
-  if (!isProtected && !isLogin && !isMaintenancePage && !isApi) {
+  if (enforceMaintenanceMode && !isProtected && !isLogin && !isMaintenancePage && !isApi) {
     const maintenanceEnabled = await isMaintenanceEnabled(supabase);
     if (maintenanceEnabled) {
       const url = request.nextUrl.clone();
