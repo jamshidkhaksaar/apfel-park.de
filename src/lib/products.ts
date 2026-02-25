@@ -1,3 +1,5 @@
+import { createStaticClient } from "./supabase/static";
+
 export type Product = {
   id: string;
   title: string;
@@ -63,12 +65,12 @@ const mapProduct = (row: DbProduct): Product | null => {
 /**
  * Fetches products from the database.
  *
+ * Uses a static Supabase client to enable SSG/ISR by avoiding request-time cookies.
  * If `category` is provided, filtering is applied in the database query to reduce payload size.
  * A final in-memory filter still runs after normalization for safety.
  */
 export async function getProducts(category?: Product["category"], limit?: number): Promise<Product[]> {
-  const { createClient } = await import("./supabase/server");
-  const supabase = await createClient();
+  const supabase = createStaticClient();
 
   let query = supabase
     .from("products")
