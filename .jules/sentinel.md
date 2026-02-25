@@ -32,3 +32,8 @@
 **Vulnerability:** The Contact API (`/api/contact`) accepted arbitrary-length strings for `name` and `message` without sanitization, exposing the database and application to potential Denial of Service (DoS) or storage exhaustion.
 **Learning:** `request.json()` can return any JSON type (including massive strings or non-string primitives), bypassing naive type assumptions in validation logic.
 **Prevention:** Implemented strict input length validation (`isValidInputLength`) and type-safe sanitization (`sanitizeInput` handling non-string inputs) for all public API endpoints.
+
+## 2026-02-25 - Insecure Default Admin Access
+**Vulnerability:** The `isAdminUser` function contained a backward-compatible fallback that allowed ANY authenticated user to gain admin privileges if `ADMIN_EMAILS` environment variable was not set.
+**Learning:** Security-critical configurations should never default to "allow all" for backward compatibility. Insecure defaults are a major source of vulnerabilities.
+**Prevention:** Changed the default behavior to `return false` when configuration is missing. Updated `.env.example` to require explicit admin configuration.

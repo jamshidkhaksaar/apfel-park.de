@@ -40,9 +40,10 @@ export const isAdminUser = (user: User | null): boolean => {
 
   const adminEmails = getAdminEmails();
   if (adminEmails.size === 0) {
-    // Backward-compatible fallback: if no explicit admin config exists yet,
-    // keep legacy behavior and allow authenticated users.
-    return true;
+    // Sentinel Security Fix (2026-02-25):
+    // Removed insecure fallback that allowed ANY authenticated user to be admin if ADMIN_EMAILS was unset.
+    // Admins must now be explicitly configured via ADMIN_EMAILS or have 'admin' role in metadata.
+    return false;
   }
 
   const email = user.email?.toLowerCase().trim();
