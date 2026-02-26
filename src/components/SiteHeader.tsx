@@ -26,11 +26,24 @@ export default function SiteHeader({
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
+
+    // Optimized scroll handler using requestAnimationFrame
+    // This prevents main thread blocking by throttling state updates to the display refresh rate
+    // rather than executing on every single scroll event.
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 12);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 12);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
+    // Initial check
     onScroll();
+
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
