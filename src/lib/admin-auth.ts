@@ -40,9 +40,10 @@ export const isAdminUser = (user: User | null): boolean => {
 
   const adminEmails = getAdminEmails();
   if (adminEmails.size === 0) {
-    // Backward-compatible fallback: if no explicit admin config exists yet,
-    // keep legacy behavior and allow authenticated users.
-    return true;
+    console.warn(
+      "[Security] ADMIN_EMAILS environment variable is not set. Admin access is restricted to users with explicit 'admin' role.",
+    );
+    return false;
   }
 
   const email = user.email?.toLowerCase().trim();
