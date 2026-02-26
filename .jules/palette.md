@@ -25,3 +25,7 @@
 ## 2026-02-14 - [Radio Group Pattern]
 **Learning:** When offering mutually exclusive choices (like languages), use the Radio Group pattern (`role='radiogroup'` + `aria-checked`) instead of Toggle Buttons (`aria-pressed`), as it better communicates the 'one-of-many' selection model to assistive technologies.
 **Action:** Use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` on options for exclusive selections.
+
+## 2026-02-15 - [Icon-Only Button Tooltips]
+**Learning:** Icon-only buttons (like 'Back to Top') rely heavily on `aria-label` which is invisible to sighted users, leading to ambiguity about their function. Native `title` tooltips are slow and inaccessible via keyboard.
+**Action:** Implement custom tooltips that appear on both hover and focus, linked via `aria-describedby`, to provide clear visual feedback for all users.
