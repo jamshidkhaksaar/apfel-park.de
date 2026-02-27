@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getDictionary, type Locale } from "../lib/i18n";
 import { siteInfo } from "../lib/site";
 import BackToTopButton from "./BackToTopButton";
+import CopyAddressButton from "./CopyAddressButton";
 import Logo from "./Logo";
 
 export default function SiteFooter({ lang }: { lang: Locale }) {
@@ -131,10 +132,10 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
             )}
             
             {/* Address */}
-            <div className="text-sm text-muted">
-              <p>{siteInfo.address.street}</p>
-              <p>{siteInfo.address.postalCode} {siteInfo.address.city}</p>
-            </div>
+            <CopyAddressButton
+              address={siteInfo.address}
+              label={lang === "de" ? "Adresse kopieren" : "Copy address"}
+            />
             
             <Link
               href={siteInfo.map.linkUrl}
