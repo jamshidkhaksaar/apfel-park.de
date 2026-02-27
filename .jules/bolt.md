@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-02-05 - Avoiding Dynamic Rendering in Public Pages
+**Learning:** Using `cookies()` or other request-time APIs (like `headers()`) in data fetching functions automatically opts the consuming page into dynamic rendering (on-demand), preventing Static Site Generation (SSG) or ISR. Even if the data itself is static (e.g., public product catalog), the *mechanism* used to fetch it can force dynamic rendering.
+**Action:** Use a dedicated "Static Client" (initialized only with URL/Key, bypassing cookies) for public, read-only data fetching to allow pages to be statically generated or cached effectively. Be aware that Middleware can still force dynamic rendering if it runs on those routes.

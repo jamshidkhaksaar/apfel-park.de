@@ -67,8 +67,8 @@ const mapProduct = (row: DbProduct): Product | null => {
  * A final in-memory filter still runs after normalization for safety.
  */
 export async function getProducts(category?: Product["category"], limit?: number): Promise<Product[]> {
-  const { createClient } = await import("./supabase/server");
-  const supabase = await createClient();
+  const { createStaticClient } = await import("./supabase/static");
+  const supabase = createStaticClient();
 
   let query = supabase
     .from("products")
