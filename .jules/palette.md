@@ -25,3 +25,7 @@
 ## 2026-02-14 - [Radio Group Pattern]
 **Learning:** When offering mutually exclusive choices (like languages), use the Radio Group pattern (`role='radiogroup'` + `aria-checked`) instead of Toggle Buttons (`aria-pressed`), as it better communicates the 'one-of-many' selection model to assistive technologies.
 **Action:** Use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` on options for exclusive selections.
+
+## 2026-02-15 - [Pagination Accessibility]
+**Learning:** Pagination indicators (like dots in carousels) implemented as buttons often lack a programmatic way to convey the currently active slide, relying only on visual cues.
+**Action:** Always add `aria-current="true"` to the pagination button that corresponds to the active slide to properly inform assistive technologies.

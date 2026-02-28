@@ -230,6 +230,7 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
                   : "w-2 bg-border hover:bg-gold/30"
               }`}
               aria-label={`${lang === "de" ? "Seite" : "Page"} ${i + 1}`}
+              aria-current={i === normalizedIndex ? "true" : undefined}
             />
           ))}
         </div>
