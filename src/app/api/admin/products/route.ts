@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminUser } from "@/lib/admin-auth";
+import { isValidInputLength } from "@/lib/security";
 import { createClient } from "@/lib/supabase/server";
 
 type CreateProductPayload = {
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
     categoryRequired: isEnglish ? "Valid category is required" : "Gultige Kategorie ist erforderlich",
     priceRequired: isEnglish ? "Valid price is required" : "Gultiger Preis ist erforderlich",
     stockRequired: isEnglish ? "Valid stock is required" : "Gultiger Lagerwert ist erforderlich",
+    inputTooLong: isEnglish ? "Input is too long" : "Eingabe ist zu lang",
     createFailed: isEnglish ? "Failed to create product" : "Produkt konnte nicht erstellt werden",
   };
 
@@ -72,6 +74,14 @@ export async function POST(request: NextRequest) {
     const stock = payload.stock === undefined ? 0 : Number(payload.stock);
     if (Number.isNaN(stock) || stock < 0) {
       return NextResponse.json({ error: messages.stockRequired }, { status: 400 });
+    }
+
+    // Validate input lengths
+    if (!isValidInputLength(title, 255) ||
+        !isValidInputLength(category, 100) ||
+        !isValidInputLength(payload.brand || "", 100) ||
+        !isValidInputLength(payload.description || "", 5000)) {
+      return NextResponse.json({ error: messages.inputTooLong }, { status: 400 });
     }
 
     const baseSlug = slugify(title);
