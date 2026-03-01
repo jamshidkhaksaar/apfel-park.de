@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminUser } from "@/lib/admin-auth";
+import { isValidInputLength, sanitizeInput } from "@/lib/security";
 import { createClient } from "@/lib/supabase/server";
 
 type CreateProductPayload = {
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     priceRequired: isEnglish ? "Valid price is required" : "Gultiger Preis ist erforderlich",
     stockRequired: isEnglish ? "Valid stock is required" : "Gultiger Lagerwert ist erforderlich",
     createFailed: isEnglish ? "Failed to create product" : "Produkt konnte nicht erstellt werden",
+    inputTooLong: isEnglish ? "Input too long" : "Eingabe zu lang",
   };
 
   const supabase = await createClient();
@@ -53,8 +55,26 @@ export async function POST(request: NextRequest) {
 
   try {
     const payload = (await request.json()) as CreateProductPayload;
-    const title = payload.title?.trim();
-    const category = payload.category ? normalizeCategory(payload.category) : null;
+
+    // Sanitize string inputs
+    const title = payload.title ? sanitizeInput(payload.title) : undefined;
+    const description = payload.description ? sanitizeInput(payload.description) : undefined;
+    const rawCategory = payload.category ? sanitizeInput(payload.category) : undefined;
+    const brand = payload.brand ? sanitizeInput(payload.brand) : undefined;
+    const imageUrl = payload.imageUrl ? sanitizeInput(payload.imageUrl) : undefined;
+
+    // Validate lengths to prevent DoS via massive payloads
+    if (
+      !isValidInputLength(title || "", 255) ||
+      !isValidInputLength(description || "", 5000) ||
+      !isValidInputLength(rawCategory || "", 100) ||
+      !isValidInputLength(brand || "", 100) ||
+      !isValidInputLength(imageUrl || "", 2000)
+    ) {
+      return NextResponse.json({ error: messages.inputTooLong }, { status: 400 });
+    }
+
+    const category = rawCategory ? normalizeCategory(rawCategory) : null;
     const price = Number(payload.price);
 
     if (!title) {
@@ -81,13 +101,13 @@ export async function POST(request: NextRequest) {
       .from("products")
       .insert({
         title,
-        description: payload.description?.trim() || null,
+        description: description || null,
         price,
         category,
-        brand: payload.brand?.trim() || null,
+        brand: brand || null,
         stock,
         slug,
-        images: payload.imageUrl ? [payload.imageUrl] : [],
+        images: imageUrl ? [imageUrl] : [],
         is_active: payload.isActive ?? true,
       })
       .select("id")

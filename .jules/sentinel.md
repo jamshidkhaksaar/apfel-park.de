@@ -32,3 +32,8 @@
 **Vulnerability:** The Contact API (`/api/contact`) accepted arbitrary-length strings for `name` and `message` without sanitization, exposing the database and application to potential Denial of Service (DoS) or storage exhaustion.
 **Learning:** `request.json()` can return any JSON type (including massive strings or non-string primitives), bypassing naive type assumptions in validation logic.
 **Prevention:** Implemented strict input length validation (`isValidInputLength`) and type-safe sanitization (`sanitizeInput` handling non-string inputs) for all public API endpoints.
+
+## 2026-03-05 - DoS via Unvalidated Input on Admin Endpoints
+**Vulnerability:** The Admin Products API (`/api/admin/products`) accepted arbitrary-length strings without sanitization. While protected by authentication, compromised admin accounts or malicious insiders could send massive string payloads causing Denial of Service (DoS) or database storage exhaustion.
+**Learning:** Input validation and length constraints (`isValidInputLength`) must be applied globally across all API endpoints, not just public ones, to ensure defense-in-depth and prevent resource exhaustion.
+**Prevention:** Enforced strict input length validation and type-safe sanitization (`sanitizeInput`) for all authenticated admin API endpoints that handle user or administrative inputs.
