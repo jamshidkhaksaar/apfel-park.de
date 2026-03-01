@@ -26,8 +26,19 @@ export default function SiteHeader({
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
+
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 12);
+      if (!ticking) {
+        // Optimization: Throttle state updates using requestAnimationFrame
+        // This prevents excessive re-renders during continuous scrolling
+        // and ensures state updates align with the browser's paint cycle
+        window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 12);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     onScroll();
