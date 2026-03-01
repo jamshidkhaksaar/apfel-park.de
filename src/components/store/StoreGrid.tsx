@@ -130,7 +130,7 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
                 </span>
 
                 {/* Quick Action Overlay */}
-                <div className="absolute bottom-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                <div className="absolute bottom-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus-within:translate-y-0 focus-within:opacity-100">
                   <Link
                     href={`/${lang}/contact?device=${encodeURIComponent(product.title)}`}
                     aria-label={lang === "de" ? `Anfragen: ${product.title}` : `Inquire about ${product.title}`}
