@@ -61,14 +61,14 @@ export default function SiteHeader({
           </div>
           <div className="hidden items-center gap-4 text-muted/80 md:flex">
             <Link href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="flex items-center gap-1.5 transition hover:text-gold">
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
               {siteInfo.phone}
             </Link>
             <span className="text-white/10">|</span>
             <span className="flex items-center gap-1.5">
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {siteInfo.hours.days} · {siteInfo.hours.time}
@@ -123,7 +123,7 @@ export default function SiteHeader({
                 className="group relative flex h-8 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-br from-gold via-amber to-bronze pl-3 pr-4 text-xs font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg shadow-gold/20 transition-all hover:scale-105 hover:shadow-gold/40"
               >
                 <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
-                <svg className="relative z-10 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="relative z-10 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
                 <span className="relative z-10">{lang === "de" ? "Shop" : "Store"}</span>
@@ -138,7 +138,7 @@ export default function SiteHeader({
               href={`/${lang}/repairs`}
               className="btn-primary !hidden lg:!inline-flex !px-3 !py-1.5 text-xs uppercase tracking-wide"
             >
-              <svg className="relative z-10 h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="relative z-10 h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               <span className="relative z-10 whitespace-nowrap">{lang === "de" ? "Reparatur" : "Repair"}</span>
@@ -202,7 +202,7 @@ export default function SiteHeader({
               onClick={() => setMobileMenuOpen(false)}
               className="btn-primary flex items-center justify-center gap-2 !py-3 text-sm font-bold uppercase tracking-wide"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               <span>{lang === "de" ? "Schnell-Reparatur" : "Quick Repair"}</span>
@@ -212,7 +212,7 @@ export default function SiteHeader({
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-3 text-sm font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
               <span>{lang === "de" ? "Zum Online Shop" : "Go to Store"}</span>
