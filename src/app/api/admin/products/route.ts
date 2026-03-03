@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminUser } from "@/lib/admin-auth";
+import { isValidInputLength, sanitizeInput } from "@/lib/security";
 import { createClient } from "@/lib/supabase/server";
 
 type CreateProductPayload = {
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     priceRequired: isEnglish ? "Valid price is required" : "Gultiger Preis ist erforderlich",
     stockRequired: isEnglish ? "Valid stock is required" : "Gultiger Lagerwert ist erforderlich",
     createFailed: isEnglish ? "Failed to create product" : "Produkt konnte nicht erstellt werden",
+    inputTooLong: isEnglish ? "Input exceeds maximum allowed length" : "Eingabe uberschreitet die maximal zulassige Lange",
   };
 
   const supabase = await createClient();
@@ -53,13 +55,27 @@ export async function POST(request: NextRequest) {
 
   try {
     const payload = (await request.json()) as CreateProductPayload;
-    const title = payload.title?.trim();
-    const category = payload.category ? normalizeCategory(payload.category) : null;
-    const price = Number(payload.price);
+
+    // Sanitize and validate lengths to prevent DoS via massive payloads
+    const title = payload.title ? sanitizeInput(payload.title) : undefined;
+    const description = payload.description ? sanitizeInput(payload.description) : undefined;
+    const brand = payload.brand ? sanitizeInput(payload.brand) : undefined;
+    const imageUrl = payload.imageUrl ? sanitizeInput(payload.imageUrl) : undefined;
 
     if (!title) {
       return NextResponse.json({ error: messages.titleRequired }, { status: 400 });
     }
+
+    if (!isValidInputLength(title, 255) ||
+        (description && !isValidInputLength(description, 5000)) ||
+        (brand && !isValidInputLength(brand, 100)) ||
+        (imageUrl && !isValidInputLength(imageUrl, 2048))) {
+      return NextResponse.json({ error: messages.inputTooLong }, { status: 400 });
+    }
+
+    const category = payload.category ? normalizeCategory(payload.category) : null;
+    const price = Number(payload.price);
+
 
     if (!category) {
       return NextResponse.json({ error: messages.categoryRequired }, { status: 400 });
@@ -81,13 +97,13 @@ export async function POST(request: NextRequest) {
       .from("products")
       .insert({
         title,
-        description: payload.description?.trim() || null,
+        description: description || null,
         price,
         category,
-        brand: payload.brand?.trim() || null,
+        brand: brand || null,
         stock,
         slug,
-        images: payload.imageUrl ? [payload.imageUrl] : [],
+        images: imageUrl ? [imageUrl] : [],
         is_active: payload.isActive ?? true,
       })
       .select("id")
