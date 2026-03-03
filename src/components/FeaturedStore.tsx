@@ -38,7 +38,7 @@ export default function FeaturedStore({
             className="btn-secondary group"
           >
             {featured.cta}
-            <svg
+            <svg aria-hidden="true"
               className="h-4 w-4 transition-transform group-hover:translate-x-1"
               fill="none"
               viewBox="0 0 24 24"
@@ -59,7 +59,7 @@ export default function FeaturedStore({
               {/* Image Area - Compact & Cleaner */}
               <div className="relative aspect-[4/3] w-full overflow-hidden ocean-card-media p-6 transition-colors group-hover:bg-surface-strong/80">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <svg
+                  <svg aria-hidden="true"
                     className="h-24 w-24 text-accent/60 transition-transform duration-700 ease-out group-hover:scale-105"
                     viewBox="0 0 64 64"
                     fill="none"
