@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminUser } from "@/lib/admin-auth";
+import { isValidInputLength, sanitizeInput } from "@/lib/security";
 import { createClient } from "@/lib/supabase/server";
 
 type CreateProductPayload = {
@@ -53,12 +54,26 @@ export async function POST(request: NextRequest) {
 
   try {
     const payload = (await request.json()) as CreateProductPayload;
-    const title = payload.title?.trim();
+
+    // Sanitize inputs
+    const title = sanitizeInput(payload.title);
+    const description = sanitizeInput(payload.description);
+    const brand = sanitizeInput(payload.brand);
     const category = payload.category ? normalizeCategory(payload.category) : null;
     const price = Number(payload.price);
 
     if (!title) {
       return NextResponse.json({ error: messages.titleRequired }, { status: 400 });
+    }
+
+    // Validate input lengths to prevent DoS via massive payloads
+    if (!isValidInputLength(title, 200) ||
+        !isValidInputLength(description || "", 5000) ||
+        !isValidInputLength(brand || "", 100)) {
+      return NextResponse.json(
+        { error: "Input too long" },
+        { status: 400 }
+      );
     }
 
     if (!category) {
@@ -81,10 +96,10 @@ export async function POST(request: NextRequest) {
       .from("products")
       .insert({
         title,
-        description: payload.description?.trim() || null,
+        description: description || null,
         price,
         category,
-        brand: payload.brand?.trim() || null,
+        brand: brand || null,
         stock,
         slug,
         images: payload.imageUrl ? [payload.imageUrl] : [],
