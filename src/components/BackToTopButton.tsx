@@ -7,10 +7,11 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
 
   useEffect(() => {
     let ticking = false;
+    let animationFrameId: number;
 
     const onScroll = () => {
       if (!ticking) {
-        window.requestAnimationFrame(() => {
+        animationFrameId = window.requestAnimationFrame(() => {
           // Show button after scrolling down 1 viewport height
           // Using window.innerHeight avoids forcing layout/reflow from scrollHeight
           setVisible(window.scrollY > window.innerHeight);
@@ -21,7 +22,12 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, []);
 
   return (
