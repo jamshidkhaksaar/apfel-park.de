@@ -26,13 +26,32 @@ export default function SiteHeader({
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
+    let rafId: number;
+
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 12);
+      if (!ticking) {
+        // Optimize: Throttle scroll event to prevent excessive re-renders and main thread blocking
+        rafId = window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 12);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
-    onScroll();
+    // Initial check (non-synchronously)
+    rafId = window.requestAnimationFrame(() => {
+      setIsScrolled(window.scrollY > 12);
+    });
+
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
   }, []);
 
   return (

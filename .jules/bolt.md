@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-03-05 - High-Frequency Event Throttling in React
+**Learning:** High-frequency event listeners like `scroll` or `mousemove` that trigger React state updates (e.g., to adjust header visibility) can cause excessive re-renders and main thread blocking, especially on complex pages. Calling `setState` synchronously within the `useEffect` body also causes cascading renders and hurts performance, which eslint rule `react-hooks/set-state-in-effect` correctly catches.
+**Action:** Always wrap high-frequency state updates inside a `requestAnimationFrame` block to ensure they run optimally synced with the display frame rate. Additionally, use the same pattern for initial checks inside `useEffect` to avoid synchronous cascading state updates, and remember to clean up with `cancelAnimationFrame`.
