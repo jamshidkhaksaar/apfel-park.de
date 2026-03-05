@@ -32,3 +32,8 @@
 **Vulnerability:** The Contact API (`/api/contact`) accepted arbitrary-length strings for `name` and `message` without sanitization, exposing the database and application to potential Denial of Service (DoS) or storage exhaustion.
 **Learning:** `request.json()` can return any JSON type (including massive strings or non-string primitives), bypassing naive type assumptions in validation logic.
 **Prevention:** Implemented strict input length validation (`isValidInputLength`) and type-safe sanitization (`sanitizeInput` handling non-string inputs) for all public API endpoints.
+
+## 2026-03-24 - CSV Injection (Formula Injection) in Order Exports
+**Vulnerability:** The `/api/admin/orders/export` endpoint exported orders into CSV format without sanitizing values starting with `=`, `+`, `-`, `@`, `\t`, or `\r`. Attackers could inject formulas (e.g., `=cmd|' /C calc'!A0`) into fields like `customer_name`, executing arbitrary commands when an admin opened the exported CSV in Excel.
+**Learning:** Standard CSV escaping (quoting fields with commas) is insufficient to prevent formula execution in spreadsheet applications; data must be explicitly sanitized against execution markers.
+**Prevention:** Prefix untrusted data starting with formula indicators (`=`, `+`, `-`, `@`, `\t`, `\r`) with a single quote (`'`), which forces Excel to treat the cell as plain text.
