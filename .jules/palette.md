@@ -25,3 +25,7 @@
 ## 2026-02-14 - [Radio Group Pattern]
 **Learning:** When offering mutually exclusive choices (like languages), use the Radio Group pattern (`role='radiogroup'` + `aria-checked`) instead of Toggle Buttons (`aria-pressed`), as it better communicates the 'one-of-many' selection model to assistive technologies.
 **Action:** Use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` on options for exclusive selections.
+
+## 2026-03-05 - [Interactive Icon-Only Links]
+**Learning:** Basic icon-only links (like social media buttons) often lack visual focus indicators (`focus-visible`) making keyboard navigation difficult. Furthermore, lacking a `title` prevents native tooltips, and leaving out `aria-hidden="true"` on their decorative SVGs causes redundant or confusing screen reader announcements.
+**Action:** Always explicitly define `focus-visible` utility classes on interactive elements, add `title` for hover tooltips on icon-only links, and use `aria-hidden="true"` on decorative SVGs inside these links.
