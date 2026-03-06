@@ -13,10 +13,17 @@ type OrderExportRow = {
 };
 
 const escapeCsv = (value: string): string => {
-  if (value.includes(",") || value.includes("\n") || value.includes('"')) {
-    return `"${value.replaceAll('"', '""')}"`;
+  let escapedValue = value;
+
+  // Prevent CSV/Formula Injection by escaping strings that start with formula characters
+  if (/^[=+\-@\t\r]/.test(escapedValue)) {
+    escapedValue = `'${escapedValue}`;
   }
-  return value;
+
+  if (escapedValue.includes(",") || escapedValue.includes("\n") || escapedValue.includes('"')) {
+    return `"${escapedValue.replaceAll('"', '""')}"`;
+  }
+  return escapedValue;
 };
 
 export async function GET() {
