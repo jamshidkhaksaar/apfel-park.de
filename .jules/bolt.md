@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-03-07 - Throttling High-Frequency Scroll Events
+**Learning:** The project's ESLint configuration strictly enforces the 'react-hooks/set-state-in-effect' rule. Calling setState synchronously inside useEffect causes lint errors; initial state synchronizations (like evaluating initial scroll position) must be deferred using requestAnimationFrame or other asynchronous patterns. Furthermore, high-frequency event listeners like `scroll` that trigger state updates must be throttled using `window.requestAnimationFrame` and cleaned up with `window.cancelAnimationFrame` to prevent excessive React re-renders and main thread blocking.
+**Action:** When adding scroll event listeners that update state, always wrap the state update in `requestAnimationFrame`, use a `ticking` boolean to prevent queueing multiple frames, and defer initial state checks to avoid lint errors.

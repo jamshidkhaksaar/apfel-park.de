@@ -26,13 +26,30 @@ export default function SiteHeader({
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
+    let frameId: number;
+
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 12);
+      if (!ticking) {
+        frameId = window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 12);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
-    onScroll();
+    // Initial check deferred to avoid synchronous setState in useEffect
+    // and to prevent 'react-hooks/set-state-in-effect' lint errors
+    frameId = window.requestAnimationFrame(() => {
+      setIsScrolled(window.scrollY > 12);
+    });
+
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.cancelAnimationFrame(frameId);
+    };
   }, []);
 
   return (
