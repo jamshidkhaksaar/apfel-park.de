@@ -25,3 +25,7 @@
 ## 2026-02-14 - [Radio Group Pattern]
 **Learning:** When offering mutually exclusive choices (like languages), use the Radio Group pattern (`role='radiogroup'` + `aria-checked`) instead of Toggle Buttons (`aria-pressed`), as it better communicates the 'one-of-many' selection model to assistive technologies.
 **Action:** Use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` on options for exclusive selections.
+
+## 2026-03-07 - [Icon-Only Links Accessibility]
+**Learning:** Icon-only interactive elements (like social links in `SiteFooter`) must include explicit `focus-visible` utility classes for keyboard accessibility, `title` attributes for native tooltips, and `aria-hidden="true"` on decorative inner SVGs to prevent redundant screen reader announcements.
+**Action:** Always verify that icon-only links have `focus-visible` states, native tooltips, and hidden decorative SVGs.
