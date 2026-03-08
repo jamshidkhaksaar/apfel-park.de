@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import PageIntro from "../../../../components/PageIntro";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+import { getFaqContent } from "../../../../lib/content";
+
+export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
@@ -22,18 +25,19 @@ export const generateMetadata = async ({
 export default async function FaqPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const faq = await getFaqContent(lang as Locale);
 
   return (
     <div className="bg-background">
       <PageIntro
-        title={dict.faq.heroTitle}
-        subtitle={dict.faq.heroSubtitle}
+        title={faq.heroTitle}
+        subtitle={faq.heroSubtitle}
         eyebrow={dict.meta.faq.title}
       />
 
       <section className="section-pad">
         <div className="container-page max-w-3xl space-y-4">
-          {dict.faq.items.map((item: { question: string; answer: string }, index: number) => (
+          {faq.items.map((item: { question: string; answer: string }, index: number) => (
             <div key={item.question} className="tech-card rounded-2xl p-6">
               <div className="flex items-start gap-4">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/20 text-sm font-bold text-gold">

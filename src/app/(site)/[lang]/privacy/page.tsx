@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import PageIntro from "../../../../components/PageIntro";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+import { getPrivacyContent } from "../../../../lib/content";
+
+export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
@@ -22,18 +25,19 @@ export const generateMetadata = async ({
 export default async function PrivacyPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const privacy = await getPrivacyContent(lang as Locale);
 
   return (
     <div className="bg-background">
       <PageIntro
-        title={dict.privacy.heroTitle}
-        subtitle={dict.privacy.intro}
+        title={privacy.heroTitle}
+        subtitle={privacy.intro}
         eyebrow={dict.meta.privacy.title}
       />
 
       <section className="section-pad">
         <div className="container-page max-w-4xl space-y-6">
-          {dict.privacy.sections.map((section: { title: string; body: readonly string[] }) => (
+          {privacy.sections.map((section: { title: string; body: readonly string[] }) => (
             <div key={section.title} className="tech-card rounded-2xl p-6">
               <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
               <ul className="mt-4 space-y-2 text-sm text-muted">

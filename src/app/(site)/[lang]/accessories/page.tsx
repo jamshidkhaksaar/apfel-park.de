@@ -7,6 +7,9 @@ import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getProducts } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
+import { getAccessoriesContent } from "../../../../lib/content";
+
+export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
@@ -30,13 +33,14 @@ export default async function AccessoriesPage({
 }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const accessoriesContent = await getAccessoriesContent(lang as Locale);
   const products = await getProducts("accessories");
 
   return (
     <div className="bg-background">
       <PageIntro
-        title={dict.accessories.heroTitle}
-        subtitle={dict.accessories.heroSubtitle}
+        title={accessoriesContent.heroTitle}
+        subtitle={accessoriesContent.heroSubtitle}
         eyebrow={dict.meta.accessories.title}
       />
 

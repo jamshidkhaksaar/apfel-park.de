@@ -7,6 +7,9 @@ import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getProducts } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
+import { getLaptopsContent } from "../../../../lib/content";
+
+export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
@@ -26,20 +29,21 @@ export const generateMetadata = async ({
 export default async function LaptopsPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const laptops = await getLaptopsContent(lang as Locale);
   const laptopProducts = await getProducts("laptops");
 
   return (
     <div className="bg-background">
       <PageIntro
-        title={dict.laptops.heroTitle}
-        subtitle={dict.laptops.heroSubtitle}
+        title={laptops.heroTitle}
+        subtitle={laptops.heroSubtitle}
         eyebrow={dict.meta.laptops.title}
       />
 
       <section className="section-pad">
         <div className="container-page">
           <div className="mb-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {dict.laptops.highlights.map((item: string) => (
+            {laptops.highlights.map((item: string) => (
               <div key={item} className="tech-card-hover rounded-2xl p-6 text-center">
                 <p className="font-medium text-foreground">{item}</p>
               </div>

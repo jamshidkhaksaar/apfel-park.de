@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import PageIntro from "../../../../components/PageIntro";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+import { getTermsContent } from "../../../../lib/content";
+
+export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
@@ -22,18 +25,19 @@ export const generateMetadata = async ({
 export default async function TermsPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const terms = await getTermsContent(lang as Locale);
 
   return (
     <div className="bg-background">
       <PageIntro
-        title={dict.terms.heroTitle}
-        subtitle={dict.terms.intro}
+        title={terms.heroTitle}
+        subtitle={terms.intro}
         eyebrow={dict.meta.terms.title}
       />
 
       <section className="section-pad">
         <div className="container-page max-w-4xl space-y-6">
-          {dict.terms.sections.map((section: { title: string; body: readonly string[] }) => (
+          {terms.sections.map((section: { title: string; body: readonly string[] }) => (
             <div key={section.title} className="tech-card rounded-2xl p-6">
               <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
               <ul className="mt-4 space-y-2 text-sm text-muted">

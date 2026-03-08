@@ -55,6 +55,11 @@ const NavIcon = ({ type }: { type: string }) => {
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
+    content: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+      </svg>
+    ),
   };
   return icons[type] || icons.dashboard;
 };
@@ -82,7 +87,7 @@ export default function AdminShell({
     router.refresh();
   };
 
-  const navItems = [
+  const navItems: Array<{ label: string; path: string; icon: string } | { divider: true; label: string }> = [
     { label: dict.sidebar.dashboard, path: "/admin", icon: "dashboard" },
     { label: dict.sidebar.products, path: "/admin/products", icon: "products" },
     { label: dict.sidebar.orders, path: "/admin/orders", icon: "orders" },
@@ -92,6 +97,18 @@ export default function AdminShell({
     { label: dict.sidebar.payments, path: "/admin/payments", icon: "payments" },
     { label: dict.sidebar.branding, path: "/admin/branding", icon: "branding" },
     { label: dict.sidebar.settings, path: "/admin/settings", icon: "settings" },
+    { divider: true, label: dict.sidebar.contentSection },
+    { label: dict.sidebar.contentHome, path: "/admin/content/home", icon: "content" },
+    { label: dict.sidebar.contentAbout, path: "/admin/content/about", icon: "content" },
+    { label: dict.sidebar.contentRepairs, path: "/admin/content/repairs", icon: "content" },
+    { label: dict.sidebar.contentFaq, path: "/admin/content/faq", icon: "content" },
+    { label: dict.sidebar.contentContact, path: "/admin/content/contact", icon: "content" },
+    { label: dict.sidebar.contentSmartphones, path: "/admin/content/smartphones", icon: "content" },
+    { label: dict.sidebar.contentAccessories, path: "/admin/content/accessories", icon: "content" },
+    { label: dict.sidebar.contentGaming, path: "/admin/content/gaming", icon: "content" },
+    { label: dict.sidebar.contentLaptops, path: "/admin/content/laptops", icon: "content" },
+    { label: dict.sidebar.contentPrivacy, path: "/admin/content/privacy", icon: "content" },
+    { label: dict.sidebar.contentTerms, path: "/admin/content/terms", icon: "content" },
   ];
 
   return (
@@ -140,7 +157,14 @@ export default function AdminShell({
           </div>
           
           <nav className="space-y-1 rounded-2xl border border-border/60 bg-surface/70 p-3 text-sm text-muted">
-            {navItems.map((item) => {
+            {navItems.map((item, idx) => {
+              if ("divider" in item) {
+                return (
+                  <p key={`divider-${idx}`} className="px-4 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-muted/50">
+                    {item.label}
+                  </p>
+                );
+              }
               const isActive =
                 item.path === "/admin"
                   ? pathname === item.path

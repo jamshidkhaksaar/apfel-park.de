@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 
 import { getDictionary, type Locale } from "../../../lib/i18n";
 import { createMetadata } from "../../../lib/metadata";
+import { getHomeContent } from "../../../lib/content";
 import { siteInfo } from "../../../lib/site";
 import HeroSlider from "../../../components/HeroSlider";
 import FeaturedStore from "../../../components/FeaturedStore";
@@ -11,6 +12,8 @@ import TestimonialsCarousel from "../../../components/TestimonialsCarousel";
 import { getFeaturedProducts } from "../../../lib/products";
 import { safeJsonStringify } from "../../../lib/security";
 import AnimatedSection from "../../../components/AnimatedSection";
+
+export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
@@ -30,9 +33,10 @@ export const generateMetadata = async ({
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const home = await getHomeContent(lang as Locale);
   const featuredProducts = await getFeaturedProducts();
 
-  const serviceItems = dict.home.services.items.map((item: { title: string; description: string }) => ({
+  const serviceItems = home.services.items.map((item: { title: string; description: string }) => ({
     "@type": "Service",
     name: item.title,
     description: item.description,
@@ -140,7 +144,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               {lang === "de" ? "Schneller Ablauf" : "Fast Process"}
             </span>
             <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
-              {dict.home.process.title}
+              {home.process.title}
             </h2>
           </div>
 
@@ -150,7 +154,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               {/* Vertical Connection Line */}
               <div className="absolute left-7 top-10 h-[calc(100%-80px)] w-px bg-gradient-to-b from-gold/70 via-gold/40 to-transparent" />
               
-              {dict.home.process.steps.map((step: { title: string; description: string }, index: number) => {
+              {home.process.steps.map((step: { title: string; description: string }, index: number) => {
                 const stepIcons = [
                   // Step 1: Diagnostic / Inspection
                   <svg key="diagnose" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -286,9 +290,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 {lang === "de" ? "Unsere Services" : "Our Services"}
               </span>
               <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
-                {dict.home.services.title}
+                {home.services.title}
               </h2>
-              <p className="mt-3 max-w-xl text-muted">{dict.home.services.subtitle}</p>
+              <p className="mt-3 max-w-xl text-muted">{home.services.subtitle}</p>
             </div>
             <Link href={`/${lang}/repairs`} className="btn-secondary">
               {lang === "de" ? "Alle Services" : "All Services"}
@@ -299,7 +303,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {dict.home.services.items.map((item: { title: string; description: string }, index: number) => {
+            {home.services.items.map((item: { title: string; description: string }, index: number) => {
               const icons = [
                 <svg key="display" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>,
                 <svg key="water" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21.5c-3.5 0-6.5-2.5-6.5-6.5 0-4.5 6.5-12 6.5-12s6.5 7.5 6.5 12c0 4-3 6.5-6.5 6.5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3 3 0 0 0 3-3c0-2-3-5-3-5s-3 3-3 5a3 3 0 0 0 3 3z" className="opacity-50" /></svg>,
@@ -336,7 +340,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {dict.home.hero.cards.map((card: { title: string; description: string; path: string; image: string }, index: number) => {
+            {home.hero.cards.map((card: { title: string; description: string; path: string; image: string }, index: number) => {
               const cardIllustrations = [
                 // 1. Shop & Advice - Storefront/Interaction
                 <svg key="shop" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.8}>
@@ -416,10 +420,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
               </svg>
-              {dict.home.support.title}
+              {home.support.title}
             </span>
             <h2 className="mx-auto max-w-3xl text-gold-metallic text-3xl font-semibold tracking-[0.02em] md:text-5xl leading-tight pb-1">
-              {dict.home.support.subtitle}
+              {home.support.subtitle}
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm text-muted md:text-base">
               {lang === "de" 
@@ -474,7 +478,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <div className="order-1 space-y-8 lg:order-2">
               {/* Feature Cards */}
               <div className="grid gap-4 sm:grid-cols-2">
-                {dict.home.support.bullets.map((item: string, index: number) => {
+                {home.support.bullets.map((item: string, index: number) => {
                   const supportDescriptions = {
                     de: [
                       "Schnelle Diagnose in wenigen Minuten.",
@@ -565,16 +569,16 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               {lang === "de" ? "Kundenstimmen" : "Testimonials"}
             </span>
             <h2 className="text-gold-metallic text-3xl font-semibold tracking-tight md:text-5xl pb-1">
-              {dict.home.testimonials.title}
+              {home.testimonials.title}
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-muted">
-              {dict.home.testimonials.subtitle}
+              {home.testimonials.subtitle}
             </p>
           </div>
 
           {/* Testimonials Carousel */}
           <TestimonialsCarousel 
-            reviews={dict.home.testimonials.items} 
+            reviews={home.testimonials.items} 
             lang={lang as "de" | "en"} 
           />
         </div>
@@ -602,9 +606,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <div className="relative flex flex-col items-center justify-between gap-8 text-center md:flex-row md:text-left">
               <div className="max-w-xl">
                 <h2 className="text-gold-metallic text-3xl font-bold tracking-tight md:text-4xl pb-1">
-                  {dict.home.cta.title}
+                  {home.cta.title}
                 </h2>
-                <p className="mt-3 text-muted">{dict.home.cta.description}</p>
+                <p className="mt-3 text-muted">{home.cta.description}</p>
               </div>
               
               <div className="flex flex-wrap justify-center gap-4">
@@ -615,10 +619,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  <span>{dict.home.cta.primary}</span>
+                  <span>{home.cta.primary}</span>
                 </Link>
                 <Link href={`/${lang}/contact`} className="btn-secondary">
-                  {dict.home.cta.secondary}
+                  {home.cta.secondary}
                 </Link>
               </div>
             </div>

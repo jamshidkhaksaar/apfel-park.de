@@ -4,8 +4,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import PageIntro from "../../../../components/PageIntro";
+import { getAboutContent } from "../../../../lib/content";
 import { getDictionary, type AboutStat, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+
+export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
@@ -52,12 +55,13 @@ const FeatureIcon = ({ type }: { type: string }): ReactNode => {
 export default async function AboutPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const about = await getAboutContent(lang as Locale);
 
   return (
     <div className="bg-background">
       <PageIntro
-        title={dict.about.heroTitle}
-        subtitle={dict.about.heroSubtitle}
+        title={about.heroTitle}
+        subtitle={about.heroSubtitle}
         eyebrow={dict.meta.about.title}
       />
 
@@ -65,7 +69,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
       <section className="relative -mt-8 z-10">
         <div className="container-page">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {dict.about.stats.map((stat: AboutStat) => (
+            {about.stats.map((stat: AboutStat) => (
               <div
                 key={stat.label}
                 className="tech-card flex flex-col items-center justify-center rounded-2xl p-6 text-center"
@@ -83,7 +87,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
         <div className="container-page">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-lg text-muted leading-relaxed md:text-xl">
-              {dict.about.intro}
+              {about.intro}
             </p>
           </div>
         </div>
@@ -106,14 +110,14 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
                 {/* Subtle overlay for better blending */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-surface/20 lg:to-surface/40" />
               </div>
-              
+
               {/* Content Side */}
               <div className="flex flex-col justify-center p-8 md:p-12">
                 <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                  {dict.about.story.title}
+                  {about.story.title}
                 </h2>
                 <p className="mt-6 text-muted leading-relaxed">
-                  {dict.about.story.content}
+                  {about.story.content}
                 </p>
                 <div className="mt-8 flex items-center gap-4">
                   <div className="flex -space-x-2">
@@ -153,7 +157,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
           </div>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {dict.about.features.map((feature: { title: string; description: string; icon: string }) => (
+            {about.features.map((feature: { title: string; description: string; icon: string }) => (
               <div
                 key={feature.title}
                 className="tech-card-hover group rounded-2xl p-6 transition-all duration-300"
@@ -179,7 +183,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>
               <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                {dict.about.values.title}
+                {about.values.title}
               </h2>
               <p className="mt-4 text-muted">
                 {lang === "de"
@@ -188,7 +192,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
               </p>
             </div>
             <div className="space-y-4">
-              {dict.about.values.items.map((value: string, index: number) => (
+              {about.values.items.map((value: string, index: number) => (
                 <div
                   key={value}
                   className="tech-card-hover flex items-start gap-4 rounded-2xl p-5"
@@ -211,10 +215,10 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
             <div className="p-8 md:p-12 lg:p-16">
               <div className="mx-auto max-w-2xl text-center">
                 <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                  {dict.about.cta.title}
+                  {about.cta.title}
                 </h2>
                 <p className="mt-4 text-muted">
-                  {dict.about.cta.description}
+                  {about.cta.description}
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                   <Link
@@ -224,7 +228,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
                     </svg>
-                    {dict.about.cta.buttons.smartphones}
+                    {about.cta.buttons.smartphones}
                   </Link>
                   <Link
                     href={`/${lang}/accessories`}
@@ -233,13 +237,13 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
                     </svg>
-                    {dict.about.cta.buttons.accessories}
+                    {about.cta.buttons.accessories}
                   </Link>
                   <Link
                     href={`/${lang}/contact`}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-medium text-muted transition hover:text-gold sm:w-auto"
                   >
-                    {dict.about.cta.buttons.contact}
+                    {about.cta.buttons.contact}
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                     </svg>

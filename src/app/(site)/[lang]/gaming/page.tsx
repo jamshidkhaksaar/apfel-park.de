@@ -7,6 +7,9 @@ import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getProducts } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
+import { getGamingContent } from "../../../../lib/content";
+
+export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
@@ -26,13 +29,14 @@ export const generateMetadata = async ({
 export default async function GamingPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const gaming = await getGamingContent(lang as Locale);
   const products = await getProducts("consoles");
 
   return (
     <div className="bg-background">
       <PageIntro
-        title={dict.gaming.heroTitle}
-        subtitle={dict.gaming.heroSubtitle}
+        title={gaming.heroTitle}
+        subtitle={gaming.heroSubtitle}
         eyebrow={dict.meta.gaming.title}
       />
 

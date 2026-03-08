@@ -5,6 +5,9 @@ import PageIntro from "../../../../components/PageIntro";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
+import { getRepairsContent } from "../../../../lib/content";
+
+export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
@@ -24,6 +27,7 @@ export const generateMetadata = async ({
 export default async function RepairsPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
+  const repairs = await getRepairsContent(lang as Locale);
 
   const repairIcons = [
     <svg key="display" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>,
@@ -42,8 +46,8 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
   return (
     <div className="bg-background">
       <PageIntro
-        title={dict.repairs.heroTitle}
-        subtitle={dict.repairs.heroSubtitle}
+        title={repairs.heroTitle}
+        subtitle={repairs.heroSubtitle}
         eyebrow={dict.meta.repairs.title}
       />
 
@@ -63,7 +67,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
             </h2>
             
             <ul className="mt-8 space-y-4">
-              {dict.repairs.highlights.map((item: string) => (
+              {repairs.highlights.map((item: string) => (
                 <li key={item} className="flex items-start gap-4">
                   <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold/20">
                     <svg className="h-4 w-4 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -94,7 +98,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
 
           {/* Right: Repair Types Grid */}
           <div className="grid gap-4 sm:grid-cols-2">
-            {dict.repairs.repairTypes.map((item: { title: string; description: string }, index: number) => (
+            {repairs.repairTypes.map((item: { title: string; description: string }, index: number) => (
               <div key={item.title} className="tech-card-hover rounded-2xl p-6">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                   {repairIcons[index]}
