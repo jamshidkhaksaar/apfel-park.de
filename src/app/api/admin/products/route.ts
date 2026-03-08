@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminUser } from "@/lib/admin-auth";
+import { isValidInputLength, sanitizeInput } from "@/lib/security";
 import { createClient } from "@/lib/supabase/server";
 
 type CreateProductPayload = {
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     priceRequired: isEnglish ? "Valid price is required" : "Gultiger Preis ist erforderlich",
     stockRequired: isEnglish ? "Valid stock is required" : "Gultiger Lagerwert ist erforderlich",
     createFailed: isEnglish ? "Failed to create product" : "Produkt konnte nicht erstellt werden",
+    inputTooLong: isEnglish ? "Input too long" : "Eingabe zu lang",
   };
 
   const supabase = await createClient();
@@ -53,7 +55,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const payload = (await request.json()) as CreateProductPayload;
-    const title = payload.title?.trim();
+    const title = sanitizeInput(payload.title);
+    const description = payload.description ? sanitizeInput(payload.description) : null;
+    const brand = payload.brand ? sanitizeInput(payload.brand) : null;
+    const imageUrl = payload.imageUrl ? sanitizeInput(payload.imageUrl) : null;
     const category = payload.category ? normalizeCategory(payload.category) : null;
     const price = Number(payload.price);
 
@@ -63,6 +68,15 @@ export async function POST(request: NextRequest) {
 
     if (!category) {
       return NextResponse.json({ error: messages.categoryRequired }, { status: 400 });
+    }
+
+    if (
+      !isValidInputLength(title, 255) ||
+      !isValidInputLength(description || "", 5000) ||
+      !isValidInputLength(brand || "", 100) ||
+      !isValidInputLength(imageUrl || "", 1000)
+    ) {
+      return NextResponse.json({ error: messages.inputTooLong }, { status: 400 });
     }
 
     if (Number.isNaN(price) || price < 0) {
@@ -81,13 +95,13 @@ export async function POST(request: NextRequest) {
       .from("products")
       .insert({
         title,
-        description: payload.description?.trim() || null,
+        description,
         price,
         category,
-        brand: payload.brand?.trim() || null,
+        brand,
         stock,
         slug,
-        images: payload.imageUrl ? [payload.imageUrl] : [],
+        images: imageUrl ? [imageUrl] : [],
         is_active: payload.isActive ?? true,
       })
       .select("id")

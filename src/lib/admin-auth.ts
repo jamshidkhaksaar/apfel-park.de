@@ -40,9 +40,9 @@ export const isAdminUser = (user: User | null): boolean => {
 
   const adminEmails = getAdminEmails();
   if (adminEmails.size === 0) {
-    // Backward-compatible fallback: if no explicit admin config exists yet,
-    // keep legacy behavior and allow authenticated users.
-    return true;
+    // Secure default: if no admin emails are configured, deny access.
+    // This prevents accidental exposure of admin routes.
+    return false;
   }
 
   const email = user.email?.toLowerCase().trim();
