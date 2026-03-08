@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-02-05 - Scroll Event Throttling with requestAnimationFrame
+**Learning:** Executing React state updates directly inside `scroll` event listeners (even passive ones) can cause severe layout thrashing and main thread blocking because scroll events fire faster than the browser can paint. Throttling via `setTimeout` can be jerky.
+**Action:** Always wrap state updates tied to high-frequency events (scroll, mousemove, resize) inside `window.requestAnimationFrame` guarded by a boolean `ticking` flag to synchronize updates with the display refresh rate.
