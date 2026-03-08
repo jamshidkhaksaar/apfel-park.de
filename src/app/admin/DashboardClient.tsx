@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { type ReactNode, useEffect, useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
 import AdminShell from "@/components/admin/AdminShell";
 
@@ -11,61 +12,338 @@ type DashboardStats = {
   reviews: number;
 };
 
+// ── Inline SVG icons ──────────────────────────────────────────────────────────
+
+const WrenchIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+  </svg>
+);
+
+const BagIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+  </svg>
+);
+
+const CubeIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+  </svg>
+);
+
+const StarIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+  </svg>
+);
+
+const TicketIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+  </svg>
+);
+
+const ArrowRightIcon = ({ className }: { className?: string }) => (
+  <svg className={className ?? 'h-4 w-4'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+  </svg>
+);
+
+// ── Static mock activity data ─────────────────────────────────────────────────
+
+type ActivityStatus = 'new' | 'in_progress' | 'ready' | 'paid';
+
+const mockActivity: Array<{ id: string; type: 'repair' | 'order'; label: string; sub: string; status: ActivityStatus }> = [
+  { id: 'TK-1041', type: 'repair', label: 'iPhone 15 Pro — Display', sub: 'TK-1041', status: 'in_progress' },
+  { id: 'ORD-882', type: 'order', label: 'USB-C Cable 3-Pack', sub: 'ORD-882', status: 'paid' },
+  { id: 'TK-1040', type: 'repair', label: 'Samsung S23 — Battery', sub: 'TK-1040', status: 'ready' },
+  { id: 'TK-1039', type: 'repair', label: 'iPad Air — Charging Port', sub: 'TK-1039', status: 'new' },
+];
+
+const statusConfig: Record<ActivityStatus, { label: string; dot: string; text: string }> = {
+  new:         { label: 'New',         dot: 'bg-indigo-400',  text: 'text-indigo-400' },
+  in_progress: { label: 'In Progress', dot: 'bg-amber-400',   text: 'text-amber-400'  },
+  ready:       { label: 'Ready',       dot: 'bg-emerald-400', text: 'text-emerald-400' },
+  paid:        { label: 'Paid',        dot: 'bg-emerald-400', text: 'text-emerald-400' },
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function isShopOpen(): boolean {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 6=Sat
+  const hour = now.getHours();
+  if (day === 0) return false;
+  if (day === 6) return hour >= 10 && hour < 16;
+  return hour >= 10 && hour < 19;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function DashboardClient({ stats }: { stats: DashboardStats }) {
   const { dict } = useAdmin();
+  const [shopOpen, setShopOpen] = useState<boolean | null>(null);
 
-  const statItems = [
-    { label: dict.dashboard.stats.repairs, value: stats.repairs, color: "text-gold" },
-    { label: dict.dashboard.stats.orders, value: stats.orders, color: "text-green" },
-    { label: dict.dashboard.stats.products, value: stats.products, color: "text-gold-soft" },
-    { label: dict.dashboard.stats.reviews, value: stats.reviews, color: "text-muted-strong" },
+  useEffect(() => {
+    const update = () => setShopOpen(isShopOpen());
+    update();
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  type AccentKey = 'gold' | 'emerald' | 'indigo' | 'rose';
+
+  const statCards: Array<{
+    label: string;
+    value: number;
+    note: string;
+    accent: AccentKey;
+    Icon: () => ReactNode;
+  }> = [
+    {
+      label: dict.dashboard.stats.repairs,
+      value: stats.repairs,
+      note: 'Open service tickets',
+      accent: 'gold',
+      Icon: WrenchIcon,
+    },
+    {
+      label: dict.dashboard.stats.orders,
+      value: stats.orders,
+      note: 'Awaiting fulfillment',
+      accent: 'emerald',
+      Icon: BagIcon,
+    },
+    {
+      label: dict.dashboard.stats.products,
+      value: stats.products,
+      note: 'Listed in catalog',
+      accent: 'indigo',
+      Icon: CubeIcon,
+    },
+    {
+      label: dict.dashboard.stats.reviews,
+      value: stats.reviews,
+      note: 'Collected to date',
+      accent: 'rose',
+      Icon: StarIcon,
+    },
   ];
 
-  const quickActions = [
-    { 
-      title: dict.dashboard.quickActions.addProduct, 
-      path: "/admin/products/new", 
-      desc: dict.dashboard.quickActions.addProductDesc 
+  const accentStyles: Record<AccentKey, { hex: string; pill: string; glow: string; number: string }> = {
+    gold:    { hex: '#F59E0B', pill: 'bg-amber-500/15',   glow: 'bg-amber-500',   number: 'text-amber-400'   },
+    emerald: { hex: '#10B981', pill: 'bg-emerald-500/15', glow: 'bg-emerald-500', number: 'text-emerald-400' },
+    indigo:  { hex: '#6366F1', pill: 'bg-indigo-500/15',  glow: 'bg-indigo-500',  number: 'text-indigo-400'  },
+    rose:    { hex: '#F43F5E', pill: 'bg-rose-500/15',    glow: 'bg-rose-500',    number: 'text-rose-400'    },
+  };
+
+  const quickActions: Array<{
+    title: string;
+    desc: string;
+    path: string;
+    accent: AccentKey;
+    Icon: () => ReactNode;
+  }> = [
+    {
+      title: dict.dashboard.quickActions.addProduct,
+      desc: dict.dashboard.quickActions.addProductDesc,
+      path: '/admin/products/new',
+      accent: 'indigo',
+      Icon: PlusIcon,
     },
-    { 
-      title: dict.dashboard.quickActions.addRepair, 
-      path: "/admin/repairs", 
-      desc: dict.dashboard.quickActions.addRepairDesc 
+    {
+      title: dict.dashboard.quickActions.addRepair,
+      desc: dict.dashboard.quickActions.addRepairDesc,
+      path: '/admin/repairs',
+      accent: 'gold',
+      Icon: WrenchIcon,
     },
-    { 
-      title: dict.dashboard.quickActions.checkOrders, 
-      path: "/admin/orders", 
-      desc: dict.dashboard.quickActions.checkOrdersDesc 
+    {
+      title: dict.dashboard.quickActions.checkOrders,
+      desc: dict.dashboard.quickActions.checkOrdersDesc,
+      path: '/admin/orders',
+      accent: 'emerald',
+      Icon: TicketIcon,
     },
   ];
 
   return (
     <AdminShell title={dict.dashboard.title}>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {statItems.map((stat) => (
-          <div key={stat.label} className="glass-panel rounded-2xl p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-              {stat.label}
-            </p>
-            <p className={`mt-4 text-3xl font-semibold ${stat.color || "text-foreground"}`}>
-              {stat.value}
-            </p>
-          </div>
-        ))}
+
+      {/* ── Section label ── */}
+      <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
+        Live Metrics
+      </p>
+
+      {/* ── Stat cards ── */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {statCards.map(({ label, value, note, accent, Icon }) => {
+          const s = accentStyles[accent];
+          return (
+            <div
+              key={label}
+              className="relative overflow-hidden rounded-2xl border border-white/8 bg-surface p-6 transition-all duration-200 hover:border-white/12"
+            >
+              {/* Corner glow */}
+              <div
+                className={`absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-15 ${s.glow}`}
+                aria-hidden="true"
+              />
+
+              {/* Icon pill */}
+              <div className={`inline-flex items-center justify-center rounded-lg p-2 ${s.pill}`}>
+                <span style={{ color: s.hex }}>
+                  <Icon />
+                </span>
+              </div>
+
+              {/* Number */}
+              <p className={`mt-4 font-mono text-5xl font-bold tabular-nums leading-none ${s.number}`}>
+                {String(value).padStart(2, '0')}
+              </p>
+
+              {/* Label */}
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
+                {label}
+              </p>
+
+              {/* Note */}
+              <p className="mt-3 text-xs text-muted/50">{note}</p>
+            </div>
+          );
+        })}
       </div>
-      <div className="glass-panel rounded-2xl p-6">
-        <h2 className="text-lg font-semibold text-foreground">{dict.dashboard.quickActions.title}</h2>
-        <p className="mt-3 text-sm text-muted">
-          {dict.dashboard.quickActions.subtitle}
+
+      {/* ── Quick actions ── */}
+      <div className="mt-8">
+        <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
+          {dict.dashboard.quickActions.title}
         </p>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {quickActions.map((item) => (
-            <Link key={item.title} href={item.path} className="group cursor-pointer rounded-xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
-              <p className="font-medium text-foreground group-hover:text-gold">{item.title}</p>
-              <p className="mt-1 text-xs text-muted">{item.desc}</p>
-            </Link>
-          ))}
+        <div className="grid gap-4 md:grid-cols-3">
+          {quickActions.map(({ title, desc, path, accent, Icon }) => {
+            const s = accentStyles[accent];
+            return (
+              <Link
+                key={path}
+                href={path}
+                className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-white/8 bg-surface p-5 transition-all duration-200 hover:border-white/14 hover:bg-surface-strong/60"
+              >
+                {/* Icon */}
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-xl"
+                  style={{ background: `linear-gradient(135deg, ${s.hex}22, ${s.hex}0a)`, border: `1px solid ${s.hex}30` }}
+                >
+                  <span style={{ color: s.hex }}>
+                    <Icon />
+                  </span>
+                </div>
+
+                {/* Text */}
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">{title}</p>
+                  <p className="mt-1 text-xs text-muted/60">{desc}</p>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex justify-end">
+                  <span
+                    className="transition-transform duration-200 group-hover:translate-x-1"
+                    style={{ color: s.hex }}
+                  >
+                    <ArrowRightIcon />
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
+      </div>
+
+      {/* ── Bottom row ── */}
+      <div className="mt-8 grid gap-4 lg:grid-cols-2">
+
+        {/* Recent Activity */}
+        <div className="rounded-2xl border border-white/8 bg-surface p-6">
+          <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
+            Recent Activity
+          </p>
+          <ul className="space-y-1">
+            {mockActivity.map((item) => {
+              const cfg = statusConfig[item.status];
+              return (
+                <li
+                  key={item.id}
+                  className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-white/4"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${cfg.dot}`} />
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium text-foreground">{item.label}</p>
+                      <p className="text-[10px] font-mono text-muted/50 tabular-nums">{item.sub}</p>
+                    </div>
+                  </div>
+                  <span className={`ml-3 shrink-0 text-[10px] font-semibold uppercase tracking-wide ${cfg.text}`}>
+                    {cfg.label}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* System */}
+        <div className="rounded-2xl border border-white/8 bg-surface p-6">
+          <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
+            System
+          </p>
+          <ul className="space-y-3">
+            {/* Last deploy */}
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+              <div className="flex items-center gap-3">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="text-xs text-muted/80">Last Deploy</span>
+              </div>
+              <span className="font-mono text-[10px] tabular-nums text-muted/50">Vercel · just now</span>
+            </li>
+
+            {/* DB connection */}
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+              <div className="flex items-center gap-3">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="text-xs text-muted/80">Database</span>
+              </div>
+              <span className="font-mono text-[10px] tabular-nums text-emerald-400/80">Connected</span>
+            </li>
+
+            {/* Shop hours */}
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+              <div className="flex items-center gap-3">
+                <span className={`h-1.5 w-1.5 rounded-full ${shopOpen ? 'bg-emerald-400' : 'bg-muted/40'}`} />
+                <span className="text-xs text-muted/80">Shop Hours</span>
+              </div>
+              <span className={`font-mono text-[10px] tabular-nums ${shopOpen ? 'text-emerald-400/80' : 'text-muted/50'}`}>
+                {shopOpen ? 'Open' : 'Closed'}
+              </span>
+            </li>
+
+            {/* Storage */}
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+              <div className="flex items-center gap-3">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                <span className="text-xs text-muted/80">Blob Storage</span>
+              </div>
+              <span className="font-mono text-[10px] tabular-nums text-amber-400/80">Vercel · Active</span>
+            </li>
+          </ul>
+        </div>
+
       </div>
     </AdminShell>
   );
