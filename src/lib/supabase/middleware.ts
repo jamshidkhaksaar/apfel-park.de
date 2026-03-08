@@ -86,8 +86,9 @@ export const updateSession = async (request: NextRequest) => {
     }
   }
 
-  // Redirect logged in users away from login page
-  if (isLogin && user) {
+  // Redirect logged in users away from login page (unless showing an error)
+  const hasError = request.nextUrl.searchParams.has("error");
+  if (isLogin && user && !hasError) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin";
     return NextResponse.redirect(url);
