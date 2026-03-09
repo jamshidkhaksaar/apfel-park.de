@@ -76,8 +76,8 @@ export default function SiteHeader({
             </span>
           </div>
           <div className="hidden items-center gap-4 text-muted/80 md:flex">
-            <Link href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="flex items-center gap-1.5 transition hover:text-gold">
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <Link href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="flex items-center gap-1.5 rounded-sm transition hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1 focus-visible:ring-offset-black">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
               {siteInfo.phone}
@@ -112,7 +112,7 @@ export default function SiteHeader({
                 <Link
                   key={item.path}
                   href={fullPath}
-                  className={`group relative whitespace-nowrap px-3 py-2 text-sm font-medium transition hover:text-foreground ${
+                  className={`group relative whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
                     isActive ? "text-foreground" : "text-muted"
                   }`}
                   aria-current={isExactMatch ? "page" : undefined}
@@ -120,7 +120,7 @@ export default function SiteHeader({
                   {item.label}
                   <span
                     className={`absolute bottom-0 left-1/2 h-0.5 -translate-x-1/2 bg-gradient-to-r from-gold-soft to-gold-deep transition-all ${
-                      isActive ? "w-full" : "w-0 group-hover:w-full"
+                      isActive ? "w-full" : "w-0 group-hover:w-full group-focus-visible:w-full"
                     }`}
                   />
                 </Link>
@@ -136,10 +136,10 @@ export default function SiteHeader({
               
               <Link
                 href={`/${lang}/store`}
-                className="group relative flex h-8 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-br from-gold via-amber to-bronze pl-3 pr-4 text-xs font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg shadow-gold/20 transition-all hover:scale-105 hover:shadow-gold/40"
+                className="group relative flex h-8 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-br from-gold via-amber to-bronze pl-3 pr-4 text-xs font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg shadow-gold/20 transition-all hover:scale-105 hover:shadow-gold/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
-                <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
-                <svg className="relative z-10 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
+                <svg className="relative z-10 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
                 <span className="relative z-10">{lang === "de" ? "Shop" : "Store"}</span>
@@ -152,9 +152,9 @@ export default function SiteHeader({
             
             <Link
               href={`/${lang}/repairs`}
-              className="btn-primary !hidden lg:!inline-flex !px-3 !py-1.5 text-xs uppercase tracking-wide"
+              className="btn-primary !hidden lg:!inline-flex !px-3 !py-1.5 text-xs uppercase tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
-              <svg className="relative z-10 h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="relative z-10 h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               <span className="relative z-10 whitespace-nowrap">{lang === "de" ? "Reparatur" : "Repair"}</span>
@@ -163,7 +163,7 @@ export default function SiteHeader({
             {/* Mobile Menu Button */}
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
               aria-label={mobileMenuOpen ? labels.closeMenu : labels.openMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu-nav"
@@ -203,7 +203,7 @@ export default function SiteHeader({
                 key={item.path}
                 href={fullPath}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-gold/5 hover:text-gold ${
+                className={`rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-gold/5 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
                   isActive ? "bg-gold/5 text-gold" : "text-muted"
                 }`}
                 aria-current={isExactMatch ? "page" : undefined}
@@ -216,9 +216,9 @@ export default function SiteHeader({
             <Link
               href={`/${lang}/repairs`}
               onClick={() => setMobileMenuOpen(false)}
-              className="btn-primary flex items-center justify-center gap-2 !py-3 text-sm font-bold uppercase tracking-wide"
+              className="btn-primary flex items-center justify-center gap-2 !py-3 text-sm font-bold uppercase tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               <span>{lang === "de" ? "Schnell-Reparatur" : "Quick Repair"}</span>
@@ -226,9 +226,9 @@ export default function SiteHeader({
             <Link
               href={`/${lang}/store`}
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-3 text-sm font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg"
+              className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-gold via-amber to-bronze px-4 py-3 text-sm font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
               <span>{lang === "de" ? "Zum Online Shop" : "Go to Store"}</span>
