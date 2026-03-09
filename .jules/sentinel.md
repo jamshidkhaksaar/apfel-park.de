@@ -32,3 +32,8 @@
 **Vulnerability:** The Contact API (`/api/contact`) accepted arbitrary-length strings for `name` and `message` without sanitization, exposing the database and application to potential Denial of Service (DoS) or storage exhaustion.
 **Learning:** `request.json()` can return any JSON type (including massive strings or non-string primitives), bypassing naive type assumptions in validation logic.
 **Prevention:** Implemented strict input length validation (`isValidInputLength`) and type-safe sanitization (`sanitizeInput` handling non-string inputs) for all public API endpoints.
+
+## 2024-05-24 - Open Redirect via Backslash Bypass
+**Vulnerability:** The `isSafeRedirect` function allowed open redirects by only checking for `//` prefixes. Attackers could bypass this using a backslash `/\example.com`, which the browser resolves as an absolute URL `http://example.com/`.
+**Learning:** Browsers normalize backslashes (`\`) to forward slashes (`/`) in URLs. Simply checking for `//` is insufficient to prevent open redirects; the logic must also account for `/\` and `\\` permutations.
+**Prevention:** Explicitly block `/\` and `\\` sequences in the `isSafeRedirect` validation function alongside the standard `//` check to ensure strict path-relative URLs.
