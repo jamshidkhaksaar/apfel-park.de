@@ -25,3 +25,7 @@
 ## 2026-02-14 - [Radio Group Pattern]
 **Learning:** When offering mutually exclusive choices (like languages), use the Radio Group pattern (`role='radiogroup'` + `aria-checked`) instead of Toggle Buttons (`aria-pressed`), as it better communicates the 'one-of-many' selection model to assistive technologies.
 **Action:** Use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` on options for exclusive selections.
+
+## 2026-03-13 - Prevent Redundant Screen Reader Announcements for Decorative Inner SVGs
+**Learning:** When SVGs are used as decorative elements inside interactive components (like links or buttons) that already have text or aria-labels providing context, screen readers may announce the SVG unnecessarily, causing redundant or confusing output.
+**Action:** Always add `aria-hidden="true"` to decorative inner SVGs in interactive elements to ensure they are ignored by assistive technologies, keeping announcements concise and focused on the element's actual purpose.
