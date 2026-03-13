@@ -140,6 +140,8 @@ export default function SiteFooter({ lang }: { lang: Locale }) {
             <Link
               href={siteInfo.map.linkUrl}
               target="_blank"
+              // Prevent reverse tabnabbing vulnerability
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm font-medium text-gold transition hover:text-gold-soft"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
