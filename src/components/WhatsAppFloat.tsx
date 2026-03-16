@@ -94,7 +94,10 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
 
         {/* Notification Badge */}
         <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-contrast-adaptive shadow-lg">
-          1
+          <span aria-hidden="true">1</span>
+          <span className="sr-only">
+            {lang === "de" ? "1 ungelesene Nachricht" : "1 unread message"}
+          </span>
         </span>
       </a>
     </div>
