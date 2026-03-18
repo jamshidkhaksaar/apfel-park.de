@@ -28,10 +28,10 @@ export const isAdminUser = (user: User | null): boolean => {
     return true;
   }
 
-  const userRole = user.user_metadata?.role;
-  if (typeof userRole === "string" && userRole.toLowerCase() === "admin") {
-    return true;
-  }
+  // 🛡️ Sentinel: Removed user_metadata role check.
+  // user_metadata is editable by the user via the Supabase Auth API.
+  // Relying on it for authorization leads to privilege escalation.
+  // Only app_metadata (which requires a service role key to modify) is safe for roles.
 
   const appRoles = toStringArray(user.app_metadata?.roles).map((role) => role.toLowerCase());
   if (appRoles.includes("admin")) {
