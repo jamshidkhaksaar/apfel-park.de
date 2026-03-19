@@ -10,10 +10,11 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
 
   useEffect(() => {
     let ticking = false;
+    let frameId: number | undefined;
 
     const onScroll = () => {
       if (!ticking) {
-        window.requestAnimationFrame(() => {
+        frameId = window.requestAnimationFrame(() => {
           setVisible(window.scrollY > window.innerHeight);
           ticking = false;
         });
@@ -21,8 +22,19 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
       }
     };
 
+    // Initial check deferred to avoid synchronous setState in useEffect
+    const initialFrameId = window.requestAnimationFrame(() => {
+      setVisible(window.scrollY > window.innerHeight);
+    });
+
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.cancelAnimationFrame(initialFrameId);
+      if (frameId !== undefined) {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
   }, []);
 
   const showTooltip = visible && (isHovered || isFocused);
