@@ -27,7 +27,7 @@ export default function SiteHeader({
 
   useEffect(() => {
     let ticking = false;
-    let frameId: number;
+    let frameId: number | undefined;
 
     const onScroll = () => {
       if (!ticking) {
@@ -40,14 +40,20 @@ export default function SiteHeader({
     };
 
     // Initial check deferred to avoid synchronous setState in useEffect
-    frameId = window.requestAnimationFrame(() => {
+    const initialFrameId = window.requestAnimationFrame(() => {
       setIsScrolled(window.scrollY > 12);
     });
 
     window.addEventListener("scroll", onScroll, { passive: true });
+
+    // ⚡ Bolt: Memory Leak & Perf Fix
+    // Impact: Prevents orphaned requestAnimationFrame callbacks from executing after unmount,
+    // which previously caused unnecessary React re-renders and main thread work on dead components.
+    // Separation of frameId and initialFrameId ensures neither is overwritten before cleanup.
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.cancelAnimationFrame(frameId);
+      if (frameId !== undefined) window.cancelAnimationFrame(frameId);
+      if (initialFrameId !== undefined) window.cancelAnimationFrame(initialFrameId);
     };
   }, []);
 
