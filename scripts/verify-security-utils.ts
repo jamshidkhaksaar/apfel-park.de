@@ -4,7 +4,8 @@ import {
   validateImageFileExtension,
   isValidEmail,
   isValidInputLength,
-  sanitizeInput
+  sanitizeInput,
+  isSafeRedirect
 } from "../src/lib/security";
 
 console.log("Running security verification...");
@@ -175,6 +176,32 @@ sanitizeCases.forEach(({ input, expected }, index) => {
     failed = true;
   } else {
     console.log(`✅ Sanitize case ${index + 1} passed`);
+  }
+});
+
+console.log("\nTesting isSafeRedirect...");
+const redirectCases = [
+  { input: "/valid-path", expected: true },
+  { input: "/valid/path/with/segments", expected: true },
+  { input: "https://example.com", expected: false },
+  { input: "//example.com", expected: false },
+  { input: "/\\example.com", expected: false },
+  { input: "javascript:alert(1)", expected: false },
+  { input: null, expected: false },
+  { input: undefined, expected: false },
+  { input: "", expected: false },
+];
+
+redirectCases.forEach(({ input, expected }, index) => {
+  const result = isSafeRedirect(input);
+  if (result !== expected) {
+    console.error(`❌ Redirect case ${index + 1} failed:`);
+    console.error(`   Input:    ${input}`);
+    console.error(`   Expected: ${expected}`);
+    console.error(`   Actual:   ${result}`);
+    failed = true;
+  } else {
+    console.log(`✅ Redirect case ${index + 1} passed`);
   }
 });
 
