@@ -28,10 +28,9 @@ export const isAdminUser = (user: User | null): boolean => {
     return true;
   }
 
-  const userRole = user.user_metadata?.role;
-  if (typeof userRole === "string" && userRole.toLowerCase() === "admin") {
-    return true;
-  }
+  // 🛡️ SECURITY: Never trust user_metadata for authorization.
+  // user_metadata can be modified by the user via the client-side Auth API.
+  // Use app_metadata (which requires service role) or ADMIN_EMAILS instead.
 
   const appRoles = toStringArray(user.app_metadata?.roles).map((role) => role.toLowerCase());
   if (appRoles.includes("admin")) {
