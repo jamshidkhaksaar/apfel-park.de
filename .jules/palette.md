@@ -25,3 +25,7 @@
 ## 2026-02-14 - [Radio Group Pattern]
 **Learning:** When offering mutually exclusive choices (like languages), use the Radio Group pattern (`role='radiogroup'` + `aria-checked`) instead of Toggle Buttons (`aria-pressed`), as it better communicates the 'one-of-many' selection model to assistive technologies.
 **Action:** Use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` on options for exclusive selections.
+
+## 2026-03-26 - [Hover-Triggered Micro-Interactions]
+**Learning:** Decorative micro-interactions, such as an arrow or icon fading in via `group-hover:opacity-100` on a link hover state, are completely invisible to keyboard users. This creates a disparity in the level of visual polish experienced between mouse and keyboard navigation.
+**Action:** Always pair `group-hover:opacity-100` with `group-focus-visible:opacity-100` (or similar focus-based modifiers) for purely decorative hover effects on interactive elements, ensuring the delightful micro-UX is accessible to all users.
