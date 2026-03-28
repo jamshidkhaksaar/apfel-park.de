@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-03-28 - Isolating High-Frequency Layout Updates
+**Learning:** Adding a `setInterval` (like a ticking clock) to a top-level layout component (like `AdminShell`) causes the entire layout and all its un-memoized children to re-render every interval tick, severely degrading performance and responsiveness across all nested pages.
+**Action:** Always isolate high-frequency state updates (e.g., clocks, polling) into their own small, separate child components. This ensures only the tiny specific component re-renders, protecting the parent layout's performance.
