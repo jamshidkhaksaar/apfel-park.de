@@ -138,7 +138,7 @@ export default function SiteHeader({
                 href={`/${lang}/store`}
                 className="group relative flex h-8 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-br from-gold via-amber to-bronze pl-3 pr-4 text-xs font-bold uppercase tracking-wider text-contrast-adaptive shadow-lg shadow-gold/20 transition-all hover:scale-105 hover:shadow-gold/40"
               >
-                <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
                 <svg className="relative z-10 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>

@@ -25,3 +25,7 @@
 ## 2026-02-14 - [Radio Group Pattern]
 **Learning:** When offering mutually exclusive choices (like languages), use the Radio Group pattern (`role='radiogroup'` + `aria-checked`) instead of Toggle Buttons (`aria-pressed`), as it better communicates the 'one-of-many' selection model to assistive technologies.
 **Action:** Use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` on options for exclusive selections.
+
+## 2026-02-14 - [Hover-Only Interactive Overlays (Links)]
+**Learning:** Decorative hover effects on interactive elements (e.g., fading in an icon using `group-hover:opacity-100`) can create accessibility traps for keyboard users when there isn't a corresponding focus state modifier.
+**Action:** Always pair `group-hover:opacity-100` with `group-focus-visible:opacity-100` on interactive overlay elements to ensure visual parity and accessibility for keyboard users.
