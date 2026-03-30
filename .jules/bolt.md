@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-02-05 - Isolating High-Frequency State Updates
+**Learning:** Having a high-frequency state update like `setInterval(..., 1000)` inside a large layout or top-level shell component causes the entire component tree to unnecessarily re-render every tick. In `AdminShell`, a simple digital clock was triggering massive DOM reconciliation every second.
+**Action:** Always extract high-frequency changing states (like clocks, timers, scrolling trackers) into their own small, isolated child components so only that specific leaf node re-renders.
