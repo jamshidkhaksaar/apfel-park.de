@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { type ReactNode, useState, useEffect } from "react";
+import { type ReactNode, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 import { useAdmin } from "@/lib/admin-context";
 import { useTheme } from "@/components/ThemeProvider";
+import LiveClock from "./LiveClock";
 
 const NavIcon = ({ type }: { type: string }) => {
   const icons: Record<string, ReactNode> = {
@@ -77,17 +78,6 @@ export default function AdminShell({
   const { dict, lang, setLang } = useAdmin();
   const { theme, toggleTheme } = useTheme();
   const [contentOpen, setContentOpen] = useState(false);
-  const [clock, setClock] = useState('');
-
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      setClock(now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
 
   const handleLangChange = (nextLang: 'de' | 'en') => {
     setLang(nextLang);
@@ -170,7 +160,7 @@ export default function AdminShell({
                 </span>
                 <span className="text-[10px] text-muted/70 tracking-wide">Hamburg</span>
               </div>
-              <span className="font-mono text-[10px] tabular-nums text-muted/50">{clock}</span>
+              <LiveClock />
             </div>
 
             {/* Language toggle + theme toggle */}
