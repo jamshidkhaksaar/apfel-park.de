@@ -149,7 +149,7 @@ export default function AdminShell({
 
           {/* Brand mark */}
           <div className="px-5 pb-4 pt-6">
-            <Link href="/admin" className="block">
+            <Link href="/admin" className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background">
               <div className="flex items-center gap-2.5">
                 <span className="text-gold text-base leading-none" aria-hidden="true">◆</span>
                 <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-foreground" style={{ fontVariant: 'small-caps' }}>
@@ -178,7 +178,7 @@ export default function AdminShell({
               <button
                 onClick={() => handleLangChange('de')}
                 aria-pressed={lang === 'de'}
-                className={`rounded px-3 py-1 text-[10px] font-semibold uppercase tracking-widest transition-all duration-150 ${
+                className={`rounded px-3 py-1 text-[10px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                   lang === 'de'
                     ? 'bg-gold/15 text-gold ring-1 ring-gold/30'
                     : 'text-muted/50 hover:text-muted'
@@ -189,7 +189,7 @@ export default function AdminShell({
               <button
                 onClick={() => handleLangChange('en')}
                 aria-pressed={lang === 'en'}
-                className={`rounded px-3 py-1 text-[10px] font-semibold uppercase tracking-widest transition-all duration-150 ${
+                className={`rounded px-3 py-1 text-[10px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                   lang === 'en'
                     ? 'bg-gold/15 text-gold ring-1 ring-gold/30'
                     : 'text-muted/50 hover:text-muted'
@@ -201,7 +201,7 @@ export default function AdminShell({
                 <button
                   onClick={toggleTheme}
                   aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted/50 transition-all duration-150 hover:bg-white/8 hover:text-gold"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted/50 transition-all duration-150 hover:bg-white/8 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   {theme === 'dark' ? (
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -236,7 +236,7 @@ export default function AdminShell({
                     <Link
                       href={item.path}
                       aria-current={isExactMatch ? 'page' : undefined}
-                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 text-xs transition-all duration-150 ${
+                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                         isActive
                           ? 'border-l-2 border-gold bg-gold/5 pl-[10px] text-gold'
                           : 'border-l-2 border-transparent pl-[10px] text-muted/70 hover:bg-white/4 hover:text-foreground'
@@ -256,7 +256,7 @@ export default function AdminShell({
             <div className="mt-4">
               <button
                 onClick={() => setContentOpen((v) => !v)}
-                className="flex w-full items-center justify-between px-2 py-1.5 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/40 hover:text-muted/60 transition-colors duration-150"
+                className="flex w-full items-center justify-between rounded px-2 py-1.5 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/40 hover:text-muted/60 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-expanded={contentOpen}
               >
                 <span>{dict.sidebar.contentSection}</span>
@@ -281,7 +281,7 @@ export default function AdminShell({
                         <Link
                           href={item.path}
                           aria-current={isExactMatch ? 'page' : undefined}
-                          className={`group relative flex items-center gap-3 rounded-lg px-3 py-1.5 text-xs transition-all duration-150 ${
+                          className={`group relative flex items-center gap-3 rounded-lg px-3 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                             isActive
                               ? 'border-l-2 border-gold bg-gold/5 pl-[10px] text-gold'
                               : 'border-l-2 border-transparent pl-[10px] text-muted/60 hover:bg-white/4 hover:text-foreground'
@@ -304,7 +304,7 @@ export default function AdminShell({
           <div className="border-t border-white/5 px-3 py-3">
             <Link
               href={`/${lang}`}
-              className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-white/4 hover:text-foreground"
+              className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-white/4 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <svg className="h-4 w-4 shrink-0 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -313,7 +313,7 @@ export default function AdminShell({
             </Link>
             <button
               onClick={handleLogout}
-              className="mt-0.5 flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2 pl-[10px] text-xs text-red-400/70 transition-all duration-150 hover:bg-red-500/8 hover:text-red-400"
+              className="mt-0.5 flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2 pl-[10px] text-xs text-red-400/70 transition-all duration-150 hover:bg-red-500/8 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
@@ -337,7 +337,7 @@ export default function AdminShell({
                   {i === breadcrumb.length - 1 ? (
                     <span className="text-xs font-semibold text-foreground">{title}</span>
                   ) : (
-                    <Link href={seg.href} className="text-xs text-muted/50 transition hover:text-muted">
+                    <Link href={seg.href} className="rounded text-xs text-muted/50 transition hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                       {seg.label}
                     </Link>
                   )}
@@ -357,7 +357,7 @@ export default function AdminShell({
               <button
                 onClick={toggleTheme}
                 aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted/40 transition-all duration-150 hover:bg-surface hover:text-gold"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted/40 transition-all duration-150 hover:bg-surface hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 {theme === 'dark' ? (
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -372,7 +372,7 @@ export default function AdminShell({
               <button
                 onClick={handleLogout}
                 title={dict.sidebar.logout}
-                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium text-muted/50 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400"
+                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium text-muted/50 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
