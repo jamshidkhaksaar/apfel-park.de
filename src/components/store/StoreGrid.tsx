@@ -117,10 +117,17 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
             >
               {/* Image */}
               <div className="relative aspect-[4/3] w-full overflow-hidden ocean-card-media p-6 transition-colors group-hover:bg-surface-strong/80">
+                {/*
+                 * Bolt Performance Optimization:
+                 * Added sizes attribute to Image component using fill.
+                 * Without sizes, Next.js assumes 100vw and downloads unnecessarily large images
+                 * for grid items, severely hurting LCP and eating bandwidth.
+                 */}
                 <Image
                   src={product.image}
                   alt={product.title}
                   fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-contain transition-transform duration-700 ease-out group-hover:scale-105"
                 />
                 
