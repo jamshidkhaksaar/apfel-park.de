@@ -1,0 +1,13 @@
+▲ Next.js 16.1.1
+- Local:         http://localhost:3003
+- Network:       http://0.0.0.0:3003
+
+✓ Starting...
+✓ Ready in 140ms
+⨯ The requested resource isn't a valid image for /branding/logo.jpg received null
+⨯ The requested resource isn't a valid image for /branding/apfel-park-white.png received null
+⨯ The requested resource isn't a valid image for /images/shop2.jpg received null
+⨯ The requested resource isn't a valid image for /branding/logo.jpg received null
+⨯ The requested resource isn't a valid image for /branding/apfel-park-white.png received null
+⨯ The requested resource isn't a valid image for /images/ipad.png received null
+⨯ The requested resource isn't a valid image for /images/footer-shop.png received null
