@@ -216,6 +216,7 @@ export default function BrandingPage() {
                     src={previews[asset.name]}
                     alt={`${asset.label} preview`}
                     fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-contain p-4"
                   />
                 ) : (
@@ -224,6 +225,7 @@ export default function BrandingPage() {
                       src={asset.currentSrc}
                       alt={asset.label}
                       fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-contain p-4 opacity-60"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";

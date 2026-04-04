@@ -78,6 +78,7 @@ export default function HeroSlider({ lang }: { lang: Locale }) {
           src="/images/shop2.jpg"
           alt={lang === "de" ? "Apfel Park Store in Hamburg" : "Apfel Park Store in Hamburg"}
           fill
+          sizes="100vw"
           className="object-cover object-center"
           priority
         />

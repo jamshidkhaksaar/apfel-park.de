@@ -591,6 +591,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           src="/images/footer-shop.png"
           alt=""
           fill
+          sizes="100vw"
           className="object-cover"
           priority={false}
         />
