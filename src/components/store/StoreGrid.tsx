@@ -121,6 +121,7 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
                   src={product.image}
                   alt={product.title}
                   fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-contain transition-transform duration-700 ease-out group-hover:scale-105"
                 />
                 
