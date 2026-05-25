@@ -88,9 +88,14 @@ export default async function SettingsPage() {
     },
   };
 
+  const secretStatus = {
+    facebookPageAccessToken: Boolean(integrations.facebookPageAccessToken),
+    instagramAccessToken: Boolean(integrations.instagramAccessToken),
+  };
+
   return (
     <AdminShell title={dict.settingsPage.title}>
-      <SettingsForm initialSettings={initialSettings} />
+      <SettingsForm initialSettings={initialSettings} secretStatus={secretStatus} />
     </AdminShell>
   );
 }

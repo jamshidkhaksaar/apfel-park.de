@@ -8,6 +8,10 @@ import { saveSettings } from "./actions";
 import { type SettingsData } from "./types";
 
 type SettingsTab = "general" | "operations" | "whatsapp" | "integrations";
+type SecretStatus = {
+  facebookPageAccessToken: boolean;
+  instagramAccessToken: boolean;
+};
 
 const tabButtonClass = (active: boolean) =>
   `rounded-2xl border px-4 py-3 text-left transition ${
@@ -23,7 +27,13 @@ const statusPillClass = (active: boolean) =>
       : "border-white/10 bg-white/[0.03] text-muted"
   }`;
 
-export default function SettingsForm({ initialSettings }: { initialSettings: SettingsData }) {
+export default function SettingsForm({
+  initialSettings,
+  secretStatus = { facebookPageAccessToken: false, instagramAccessToken: false },
+}: {
+  initialSettings: SettingsData;
+  secretStatus?: SecretStatus;
+}) {
   const router = useRouter();
   const { dict, lang } = useAdmin();
   const [settings, setSettings] = useState<SettingsData>({
@@ -34,8 +44,14 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const facebookPublishingReady = Boolean(settings.integrations.facebookPageId && settings.integrations.facebookPageAccessToken);
-  const instagramPublishingReady = Boolean(settings.integrations.instagramBusinessAccountId && settings.integrations.instagramAccessToken);
+  const facebookPublishingReady = Boolean(
+    settings.integrations.facebookPageId &&
+      (settings.integrations.facebookPageAccessToken || secretStatus.facebookPageAccessToken),
+  );
+  const instagramPublishingReady = Boolean(
+    settings.integrations.instagramBusinessAccountId &&
+      (settings.integrations.instagramAccessToken || secretStatus.instagramAccessToken),
+  );
   const publishingReady = facebookPublishingReady || instagramPublishingReady;
   const autoPublishEnabled = settings.integrations.autoPublishNewProducts || settings.integrations.autoPublishDiscountProducts;
 
