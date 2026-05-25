@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTheme } from "./ThemeProvider";
+import { shouldBypassImageOptimization, useBranding } from "./BrandingProvider";
 
 type LogoProps = {
   /** Size variant */
@@ -40,6 +42,11 @@ export default function Logo({
   priority = false,
 }: LogoProps) {
   const { width, height, containerClass } = sizeMap[size];
+  const { theme } = useTheme();
+  const branding = useBranding();
+  const logoSrc = branding.logo;
+  const logoWhiteSrc = branding.logoWhite;
+  const activeLogoSrc = theme === "mono" ? logoWhiteSrc : logoSrc;
 
   const logoImage = (
     <div
@@ -47,23 +54,17 @@ export default function Logo({
       suppressHydrationWarning
     >
       <Image
-        src="/branding/logo.jpg"
+        src={activeLogoSrc}
         alt="Apfel Park"
         width={width}
         height={height}
-        className="logo-image logo-image-default rounded-xl object-contain shadow-lg"
+        className="logo-image rounded-xl object-contain shadow-lg"
         style={{ width: "100%", height: "100%" }}
         priority={priority}
-        suppressHydrationWarning
-      />
-      <Image
-        src="/branding/apfel-park-white.png"
-        alt="Apfel Park"
-        width={width}
-        height={height}
-        className="logo-image logo-image-mono rounded-xl object-contain shadow-lg"
-        style={{ width: "100%", height: "100%" }}
-        priority={priority}
+        loading={priority ? "eager" : undefined}
+        fetchPriority={priority ? "high" : undefined}
+        sizes={`${width}px`}
+        unoptimized={shouldBypassImageOptimization(activeLogoSrc)}
         suppressHydrationWarning
       />
     </div>

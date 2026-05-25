@@ -76,14 +76,15 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredPhones.map((phone) => (
-              <article key={phone.id} className="tech-card-hover overflow-hidden rounded-2xl">
-                <div className="relative aspect-[4/5]">
+              <Link key={phone.id} href={`/${lang}/store/${phone.slug}`} className="tech-card-hover overflow-hidden rounded-2xl block">
+                <div className="relative aspect-[4/5] bg-[#f5f5f5]">
                   <Image
                     src={phone.image}
                     alt={phone.title}
                     fill
-                    className="object-cover"
+                    className="object-contain p-5 transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                    unoptimized={phone.image.startsWith("/uploads/")}
                   />
                 </div>
                 <div className="p-4">
@@ -92,15 +93,19 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
                   )}
                   <h3 className="mt-1 text-lg font-semibold text-foreground">{phone.title}</h3>
                   <p className="mt-2 text-sm text-muted">{phone.description}</p>
-                  <p className="mt-4 text-2xl font-bold text-gold">€{phone.price}</p>
-                  <Link
-                    href={{ pathname: `/${lang}/contact`, query: { device: phone.title } }}
-                    className="btn-primary mt-4 w-full"
-                  >
-                    <span>{lang === "de" ? "Anfragen" : "Inquire"}</span>
-                  </Link>
+                  <div className="mt-4 flex items-end justify-between gap-3">
+                    <div className="flex flex-col">
+                      <p className="text-2xl font-bold text-gold">€{phone.price}</p>
+                      {phone.compareAtPrice ? (
+                        <span className="text-xs text-muted line-through">€{phone.compareAtPrice}</span>
+                      ) : null}
+                    </div>
+                    <span className="btn-primary pointer-events-none">
+                      <span>{lang === "de" ? "Details" : "Details"}</span>
+                    </span>
+                  </div>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}

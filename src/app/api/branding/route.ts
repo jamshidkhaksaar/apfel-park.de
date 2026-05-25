@@ -1,9 +1,10 @@
-import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminUser } from "@/lib/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { uploadBrandingAsset } from "@/lib/blob";
+import { createAdminDbClient } from "@/lib/admin-db";
+import { createAdminServerClient } from "@/lib/admin-auth-server";
+import { defaultSocialLinks } from "@/lib/site";
 import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
 
 const ALLOWED_TYPES: Record<string, string[]> = {
@@ -33,6 +34,9 @@ const DEFAULT_BRANDING = {
   ogImage: "/images/shop2.jpg",
 } as const;
 
+const SOCIAL_FIELDS = ["instagram", "facebook", "tiktok", "whatsapp"] as const;
+type SocialField = (typeof SOCIAL_FIELDS)[number];
+
 const getExtension = (mimeType: string): string => {
   const extensions: Record<string, string> = {
     "image/png": ".png",
@@ -57,33 +61,33 @@ export async function POST(request: NextRequest) {
     noFiles: isEnglish ? "No files uploaded" : "Keine Dateien hochgeladen",
     saved: isEnglish ? "Saved successfully" : "Erfolgreich gespeichert",
     saveError: isEnglish ? "Failed to save files" : "Fehler beim Speichern der Dateien",
-    blobMissing:
-      isEnglish
-        ? "BLOB_READ_WRITE_TOKEN is not configured"
-        : "BLOB_READ_WRITE_TOKEN ist nicht konfiguriert",
     extensionMismatch:
       isEnglish
         ? "File extension does not match content type for"
         : "Dateiendung passt nicht zum Inhaltstyp fur",
   };
 
-  const supabase = await createClient();
+  const adminClient = await createAdminServerClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await adminClient.auth.getUser();
 
   if (!isAdminUser(user)) {
     return NextResponse.json({ error: messages.unauthorized }, { status: 401 });
-  }
-
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return NextResponse.json({ error: messages.blobMissing }, { status: 500 });
   }
 
   try {
     const formData = await request.formData();
     const savedFiles: string[] = [];
     const uploadedUrls: Partial<Record<"logo" | "logoWhite" | "favicon" | "ogImage", string>> = {};
+    const submittedSocialLinks: Partial<Record<SocialField, string>> = {};
+
+    for (const field of SOCIAL_FIELDS) {
+      const value = formData.get(field);
+      if (typeof value === "string") {
+        submittedSocialLinks[field] = value.trim();
+      }
+    }
 
     for (const [fieldName, file] of formData.entries()) {
       if (!(file instanceof File)) {
@@ -91,8 +95,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Validate field name
-        if (!ALLOWED_TYPES[fieldName]) {
-          return NextResponse.json(
+      if (!ALLOWED_TYPES[fieldName]) {
+        return NextResponse.json(
           { error: `${messages.unknownField}: ${fieldName}` },
           { status: 400 }
         );
@@ -150,46 +154,43 @@ export async function POST(request: NextRequest) {
       const extension = getExtension(normalizedType);
       const baseName = FILE_NAMES[fieldName];
 
-      let blob;
       try {
-        blob = await put(`branding/${baseName}${extension}`, buffer, {
-          access: "public",
-          contentType:
-            fieldName === "favicon" && normalizedType === "application/octet-stream"
-              ? "image/x-icon"
-              : normalizedType,
-          token: process.env.BLOB_READ_WRITE_TOKEN,
-          addRandomSuffix: false,
-          allowOverwrite: true,
-        });
+        const uploadedUrl = await uploadBrandingAsset(`${baseName}${extension}`, buffer);
+        if (fieldName === "logo") uploadedUrls.logo = uploadedUrl;
+        if (fieldName === "logo-white") uploadedUrls.logoWhite = uploadedUrl;
+        if (fieldName === "favicon") uploadedUrls.favicon = uploadedUrl;
+        if (fieldName === "og-image") uploadedUrls.ogImage = uploadedUrl;
       } catch (error) {
         const detail = error instanceof Error ? error.message : "Unknown upload error";
         throw new Error(`${fieldName}: ${detail}`);
       }
-
-      if (fieldName === "logo") uploadedUrls.logo = blob.url;
-      if (fieldName === "logo-white") uploadedUrls.logoWhite = blob.url;
-      if (fieldName === "favicon") uploadedUrls.favicon = blob.url;
-      if (fieldName === "og-image") uploadedUrls.ogImage = blob.url;
       savedFiles.push(fieldName);
     }
 
     if (savedFiles.length === 0) {
-      return NextResponse.json(
-        { error: messages.noFiles },
-        { status: 400 }
-      );
+      const hasSocialUpdates = Object.values(submittedSocialLinks).some((value) => typeof value === "string");
+      if (!hasSocialUpdates) {
+        return NextResponse.json({ error: messages.noFiles }, { status: 400 });
+      }
     }
 
     let existingValue: Record<string, string> | null = null;
+    let existingSocialLinks: Record<string, string> | null = null;
     try {
-      const admin = createAdminClient();
+      const admin = createAdminDbClient();
       const { data: existingRow } = await admin
         .from("store_settings")
         .select("value")
         .eq("key", "branding_assets")
         .maybeSingle();
       existingValue = (existingRow?.value as Record<string, string> | null) ?? null;
+
+      const { data: socialRow } = await admin
+        .from("store_settings")
+        .select("value")
+        .eq("key", "site_social_links")
+        .maybeSingle();
+      existingSocialLinks = (socialRow?.value as Record<string, string> | null) ?? null;
     } catch (error) {
       console.error("Failed to read existing branding settings:", error);
     }
@@ -200,8 +201,14 @@ export async function POST(request: NextRequest) {
       ...uploadedUrls,
     };
 
+    const mergedSocialLinks = {
+      ...defaultSocialLinks,
+      ...(existingSocialLinks ?? {}),
+      ...submittedSocialLinks,
+    };
+
     try {
-      const admin = createAdminClient();
+      const admin = createAdminDbClient();
       const { error: saveSettingsError } = await admin.from("store_settings").upsert(
         {
           key: "branding_assets",
@@ -211,9 +218,18 @@ export async function POST(request: NextRequest) {
         { onConflict: "key" },
       );
 
-      if (saveSettingsError) {
+      const { error: saveSocialError } = await admin.from("store_settings").upsert(
+        {
+          key: "site_social_links",
+          value: mergedSocialLinks,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
+
+      if (saveSettingsError || saveSocialError) {
         return NextResponse.json(
-          { error: saveSettingsError.message || messages.saveError },
+          { error: saveSettingsError?.message || saveSocialError?.message || messages.saveError },
           { status: 500 },
         );
       }
@@ -227,41 +243,53 @@ export async function POST(request: NextRequest) {
       message: `${messages.saved}: ${savedFiles.join(", ")}`,
       files: savedFiles,
       branding: mergedBranding,
+      socialLinks: mergedSocialLinks,
     });
   } catch (error) {
     console.error("Branding upload error:", error);
     const detail = error instanceof Error ? error.message : messages.saveError;
-    return NextResponse.json(
-      { error: `${messages.saveError} (${detail})` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `${messages.saveError} (${detail})` }, { status: 500 });
   }
 }
 
 export async function GET() {
-  const supabase = await createClient();
+  const adminClient = await createAdminServerClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await adminClient.auth.getUser();
 
   if (!isAdminUser(user)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const admin = createAdminClient();
+    const admin = createAdminDbClient();
     const { data } = await admin
       .from("store_settings")
       .select("value")
       .eq("key", "branding_assets")
       .maybeSingle();
 
+    const { data: socialData } = await admin
+      .from("store_settings")
+      .select("value")
+      .eq("key", "site_social_links")
+      .maybeSingle();
+
     const stored = (data?.value as Record<string, string> | null) ?? null;
+    const socialLinks = (socialData?.value as Record<string, string> | null) ?? null;
     return NextResponse.json({
       ...DEFAULT_BRANDING,
       ...(stored ?? {}),
+      socialLinks: {
+        ...defaultSocialLinks,
+        ...(socialLinks ?? {}),
+      },
     });
   } catch {
-    return NextResponse.json(DEFAULT_BRANDING);
+    return NextResponse.json({
+      ...DEFAULT_BRANDING,
+      socialLinks: defaultSocialLinks,
+    });
   }
 }

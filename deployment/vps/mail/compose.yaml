@@ -1,0 +1,53 @@
+services:
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver@sha256:4f5093c251b61d5691f5ccfd3f90fcbf505585bfd045546430d282e5417658c8
+    container_name: mailserver
+    hostname: mail
+    domainname: apfel-park.de
+    env_file:
+      - .env
+    ports:
+      - "25:25"
+      - "465:465"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - /srv/apfel-park/mail/docker-data/mail-data:/var/mail
+      - /srv/apfel-park/mail/docker-data/mail-state:/var/mail-state
+      - /srv/apfel-park/mail/docker-data/mail-logs:/var/log/mail
+      - /srv/apfel-park/mail/docker-data/config:/tmp/docker-mailserver
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    stop_grace_period: 1m
+    cap_add:
+      - NET_ADMIN
+    healthcheck:
+      test: "ss --listening --tcp | grep -P 'LISTEN.+:smtp' || exit 1"
+      timeout: 3s
+      retries: 0
+
+  roundcube:
+    image: roundcube/roundcubemail@sha256:5f202ebd4b2ede2d919eac18352359e19d2e2b14c941be04a06a7bec9fc0a579
+    container_name: roundcube
+    env_file:
+      - ./roundcube.env
+    ports:
+      - "127.0.0.1:8081:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "mail.apfel-park.de:46.225.23.177"
+    depends_on:
+      - mailserver
+    restart: unless-stopped
+    volumes:
+      - /srv/apfel-park/mail/docker-data/roundcube/db:/var/roundcube/db
+      - /srv/apfel-park/mail/docker-data/roundcube/temp:/tmp/roundcube-temp
+      - /srv/apfel-park/mail/roundcube/config/apfel-branding.inc.php:/var/roundcube/config/apfel-branding.inc.php:ro
+      - /srv/apfel-park/mail/roundcube/public/apfel-branding.css:/var/www/html/public_html/apfel-branding.css:ro
+      - /srv/apfel-park/mail/roundcube/templates/layout.html:/var/www/html/skins/elastic/templates/includes/layout.html:ro
+      - /srv/apfel-park/app/shared/uploads/branding:/var/www/html/public_html/apfel-branding:ro
+
+networks:
+  default:
+    name: mail_default

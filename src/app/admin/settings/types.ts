@@ -16,12 +16,44 @@ export type SettingsData = {
     sunday: string;
   };
   maintenance: {
-    enabled: boolean;
+    siteEnabled: boolean;
+    storeEnabled: boolean;
   };
   recaptcha: {
     enabled: boolean;
     siteKey: string;
     secretKey: string;
     minScore: number;
+  };
+  integrations: {
+    whatsappWidgetEnabled: boolean;
+    whatsappNumber: string;
+    whatsappDefaultMessageDe: string;
+    whatsappDefaultMessageEn: string;
+    whatsappCloudApiEnabled: boolean;
+    whatsappPhoneNumberId: string;
+    whatsappBusinessAccountId: string;
+    whatsappAccessToken: string;
+    whatsappWebhookVerifyToken: string;
+    metaPixelEnabled: boolean;
+    metaPixelId: string;
+    metaConversionsApiToken: string;
+    metaConversionsTestEventCode: string;
+    tiktokPixelEnabled: boolean;
+    tiktokPixelId: string;
+    tiktokEventsApiToken: string;
+    tiktokTestEventCode: string;
+    googleAnalyticsEnabled: boolean;
+    googleAnalyticsId: string;
+    facebookPageId: string;
+    facebookPageAccessToken: string;
+    instagramBusinessAccountId: string;
+    instagramAccessToken: string;
+    tiktokShopEnabled: boolean;
+    tiktokShopAppKey: string;
+    tiktokShopAppSecret: string;
+    tiktokShopWebhookSecret: string;
+    autoPublishNewProducts: boolean;
+    autoPublishDiscountProducts: boolean;
   };
 };

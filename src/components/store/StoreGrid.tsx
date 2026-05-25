@@ -13,6 +13,11 @@ type StoreGridProps = {
 
 const categories = ["all", "smartphones", "accessories", "consoles", "laptops"];
 
+const discountPercentage = (price: number, compareAtPrice?: number) => {
+  if (!compareAtPrice || compareAtPrice <= price) return null;
+  return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
+};
+
 export default function StoreGrid({ products, lang }: StoreGridProps) {
   const [activeCategory, setActiveCategory] = useState("all");
   const [sortBy, setSortBy] = useState("featured");
@@ -91,56 +96,60 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
       {/* Main Grid */}
       <div className="flex-1">
         {/* Toolbar */}
-        <div className="mb-6 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
           <p className="text-sm text-muted">
             <span className="font-bold text-white">{filteredProducts.length}</span> {lang === "de" ? "Produkte" : "Products"}
           </p>
-          
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            aria-label={lang === "de" ? "Sortieren nach" : "Sort by"}
-            className="rounded-lg border border-white/10 bg-black px-3 py-1.5 text-sm text-white focus:border-gold focus:outline-none"
-          >
-            <option value="featured">{lang === "de" ? "Empfohlen" : "Featured"}</option>
-            <option value="price-asc">{lang === "de" ? "Preis: Aufsteigend" : "Price: Low to High"}</option>
-            <option value="price-desc">{lang === "de" ? "Preis: Absteigend" : "Price: High to Low"}</option>
-          </select>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href={`/${lang}/cart`} className="rounded-lg border border-gold/40 px-3 py-1.5 text-sm font-semibold text-gold transition hover:bg-gold/10">
+              {lang === "de" ? "Warenkorb" : "Cart"}
+            </Link>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              aria-label={lang === "de" ? "Sortieren nach" : "Sort by"}
+              className="rounded-lg border border-white/10 bg-black px-3 py-1.5 text-sm text-white focus:border-gold focus:outline-none"
+            >
+              <option value="featured">{lang === "de" ? "Empfohlen" : "Featured"}</option>
+              <option value="price-asc">{lang === "de" ? "Preis: Aufsteigend" : "Price: Low to High"}</option>
+              <option value="price-desc">{lang === "de" ? "Preis: Absteigend" : "Price: High to Low"}</option>
+            </select>
+          </div>
         </div>
 
         {/* Products */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredProducts.map((product) => (
-            <div
+            (() => {
+              const discount = discountPercentage(product.price, product.compareAtPrice);
+
+              return (
+            <Link
               key={product.id}
+              href={`/${lang}/store/${product.slug}`}
               className="group relative flex flex-col overflow-hidden rounded-3xl ocean-card shadow-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gold/20 hover:ring-1 hover:ring-gold/30"
             >
               {/* Image */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden ocean-card-media p-6 transition-colors group-hover:bg-surface-strong/80">
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#f5f5f5] p-5">
                 <Image
                   src={product.image}
                   alt={product.title}
                   fill
                   className="object-contain transition-transform duration-700 ease-out group-hover:scale-105"
+                  unoptimized={product.image.startsWith("/uploads/")}
                 />
                 
                 {/* Badge */}
                 <span className="absolute left-3 top-3 rounded-full bg-surface/80 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-muted-strong backdrop-blur-md">
                   {product.category}
                 </span>
+                {discount ? (
+                  <span className="absolute right-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                    -{discount}%
+                  </span>
+                ) : null}
 
-                {/* Quick Action Overlay */}
-                <div className="absolute bottom-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus-within:translate-y-0 focus-within:opacity-100">
-                  <Link
-                    href={`/${lang}/contact?device=${encodeURIComponent(product.title)}`}
-                    aria-label={lang === "de" ? `Anfragen: ${product.title}` : `Inquire about ${product.title}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-foreground shadow-lg transition hover:scale-110 hover:bg-gold"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                  </Link>
-                </div>
               </div>
 
               {/* Info */}
@@ -153,19 +162,24 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
                 </p>
                 
                 <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-3">
-                  <span className="text-base font-semibold text-foreground">
-                    {product.price.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
-                  </span>
-                  <Link
-                    href={`/${lang}/contact?device=${encodeURIComponent(product.title)}`}
-                    aria-label={lang === "de" ? `Details zu ${product.title}` : `Details for ${product.title}`}
-                    className="text-[9px] font-bold uppercase tracking-wider text-muted-strong transition-colors hover:text-gold"
-                  >
+                  <div className="flex flex-col">
+                    <span className="text-base font-semibold text-foreground">
+                      {product.price.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
+                    </span>
+                    {product.compareAtPrice ? (
+                      <span className="text-xs text-muted line-through">
+                        {product.compareAtPrice.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-strong transition-colors group-hover:text-gold">
                     {lang === "de" ? "Details" : "Details"} →
-                  </Link>
+                  </span>
                 </div>
               </div>
-            </div>
+            </Link>
+              );
+            })()
           ))}
         </div>
         

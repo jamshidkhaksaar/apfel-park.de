@@ -78,18 +78,21 @@ export default async function LaptopsPage({ params }: { params: Promise<{ lang: 
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 50vw, 33vw"
+                      unoptimized={product.image.startsWith("/uploads/")}
                     />
                   </div>
                   <div className="p-6">
                     <h3 className="text-lg font-bold text-foreground">{product.title}</h3>
                     <p className="mt-2 text-sm text-muted">{product.description}</p>
                     <div className="mt-4 flex items-center justify-between">
-                      <span className="text-2xl font-bold text-gold">€{product.price}</span>
-                      <Link
-                        href={{ pathname: `/${lang}/contact`, query: { device: product.title } }}
-                        className="btn-primary"
-                      >
-                        <span>{lang === "de" ? "Anfragen" : "Inquire"}</span>
+                      <div className="flex flex-col">
+                        <span className="text-2xl font-bold text-gold">€{product.price}</span>
+                        {product.compareAtPrice ? (
+                          <span className="text-xs text-muted line-through">€{product.compareAtPrice}</span>
+                        ) : null}
+                      </div>
+                      <Link href={`/${lang}/store/${product.slug}`} className="btn-primary">
+                        <span>{lang === "de" ? "Details" : "Details"}</span>
                       </Link>
                     </div>
                   </div>

@@ -497,13 +497,25 @@
 
   /* Professional Hero Overlays */
   .hero-gradient-overlay {
-    background: 
-      linear-gradient(135deg, rgba(8, 8, 12, 0.98) 0%, rgba(10, 10, 14, 0.92) 25%, rgba(15, 13, 10, 0.78) 55%, rgba(16, 12, 8, 0.55) 75%, rgba(12, 10, 8, 0.2) 100%);
+    background:
+      linear-gradient(105deg,
+        rgba(6, 6, 10, 0.98) 0%,
+        rgba(9, 8, 12, 0.93) 20%,
+        rgba(14, 11, 8, 0.78) 48%,
+        rgba(18, 14, 8, 0.42) 68%,
+        rgba(10, 8, 6, 0.12) 100%),
+      linear-gradient(to bottom,
+        rgba(0, 0, 0, 0.55) 0%,
+        transparent 35%,
+        transparent 65%,
+        rgba(0, 0, 0, 0.70) 100%);
   }
 
   .hero-vignette {
-    background: 
-      radial-gradient(ellipse at 30% 45%, transparent 20%, rgba(8, 8, 12, 0.45) 60%, rgba(6, 6, 10, 0.88) 100%);
+    background:
+      radial-gradient(ellipse at 25% 50%, transparent 10%, rgba(5, 5, 9, 0.58) 50%, rgba(4, 4, 8, 0.94) 100%),
+      radial-gradient(ellipse at 90% 15%, rgba(196, 148, 32, 0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 85%, rgba(20, 40, 160, 0.08) 0%, transparent 45%);
   }
 
   .hero-content-panel {
@@ -608,6 +620,36 @@
     .hero-right-card {
       animation: none;
     }
+  }
+
+  /* ── Hero: floating brand badges ── */
+  .hero-brand-badge {
+    background: linear-gradient(135deg, rgba(8, 8, 14, 0.80) 0%, rgba(12, 12, 18, 0.65) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* ── Hero: scan-line grain overlay ── */
+  .hero-scanline-overlay {
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 0, 0, 0.06) 3px,
+      rgba(0, 0, 0, 0.06) 4px
+    );
+    opacity: 0.6;
+  }
+
+  /* ── Float animations ── */
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+  }
+
+  .animate-float-slow {
+    animation: float-slow 16s ease-in-out infinite;
   }
 
   .hero-headline {
@@ -900,13 +942,24 @@
 
   /* Mono theme - Hero section */
   [data-theme="mono"] .hero-gradient-overlay {
-    background: 
-      linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.93) 25%, rgba(247, 243, 237, 0.8) 55%, rgba(245, 240, 234, 0.55) 75%, rgba(240, 236, 230, 0.25) 100%);
+    background:
+      linear-gradient(105deg,
+        rgba(255, 255, 255, 0.98) 0%,
+        rgba(255, 253, 248, 0.93) 22%,
+        rgba(248, 243, 236, 0.80) 48%,
+        rgba(245, 240, 233, 0.50) 68%,
+        rgba(240, 235, 228, 0.20) 100%),
+      linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.45) 0%,
+        transparent 35%,
+        transparent 65%,
+        rgba(255, 255, 255, 0.72) 100%);
   }
 
   [data-theme="mono"] .hero-vignette {
-    background: 
-      radial-gradient(ellipse at 30% 45%, transparent 20%, rgba(255, 255, 255, 0.6) 60%, rgba(255, 255, 255, 0.95) 100%);
+    background:
+      radial-gradient(ellipse at 25% 50%, transparent 10%, rgba(255, 255, 255, 0.65) 52%, rgba(255, 255, 255, 0.97) 100%),
+      radial-gradient(ellipse at 90% 15%, rgba(196, 148, 32, 0.07) 0%, transparent 50%);
   }
 
   [data-theme="mono"] .hero-content-panel {
@@ -2028,7 +2081,96 @@
 }
 
 [data-theme="mono"] .text-contrast-adaptive {
-  color: #ffffff;
+  color: #1f1f23;
+}
+
+[data-theme="mono"] .glass-panel,
+[data-theme="mono"] .admin-shell-panel {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="mono"] .glass-panel .text-foreground,
+[data-theme="mono"] .glass-panel .text-heading,
+[data-theme="mono"] .glass-panel .text-gold,
+[data-theme="mono"] .glass-panel .text-amber-400,
+[data-theme="mono"] .glass-panel .text-emerald-400,
+[data-theme="mono"] .glass-panel .text-indigo-400,
+[data-theme="mono"] .glass-panel .text-rose-400 {
+  color: inherit;
+}
+
+[data-theme="mono"] .glass-panel .text-foreground {
+  color: #111111;
+}
+
+[data-theme="mono"] .glass-panel .text-muted,
+[data-theme="mono"] .glass-panel .text-muted\/40,
+[data-theme="mono"] .glass-panel .text-muted\/50,
+[data-theme="mono"] .glass-panel .text-muted\/60,
+[data-theme="mono"] .glass-panel .text-muted\/70,
+[data-theme="mono"] .glass-panel .text-muted\/80 {
+  color: #5d5d63;
+}
+
+[data-theme="mono"] .glass-panel .bg-surface,
+[data-theme="mono"] .glass-panel .bg-surface\/40,
+[data-theme="mono"] .glass-panel .bg-surface\/50,
+[data-theme="mono"] .glass-panel .bg-surface-strong\/60,
+[data-theme="mono"] .glass-panel .bg-black\/10,
+[data-theme="mono"] .glass-panel .bg-black\/20 {
+  background: #f7f4ee;
+}
+
+[data-theme="mono"] .glass-panel .border-white\/8,
+[data-theme="mono"] .glass-panel .border-white\/10,
+[data-theme="mono"] .glass-panel .border-border\/50,
+[data-theme="mono"] .glass-panel .border-border\/60 {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="mono"] .glass-panel .hover\:bg-white\/4:hover,
+[data-theme="mono"] .glass-panel .hover\:bg-white\/5:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="mono"] .admin-shell-root,
+[data-theme="mono"] .admin-shell-root .text-foreground,
+[data-theme="mono"] .admin-shell-root .text-heading {
+  color: #111111;
+}
+
+[data-theme="mono"] .admin-shell-root .text-muted,
+[data-theme="mono"] .admin-shell-root .text-muted\/30,
+[data-theme="mono"] .admin-shell-root .text-muted\/40,
+[data-theme="mono"] .admin-shell-root .text-muted\/50,
+[data-theme="mono"] .admin-shell-root .text-muted\/60,
+[data-theme="mono"] .admin-shell-root .text-muted\/70,
+[data-theme="mono"] .admin-shell-root .text-muted\/80 {
+  color: #4d4d54;
+}
+
+[data-theme="mono"] .admin-shell-root .text-gold,
+[data-theme="mono"] .admin-shell-root .text-amber-200,
+[data-theme="mono"] .admin-shell-root .text-amber-400,
+[data-theme="mono"] .admin-shell-root .text-green-300,
+[data-theme="mono"] .admin-shell-root .text-emerald-300,
+[data-theme="mono"] .admin-shell-root .text-red-300 {
+  color: #111111;
+}
+
+[data-theme="mono"] .admin-shell-panel,
+[data-theme="mono"] .admin-shell-root aside,
+[data-theme="mono"] .admin-shell-root header {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="mono"] .admin-shell-root aside .bg-gold\/5,
+[data-theme="mono"] .admin-shell-root .bg-gold\/10,
+[data-theme="mono"] .admin-shell-root .bg-gold\/15 {
+  background: rgba(181, 132, 47, 0.1);
 }
 
 /* ========================================
@@ -2118,5 +2260,3 @@
 /* ========================================
    END ACCESSIBILITY IMPROVEMENTS
    ======================================== */
-
-

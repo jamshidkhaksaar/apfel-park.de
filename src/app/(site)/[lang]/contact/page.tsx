@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
 import ContactForm from "../../../../components/ContactForm";
+import ExternalMapEmbed from "../../../../components/ExternalMapEmbed";
 import PageIntro from "../../../../components/PageIntro";
+import TrackedLink from "../../../../components/TrackedLink";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
@@ -81,6 +83,31 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                 </span>
               </div>
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TrackedLink
+                href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
+                className="btn-secondary justify-center"
+                eventName="contact_click"
+                eventPayload={{ type: "phone", source: "contact_page" }}
+              >
+                {lang === "de" ? "Anrufen" : "Call"}
+              </TrackedLink>
+              <TrackedLink
+                href={`https://wa.me/${siteInfo.whatsapp}?text=${encodeURIComponent(
+                  lang === "de"
+                    ? "Hallo Apfel Park, ich habe eine Frage."
+                    : "Hello Apfel Park, I have a question.",
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary justify-center"
+                eventName="whatsapp_click"
+                eventPayload={{ source: "contact_page" }}
+              >
+                WhatsApp
+              </TrackedLink>
+            </div>
           </div>
 
           {/* Contact Form */}
@@ -93,11 +120,11 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
         <section className="section-pad bg-surface/30">
           <div className="container-page">
             <div className="overflow-hidden rounded-3xl border border-white/10">
-              <iframe
+              <ExternalMapEmbed
+                lang={lang as Locale}
                 title="Apfel Park Map"
                 src={siteInfo.map.embedUrl}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
+                directionsUrl={siteInfo.map.linkUrl}
                 className="h-96 w-full"
               />
             </div>

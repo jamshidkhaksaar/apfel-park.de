@@ -29,6 +29,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
+.eslintcache
 
 # env files
 .env*
@@ -46,6 +48,18 @@ yarn-error.log*
 *.temp
 tmp/
 temp/
+.cache/
+.tmp/
+
+# local audits and reports
+lighthouse*.json
+lighthouse*.html
+*.lcov
+
+# local test/runtime artifacts
+.cookies/
+*.cookies
+*.har
 
 # typescript
 *.tsbuildinfo

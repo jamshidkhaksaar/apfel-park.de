@@ -1,4 +1,4 @@
-import type { User } from "@supabase/supabase-js";
+import type { User } from "@/lib/auth-types";
 
 const toStringArray = (value: unknown): string[] => {
   if (Array.isArray(value)) {

@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  experimental: {
+    proxyClientMaxBodySize: '35mb',
+  },
   
   // Generate unique build IDs to help with cache invalidation
   generateBuildId: async () => {
@@ -12,6 +15,20 @@ const nextConfig: NextConfig = {
   images: {
     // Enable modern image formats for better compression
     formats: ['image/avif', 'image/webp'],
+    localPatterns: [
+      {
+        pathname: '/uploads/**',
+      },
+      {
+        pathname: '/branding/**',
+      },
+      {
+        pathname: '/images/**',
+      },
+      {
+        pathname: '/favicon.ico',
+      },
+    ],
     remotePatterns: [
       {
         protocol: 'https',

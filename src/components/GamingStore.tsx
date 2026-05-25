@@ -61,30 +61,33 @@ export default function GamingStore({ lang, products }: GamingStoreProps) {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {sortedProducts.map((product) => (
-              <article key={product.id} className="tech-card-hover overflow-hidden rounded-2xl">
-                <div className="relative aspect-[4/3]">
+              <Link key={product.id} href={`/${lang}/store/${product.slug}`} className="tech-card-hover overflow-hidden rounded-2xl block">
+                <div className="relative aspect-[4/3] bg-[#f5f5f5]">
                   <Image
                     src={product.image}
                     alt={product.title}
                     fill
-                    className="object-cover"
+                    className="object-contain p-5 transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                    unoptimized={product.image.startsWith("/uploads/")}
                   />
                 </div>
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-foreground">{product.title}</h3>
                   <p className="mt-2 line-clamp-2 text-sm text-muted">{product.description}</p>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="text-2xl font-bold text-gold">€{product.price}</span>
-                    <Link
-                      href={{ pathname: `/${lang}/contact`, query: { device: product.title } }}
-                      className="rounded-lg bg-gold/10 px-3 py-2 text-sm font-medium text-gold transition hover:bg-gold/20"
-                    >
-                      {lang === "de" ? "Anfragen" : "Inquire"}
-                    </Link>
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-bold text-gold">€{product.price}</span>
+                      {product.compareAtPrice ? (
+                        <span className="text-xs text-muted line-through">€{product.compareAtPrice}</span>
+                      ) : null}
+                    </div>
+                    <span className="rounded-lg bg-gold/10 px-3 py-2 text-sm font-medium text-gold transition pointer-events-none">
+                      {lang === "de" ? "Details" : "Details"}
+                    </span>
                   </div>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}

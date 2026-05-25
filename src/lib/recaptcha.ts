@@ -10,7 +10,7 @@
  * Development mode: Set NEXT_PUBLIC_RECAPTCHA_ENABLED=false to skip verification
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminDbClient } from "@/lib/admin-db";
 
 // Types
 export type ReCaptchaSettings = {
@@ -45,18 +45,19 @@ const DEFAULT_SETTINGS: ReCaptchaSettings = {
  */
 export const getReCaptchaSettings = async (): Promise<ReCaptchaSettings> => {
   try {
-    const supabase = createAdminClient();
+    const adminDb = createAdminDbClient();
 
-    const { data } = await supabase
+    const { data } = await adminDb
       .from("store_settings")
       .select("value")
       .eq("key", "recaptcha")
       .maybeSingle();
 
-    if (data?.value) {
+    const storedValue = data?.value as Partial<ReCaptchaSettings> | null | undefined;
+    if (storedValue) {
       return {
         ...DEFAULT_SETTINGS,
-        ...data.value,
+        ...storedValue,
       };
     }
   } catch (error) {

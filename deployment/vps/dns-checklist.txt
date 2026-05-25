@@ -1,0 +1,16 @@
+Required DNS records in Cloudflare:
+
+A      apfel-park.de           46.225.23.177
+A      www                     46.225.23.177
+A      mail                    46.225.23.177
+MX     apfel-park.de           mail.apfel-park.de  priority 10
+TXT    apfel-park.de           v=spf1 mx -all
+TXT    _dmarc                  v=DMARC1; p=quarantine; rua=mailto:postmaster@apfel-park.de; adkim=s; aspf=s
+TXT    mail._domainkey         v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAneOtiEf/d2M6u8aqnssO4aUHMLLXJQzjzKewEBxMdU+pPe93JnvVU4iAxp1DSdK3QG4wFv9cV5X/Yz7ie+eKoTALrmfwoQ6lVL18y2nIUwOjaiSoRsu7YFC4E77EuqOoKgJoonGVrbMiEr68VsZIwVQOmwNCzJShpuO8wP48GRWQS8bagW/4ZChZbsUuO/EdDP1kLrpzElLNF0dZQMCOIqessCVJjn6xjTGWN21wh48Y8JoRkkeZL0SMvRbEt5YCrnH0EDQLFx9HeuDaZjNHk0lB+P89auTVckPSlZYC3RBYtrP9MMY/igtbn8mvr1Dbxb/V+hfS4BeADba5aGLbrwIDAQAB
+
+Also required outside Cloudflare DNS records:
+- PTR / reverse DNS for 46.225.23.177 -> mail.apfel-park.de
+
+Cloudflare proxy rules:
+- `apfel-park.de` and `www` may be proxied
+- `mail` must be DNS only

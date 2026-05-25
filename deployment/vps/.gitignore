@@ -1,0 +1,17 @@
+# Keep live VPS secrets and data out of this deployment package.
+.env
+*.env
+!*env.example
+roundcube.env
+postfix-accounts.cf
+*.pem
+*.key
+*.crt
+*.tar
+*.tar.gz
+*.sql
+*.sql.gz
+mail-data/
+mail-state/
+mail-logs/
+backups/

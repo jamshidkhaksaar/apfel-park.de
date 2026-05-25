@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminServerClient } from "@/lib/admin-auth-server";
 import Link from "next/link";
 import { getAdminDictionary, getAdminNumberLocale } from "@/lib/admin-i18n-server";
 import type { AdminDictionary } from "@/lib/admin-i18n";
@@ -10,8 +10,14 @@ type OrderRow = {
   id: string;
   order_number: number | null;
   customer_name: string | null;
+  customer_email: string | null;
   status: string | null;
+  payment_status: string | null;
+  provider: string | null;
+  shipping_method: string | null;
+  paid_at: string | null;
   total_amount: number | string;
+  currency: string | null;
 };
 
 const formatStatus = (status: string | null, dict: AdminDictionary): string => {
@@ -32,12 +38,12 @@ const formatStatus = (status: string | null, dict: AdminDictionary): string => {
 };
 
 export default async function OrdersPage() {
-  const supabase = await createClient();
+  const adminClient = await createAdminServerClient();
   const dict = await getAdminDictionary();
   const numberLocale = await getAdminNumberLocale();
-  const { data } = await supabase
+  const { data } = await adminClient
     .from("orders")
-    .select("id,order_number,customer_name,status,total_amount")
+    .select("id,order_number,customer_name,customer_email,status,payment_status,provider,shipping_method,paid_at,total_amount,currency")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -69,6 +75,8 @@ export default async function OrdersPage() {
                 <th className="px-4 py-3">{dict.ordersPage.table.order}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.customer}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.status}</th>
+                <th className="px-4 py-3">Payment</th>
+                <th className="px-4 py-3">Fulfillment</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.total}</th>
               </tr>
             </thead>
@@ -79,8 +87,16 @@ export default async function OrdersPage() {
                     <td className="px-4 py-3 font-semibold text-foreground">
                       {order.order_number ? `#A-${order.order_number}` : `#${order.id.slice(0, 8)}`}
                     </td>
-                    <td className="px-4 py-3 text-muted">{order.customer_name ?? "-"}</td>
+                    <td className="px-4 py-3 text-muted">
+                      <div>{order.customer_name ?? "-"}</div>
+                      {order.customer_email ? <div className="text-xs">{order.customer_email}</div> : null}
+                    </td>
                     <td className="px-4 py-3 text-muted">{formatStatus(order.status, dict)}</td>
+                    <td className="px-4 py-3 text-muted">
+                      <div>{order.payment_status ?? "-"}</div>
+                      <div className="text-xs">{order.provider ?? "-"}</div>
+                    </td>
+                    <td className="px-4 py-3 text-muted">{order.shipping_method ?? "-"}</td>
                     <td className="px-4 py-3 text-muted">
                       {(() => {
                         const amount = Number(order.total_amount);
@@ -90,7 +106,7 @@ export default async function OrdersPage() {
 
                         return new Intl.NumberFormat(numberLocale, {
                           style: "currency",
-                          currency: "EUR",
+                          currency: order.currency || "EUR",
                         }).format(amount);
                       })()}
                     </td>
@@ -98,7 +114,7 @@ export default async function OrdersPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted">
                     {dict.ordersPage.empty}
                   </td>
                 </tr>

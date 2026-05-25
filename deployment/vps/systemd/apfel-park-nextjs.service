@@ -1,0 +1,19 @@
+[Unit]
+Description=Apfel Park Next.js Application
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/srv/apfel-park/app/current/.next/standalone
+EnvironmentFile=/srv/apfel-park/app/shared/app.env
+Environment=PATH=/root/.nvm/versions/node/v24.14.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/root/.nvm/versions/node/v24.14.0/bin/node /srv/apfel-park/app/current/.next/standalone/server.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

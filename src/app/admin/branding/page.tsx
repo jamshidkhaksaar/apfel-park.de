@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { shouldBypassImageOptimization } from "@/components/BrandingProvider";
 
 import AdminShell from "../../../components/admin/AdminShell";
 import { useAdmin } from "@/lib/admin-context";
@@ -15,6 +16,13 @@ type BrandingAsset = {
   dimensions: string;
 };
 
+type SocialLinks = {
+  instagram: string;
+  facebook: string;
+  tiktok: string;
+  whatsapp: string;
+};
+
 export default function BrandingPage() {
   const { dict } = useAdmin();
 
@@ -23,6 +31,18 @@ export default function BrandingPage() {
     logoWhite: "/branding/apfel-park-white.png",
     favicon: "/favicon.ico",
     ogImage: "/images/shop2.jpg",
+  });
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({
+    instagram: "",
+    facebook: "",
+    tiktok: "",
+    whatsapp: "",
+  });
+  const [initialSocialLinks, setInitialSocialLinks] = useState<SocialLinks>({
+    instagram: "",
+    facebook: "",
+    tiktok: "",
+    whatsapp: "",
   });
 
   const brandingAssets: BrandingAsset[] = [
@@ -71,11 +91,21 @@ export default function BrandingPage() {
       try {
         const response = await fetch("/api/branding", { cache: "no-store" });
         if (!response.ok) return;
-        const data = (await response.json()) as Partial<typeof currentBranding>;
+        const data = (await response.json()) as Partial<typeof currentBranding> & {
+          socialLinks?: Partial<SocialLinks>;
+        };
         setCurrentBranding((prev) => ({
           ...prev,
           ...data,
         }));
+        const loadedSocials = {
+          instagram: data.socialLinks?.instagram ?? "",
+          facebook: data.socialLinks?.facebook ?? "",
+          tiktok: data.socialLinks?.tiktok ?? "",
+          whatsapp: data.socialLinks?.whatsapp ?? "",
+        };
+        setSocialLinks(loadedSocials);
+        setInitialSocialLinks(loadedSocials);
       } catch {
         // Keep defaults if API is unavailable.
       }
@@ -105,7 +135,7 @@ export default function BrandingPage() {
 
   const handleSave = async () => {
     const filesToUpload = Object.entries(uploads).filter(([, file]) => file !== null);
-    if (filesToUpload.length === 0) {
+    if (filesToUpload.length === 0 && !hasLinkChanges) {
       setMessage({ type: "error", text: dict.brandingPage.noFiles });
       return;
     }
@@ -120,6 +150,10 @@ export default function BrandingPage() {
           formData.append(name, file);
         }
       }
+      formData.append("instagram", socialLinks.instagram.trim());
+      formData.append("facebook", socialLinks.facebook.trim());
+      formData.append("tiktok", socialLinks.tiktok.trim());
+      formData.append("whatsapp", socialLinks.whatsapp.trim());
 
       const response = await fetch("/api/branding", {
         method: "POST",
@@ -129,10 +163,21 @@ export default function BrandingPage() {
       if (response.ok) {
         const data = (await response.json()) as {
           branding?: Partial<typeof currentBranding>;
+          socialLinks?: Partial<SocialLinks>;
         };
         setMessage({ type: "success", text: dict.brandingPage.success });
         if (data.branding) {
           setCurrentBranding((prev) => ({ ...prev, ...data.branding }));
+        }
+        if (data.socialLinks) {
+          const savedSocials = {
+            instagram: data.socialLinks.instagram ?? "",
+            facebook: data.socialLinks.facebook ?? "",
+            tiktok: data.socialLinks.tiktok ?? "",
+            whatsapp: data.socialLinks.whatsapp ?? "",
+          };
+          setSocialLinks(savedSocials);
+          setInitialSocialLinks(savedSocials);
         }
         setUploads({});
         setPreviews({});
@@ -163,7 +208,9 @@ export default function BrandingPage() {
     }
   };
 
-  const hasChanges = Object.values(uploads).some(Boolean);
+  const hasFileChanges = Object.values(uploads).some(Boolean);
+  const hasLinkChanges = JSON.stringify(socialLinks) !== JSON.stringify(initialSocialLinks);
+  const hasChanges = hasFileChanges || hasLinkChanges;
 
   return (
     <AdminShell title={dict.brandingPage.title}>
@@ -217,6 +264,7 @@ export default function BrandingPage() {
                     alt={`${asset.label} preview`}
                     fill
                     className="object-contain p-4"
+                    unoptimized={shouldBypassImageOptimization(previews[asset.name])}
                   />
                 ) : (
                   <div className="relative h-full w-full">
@@ -225,6 +273,7 @@ export default function BrandingPage() {
                       alt={asset.label}
                       fill
                       className="object-contain p-4 opacity-60"
+                      unoptimized={shouldBypassImageOptimization(asset.currentSrc)}
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
@@ -300,6 +349,40 @@ export default function BrandingPage() {
           ))}
         </div>
 
+        <div className="glass-panel rounded-2xl p-6">
+          <div className="max-w-3xl">
+            <h3 className="text-lg font-semibold text-foreground">{dict.brandingPage.socialLinksTitle}</h3>
+            <p className="mt-1 text-sm text-muted">{dict.brandingPage.socialLinksDescription}</p>
+          </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {(
+              [
+                ["instagram", dict.brandingPage.socialFields.instagram],
+                ["facebook", dict.brandingPage.socialFields.facebook],
+                ["tiktok", dict.brandingPage.socialFields.tiktok],
+                ["whatsapp", dict.brandingPage.socialFields.whatsapp],
+              ] as const
+            ).map(([key, label]) => (
+              <label key={key} className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{label}</span>
+                <input
+                  type="url"
+                  value={socialLinks[key]}
+                  onChange={(event) =>
+                    setSocialLinks((prev) => ({
+                      ...prev,
+                      [key]: event.target.value,
+                    }))
+                  }
+                  placeholder="https://"
+                  className="mt-2 w-full rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-sm text-foreground focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40"
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* Save Button & Messages */}
         <div className="glass-panel flex items-center justify-between rounded-2xl p-6">
           <div>
@@ -314,7 +397,9 @@ export default function BrandingPage() {
             )}
             {!message && hasChanges && (
                 <p className="text-sm text-muted">
-                  {Object.keys(uploads).length} {dict.brandingPage.filesReady}
+                  {hasFileChanges
+                    ? `${Object.keys(uploads).length} ${dict.brandingPage.filesReady}`
+                    : dict.brandingPage.linksReady}
                 </p>
             )}
           </div>
@@ -322,10 +407,10 @@ export default function BrandingPage() {
           <button
             onClick={handleSave}
             disabled={!hasChanges || saving}
-            className={`rounded-xl px-6 py-3 text-sm font-semibold transition ${
+            className={`rounded-xl border px-6 py-3 text-sm font-semibold transition ${
               hasChanges && !saving
-                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400 hover:to-orange-400"
-                : "cursor-not-allowed bg-surface-strong text-muted"
+                ? "border-amber-500/60 bg-gradient-to-r from-amber-400 to-orange-400 text-black shadow-sm hover:from-amber-300 hover:to-orange-300"
+                : "cursor-not-allowed border-border/60 bg-background/60 text-muted"
             }`}
           >
             {saving ? (

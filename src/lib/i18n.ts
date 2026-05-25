@@ -41,6 +41,7 @@ export const dictionary = {
         { label: "FAQ", path: "/faq" },
         { label: "Datenschutz", path: "/privacy" },
         { label: "AGB", path: "/terms" },
+        { label: "Impressum", path: "/impressum" },
       ],
       support: [
         "Sofort-Diagnose & transparente Preise",
@@ -545,52 +546,74 @@ export const dictionary = {
     privacy: {
       heroTitle: "Datenschutzerklärung",
       intro:
-        "Wir nehmen den Schutz Ihrer Daten ernst. Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeitung personenbezogener Daten auf unserer Website und bei unseren Services.",
+        "Diese Datenschutzerklärung informiert darüber, wie Apfel Park personenbezogene Daten bei der Nutzung dieser Website, bei Kontaktanfragen, Reparaturanfragen, Bestellungen und bei der Kommunikation per E-Mail verarbeitet.",
       sections: [
         {
           title: "1. Verantwortlicher",
           body: [
             "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
             "E-Mail: info@apfel-park.de | Telefon: 040 58978787",
+            "Bei Datenschutzanfragen können Sie uns jederzeit über die oben genannten Kontaktdaten erreichen.",
           ],
         },
         {
-          title: "2. Erhobene Daten",
+          title: "2. Verarbeitete Datenkategorien",
           body: [
-            "Kontakt- und Bestelldaten (Name, E-Mail, Telefonnummer, Adresse)",
-            "Geräteinformationen für Reparaturen und Service-Aufträge",
-            "Zahlungs- und Rechnungsdaten im Bestellprozess",
+            "Kontakt- und Kommunikationsdaten wie Name, E-Mail-Adresse, Telefonnummer und Nachrichteninhalte.",
+            "Auftrags- und Gerätedaten wie Reparaturanfragen, Gerätetyp, Fehlerbeschreibung, Statusinformationen, Kostenschätzungen und Reparaturnotizen.",
+            "Bestell- und Rechnungsdaten, soweit sie für Verkauf, Reparatur, Abrechnung oder gesetzliche Aufbewahrung erforderlich sind.",
+            "Technische Nutzungsdaten wie IP-Adresse, Zeitstempel, Browserinformationen sowie sicherheitsrelevante Protokolle zur Abwehr von Missbrauch und zur Sicherstellung des Betriebs.",
           ],
         },
         {
-          title: "3. Zweck der Verarbeitung",
+          title: "3. Zwecke und Rechtsgrundlagen",
           body: [
-            "Durchführung von Reparaturen, Bestellungen und Support",
-            "Kommunikation zu Angeboten, Terminen und Services",
-            "Erfüllung gesetzlicher Pflichten (z. B. Rechnungslegung)",
+            "Art. 6 Abs. 1 lit. b DSGVO: Bearbeitung von Kontaktanfragen, Reparaturaufträgen, Bestellungen und vorvertraglichen Anfragen.",
+            "Art. 6 Abs. 1 lit. c DSGVO: Erfüllung gesetzlicher Pflichten, insbesondere steuer- und handelsrechtlicher Aufbewahrungspflichten.",
+            "Art. 6 Abs. 1 lit. f DSGVO: IT-Sicherheit, Missbrauchsvermeidung, Systemüberwachung und stabile Bereitstellung der Website.",
+            "Art. 6 Abs. 1 lit. a DSGVO in Verbindung mit § 25 TDDDG: Laden externer Dienste und Marketing-Technologien wie Google Maps, Google reCAPTCHA sowie gegebenenfalls Meta Pixel und TikTok Pixel erst nach Ihrer Einwilligung.",
           ],
         },
         {
-          title: "4. Weitergabe an Dritte",
+          title: "4. Empfänger und Dienstleister",
           body: [
-            "Zahlungsdienstleister (z. B. PayPal, Klarna, Sofort, Giropay, SEPA, Stripe)",
-            "Versand- und Logistikpartner bei Bestellungen",
-            "IT- und Hosting-Dienstleister (z. B. Vercel, Supabase)",
+            "Hosting und Serverbetrieb erfolgen auf einem gemieteten Server bei Hetzner. Die Website nutzt Cloudflare für DNS und technische Schutzfunktionen.",
+            "E-Mail-Kommunikation und Reparaturstatus-E-Mails werden über unser selbst gehostetes Mail-System verarbeitet.",
+            "Kartendarstellungen erfolgen nur nach Einwilligung über Google Maps. Wenn aktiviert, kann Google dabei technische Nutzungsdaten verarbeiten.",
+            "Wenn Spam-Schutz per Google reCAPTCHA aktiviert ist, wird dieser externe Dienst ebenfalls nur nach Einwilligung geladen.",
+            "Wenn Marketing-Tracking aktiviert und von Ihnen freigegeben wurde, können Meta Pixel und TikTok Pixel technische Nutzungs- und Ereignisdaten für Reichweitenmessung, Kampagnenauswertung und Werbeattribution verarbeiten.",
+            "Eine Weitergabe an weitere Empfänger erfolgt nur, wenn dies für die Vertragsabwicklung erforderlich ist oder wir gesetzlich dazu verpflichtet sind.",
           ],
         },
         {
-          title: "5. Cookies & Tracking",
+          title: "5. Cookies, lokale Speicherung und Einwilligung",
           body: [
-            "Wir verwenden technisch notwendige Cookies, um den Betrieb der Website zu gewährleisten.",
-            "Optionale Tracking- und SEO-Tools können im Admin-Dashboard aktiviert werden.",
+            "Wir verwenden notwendige Cookies bzw. lokale Speicherung für Sprachwahl, Theme-Darstellung, sichere Admin-Sitzungen und technische Bereitstellung der Website.",
+            "Externe Inhalte wie Google Maps, Google reCAPTCHA sowie gegebenenfalls Marketing-Technologien wie Meta Pixel und TikTok Pixel werden erst geladen, wenn Sie externen Diensten zustimmen.",
+            "Ihre Auswahl zu externen Diensten speichern wir, damit Ihre Einwilligung oder Ablehnung nicht bei jedem Seitenaufruf erneut abgefragt werden muss.",
           ],
         },
         {
-          title: "6. Ihre Rechte",
+          title: "6. Speicherdauer",
           body: [
-            "Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung",
-            "Widerspruch gegen die Verarbeitung und Datenübertragbarkeit",
-            "Beschwerde bei der zuständigen Datenschutzbehörde",
+            "Kontakt- und Reparaturanfragen speichern wir nur so lange, wie dies für Bearbeitung, Nachverfolgung, Gewährleistung und gesetzliche Pflichten erforderlich ist.",
+            "Rechnungs- und buchhaltungsrelevante Daten speichern wir entsprechend der gesetzlichen Aufbewahrungsfristen.",
+            "Sicherheits- und Serverprotokolle werden nur so lange vorgehalten, wie dies für Stabilität, Missbrauchsabwehr und Fehleranalyse notwendig ist.",
+          ],
+        },
+        {
+          title: "7. Drittlandtransfers",
+          body: [
+            "Beim Laden externer Dienste wie Google Maps, Google reCAPTCHA, Meta Pixel oder TikTok Pixel kann eine Übermittlung personenbezogener Daten in Drittländer, insbesondere in die USA, nicht ausgeschlossen werden.",
+            "Diese Dienste werden daher standardmäßig nicht geladen, sondern erst nach Ihrer Einwilligung aktiviert.",
+          ],
+        },
+        {
+          title: "8. Ihre Rechte",
+          body: [
+            "Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung und Datenübertragbarkeit nach Maßgabe der gesetzlichen Voraussetzungen.",
+            "Soweit wir Daten auf Grundlage berechtigter Interessen verarbeiten, haben Sie das Recht auf Widerspruch. Erteilte Einwilligungen können Sie jederzeit mit Wirkung für die Zukunft widerrufen.",
+            "Sie haben außerdem das Recht, sich bei einer zuständigen Datenschutzaufsichtsbehörde zu beschweren.",
           ],
         },
       ],
@@ -676,6 +699,7 @@ export const dictionary = {
         { label: "FAQ", path: "/faq" },
         { label: "Privacy", path: "/privacy" },
         { label: "Terms", path: "/terms" },
+        { label: "Impressum", path: "/impressum" },
       ],
       support: [
         "Instant diagnostics with clear pricing",
@@ -1180,52 +1204,74 @@ export const dictionary = {
     privacy: {
       heroTitle: "Privacy Policy",
       intro:
-        "We take data protection seriously. This privacy policy explains the nature, scope and purpose of processing personal data on our website and services.",
+        "This privacy policy explains how Apfel Park processes personal data when you use this website, contact us, request repairs, place orders, or communicate with us by email.",
       sections: [
         {
           title: "1. Controller",
           body: [
             "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
             "Email: info@apfel-park.de | Phone: 040 58978787",
+            "You can contact us at any time using the details above for privacy-related questions.",
           ],
         },
         {
-          title: "2. Data collected",
+          title: "2. Categories of data processed",
           body: [
-            "Contact and order data (name, email, phone, address)",
-            "Device information for repairs and service orders",
-            "Payment and invoice data during checkout",
+            "Contact and communication data such as name, email address, phone number, and message content.",
+            "Repair and device data such as repair requests, device type, issue description, status updates, cost estimates, and repair notes.",
+            "Order and invoice data where required for sales, repairs, invoicing, or legal retention duties.",
+            "Technical usage data such as IP address, timestamps, browser details, and security-related logs required to protect and operate the website.",
           ],
         },
         {
-          title: "3. Purpose of processing",
+          title: "3. Purposes and legal bases",
           body: [
-            "Executing repairs, orders and customer support",
-            "Communication about appointments and services",
-            "Compliance with legal obligations (e.g., invoicing)",
+            "Article 6(1)(b) GDPR: handling contact requests, repair orders, purchases, and pre-contractual inquiries.",
+            "Article 6(1)(c) GDPR: complying with legal obligations, especially accounting and retention obligations.",
+            "Article 6(1)(f) GDPR: IT security, abuse prevention, system monitoring, and reliable website operation.",
+            "Article 6(1)(a) GDPR together with Section 25 TDDDG: loading external services and marketing technologies such as Google Maps, Google reCAPTCHA, and, if configured, Meta Pixel and TikTok Pixel only after consent.",
           ],
         },
         {
-          title: "4. Data sharing",
+          title: "4. Recipients and service providers",
           body: [
-            "Payment providers (PayPal, Klarna, Sofort, Giropay, SEPA, Stripe)",
-            "Shipping and logistics partners for orders",
-            "IT and hosting providers (e.g., Vercel, Supabase)",
+            "Hosting and server operations run on a rented server with Hetzner. The website also uses Cloudflare for DNS and technical protection features.",
+            "Email communication and repair-status emails are processed through our self-hosted mail system.",
+            "Maps are provided only after consent through Google Maps. When enabled, Google may process technical usage data.",
+            "If spam protection through Google reCAPTCHA is enabled, this external service is also loaded only after consent.",
+            "If marketing tracking is configured and you allow external services, Meta Pixel and TikTok Pixel may process technical usage and event data for reach measurement, campaign reporting, and ad attribution.",
+            "We share data with other recipients only where necessary for contract performance or where we are legally required to do so.",
           ],
         },
         {
-          title: "5. Cookies & tracking",
+          title: "5. Cookies, local storage, and consent",
           body: [
-            "We use necessary cookies to run the website.",
-            "Optional tracking and SEO tools can be activated in the admin dashboard.",
+            "We use necessary cookies or local storage for language selection, theme preference, secure admin sessions, and technical delivery of the website.",
+            "External content such as Google Maps, Google reCAPTCHA, and, if configured, marketing technologies such as Meta Pixel and TikTok Pixel are loaded only after you allow external services.",
+            "We store your consent choice so that your preference does not need to be requested again on every visit.",
           ],
         },
         {
-          title: "6. Your rights",
+          title: "6. Retention periods",
           body: [
-            "Access, correction, deletion and restriction of processing",
-            "Objection to processing and data portability",
-            "Complaint with the responsible data protection authority",
+            "We keep contact and repair-request data only as long as necessary for processing, follow-up, warranty, and legal obligations.",
+            "Invoice and accounting data is retained according to applicable statutory retention periods.",
+            "Security and server logs are stored only as long as required for stability, abuse prevention, and troubleshooting.",
+          ],
+        },
+        {
+          title: "7. International transfers",
+          body: [
+            "When external services such as Google Maps, Google reCAPTCHA, Meta Pixel, or TikTok Pixel are loaded, a transfer of personal data to third countries, especially the United States, cannot be ruled out.",
+            "These services are therefore not loaded by default and are activated only after your consent.",
+          ],
+        },
+        {
+          title: "8. Your rights",
+          body: [
+            "You have the right to access, rectify, erase, restrict processing, and receive data portability subject to the legal requirements.",
+            "Where we process data on the basis of legitimate interests, you have the right to object. You may withdraw consent at any time for the future.",
+            "You also have the right to lodge a complaint with a competent data protection supervisory authority.",
           ],
         },
       ],
@@ -1277,7 +1323,11 @@ export const dictionary = {
 
 export type AboutStat = (typeof dictionary)[Locale]["about"]["stats"][number];
 
-export const getDictionary = (locale: Locale) => dictionary[locale];
+export const isLocale = (value: string): value is Locale =>
+  value === "de" || value === "en";
+
+export const getDictionary = (locale: string) =>
+  dictionary[isLocale(locale) ? locale : "de"];
 
 export type NavItems = (typeof dictionary)[Locale]["nav"];
 export type HeaderLabels = (typeof dictionary)[Locale]["header"];

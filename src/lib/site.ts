@@ -1,6 +1,14 @@
+export const defaultSocialLinks = {
+  instagram: "https://www.instagram.com/apfelpark_harburg/",
+  facebook: "https://www.facebook.com/apfelpark.harburg",
+  tiktok: "https://www.tiktok.com/@apfelpark",
+  whatsapp: "https://wa.me/494058978787",
+};
+
 export const siteInfo = {
   name: "Apfel Park",
   legalName: "Apfel Park",
+  vatId: "DE345074336",
   tagline: "Smart Phone. Smart Service. Smart Price.",
   url: "https://apfel-park.de",
   phone: "040 58978787",
@@ -16,12 +24,7 @@ export const siteInfo = {
     days: "Montag – Samstag",
     time: "09:30 – 20:00",
   },
-  social: {
-    instagram: "https://www.instagram.com/apfelpark_harburg/",
-    facebook: "https://www.facebook.com/apfelpark.harburg",
-    tiktok: "https://www.tiktok.com/@apfelpark",
-    whatsapp: "https://wa.me/494058978787",
-  },
+  social: defaultSocialLinks,
   map: {
     query: "Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
     embedUrl: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY

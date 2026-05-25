@@ -9,6 +9,7 @@ import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import TrackedLink from "./TrackedLink";
 
 type SiteHeaderProps = {
   lang: Locale;
@@ -76,12 +77,17 @@ export default function SiteHeader({
             </span>
           </div>
           <div className="hidden items-center gap-4 text-muted/80 md:flex">
-            <Link href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="flex items-center gap-1.5 transition hover:text-gold">
+            <TrackedLink
+              href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
+              className="flex items-center gap-1.5 transition hover:text-gold"
+              eventName="contact_click"
+              eventPayload={{ type: "phone", source: "header" }}
+            >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
               {siteInfo.phone}
-            </Link>
+            </TrackedLink>
             <span className="text-white/10">|</span>
             <span className="flex items-center gap-1.5">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -143,6 +149,15 @@ export default function SiteHeader({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
                 <span className="relative z-10">{lang === "de" ? "Shop" : "Store"}</span>
+              </Link>
+              <Link
+                href={`/${lang}/cart`}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-gold/30 text-gold transition hover:bg-gold/10"
+                aria-label={lang === "de" ? "Warenkorb öffnen" : "Open cart"}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.5l2.1 12.15A2.25 2.25 0 008.07 17h8.56a2.25 2.25 0 002.2-1.78L20.25 8.5H5.25M9 21h.01M17 21h.01" />
+                </svg>
               </Link>
             </div>
             <div className="flex items-center gap-3 lg:hidden">
@@ -232,6 +247,16 @@ export default function SiteHeader({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
               <span>{lang === "de" ? "Zum Online Shop" : "Go to Store"}</span>
+            </Link>
+            <Link
+              href={`/${lang}/cart`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-2 rounded-full border border-gold/30 px-4 py-3 text-sm font-bold uppercase tracking-wider text-gold"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.5l2.1 12.15A2.25 2.25 0 008.07 17h8.56a2.25 2.25 0 002.2-1.78L20.25 8.5H5.25M9 21h.01M17 21h.01" />
+              </svg>
+              <span>{lang === "de" ? "Warenkorb" : "Cart"}</span>
             </Link>
           </div>
         </nav>

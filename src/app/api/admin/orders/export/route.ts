@@ -1,19 +1,33 @@
 import { NextResponse } from "next/server";
 
-import { isAdminUser } from "@/lib/admin-auth";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminDbClient } from "@/lib/admin-db";
+import { readSessionUser } from "@/lib/session";
 
 type OrderExportRow = {
   order_number: number | null;
   customer_name: string | null;
-  customer_email: string;
+  customer_email: string | null;
   status: string | null;
-  total_amount: number | string;
-  created_at: string;
+  payment_status: string | null;
+  provider: string | null;
+  shipping_method: string | null;
+  total_amount: number | string | null;
+  currency: string | null;
+  created_at: string | null;
 };
 
-const escapeCsv = (value: string): string => {
-  let processedValue = value;
+const toCsvString = (value: unknown): string => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return String(value);
+  }
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+};
+
+const escapeCsv = (value: unknown): string => {
+  let processedValue = toCsvString(value);
 
   // Prevent CSV Injection (Formula Injection) by prefixing potentially dangerous characters
   // Accounting for leading spaces which some spreadsheet applications ignore before a formula
@@ -28,18 +42,15 @@ const escapeCsv = (value: string): string => {
 };
 
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!isAdminUser(user)) {
+  const user = await readSessionUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  const admin = createAdminDbClient();
+  const { data, error } = await admin
     .from("orders")
-    .select("order_number,customer_name,customer_email,status,total_amount,created_at")
+    .select("order_number,customer_name,customer_email,status,payment_status,provider,shipping_method,total_amount,currency,created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -47,18 +58,22 @@ export async function GET() {
   }
 
   const rows = (data ?? []) as OrderExportRow[];
-  const header = ["order_number", "customer_name", "customer_email", "status", "total_amount", "created_at"];
+  const header = ["order_number", "customer_name", "customer_email", "status", "payment_status", "provider", "shipping_method", "total_amount", "currency", "created_at"];
 
   const csvRows = rows.map((row) =>
     (() => {
       const amount = Number(row.total_amount);
       return [
-        row.order_number?.toString() ?? "",
+        row.order_number ?? "",
         row.customer_name ?? "",
-        row.customer_email,
+        row.customer_email ?? "",
         row.status ?? "",
+        row.payment_status ?? "",
+        row.provider ?? "",
+        row.shipping_method ?? "",
         Number.isFinite(amount) ? amount.toString() : "",
-        row.created_at,
+        row.currency ?? "EUR",
+        row.created_at ?? "",
       ];
     })()
       .map((value) => escapeCsv(value))

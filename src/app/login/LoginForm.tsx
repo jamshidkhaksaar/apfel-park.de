@@ -2,22 +2,28 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useActionState, useState } from "react";
+import { useState } from "react";
 
 import { useReCaptcha } from "@/components/ReCaptcha";
 
-import { loginAction } from "./actions";
 import Logo from "@/components/Logo";
 
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/admin";
-  const routeError = searchParams.get("error") === "forbidden" ? "Access denied" : null;
+  const errorParam = searchParams.get("error");
+  const routeError =
+    errorParam === "forbidden"
+      ? "Access denied"
+      : errorParam === "invalid"
+        ? "Invalid email or password"
+        : errorParam === "captcha"
+          ? "Invalid captcha. Please try again."
+          : null;
   const { token: recaptchaToken, isLoading: recaptchaLoading, error: recaptchaError, ReCaptchaComponent } =
     useReCaptcha("admin_login");
-  
-  const [state, action, isPending] = useActionState(loginAction, null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -33,13 +39,18 @@ export default function LoginForm() {
 
         {/* Login Card */}
         <div className="tech-card rounded-2xl p-8">
-          <form action={action} className="space-y-6">
+          <form
+            action="/api/admin/login"
+            method="post"
+            className="space-y-6"
+            onSubmit={() => setIsSubmitting(true)}
+          >
             <input type="hidden" name="redirectTo" value={redirectTo} />
             <input type="hidden" name="recaptchaToken" value={recaptchaToken} />
             
-            {(state?.error || routeError) && (
+            {routeError && (
               <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
-                {state?.error ?? routeError}
+                {routeError}
               </div>
             )}
 
@@ -97,10 +108,10 @@ export default function LoginForm() {
 
             <button
               type="submit"
-              disabled={isPending || recaptchaLoading || Boolean(recaptchaError)}
+              disabled={isSubmitting || recaptchaLoading || Boolean(recaptchaError)}
               className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isPending ? (
+              {isSubmitting ? (
                 <>
                   <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

@@ -1,8 +1,8 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminDbClient } from "@/lib/admin-db";
 import { isAdminUser } from "@/lib/admin-auth";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminServerClient } from "@/lib/admin-auth-server";
 import type { AdminLocale } from "@/lib/admin-i18n";
 
 import { type SettingsData } from "./types";
@@ -22,12 +22,62 @@ const mergeSecretValues = (
     secretKey: "",
     minScore: 0.5,
   };
+  const existingIntegrations = (existing.integrations as SettingsData["integrations"] | undefined) ?? {
+    whatsappWidgetEnabled: true,
+    whatsappNumber: "",
+    whatsappDefaultMessageDe: "",
+    whatsappDefaultMessageEn: "",
+    whatsappCloudApiEnabled: false,
+    whatsappPhoneNumberId: "",
+    whatsappBusinessAccountId: "",
+    whatsappAccessToken: "",
+    whatsappWebhookVerifyToken: "",
+    metaPixelEnabled: false,
+    metaPixelId: "",
+    metaConversionsApiToken: "",
+    metaConversionsTestEventCode: "",
+    tiktokPixelEnabled: false,
+    tiktokPixelId: "",
+    tiktokEventsApiToken: "",
+    tiktokTestEventCode: "",
+    googleAnalyticsEnabled: false,
+    googleAnalyticsId: "",
+    facebookPageId: "",
+    facebookPageAccessToken: "",
+    instagramBusinessAccountId: "",
+    instagramAccessToken: "",
+    tiktokShopEnabled: false,
+    tiktokShopAppKey: "",
+    tiktokShopAppSecret: "",
+    tiktokShopWebhookSecret: "",
+    autoPublishNewProducts: false,
+    autoPublishDiscountProducts: false,
+  };
 
   return {
     ...settings,
     recaptcha: {
       ...settings.recaptcha,
       secretKey: settings.recaptcha.secretKey || existingRecaptcha.secretKey || "",
+    },
+    integrations: {
+      ...settings.integrations,
+      whatsappAccessToken:
+        settings.integrations.whatsappAccessToken || existingIntegrations.whatsappAccessToken || "",
+      whatsappWebhookVerifyToken:
+        settings.integrations.whatsappWebhookVerifyToken || existingIntegrations.whatsappWebhookVerifyToken || "",
+      metaConversionsApiToken:
+        settings.integrations.metaConversionsApiToken || existingIntegrations.metaConversionsApiToken || "",
+      tiktokEventsApiToken:
+        settings.integrations.tiktokEventsApiToken || existingIntegrations.tiktokEventsApiToken || "",
+      facebookPageAccessToken:
+        settings.integrations.facebookPageAccessToken || existingIntegrations.facebookPageAccessToken || "",
+      instagramAccessToken:
+        settings.integrations.instagramAccessToken || existingIntegrations.instagramAccessToken || "",
+      tiktokShopAppSecret:
+        settings.integrations.tiktokShopAppSecret || existingIntegrations.tiktokShopAppSecret || "",
+      tiktokShopWebhookSecret:
+        settings.integrations.tiktokShopWebhookSecret || existingIntegrations.tiktokShopWebhookSecret || "",
     },
   };
 };
@@ -39,26 +89,27 @@ export const saveSettings = async (
   const isEnglish = lang === "en";
 
   try {
-    const supabase = await createClient();
+    const adminClient = await createAdminServerClient();
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await adminClient.auth.getUser();
 
     if (authError || !isAdminUser(user)) {
       return { success: false, message: isEnglish ? "Unauthorized" : "Nicht autorisiert" };
     }
 
-    const admin = createAdminClient();
+    const admin = createAdminDbClient();
     const { data: existingRows } = await admin
       .from("store_settings")
       .select("key, value");
+    const rows = (existingRows ?? []) as Array<{ key: keyof SettingsData; value: SettingsData[keyof SettingsData] }>;
 
     const existingMap =
-      existingRows?.reduce((acc, curr) => {
-        acc[curr.key] = curr.value as SettingsData[keyof SettingsData];
+      rows.reduce((acc, curr) => {
+        acc[curr.key] = curr.value;
         return acc;
-      }, {} as Record<string, SettingsData[keyof SettingsData]>) || {};
+      }, {} as Partial<Record<keyof SettingsData, SettingsData[keyof SettingsData]>>);
 
     const mergedSettings = mergeSecretValues(settings, existingMap);
 

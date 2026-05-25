@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { sendContactNotificationEmail } from "@/lib/email";
+import { sendLeadTrackingEvents } from "@/lib/marketing";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { isValidEmail, isValidInputLength, sanitizeInput } from "@/lib/security";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminDbClient } from "@/lib/admin-db";
+import { siteInfo } from "@/lib/site";
 
 type ContactFormData = {
   name: string;
@@ -60,11 +62,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store the contact submission in database using Service Role (admin access)
-    // This allows inserting even if RLS denies public inserts
-    const supabase = createAdminClient();
+    // Store the contact submission in database using admin DB access.
+    const adminDb = createAdminDbClient();
 
-    const { error: dbError } = await supabase.from("contact_submissions").insert({
+    const { error: dbError } = await adminDb.from("contact_submissions").insert({
       name,
       email,
       device: device || null,
@@ -95,6 +96,23 @@ export async function POST(request: NextRequest) {
     if (!emailResult.success) {
       console.warn("[Contact API] Email notification failed:", emailResult.error);
     }
+
+    await sendLeadTrackingEvents(
+      {
+        eventName: "Contact",
+        email,
+        firstName: name,
+        locale: payload.locale || "en",
+        formType: "contact",
+        deviceModel: device || null,
+      },
+      {
+        consentMode: request.cookies.get("apfel-consent")?.value ?? null,
+        ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+        userAgent: request.headers.get("user-agent"),
+        url: `${siteInfo.url}/contact`,
+      },
+    );
 
     return NextResponse.json({
       success: true,

@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import PageIntro from "../../../../components/PageIntro";
+import RepairCatalogExplorer from "../../../../components/RepairCatalogExplorer";
+import RepairRequestForm from "../../../../components/RepairRequestForm";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
 import { getRepairsContent } from "../../../../lib/content";
+import { getRepairCatalog } from "../../../../lib/repair-catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +31,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
   const repairs = await getRepairsContent(lang as Locale);
+  const repairCatalog = await getRepairCatalog();
 
   const repairIcons = [
     <svg key="display" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>,
@@ -49,9 +53,52 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
         title={repairs.heroTitle}
         subtitle={repairs.heroSubtitle}
         eyebrow={dict.meta.repairs.title}
+        compact
       />
 
-      {/* Why Choose Us & Repair Types */}
+      {/* ── 1. Price finder ─────────────────────────────────────────────── */}
+      <section className="section-pad bg-surface/20">
+        <div className="container-page">
+          <div className="mb-10 text-center">
+            <span className="badge-gold mb-4 inline-flex">
+              {lang === "de" ? "Preisfinder" : "Repair price finder"}
+            </span>
+            <h2 className="text-3xl font-bold text-foreground md:text-4xl">
+              {lang === "de" ? "Preise & Modelle durchsuchen" : "Browse prices & supported models"}
+            </h2>
+            <p className="mx-auto mt-4 max-w-3xl text-muted">
+              {lang === "de"
+                ? "Wähle zuerst deine Marke und dein Modell. Für gelistete Geräte zeigen wir Startpreise, für Spezialfälle markieren wir bewusst Preis auf Anfrage."
+                : "Choose your brand and model first. Listed devices show starting prices, while special cases are clearly marked as quote on request."}
+            </p>
+          </div>
+
+          <RepairCatalogExplorer lang={lang as Locale} catalog={repairCatalog} />
+        </div>
+      </section>
+
+      {/* ── 2. Repair request form ───────────────────────────────────────── */}
+      <section className="section-pad bg-surface/20" id="repair-request">
+        <div className="container-page">
+          <div className="mb-10 text-center">
+            <span className="badge-gold mb-4 inline-flex">
+              {lang === "de" ? "Online-Reparaturflow" : "Online repair flow"}
+            </span>
+            <h2 className="text-3xl font-bold text-foreground md:text-4xl">
+              {lang === "de" ? "Reparatur online starten" : "Start your repair online"}
+            </h2>
+            <p className="mx-auto mt-4 max-w-3xl text-muted">
+              {lang === "de"
+                ? "Sende uns dein Gerät und das Problem direkt online. Du bekommst sofort eine Ticketnummer per E-Mail und danach automatische Status-Updates zu Bearbeitung, Kosten und Abschluss."
+                : "Send us your device and issue online. You will receive a ticket number by email right away and then automatic updates for processing, pricing, and completion."}
+            </p>
+          </div>
+
+          <RepairRequestForm lang={lang as Locale} catalog={repairCatalog} />
+        </div>
+      </section>
+
+      {/* ── 3. Why Choose Us & Repair Types ─────────────────────────────── */}
       <section className="section-pad">
         <div className="container-page grid gap-12 lg:grid-cols-2">
           {/* Left: Highlights */}
@@ -65,7 +112,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
             <h2 className="text-2xl font-bold text-foreground">
               {lang === "de" ? "Warum Apfel Park?" : "Why Apfel Park?"}
             </h2>
-            
+
             <ul className="mt-8 space-y-4">
               {repairs.highlights.map((item: string) => (
                 <li key={item} className="flex items-start gap-4">
@@ -98,7 +145,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
 
           {/* Right: Repair Types Grid */}
           <div className="grid gap-4 sm:grid-cols-2">
-            {repairs.repairTypes.map((item: { title: string; description: string }, index: number) => (
+            {(Array.isArray(repairs.repairTypes) ? repairs.repairTypes : []).filter((item): item is { title: string; description: string } => !!item?.title).map((item, index: number) => (
               <div key={item.title} className="tech-card-hover rounded-2xl p-6">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                   {repairIcons[index]}
@@ -111,7 +158,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
         </div>
       </section>
 
-      {/* Services Section */}
+      {/* ── 4. Services Section ──────────────────────────────────────────── */}
       <section className="section-pad bg-surface/30">
         <div className="container-page">
           <div className="mb-12 text-center">
@@ -130,7 +177,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {dict.services.categories.map((item: { title: string; description: string }, index: number) => (
+            {(Array.isArray(dict.services.categories) ? dict.services.categories : []).filter((item): item is { title: string; description: string } => !!item?.title).map((item, index: number) => (
               <div key={item.title} className="tech-card-hover group rounded-2xl p-6 text-center">
                 <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold transition group-hover:from-gold/30 group-hover:to-amber/30">
                   {serviceIcons[index]}
@@ -143,7 +190,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
         </div>
       </section>
 
-      {/* Devices We Repair */}
+      {/* ── 5. Devices We Repair ─────────────────────────────────────────── */}
       <section className="section-pad">
         <div className="container-page">
           <div className="mb-12 text-center">

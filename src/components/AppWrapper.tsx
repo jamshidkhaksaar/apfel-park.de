@@ -1,37 +1,51 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
-import LoadingScreen from "./LoadingScreen";
-import WhatsAppFloat from "./WhatsAppFloat";
+import dynamic from "next/dynamic";
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+import MarketingConsentScripts from "./MarketingConsentScripts";
+
+const CookieBanner = dynamic(() => import("./CookieBanner"), { ssr: false });
+const ChatWidget = dynamic(() => import("./ChatWidget"), { ssr: false });
+const ProductPromoPopup = dynamic(() => import("./ProductPromoPopup"), { ssr: false });
 
 type AppWrapperProps = {
   children: React.ReactNode;
   lang: "de" | "en";
+  promo: {
+    enabled: boolean;
+    title: { de: string; en: string };
+    description: { de: string; en: string };
+    ctaLabel: { de: string; en: string };
+    ctaHref: string;
+  };
+  discountedProducts: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    price: number;
+    compareAtPrice?: number;
+  }>;
+  marketing: {
+    metaPixelEnabled: boolean;
+    metaPixelId: string;
+    tiktokPixelEnabled: boolean;
+    tiktokPixelId: string;
+    googleAnalyticsEnabled: boolean;
+    googleAnalyticsId: string;
+  };
+  whatsapp: {
+    widgetEnabled: boolean;
+    number: string;
+    defaultMessageDe: string;
+    defaultMessageEn: string;
+    cloudApiEnabled: boolean;
+  };
 };
 
-let hasLoadedState = false;
-const loadingListeners = new Set<() => void>();
-
-const loadingStore = {
-  getSnapshot: () => hasLoadedState,
-  getServerSnapshot: () => false,
-  subscribe: (listener: () => void) => {
-    loadingListeners.add(listener);
-    return () => loadingListeners.delete(listener);
-  },
-  setHasLoaded: (value: boolean) => {
-    if (hasLoadedState === value) return;
-    hasLoadedState = value;
-    loadingListeners.forEach((listener) => listener());
-  },
-};
-
-export default function AppWrapper({ children, lang }: AppWrapperProps) {
-  const hasLoaded = useSyncExternalStore(
-    loadingStore.subscribe,
-    loadingStore.getSnapshot,
-    loadingStore.getServerSnapshot,
-  );
+export default function AppWrapper({ children, lang, promo, discountedProducts, marketing, whatsapp }: AppWrapperProps) {
+  const pathname = usePathname();
+  const effectiveLang = pathname?.startsWith("/en") ? "en" : pathname?.startsWith("/de") ? "de" : lang;
 
   useEffect(() => {
     try {
@@ -56,36 +70,65 @@ export default function AppWrapper({ children, lang }: AppWrapperProps) {
   }, []);
 
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem("apfel-loaded");
-      loadingStore.setHasLoaded(Boolean(stored));
-    } catch {
-      loadingStore.setHasLoaded(false);
-    }
+    const reloadKey = "apfel-chunk-reload-once";
+
+    const maybeRecoverFromChunkError = (message: string, source = "") => {
+      const looksLikeChunkError =
+        message.includes("ChunkLoadError") ||
+        message.includes("/_next/static/chunks/") ||
+        message.includes("Failed to fetch dynamically imported module") ||
+        source.includes("/_next/static/chunks/");
+
+      if (!looksLikeChunkError) return;
+
+      try {
+        if (sessionStorage.getItem(reloadKey) === "1") return;
+        sessionStorage.setItem(reloadKey, "1");
+      } catch {
+        return;
+      }
+
+      window.location.reload();
+    };
+
+    const onWindowError = (event: ErrorEvent) => {
+      const target = event.target as HTMLScriptElement | HTMLLinkElement | null;
+      const source =
+        (target instanceof HTMLScriptElement && target.src) ||
+        (target instanceof HTMLLinkElement && target.href) ||
+        event.filename ||
+        "";
+
+      maybeRecoverFromChunkError(event.message || "", source);
+    };
+
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason =
+        typeof event.reason === "string"
+          ? event.reason
+          : event.reason instanceof Error
+            ? event.reason.message
+            : "";
+
+      maybeRecoverFromChunkError(reason);
+    };
+
+    window.addEventListener("error", onWindowError);
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+
+    return () => {
+      window.removeEventListener("error", onWindowError);
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
+    };
   }, []);
-
-  const handleLoadingComplete = () => {
-    try {
-      sessionStorage.setItem("apfel-loaded", "true");
-    } catch {
-      // sessionStorage not available
-    }
-    loadingStore.setHasLoaded(true);
-  };
-
-  const isLoading = !hasLoaded;
 
   return (
     <>
-      {isLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} minDisplayTime={2500} />}
-      <div
-        className={`relative z-10 transition-opacity duration-500 ${
-          isLoading ? "opacity-0" : "opacity-100"
-        }`}
-      >
-        {children}
-      </div>
-      <WhatsAppFloat lang={lang} />
+      <div className="relative z-10">{children}</div>
+      <MarketingConsentScripts {...marketing} />
+      <ProductPromoPopup lang={effectiveLang} promo={promo} discountedProducts={discountedProducts} />
+      <ChatWidget lang={effectiveLang} whatsapp={whatsapp} />
+      <CookieBanner lang={effectiveLang} />
     </>
   );
 }

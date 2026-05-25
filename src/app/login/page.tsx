@@ -1,7 +1,16 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
+
+import { readSessionUser } from "@/lib/session";
+
 import LoginForm from "./LoginForm";
 
 export default async function LoginPage() {
+  const user = await readSessionUser();
+  if (user) {
+    redirect("/admin");
+  }
+
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-background">

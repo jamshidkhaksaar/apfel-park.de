@@ -1,18 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { siteInfo } from "../lib/site";
+import { usePathname } from "next/navigation";
 
 type WhatsAppFloatProps = {
   lang: "de" | "en";
+  settings: {
+    widgetEnabled: boolean;
+    number: string;
+    defaultMessageDe: string;
+    defaultMessageEn: string;
+    cloudApiEnabled: boolean;
+  };
 };
 
-export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
+const normalizeNumber = (value: string) => value.replace(/[^\d]/g, "");
+
+export default function WhatsAppFloat({ lang, settings }: WhatsAppFloatProps) {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipId = `whatsapp-tooltip-${lang}`;
+  const shouldHide =
+    !settings.widgetEnabled ||
+    !settings.number ||
+    pathname === "/login" ||
+    pathname?.startsWith("/admin") ||
+    pathname === "/maintenance";
 
   // Show button after a short delay for better UX
   useEffect(() => {
@@ -31,17 +47,20 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
     };
   }, []);
 
-  const message = lang === "de" 
-    ? "Hallo! Ich habe eine Frage zu Ihren Services." 
-    : "Hello! I have a question about your services.";
+  const message = lang === "de" ? settings.defaultMessageDe : settings.defaultMessageEn;
 
-  const whatsappUrl = `https://wa.me/${siteInfo.whatsapp}?text=${encodeURIComponent(message)}`;
+  const whatsappUrl = `https://wa.me/${normalizeNumber(settings.number)}?text=${encodeURIComponent(message)}`;
+
+  if (shouldHide) {
+    return null;
+  }
 
   return (
     <div 
-      className={`fixed bottom-6 right-6 z-50 transition-all duration-500 ${
+      className={`fixed right-4 z-[120] hidden transition-all duration-500 md:right-6 md:block ${
         isVisible ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0"
       }`}
+      style={{ bottom: "calc(1.5rem + var(--apfel-cookie-banner-height, 0px))" }}
     >
       {/* Tooltip */}
       <div 
@@ -76,6 +95,7 @@ export default function WhatsAppFloat({ lang }: WhatsAppFloatProps) {
         onMouseLeave={() => setIsHovered(false)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
+        onClick={() => window.apfelTrack?.("whatsapp_click", { source: "floating_button", page_path: pathname || "/" })}
         className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-500/30 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-green-500/40 focus:outline-none focus-visible:ring-4 focus-visible:ring-green-500/50"
         aria-label={lang === "de" ? "Chatte auf WhatsApp" : "Chat on WhatsApp"}
         aria-describedby={tooltipId}

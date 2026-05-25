@@ -1,27 +1,49 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminDbClient } from "@/lib/admin-db";
 import { getDictionary, type Locale } from "@/lib/i18n";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mergeDeep(base: any, override: any): any {
-  if (!override || typeof override !== "object" || Array.isArray(override)) {
-    return override !== undefined ? override : base;
+type DeepValue = Record<string, unknown> | string | number | boolean | null | undefined | DeepValue[];
+
+function isRecord(value: DeepValue): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mergeDeep<T extends Record<string, unknown>>(base: T, override: Record<string, unknown>): T {
+  if (!isRecord(override)) {
+    return base;
   }
-  const result = { ...base };
+
+  const baseRecord: Record<string, unknown> = isRecord(base) ? base : {};
+  const result: Record<string, unknown> = { ...baseRecord };
+
   for (const key of Object.keys(override)) {
-    if (Array.isArray(override[key])) {
-      result[key] = override[key];
-    } else if (typeof override[key] === "object" && override[key] !== null) {
-      result[key] = mergeDeep(base?.[key] ?? {}, override[key]);
-    } else if (override[key] !== undefined) {
-      result[key] = override[key];
+    const overrideValue = override[key] as DeepValue;
+    const baseValue = (baseRecord[key] as DeepValue) ?? undefined;
+
+    if (Array.isArray(overrideValue)) {
+      if (
+        Array.isArray(baseValue) &&
+        overrideValue.every((item) => isRecord(item)) &&
+        baseValue.every((item) => isRecord(item))
+      ) {
+        result[key] = overrideValue.map((item, index) =>
+          mergeDeep((baseValue[index] as Record<string, unknown>) ?? {}, item as Record<string, unknown>)
+        );
+      } else {
+        result[key] = overrideValue;
+      }
+    } else if (isRecord(overrideValue)) {
+      result[key] = mergeDeep(isRecord(baseValue) ? baseValue : {}, overrideValue);
+    } else if (overrideValue !== undefined) {
+      result[key] = overrideValue;
     }
   }
-  return result;
+
+  return result as T;
 }
 
 async function fetchContentKey(key: string): Promise<Record<string, unknown> | null> {
   try {
-    const admin = createAdminClient();
+    const admin = createAdminDbClient();
     const { data } = await admin
       .from("store_settings")
       .select("value")

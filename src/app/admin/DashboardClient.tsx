@@ -10,6 +10,17 @@ type DashboardStats = {
   orders: number;
   products: number;
   reviews: number;
+  liveUsers: number;
+  unreadChats: number;
+};
+
+type DashboardActivity = {
+  id: string;
+  type: "repair" | "order";
+  label: string;
+  sub: string;
+  status: string | null;
+  createdAt: string;
 };
 
 // ── Inline SVG icons ──────────────────────────────────────────────────────────
@@ -56,24 +67,6 @@ const ArrowRightIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// ── Static mock activity data ─────────────────────────────────────────────────
-
-type ActivityStatus = 'new' | 'in_progress' | 'ready' | 'paid';
-
-const mockActivity: Array<{ id: string; type: 'repair' | 'order'; label: string; sub: string; status: ActivityStatus }> = [
-  { id: 'TK-1041', type: 'repair', label: 'iPhone 15 Pro — Display', sub: 'TK-1041', status: 'in_progress' },
-  { id: 'ORD-882', type: 'order', label: 'USB-C Cable 3-Pack', sub: 'ORD-882', status: 'paid' },
-  { id: 'TK-1040', type: 'repair', label: 'Samsung S23 — Battery', sub: 'TK-1040', status: 'ready' },
-  { id: 'TK-1039', type: 'repair', label: 'iPad Air — Charging Port', sub: 'TK-1039', status: 'new' },
-];
-
-const statusConfig: Record<ActivityStatus, { label: string; dot: string; text: string }> = {
-  new:         { label: 'New',         dot: 'bg-indigo-400',  text: 'text-indigo-400' },
-  in_progress: { label: 'In Progress', dot: 'bg-amber-400',   text: 'text-amber-400'  },
-  ready:       { label: 'Ready',       dot: 'bg-emerald-400', text: 'text-emerald-400' },
-  paid:        { label: 'Paid',        dot: 'bg-emerald-400', text: 'text-emerald-400' },
-};
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function isShopOpen(): boolean {
@@ -87,15 +80,54 @@ function isShopOpen(): boolean {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function DashboardClient({ stats }: { stats: DashboardStats }) {
-  const { dict } = useAdmin();
+export default function DashboardClient({
+  stats,
+  recentActivity,
+}: {
+  stats: DashboardStats;
+  recentActivity: DashboardActivity[];
+}) {
+  const { dict, lang } = useAdmin();
   const [shopOpen, setShopOpen] = useState<boolean | null>(null);
+  const [liveStats, setLiveStats] = useState(stats);
+  const [liveActivity, setLiveActivity] = useState(recentActivity);
 
   useEffect(() => {
     const update = () => setShopOpen(isShopOpen());
     update();
     const id = setInterval(update, 60_000);
     return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLive = async () => {
+      try {
+        const response = await fetch("/api/admin/dashboard-live", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+        const payload = (await response.json()) as {
+          stats?: DashboardStats;
+          recentActivity?: DashboardActivity[];
+        };
+        if (!cancelled) {
+          if (payload.stats) setLiveStats(payload.stats);
+          if (Array.isArray(payload.recentActivity)) setLiveActivity(payload.recentActivity);
+        }
+      } catch {
+        // ignore transient poll failures
+      }
+    };
+
+    loadLive();
+    const id = window.setInterval(loadLive, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, []);
 
   type AccentKey = 'gold' | 'emerald' | 'indigo' | 'rose';
@@ -109,33 +141,119 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
   }> = [
     {
       label: dict.dashboard.stats.repairs,
-      value: stats.repairs,
-      note: 'Open service tickets',
+      value: liveStats.repairs,
+      note: lang === "de" ? "Offene Servicefälle" : "Open service tickets",
       accent: 'gold',
       Icon: WrenchIcon,
     },
     {
       label: dict.dashboard.stats.orders,
-      value: stats.orders,
-      note: 'Awaiting fulfillment',
+      value: liveStats.orders,
+      note: lang === "de" ? "Warten auf Bearbeitung" : "Awaiting fulfillment",
       accent: 'emerald',
       Icon: BagIcon,
     },
     {
       label: dict.dashboard.stats.products,
-      value: stats.products,
-      note: 'Listed in catalog',
+      value: liveStats.products,
+      note: lang === "de" ? "Im Katalog gelistet" : "Listed in catalog",
       accent: 'indigo',
       Icon: CubeIcon,
     },
     {
       label: dict.dashboard.stats.reviews,
-      value: stats.reviews,
-      note: 'Collected to date',
+      value: liveStats.reviews,
+      note: lang === "de" ? "Bisher gesammelt" : "Collected to date",
       accent: 'rose',
       Icon: StarIcon,
     },
+    {
+      label: lang === "de" ? "Live Nutzer" : "Live Users",
+      value: liveStats.liveUsers,
+      note: lang === "de" ? "Aktive Besucher in den letzten 5 Min." : "Active visitors in the last 5 min.",
+      accent: 'emerald',
+      Icon: () => (
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372A9.337 9.337 0 0021.75 18c0-1.385-.945-2.598-2.31-2.94A5.999 5.999 0 0012 5.25a5.999 5.999 0 00-7.44 9.81C3.195 15.402 2.25 16.615 2.25 18a9.337 9.337 0 004.125 1.5A9.38 9.38 0 009 19.128m6 0a9.38 9.38 0 01-6 0m6 0a8.962 8.962 0 00-6 0" />
+        </svg>
+      ),
+    },
+    {
+      label: lang === "de" ? "Ungelesene Chats" : "Unread Chats",
+      value: liveStats.unreadChats,
+      note: lang === "de" ? "Neue Kundennachrichten" : "New customer messages",
+      accent: 'gold',
+      Icon: () => (
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12c0-4.97 4.365-9 9.75-9s9.75 4.03 9.75 9-4.365 9-9.75 9a10.7 10.7 0 01-4.18-.84L3 20.25l1.3-3.9A8.88 8.88 0 012.25 12z" />
+        </svg>
+      ),
+    },
   ];
+
+  const getActivityStatus = (type: DashboardActivity["type"], status: string | null) => {
+    const normalized = status?.toLowerCase().trim();
+    if (type === "repair") {
+      if (normalized === "new" || normalized === "neu") {
+        return {
+          label: lang === "de" ? "Neu" : "New",
+          dot: "bg-indigo-400",
+          text: "text-indigo-400",
+        };
+      }
+      if (normalized === "in_progress" || normalized === "in arbeit") {
+        return {
+          label: lang === "de" ? "In Arbeit" : "In Progress",
+          dot: "bg-amber-400",
+          text: "text-amber-400",
+        };
+      }
+      if (normalized === "ready" || normalized === "abholbereit") {
+        return {
+          label: lang === "de" ? "Bereit" : "Ready",
+          dot: "bg-emerald-400",
+          text: "text-emerald-400",
+        };
+      }
+      if (normalized === "completed" || normalized === "abgeschlossen") {
+        return {
+          label: lang === "de" ? "Abgeschlossen" : "Completed",
+          dot: "bg-emerald-400",
+          text: "text-emerald-400",
+        };
+      }
+    }
+
+    if (type === "order") {
+      if (normalized === "pending" || normalized === "ausstehend" || normalized === "neu") {
+        return {
+          label: lang === "de" ? "Ausstehend" : "Pending",
+          dot: "bg-indigo-400",
+          text: "text-indigo-400",
+        };
+      }
+      if (normalized === "paid" || normalized === "bezahlt") {
+        return {
+          label: lang === "de" ? "Bezahlt" : "Paid",
+          dot: "bg-emerald-400",
+          text: "text-emerald-400",
+        };
+      }
+      if (normalized === "shipped" || normalized === "versendet") {
+        return {
+          label: lang === "de" ? "Versendet" : "Shipped",
+          dot: "bg-amber-400",
+          text: "text-amber-400",
+        };
+      }
+    }
+
+    return {
+      label: status || (lang === "de" ? "Unbekannt" : "Unknown"),
+      dot: "bg-muted/40",
+      text: "text-muted/70",
+    };
+  };
 
   const accentStyles: Record<AccentKey, { hex: string; pill: string; glow: string; number: string }> = {
     gold:    { hex: '#F59E0B', pill: 'bg-amber-500/15',   glow: 'bg-amber-500',   number: 'text-amber-400'   },
@@ -275,8 +393,8 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
             Recent Activity
           </p>
           <ul className="space-y-1">
-            {mockActivity.map((item) => {
-              const cfg = statusConfig[item.status];
+            {liveActivity.length > 0 ? liveActivity.map((item) => {
+              const cfg = getActivityStatus(item.type, item.status);
               return (
                 <li
                   key={item.id}
@@ -294,7 +412,11 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                   </span>
                 </li>
               );
-            })}
+            }) : (
+              <li className="rounded-lg px-3 py-6 text-center text-sm text-muted/70">
+                {lang === "de" ? "Noch keine letzten Aktivitäten vorhanden." : "No recent activity yet."}
+              </li>
+            )}
           </ul>
         </div>
 
@@ -304,42 +426,42 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
             System
           </p>
           <ul className="space-y-3">
-            {/* Last deploy */}
             <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
               <div className="flex items-center gap-3">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="text-xs text-muted/80">Last Deploy</span>
+                <span className="text-xs text-muted/80">{lang === "de" ? "Hosting" : "Hosting"}</span>
               </div>
-              <span className="font-mono text-[10px] tabular-nums text-muted/50">Vercel · just now</span>
-            </li>
-
-            {/* DB connection */}
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
-              <div className="flex items-center gap-3">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="text-xs text-muted/80">Database</span>
-              </div>
-              <span className="font-mono text-[10px] tabular-nums text-emerald-400/80">Connected</span>
-            </li>
-
-            {/* Shop hours */}
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
-              <div className="flex items-center gap-3">
-                <span className={`h-1.5 w-1.5 rounded-full ${shopOpen ? 'bg-emerald-400' : 'bg-muted/40'}`} />
-                <span className="text-xs text-muted/80">Shop Hours</span>
-              </div>
-              <span className={`font-mono text-[10px] tabular-nums ${shopOpen ? 'text-emerald-400/80' : 'text-muted/50'}`}>
-                {shopOpen ? 'Open' : 'Closed'}
+              <span className="font-mono text-[10px] tabular-nums text-muted/50">
+                {lang === "de" ? "Self-hosted VPS" : "Self-hosted VPS"}
               </span>
             </li>
 
-            {/* Storage */}
             <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
               <div className="flex items-center gap-3">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="text-xs text-muted/80">Blob Storage</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="text-xs text-muted/80">{lang === "de" ? "Datenbank" : "Database"}</span>
               </div>
-              <span className="font-mono text-[10px] tabular-nums text-amber-400/80">Vercel · Active</span>
+              <span className="font-mono text-[10px] tabular-nums text-emerald-400/80">PostgreSQL</span>
+            </li>
+
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+              <div className="flex items-center gap-3">
+                <span className={`h-1.5 w-1.5 rounded-full ${shopOpen ? 'bg-emerald-400' : 'bg-muted/40'}`} />
+                <span className="text-xs text-muted/80">{lang === "de" ? "Öffnungszeiten" : "Shop Hours"}</span>
+              </div>
+              <span className={`font-mono text-[10px] tabular-nums ${shopOpen ? 'text-emerald-400/80' : 'text-muted/50'}`}>
+                {shopOpen ? (lang === "de" ? 'Geöffnet' : 'Open') : (lang === "de" ? 'Geschlossen' : 'Closed')}
+              </span>
+            </li>
+
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+              <div className="flex items-center gap-3">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="text-xs text-muted/80">{lang === "de" ? "Dateispeicher" : "File Storage"}</span>
+              </div>
+              <span className="font-mono text-[10px] tabular-nums text-emerald-400/80">
+                {lang === "de" ? "Lokaler Uploadspeicher" : "Local upload storage"}
+              </span>
             </li>
           </ul>
         </div>

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { isAdminUser } from "@/lib/admin-auth";
 import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
 import { uploadProductImage } from "@/lib/blob";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminServerClient } from "@/lib/admin-auth-server";
 
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -20,14 +21,16 @@ export async function POST(request: NextRequest) {
     uploadFailed: isEnglish ? "Upload failed" : "Upload fehlgeschlagen",
   };
 
-  const supabase = await createClient();
+  const adminClient = await createAdminServerClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await adminClient.auth.getUser();
 
   if (!isAdminUser(user)) {
     return NextResponse.json({ error: messages.unauthorized }, { status: 401 });
   }
+  const csrf = rejectCrossSiteAdminMutation(request, messages.unauthorized);
+  if (csrf) return csrf;
 
   try {
     const formData = await request.formData();
@@ -56,8 +59,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const url = await uploadProductImage(file);
-    return NextResponse.json({ url });
+    const upload = await uploadProductImage(file);
+    return NextResponse.json(upload);
   } catch (error) {
     console.error("Product image upload failed:", error);
     return NextResponse.json({ error: messages.uploadFailed }, { status: 500 });

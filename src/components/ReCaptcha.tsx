@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
 
 declare global {
   interface Window {
@@ -20,22 +20,29 @@ type ReCaptchaProps = {
   onLoad?: () => void;
 };
 
+const getConsentErrorMessage = () => {
+  if (typeof document !== "undefined" && document.documentElement.lang.startsWith("de")) {
+    return "Externer Google-Spamschutz ist erst nach Ihrer Zustimmung verfügbar.";
+  }
+
+  return "External Google spam protection is disabled until consent is granted.";
+};
+
 /**
  * Get reCAPTCHA site key from database (client-side)
  */
 const getReCaptchaSiteKey = async (): Promise<{ siteKey: string; enabled: boolean }> => {
   try {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("store_settings")
-      .select("value")
-      .eq("key", "recaptcha")
-      .maybeSingle();
-
-    if (data?.value) {
+    const response = await fetch("/api/public/recaptcha", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    if (response.ok) {
+      const data = await response.json();
       return {
-        siteKey: data.value.siteKey || "",
-        enabled: data.value.enabled || false,
+        siteKey: data.siteKey || "",
+        enabled: Boolean(data.enabled),
       };
     }
   } catch (error) {
@@ -63,6 +70,7 @@ const getReCaptchaSiteKey = async (): Promise<{ siteKey: string; enabled: boolea
 export default function ReCaptcha({ action, onVerify, onError, onLoad }: ReCaptchaProps) {
   const [siteKey, setSiteKey] = useState<string>("");
   const [enabled, setEnabled] = useState<boolean>(false);
+  const [consentMode, setConsentMode] = useState<ConsentMode>("unset");
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
@@ -92,9 +100,32 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad }: ReCaptc
     loadSettings();
   }, [onVerify, onError, onLoad]);
 
+  useEffect(() => {
+    setConsentMode(readConsentMode());
+
+    const handleChange = (event: Event) => {
+      setConsentMode((event as CustomEvent<ConsentMode>).detail ?? readConsentMode());
+      setLoaded(false);
+      executedRef.current = false;
+    };
+
+    window.addEventListener(CONSENT_EVENT_NAME, handleChange as EventListener);
+    return () => {
+      window.removeEventListener(CONSENT_EVENT_NAME, handleChange as EventListener);
+    };
+  }, []);
+
   // Load reCAPTCHA script
   useEffect(() => {
     if (!enabled || !siteKey || loaded) return;
+
+    if (consentMode !== "external") {
+      const message = getConsentErrorMessage();
+      setError(message);
+      onError?.(message);
+      return;
+    }
+    setError(null);
 
     // Check if script already exists
     if (document.querySelector(`script[src*="recaptcha"]`)) {
@@ -123,11 +154,11 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad }: ReCaptc
     return () => {
       // Cleanup on unmount (optional - usually want to keep script loaded)
     };
-  }, [enabled, siteKey, loaded, onError, onLoad]);
+  }, [consentMode, enabled, siteKey, loaded, onError, onLoad]);
 
   // Execute reCAPTCHA when ready
   const executeReCaptcha = useCallback(async () => {
-    if (!enabled || !siteKey || executedRef.current) return;
+    if (!enabled || !siteKey || consentMode !== "external" || executedRef.current) return;
 
     try {
       await new Promise<void>((resolve) => {
@@ -162,14 +193,14 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad }: ReCaptc
       setError("reCAPTCHA verification failed");
       onError?.("reCAPTCHA execution failed");
     }
-  }, [enabled, siteKey, action, onVerify, onError]);
+  }, [enabled, siteKey, consentMode, action, onVerify, onError]);
 
   // Execute when loaded
   useEffect(() => {
-    if (loaded && enabled && siteKey) {
+    if (loaded && enabled && siteKey && consentMode === "external") {
       executeReCaptcha();
     }
-  }, [loaded, enabled, siteKey, executeReCaptcha]);
+  }, [loaded, enabled, siteKey, consentMode, executeReCaptcha]);
 
   // Don't render anything visible for reCAPTCHA v3
   // The badge is shown by Google automatically (can be hidden with CSS if disclosed in privacy policy)

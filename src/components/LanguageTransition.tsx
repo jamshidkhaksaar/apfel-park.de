@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { useTheme } from "./ThemeProvider";
+import { shouldBypassImageOptimization, useBranding } from "./BrandingProvider";
 
 type LanguageContextType = {
   switchLanguage: (newPath: string, newLocale: string) => void;
@@ -25,7 +26,6 @@ const themeColors = {
     wave3: "#0b0b0e",
     accent: "#ebc378",
     accentGlow: "rgba(235, 195, 120, 0.35)",
-    logo: "/branding/apfel-park-white.png",
   },
   mono: {
     wave1: "#3a3a3c",
@@ -33,7 +33,6 @@ const themeColors = {
     wave3: "#fcfbf9",
     accent: "#d6a95e",
     accentGlow: "rgba(214, 169, 94, 0.25)",
-    logo: "/branding/logo.jpg",
   },
 };
 
@@ -43,9 +42,11 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
   const router = useRouter();
   const pathname = usePathname();
   const { theme } = useTheme();
+  const branding = useBranding();
   
   // Get theme colors
   const colors = themeColors[theme];
+  const logoSrc = theme === "dark" ? branding.logoWhite : branding.logo;
 
   const switchLanguage = async (newPath: string, newLocale: string) => {
     setIsSwitching(true);
@@ -154,11 +155,12 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
                 }}
               >
                 <Image
-                  src={colors.logo}
+                  src={logoSrc}
                   alt="Loading"
                   width={100}
                   height={100}
                   className="h-full w-full rounded-full object-cover opacity-90"
+                  unoptimized={shouldBypassImageOptimization(logoSrc)}
                 />
                 <div 
                   className="absolute -inset-1 animate-spin rounded-full border-2 border-transparent"

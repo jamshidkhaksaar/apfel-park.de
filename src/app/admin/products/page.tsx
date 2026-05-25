@@ -1,97 +1,151 @@
-import { createClient } from "@/lib/supabase/server";
-import { getAdminDictionary, getAdminNumberLocale } from "@/lib/admin-i18n-server";
-import Link from "next/link";
 import AdminShell from "../../../components/admin/AdminShell";
+import ProductCatalogAdmin, { type AdminProductRecord } from "../../../components/admin/ProductCatalogAdmin";
+
+import { createAdminDbClient } from "@/lib/admin-db";
+import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
+import { getPromoPopupSettings } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProductsPage() {
-  const supabase = await createClient();
-  const dict = await getAdminDictionary();
-  const numberLocale = await getAdminNumberLocale();
-  const { data: products } = await supabase
-    .from("products")
-    .select("*")
-    .order("created_at", { ascending: false });
+type ProductRow = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  category: string;
+  brand: string | null;
+  model: string | null;
+  sku: string | null;
+  price: number | string;
+  compare_at_price: number | string | null;
+  stock: number | null;
+  slug: string | null;
+  is_active: boolean | null;
+  images: string[] | null;
+  feature_bullets: string[] | null;
+  specs: unknown;
+  variants: unknown;
+  created_at: string | null;
+};
 
-  const getCategoryLabel = (category: string) => {
-    const normalized = category.toLowerCase();
-    if (normalized === "smartphone" || normalized === "smartphones") return dict.productsPage.categories.smartphones;
-    if (normalized === "accessory" || normalized === "accessories") return dict.productsPage.categories.accessories;
-    if (normalized === "console" || normalized === "consoles" || normalized === "gaming") return dict.productsPage.categories.consoles;
-    if (normalized === "laptop" || normalized === "laptops") return dict.productsPage.categories.laptops;
-    return dict.productsPage.categories.unknown;
-  };
+type FeaturedProductsRow = {
+  value: unknown;
+};
+
+const toVariants = (value: unknown) => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const candidate = entry as {
+        color?: unknown;
+        storage?: unknown;
+        price?: unknown;
+        compareAtPrice?: unknown;
+        stock?: unknown;
+        sku?: unknown;
+        imageIndex?: unknown;
+        isDefault?: unknown;
+      };
+
+      if (typeof candidate.color !== "string" || typeof candidate.storage !== "string") return null;
+
+      return {
+        color: candidate.color,
+        storage: candidate.storage,
+        price: candidate.price === null || candidate.price === undefined ? undefined : toNumber(candidate.price as string | number),
+        compareAtPrice:
+          candidate.compareAtPrice === null || candidate.compareAtPrice === undefined
+            ? undefined
+            : toNumber(candidate.compareAtPrice as string | number),
+        stock: candidate.stock === null || candidate.stock === undefined ? undefined : toNumber(candidate.stock as string | number),
+        sku: typeof candidate.sku === "string" ? candidate.sku : "",
+        imageIndex:
+          candidate.imageIndex === null || candidate.imageIndex === undefined
+            ? undefined
+            : toNumber(candidate.imageIndex as string | number),
+        isDefault: Boolean(candidate.isDefault),
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+};
+
+const toNumber = (value: string | number | null | undefined): number => {
+  const parsed = typeof value === "string" ? Number(value) : value;
+  return Number.isFinite(parsed) ? Number(parsed) : 0;
+};
+
+const toSpecs = (value: unknown) => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const candidate = entry as { label?: unknown; value?: unknown };
+      if (typeof candidate.label !== "string" || typeof candidate.value !== "string") return null;
+      return {
+        label: candidate.label,
+        value: candidate.value,
+      };
+    })
+    .filter((entry): entry is { label: string; value: string } => entry !== null);
+};
+
+const mapProduct = (row: ProductRow): AdminProductRecord => ({
+  id: row.id,
+  title: row.title,
+  subtitle: row.subtitle ?? "",
+  description: row.description ?? "",
+  category: row.category,
+  brand: row.brand ?? "",
+  model: row.model ?? "",
+  sku: row.sku ?? "",
+  price: toNumber(row.price),
+  compareAtPrice: row.compare_at_price === null || row.compare_at_price === undefined ? null : toNumber(row.compare_at_price),
+  stock: typeof row.stock === "number" ? row.stock : 0,
+  slug: row.slug ?? "",
+  isActive: Boolean(row.is_active),
+  images: row.images?.filter(Boolean) ?? [],
+  featureBullets: row.feature_bullets?.filter(Boolean) ?? [],
+  specs: toSpecs(row.specs),
+  variants: toVariants(row.variants),
+  isHomepageFeatured: false,
+  createdAt: row.created_at ?? new Date(0).toISOString(),
+});
+
+export default async function ProductsPage() {
+  const [dict, locale, promo] = await Promise.all([
+    getAdminDictionary(),
+    getAdminLocale(),
+    getPromoPopupSettings(),
+  ]);
+
+  const admin = createAdminDbClient();
+  const [{ data }, { data: featuredRow }] = await Promise.all([
+    admin
+      .from<ProductRow[]>("products")
+      .select("id,title,subtitle,description,category,brand,model,sku,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at")
+      .order("created_at", { ascending: false }),
+    admin
+      .from<FeaturedProductsRow>("store_settings")
+      .select("value")
+      .eq("key", "featured_product_ids")
+      .maybeSingle(),
+  ]);
+
+  const featuredProductIds = Array.isArray(featuredRow?.value)
+    ? featuredRow.value.filter((item): item is string => typeof item === "string")
+    : [];
+
+  const products = (data ?? []).map((row) => ({
+    ...mapProduct(row),
+    isHomepageFeatured: featuredProductIds.includes(row.id),
+  }));
 
   return (
     <AdminShell title={dict.productsPage.title}>
-      <div className="glass-panel rounded-2xl p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-              {dict.productsPage.eyebrow}
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold text-foreground">
-              {dict.productsPage.heading}
-            </h2>
-          </div>
-          <Link 
-            href="/admin/products/new"
-            className="rounded-full bg-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-black hover:bg-gold-deep transition"
-          >
-            {dict.productsPage.create}
-          </Link>
-        </div>
-        <div className="mt-6 overflow-hidden rounded-xl border border-border/60">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-surface-strong/60 text-xs uppercase tracking-[0.2em] text-muted">
-              <tr>
-                <th className="px-4 py-3">{dict.productsPage.table.product}</th>
-                <th className="px-4 py-3">{dict.productsPage.table.status}</th>
-                <th className="px-4 py-3">{dict.productsPage.table.category}</th>
-                <th className="px-4 py-3">{dict.productsPage.table.stock}</th>
-                <th className="px-4 py-3">{dict.productsPage.table.price}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {products && products.length > 0 ? (
-                products.map((item) => (
-                  <tr key={item.id} className="hover:bg-white/5 transition">
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      {item.title}
-                    </td>
-                    <td className="px-4 py-3 text-muted">
-                      {item.is_active ? (
-                        <span className="inline-flex items-center rounded-full bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-inset ring-green-400/20">
-                          {dict.productsPage.status.active}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-400/20">
-                          {dict.productsPage.status.draft}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted">{getCategoryLabel(item.category)}</td>
-                    <td className="px-4 py-3 text-muted">{item.stock}</td>
-                    <td className="px-4 py-3 text-muted">
-                      {new Intl.NumberFormat(numberLocale, {
-                        style: "currency",
-                        currency: "EUR",
-                      }).format(item.price)}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
-                    {dict.productsPage.empty}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <ProductCatalogAdmin locale={locale} products={products} promo={promo} />
     </AdminShell>
   );
 }

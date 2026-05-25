@@ -1,6 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
+import {
+  siApple,
+  siGoogle,
+  siHuawei,
+  siPlaystation,
+  siSamsung,
+  siSony,
+  siXiaomi,
+} from "simple-icons";
 
 import { getDictionary, type Locale } from "../../../lib/i18n";
 import { createMetadata } from "../../../lib/metadata";
@@ -12,6 +21,7 @@ import TestimonialsCarousel from "../../../components/TestimonialsCarousel";
 import { getFeaturedProducts } from "../../../lib/products";
 import { safeJsonStringify } from "../../../lib/security";
 import AnimatedSection from "../../../components/AnimatedSection";
+import { getHeroMediaSettings } from "../../../lib/site-settings-server";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +45,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const dict = getDictionary(lang as Locale);
   const home = await getHomeContent(lang as Locale);
   const featuredProducts = await getFeaturedProducts();
+  const heroMedia = await getHeroMediaSettings();
 
   const serviceItems = home.services.items.map((item: { title: string; description: string }) => ({
     "@type": "Service",
@@ -89,12 +100,47 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   };
 
   const deviceBrands = [
-    { name: "Apple", icon: "🍎" },
-    { name: "Samsung", icon: "📱" },
-    { name: "Huawei", icon: "📲" },
-    { name: "Xiaomi", icon: "📱" },
-    { name: "Google", icon: "🔍" },
-    { name: "Sony", icon: "🎮" },
+    {
+      name: "Apple",
+      color: `#${siApple.hex}`,
+      path: siApple.path,
+    },
+    {
+      name: "Samsung",
+      color: `#${siSamsung.hex}`,
+      path: siSamsung.path,
+    },
+    {
+      name: "Google",
+      color: `#${siGoogle.hex}`,
+      path: siGoogle.path,
+    },
+    {
+      name: "Huawei",
+      color: `#${siHuawei.hex}`,
+      path: siHuawei.path,
+    },
+    {
+      name: "Xiaomi",
+      color: `#${siXiaomi.hex}`,
+      path: siXiaomi.path,
+    },
+    {
+      name: "Sony",
+      color: "#1a1a1a",
+      path: siSony.path,
+    },
+    {
+      name: "PlayStation",
+      color: `#${siPlaystation.hex}`,
+      path: siPlaystation.path,
+    },
+    {
+      name: "Nintendo",
+      color: "#E60012",
+      letter: "N",
+      path: null,
+    },
   ];
 
   return (
@@ -105,22 +151,34 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       />
 
       {/* Hero Slider */}
-      <HeroSlider lang={lang as Locale} />
+      <HeroSlider lang={lang as Locale} media={heroMedia} />
 
-      {/* Brands Marquee */}
-      <section className="border-y border-border bg-surface-strong py-6">
+      {/* Brands Bar */}
+      <section className="border-y border-border bg-surface-strong py-5">
         <div className="container-page">
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-            <span className="text-xs uppercase tracking-widest text-gold/80 font-semibold">
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
+            <span className="shrink-0 text-[10px] uppercase tracking-[0.28em] text-gold/70 font-semibold">
               {lang === "de" ? "Verkauf & Reparatur" : "We Sell & Repair"}
             </span>
-            <ul className="flex flex-wrap items-center justify-center gap-8 md:gap-12" role="list">
+            <div className="mx-4 h-4 w-px bg-border hidden md:block" />
+            <ul className="flex flex-wrap items-center justify-center gap-5 md:gap-8" role="list">
               {deviceBrands.map((brand) => (
-                <li key={brand.name} className="group flex items-center gap-2 transition hover:scale-105">
-                  <span className="font-display flex items-center gap-2 text-lg font-bold tracking-tight text-muted/60 transition-colors group-hover:text-gold">
-                    <span aria-hidden="true" className="text-base opacity-70 transition-opacity group-hover:opacity-100">
-                      {brand.icon}
-                    </span>
+                <li key={brand.name} className="group flex items-center gap-2 transition-transform duration-200 hover:scale-105">
+                  <div
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg shadow-sm"
+                    style={{ backgroundColor: brand.color }}
+                  >
+                    {brand.path ? (
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5 text-white" aria-hidden="true">
+                        <path d={brand.path} />
+                      </svg>
+                    ) : (
+                      <span className="text-[9px] font-black text-white leading-none">
+                        {brand.letter}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-bold tracking-tight text-muted/65 transition-colors group-hover:text-gold">
                     {brand.name}
                   </span>
                 </li>
