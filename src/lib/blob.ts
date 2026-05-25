@@ -36,6 +36,15 @@ const sanitizeFileName = (fileName: string): string => {
 
 const buildPublicUrl = (segments: string[]): string => `/${segments.join("/")}`;
 
+export const resolveUploadPath = (urlPath: string): string | null => {
+  if (!urlPath.startsWith("/uploads/")) return null;
+  const relativePath = urlPath.replace(/^\/uploads\//, "");
+  const resolved = path.resolve(uploadsRoot, relativePath);
+  const root = path.resolve(uploadsRoot);
+  if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) return null;
+  return resolved;
+};
+
 const writeUpload = async (
   directory: string,
   fileName: string,

@@ -726,7 +726,9 @@ const publishInstagramPost = async (
     return { success: false, target: "instagram", error: "Instagram publishing requires a product image" };
   }
 
-  const publicImageUrl = imageUrl.startsWith("http") ? imageUrl : `https://apfel-park.de${imageUrl}`;
+  const publicImageUrl = imageUrl.startsWith("http")
+    ? imageUrl
+    : `https://apfel-park.de/api/public/social-image?src=${encodeURIComponent(imageUrl)}`;
 
   try {
     const createRes = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${config.instagramBusinessAccountId}/media`, {
