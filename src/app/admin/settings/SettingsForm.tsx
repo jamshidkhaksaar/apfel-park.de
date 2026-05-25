@@ -16,6 +16,13 @@ const tabButtonClass = (active: boolean) =>
       : "border-border/60 bg-surface/70 text-muted hover:border-gold/30 hover:text-foreground"
   }`;
 
+const statusPillClass = (active: boolean) =>
+  `rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+    active
+      ? "border-green-500/30 bg-green-950/20 text-green-300"
+      : "border-white/10 bg-white/[0.03] text-muted"
+  }`;
+
 export default function SettingsForm({ initialSettings }: { initialSettings: SettingsData }) {
   const router = useRouter();
   const { dict, lang } = useAdmin();
@@ -27,6 +34,10 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const facebookPublishingReady = Boolean(settings.integrations.facebookPageId && settings.integrations.facebookPageAccessToken);
+  const instagramPublishingReady = Boolean(settings.integrations.instagramBusinessAccountId && settings.integrations.instagramAccessToken);
+  const publishingReady = facebookPublishingReady || instagramPublishingReady;
+  const autoPublishEnabled = settings.integrations.autoPublishNewProducts || settings.integrations.autoPublishDiscountProducts;
 
   const handleChange = (section: keyof SettingsData, field: string, value: string | boolean | number) => {
     setSettings((prev) => ({
@@ -517,26 +528,72 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Set
             </div>
 
             <div className="glass-panel rounded-3xl p-6">
-              <h3 className="text-lg font-semibold text-foreground">{dict.settingsForm.automationTitle}</h3>
-              <p className="mt-2 text-sm text-muted">{dict.settingsForm.automationDesc}</p>
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">{dict.settingsForm.automationTitle}</h3>
+                  <p className="mt-2 text-sm text-muted">{dict.settingsForm.automationDesc}</p>
+                </div>
+                <span className={statusPillClass(autoPublishEnabled)}>
+                  {autoPublishEnabled ? dict.settingsForm.automationActive : dict.settingsForm.automationInactive}
+                </span>
+              </div>
+
+              <div className="mt-5 grid gap-3 lg:grid-cols-3">
+                <div className={`rounded-2xl border px-4 py-3 ${facebookPublishingReady ? "border-green-500/30 bg-green-950/10" : "border-amber-500/30 bg-amber-950/10"}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{dict.settingsForm.facebookChannel}</span>
+                    <span className={statusPillClass(facebookPublishingReady)}>
+                      {facebookPublishingReady ? dict.settingsForm.configured : dict.settingsForm.missing}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-muted">{dict.settingsForm.facebookChannelDesc}</p>
+                </div>
+                <div className={`rounded-2xl border px-4 py-3 ${instagramPublishingReady ? "border-green-500/30 bg-green-950/10" : "border-amber-500/30 bg-amber-950/10"}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{dict.settingsForm.instagramChannel}</span>
+                    <span className={statusPillClass(instagramPublishingReady)}>
+                      {instagramPublishingReady ? dict.settingsForm.configured : dict.settingsForm.missing}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-muted">{dict.settingsForm.instagramChannelDesc}</p>
+                </div>
+                <div className={`rounded-2xl border px-4 py-3 ${publishingReady ? "border-gold/25 bg-gold/5" : "border-red-500/30 bg-red-950/10"}`}>
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{dict.settingsForm.publishTrigger}</div>
+                  <p className="mt-2 text-xs text-muted">
+                    {publishingReady ? dict.settingsForm.publishTriggerDesc : dict.settingsForm.publishNeedsConfig}
+                  </p>
+                </div>
+              </div>
+
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <button
                   type="button"
                   onClick={() => handleChange("integrations", "autoPublishNewProducts", !settings.integrations.autoPublishNewProducts)}
-                  className={`rounded-2xl border px-4 py-4 text-left transition ${settings.integrations.autoPublishNewProducts ? "border-green-500/40 bg-green-950/10" : "border-border/60 bg-surface/70"}`}
+                  className={`rounded-2xl border px-4 py-4 text-left transition hover:border-gold/35 ${settings.integrations.autoPublishNewProducts ? "border-green-500/40 bg-green-950/10" : "border-border/60 bg-surface/70"}`}
                 >
-                  <div className="text-sm font-semibold text-foreground">{dict.settingsForm.autoPublishNewProducts}</div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-sm font-semibold text-foreground">{dict.settingsForm.autoPublishNewProducts}</div>
+                    <span className={statusPillClass(settings.integrations.autoPublishNewProducts)}>
+                      {settings.integrations.autoPublishNewProducts ? dict.settingsForm.enabled : dict.settingsForm.disabled}
+                    </span>
+                  </div>
                   <div className="mt-1 text-xs text-muted">{dict.settingsForm.autoPublishNewProductsDesc}</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleChange("integrations", "autoPublishDiscountProducts", !settings.integrations.autoPublishDiscountProducts)}
-                  className={`rounded-2xl border px-4 py-4 text-left transition ${settings.integrations.autoPublishDiscountProducts ? "border-green-500/40 bg-green-950/10" : "border-border/60 bg-surface/70"}`}
+                  className={`rounded-2xl border px-4 py-4 text-left transition hover:border-gold/35 ${settings.integrations.autoPublishDiscountProducts ? "border-green-500/40 bg-green-950/10" : "border-border/60 bg-surface/70"}`}
                 >
-                  <div className="text-sm font-semibold text-foreground">{dict.settingsForm.autoPublishDiscountProducts}</div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-sm font-semibold text-foreground">{dict.settingsForm.autoPublishDiscountProducts}</div>
+                    <span className={statusPillClass(settings.integrations.autoPublishDiscountProducts)}>
+                      {settings.integrations.autoPublishDiscountProducts ? dict.settingsForm.enabled : dict.settingsForm.disabled}
+                    </span>
+                  </div>
                   <div className="mt-1 text-xs text-muted">{dict.settingsForm.autoPublishDiscountProductsDesc}</div>
                 </button>
               </div>
+              <p className="mt-4 text-xs text-muted/70">{dict.settingsForm.automationFootnote}</p>
             </div>
           </div>
         )}
