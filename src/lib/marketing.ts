@@ -102,6 +102,25 @@ const META_API_VERSION = "v22.0";
 const TIKTOK_EVENTS_API_URL = "https://business-api.tiktok.com/open_api/v1.3/event/track/";
 const SOCIAL_PUBLISH_TIMEOUT_MS = 15000;
 
+const parseGraphError = (responseText: string) => {
+  if (!responseText) return "Meta returned an empty error response";
+
+  try {
+    const parsed = JSON.parse(responseText) as { error?: { message?: string; code?: number; error_subcode?: number } };
+    if (parsed.error?.message) {
+      const details = [
+        parsed.error.code ? `code ${parsed.error.code}` : "",
+        parsed.error.error_subcode ? `subcode ${parsed.error.error_subcode}` : "",
+      ].filter(Boolean).join(", ");
+      return details ? `${parsed.error.message} (${details})` : parsed.error.message;
+    }
+  } catch {
+    // Fall through to the raw response slice.
+  }
+
+  return responseText.slice(0, 500);
+};
+
 const normalizeString = (value: string | null | undefined) => (value ?? "").trim();
 
 const hashValue = (value: string | null | undefined) => {
@@ -699,7 +718,7 @@ const publishFacebookPost = async (
 
     const responseText = await response.text();
     if (!response.ok) {
-      return { success: false, target: "facebook", status: response.status, error: responseText };
+      return { success: false, target: "facebook", status: response.status, error: parseGraphError(responseText) };
     }
 
     const published = responseText ? JSON.parse(responseText) as { id?: string } : {};
@@ -744,7 +763,7 @@ const publishInstagramPost = async (
 
     const createText = await createRes.text();
     if (!createRes.ok) {
-      return { success: false, target: "instagram", status: createRes.status, error: createText };
+      return { success: false, target: "instagram", status: createRes.status, error: parseGraphError(createText) };
     }
 
     const creation = createText ? JSON.parse(createText) as { id?: string } : {};
@@ -764,7 +783,7 @@ const publishInstagramPost = async (
 
     const publishText = await publishRes.text();
     if (!publishRes.ok) {
-      return { success: false, target: "instagram", status: publishRes.status, error: publishText };
+      return { success: false, target: "instagram", status: publishRes.status, error: parseGraphError(publishText) };
     }
 
     const published = publishText ? JSON.parse(publishText) as { id?: string } : {};
@@ -791,8 +810,19 @@ export const autoPublishProductPromotion = async (
   const link = `https://apfel-park.de/${locale}/store/${payload.slug}`;
   const text = createPromotionText(payload);
 
-  return Promise.all([
+  const results = await Promise.all([
     publishFacebookPost(config, text, link),
     publishInstagramPost(config, text, payload.imageUrl || null),
   ]);
+
+  results.forEach((result) => {
+    if (result.success) {
+      console.info(`[Marketing] ${result.target} published`, result.postId ? { postId: result.postId } : {});
+      return;
+    }
+
+    console.warn(`[Marketing] ${result.target} publish failed:`, result.error || `status ${result.status}`);
+  });
+
+  return results;
 };
