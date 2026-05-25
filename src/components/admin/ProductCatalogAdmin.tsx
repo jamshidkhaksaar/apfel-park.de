@@ -54,6 +54,13 @@ type PromoSettings = {
   pinnedProductIds?: string[];
 };
 
+type SocialPublishResult = {
+  success: boolean;
+  target: "facebook" | "instagram";
+  postId?: string;
+  error?: string;
+};
+
 type Props = {
   locale: AdminLocale;
   products: AdminProductRecord[];
@@ -99,6 +106,41 @@ const categoryLabel = (locale: AdminLocale, category: string) => {
   };
 
   return labels[category as keyof typeof labels] ?? category;
+};
+
+const formatSocialPublishMessage = (results: SocialPublishResult[] | undefined, locale: AdminLocale) => {
+  if (!results || results.length === 0) {
+    return locale === "de"
+      ? "Produkt aktualisiert. Social Publishing ist nicht aktiv."
+      : "Product updated. Social publishing is not active.";
+  }
+
+  const successful = results.filter((result) => result.success).map((result) => result.target);
+  const failed = results.filter((result) => !result.success);
+  const labels = new Intl.ListFormat(locale === "de" ? "de-DE" : "en-US", {
+    style: "short",
+    type: "conjunction",
+  });
+
+  if (failed.length === 0) {
+    return locale === "de"
+      ? `Produkt aktualisiert und auf ${labels.format(successful)} veröffentlicht.`
+      : `Product updated and published to ${labels.format(successful)}.`;
+  }
+
+  const failureText = failed
+    .map((result) => `${result.target}: ${result.error || (locale === "de" ? "fehlgeschlagen" : "failed")}`)
+    .join("; ");
+
+  if (successful.length === 0) {
+    return locale === "de"
+      ? `Produkt aktualisiert. Social Publishing fehlgeschlagen: ${failureText}`
+      : `Product updated. Social publishing failed: ${failureText}`;
+  }
+
+  return locale === "de"
+    ? `Produkt aktualisiert und auf ${labels.format(successful)} veröffentlicht. Fehler: ${failureText}`
+    : `Product updated and published to ${labels.format(successful)}. Failed: ${failureText}`;
 };
 
 const productToForm = (product: AdminProductRecord): ProductFormState => ({
@@ -335,7 +377,10 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
           }),
         });
 
-        const payload = await response.json();
+        const payload = (await response.json()) as {
+          error?: string;
+          socialPublishing?: SocialPublishResult[];
+        };
         if (!response.ok) {
           throw new Error(payload.error || "Save failed");
         }
@@ -366,7 +411,7 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
         setFormState(productToForm(updated));
         setImageFiles([null, null, null, null]);
         setVariantImageFiles(updated.variants.map(() => [null, null, null, null]));
-        setSaveMessage(locale === "de" ? "Produkt aktualisiert." : "Product updated.");
+        setSaveMessage(formatSocialPublishMessage(payload.socialPublishing, locale));
       } catch (error) {
         setSaveError(error instanceof Error ? error.message : locale === "de" ? "Speichern fehlgeschlagen." : "Save failed.");
       }

@@ -89,9 +89,18 @@ type EventSendResult = {
   error?: string;
 };
 
+export type SocialPublishResult = {
+  success: boolean;
+  target: "facebook" | "instagram";
+  status?: number;
+  postId?: string;
+  error?: string;
+};
+
 const EXTERNAL_CONSENT = "external";
 const META_API_VERSION = "v22.0";
 const TIKTOK_EVENTS_API_URL = "https://business-api.tiktok.com/open_api/v1.3/event/track/";
+const SOCIAL_PUBLISH_TIMEOUT_MS = 15000;
 
 const normalizeString = (value: string | null | undefined) => (value ?? "").trim();
 
@@ -667,10 +676,17 @@ const createPromotionText = (payload: ProductPromotionPayload) => {
   ].filter(Boolean).join("\n");
 };
 
-const publishFacebookPost = async (config: MarketingIntegrationsConfig, message: string, link: string) => {
-  if (!config.facebookPageId || !config.facebookPageAccessToken) return;
+const publishFacebookPost = async (
+  config: MarketingIntegrationsConfig,
+  message: string,
+  link: string,
+): Promise<SocialPublishResult> => {
+  if (!config.facebookPageId || !config.facebookPageAccessToken) {
+    return { success: false, target: "facebook", error: "Facebook publishing not configured" };
+  }
+
   try {
-    await fetch(`https://graph.facebook.com/${META_API_VERSION}/${config.facebookPageId}/feed`, {
+    const response = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${config.facebookPageId}/feed`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
@@ -678,58 +694,102 @@ const publishFacebookPost = async (config: MarketingIntegrationsConfig, message:
         link,
         access_token: config.facebookPageAccessToken,
       }),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(SOCIAL_PUBLISH_TIMEOUT_MS),
     });
+
+    const responseText = await response.text();
+    if (!response.ok) {
+      return { success: false, target: "facebook", status: response.status, error: responseText };
+    }
+
+    const published = responseText ? JSON.parse(responseText) as { id?: string } : {};
+    return { success: true, target: "facebook", status: response.status, postId: published.id };
   } catch (error) {
     console.warn("[Marketing] Facebook publish failed:", error);
+    return {
+      success: false,
+      target: "facebook",
+      error: error instanceof Error ? error.message : "Facebook publish failed",
+    };
   }
 };
 
-const publishInstagramPost = async (config: MarketingIntegrationsConfig, caption: string, imageUrl?: string | null) => {
-  if (!config.instagramBusinessAccountId || !config.instagramAccessToken || !imageUrl) return;
+const publishInstagramPost = async (
+  config: MarketingIntegrationsConfig,
+  caption: string,
+  imageUrl?: string | null,
+): Promise<SocialPublishResult> => {
+  if (!config.instagramBusinessAccountId || !config.instagramAccessToken) {
+    return { success: false, target: "instagram", error: "Instagram publishing not configured" };
+  }
+  if (!imageUrl) {
+    return { success: false, target: "instagram", error: "Instagram publishing requires a product image" };
+  }
+
+  const publicImageUrl = imageUrl.startsWith("http") ? imageUrl : `https://apfel-park.de${imageUrl}`;
+
   try {
     const createRes = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${config.instagramBusinessAccountId}/media`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        image_url: imageUrl.startsWith("http") ? imageUrl : `https://apfel-park.de${imageUrl}`,
+        image_url: publicImageUrl,
         caption,
         access_token: config.instagramAccessToken,
       }),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(SOCIAL_PUBLISH_TIMEOUT_MS),
     });
 
-    if (!createRes.ok) return;
-    const creation = (await createRes.json()) as { id?: string };
-    if (!creation.id) return;
+    const createText = await createRes.text();
+    if (!createRes.ok) {
+      return { success: false, target: "instagram", status: createRes.status, error: createText };
+    }
 
-    await fetch(`https://graph.facebook.com/${META_API_VERSION}/${config.instagramBusinessAccountId}/media_publish`, {
+    const creation = createText ? JSON.parse(createText) as { id?: string } : {};
+    if (!creation.id) {
+      return { success: false, target: "instagram", status: createRes.status, error: "Instagram did not return a creation ID" };
+    }
+
+    const publishRes = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${config.instagramBusinessAccountId}/media_publish`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         creation_id: creation.id,
         access_token: config.instagramAccessToken,
       }),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(SOCIAL_PUBLISH_TIMEOUT_MS),
     });
+
+    const publishText = await publishRes.text();
+    if (!publishRes.ok) {
+      return { success: false, target: "instagram", status: publishRes.status, error: publishText };
+    }
+
+    const published = publishText ? JSON.parse(publishText) as { id?: string } : {};
+    return { success: true, target: "instagram", status: publishRes.status, postId: published.id };
   } catch (error) {
     console.warn("[Marketing] Instagram publish failed:", error);
+    return {
+      success: false,
+      target: "instagram",
+      error: error instanceof Error ? error.message : "Instagram publish failed",
+    };
   }
 };
 
 export const autoPublishProductPromotion = async (
   payload: ProductPromotionPayload,
   mode: "new" | "discount",
-) => {
+): Promise<SocialPublishResult[]> => {
   const config = await getIntegrations();
-  if (mode === "new" && !config.autoPublishNewProducts) return;
-  if (mode === "discount" && !config.autoPublishDiscountProducts) return;
+  if (mode === "new" && !config.autoPublishNewProducts) return [];
+  if (mode === "discount" && !config.autoPublishDiscountProducts) return [];
 
   const locale = payload.locale === "en" ? "en" : "de";
   const link = `https://apfel-park.de/${locale}/store/${payload.slug}`;
   const text = createPromotionText(payload);
 
-  await Promise.all([
+  return Promise.all([
     publishFacebookPost(config, text, link),
     publishInstagramPost(config, text, payload.imageUrl || null),
   ]);

@@ -336,7 +336,7 @@ export async function POST(request: NextRequest) {
 
     await syncHomepageFeatured(data.id, product.isHomepageFeatured);
 
-    void autoPublishProductPromotion(
+    const socialPublishing = await autoPublishProductPromotion(
       {
         id: data.id,
         title: product.title,
@@ -351,7 +351,7 @@ export async function POST(request: NextRequest) {
       hasDiscountPrice(product.price, product.compareAtPrice) ? "discount" : "new",
     );
 
-    return NextResponse.json({ success: true, id: data.id });
+    return NextResponse.json({ success: true, id: data.id, socialPublishing });
   } catch (error) {
     console.error("Create product failed:", error);
     return NextResponse.json({ error: auth.messages.createFailed }, { status: 500 });
@@ -426,7 +426,7 @@ export async function PATCH(request: NextRequest) {
 
     await syncHomepageFeatured(payload.id, product.isHomepageFeatured);
 
-    void autoPublishProductPromotion(
+    const socialPublishing = await autoPublishProductPromotion(
       {
         id: payload.id,
         title: product.title,
@@ -441,7 +441,7 @@ export async function PATCH(request: NextRequest) {
       hasDiscountPrice(product.price, product.compareAtPrice) ? "discount" : "new",
     );
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, socialPublishing });
   } catch (error) {
     console.error("Update product failed:", error);
     return NextResponse.json({ error: auth.messages.createFailed }, { status: 500 });
