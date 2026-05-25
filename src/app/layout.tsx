@@ -46,11 +46,10 @@ export const generateMetadata = async (): Promise<Metadata> => {
     keywords: splitKeywords(seo.global.defaultKeywords.de),
     verification: {
       google: seo.global.googleVerification || undefined,
-      other: seo.global.bingVerification
-        ? {
-            "msvalidate.01": seo.global.bingVerification,
-          }
-        : undefined,
+      other: {
+        ...(seo.global.bingVerification ? { "msvalidate.01": seo.global.bingVerification } : {}),
+        "facebook-domain-verification": "0t4jnlg1dykib884mbuxgkzymjxkyi",
+      },
     },
     openGraph: {
       title: "Apfel Park | Smartphone Repair & Tech Store",
