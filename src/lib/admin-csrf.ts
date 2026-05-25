@@ -13,6 +13,27 @@ const toOrigin = (value: string | null | undefined) => {
   }
 };
 
+const addOriginWithDomainVariant = (origins: Set<string>, value: string | null | undefined) => {
+  if (!value) return;
+
+  try {
+    const url = new URL(value);
+    origins.add(url.origin);
+
+    if (url.hostname.startsWith("www.")) {
+      url.hostname = url.hostname.slice(4);
+      origins.add(url.origin);
+      return;
+    }
+
+    url.hostname = `www.${url.hostname}`;
+    origins.add(url.origin);
+  } catch {
+    const origin = toOrigin(value);
+    if (origin) origins.add(origin);
+  }
+};
+
 const getAllowedOrigins = (request: NextRequest) => {
   const origins = new Set<string>();
   const configuredOrigins = [
@@ -22,8 +43,7 @@ const getAllowedOrigins = (request: NextRequest) => {
   ];
 
   configuredOrigins.forEach((value) => {
-    const origin = toOrigin(value);
-    if (origin) origins.add(origin);
+    addOriginWithDomainVariant(origins, value);
   });
 
   if (process.env.NODE_ENV !== "production") {
