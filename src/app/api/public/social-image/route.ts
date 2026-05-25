@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       .jpeg({ quality: 90, progressive: true })
       .toBuffer();
 
-    return new NextResponse(image, {
+    return new NextResponse(new Uint8Array(image), {
       headers: {
         "Content-Type": "image/jpeg",
         "Cache-Control": "public, max-age=86400",
