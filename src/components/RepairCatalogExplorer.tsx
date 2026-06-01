@@ -166,9 +166,6 @@ function BrandGrid({
   activeBrandId: string;
   onSelect: (id: string) => void;
 }) {
-  const row1 = brands.slice(0, 4);
-  const row2 = brands.slice(4);
-
   const BrandCard = ({ brand }: { brand: RepairCatalogBrand }) => {
     const active = brand.id === activeBrandId;
     return (
@@ -202,15 +199,10 @@ function BrandGrid({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap justify-center gap-4">
-        {row1.map((brand) => <BrandCard key={brand.id} brand={brand} />)}
-      </div>
-      {row2.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-4">
-          {row2.map((brand) => <BrandCard key={brand.id} brand={brand} />)}
-        </div>
-      )}
+    <div className="grid grid-cols-2 justify-items-center gap-4 sm:grid-cols-4">
+      {brands.map((brand) => (
+        <BrandCard key={brand.id} brand={brand} />
+      ))}
     </div>
   );
 }
@@ -597,7 +589,7 @@ function ModelGrid({
   const isPortrait = deviceType === "phone" || deviceType === "tablet" || deviceType === "watch";
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       {family.models.map((model) => {
         const active = model.id === selectedModelId;
         const hasParts = model.parts && model.parts.length > 0;
