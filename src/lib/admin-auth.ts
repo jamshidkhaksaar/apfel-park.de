@@ -28,11 +28,6 @@ export const isAdminUser = (user: User | null): boolean => {
     return true;
   }
 
-  const userRole = user.user_metadata?.role;
-  if (typeof userRole === "string" && userRole.toLowerCase() === "admin") {
-    return true;
-  }
-
   const appRoles = toStringArray(user.app_metadata?.roles).map((role) => role.toLowerCase());
   if (appRoles.includes("admin")) {
     return true;
