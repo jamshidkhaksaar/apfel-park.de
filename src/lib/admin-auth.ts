@@ -28,10 +28,9 @@ export const isAdminUser = (user: User | null): boolean => {
     return true;
   }
 
-  const userRole = user.user_metadata?.role;
-  if (typeof userRole === "string" && userRole.toLowerCase() === "admin") {
-    return true;
-  }
+  // Security Note: user_metadata is editable by the user themselves via the client-side Auth API.
+  // Never use it for authorization checks (like role checks) as it creates a privilege escalation vulnerability.
+  // Always use app_metadata instead, which requires a service role key to modify.
 
   const appRoles = toStringArray(user.app_metadata?.roles).map((role) => role.toLowerCase());
   if (appRoles.includes("admin")) {
