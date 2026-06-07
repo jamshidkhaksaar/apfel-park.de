@@ -28,10 +28,8 @@ export const isAdminUser = (user: User | null): boolean => {
     return true;
   }
 
-  const userRole = user.user_metadata?.role;
-  if (typeof userRole === "string" && userRole.toLowerCase() === "admin") {
-    return true;
-  }
+  // user.user_metadata is omitted as it can be edited by the user directly
+  // which causes privilege escalation
 
   const appRoles = toStringArray(user.app_metadata?.roles).map((role) => role.toLowerCase());
   if (appRoles.includes("admin")) {
