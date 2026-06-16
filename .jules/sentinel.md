@@ -32,3 +32,8 @@
 **Vulnerability:** The Contact API (`/api/contact`) accepted arbitrary-length strings for `name` and `message` without sanitization, exposing the database and application to potential Denial of Service (DoS) or storage exhaustion.
 **Learning:** `request.json()` can return any JSON type (including massive strings or non-string primitives), bypassing naive type assumptions in validation logic.
 **Prevention:** Implemented strict input length validation (`isValidInputLength`) and type-safe sanitization (`sanitizeInput` handling non-string inputs) for all public API endpoints.
+
+## 2026-03-29 - Privilege Escalation via Supabase user_metadata
+**Vulnerability:** The `isAdminUser` function in `src/lib/admin-auth.ts` checked `user.user_metadata?.role` to determine if a user is an administrator. This allowed any authenticated user to escalate privileges to 'admin' by updating their own `user_metadata` via the client-side Supabase Auth API (`supabase.auth.updateUser()`).
+**Learning:** In Supabase, `user_metadata` is inherently editable by the user and must never be used for authorization checks or role assignments.
+**Prevention:** Authorization logic must strictly rely on `app_metadata`, which requires a service role key to modify and cannot be altered by the user directly.
