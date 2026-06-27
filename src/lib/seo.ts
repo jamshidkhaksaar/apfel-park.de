@@ -219,7 +219,7 @@ export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        allow: ["/", "/api/meta/catalog.csv"],
         disallow: ["/admin", "/login", "/api/"],
       },
     ],

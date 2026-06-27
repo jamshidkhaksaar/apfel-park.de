@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
-import { isAdminUser } from "@/lib/admin-auth";
+import { canManageProducts } from "@/lib/admin-auth";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import { createAdminDbClient } from "@/lib/admin-db";
 import { query } from "@/lib/db";
@@ -175,7 +175,7 @@ const ensureAdmin = async (request: NextRequest) => {
     data: { user },
   } = await adminClient.auth.getUser();
 
-  if (!isAdminUser(user)) {
+  if (!canManageProducts(user)) {
     return { ok: false as const, response: NextResponse.json({ error: messages.unauthorized }, { status: 401 }) };
   }
   const csrf = rejectCrossSiteAdminMutation(request, messages.unauthorized);

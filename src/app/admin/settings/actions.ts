@@ -35,6 +35,7 @@ const mergeSecretValues = (
     metaPixelEnabled: false,
     metaPixelId: "",
     metaConversionsApiToken: "",
+    metaDatasetQualityApiToken: "",
     metaConversionsTestEventCode: "",
     tiktokPixelEnabled: false,
     tiktokPixelId: "",
@@ -68,6 +69,8 @@ const mergeSecretValues = (
         settings.integrations.whatsappWebhookVerifyToken || existingIntegrations.whatsappWebhookVerifyToken || "",
       metaConversionsApiToken:
         settings.integrations.metaConversionsApiToken || existingIntegrations.metaConversionsApiToken || "",
+      metaDatasetQualityApiToken:
+        settings.integrations.metaDatasetQualityApiToken || existingIntegrations.metaDatasetQualityApiToken || "",
       tiktokEventsApiToken:
         settings.integrations.tiktokEventsApiToken || existingIntegrations.tiktokEventsApiToken || "",
       facebookPageAccessToken:

@@ -1,6 +1,6 @@
 services:
   mailserver:
-    image: ghcr.io/docker-mailserver/docker-mailserver@sha256:4f5093c251b61d5691f5ccfd3f90fcbf505585bfd045546430d282e5417658c8
+    image: ghcr.io/docker-mailserver/docker-mailserver@sha256:af51b15dd3fc72153c0e90eb7692bb5e3a463212d87959a80fa7aa89b617d44a
     container_name: mailserver
     hostname: mail
     domainname: apfel-park.de
@@ -28,7 +28,7 @@ services:
       retries: 0
 
   roundcube:
-    image: roundcube/roundcubemail@sha256:5f202ebd4b2ede2d919eac18352359e19d2e2b14c941be04a06a7bec9fc0a579
+    image: roundcube/roundcubemail@sha256:79632c9bc3a83f5d50226a76dfb3e9170124ca78cbc239e0a536fe44c262b752
     container_name: roundcube
     env_file:
       - ./roundcube.env

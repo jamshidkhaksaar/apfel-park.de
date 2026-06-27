@@ -108,6 +108,25 @@ const categoryLabel = (locale: AdminLocale, category: string) => {
   return labels[category as keyof typeof labels] ?? category;
 };
 
+const isExpiredMetaTokenError = (error: string | undefined) => {
+  const normalized = (error ?? "").toLowerCase();
+  return (
+    normalized.includes("session has expired") ||
+    normalized.includes("access token") && normalized.includes("expired") ||
+    normalized.includes("code 190") && normalized.includes("subcode 463")
+  );
+};
+
+const formatSocialError = (result: SocialPublishResult, locale: AdminLocale) => {
+  if (isExpiredMetaTokenError(result.error)) {
+    return locale === "de"
+      ? `${result.target}: Meta-Zugriffstoken ist abgelaufen. Bitte in Einstellungen > Integrationen einen neuen Business/System-User-Token speichern.`
+      : `${result.target}: Meta access token is expired. Save a new Business/System User token in Settings > Integrations.`;
+  }
+
+  return `${result.target}: ${result.error || (locale === "de" ? "fehlgeschlagen" : "failed")}`;
+};
+
 const formatSocialPublishMessage = (results: SocialPublishResult[] | undefined, locale: AdminLocale) => {
   if (!results || results.length === 0) {
     return locale === "de"
@@ -128,9 +147,7 @@ const formatSocialPublishMessage = (results: SocialPublishResult[] | undefined, 
       : `Product updated and published to ${labels.format(successful)}.`;
   }
 
-  const failureText = failed
-    .map((result) => `${result.target}: ${result.error || (locale === "de" ? "fehlgeschlagen" : "failed")}`)
-    .join("; ");
+  const failureText = failed.map((result) => formatSocialError(result, locale)).join("; ");
 
   if (successful.length === 0) {
     return locale === "de"

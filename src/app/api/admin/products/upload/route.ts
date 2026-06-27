@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
-import { isAdminUser } from "@/lib/admin-auth";
+import { canManageProducts } from "@/lib/admin-auth";
 import { isSecureSvg, validateImageFileExtension } from "@/lib/security";
 import { uploadProductImage } from "@/lib/blob";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await adminClient.auth.getUser();
 
-  if (!isAdminUser(user)) {
+  if (!canManageProducts(user)) {
     return NextResponse.json({ error: messages.unauthorized }, { status: 401 });
   }
   const csrf = rejectCrossSiteAdminMutation(request, messages.unauthorized);

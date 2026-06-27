@@ -4,10 +4,16 @@ import { createContext, useContext, useSyncExternalStore, type ReactNode } from 
 import Cookies from "js-cookie";
 import { adminDictionary, type AdminDictionary, type AdminLocale } from "./admin-i18n";
 
+type AdminUser = {
+  email: string;
+  role: string;
+} | null;
+
 type AdminContextType = {
   lang: AdminLocale;
   setLang: (lang: AdminLocale) => void;
   dict: AdminDictionary;
+  user: AdminUser;
 };
 
 const AdminContext = createContext<AdminContextType | null>(null);
@@ -24,7 +30,13 @@ const subscribeToAdminLang = (onStoreChange: () => void) => {
   return () => window.removeEventListener(ADMIN_LANG_EVENT, onStoreChange);
 };
 
-export function AdminProvider({ children }: { children: ReactNode }) {
+export function AdminProvider({
+  children,
+  user,
+}: {
+  children: ReactNode;
+  user?: AdminUser;
+}) {
   const lang = useSyncExternalStore<AdminLocale>(
     subscribeToAdminLang,
     getStoredAdminLang,
@@ -37,7 +49,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AdminContext.Provider value={{ lang, setLang, dict: adminDictionary[lang] }}>
+    <AdminContext.Provider value={{ lang, setLang, dict: adminDictionary[lang], user: user ?? null }}>
       {children}
     </AdminContext.Provider>
   );

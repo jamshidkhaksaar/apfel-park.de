@@ -24,6 +24,9 @@ type MarketingRequestContext = {
   ipAddress?: string | null;
   userAgent?: string | null;
   url?: string | null;
+  fbp?: string | null;
+  fbc?: string | null;
+  externalId?: string | null;
 };
 
 type LeadPayload = {
@@ -40,8 +43,8 @@ type LeadPayload = {
   deviceModel?: string | null;
 };
 
-type ViewContentPayload = {
-  eventName: "ViewContent";
+type CatalogInteractionPayload = {
+  eventName: "ViewContent" | "AddToCart";
   eventId?: string;
   productId: string;
   title: string;
@@ -49,6 +52,14 @@ type ViewContentPayload = {
   price?: number | null;
   currency?: string;
   locale?: string | null;
+};
+
+type ViewContentPayload = CatalogInteractionPayload & {
+  eventName: "ViewContent";
+};
+
+type AddToCartPayload = CatalogInteractionPayload & {
+  eventName: "AddToCart";
 };
 
 type PurchasePayload = {
@@ -194,6 +205,17 @@ const getIntegrations = async (): Promise<MarketingIntegrationsConfig> => {
 };
 
 const canTrack = (context: MarketingRequestContext) => context.consentMode === EXTERNAL_CONSENT;
+
+const buildMetaUserData = (
+  context: MarketingRequestContext,
+  fallbackExternalId?: string | null,
+) => ({
+  client_ip_address: context.ipAddress || undefined,
+  client_user_agent: context.userAgent || undefined,
+  fbp: context.fbp || undefined,
+  fbc: context.fbc || undefined,
+  external_id: hashValue(context.externalId || fallbackExternalId),
+});
 
 const sendMetaLeadEvent = async (
   config: MarketingIntegrationsConfig,
@@ -357,7 +379,7 @@ export const sendLeadTrackingEvents = async (
 
 const sendMetaViewContentEvent = async (
   config: MarketingIntegrationsConfig,
-  payload: ViewContentPayload,
+  payload: CatalogInteractionPayload,
   context: MarketingRequestContext,
 ): Promise<EventSendResult> => {
   if (!config.metaPixelEnabled || !config.metaPixelId || !config.metaConversionsApiToken) {
@@ -373,10 +395,7 @@ const sendMetaViewContentEvent = async (
         event_id: eventId,
         action_source: "website",
         event_source_url: context.url || "https://apfel-park.de",
-        user_data: {
-          client_ip_address: context.ipAddress || undefined,
-          client_user_agent: context.userAgent || undefined,
-        },
+        user_data: buildMetaUserData(context, payload.productId),
         custom_data: {
           currency: payload.currency || "EUR",
           value: payload.price ?? 0,
@@ -414,7 +433,7 @@ const sendMetaViewContentEvent = async (
 
 const sendTikTokViewContentEvent = async (
   config: MarketingIntegrationsConfig,
-  payload: ViewContentPayload,
+  payload: CatalogInteractionPayload,
   context: MarketingRequestContext,
 ): Promise<EventSendResult> => {
   if (!config.tiktokPixelEnabled || !config.tiktokPixelId || !config.tiktokEventsApiToken) {
@@ -484,6 +503,21 @@ export const sendViewContentTrackingEvents = async (
   logFailures([metaResult, tikTokResult]);
 };
 
+export const sendAddToCartTrackingEvents = async (
+  payload: AddToCartPayload,
+  context: MarketingRequestContext,
+) => {
+  if (!canTrack(context)) return;
+
+  const config = await getIntegrations();
+  const [metaResult, tikTokResult] = await Promise.all([
+    sendMetaViewContentEvent(config, payload, context),
+    sendTikTokViewContentEvent(config, payload, context),
+  ]);
+
+  logFailures([metaResult, tikTokResult]);
+};
+
 const sendMetaPurchaseEvent = async (
   config: MarketingIntegrationsConfig,
   payload: PurchasePayload,
@@ -503,11 +537,10 @@ const sendMetaPurchaseEvent = async (
         action_source: "website",
         event_source_url: context.url || "https://apfel-park.de/checkout/success",
         user_data: {
+          ...buildMetaUserData(context, payload.email || payload.phone || payload.orderId),
           em: hashValue(payload.email),
           ph: hashPhone(payload.phone),
           fn: hashValue(payload.firstName),
-          client_ip_address: context.ipAddress || undefined,
-          client_user_agent: context.userAgent || undefined,
         },
         custom_data: {
           currency: payload.currency || "EUR",

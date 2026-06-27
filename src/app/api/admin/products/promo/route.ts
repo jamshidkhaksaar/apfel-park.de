@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
-import { isAdminUser } from "@/lib/admin-auth";
+import { canManageProducts } from "@/lib/admin-auth";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import { createAdminDbClient } from "@/lib/admin-db";
 import { sanitizeInput } from "@/lib/security";
@@ -22,7 +22,7 @@ export async function PATCH(request: NextRequest) {
     data: { user },
   } = await adminClient.auth.getUser();
 
-  if (!isAdminUser(user)) {
+  if (!canManageProducts(user)) {
     return NextResponse.json({ error: isEnglish ? "Unauthorized" : "Nicht autorisiert" }, { status: 401 });
   }
   const csrf = rejectCrossSiteAdminMutation(request, isEnglish ? "Forbidden" : "Verboten");

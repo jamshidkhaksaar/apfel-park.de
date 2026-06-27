@@ -68,6 +68,7 @@ export default async function SettingsPage() {
       metaPixelEnabled: integrations.metaPixelEnabled || false,
       metaPixelId: integrations.metaPixelId || "",
       metaConversionsApiToken: "",
+      metaDatasetQualityApiToken: "",
       metaConversionsTestEventCode: integrations.metaConversionsTestEventCode || "",
       tiktokPixelEnabled: integrations.tiktokPixelEnabled || false,
       tiktokPixelId: integrations.tiktokPixelId || "",

@@ -5,8 +5,8 @@ $public_base = 'https://mail.apfel-park.de';
 $config['product_name'] = 'Apfel Park Mail';
 $config['support_url'] = 'https://www.apfel-park.de';
 $config['display_product_info'] = 1;
-$config['imap_host'] = 'ssl://mailserver:993';
-$config['smtp_host'] = 'ssl://mailserver:465';
+$config['imap_host'] = 'ssl://mail.apfel-park.de:993';
+$config['smtp_host'] = 'tls://mail.apfel-park.de:587';
 
 $config['imap_conn_options'] = [
     'ssl' => [

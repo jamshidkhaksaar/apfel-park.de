@@ -19,8 +19,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/login?redirectTo=/admin");
   }
 
+  const role =
+    (user.app_metadata?.role as string) ||
+    (user.user_metadata?.role as string) ||
+    "admin";
+
   return (
-    <AdminProvider>
+    <AdminProvider user={{ email: user.email, role }}>
       {children}
     </AdminProvider>
   );

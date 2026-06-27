@@ -18,17 +18,41 @@ declare global {
   interface Window {
     fbq?: (...args: unknown[]) => void;
     _fbq?: (...args: unknown[]) => void;
-    ttq?: {
-      page?: () => void;
-      load?: (id: string) => void;
-      track?: (eventName: string, payload?: Record<string, unknown>, options?: Record<string, unknown>) => void;
-    };
+    ttq?: TikTokQueue;
     TiktokAnalyticsObject?: string;
     gtag?: (...args: unknown[]) => void;
     dataLayer?: unknown[];
     apfelTrack?: (eventName: string, payload?: Record<string, unknown>, eventId?: string) => void;
   }
 }
+
+type TikTokMethod =
+  | "page"
+  | "track"
+  | "identify"
+  | "instances"
+  | "debug"
+  | "on"
+  | "off"
+  | "once"
+  | "ready"
+  | "alias"
+  | "group"
+  | "enableCookie"
+  | "disableCookie"
+  | "holdConsent"
+  | "revokeConsent"
+  | "grantConsent";
+
+type TikTokQueue = Array<unknown[]> & {
+  _i?: Record<string, TikTokQueue & { _u?: string }>;
+  _o?: Record<string, Record<string, unknown>>;
+  _t?: Record<string, number>;
+  instance?: (pixelId: string) => TikTokQueue;
+  load?: (pixelId: string, options?: Record<string, unknown>) => void;
+  page?: () => void;
+  track?: (eventName: string, payload?: Record<string, unknown>, options?: Record<string, unknown>) => void;
+} & Partial<Record<TikTokMethod, (...args: unknown[]) => void>>;
 
 const setupGoogleAnalytics = (gaId: string) => {
   if (!gaId || window.gtag) return;
@@ -79,31 +103,65 @@ const setupMetaPixel = (pixelId: string) => {
 
 const setupTikTokPixel = (pixelId: string) => {
   if (!pixelId || window.ttq) return;
-  // Official base snippet adapted for client-only consent loading.
-  ((w: Window & typeof globalThis, d: Document, t?: HTMLScriptElement) => {
-    w.TiktokAnalyticsObject = "ttq";
-    const ttq = ((w as Window & typeof globalThis & { ttq?: Record<string, unknown> }).ttq = (w as Window & typeof globalThis & { ttq?: Record<string, unknown> }).ttq || {});
-    const methods = ["page", "track", "identify", "instances", "debug", "on", "off", "once", "ready", "alias", "group", "enableCookie", "disableCookie"] as const;
-    methods.forEach((method) => {
-      (ttq as Record<string, unknown>)[method] =
-        (ttq as Record<string, unknown>)[method] ||
-        ((...args: unknown[]) => {
-          ((ttq as Record<string, unknown>)._queue ||= [] as unknown[]);
-          ((ttq as Record<string, unknown>)._queue as unknown[]).push([method, ...args]);
-        });
-    });
-    (ttq as { load?: (id: string) => void }).load = (id: string) => {
-      loadScript("tiktok-pixel-script", `https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=${id}&lib=ttq`);
-    };
-    t = d.createElement("script");
-    t.async = true;
-    t.src = "https://analytics.tiktok.com/i18n/pixel/events.js";
-    t.id = "tiktok-pixel-loader";
-    d.head.appendChild(t);
-  })(window, document);
 
-  const ttq = window.ttq as { load?: (id: string) => void } | undefined;
-  ttq?.load?.(pixelId);
+  ((w: Window & typeof globalThis, d: Document, analyticsObject: "ttq") => {
+    w.TiktokAnalyticsObject = analyticsObject;
+    const ttq = (w[analyticsObject] = w[analyticsObject] || []) as TikTokQueue;
+    const methods: TikTokMethod[] = [
+      "page",
+      "track",
+      "identify",
+      "instances",
+      "debug",
+      "on",
+      "off",
+      "once",
+      "ready",
+      "alias",
+      "group",
+      "enableCookie",
+      "disableCookie",
+      "holdConsent",
+      "revokeConsent",
+      "grantConsent",
+    ];
+    const setAndDefer = (queue: TikTokQueue, method: TikTokMethod) => {
+      queue[method] = (...args: unknown[]) => {
+        queue.push([method, ...args]);
+      };
+    };
+
+    methods.forEach((method) => setAndDefer(ttq, method));
+    ttq.instance = (id: string) => {
+      const instances = ttq._i || {};
+      const instance = instances[id] || ([] as unknown as TikTokQueue);
+      methods.forEach((method) => setAndDefer(instance, method));
+      return instance;
+    };
+
+    ttq.load = (id: string, options?: Record<string, unknown>) => {
+      const scriptUrl = "https://analytics.tiktok.com/i18n/pixel/events.js";
+      const script = d.createElement("script");
+      const firstScript = d.getElementsByTagName("script")[0];
+
+      ttq._i = ttq._i || {};
+      ttq._i[id] = [] as unknown as TikTokQueue;
+      ttq._i[id]._u = scriptUrl;
+      ttq._t = ttq._t || {};
+      ttq._t[id] = Date.now();
+      ttq._o = ttq._o || {};
+      ttq._o[id] = options || {};
+
+      script.id = "tiktok-pixel-script";
+      script.type = "text/javascript";
+      script.async = true;
+      script.src = `${scriptUrl}?sdkid=${id}&lib=${analyticsObject}`;
+      firstScript.parentNode?.insertBefore(script, firstScript);
+    };
+
+    ttq.load(pixelId);
+    ttq.page?.();
+  })(window, document, "ttq");
 };
 
 const toMetaEventName = (eventName: string) => {

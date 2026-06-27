@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { appendFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import { randomBytes } from "node:crypto";
 
@@ -6,7 +7,12 @@ const execFileAsync = promisify(execFile);
 
 const MAIL_CONTAINER = "mailserver";
 const MAIL_DOMAIN = "apfel-park.de";
-const SYSTEM_MAILBOXES = new Set([`postmaster@${MAIL_DOMAIN}`]);
+const MAIL_AUDIT_LOG = "/srv/apfel-park/mail/mail-admin-audit.log";
+const SYSTEM_MAILBOXES = new Set([
+  `info@${MAIL_DOMAIN}`,
+  `postmaster@${MAIL_DOMAIN}`,
+  `repairs@${MAIL_DOMAIN}`,
+]);
 
 export type MailboxRecord = {
   email: string;
@@ -74,6 +80,14 @@ const runSetup = async (args: string[]) => {
   return `${result.stdout ?? ""}${result.stderr ?? ""}`;
 };
 
+const writeMailAudit = async (action: string, email: string, details: Record<string, string> = {}) => {
+  const fields = Object.entries(details)
+    .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
+    .join(" ");
+  const line = `${new Date().toISOString()} action=${action} email=${email}${fields ? ` ${fields}` : ""}\n`;
+  await appendFile(MAIL_AUDIT_LOG, line, { mode: 0o600 });
+};
+
 const normalizeMailbox = (value: string): string => {
   const trimmed = value.trim().toLowerCase();
   const email = trimmed.includes("@") ? trimmed : `${trimmed}@${MAIL_DOMAIN}`;
@@ -102,8 +116,8 @@ const normalizeQuotaInput = (value: string | null | undefined): string => {
 const normalizeMailboxPassword = (value: string | null | undefined): string => {
   const trimmed = (value ?? "").trim();
   if (!trimmed) return generateMailboxPassword();
-  if (trimmed.length < 12) {
-    throw new Error("Mailbox password must be at least 12 characters.");
+  if (trimmed.length < 8) {
+    throw new Error("Mailbox password must be at least 8 characters.");
   }
   if (trimmed.length > 128) {
     throw new Error("Mailbox password must be 128 characters or fewer.");
@@ -162,6 +176,7 @@ export const createMailbox = async ({
 
   await runSetup(["email", "add", email, resolvedPassword]);
   await runSetup(["quota", "set", email, resolvedQuota]);
+  await writeMailAudit("create", email, { quota: resolvedQuota });
 
   return { email, password: resolvedPassword };
 };
@@ -176,6 +191,7 @@ export const resetMailboxPassword = async ({
   const mailbox = normalizeMailbox(email);
   const resolvedPassword = normalizeMailboxPassword(password);
   await runSetup(["email", "update", mailbox, resolvedPassword]);
+  await writeMailAudit("password-reset", mailbox);
   return { email: mailbox, password: resolvedPassword };
 };
 
@@ -186,6 +202,7 @@ export const deleteMailbox = async ({ email }: { email: string }) => {
   }
 
   await runSetup(["email", "del", mailbox]);
+  await writeMailAudit("delete", mailbox);
   return { email: mailbox };
 };
 
@@ -199,5 +216,6 @@ export const updateMailboxQuota = async ({
   const mailbox = normalizeMailbox(email);
   const resolvedQuota = normalizeQuotaInput(quota);
   await runSetup(["quota", "set", mailbox, resolvedQuota]);
+  await writeMailAudit("quota", mailbox, { quota: resolvedQuota });
   return { email: mailbox, quota: resolvedQuota };
 };

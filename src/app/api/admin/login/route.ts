@@ -5,6 +5,7 @@ import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { ADMIN_SESSION_COOKIE, createSessionToken, getSessionCookieOptions } from "@/lib/session";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { isSafeRedirect } from "@/lib/security";
+import { verifyUserCredentials } from "@/lib/users";
 
 const comparePasswords = (left: string, right: string): boolean => {
   const leftBuffer = Buffer.from(left);
@@ -37,6 +38,8 @@ export async function POST(request: NextRequest) {
     return buildRelativeRedirect("/login?error=captcha");
   }
 
+  let sessionRole: string | undefined;
+
   const adminEmails = new Set(
     (process.env.ADMIN_EMAILS ?? "")
       .split(",")
@@ -45,12 +48,25 @@ export async function POST(request: NextRequest) {
   );
   const expectedPassword = process.env.ADMIN_PASSWORD ?? "";
 
-  if (!adminEmails.has(email) || !expectedPassword || !comparePasswords(password, expectedPassword)) {
+  if (adminEmails.has(email) && expectedPassword && comparePasswords(password, expectedPassword)) {
+    sessionRole = "admin";
+  } else {
+    const dbResult = await verifyUserCredentials(email, password);
+    if (dbResult.valid) {
+      sessionRole = dbResult.role;
+    }
+  }
+
+  if (!sessionRole) {
     return buildRelativeRedirect("/login?error=invalid");
   }
 
   const target = isSafeRedirect(redirectTo) ? redirectTo : "/admin";
   const response = buildRelativeRedirect(target);
-  response.cookies.set(ADMIN_SESSION_COOKIE, createSessionToken(email), getSessionCookieOptions());
+  response.cookies.set(
+    ADMIN_SESSION_COOKIE,
+    createSessionToken(email, sessionRole),
+    getSessionCookieOptions(),
+  );
   return response;
 }

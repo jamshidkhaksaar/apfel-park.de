@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 
 import { createServerDbClient } from "@/lib/db";
 import { clearSessionCookie, readSessionUser, setSessionCookie } from "@/lib/session";
+import { verifyUserCredentials } from "@/lib/users";
 
 const comparePasswords = (left: string, right: string): boolean => {
   const leftBuffer = Buffer.from(left);
@@ -17,6 +18,8 @@ export const createAdminServerClient = async () => {
       error: null,
     }),
     signInWithPassword: async ({ email, password }) => {
+      const normalizedEmail = email.trim().toLowerCase();
+
       const adminEmails = new Set(
         (process.env.ADMIN_EMAILS ?? "")
           .split(",")
@@ -24,16 +27,23 @@ export const createAdminServerClient = async () => {
           .filter(Boolean),
       );
       const expectedPassword = process.env.ADMIN_PASSWORD;
+
       if (
-        !expectedPassword ||
-        !adminEmails.has(email.trim().toLowerCase()) ||
-        !comparePasswords(password, expectedPassword)
+        expectedPassword &&
+        adminEmails.has(normalizedEmail) &&
+        comparePasswords(password, expectedPassword)
       ) {
-        return { error: { message: "Invalid login" } };
+        await setSessionCookie(normalizedEmail, "admin");
+        return { error: null };
       }
 
-      await setSessionCookie(email.trim().toLowerCase());
-      return { error: null };
+      const dbResult = await verifyUserCredentials(normalizedEmail, password);
+      if (dbResult.valid) {
+        await setSessionCookie(normalizedEmail, dbResult.role);
+        return { error: null };
+      }
+
+      return { error: { message: "Invalid login" } };
     },
     signOut: async () => {
       await clearSessionCookie();

@@ -127,6 +127,13 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
       value: cart.totalAmount,
       payment_provider: provider,
       items: cart.items.map((item) => ({ item_id: item.productId, item_name: item.title, quantity: item.quantity })),
+      content_ids: cart.items.map((item) => item.productId),
+      content_type: "product",
+      contents: cart.items.map((item) => ({
+        id: item.productId,
+        quantity: item.quantity,
+        item_price: item.unitAmount,
+      })),
     });
 
     const endpoint = provider === "stripe" ? "/api/checkout/stripe" : "/api/checkout/paypal/create";

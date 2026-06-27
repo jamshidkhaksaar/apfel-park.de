@@ -1,6 +1,8 @@
 import { createAdminDbClient } from "@/lib/admin-db";
 import { defaultSocialLinks, siteInfo } from "@/lib/site";
 
+const DEFAULT_TIKTOK_PIXEL_ID = "D8LV0ARC77UCVEHVMHGG";
+
 export type MarketingIntegrations = {
   metaPixelEnabled: boolean;
   metaPixelId: string;
@@ -65,8 +67,11 @@ export const getMarketingIntegrations = async (): Promise<MarketingIntegrations>
     return {
       metaPixelEnabled: Boolean(value?.metaPixelEnabled),
       metaPixelId: typeof value?.metaPixelId === "string" ? value.metaPixelId : "",
-      tiktokPixelEnabled: Boolean(value?.tiktokPixelEnabled),
-      tiktokPixelId: typeof value?.tiktokPixelId === "string" ? value.tiktokPixelId : "",
+      tiktokPixelEnabled: value?.tiktokPixelEnabled !== false,
+      tiktokPixelId:
+        typeof value?.tiktokPixelId === "string" && value.tiktokPixelId.trim()
+          ? value.tiktokPixelId
+          : DEFAULT_TIKTOK_PIXEL_ID,
       googleAnalyticsEnabled: Boolean(value?.googleAnalyticsEnabled),
       googleAnalyticsId: typeof value?.googleAnalyticsId === "string" ? value.googleAnalyticsId : "",
     };
@@ -74,8 +79,8 @@ export const getMarketingIntegrations = async (): Promise<MarketingIntegrations>
     return {
       metaPixelEnabled: false,
       metaPixelId: "",
-      tiktokPixelEnabled: false,
-      tiktokPixelId: "",
+      tiktokPixelEnabled: true,
+      tiktokPixelId: DEFAULT_TIKTOK_PIXEL_ID,
       googleAnalyticsEnabled: false,
       googleAnalyticsId: "",
     };

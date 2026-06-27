@@ -38,6 +38,7 @@ export type SettingsData = {
     metaPixelEnabled: boolean;
     metaPixelId: string;
     metaConversionsApiToken: string;
+    metaDatasetQualityApiToken: string;
     metaConversionsTestEventCode: string;
     tiktokPixelEnabled: boolean;
     tiktokPixelId: string;

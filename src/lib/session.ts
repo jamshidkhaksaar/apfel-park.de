@@ -3,6 +3,7 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
 
 import type { User } from "@/lib/auth-types";
+import { getUserByEmail } from "@/lib/users";
 
 export const ADMIN_SESSION_COOKIE = "apfel_admin_session";
 
@@ -37,30 +38,54 @@ const decodeEmail = (value: string): string | null => {
   }
 };
 
-const parseToken = (token: string): { email: string; sessionId: string; signature: string } | null => {
-  const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  const [encodedEmail, sessionId, signature] = parts;
-  if (!encodedEmail || !sessionId || !signature) return null;
-  const email = decodeEmail(encodedEmail);
-  if (!email) return null;
-  return { email, sessionId, signature };
+type ParsedToken = {
+  email: string;
+  role: string;
+  sessionId: string;
+  signature: string;
 };
 
-const buildPayload = (email: string, sessionId: string): string => `${encodeEmail(email)}.${sessionId}`;
+const parseToken = (token: string): ParsedToken | null => {
+  const parts = token.split(".");
+  if (parts.length === 3) {
+    const [encodedEmail, sessionId, signature] = parts;
+    if (!encodedEmail || !sessionId || !signature) return null;
+    const email = decodeEmail(encodedEmail);
+    if (!email) return null;
+    return { email, role: "admin", sessionId, signature };
+  }
+  if (parts.length === 4) {
+    const [encodedEmail, role, sessionId, signature] = parts;
+    if (!encodedEmail || !role || !sessionId || !signature) return null;
+    const email = decodeEmail(encodedEmail);
+    if (!email) return null;
+    return { email, role, sessionId, signature };
+  }
+  return null;
+};
 
-export const createAdminUser = (email = getPrimaryAdminEmail()): User => ({
+const buildPayload = (email: string, sessionId: string, role?: string): string => {
+  if (role) {
+    return `${encodeEmail(email)}.${role}.${sessionId}`;
+  }
+  return `${encodeEmail(email)}.${sessionId}`;
+};
+
+export const createAdminUser = (email = getPrimaryAdminEmail(), role = "admin"): User => ({
   id: email,
   email,
-  app_metadata: { role: "admin" },
-  user_metadata: { role: "admin" },
+  app_metadata: { role },
+  user_metadata: { role },
 });
 
-export const createSessionToken = (email: string): string => {
+export const createSessionToken = (email: string, role?: string): string => {
   const normalized = email.toLowerCase();
   const sessionId = randomUUID();
-  const payload = buildPayload(normalized, sessionId);
-  return `${payload}.${sign(payload)}`;
+  const payload = buildPayload(normalized, sessionId, role);
+  const parts = role
+    ? `${encodeEmail(normalized)}.${role}.${sessionId}`
+    : `${encodeEmail(normalized)}.${sessionId}`;
+  return `${parts}.${sign(payload)}`;
 };
 
 export const getSessionCookieOptions = () => ({
@@ -71,17 +96,28 @@ export const getSessionCookieOptions = () => ({
   maxAge: 60 * 60 * 24 * 14,
 });
 
-const verifyToken = (token: string): string | null => {
+const verifyToken = (token: string): { email: string; role: string } | null => {
   const parsed = parseToken(token);
   if (!parsed) return null;
 
-  const payload = buildPayload(parsed.email, parsed.sessionId);
-  const expected = sign(payload);
-  const expectedBuffer = Buffer.from(expected);
+  let payload = buildPayload(parsed.email, parsed.sessionId, parsed.role);
+  let expected = sign(payload);
+  let expectedBuffer = Buffer.from(expected);
   const actualBuffer = Buffer.from(parsed.signature);
-  if (expectedBuffer.length !== actualBuffer.length) return null;
-  if (!timingSafeEqual(expectedBuffer, actualBuffer)) return null;
-  return parsed.email.toLowerCase();
+
+  if (expectedBuffer.length === actualBuffer.length && timingSafeEqual(expectedBuffer, actualBuffer)) {
+    return { email: parsed.email.toLowerCase(), role: parsed.role };
+  }
+
+  payload = buildPayload(parsed.email, parsed.sessionId);
+  expected = sign(payload);
+  expectedBuffer = Buffer.from(expected);
+
+  if (expectedBuffer.length === actualBuffer.length && timingSafeEqual(expectedBuffer, actualBuffer)) {
+    return { email: parsed.email.toLowerCase(), role: "admin" };
+  }
+
+  return null;
 };
 
 export const readSessionUser = async (): Promise<User | null> => {
@@ -89,23 +125,38 @@ export const readSessionUser = async (): Promise<User | null> => {
   const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const email = verifyToken(token);
-  if (!email) return null;
+  const verified = verifyToken(token);
+  if (!verified) return null;
 
-  const adminEmails = new Set(
-    (process.env.ADMIN_EMAILS ?? "")
-      .split(",")
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean),
-  );
+  if (verified.role === "admin") {
+    const adminEmails = new Set(
+      (process.env.ADMIN_EMAILS ?? "")
+        .split(",")
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean),
+    );
 
-  if (!adminEmails.has(email)) return null;
-  return createAdminUser(email);
+    if (adminEmails.has(verified.email)) {
+      return createAdminUser(verified.email, verified.role);
+    }
+
+    const dbUser = await getUserByEmail(verified.email);
+    if (dbUser && dbUser.role === "admin") {
+      return createAdminUser(verified.email, dbUser.role);
+    }
+
+    return null;
+  }
+
+  const dbUser = await getUserByEmail(verified.email);
+  if (!dbUser) return null;
+
+  return createAdminUser(verified.email, dbUser.role);
 };
 
-export const setSessionCookie = async (email: string): Promise<void> => {
+export const setSessionCookie = async (email: string, role?: string): Promise<void> => {
   const cookieStore = await cookies();
-  cookieStore.set(ADMIN_SESSION_COOKIE, createSessionToken(email), getSessionCookieOptions());
+  cookieStore.set(ADMIN_SESSION_COOKIE, createSessionToken(email, role), getSessionCookieOptions());
 };
 
 export const clearSessionCookie = async (): Promise<void> => {
@@ -122,16 +173,21 @@ export const clearSessionCookie = async (): Promise<void> => {
 export const readSessionUserFromRequest = (request: NextRequest): User | null => {
   const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   if (!token) return null;
-  const email = verifyToken(token);
-  if (!email) return null;
 
-  const adminEmails = new Set(
-    (process.env.ADMIN_EMAILS ?? "")
-      .split(",")
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean),
-  );
+  const verified = verifyToken(token);
+  if (!verified) return null;
 
-  if (!adminEmails.has(email)) return null;
-  return createAdminUser(email);
+  if (verified.role === "admin") {
+    const adminEmails = new Set(
+      (process.env.ADMIN_EMAILS ?? "")
+        .split(",")
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean),
+    );
+
+    if (!adminEmails.has(verified.email)) return null;
+    return createAdminUser(verified.email, verified.role);
+  }
+
+  return createAdminUser(verified.email, verified.role);
 };

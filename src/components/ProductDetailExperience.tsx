@@ -88,7 +88,29 @@ export default function ProductDetailExperience({ locale, product }: Props) {
       item_name: product.title,
       item_category: product.category,
       quantity: 1,
+      content_ids: [product.id],
+      content_type: "product",
+      content_name: product.title,
+      content_category: product.category,
+      contents: [{ id: product.id, quantity: 1, item_price: activePrice }],
     }, `${eventName}-${product.id}-${selectedVariant?.sku || selectedVariant?.color || "base"}`);
+  };
+  const sendServerAddToCart = () => {
+    void fetch("/api/marketing/add-to-cart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        productId: product.id,
+        title: product.title,
+        category: product.category,
+        price: activePrice,
+        locale,
+        slug: product.slug,
+      }),
+      keepalive: true,
+    }).catch(() => undefined);
   };
   const productUrl = `${siteInfo.url}/${locale}/store/${product.slug}`;
   const whatsappMessage = locale === "de"
@@ -243,6 +265,7 @@ export default function ProductDetailExperience({ locale, product }: Props) {
               onClick={() => {
                 addStoredCartItem(cartItem);
                 trackCart("add_to_cart");
+                sendServerAddToCart();
               }}
             >
               <span>{locale === "de" ? "In den Warenkorb" : "Add to cart"}</span>
@@ -316,10 +339,11 @@ export default function ProductDetailExperience({ locale, product }: Props) {
         <button
           type="button"
           className="btn-secondary justify-center"
-          onClick={() => {
-            addStoredCartItem(cartItem);
-            trackCart("add_to_cart");
-          }}
+            onClick={() => {
+              addStoredCartItem(cartItem);
+              trackCart("add_to_cart");
+              sendServerAddToCart();
+            }}
         >
           {locale === "de" ? "Warenkorb" : "Cart"}
         </button>

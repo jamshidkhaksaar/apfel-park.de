@@ -425,6 +425,11 @@ export default function SettingsForm({
                     <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                   </div>
                   <div className="space-y-1">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.metaDatasetQualityToken}</label>
+                    <input type="password" value={settings.integrations.metaDatasetQualityApiToken} onChange={(e) => handleChange("integrations", "metaDatasetQualityApiToken", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
+                  </div>
+                  <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.metaTestEventCode}</label>
                     <input type="text" value={settings.integrations.metaConversionsTestEventCode} onChange={(e) => handleChange("integrations", "metaConversionsTestEventCode", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   </div>
