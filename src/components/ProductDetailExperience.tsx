@@ -336,9 +336,6 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             >
               <span>WhatsApp</span>
             </a>
-            <Link href={`/${locale}/repairs`} className="btn-secondary justify-center">
-              <span>{locale === "de" ? "Reparatur anfragen" : "Request repair"}</span>
-            </Link>
           </div>
 
           {added ? (
