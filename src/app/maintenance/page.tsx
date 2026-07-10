@@ -10,129 +10,138 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
   const isStoreOnly = scope === "store";
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,#213249,transparent_35%),linear-gradient(180deg,#0a1017_0%,#0f1723_45%,#111827_100%)] px-6 py-16 text-white">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:36px_36px] opacity-20" />
-      <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="space-y-8">
-          <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-3 shadow-2xl shadow-black/30">
-              <Image
-                src="/uploads/branding/logo-white.png"
-                alt="Apfel Park"
-                width={56}
-                height={56}
-                className="h-full w-full object-contain"
-              />
+    <main className="relative min-h-screen overflow-hidden bg-background px-6 py-16 text-foreground">
+      {/* Subtle grid backdrop */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] bg-[size:42px_42px] opacity-40" />
+      {/* Gold radial glow */}
+      <div className="pointer-events-none absolute -top-32 left-1/2 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-accent-glow blur-[120px]" />
+
+      <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-12 text-center">
+        {/* Logo */}
+        <div className="flex h-24 w-24 items-center justify-center rounded-3xl border border-border bg-surface/60 p-4 shadow-2xl shadow-black/20 backdrop-blur-sm">
+          <Image
+            src="/uploads/branding/logo-white.png"
+            alt="Apfel Park"
+            width={64}
+            height={64}
+            className="h-full w-full object-contain"
+          />
+        </div>
+
+        {/* Status badge */}
+        <div className="inline-flex items-center gap-3 rounded-full border border-accent/30 bg-accent/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-accent-soft">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+          </span>
+          {isStoreOnly ? "Store Update" : "Maintenance"}
+        </div>
+        {/* Headline */}
+        <div className="space-y-5">
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+            {isStoreOnly ? (
+              <>
+                Unser Store wird gerade{" "}
+                <span className="gradient-text">optimiert</span>
+              </>
+            ) : (
+              <>
+                Wir verbessern gerade die{" "}
+                <span className="gradient-text">Apfel Park</span> Website
+              </>
+            )}
+          </h1>
+          <p className="mx-auto max-w-2xl text-lg leading-relaxed text-muted">
+            {isStoreOnly
+              ? "Unsere Werkstatt läuft weiter — nur der Shop-Bereich bekommt gerade ein technisches Update. Wir sind in Kürze wieder für dich da."
+              : "Ein Techniker arbeitet an Performance, Inhalten und System-Updates. Wir sind in Kürze wieder für Besucher verfügbar."}
+          </p>
+        </div>
+
+        {/* Status cards */}
+        <div className="grid w-full max-w-2xl gap-4 sm:grid-cols-3">
+          <div className="tech-card rounded-2xl p-5 text-left">
+            <div className="flex items-center gap-2 text-accent-soft">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">Status</p>
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Apfel Park</p>
-              <p className="mt-2 text-sm text-slate-300">
-                Hamburg repair, devices and store operations
-              </p>
-            </div>
-          </div>
-          <div className="inline-flex items-center gap-3 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-amber-300" />
-            Apfel Park Maintenance
-          </div>
-          <div className="space-y-4">
-            <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
-              {isStoreOnly ? "Store Update in Progress" : "Website Update in Progress"}
+            <p className="mt-2 text-base font-semibold text-foreground">
+              {isStoreOnly ? "Shop pausiert" : "Update läuft"}
             </p>
-            <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-white md:text-6xl">
-              {isStoreOnly
-                ? "Unser Store wird gerade optimiert."
-                : "Wir verbessern gerade die Apfel Park Website."}
-            </h1>
-            <p className="max-w-2xl text-lg leading-8 text-slate-300">
-              {isStoreOnly
-                ? "Unsere Werkstatt lauft weiter, aber der Shop-Bereich bekommt gerade ein technisches Update. Admin und interne Systeme bleiben verfugbar."
-                : "Ein Techniker arbeitet gerade an Performance, Inhalten und System-Updates. Wir sind in Kurze wieder fur Besucher verfugbar."}
+          </div>
+          <div className="tech-card rounded-2xl p-5 text-left">
+            <div className="flex items-center gap-2 text-accent-soft">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">Bereich</p>
+            </div>
+            <p className="mt-2 text-base font-semibold text-foreground">
+              {isStoreOnly ? "Nur Shop" : "Komplette Seite"}
             </p>
           </div>
+          <div className="tech-card rounded-2xl p-5 text-left">
+            <div className="flex items-center gap-2 text-accent-soft">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">ETA</p>
+            </div>
+            <p className="mt-2 text-base font-semibold text-foreground">In Kürze</p>
+          </div>
+        </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Status</p>
-              <p className="mt-2 text-lg font-semibold text-white">Technician active</p>
+        {/* What's available */}
+        {isStoreOnly ? (
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <span className="text-xs uppercase tracking-[0.2em] text-muted">Noch verfügbar:</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-4 py-2 text-sm text-foreground">
+              <svg className="h-3.5 w-3.5 text-accent-soft" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Reparatur & Service
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Scope</p>
-              <p className="mt-2 text-lg font-semibold text-white">{isStoreOnly ? "Store only" : "Full website"}</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Location</p>
-              <p className="mt-2 text-lg font-semibold text-white">Hamburg</p>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-4 py-2 text-sm text-foreground">
+              <svg className="h-3.5 w-3.5 text-accent-soft" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Kontakt & Anfragen
             </div>
           </div>
+        ) : null}
 
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-            <p className="text-sm font-semibold text-white">
-              {isStoreOnly ? "Was weiterhin verfugbar bleibt" : "Was intern weiterlauft"}
-            </p>
-            <div className="mt-4 grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                Admin dashboard and internal workflows
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                Repair handling and customer communication
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                Email systems and mailbox access
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                Fast rollback once maintenance is complete
-              </div>
-            </div>
+        {/* Contact CTA */}
+        <div className="flex flex-col items-center gap-4 pt-4">
+          <p className="text-sm text-muted">Brauchst du Hilfe? Wir sind erreichbar:</p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <a
+              href="tel:+494058978787"
+              className="btn-primary inline-flex items-center gap-2 !px-6 !py-3 text-sm"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              040 58978787
+            </a>
+            <a
+              href="mailto:info@apfel-park.de"
+              className="btn-secondary inline-flex items-center gap-2 !px-6 !py-3 text-sm"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              info@apfel-park.de
+            </a>
           </div>
-        </section>
+        </div>
 
-        <section className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/30 backdrop-blur">
-          <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/70 p-4">
-            <svg viewBox="0 0 640 520" className="w-full" role="img" aria-label="Technician repairing devices illustration">
-              <defs>
-                <linearGradient id="panel" x1="0" x2="1">
-                  <stop offset="0%" stopColor="#18212f" />
-                  <stop offset="100%" stopColor="#27384e" />
-                </linearGradient>
-                <linearGradient id="accent" x1="0" x2="1">
-                  <stop offset="0%" stopColor="#f7c948" />
-                  <stop offset="100%" stopColor="#f59e0b" />
-                </linearGradient>
-              </defs>
-              <rect x="24" y="28" width="592" height="464" rx="28" fill="url(#panel)" stroke="rgba(255,255,255,0.12)" />
-              <rect x="58" y="72" width="220" height="120" rx="20" fill="#0f172a" stroke="#334155" />
-              <rect x="84" y="98" width="168" height="16" rx="8" fill="#1e293b" />
-              <rect x="84" y="128" width="120" height="16" rx="8" fill="#1e293b" />
-              <rect x="84" y="158" width="88" height="16" rx="8" fill="url(#accent)" />
-
-              <rect x="336" y="330" width="180" height="42" rx="14" fill="#111827" stroke="#334155" />
-              <rect x="358" y="350" width="76" height="8" rx="4" fill="#475569" />
-              <rect x="446" y="350" width="48" height="8" rx="4" fill="url(#accent)" />
-
-              <ellipse cx="430" cy="432" rx="124" ry="18" fill="rgba(0,0,0,0.25)" />
-              <rect x="302" y="250" width="160" height="90" rx="18" fill="#0b1220" stroke="#475569" />
-              <rect x="320" y="266" width="124" height="58" rx="10" fill="#111827" />
-              <circle cx="383" cy="294" r="22" fill="none" stroke="url(#accent)" strokeWidth="8" />
-              <path d="M383 274v20l14 10" fill="none" stroke="#f8fafc" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-
-              <circle cx="212" cy="238" r="46" fill="#f2c4a5" />
-              <path d="M170 232c6-54 86-66 105-12l-4 6c-34-14-66-13-97 6z" fill="#111827" />
-              <rect x="187" y="278" width="52" height="86" rx="18" fill="#f2c4a5" />
-              <path d="M149 346c22-28 39-40 58-40h20c17 0 30 5 50 24l32 30-34 31-26-22-2 101h-70l2-73-24 58-51-23 33-78z" fill="#0f172a" />
-              <path d="M272 351l38-33 38 43-32 27z" fill="#f59e0b" />
-              <path d="M314 338l22-18 18 22-20 18z" fill="#f8fafc" opacity="0.9" />
-              <path d="M360 387l54-52 24 26-60 55z" fill="#1f2937" />
-              <path d="M372 420l58-53 18 19-63 58z" fill="#334155" />
-              <circle cx="451" cy="355" r="16" fill="url(#accent)" />
-              <path d="M451 343v24M439 355h24" stroke="#111827" strokeWidth="4" strokeLinecap="round" />
-
-              <rect x="72" y="372" width="160" height="22" rx="11" fill="#111827" stroke="#334155" />
-              <rect x="88" y="379" width="72" height="8" rx="4" fill="#475569" />
-              <rect x="168" y="379" width="44" height="8" rx="4" fill="url(#accent)" />
-            </svg>
-          </div>
-        </section>
+        {/* Address footer */}
+        <div className="mt-8 border-t border-border pt-6 text-xs text-muted">
+          <p className="font-semibold uppercase tracking-[0.2em] text-muted-strong">Apfel Park</p>
+          <p className="mt-1">Wilhelm-Strauß-Weg 2b · 21109 Hamburg</p>
+        </div>
       </div>
     </main>
   );
