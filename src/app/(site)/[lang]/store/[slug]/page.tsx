@@ -25,7 +25,8 @@ export const generateMetadata = async ({
   params: Promise<{ lang: string; slug: string }>;
 }): Promise<Metadata> => {
   const { lang, slug } = await params;
-  const product = await getProductBySlug(slug);
+  const locale = lang as Locale;
+  const product = await getProductBySlug(slug, locale);
   if (!product) {
     return createMetadata(
       lang as Locale,
@@ -51,13 +52,13 @@ export default async function ProductDetailPage({
 }) {
   const { lang, slug } = await params;
   const locale = lang as Locale;
-  const product = await getProductBySlug(slug);
+  const product = await getProductBySlug(slug, locale);
 
   if (!product) {
     notFound();
   }
 
-  const relatedProducts = await getRelatedProducts(product, 4);
+  const relatedProducts = await getRelatedProducts(product, 4, locale);
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",

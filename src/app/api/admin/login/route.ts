@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
+import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/login-rate-limit";
 import { ADMIN_SESSION_COOKIE, createSessionToken, getSessionCookieOptions } from "@/lib/session";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { isSafeRedirect } from "@/lib/security";
@@ -33,8 +34,23 @@ export async function POST(request: NextRequest) {
     return buildRelativeRedirect("/login?error=invalid");
   }
 
+  // Site is fronted by Cloudflare: CF-Connecting-IP carries the real client IP,
+  // while X-Real-IP holds the rotating Cloudflare edge address.
+  const clientIp =
+    request.headers.get("cf-connecting-ip") ??
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown";
+  const ipKey = `ip:${clientIp}`;
+  const emailKey = `email:${email}`;
+
+  if (isLoginBlocked(ipKey) || isLoginBlocked(emailKey)) {
+    return buildRelativeRedirect("/login?error=rate");
+  }
+
   const verification = await verifyReCaptcha(token, "admin_login");
   if (!verification.success) {
+    recordLoginFailure(ipKey);
     return buildRelativeRedirect("/login?error=captcha");
   }
 
@@ -58,8 +74,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (!sessionRole) {
+    recordLoginFailure(ipKey);
+    recordLoginFailure(emailKey);
     return buildRelativeRedirect("/login?error=invalid");
   }
+
+  clearLoginFailures(ipKey);
+  clearLoginFailures(emailKey);
 
   const target = isSafeRedirect(redirectTo) ? redirectTo : "/admin";
   const response = buildRelativeRedirect(target);

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
+import { formatPrice } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
 
@@ -77,9 +78,9 @@ export default function GamingStore({ lang, products }: GamingStoreProps) {
                   <p className="mt-2 line-clamp-2 text-sm text-muted">{product.description}</p>
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-2xl font-bold text-gold">€{product.price}</span>
+                      <span className="text-2xl font-bold text-gold">{formatPrice(lang, product.price)}</span>
                       {product.compareAtPrice ? (
-                        <span className="text-xs text-muted line-through">€{product.compareAtPrice}</span>
+                        <span className="text-xs text-muted line-through">{formatPrice(lang, product.compareAtPrice)}</span>
                       ) : null}
                     </div>
                     <span className="rounded-lg bg-gold/10 px-3 py-2 text-sm font-medium text-gold transition pointer-events-none">

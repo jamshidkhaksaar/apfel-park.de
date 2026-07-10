@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import ProductGallery from "@/components/ProductGallery";
 import { addStoredCartItem } from "@/components/checkout/cart";
+import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
 import type { Product, ProductVariant } from "@/lib/products";
 import { siteInfo } from "@/lib/site";
@@ -14,11 +15,7 @@ type Props = {
   product: Product;
 };
 
-const formatMoney = (lang: Locale, value: number) =>
-  new Intl.NumberFormat(lang === "de" ? "de-DE" : "en-US", {
-    style: "currency",
-    currency: "EUR",
-  }).format(value);
+const formatMoney = formatPrice;
 
 const getDiscount = (price: number, compareAtPrice?: number) => {
   if (!compareAtPrice || compareAtPrice <= price) return null;
@@ -32,6 +29,13 @@ export default function ProductDetailExperience({ locale, product }: Props) {
   const defaultVariant = getDefaultVariant(product.variants);
   const [selectedColor, setSelectedColor] = useState(defaultVariant?.color ?? "");
   const [selectedStorage, setSelectedStorage] = useState(defaultVariant?.storage ?? "");
+  const [added, setAdded] = useState(false);
+
+  useEffect(() => {
+    if (!added) return;
+    const timer = window.setTimeout(() => setAdded(false), 1800);
+    return () => window.clearTimeout(timer);
+  }, [added]);
 
   const colors = useMemo(
     () => Array.from(new Set(product.variants.map((variant) => variant.color))).filter(Boolean),
@@ -79,6 +83,14 @@ export default function ProductDetailExperience({ locale, product }: Props) {
     variantColor: selectedVariant?.color ?? null,
     variantStorage: selectedVariant?.storage ?? null,
     quantity: 1,
+  };
+  const isOutOfStock = activeStock === 0;
+  const handleAddToCart = () => {
+    if (isOutOfStock) return;
+    addStoredCartItem(cartItem);
+    trackCart("add_to_cart");
+    sendServerAddToCart();
+    setAdded(true);
   };
   const trackCart = (eventName: "add_to_cart" | "begin_checkout") => {
     window.apfelTrack?.(eventName, {
@@ -236,14 +248,18 @@ export default function ProductDetailExperience({ locale, product }: Props) {
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
                 {locale === "de" ? "Verfügbarkeit" : "Availability"}
               </p>
-              <p className="mt-2 text-sm font-medium text-foreground">
+              <p className={`mt-2 text-sm font-medium ${isOutOfStock ? "text-red-500" : "text-foreground"}`}>
                 {activeStock && activeStock > 0
                   ? locale === "de"
                     ? `${activeStock} Stück auf Lager`
                     : `${activeStock} units in stock`
-                  : locale === "de"
-                    ? "Auf Anfrage"
-                    : "On request"}
+                  : isOutOfStock
+                    ? locale === "de"
+                      ? "Ausverkauft"
+                      : "Out of stock"
+                    : locale === "de"
+                      ? "Auf Anfrage"
+                      : "On request"}
               </p>
             </div>
             <div>
@@ -261,18 +277,29 @@ export default function ProductDetailExperience({ locale, product }: Props) {
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              className="btn-primary justify-center"
-              onClick={() => {
-                addStoredCartItem(cartItem);
-                trackCart("add_to_cart");
-                sendServerAddToCart();
-              }}
+              className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isOutOfStock}
+              onClick={handleAddToCart}
             >
-              <span>{locale === "de" ? "In den Warenkorb" : "Add to cart"}</span>
+              <span>
+                {isOutOfStock
+                  ? locale === "de"
+                    ? "Ausverkauft"
+                    : "Out of stock"
+                  : added
+                    ? locale === "de"
+                      ? "Hinzugefügt ✓"
+                      : "Added ✓"
+                    : locale === "de"
+                      ? "In den Warenkorb"
+                      : "Add to cart"}
+              </span>
             </button>
             <Link
               href={`/${locale}/checkout`}
-              className="btn-secondary justify-center"
+              className={`btn-secondary justify-center ${isOutOfStock ? "pointer-events-none opacity-50" : ""}`}
+              aria-disabled={isOutOfStock}
+              tabIndex={isOutOfStock ? -1 : undefined}
               onClick={() => {
                 addStoredCartItem(cartItem);
                 trackCart("begin_checkout");
@@ -310,6 +337,14 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             </Link>
           </div>
 
+          {added ? (
+            <p className="mt-4 text-center text-sm font-medium text-gold">
+              <Link href={`/${locale}/cart`} className="underline underline-offset-4">
+                {locale === "de" ? "Warenkorb ansehen →" : "View cart →"}
+              </Link>
+            </p>
+          ) : null}
+
           <div className="mt-6 grid gap-3 rounded-3xl border border-border/60 bg-surface/50 p-5 text-sm text-muted">
             <p>{locale === "de" ? "Abholung im Store oder versicherter Versand innerhalb Deutschlands." : "Store pickup or tracked shipping within Germany."}</p>
             <p>{locale === "de" ? "Sichere Zahlung mit Karte oder PayPal. Preise inkl. gesetzlicher MwSt." : "Secure card or PayPal payment. Prices include VAT."}</p>
@@ -338,24 +373,40 @@ export default function ProductDetailExperience({ locale, product }: Props) {
       <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
         <button
           type="button"
-          className="btn-secondary justify-center"
-            onClick={() => {
-              addStoredCartItem(cartItem);
-              trackCart("add_to_cart");
-              sendServerAddToCart();
-            }}
+          className="btn-secondary justify-center disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isOutOfStock}
+          onClick={handleAddToCart}
         >
-          {locale === "de" ? "Warenkorb" : "Cart"}
+          {isOutOfStock
+            ? locale === "de"
+              ? "Ausverkauft"
+              : "Sold out"
+            : added
+              ? locale === "de"
+                ? "Hinzugefügt ✓"
+                : "Added ✓"
+              : locale === "de"
+                ? "Warenkorb"
+                : "Cart"}
         </button>
         <Link
-          href={`/${locale}/checkout`}
-          className="btn-primary justify-center"
+          href={added ? `/${locale}/cart` : `/${locale}/checkout`}
+          className={`btn-primary justify-center ${isOutOfStock ? "pointer-events-none opacity-50" : ""}`}
+          aria-disabled={isOutOfStock}
+          tabIndex={isOutOfStock ? -1 : undefined}
           onClick={() => {
+            if (added) return;
             addStoredCartItem(cartItem);
             trackCart("begin_checkout");
           }}
         >
-          {locale === "de" ? "Kaufen" : "Buy"}
+          {added
+            ? locale === "de"
+              ? "Zum Warenkorb"
+              : "View cart"
+            : locale === "de"
+              ? "Kaufen"
+              : "Buy"}
         </Link>
       </div>
     </div>

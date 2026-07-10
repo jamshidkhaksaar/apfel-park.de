@@ -34,7 +34,7 @@ export default async function AccessoriesPage({
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
   const accessoriesContent = await getAccessoriesContent(lang as Locale);
-  const products = await getProducts("accessories");
+  const products = await getProducts("accessories", undefined, lang as Locale);
 
   return (
     <div className="bg-background">

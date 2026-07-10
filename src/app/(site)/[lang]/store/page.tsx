@@ -22,7 +22,8 @@ export const generateMetadata = async ({
 
 export default async function StorePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  const products = await getProducts();
+  const locale = lang as Locale;
+  const products = await getProducts(undefined, undefined, locale);
 
   return (
     <div className="bg-background">
@@ -36,7 +37,7 @@ export default async function StorePage({ params }: { params: Promise<{ lang: st
 
       <section className="section-pad">
         <div className="container-page">
-          <StoreGrid products={products} lang={lang as Locale} />
+          <StoreGrid products={products} lang={locale} />
         </div>
       </section>
     </div>

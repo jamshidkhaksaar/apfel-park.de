@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { type Product } from "../../lib/products";
+import { formatPrice } from "../../lib/format";
 import { type Locale } from "../../lib/i18n";
 
 type StoreGridProps = {
@@ -164,11 +165,11 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
                 <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-3">
                   <div className="flex flex-col">
                     <span className="text-base font-semibold text-foreground">
-                      {product.price.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
+                      {formatPrice(lang, product.price)}
                     </span>
                     {product.compareAtPrice ? (
                       <span className="text-xs text-muted line-through">
-                        {product.compareAtPrice.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
+                        {formatPrice(lang, product.compareAtPrice)}
                       </span>
                     ) : null}
                   </div>

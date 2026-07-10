@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { formatPrice } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
 
@@ -95,9 +96,9 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
                   <p className="mt-2 text-sm text-muted">{phone.description}</p>
                   <div className="mt-4 flex items-end justify-between gap-3">
                     <div className="flex flex-col">
-                      <p className="text-2xl font-bold text-gold">€{phone.price}</p>
+                      <p className="text-2xl font-bold text-gold">{formatPrice(lang, phone.price)}</p>
                       {phone.compareAtPrice ? (
-                        <span className="text-xs text-muted line-through">€{phone.compareAtPrice}</span>
+                        <span className="text-xs text-muted line-through">{formatPrice(lang, phone.compareAtPrice)}</span>
                       ) : null}
                     </div>
                     <span className="btn-primary pointer-events-none">

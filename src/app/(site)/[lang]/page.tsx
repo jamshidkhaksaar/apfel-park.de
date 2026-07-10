@@ -44,7 +44,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
   const home = await getHomeContent(lang as Locale);
-  const featuredProducts = await getFeaturedProducts();
+  const featuredProducts = await getFeaturedProducts(lang as Locale);
   const heroMedia = await getHeroMediaSettings();
 
   const serviceItems = home.services.items.map((item: { title: string; description: string }) => ({

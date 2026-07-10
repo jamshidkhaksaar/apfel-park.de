@@ -73,6 +73,13 @@ export const canManageRepairs = (user: User | null): boolean => {
   return role === "manager";
 };
 
+export const canManageBatchBuy = (user: User | null): boolean => {
+  if (!user) return false;
+  if (isAdminUser(user)) return true;
+  const role = getUserRole(user);
+  return role === "manager";
+};
+
 export const canAccessAdmin = (user: User | null): boolean => {
   if (!user) return false;
   const role = getUserRole(user);
@@ -93,6 +100,7 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
       "/admin/products",
       "/admin/orders",
       "/admin/repairs",
+      "/admin/batch-buy",
       "/admin/reviews",
       "/admin/chat",
     );

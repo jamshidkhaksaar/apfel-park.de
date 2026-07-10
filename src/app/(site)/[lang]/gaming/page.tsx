@@ -30,7 +30,7 @@ export default async function GamingPage({ params }: { params: Promise<{ lang: s
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
   const gaming = await getGamingContent(lang as Locale);
-  const products = await getProducts("consoles");
+  const products = await getProducts("consoles", undefined, lang as Locale);
 
   const serviceCards = [
     {

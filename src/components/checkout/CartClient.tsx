@@ -130,12 +130,38 @@ export default function CartClient({ locale }: Props) {
                     {formatMoney(locale, line.unitAmount, cart.currency)}
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <button type="button" className="rounded-full border border-border/60 px-3 py-1 text-sm" onClick={() => updateQuantity(line, line.quantity - 1)}>-</button>
+                    <button
+                      type="button"
+                      className="rounded-full border border-border/60 px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={line.quantity <= 1}
+                      aria-label={locale === "de" ? `Menge von ${line.title} verringern` : `Decrease quantity of ${line.title}`}
+                      onClick={() => updateQuantity(line, line.quantity - 1)}
+                    >
+                      -
+                    </button>
                     <span className="min-w-8 text-center text-sm font-semibold">{line.quantity}</span>
-                    <button type="button" className="rounded-full border border-border/60 px-3 py-1 text-sm" onClick={() => updateQuantity(line, line.quantity + 1)}>+</button>
-                    <button type="button" className="text-sm text-muted transition hover:text-red-200" onClick={() => removeLine(line)}>
+                    <button
+                      type="button"
+                      className="rounded-full border border-border/60 px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={line.quantity >= 10}
+                      aria-label={locale === "de" ? `Menge von ${line.title} erhöhen` : `Increase quantity of ${line.title}`}
+                      onClick={() => updateQuantity(line, line.quantity + 1)}
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      className="text-sm text-muted transition hover:text-red-200"
+                      aria-label={locale === "de" ? `${line.title} entfernen` : `Remove ${line.title}`}
+                      onClick={() => removeLine(line)}
+                    >
                       {locale === "de" ? "Entfernen" : "Remove"}
                     </button>
+                    {line.quantity >= 10 ? (
+                      <span className="text-xs text-muted">
+                        {locale === "de" ? "Max. 10 pro Artikel" : "Max. 10 per item"}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
                 <div className="text-left font-semibold text-foreground md:text-right">
@@ -147,6 +173,9 @@ export default function CartClient({ locale }: Props) {
         ) : (
           <div className="mt-8 rounded-xl border border-border/60 bg-surface/40 p-8 text-center">
             <p className="text-muted">{locale === "de" ? "Dein Warenkorb ist leer." : "Your cart is empty."}</p>
+            <Link href={`/${locale}/store`} className="btn-primary mt-6 inline-flex justify-center">
+              {locale === "de" ? "Weiter einkaufen" : "Continue shopping"}
+            </Link>
           </div>
         )}
       </div>
