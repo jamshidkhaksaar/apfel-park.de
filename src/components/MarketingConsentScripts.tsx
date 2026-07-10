@@ -186,10 +186,9 @@ const toTikTokEventName = (eventName: string) => {
 };
 
 /**
- * Marketing pixels (Meta, TikTok, GA) should only load on public-facing
- * pages. Skip them on /login, /admin, and /maintenance to avoid injecting
- * third-party tracking scripts where they serve no purpose and generate
- * console errors (especially when tracking prevention blocks them).
+ * All marketing scripts skip private/maintenance routes. Meta and TikTok are
+ * further limited to conversion pages so third-party pixels are not loaded
+ * across general content or category pages.
  */
 const isExcludedPath = (pathname: string): boolean => {
   if (pathname === "/login" || pathname.startsWith("/login/")) return true;
@@ -197,6 +196,9 @@ const isExcludedPath = (pathname: string): boolean => {
   if (pathname === "/maintenance" || pathname.startsWith("/maintenance/")) return true;
   return false;
 };
+
+const isConversionPath = (pathname: string): boolean =>
+  /^\/(?:de|en)\/(?:store\/[^/]+|cart(?:\/|$)|checkout(?:\/|$)|campaigns?(?:\/|$))/.test(pathname);
 
 export default function MarketingConsentScripts({
   metaPixelEnabled,
@@ -218,11 +220,11 @@ export default function MarketingConsentScripts({
       lastPageViewRef.current = path;
 
       if (metaPixelEnabled && metaPixelId && window.fbq) {
-        window.fbq("track", "PageView");
+        if (isConversionPath(pathname)) window.fbq("track", "PageView");
       }
 
       if (tiktokPixelEnabled && tiktokPixelId && window.ttq?.page) {
-        window.ttq.page();
+        if (isConversionPath(pathname)) window.ttq.page();
       }
 
       if (googleAnalyticsEnabled && googleAnalyticsId && window.gtag) {
@@ -236,11 +238,11 @@ export default function MarketingConsentScripts({
       if (mode !== "external") return;
       if (isExcludedPath(pathname)) return;
 
-      if (metaPixelEnabled && metaPixelId) {
+      if (isConversionPath(pathname) && metaPixelEnabled && metaPixelId) {
         setupMetaPixel(metaPixelId);
       }
 
-      if (tiktokPixelEnabled && tiktokPixelId) {
+      if (isConversionPath(pathname) && tiktokPixelEnabled && tiktokPixelId) {
         setupTikTokPixel(tiktokPixelId);
       }
 
@@ -276,13 +278,13 @@ export default function MarketingConsentScripts({
         });
       }
 
-      if (metaPixelEnabled && metaPixelId && window.fbq) {
+      if (isConversionPath(pathname) && metaPixelEnabled && metaPixelId && window.fbq) {
         const metaEvent = toMetaEventName(eventName);
         const method = ["contact_click", "whatsapp_click"].includes(eventName) ? "trackCustom" : "track";
         window.fbq(method, metaEvent, payload, eventId ? { eventID: eventId } : undefined);
       }
 
-      if (tiktokPixelEnabled && tiktokPixelId && window.ttq?.track) {
+      if (isConversionPath(pathname) && tiktokPixelEnabled && tiktokPixelId && window.ttq?.track) {
         window.ttq.track(toTikTokEventName(eventName), payload, eventId ? { event_id: eventId } : undefined);
       }
     };
@@ -290,7 +292,7 @@ export default function MarketingConsentScripts({
     return () => {
       delete window.apfelTrack;
     };
-  }, [metaPixelEnabled, metaPixelId, tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId]);
+  }, [pathname, metaPixelEnabled, metaPixelId, tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId]);
 
   useEffect(() => {
     if (!initializedRef.current) return;
