@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 type MaintenancePageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -19,11 +17,10 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
       <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-12 text-center">
         {/* Logo */}
         <div className="flex h-24 w-24 items-center justify-center rounded-3xl border border-border bg-surface/60 p-4 shadow-2xl shadow-black/20 backdrop-blur-sm">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/uploads/branding/logo-white.png"
             alt="Apfel Park"
-            width={64}
-            height={64}
             className="h-full w-full object-contain"
           />
         </div>
