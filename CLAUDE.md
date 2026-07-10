@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Apfel Park** is a bilingual (German/English) Next.js 16 website for a smartphone repair shop in Hamburg. It combines a public-facing storefront with a full admin dashboard, Supabase backend, and Vercel Blob storage.
+**Apfel Park** is a bilingual (German/English) Next.js 16 website for a smartphone repair shop in Hamburg. It combines a public-facing storefront with a full admin dashboard and local PostgreSQL-backed data.
 
 ## Commands
 
@@ -53,7 +53,7 @@ Use the correct client for the context. Admin API routes use the service role cl
 
 **Security**: `src/lib/security.ts` provides input sanitization utilities. Contact form submissions go through reCAPTCHA v3 verification (`src/lib/recaptcha.ts`) before storage. Never store raw user input without sanitization.
 
-**Assets**: Product images use Vercel Blob (`src/lib/blob.ts`). Dynamic branding (favicon, logo) is fetched from the `store_settings` Supabase table via `/api/branding`.
+**Assets**: Product images use the local upload storage implementation in `src/lib/blob.ts`. Dynamic branding (favicon, logo) is fetched from the `store_settings` database table via `/api/branding`.
 
 ### Next.js Patterns
 
