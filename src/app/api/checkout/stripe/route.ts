@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
       headers: {
         Authorization: `Bearer ${secretKey}`,
         "Content-Type": "application/x-www-form-urlencoded",
+        "Idempotency-Key": order.id,
       },
       body: form,
       signal: AbortSignal.timeout(10000),
