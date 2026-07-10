@@ -23,6 +23,8 @@ export default function SiteHeader({
   navItems,
   labels,
 }: SiteHeaderProps) {
+  const shrinkAt = 80;
+  const expandAt = 40;
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -36,7 +38,11 @@ export default function SiteHeader({
     const onScroll = () => {
       if (!ticking) {
         frameId = window.requestAnimationFrame(() => {
-          setIsScrolled(window.scrollY > 12);
+          setIsScrolled((currentlyScrolled) => {
+            if (!currentlyScrolled && window.scrollY >= shrinkAt) return true;
+            if (currentlyScrolled && window.scrollY <= expandAt) return false;
+            return currentlyScrolled;
+          });
           ticking = false;
         });
         ticking = true;
@@ -45,7 +51,7 @@ export default function SiteHeader({
 
     // Initial check deferred to avoid synchronous setState in useEffect
     frameId = window.requestAnimationFrame(() => {
-      setIsScrolled(window.scrollY > 12);
+      setIsScrolled(window.scrollY >= shrinkAt);
     });
 
     window.addEventListener("scroll", onScroll, { passive: true });
