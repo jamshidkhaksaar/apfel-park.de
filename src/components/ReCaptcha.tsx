@@ -18,6 +18,7 @@ type ReCaptchaProps = {
   onVerify: (token: string) => void;
   onError?: (error: string) => void;
   onLoad?: () => void;
+  requireConsent?: boolean;
 };
 
 const getConsentErrorMessage = () => {
@@ -67,7 +68,7 @@ const getReCaptchaSiteKey = async (): Promise<{ siteKey: string; enabled: boolea
  * 
  * The token should be sent with your form submission and verified server-side.
  */
-export default function ReCaptcha({ action, onVerify, onError, onLoad }: ReCaptchaProps) {
+export default function ReCaptcha({ action, onVerify, onError, onLoad, requireConsent = true }: ReCaptchaProps) {
   const [siteKey, setSiteKey] = useState<string>("");
   const [enabled, setEnabled] = useState<boolean>(false);
   const [consentMode, setConsentMode] = useState<ConsentMode>("unset");
@@ -119,7 +120,7 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad }: ReCaptc
   useEffect(() => {
     if (!enabled || !siteKey || loaded) return;
 
-    if (consentMode !== "external") {
+    if (requireConsent && consentMode !== "external") {
       const message = getConsentErrorMessage();
       setError(message);
       onError?.(message);
@@ -154,11 +155,12 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad }: ReCaptc
     return () => {
       // Cleanup on unmount (optional - usually want to keep script loaded)
     };
-  }, [consentMode, enabled, siteKey, loaded, onError, onLoad]);
+  }, [consentMode, enabled, siteKey, loaded, onError, onLoad, requireConsent]);
 
   // Execute reCAPTCHA when ready
   const executeReCaptcha = useCallback(async () => {
-    if (!enabled || !siteKey || consentMode !== "external" || executedRef.current) return;
+    if (!enabled || !siteKey || executedRef.current) return;
+    if (requireConsent && consentMode !== "external") return;
 
     try {
       await new Promise<void>((resolve) => {
@@ -193,14 +195,14 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad }: ReCaptc
       setError("reCAPTCHA verification failed");
       onError?.("reCAPTCHA execution failed");
     }
-  }, [enabled, siteKey, consentMode, action, onVerify, onError]);
+  }, [enabled, siteKey, consentMode, action, onVerify, onError, requireConsent]);
 
   // Execute when loaded
   useEffect(() => {
-    if (loaded && enabled && siteKey && consentMode === "external") {
+    if (loaded && enabled && siteKey && (!requireConsent || consentMode === "external")) {
       executeReCaptcha();
     }
-  }, [loaded, enabled, siteKey, consentMode, executeReCaptcha]);
+  }, [loaded, enabled, siteKey, consentMode, executeReCaptcha, requireConsent]);
 
   // Don't render anything visible for reCAPTCHA v3
   // The badge is shown by Google automatically (can be hidden with CSS if disclosed in privacy policy)
@@ -222,7 +224,7 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad }: ReCaptc
 /**
  * Hook for using reCAPTCHA in forms
  */
-export function useReCaptcha(action: string) {
+export function useReCaptcha(action: string, options?: { requireConsent?: boolean }) {
   const [token, setToken] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -241,14 +243,17 @@ export function useReCaptcha(action: string) {
     // Script loaded, waiting for token
   }, []);
 
+  const requireConsent = options?.requireConsent ?? true;
+
   const ReCaptchaComponent = useCallback(() => (
     <ReCaptcha
       action={action}
       onVerify={handleVerify}
       onError={handleError}
       onLoad={handleLoad}
+      requireConsent={requireConsent}
     />
-  ), [action, handleVerify, handleError, handleLoad]);
+  ), [action, handleVerify, handleError, handleLoad, requireConsent]);
 
   return {
     token,

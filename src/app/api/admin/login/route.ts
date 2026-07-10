@@ -50,8 +50,15 @@ export async function POST(request: NextRequest) {
 
   const verification = await verifyReCaptcha(token, "admin_login");
   if (!verification.success) {
-    recordLoginFailure(ipKey);
-    return buildRelativeRedirect("/login?error=captcha");
+    // If reCAPTCHA is enabled but the token is empty (script blocked by ad blocker,
+    // consent issue, etc.), fall back to rate limiting instead of hard-blocking.
+    // Rate limiting (above) still prevents brute-force attacks.
+    if (token) {
+      recordLoginFailure(ipKey);
+      return buildRelativeRedirect("/login?error=captcha");
+    }
+    // Empty token: log a warning but proceed — rate limiting is the safety net.
+    console.warn("[Login] reCAPTCHA verification failed with empty token — relying on rate limiting");
   }
 
   let sessionRole: string | undefined;

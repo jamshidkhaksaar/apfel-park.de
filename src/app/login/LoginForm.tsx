@@ -23,7 +23,7 @@ export default function LoginForm() {
             ? "Too many attempts. Please try again in 15 minutes."
             : null;
   const { token: recaptchaToken, isLoading: recaptchaLoading, error: recaptchaError, ReCaptchaComponent } =
-    useReCaptcha("admin_login");
+    useReCaptcha("admin_login", { requireConsent: false });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -105,12 +105,16 @@ export default function LoginForm() {
 
             <ReCaptchaComponent />
             {recaptchaError && (
-              <p className="text-xs text-red-400 text-center">{recaptchaError}</p>
+              <p className="text-xs text-amber-400 text-center">
+                {recaptchaError}
+                <br />
+                <span className="text-muted">You can still sign in — rate limiting protects against brute force.</span>
+              </p>
             )}
 
             <button
               type="submit"
-              disabled={isSubmitting || recaptchaLoading || Boolean(recaptchaError)}
+              disabled={isSubmitting || recaptchaLoading}
               className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
