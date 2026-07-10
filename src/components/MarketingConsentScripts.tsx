@@ -185,6 +185,19 @@ const toTikTokEventName = (eventName: string) => {
   return eventName;
 };
 
+/**
+ * Marketing pixels (Meta, TikTok, GA) should only load on public-facing
+ * pages. Skip them on /login, /admin, and /maintenance to avoid injecting
+ * third-party tracking scripts where they serve no purpose and generate
+ * console errors (especially when tracking prevention blocks them).
+ */
+const isExcludedPath = (pathname: string): boolean => {
+  if (pathname === "/login" || pathname.startsWith("/login/")) return true;
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
+  if (pathname === "/maintenance" || pathname.startsWith("/maintenance/")) return true;
+  return false;
+};
+
 export default function MarketingConsentScripts({
   metaPixelEnabled,
   metaPixelId,
@@ -221,6 +234,7 @@ export default function MarketingConsentScripts({
 
     const applyConsent = (mode: ConsentMode) => {
       if (mode !== "external") return;
+      if (isExcludedPath(pathname)) return;
 
       if (metaPixelEnabled && metaPixelId) {
         setupMetaPixel(metaPixelId);
