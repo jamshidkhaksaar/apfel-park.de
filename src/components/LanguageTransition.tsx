@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { useTheme } from "./ThemeProvider";
@@ -39,6 +39,8 @@ const themeColors = {
 export default function LanguageTransitionProvider({ children }: { children: React.ReactNode }) {
   const [isSwitching, setIsSwitching] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const pendingPathRef = useRef<string | null>(null);
+  const timersRef = useRef<number[]>([]);
   const router = useRouter();
   const pathname = usePathname();
   const { theme } = useTheme();
@@ -48,7 +50,16 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
   const colors = themeColors[theme];
   const logoSrc = theme === "dark" ? branding.logoWhite : branding.logo;
 
-  const switchLanguage = async (newPath: string, newLocale: string) => {
+  const clearTimers = () => {
+    timersRef.current.forEach((timer) => window.clearTimeout(timer));
+    timersRef.current = [];
+  };
+
+  const switchLanguage = (newPath: string, newLocale: string) => {
+    if (isSwitching) return;
+
+    clearTimers();
+    pendingPathRef.current = newPath;
     setIsSwitching(true);
     
     // Start wave animation
@@ -56,25 +67,29 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
       setShowContent(true);
     });
 
-    // Wait for waves to cover screen (1.2s for slow fluid feel)
-    await new Promise(r => setTimeout(r, 1200));
-    
-    // Update cookie and navigate
     document.cookie = `apfel-lang=${newLocale}; path=/; max-age=31536000`;
-    router.push(newPath);
+    timersRef.current.push(window.setTimeout(() => router.push(newPath), 700));
+
+    // Never leave the overlay active if navigation fails or is interrupted.
+    timersRef.current.push(window.setTimeout(() => {
+      pendingPathRef.current = null;
+      setShowContent(false);
+      setIsSwitching(false);
+    }, 5000));
   };
 
   useEffect(() => {
-    if (isSwitching) {
-      // Navigation happened
-      const timer = setTimeout(() => {
-        setShowContent(false);
-        // Wait for exit animation
-        setTimeout(() => setIsSwitching(false), 1200);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
+    if (!isSwitching || pathname !== pendingPathRef.current) return;
+
+    clearTimers();
+    timersRef.current.push(window.setTimeout(() => setShowContent(false), 250));
+    timersRef.current.push(window.setTimeout(() => {
+      pendingPathRef.current = null;
+      setIsSwitching(false);
+    }, 1450));
   }, [pathname, isSwitching]);
+
+  useEffect(() => () => clearTimers(), []);
 
   if (!isSwitching && !showContent) {
     return (
