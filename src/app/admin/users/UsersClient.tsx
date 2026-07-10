@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
 import AdminShell from "@/components/admin/AdminShell";
-import type { UserPublic, UserRole, VALID_ROLES } from "@/lib/users";
-
-const roleOptions: { value: UserRole; label: string }[] = [
-  { value: "admin", label: "" },
-  { value: "manager", label: "" },
-  { value: "product_editor", label: "" },
-];
+import type { UserPublic, UserRole } from "@/lib/users";
 
 export default function UsersClient({ users: initialUsers }: { users: UserPublic[] }) {
   const { dict } = useAdmin();
