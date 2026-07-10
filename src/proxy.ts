@@ -1,14 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const isPublicStorePath = (pathname: string) => {
-  // Covers the normal category store (/de/store...) and the Open-Box catalog
-  // (/de/open-box, /en/open-box). Open-box items also surface on their normal
-  // category page, but the dedicated Open-Box page must obey the store
-  // maintenance toggle and avoid being redirected away.
-  return (
-    /^\/(?:de|en)\/store(?:\/.*)?$/.test(pathname) ||
-    /^\/(?:de|en)\/open-box(?:\/.*)?$/.test(pathname)
-  );
+  // Only the generic /store aggregator obeys the store-maintenance toggle.
+  // Category pages (/smartphones, /accessories, …) and the Open-Box catalog
+  // (/open-box) stay reachable, consistent with the other nav category links.
+  return /^\/(?:de|en)\/store(?:\/.*)?$/.test(pathname);
 };
 
 const isBypassedPath = (pathname: string) => {
