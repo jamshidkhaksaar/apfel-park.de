@@ -587,14 +587,6 @@ function ModelGrid({
 }) {
   const deviceType = getDeviceType(family);
   const isPortrait = deviceType === "phone" || deviceType === "tablet" || deviceType === "watch";
-  const imageFrameClass =
-    deviceType === "phone"
-      ? "h-[88%] w-[68%] rounded-[2rem]"
-      : deviceType === "tablet"
-        ? "h-[88%] w-[84%] rounded-[1.75rem]"
-        : deviceType === "watch"
-          ? "h-[72%] w-[72%] rounded-[1.5rem]"
-          : "h-[84%] w-[86%] rounded-[1.5rem]";
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -617,32 +609,22 @@ function ModelGrid({
             className={`group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50 ${
               active
                 ? "border-gold/60 bg-gold/10 shadow-xl shadow-gold/15"
-                : "border-white/8 bg-white/3 hover:border-gold/25 hover:shadow-xl hover:shadow-black/20"
+                : "border-border bg-surface/40 hover:border-gold/25 hover:shadow-xl hover:shadow-black/20"
             }`}
           >
-            {/* Device image area — portrait aspect for phone/tablet/watch, wider for laptop/pc/other */}
-            <div className={`relative overflow-hidden bg-gradient-to-b from-white/5 to-transparent ${isPortrait ? "aspect-[3/4]" : "aspect-[4/3]"}`}>
-              <div className="absolute inset-0 flex items-center justify-center p-4">
-                <div className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.75rem] border p-3 shadow-inner transition-all duration-300 ${
-                  active
-                    ? "border-gold/35 bg-gold/10 shadow-gold/10"
-                    : "border-white/10 bg-white/[0.04] shadow-black/20 group-hover:border-gold/25 group-hover:bg-gold/[0.07]"
-                }`}>
-                  <div className="pointer-events-none absolute inset-0 rounded-[1.65rem] bg-gradient-to-br from-white/14 via-transparent to-black/20" />
-                  <div className="pointer-events-none absolute inset-x-5 top-3 h-px bg-white/25" />
-                  <div className={`relative z-10 flex items-center justify-center overflow-hidden bg-black/10 ${imageFrameClass}`}>
-                    {model.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={model.image}
-                        alt={model.name}
-                        className="h-full w-full rounded-[inherit] object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <DeviceSilhouette family={family} />
-                    )}
-                  </div>
-                </div>
+            {/* Device image area */}
+            <div className={`relative flex items-center justify-center overflow-hidden bg-surface/60 ${isPortrait ? "aspect-[3/4]" : "aspect-[4/3]"}`}>
+              <div className="flex h-full w-full items-center justify-center p-5">
+                {model.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={model.image}
+                    alt={model.name}
+                    className="max-h-full max-w-full object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <DeviceSilhouette family={family} />
+                )}
               </div>
             </div>
 
@@ -664,7 +646,7 @@ function ModelGrid({
                   </p>
                 </div>
               ) : (
-                <div className="mt-auto rounded-lg bg-black/20 px-2 py-1.5 text-center">
+                <div className="mt-auto rounded-lg bg-background/40 px-2 py-1.5 text-center">
                   <p className="text-[9px] uppercase tracking-widest text-muted/50">
                     {isGerman ? "Ab" : "From"}
                   </p>
