@@ -104,7 +104,12 @@ export default function LanguageTransitionProvider({ children }: { children: Rea
       {children}
       
       {/* Wave Transition Container */}
-      <div className="fixed inset-0 z-[10000] pointer-events-none flex flex-col justify-end overflow-hidden">
+      <div className="fixed inset-0 z-[2147483647] pointer-events-none flex flex-col justify-end overflow-hidden">
+        <div
+          aria-hidden="true"
+          className={`absolute inset-0 z-0 transition-opacity duration-200 ${showContent ? "opacity-100" : "opacity-0"}`}
+          style={{ backgroundColor: colors.wave3 }}
+        />
         
         {/* Wave 1: Deep Color (Back) */}
         <div 
