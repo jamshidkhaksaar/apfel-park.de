@@ -177,16 +177,6 @@ export default function SiteHeader({
               <ThemeToggle />
             </div>
             
-            <Link
-              href={`/${lang}/repairs`}
-              className="btn-primary !hidden lg:!inline-flex !px-3 !py-1.5 text-xs uppercase tracking-wide"
-            >
-              <svg className="relative z-10 h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span className="relative z-10 whitespace-nowrap">{lang === "de" ? "Reparatur" : "Repair"}</span>
-            </Link>
-
             {/* Mobile Menu Button */}
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -240,16 +230,6 @@ export default function SiteHeader({
             );
           })}
           <div className="mt-4 flex flex-col gap-3 border-t border-white/5 pt-4">
-            <Link
-              href={`/${lang}/repairs`}
-              onClick={() => setMobileMenuOpen(false)}
-              className="btn-primary flex items-center justify-center gap-2 !py-3 text-sm font-bold uppercase tracking-wide"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span>{lang === "de" ? "Schnell-Reparatur" : "Quick Repair"}</span>
-            </Link>
             <Link
               href={`/${lang}/store`}
               onClick={() => setMobileMenuOpen(false)}

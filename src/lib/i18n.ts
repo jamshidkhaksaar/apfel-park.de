@@ -6,7 +6,6 @@ export const dictionary = {
   de: {
     nav: [
       { label: "Startseite", path: "" },
-      { label: "Reparatur & Service", path: "/repairs" },
       { label: "Smartphones", path: "/smartphones" },
       { label: "Open-Box", path: "/open-box" },
       { label: "Zubehör", path: "/accessories" },
@@ -665,7 +664,6 @@ export const dictionary = {
   en: {
     nav: [
       { label: "Home", path: "" },
-      { label: "Repair & Service", path: "/repairs" },
       { label: "Smartphones", path: "/smartphones" },
       { label: "Open-Box", path: "/open-box" },
       { label: "Accessories", path: "/accessories" },
