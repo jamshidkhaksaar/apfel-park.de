@@ -34,7 +34,7 @@ export default async function SmartphonesPage({
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
   const smartphonesContent = await getSmartphonesContent(lang as Locale);
-  const smartphones = await getProducts("smartphones");
+  const smartphones = await getProducts("smartphones", undefined, lang as Locale);
 
   return (
     <div className="bg-background">

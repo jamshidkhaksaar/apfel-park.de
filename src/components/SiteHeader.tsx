@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
+import { getStoredCartCount, subscribeStoredCart } from "./checkout/cart";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
 import Logo from "./Logo";
@@ -25,6 +26,8 @@ export default function SiteHeader({
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const cartCount = useSyncExternalStore(subscribeStoredCart, getStoredCartCount, () => 0);
+  const cartBadge = cartCount > 9 ? "9+" : String(cartCount);
 
   useEffect(() => {
     let ticking = false;
@@ -152,12 +155,21 @@ export default function SiteHeader({
               </Link>
               <Link
                 href={`/${lang}/cart`}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-gold/30 text-gold transition hover:bg-gold/10"
-                aria-label={lang === "de" ? "Warenkorb öffnen" : "Open cart"}
+                className="relative flex h-8 w-8 items-center justify-center rounded-full border border-gold/30 text-gold transition hover:bg-gold/10"
+                aria-label={
+                  lang === "de"
+                    ? `Warenkorb öffnen${cartCount > 0 ? ` (${cartCount} Artikel)` : ""}`
+                    : `Open cart${cartCount > 0 ? ` (${cartCount} items)` : ""}`
+                }
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.5l2.1 12.15A2.25 2.25 0 008.07 17h8.56a2.25 2.25 0 002.2-1.78L20.25 8.5H5.25M9 21h.01M17 21h.01" />
                 </svg>
+                {cartCount > 0 ? (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold leading-none text-background">
+                    {cartBadge}
+                  </span>
+                ) : null}
               </Link>
             </div>
             <div className="flex items-center gap-3 lg:hidden">
@@ -257,6 +269,11 @@ export default function SiteHeader({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.5l2.1 12.15A2.25 2.25 0 008.07 17h8.56a2.25 2.25 0 002.2-1.78L20.25 8.5H5.25M9 21h.01M17 21h.01" />
               </svg>
               <span>{lang === "de" ? "Warenkorb" : "Cart"}</span>
+              {cartCount > 0 ? (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[11px] font-bold leading-none text-background">
+                  {cartBadge}
+                </span>
+              ) : null}
             </Link>
           </div>
         </nav>

@@ -1,4 +1,5 @@
 import { createDbClient } from "@/lib/db";
+import type { Locale } from "@/lib/i18n";
 
 export type ProductCategory = "smartphones" | "accessories" | "consoles" | "laptops";
 
@@ -42,11 +43,24 @@ export type Product = {
   hasDiscount: boolean;
 };
 
+type LocalizedText = {
+  de?: string | null;
+  en?: string | null;
+};
+
+type LocalizedSpec = {
+  label?: LocalizedText | string | null;
+  value?: LocalizedText | string | null;
+};
+
 type DbProduct = {
   id: string;
   title: string;
+  title_i18n?: LocalizedText | null;
   subtitle: string | null;
+  subtitle_i18n?: LocalizedText | null;
   description: string | null;
+  description_i18n?: LocalizedText | null;
   price: number | string;
   compare_at_price: number | string | null;
   category: string;
@@ -57,7 +71,9 @@ type DbProduct = {
   slug: string | null;
   images: string[] | null;
   feature_bullets: string[] | null;
+  feature_bullets_i18n?: { de?: string[] | null; en?: string[] | null } | null;
   specs: unknown;
+  specs_i18n?: LocalizedSpec[] | null;
   variants: unknown;
 };
 
@@ -116,6 +132,46 @@ const toNumber = (value: number | string | null | undefined): number | undefined
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+const localizedText = (value: LocalizedText | null | undefined, locale: Locale, fallback: string | null | undefined): string => {
+  const preferred = value?.[locale]?.trim();
+  if (preferred) return preferred;
+  const fallbackLocale = locale === "de" ? value?.en?.trim() : value?.de?.trim();
+  return fallbackLocale || fallback || "";
+};
+
+const localizedStringArray = (
+  value: { de?: string[] | null; en?: string[] | null } | null | undefined,
+  locale: Locale,
+  fallback: string[] | null | undefined,
+): string[] => {
+  const preferred = value?.[locale]?.filter(Boolean) ?? [];
+  if (preferred.length > 0) return preferred;
+  const fallbackLocale = locale === "de" ? value?.en?.filter(Boolean) : value?.de?.filter(Boolean);
+  return fallbackLocale && fallbackLocale.length > 0 ? fallbackLocale : (fallback?.filter(Boolean) ?? []);
+};
+
+const localizedSpecValue = (value: LocalizedText | string | null | undefined, locale: Locale): string => {
+  if (typeof value === "string") return value.trim();
+  return localizedText(value, locale, "");
+};
+
+const toLocalizedSpecs = (value: unknown, locale: Locale, fallback: unknown): ProductSpec[] => {
+  if (!Array.isArray(value)) return toSpecs(fallback);
+
+  const specs = value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const candidate = entry as LocalizedSpec;
+      const label = localizedSpecValue(candidate.label, locale);
+      const specValue = localizedSpecValue(candidate.value, locale);
+      if (!label || !specValue) return null;
+      return { label, value: specValue };
+    })
+    .filter((entry): entry is ProductSpec => entry !== null);
+
+  return specs.length > 0 ? specs : toSpecs(fallback);
+};
+
 const toSpecs = (value: unknown): ProductSpec[] => {
   if (!Array.isArray(value)) return [];
 
@@ -132,7 +188,7 @@ const toSpecs = (value: unknown): ProductSpec[] => {
     .filter((entry): entry is ProductSpec => entry !== null);
 };
 
-const toVariants = (value: unknown): ProductVariant[] => {
+const toVariants = (value: unknown, locale: Locale = "de"): ProductVariant[] => {
   if (!Array.isArray(value)) return [];
 
   return value
@@ -140,7 +196,11 @@ const toVariants = (value: unknown): ProductVariant[] => {
       if (!entry || typeof entry !== "object") return null;
       const candidate = entry as {
         color?: unknown;
+        colorI18n?: unknown;
+        color_i18n?: unknown;
         storage?: unknown;
+        storageI18n?: unknown;
+        storage_i18n?: unknown;
         price?: unknown;
         compareAtPrice?: unknown;
         stock?: unknown;
@@ -149,8 +209,10 @@ const toVariants = (value: unknown): ProductVariant[] => {
         isDefault?: unknown;
       };
 
-      const color = typeof candidate.color === "string" ? candidate.color.trim() : "";
-      const storage = typeof candidate.storage === "string" ? candidate.storage.trim() : "";
+      const colorI18n = (candidate.colorI18n || candidate.color_i18n) as LocalizedText | null | undefined;
+      const storageI18n = (candidate.storageI18n || candidate.storage_i18n) as LocalizedText | null | undefined;
+      const color = localizedText(colorI18n, locale, typeof candidate.color === "string" ? candidate.color.trim() : "");
+      const storage = localizedText(storageI18n, locale, typeof candidate.storage === "string" ? candidate.storage.trim() : "");
       if (!color || !storage) return null;
 
       const price = toNumber(candidate.price as number | string | null | undefined);
@@ -177,7 +239,7 @@ const computeDiscountPercentage = (price: number, compareAtPrice?: number) => {
   return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
 };
 
-const mapProduct = (row: DbProduct): Product | null => {
+const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
   const category = normalizeCategory(row.category);
   if (!category || !row.slug) return null;
 
@@ -186,13 +248,13 @@ const mapProduct = (row: DbProduct): Product | null => {
   const discountPercentage = computeDiscountPercentage(price, compareAtPrice);
   const images = row.images?.filter(Boolean) ?? [];
   const image = images[0] ?? fallbackImageByCategory[category];
-  const variants = toVariants(row.variants);
+  const variants = toVariants(row.variants, locale);
 
   return {
     id: row.id,
-    title: row.title,
-    subtitle: row.subtitle ?? "",
-    description: row.description ?? "",
+    title: localizedText(row.title_i18n, locale, row.title),
+    subtitle: localizedText(row.subtitle_i18n, locale, row.subtitle),
+    description: localizedText(row.description_i18n, locale, row.description),
     price,
     compareAtPrice,
     category,
@@ -203,8 +265,8 @@ const mapProduct = (row: DbProduct): Product | null => {
     sku: row.sku ?? undefined,
     stock: row.stock ?? undefined,
     slug: row.slug,
-    featureBullets: row.feature_bullets?.filter(Boolean) ?? [],
-    specs: toSpecs(row.specs),
+    featureBullets: localizedStringArray(row.feature_bullets_i18n, locale, row.feature_bullets),
+    specs: toLocalizedSpecs(row.specs_i18n, locale, row.specs),
     variants,
     discountPercentage,
     hasDiscount: Boolean(discountPercentage),
@@ -212,12 +274,12 @@ const mapProduct = (row: DbProduct): Product | null => {
 };
 
 const baseSelect =
-  "id,title,subtitle,description,price,compare_at_price,category,brand,model,sku,stock,slug,images,feature_bullets,specs,variants";
+  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,brand,model,sku,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants";
 
 /**
  * Fetches products from the database.
  */
-export async function getProducts(category?: ProductCategory, limit?: number): Promise<Product[]> {
+export async function getProducts(category?: ProductCategory, limit?: number, locale: Locale = "de"): Promise<Product[]> {
   const db = createDbClient();
 
   let query = db
@@ -239,14 +301,14 @@ export async function getProducts(category?: ProductCategory, limit?: number): P
   if (error || !data) return [];
 
   const products = (data as DbProduct[])
-    .map(mapProduct)
+    .map((row) => mapProduct(row, locale))
     .filter((item): item is Product => item !== null);
 
   if (!category) return products;
   return products.filter((product) => product.category === category);
 }
 
-export async function getFeaturedProducts(): Promise<Product[]> {
+export async function getFeaturedProducts(locale: Locale = "de"): Promise<Product[]> {
   const db = createDbClient();
   const [{ data: featuredRow }, products] = await Promise.all([
     db
@@ -254,7 +316,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
       .select("value")
       .eq("key", "featured_product_ids")
       .maybeSingle(),
-    getProducts(),
+    getProducts(undefined, undefined, locale),
   ]);
 
   const featuredIds = Array.isArray(featuredRow?.value)
@@ -272,7 +334,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     .map((product) => ({ ...product, isFeatured: true }));
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+export async function getProductBySlug(slug: string, locale: Locale = "de"): Promise<Product | null> {
   const db = createDbClient();
   const { data, error } = await db
     .from<DbProduct>("products")
@@ -282,21 +344,21 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     .single();
 
   if (error || !data) return null;
-  return mapProduct(data as DbProduct);
+  return mapProduct(data as DbProduct, locale);
 }
 
-export async function getRelatedProducts(product: Product, limit = 4): Promise<Product[]> {
-  const products = await getProducts(product.category);
+export async function getRelatedProducts(product: Product, limit = 4, locale: Locale = "de"): Promise<Product[]> {
+  const products = await getProducts(product.category, undefined, locale);
   return products.filter((candidate) => candidate.id !== product.id).slice(0, limit);
 }
 
-export async function getDiscountedProducts(limit = 6): Promise<Product[]> {
-  const products = await getProducts();
+export async function getDiscountedProducts(limit = 6, locale: Locale = "de"): Promise<Product[]> {
+  const products = await getProducts(undefined, undefined, locale);
   return products.filter((product) => product.hasDiscount).slice(0, limit);
 }
 
-export async function getPromoProducts(pinnedIds?: string[]): Promise<Product[]> {
-  const products = await getProducts();
+export async function getPromoProducts(pinnedIds?: string[], locale: Locale = "de"): Promise<Product[]> {
+  const products = await getProducts(undefined, undefined, locale);
   if (pinnedIds?.length) {
     const byId = new Map(products.map((p) => [p.id, p]));
     return pinnedIds.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p)).slice(0, 3);

@@ -1058,14 +1058,34 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                         <div key={`${image}-${index}`} className="rounded-2xl border border-border/60 bg-surface/70 p-3">
                           <div className="relative aspect-square overflow-hidden rounded-xl bg-black/20">
                             <Image src={image} alt="" fill className="object-cover" unoptimized={image.startsWith("/uploads/")} />
+                            {index === 0 ? (
+                              <span className="absolute left-2 top-2 rounded-full bg-gold px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-black">
+                                {locale === "de" ? "Cover" : "Cover"}
+                              </span>
+                            ) : null}
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => setFormState((prev) => ({ ...prev, images: prev.images.filter((item) => item !== image) }))}
-                            className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-red-300"
-                          >
-                            {locale === "de" ? "Entfernen" : "Remove"}
-                          </button>
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormState((prev) => {
+                                  const next = prev.images.filter((item) => item !== image);
+                                  next.unshift(image);
+                                  return { ...prev, images: next };
+                                });
+                              }}
+                              className="text-xs font-semibold uppercase tracking-[0.18em] text-gold"
+                            >
+                              {locale === "de" ? "Als Cover" : "Set cover"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFormState((prev) => ({ ...prev, images: prev.images.filter((item) => item !== image) }))}
+                              className="text-xs font-semibold uppercase tracking-[0.18em] text-red-300"
+                            >
+                              {locale === "de" ? "Entfernen" : "Remove"}
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>

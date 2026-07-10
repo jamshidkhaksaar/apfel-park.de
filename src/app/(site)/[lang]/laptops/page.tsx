@@ -30,7 +30,7 @@ export default async function LaptopsPage({ params }: { params: Promise<{ lang: 
   const { lang } = await params;
   const dict = getDictionary(lang as Locale);
   const laptops = await getLaptopsContent(lang as Locale);
-  const laptopProducts = await getProducts("laptops");
+  const laptopProducts = await getProducts("laptops", undefined, lang as Locale);
 
   return (
     <div className="bg-background">

@@ -59,6 +59,12 @@ const NavIcon = ({ type }: { type: string }) => {
         <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
       </svg>
     ),
+    batchBuy: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5h10.5M6.75 12h10.5M7.5 16.5h4.5M4.5 4.5h15v15h-15z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 16.5h.008v.008H16.5v-.008zM19.5 12h.008v.008H19.5V12z" />
+      </svg>
+    ),
     chat: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12c0-4.97 4.365-9 9.75-9s9.75 4.03 9.75 9-4.365 9-9.75 9a10.7 10.7 0 01-4.18-.84L3 20.25l1.3-3.9A8.88 8.88 0 012.25 12z" />
@@ -130,6 +136,7 @@ export default function AdminShell({
   const { theme, toggleTheme } = useTheme();
   const [clock, setClock] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [badges, setBadges] = useState<AdminBadgeCounts>({ chat: 0, repairs: 0, orders: 0 });
 
   // Live clock
@@ -203,6 +210,7 @@ export default function AdminShell({
   const managerItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
     { label: dict.sidebar.orders,    path: '/admin/orders',   icon: 'orders',  badge: badges.orders },
     { label: dict.sidebar.repairs,   path: '/admin/repairs',  icon: 'repairs', badge: badges.repairs },
+    { label: dict.sidebar.batchBuy,  path: '/admin/batch-buy', icon: 'batchBuy' },
     { label: dict.sidebar.chat,      path: '/admin/chat',     icon: 'chat',    badge: badges.chat },
     { label: dict.sidebar.reviews,   path: '/admin/reviews',  icon: 'reviews' },
   ];
@@ -253,13 +261,14 @@ export default function AdminShell({
             admin-shell-panel
             fixed inset-y-0 left-0 z-40 flex h-full w-72 shrink-0 flex-col overflow-hidden
             border-r border-white/5 bg-surface/95
-            transition-transform duration-300 ease-in-out
-            lg:relative lg:inset-auto lg:z-auto lg:w-64 lg:translate-x-0 lg:bg-surface/40
+            transition-[transform,width] duration-300 ease-in-out
+            lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:bg-surface/40
+            ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
             ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
           `}
         >
           {/* Brand mark */}
-          <div className="px-5 pb-4 pt-6">
+          <div className={`px-5 pb-4 pt-6 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
             {/* Close button – mobile only */}
             <div className="mb-4 flex items-center justify-between lg:hidden">
               <div className="flex items-center gap-2.5">
@@ -281,7 +290,7 @@ export default function AdminShell({
             </div>
 
             {/* Brand mark (desktop only) */}
-            <Link href="/admin" className="hidden lg:block" onClick={closeSidebar}>
+            <Link href="/admin" className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`} onClick={closeSidebar}>
               <div className="flex items-center gap-2.5">
                 <span className="text-gold text-base leading-none" aria-hidden="true">◆</span>
                 <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-foreground" style={{ fontVariant: 'small-caps' }}>
@@ -294,7 +303,7 @@ export default function AdminShell({
             </Link>
 
             {/* Status bar */}
-            <div className="mt-4 flex items-center justify-between">
+            <div className={`mt-4 flex items-center justify-between ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               <div className="flex items-center gap-2">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
@@ -306,7 +315,7 @@ export default function AdminShell({
             </div>
 
             {/* Language + theme toggles */}
-            <div className="mt-4 flex items-center gap-1">
+            <div className={`mt-4 flex items-center gap-1 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               <button
                 onClick={() => handleLangChange('de')}
                 aria-pressed={lang === 'de'}
@@ -348,8 +357,8 @@ export default function AdminShell({
           <div className="border-t border-white/5" />
 
           {/* Nav */}
-          <nav className="flex-1 overflow-y-auto px-3 py-3">
-            <p className="mb-2 px-2 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/40">
+          <nav className={`flex-1 overflow-y-auto px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
+            <p className={`mb-2 px-2 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/40 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               Navigation
             </p>
             <ul className="space-y-0.5">
@@ -364,7 +373,8 @@ export default function AdminShell({
                       href={item.path}
                       aria-current={pathname === item.path ? 'page' : undefined}
                       onClick={closeSidebar}
-                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs transition-all duration-150 lg:py-2 ${
+                      title={sidebarCollapsed ? item.label : undefined}
+                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs transition-all duration-150 lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${
                         isActive
                           ? 'border-l-2 border-gold bg-gold/5 pl-[10px] text-gold'
                           : 'border-l-2 border-transparent pl-[10px] text-muted/70 hover:bg-white/4 hover:text-foreground'
@@ -373,7 +383,7 @@ export default function AdminShell({
                       <span className={`shrink-0 transition-colors duration-150 ${isActive ? 'text-gold' : 'text-muted/40 group-hover:text-muted/70'}`}>
                         <NavIcon type={item.icon} />
                       </span>
-                      <span className="min-w-0 flex-1 break-words leading-snug font-medium">{item.label}</span>
+                      <span className={`min-w-0 flex-1 break-words leading-snug font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
                       {item.badge && item.badge > 0 ? (
                         <span className={`ml-auto inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
                           isActive ? "bg-gold text-black" : "bg-red-500/15 text-red-500"
@@ -389,36 +399,39 @@ export default function AdminShell({
           </nav>
 
           {/* Bottom links */}
-          <div className="border-t border-white/5 px-3 py-3">
+          <div className={`border-t border-white/5 px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
             <a
               href="https://mail.apfel-park.de"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-white/4 hover:text-foreground lg:py-2"
+              title={sidebarCollapsed ? "Webmail Login" : undefined}
+              className={`flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-white/4 hover:text-foreground lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
               <svg className="h-4 w-4 shrink-0 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 7.5v9A2.25 2.25 0 0119.5 18.75h-15A2.25 2.25 0 012.25 16.5v-9m19.5 0A2.25 2.25 0 0019.5 5.25h-15A2.25 2.25 0 002.25 7.5m19.5 0v.243a2.25 2.25 0 01-1.07 1.91l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 9.653a2.25 2.25 0 01-1.07-1.91V7.5" />
               </svg>
-              <span className="min-w-0 break-words leading-snug font-medium">Webmail Login</span>
+              <span className={`min-w-0 break-words leading-snug font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>Webmail Login</span>
             </a>
             <Link
               href={`/${lang}`}
               onClick={closeSidebar}
-              className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-white/4 hover:text-foreground lg:py-2"
+              title={sidebarCollapsed ? dict.sidebar.backToSite : undefined}
+              className={`flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-white/4 hover:text-foreground lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
               <svg className="h-4 w-4 shrink-0 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
               </svg>
-              <span className="min-w-0 break-words leading-snug font-medium">{dict.sidebar.backToSite}</span>
+              <span className={`min-w-0 break-words leading-snug font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{dict.sidebar.backToSite}</span>
             </Link>
             <button
               onClick={handleLogout}
-              className="mt-0.5 flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-red-400/70 transition-all duration-150 hover:bg-red-500/8 hover:text-red-400 lg:py-2"
+              title={sidebarCollapsed ? dict.sidebar.logout : undefined}
+              className={`mt-0.5 flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-red-400/70 transition-all duration-150 hover:bg-red-500/8 hover:text-red-400 lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
               <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
               </svg>
-              <span className="font-medium">{dict.sidebar.logout}</span>
+              <span className={`font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{dict.sidebar.logout}</span>
             </button>
           </div>
         </aside>
@@ -431,6 +444,17 @@ export default function AdminShell({
 
             {/* Left: hamburger (mobile) + breadcrumb (desktop) + page title (mobile) */}
             <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed((value) => !value)}
+                aria-label={sidebarCollapsed ? dict.sidebar.expandNavigation : dict.sidebar.collapseNavigation}
+                title={sidebarCollapsed ? dict.sidebar.expandNavigation : dict.sidebar.collapseNavigation}
+                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted/70 transition-all duration-150 hover:border-gold/30 hover:bg-gold/10 hover:text-gold lg:flex"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d={sidebarCollapsed ? "M9 4.5l7.5 7.5-7.5 7.5" : "M15 4.5L7.5 12l7.5 7.5"} />
+                </svg>
+              </button>
 
               {/* Hamburger – mobile only */}
               <button

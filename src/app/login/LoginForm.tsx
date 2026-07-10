@@ -19,7 +19,9 @@ export default function LoginForm() {
         ? "Invalid email or password"
         : errorParam === "captcha"
           ? "Invalid captcha. Please try again."
-          : null;
+          : errorParam === "rate"
+            ? "Too many attempts. Please try again in 15 minutes."
+            : null;
   const { token: recaptchaToken, isLoading: recaptchaLoading, error: recaptchaError, ReCaptchaComponent } =
     useReCaptcha("admin_login");
   const [showPassword, setShowPassword] = useState(false);
@@ -63,8 +65,8 @@ export default function LoginForm() {
                 name="email"
                 type="email"
                 required
+                autoComplete="username"
                 className="w-full rounded-xl border border-white/10 bg-surface px-4 py-3 text-foreground placeholder:text-muted/50 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
-                placeholder="admin@apfel-park.de"
               />
             </div>
 
@@ -78,8 +80,8 @@ export default function LoginForm() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
+                  autoComplete="current-password"
                   className="w-full rounded-xl border border-white/10 bg-surface px-4 py-3 pr-10 text-foreground placeholder:text-muted/50 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
-                  placeholder="••••••••"
                 />
                 <button
                   type="button"

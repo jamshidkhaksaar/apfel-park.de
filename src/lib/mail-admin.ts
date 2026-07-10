@@ -157,7 +157,7 @@ export const listMailboxes = async (): Promise<MailboxRecord[]> => {
         isSystem: SYSTEM_MAILBOXES.has(email),
       };
     })
-    .filter((entry): entry is MailboxRecord => entry !== null)
+    .filter((entry): entry is MailboxRecord => entry !== null && entry.email.endsWith(`@${MAIL_DOMAIN}`))
     .sort((left, right) => left.email.localeCompare(right.email));
 };
 

@@ -587,6 +587,14 @@ function ModelGrid({
 }) {
   const deviceType = getDeviceType(family);
   const isPortrait = deviceType === "phone" || deviceType === "tablet" || deviceType === "watch";
+  const imageFrameClass =
+    deviceType === "phone"
+      ? "h-[88%] w-[68%] rounded-[2rem]"
+      : deviceType === "tablet"
+        ? "h-[88%] w-[84%] rounded-[1.75rem]"
+        : deviceType === "watch"
+          ? "h-[72%] w-[72%] rounded-[1.5rem]"
+          : "h-[84%] w-[86%] rounded-[1.5rem]";
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -615,16 +623,26 @@ function ModelGrid({
             {/* Device image area — portrait aspect for phone/tablet/watch, wider for laptop/pc/other */}
             <div className={`relative overflow-hidden bg-gradient-to-b from-white/5 to-transparent ${isPortrait ? "aspect-[3/4]" : "aspect-[4/3]"}`}>
               <div className="absolute inset-0 flex items-center justify-center p-4">
-                {model.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={model.image}
-                    alt={model.name}
-                    className="h-full w-auto max-w-full object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
-                  />
-                ) : (
-                  <DeviceSilhouette family={family} />
-                )}
+                <div className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.75rem] border p-3 shadow-inner transition-all duration-300 ${
+                  active
+                    ? "border-gold/35 bg-gold/10 shadow-gold/10"
+                    : "border-white/10 bg-white/[0.04] shadow-black/20 group-hover:border-gold/25 group-hover:bg-gold/[0.07]"
+                }`}>
+                  <div className="pointer-events-none absolute inset-0 rounded-[1.65rem] bg-gradient-to-br from-white/14 via-transparent to-black/20" />
+                  <div className="pointer-events-none absolute inset-x-5 top-3 h-px bg-white/25" />
+                  <div className={`relative z-10 flex items-center justify-center overflow-hidden bg-black/10 ${imageFrameClass}`}>
+                    {model.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={model.image}
+                        alt={model.name}
+                        className="h-full w-full rounded-[inherit] object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <DeviceSilhouette family={family} />
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
