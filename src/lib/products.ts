@@ -339,7 +339,7 @@ export async function getFeaturedProducts(locale: Locale = "de"): Promise<Produc
     : [];
 
   if (featuredIds.length === 0) {
-    return products.slice(0, 4).map((product) => ({ ...product, isFeatured: true }));
+    return [];
   }
 
   const byId = new Map(products.map((product) => [product.id, product] as const));
