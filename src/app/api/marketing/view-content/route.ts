@@ -8,6 +8,7 @@ type ViewContentPayload = {
   productId: string;
   title: string;
   category: string;
+  condition?: string;
   price?: number;
   locale?: string;
   slug?: string;
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
         productId: sanitizeInput(payload.productId),
         title: sanitizeInput(payload.title),
         category: sanitizeInput(payload.category),
+        condition: payload.condition ? sanitizeInput(payload.condition) : "new",
         price: typeof payload.price === "number" ? payload.price : undefined,
         locale,
       },

@@ -59,7 +59,7 @@ const productToRow = (product: Product): string[] => {
     product.title,
     getDescription(product),
     inventory > 0 ? "in stock" : "out of stock",
-    "new",
+    product.condition,
     `${product.price.toFixed(2)} EUR`,
     `${siteInfo.url}/de/store/${product.slug}`,
     absoluteUrl(product.image),

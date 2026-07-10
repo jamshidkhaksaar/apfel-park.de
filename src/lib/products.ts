@@ -3,6 +3,8 @@ import type { Locale } from "@/lib/i18n";
 
 export type ProductCategory = "smartphones" | "accessories" | "consoles" | "laptops";
 
+export type ProductCondition = "new" | "refurbished" | "used";
+
 export type ProductSpec = {
   label: string;
   value: string;
@@ -28,6 +30,8 @@ export type Product = {
   price: number;
   compareAtPrice?: number;
   category: ProductCategory;
+  condition: ProductCondition;
+  isOpenBox: boolean;
   image: string;
   images: string[];
   brand?: string;
@@ -64,6 +68,7 @@ type DbProduct = {
   price: number | string;
   compare_at_price: number | string | null;
   category: string;
+  condition?: string | null;
   brand: string | null;
   model: string | null;
   sku: string | null;
@@ -110,6 +115,13 @@ const normalizeCategory = (category: string): ProductCategory | null => {
   if (value === "console" || value === "consoles" || value === "gaming" || value === "game") return "consoles";
   if (value === "laptop" || value === "laptops") return "laptops";
   return null;
+};
+
+const normalizeCondition = (condition: string | null | undefined): ProductCondition => {
+  const value = (condition ?? "").toLowerCase().trim();
+  if (value === "refurbished") return "refurbished";
+  if (value === "used") return "used";
+  return "new";
 };
 
 const fallbackImageByCategory: Record<ProductCategory, string> = {
@@ -245,6 +257,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
 
   const price = toNumber(row.price) ?? 0;
   const compareAtPrice = toNumber(row.compare_at_price);
+  const condition = normalizeCondition(row.condition);
   const discountPercentage = computeDiscountPercentage(price, compareAtPrice);
   const images = row.images?.filter(Boolean) ?? [];
   const image = images[0] ?? fallbackImageByCategory[category];
@@ -258,6 +271,8 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     price,
     compareAtPrice,
     category,
+    condition,
+    isOpenBox: condition !== "new",
     image,
     images: images.length > 0 ? images : [image],
     brand: row.brand ?? undefined,
@@ -274,7 +289,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
 };
 
 const baseSelect =
-  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,brand,model,sku,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants";
+  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,brand,model,sku,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants";
 
 /**
  * Fetches products from the database.
@@ -355,6 +370,12 @@ export async function getRelatedProducts(product: Product, limit = 4, locale: Lo
 export async function getDiscountedProducts(limit = 6, locale: Locale = "de"): Promise<Product[]> {
   const products = await getProducts(undefined, undefined, locale);
   return products.filter((product) => product.hasDiscount).slice(0, limit);
+}
+
+export async function getOpenBoxProducts(limit?: number, locale: Locale = "de"): Promise<Product[]> {
+  const products = await getProducts(undefined, undefined, locale);
+  const openBox = products.filter((product) => product.isOpenBox);
+  return limit ? openBox.slice(0, limit) : openBox;
 }
 
 export async function getPromoProducts(pinnedIds?: string[], locale: Locale = "de"): Promise<Product[]> {

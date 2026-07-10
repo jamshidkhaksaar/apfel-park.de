@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import ConditionBadge from "./ConditionBadge";
 import { formatPrice } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
@@ -92,6 +93,7 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
                   {phone.brand && (
                     <p className="text-xs font-semibold uppercase tracking-wider text-gold">{phone.brand}</p>
                   )}
+                  <ConditionBadge condition={phone.condition} lang={lang} className="mt-1" />
                   <h3 className="mt-1 text-lg font-semibold text-foreground">{phone.title}</h3>
                   <p className="mt-2 text-sm text-muted">{phone.description}</p>
                   <div className="mt-4 flex items-end justify-between gap-3">

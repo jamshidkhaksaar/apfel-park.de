@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import ProductGallery from "@/components/ProductGallery";
 import { addStoredCartItem } from "@/components/checkout/cart";
+import ConditionBadge from "@/components/ConditionBadge";
 import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
 import type { Product, ProductVariant } from "@/lib/products";
@@ -99,6 +100,7 @@ export default function ProductDetailExperience({ locale, product }: Props) {
       item_id: product.id,
       item_name: product.title,
       item_category: product.category,
+      content_condition: product.condition,
       quantity: 1,
       content_ids: [product.id],
       content_type: "product",
@@ -117,6 +119,7 @@ export default function ProductDetailExperience({ locale, product }: Props) {
         productId: product.id,
         title: product.title,
         category: product.category,
+        condition: product.condition,
         price: activePrice,
         locale,
         slug: product.slug,
@@ -173,6 +176,7 @@ export default function ProductDetailExperience({ locale, product }: Props) {
                 -{activeDiscount}%
               </span>
             ) : null}
+            <ConditionBadge condition={product.condition} lang={locale} />
           </div>
 
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">

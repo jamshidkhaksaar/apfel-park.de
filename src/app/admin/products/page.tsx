@@ -13,6 +13,7 @@ type ProductRow = {
   subtitle: string | null;
   description: string | null;
   category: string;
+  condition: string | null;
   brand: string | null;
   model: string | null;
   sku: string | null;
@@ -98,6 +99,7 @@ const mapProduct = (row: ProductRow): AdminProductRecord => ({
   subtitle: row.subtitle ?? "",
   description: row.description ?? "",
   category: row.category,
+  condition: row.condition ?? "new",
   brand: row.brand ?? "",
   model: row.model ?? "",
   sku: row.sku ?? "",
@@ -125,7 +127,7 @@ export default async function ProductsPage() {
   const [{ data }, { data: featuredRow }] = await Promise.all([
     admin
       .from<ProductRow[]>("products")
-      .select("id,title,subtitle,description,category,brand,model,sku,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at")
+      .select("id,title,subtitle,description,category,condition,brand,model,sku,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at")
       .order("created_at", { ascending: false }),
     admin
       .from<FeaturedProductsRow>("store_settings")

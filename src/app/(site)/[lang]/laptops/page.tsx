@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import ConditionBadge from "../../../../components/ConditionBadge";
 import PageIntro from "../../../../components/PageIntro";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
@@ -82,6 +83,7 @@ export default async function LaptopsPage({ params }: { params: Promise<{ lang: 
                     />
                   </div>
                   <div className="p-6">
+                    <ConditionBadge condition={product.condition} lang={lang as Locale} className="mb-1" />
                     <h3 className="text-lg font-bold text-foreground">{product.title}</h3>
                     <p className="mt-2 text-sm text-muted">{product.description}</p>
                     <div className="mt-4 flex items-center justify-between">

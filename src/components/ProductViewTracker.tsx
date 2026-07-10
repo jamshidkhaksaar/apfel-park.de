@@ -11,6 +11,7 @@ type ProductViewTrackerProps = {
   price?: number;
   locale: "de" | "en";
   slug: string;
+  condition?: string;
 };
 
 export default function ProductViewTracker({
@@ -20,6 +21,7 @@ export default function ProductViewTracker({
   price,
   locale,
   slug,
+  condition,
 }: ProductViewTrackerProps) {
   const sentRef = useRef(false);
   const attemptsRef = useRef(0);
@@ -45,6 +47,7 @@ export default function ProductViewTracker({
         content_type: "product",
         content_name: title,
         content_category: category,
+        content_condition: condition ?? "new",
         contents: [{ id: productId, quantity: 1, item_price: price ?? 0 }],
       }, `view-${productId}`);
 
@@ -60,6 +63,7 @@ export default function ProductViewTracker({
           price,
           locale,
           slug,
+          condition: condition ?? "new",
         }),
         keepalive: true,
       }).catch(() => {
@@ -80,7 +84,7 @@ export default function ProductViewTracker({
     return () => {
       window.removeEventListener(CONSENT_EVENT_NAME, handleConsentChange as EventListener);
     };
-  }, [category, locale, price, productId, slug, title]);
+  }, [category, condition, locale, price, productId, slug, title]);
 
   return null;
 }

@@ -99,6 +99,7 @@ export default async function ProductDetailPage({
         productId={product.id}
         title={product.title}
         category={product.category}
+        condition={product.condition}
         price={product.price}
         locale={locale}
         slug={product.slug}

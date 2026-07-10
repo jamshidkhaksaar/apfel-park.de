@@ -29,6 +29,7 @@ export type AdminProductRecord = {
   subtitle: string;
   description: string;
   category: string;
+  condition: string;
   brand: string;
   model: string;
   sku: string;
@@ -73,6 +74,7 @@ type ProductFormState = {
   subtitle: string;
   description: string;
   category: string;
+  condition: string;
   brand: string;
   model: string;
   sku: string;
@@ -92,20 +94,21 @@ const imageSlotLabels = {
   en: ["Front", "Back", "Side", "Extra"],
 } as const;
 
-const categoryOptions = ["all", "smartphones", "accessories", "consoles", "laptops", "discounted", "inactive"] as const;
+const categoryOptions = ["all", "smartphones", "accessories", "consoles", "laptops", "open-box", "discounted", "inactive"] as const;
 
 const categoryLabel = (locale: AdminLocale, category: string) => {
-  const labels = {
+  const labels: Record<string, string> = {
     smartphones: locale === "de" ? "Smartphones" : "Smartphones",
     accessories: locale === "de" ? "Zubehör" : "Accessories",
     consoles: locale === "de" ? "Gaming" : "Gaming",
     laptops: locale === "de" ? "Laptops" : "Laptops",
+    "open-box": locale === "de" ? "Open-Box" : "Open-Box",
     discounted: locale === "de" ? "Rabatt" : "Discounted",
     inactive: locale === "de" ? "Inaktiv" : "Inactive",
     all: locale === "de" ? "Alle" : "All",
   };
 
-  return labels[category as keyof typeof labels] ?? category;
+  return labels[category] ?? category;
 };
 
 const isExpiredMetaTokenError = (error: string | undefined) => {
@@ -166,6 +169,7 @@ const productToForm = (product: AdminProductRecord): ProductFormState => ({
   subtitle: product.subtitle,
   description: product.description,
   category: product.category,
+  condition: product.condition || "new",
   brand: product.brand,
   model: product.model,
   sku: product.sku,
@@ -260,6 +264,7 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
       if (activeCategory === "all") return true;
       if (activeCategory === "inactive") return !product.isActive;
       if (activeCategory === "discounted") return Boolean(discountPercentage(product.price, product.compareAtPrice));
+      if (activeCategory === "open-box") return product.condition !== "new";
       return product.category === activeCategory;
     });
   }, [records, search, activeCategory]);
@@ -275,6 +280,7 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
     subtitle: "",
     description: "",
     category: "smartphones",
+    condition: "new",
     brand: "",
     model: "",
     sku: "",
@@ -379,6 +385,7 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
             subtitle: formState.subtitle,
             description: formState.description,
             category: formState.category,
+            condition: formState.condition,
             brand: formState.brand,
             model: formState.model,
             sku: formState.sku,
@@ -408,6 +415,7 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
           subtitle: formState.subtitle,
           description: formState.description,
           category: formState.category,
+          condition: formState.condition,
           brand: formState.brand,
           model: formState.model,
           sku: formState.sku,
@@ -693,6 +701,35 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Lager" : "Stock"}</span>
                       <input type="number" step="1" value={formState.stock} onChange={(event) => setFormState((prev) => ({ ...prev, stock: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
                     </label>
+                  </div>
+
+                  <div className="rounded-2xl border border-border/60 bg-surface/60 px-4 py-3">
+                    <label className="flex items-center gap-3 text-sm text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={formState.condition !== "new"}
+                        onChange={(event) =>
+                          setFormState((prev) => ({
+                            ...prev,
+                            condition: event.target.checked ? (prev.condition === "new" ? "refurbished" : prev.condition) : "new",
+                          }))
+                        }
+                      />
+                      {locale === "de" ? "Open-Box (geöffnetes Vorführ-/Retourengerät)" : "Open-Box (opened display/return unit)"}
+                    </label>
+                    {formState.condition !== "new" ? (
+                      <label className="mt-3 flex items-center gap-3 text-sm text-foreground">
+                        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zustand" : "Condition"}</span>
+                        <select
+                          value={formState.condition}
+                          onChange={(event) => setFormState((prev) => ({ ...prev, condition: event.target.value }))}
+                          className="rounded-2xl border border-border/60 bg-surface/70 px-4 py-2 text-sm text-foreground"
+                        >
+                          <option value="refurbished">{locale === "de" ? "Generalüberholt" : "Refurbished"}</option>
+                          <option value="used">{locale === "de" ? "Gebraucht" : "Used"}</option>
+                        </select>
+                      </label>
+                    ) : null}
                   </div>
 
                   <div className="grid gap-4 xl:grid-cols-2">

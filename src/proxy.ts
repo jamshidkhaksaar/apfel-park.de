@@ -1,7 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const isPublicStorePath = (pathname: string) => {
-  return /^\/(?:de|en)\/store(?:\/.*)?$/.test(pathname);
+  // Covers the normal category store (/de/store...) and the Open-Box catalog
+  // (/de/open-box, /en/open-box). Open-box items also surface on their normal
+  // category page, but the dedicated Open-Box page must obey the store
+  // maintenance toggle and avoid being redirected away.
+  return (
+    /^\/(?:de|en)\/store(?:\/.*)?$/.test(pathname) ||
+    /^\/(?:de|en)\/open-box(?:\/.*)?$/.test(pathname)
+  );
 };
 
 const isBypassedPath = (pathname: string) => {

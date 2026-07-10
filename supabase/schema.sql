@@ -20,6 +20,7 @@ create table public.products (
   feature_bullets text[],
   specs jsonb default '[]'::jsonb,
   is_active boolean default true,
+  condition text not null default 'new', -- 'new' | 'refurbished' | 'used'; non-'new' = Open-Box
   slug text unique
 );
 

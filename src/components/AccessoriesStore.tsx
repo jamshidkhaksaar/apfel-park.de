@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
+import ConditionBadge from "./ConditionBadge";
 import { formatPrice } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
@@ -74,6 +75,7 @@ export default function AccessoriesStore({ lang, products }: AccessoriesStorePro
                   />
                 </div>
                 <div className="p-4">
+                  <ConditionBadge condition={product.condition} lang={lang} className="mb-1" />
                   <h3 className="text-base font-semibold text-foreground">{product.title}</h3>
                   <p className="mt-2 line-clamp-2 text-sm text-muted">{product.description}</p>
                   <div className="mt-4 flex items-center justify-between">

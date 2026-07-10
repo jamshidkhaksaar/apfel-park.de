@@ -23,6 +23,7 @@ type DraftPayload = {
   price?: number;
   compareAtPrice?: number | null;
   category?: string;
+  condition?: string;
   brand?: string;
   model?: string;
   sku?: string;
@@ -60,6 +61,13 @@ const normalizeCategory = (category: string): string | null => {
   if (value === "console" || value === "consoles" || value === "gaming") return "consoles";
   if (value === "laptop" || value === "laptops") return "laptops";
   return null;
+};
+
+const normalizeCondition = (condition: string | undefined): "new" | "refurbished" | "used" => {
+  const value = (condition ?? "").toLowerCase().trim();
+  if (value === "refurbished") return "refurbished";
+  if (value === "used") return "used";
+  return "new";
 };
 
 const isAuthorized = (request: NextRequest): boolean => {
@@ -140,6 +148,7 @@ export async function POST(request: NextRequest) {
     const model = sanitizeInput(typeof payload.model === "string" ? payload.model : "");
     const sku = sanitizeInput(typeof payload.sku === "string" ? payload.sku : "");
     const category = payload.category ? normalizeCategory(payload.category) : null;
+    const condition = normalizeCondition(payload.condition);
     const price = parsePrice(payload.price);
     const compareAtPrice = parsePrice(payload.compareAtPrice);
     const stock = payload.stock === undefined ? 0 : Number(payload.stock);
@@ -216,9 +225,9 @@ export async function POST(request: NextRequest) {
         "images", "variants",
         "feature_bullets", "feature_bullets_i18n",
         "specs", "specs_i18n",
-        "is_active"
+        "is_active", "condition"
       ) VALUES (
-        $1,$2,$3,$4::jsonb,$5::jsonb,$6::jsonb,$7,$8,$9,$10,$11,$12,$13,$14,$15,'[]'::jsonb,$16,$17::jsonb,$18::jsonb,$19::jsonb,$20
+        $1,$2,$3,$4::jsonb,$5::jsonb,$6::jsonb,$7,$8,$9,$10,$11,$12,$13,$14,$15,'[]'::jsonb,$16,$17::jsonb,$18::jsonb,$19::jsonb,$20,$21
       )
       RETURNING "id","slug"`,
       [
@@ -242,6 +251,7 @@ export async function POST(request: NextRequest) {
         JSON.stringify(specsBase),
         JSON.stringify(specs),
         isActive,
+        condition,
       ],
     );
 

@@ -11,6 +11,7 @@ type FormState = {
   subtitle: string;
   description: string;
   category: "smartphones" | "accessories" | "consoles" | "laptops";
+  condition: string;
   price: string;
   compareAtPrice: string;
   stock: string;
@@ -43,6 +44,7 @@ const initialState: FormState = {
   subtitle: "",
   description: "",
   category: "smartphones",
+  condition: "new",
   price: "",
   compareAtPrice: "",
   stock: "0",
@@ -193,6 +195,7 @@ export default function ProductCreateForm() {
           subtitle: state.subtitle,
           description: state.description,
           category: state.category,
+          condition: state.condition,
           price: Number(state.price),
           compareAtPrice: state.compareAtPrice ? Number(state.compareAtPrice) : null,
           stock: Number(state.stock),
@@ -366,6 +369,35 @@ export default function ProductCreateForm() {
             className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
           />
         </div>
+      </div>
+
+      <div className="rounded-xl border border-border/60 bg-black/20 px-4 py-3">
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            checked={state.condition !== "new"}
+            onChange={(event) =>
+              setState((prev) => ({
+                ...prev,
+                condition: event.target.checked ? (prev.condition === "new" ? "refurbished" : prev.condition) : "new",
+              }))
+            }
+          />
+          {dict.productForm.openBox}
+        </label>
+        {state.condition !== "new" ? (
+          <label className="mt-3 flex items-center gap-3 text-sm text-muted">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em]">{dict.productForm.condition}</span>
+            <select
+              value={state.condition}
+              onChange={(event) => setState((prev) => ({ ...prev, condition: event.target.value }))}
+              className="rounded-xl border border-border/60 bg-black/30 px-4 py-2 text-sm text-foreground"
+            >
+              <option value="refurbished">{dict.productForm.conditionRefurbished}</option>
+              <option value="used">{dict.productForm.conditionUsed}</option>
+            </select>
+          </label>
+        ) : null}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

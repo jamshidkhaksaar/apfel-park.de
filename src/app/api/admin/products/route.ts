@@ -16,6 +16,7 @@ type ProductPayload = {
   price?: number;
   compareAtPrice?: number | null;
   category?: string;
+  condition?: string;
   brand?: string;
   model?: string;
   stock?: number;
@@ -52,6 +53,13 @@ const normalizeCategory = (category: string): string | null => {
   if (value === "console" || value === "consoles" || value === "gaming") return "consoles";
   if (value === "laptop" || value === "laptops") return "laptops";
   return null;
+};
+
+const normalizeCondition = (condition: string | undefined): "new" | "refurbished" | "used" => {
+  const value = (condition ?? "").toLowerCase().trim();
+  if (value === "refurbished") return "refurbished";
+  if (value === "used") return "used";
+  return "new";
 };
 
 const sanitizeStringArray = (items: unknown, maxLength: number) => {
@@ -194,6 +202,7 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   const model = payload.model ? sanitizeInput(payload.model) : null;
   const sku = payload.sku ? sanitizeInput(payload.sku) : null;
   const category = payload.category ? normalizeCategory(payload.category) : null;
+  const condition = normalizeCondition(payload.condition);
   const price = parsePrice(payload.price);
   const compareAtPrice = parsePrice(payload.compareAtPrice);
   const stock = payload.stock === undefined ? 0 : Number(payload.stock);
@@ -213,6 +222,7 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
     price,
     compareAtPrice,
     stock,
+    condition,
     images,
     variants,
     featureBullets,
@@ -304,9 +314,10 @@ export async function POST(request: NextRequest) {
         "variants",
         "feature_bullets",
         "specs",
-        "is_active"
+        "is_active",
+        "condition"
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17
       )
       RETURNING "id"`,
       [
@@ -326,6 +337,7 @@ export async function POST(request: NextRequest) {
         product.featureBullets,
         JSON.stringify(product.specs),
         product.isActive,
+        product.condition,
       ],
     );
 
@@ -401,7 +413,8 @@ export async function PATCH(request: NextRequest) {
         "variants" = $14::jsonb,
         "feature_bullets" = $15,
         "specs" = $16::jsonb,
-        "is_active" = $17
+        "is_active" = $17,
+        "condition" = $18
        WHERE "id" = $1`,
       [
         payload.id,
@@ -421,6 +434,7 @@ export async function PATCH(request: NextRequest) {
         product.featureBullets,
         JSON.stringify(product.specs),
         product.isActive,
+        product.condition,
       ],
     );
 

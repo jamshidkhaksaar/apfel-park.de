@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { type Product } from "../../lib/products";
+import ConditionBadge from "../ConditionBadge";
 import { formatPrice } from "../../lib/format";
 import { type Locale } from "../../lib/i18n";
 
@@ -155,6 +156,7 @@ export default function StoreGrid({ products, lang }: StoreGridProps) {
 
               {/* Info */}
               <div className="flex flex-1 flex-col p-4">
+                <ConditionBadge condition={product.condition} lang={lang} className="mb-1 self-start" />
                 <h3 className="mb-1 text-base font-bold leading-tight text-foreground transition-colors group-hover:text-gold line-clamp-1">
                   {product.title}
                 </h3>

@@ -49,6 +49,7 @@ type CatalogInteractionPayload = {
   productId: string;
   title: string;
   category: string;
+  condition?: string;
   price?: number | null;
   currency?: string;
   locale?: string | null;
@@ -401,6 +402,7 @@ const sendMetaViewContentEvent = async (
           value: payload.price ?? 0,
           content_name: payload.title,
           content_category: payload.category,
+          content_condition: payload.condition || "new",
           content_ids: [payload.productId],
           content_type: "product",
           locale: payload.locale || undefined,
@@ -460,6 +462,7 @@ const sendTikTokViewContentEvent = async (
           content_id: payload.productId,
           content_name: payload.title,
           content_category: payload.category,
+          content_condition: payload.condition || "new",
           locale: payload.locale || undefined,
         },
       },
