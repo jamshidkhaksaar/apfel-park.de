@@ -19,6 +19,7 @@ type ReCaptchaProps = {
   onError?: (error: string) => void;
   onLoad?: () => void;
   requireConsent?: boolean;
+  executeRef?: { current: (() => Promise<string>) | null };
 };
 
 const getConsentErrorMessage = () => {
@@ -68,14 +69,17 @@ const getReCaptchaSiteKey = async (): Promise<{ siteKey: string; enabled: boolea
  * 
  * The token should be sent with your form submission and verified server-side.
  */
-export default function ReCaptcha({ action, onVerify, onError, onLoad, requireConsent = true }: ReCaptchaProps) {
+export default function ReCaptcha({ action, onVerify, onError, onLoad, requireConsent = true, executeRef }: ReCaptchaProps) {
   const [siteKey, setSiteKey] = useState<string>("");
   const [enabled, setEnabled] = useState<boolean>(false);
-  const [consentMode, setConsentMode] = useState<ConsentMode>("unset");
+  const [consentMode, setConsentMode] = useState<ConsentMode>(() => readConsentMode());
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   const executedRef = useRef(false);
+
+  const consentBlocked = Boolean(enabled && siteKey && requireConsent && consentMode !== "external");
+  const consentMessage = consentBlocked ? getConsentErrorMessage() : null;
 
   // Load settings from database
   useEffect(() => {
@@ -102,8 +106,6 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad, requireCo
   }, [onVerify, onError, onLoad]);
 
   useEffect(() => {
-    setConsentMode(readConsentMode());
-
     const handleChange = (event: Event) => {
       setConsentMode((event as CustomEvent<ConsentMode>).detail ?? readConsentMode());
       setLoaded(false);
@@ -116,22 +118,24 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad, requireCo
     };
   }, []);
 
+  // Notify the parent while consent is missing
+  useEffect(() => {
+    if (consentMessage) {
+      onError?.(consentMessage);
+    }
+  }, [consentMessage, onError]);
+
   // Load reCAPTCHA script
   useEffect(() => {
-    if (!enabled || !siteKey || loaded) return;
-
-    if (requireConsent && consentMode !== "external") {
-      const message = getConsentErrorMessage();
-      setError(message);
-      onError?.(message);
-      return;
-    }
-    setError(null);
+    if (!enabled || !siteKey || loaded || consentBlocked) return;
 
     // Check if script already exists
     if (document.querySelector(`script[src*="recaptcha"]`)) {
-      setLoaded(true);
-      return;
+      const timeoutId = window.setTimeout(() => {
+        setLoaded(true);
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
     }
 
     const script = document.createElement("script");
@@ -155,61 +159,95 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad, requireCo
     return () => {
       // Cleanup on unmount (optional - usually want to keep script loaded)
     };
-  }, [consentMode, enabled, siteKey, loaded, onError, onLoad, requireConsent]);
+  }, [consentBlocked, enabled, siteKey, loaded, onError, onLoad]);
 
-  // Execute reCAPTCHA when ready
+  // Request a fresh token from Google. reCAPTCHA v3 tokens expire after
+  // 2 minutes, so callers should execute as close to form submission as possible.
+  const requestFreshToken = useCallback(async (): Promise<string> => {
+    if (!enabled || !siteKey) return "";
+    if (requireConsent && consentMode !== "external") return "";
+
+    await new Promise<void>((resolve) => {
+      if (window.grecaptcha) {
+        window.grecaptcha.ready(resolve);
+      } else {
+        // Wait for grecaptcha to be available
+        const checkInterval = setInterval(() => {
+          if (window.grecaptcha) {
+            clearInterval(checkInterval);
+            window.grecaptcha.ready(resolve);
+          }
+        }, 100);
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          resolve();
+        }, 10000);
+      }
+    });
+
+    if (!window.grecaptcha) {
+      throw new Error("reCAPTCHA not available");
+    }
+
+    const token = await window.grecaptcha.execute(siteKey, { action });
+    onVerify(token);
+    return token;
+  }, [enabled, siteKey, consentMode, action, onVerify, requireConsent]);
+
+  // Execute reCAPTCHA once when ready (prefetch for forms that don't
+  // execute at submit time)
   const executeReCaptcha = useCallback(async () => {
-    if (!enabled || !siteKey || executedRef.current) return;
-    if (requireConsent && consentMode !== "external") return;
+    if (executedRef.current) return;
 
     try {
-      await new Promise<void>((resolve) => {
-        if (window.grecaptcha) {
-          window.grecaptcha.ready(resolve);
-        } else {
-          // Wait for grecaptcha to be available
-          const checkInterval = setInterval(() => {
-            if (window.grecaptcha) {
-              clearInterval(checkInterval);
-              window.grecaptcha.ready(resolve);
-            }
-          }, 100);
-
-          // Timeout after 10 seconds
-          setTimeout(() => {
-            clearInterval(checkInterval);
-            resolve();
-          }, 10000);
-        }
-      });
-
-      if (!window.grecaptcha) {
-        throw new Error("reCAPTCHA not available");
-      }
-
-      const token = await window.grecaptcha.execute(siteKey, { action });
+      await requestFreshToken();
       executedRef.current = true;
-      onVerify(token);
     } catch (err) {
       console.error("reCAPTCHA execution error:", err);
       setError("reCAPTCHA verification failed");
       onError?.("reCAPTCHA execution failed");
     }
-  }, [enabled, siteKey, consentMode, action, onVerify, onError, requireConsent]);
+  }, [requestFreshToken, onError]);
+
+  // Expose an on-demand executor so forms can get a fresh token at submit time
+  useEffect(() => {
+    if (!executeRef) return;
+
+    executeRef.current = async () => {
+      try {
+        return await requestFreshToken();
+      } catch (err) {
+        console.error("reCAPTCHA execution error:", err);
+        return "";
+      }
+    };
+
+    return () => {
+      executeRef.current = null;
+    };
+  }, [executeRef, requestFreshToken]);
 
   // Execute when loaded
   useEffect(() => {
     if (loaded && enabled && siteKey && (!requireConsent || consentMode === "external")) {
-      executeReCaptcha();
+      const timeoutId = window.setTimeout(() => {
+        void executeReCaptcha();
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
     }
   }, [loaded, enabled, siteKey, consentMode, executeReCaptcha, requireConsent]);
 
   // Don't render anything visible for reCAPTCHA v3
   // The badge is shown by Google automatically (can be hidden with CSS if disclosed in privacy policy)
-  if (error) {
+  const displayError = error ?? consentMessage;
+
+  if (displayError) {
     return (
       <div className="text-xs text-red-400">
-        {error}
+        {displayError}
       </div>
     );
   }
@@ -228,8 +266,11 @@ export function useReCaptcha(action: string, options?: { requireConsent?: boolea
   const [token, setToken] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const executeRef = useRef<(() => Promise<string>) | null>(null);
+  const tokenRef = useRef<string>("");
 
   const handleVerify = useCallback((newToken: string) => {
+    tokenRef.current = newToken;
     setToken(newToken);
     setIsLoading(false);
   }, []);
@@ -245,6 +286,29 @@ export function useReCaptcha(action: string, options?: { requireConsent?: boolea
 
   const requireConsent = options?.requireConsent ?? true;
 
+  /**
+   * Execute reCAPTCHA on demand and return a fresh token.
+   * Prefer this at form submit time: v3 tokens expire after 2 minutes,
+   * so the prefetched `token` may already be stale. Falls back to the
+   * last known token (or "") if execution fails or Google is unreachable.
+   */
+  const execute = useCallback(async (): Promise<string> => {
+    if (!executeRef.current) {
+      return tokenRef.current;
+    }
+
+    try {
+      return await Promise.race([
+        executeRef.current(),
+        new Promise<string>((_, reject) => {
+          setTimeout(() => reject(new Error("reCAPTCHA execute timed out")), 8000);
+        }),
+      ]);
+    } catch {
+      return tokenRef.current;
+    }
+  }, []);
+
   const ReCaptchaComponent = useCallback(() => (
     <ReCaptcha
       action={action}
@@ -252,6 +316,7 @@ export function useReCaptcha(action: string, options?: { requireConsent?: boolea
       onError={handleError}
       onLoad={handleLoad}
       requireConsent={requireConsent}
+      executeRef={executeRef}
     />
   ), [action, handleVerify, handleError, handleLoad, requireConsent]);
 
@@ -259,6 +324,7 @@ export function useReCaptcha(action: string, options?: { requireConsent?: boolea
     token,
     isLoading,
     error,
+    execute,
     ReCaptchaComponent,
   };
 }

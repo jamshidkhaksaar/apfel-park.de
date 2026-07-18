@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { useReCaptcha } from "@/components/ReCaptcha";
 
@@ -22,10 +22,34 @@ export default function LoginForm() {
           : errorParam === "rate"
             ? "Too many attempts. Please try again in 15 minutes."
             : null;
-  const { token: recaptchaToken, error: recaptchaError, ReCaptchaComponent } =
-    useReCaptcha("admin_login", { requireConsent: false });
+  const {
+    token: recaptchaToken,
+    error: recaptchaError,
+    execute: executeReCaptcha,
+    ReCaptchaComponent,
+  } = useReCaptcha("admin_login", { requireConsent: false });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const tokenInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    const form = event.currentTarget;
+
+    // reCAPTCHA v3 tokens expire after 2 minutes, so request a fresh token
+    // at submit time — the prefetched token may already be stale.
+    const freshToken = await executeReCaptcha();
+    if (tokenInputRef.current) {
+      tokenInputRef.current.value = freshToken;
+    }
+
+    // Native submit: bypasses this React handler but keeps the browser's
+    // full-page POST + redirect flow the login route expects.
+    form.submit();
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -45,10 +69,15 @@ export default function LoginForm() {
             action="/api/admin/login"
             method="post"
             className="space-y-6"
-            onSubmit={() => setIsSubmitting(true)}
+            onSubmit={handleSubmit}
           >
             <input type="hidden" name="redirectTo" value={redirectTo} />
-            <input type="hidden" name="recaptchaToken" value={recaptchaToken} />
+            <input
+              ref={tokenInputRef}
+              type="hidden"
+              name="recaptchaToken"
+              defaultValue={recaptchaToken}
+            />
             
             {routeError && (
               <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
