@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-03-19 - Animation Frame Cancellation in Throttled Listeners
+**Learning:** `requestAnimationFrame` used to throttle scroll event listeners (like in `BackToTopButton`) leaves dangling animation frames if not properly canceled on component unmount, potentially causing memory leaks and React state updates on unmounted components.
+**Action:** Always store the return ID from `requestAnimationFrame` (`let frameId: number | undefined;`) and explicitly call `window.cancelAnimationFrame(frameId)` in the `useEffect` cleanup function. If an initial frame check is also used alongside a continuous event listener, ensure they use separate IDs so the initial ID isn't overwritten before cleanup.
