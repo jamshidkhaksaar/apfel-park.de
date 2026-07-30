@@ -29,6 +29,7 @@ export const isSafeRedirect = (value: string | null | undefined): boolean => {
   if (!value) return false;
   if (!value.startsWith("/")) return false;
   if (value.startsWith("//")) return false;
+  if (value.startsWith("/\\")) return false; // Prevent bypass using backslash
   if (/[\u0000-\u001F\u007F]/.test(value)) return false;
   return true;
 };
