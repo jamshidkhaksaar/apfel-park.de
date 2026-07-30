@@ -130,10 +130,10 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
                   <div className="review-bubble-shell relative rounded-[2rem] border border-border bg-gradient-to-br from-surface to-surface-strong p-6 shadow-[0_10px_32px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-500 ease-out group-hover:-translate-y-2 group-hover:border-gold/30 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.3),0_0_30px_rgba(212,158,66,0.18),inset_0_1px_0_rgba(212,158,66,0.08)]">
                   
                   {/* Inner Glow Effect */}
-                  <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-br from-gold/5 via-transparent to-amber/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-br from-gold/5 via-transparent to-amber/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100" />
                   
                   {/* Shine Effect on Hover */}
-                  <div className="pointer-events-none absolute -inset-px rounded-[2rem] opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{
+                  <div className="pointer-events-none absolute -inset-px rounded-[2rem] opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100" style={{
                     background: "linear-gradient(135deg, rgba(245,158,11,0.2) 0%, transparent 50%, transparent 100%)"
                   }} />
 
@@ -170,8 +170,8 @@ export default function TestimonialsCarousel({ reviews, lang }: TestimonialsCaro
                     <div className="flex items-center gap-3">
                       {/* Avatar with Gold Ring */}
                       <div className="relative">
-                        <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-gold/60 to-amber/60 opacity-0 blur-sm transition-all duration-500 group-hover:opacity-100" />
-                        <div className="relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-gold to-amber text-sm font-bold text-background shadow-lg transition-transform duration-500 group-hover:scale-110">
+                        <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-gold/60 to-amber/60 opacity-0 blur-sm transition-all duration-500 group-hover:opacity-100 group-focus-visible:opacity-100" />
+                        <div className="relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-gold to-amber text-sm font-bold text-background shadow-lg transition-transform duration-500 group-hover:scale-110 group-focus-visible:scale-110">
                           {getInitials(review.name)}
                         </div>
                       </div>

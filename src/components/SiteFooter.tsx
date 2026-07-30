@@ -87,7 +87,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
                     href={`/${lang}${item.path}`} 
                     className="group flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
                   >
-                    <svg className="h-3 w-3 text-gold opacity-0 transition group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="h-3 w-3 text-gold opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                     {item.label}
@@ -110,7 +110,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
                     href={`/${lang}${item.path}`} 
                     className="group flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
                   >
-                    <svg className="h-3 w-3 text-amber opacity-0 transition group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="h-3 w-3 text-amber opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                     {item.label}
