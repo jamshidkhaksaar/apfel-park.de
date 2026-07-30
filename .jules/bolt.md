@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-02-05 - requestAnimationFrame Unmount Leak
+**Learning:** When using `window.requestAnimationFrame` inside a React `useEffect` (e.g. for scroll listeners), failing to capture the returned `frameId` and calling `cancelAnimationFrame` in the cleanup function can lead to memory leaks and errors if the component unmounts while the frame is still pending.
+**Action:** Always store the return value of `requestAnimationFrame` in a typed variable (`let frameId: number | undefined;`) and ensure `window.cancelAnimationFrame(frameId)` is called in the `useEffect` cleanup closure to prevent zombie frames from executing on unmounted components.

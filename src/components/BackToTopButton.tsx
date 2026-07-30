@@ -10,10 +10,12 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
 
   useEffect(() => {
     let ticking = false;
+    let frameId: number | undefined;
+    let initialFrameId: number | undefined;
 
     const onScroll = () => {
       if (!ticking) {
-        window.requestAnimationFrame(() => {
+        frameId = window.requestAnimationFrame(() => {
           setVisible(window.scrollY > window.innerHeight);
           ticking = false;
         });
@@ -21,8 +23,24 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
       }
     };
 
+    // ⚡ Bolt: Initial check deferred to avoid synchronous setState in useEffect.
+    // We track this initialFrameId separately so that an immediate scroll event
+    // doesn't overwrite it, preventing us from canceling the initial frame on unmount.
+    initialFrameId = window.requestAnimationFrame(() => {
+      setVisible(window.scrollY > window.innerHeight);
+    });
+
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      // ⚡ Bolt: Cleanup pending animation frames to prevent memory leaks and state updates on unmounted component
+      if (frameId !== undefined) {
+        window.cancelAnimationFrame(frameId);
+      }
+      if (initialFrameId !== undefined) {
+        window.cancelAnimationFrame(initialFrameId);
+      }
+    };
   }, []);
 
   const showTooltip = visible && (isHovered || isFocused);
