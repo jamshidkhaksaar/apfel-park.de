@@ -10,10 +10,11 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
 
   useEffect(() => {
     let ticking = false;
+    let frameId: number | undefined;
 
     const onScroll = () => {
       if (!ticking) {
-        window.requestAnimationFrame(() => {
+        frameId = window.requestAnimationFrame(() => {
           setVisible(window.scrollY > window.innerHeight);
           ticking = false;
         });
@@ -22,7 +23,14 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+
+    // ⚡ Bolt: Memory Leak Fix
+    // Impact: Cancels pending requestAnimationFrame callbacks when the component unmounts,
+    // avoiding unnecessary layout trashing, React warnings, and dead component state updates.
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frameId !== undefined) window.cancelAnimationFrame(frameId);
+    };
   }, []);
 
   const showTooltip = visible && (isHovered || isFocused);
