@@ -13,3 +13,7 @@
 ## 2026-02-04 - Hardcoded Data in Client Components
 **Learning:** Hardcoding large static datasets (like product inventories) directly within Client Components bloats the JavaScript bundle unnecessarily.
 **Action:** Extract such data to shared libraries (`src/lib`) or databases, fetch it via Server Components, and pass it down as props. This keeps the client bundle lightweight and allows for easier data management.
+
+## 2026-02-12 - Missing cancelAnimationFrame
+**Learning:** Attaching `requestAnimationFrame` inside a `useEffect` scroll event listener without a corresponding `cancelAnimationFrame` in the cleanup function can cause memory leaks and state updates on unmounted components in React, leading to performance degradation and console errors.
+**Action:** Always capture the `frameId` returned by `requestAnimationFrame` when using it in event listeners, and clear it using `cancelAnimationFrame` in the component unmount/cleanup phase.
