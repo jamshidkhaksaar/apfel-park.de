@@ -25,3 +25,7 @@
 ## 2026-02-14 - [Radio Group Pattern]
 **Learning:** When offering mutually exclusive choices (like languages), use the Radio Group pattern (`role='radiogroup'` + `aria-checked`) instead of Toggle Buttons (`aria-pressed`), as it better communicates the 'one-of-many' selection model to assistive technologies.
 **Action:** Use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` on options for exclusive selections.
+
+## 2026-02-15 - [Notification Badge Accessibility]
+**Learning:** Uncontextualized numbers in notification badges (like a simple "1") are read by screen readers without any explanation of what they represent, confusing visually impaired users.
+**Action:** Always wrap the visual number in `aria-hidden="true"` and include a neighboring `sr-only` element that provides full context (e.g. "1 unread message").
