@@ -106,6 +106,13 @@ fi
 code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/xx" || true)"
 [ "$code" = "404" ] || log "WARNING: /xx returned $code, expected 404"
 
+# / must redirect to /de PERMANENTLY (308). A 307 tells Google to keep the bare
+# domain indexed instead of consolidating onto /de, which split the homepage
+# across four indexed URLs and left the legacy http://www variant outranking
+# the canonical one.
+code="$(curl -s -o /dev/null -w '%{http_code}' --max-redirs 0 "$BASE_URL/" || true)"
+[ "$code" = "308" ] || log "WARNING: / returned $code, expected 308 (permanent redirect to /de)"
+
 log "pruning old releases (keeping $KEEP)"
 ls -1dt "$RELEASES"/*/ 2>/dev/null | tail -n +$((KEEP + 1)) | while read -r old; do
   [ "$(readlink -f "$old")" = "$(readlink -f "$CURRENT")" ] && continue
