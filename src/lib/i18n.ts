@@ -344,9 +344,9 @@ export const dictionary = {
       ],
     },
     repairs: {
-      heroTitle: "Reparaturen ohne Stress",
+      heroTitle: "Handy Reparatur Hamburg",
       heroSubtitle:
-        "Unsere Werkstatt löst komplexe Schäden, inklusive Board-Level Reparaturen.",
+        "Reparaturen ohne Stress in Hamburg-Wilhelmsburg – unsere Werkstatt löst auch komplexe Schäden, inklusive Board-Level Reparaturen.",
       highlights: [
         "Express-Service in Hamburg",
         "Original- und Premium-Ersatzteile",
@@ -1030,9 +1030,9 @@ export const dictionary = {
       ],
     },
     repairs: {
-      heroTitle: "Repairs without stress",
+      heroTitle: "Phone Repair Hamburg",
       heroSubtitle:
-        "Our workshop resolves complex damage, including board-level repairs.",
+        "Repairs without stress in Hamburg-Wilhelmsburg – our workshop resolves complex damage, including board-level repairs.",
       highlights: [
         "Express service in Hamburg",
         "Original & premium parts",
