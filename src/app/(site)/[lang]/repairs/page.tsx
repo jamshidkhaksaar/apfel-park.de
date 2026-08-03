@@ -354,7 +354,9 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
               </p>
             </div>
 
-            {/* Game Consoles */}
+            {/* Other Android brands -- the repair catalogue prices 39 Xiaomi
+                and 37 Google Pixel models, unlike consoles which we do not
+                repair at all. */}
             <div className="tech-card-hover group rounded-2xl p-6">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/10 to-amber/10 text-gold transition group-hover:from-gold/20 group-hover:to-amber/20">
                 <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -363,10 +365,10 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
                 </svg>
               </div>
               <h3 className="text-lg font-bold text-foreground">
-                {lang === "de" ? "Spielkonsolen" : "Game Consoles"}
+                {lang === "de" ? "Weitere Marken" : "Other brands"}
               </h3>
               <p className="mt-2 text-sm text-muted">
-                PlayStation, Xbox, Nintendo Switch
+                Xiaomi, Google Pixel, Nothing, Sony Xperia
               </p>
             </div>
           </div>

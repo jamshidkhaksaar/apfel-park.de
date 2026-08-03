@@ -67,7 +67,10 @@ export const createMetadata = async (
     keywords,
     robots: {
       index,
-      follow: index,
+      // noindex, follow -- a page we do not want indexed should still pass
+      // its links. Tying follow to index made /gaming emit "noindex, nofollow",
+      // which needlessly dead-ends its internal links.
+      follow: true,
     },
     alternates: {
       canonical,

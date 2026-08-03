@@ -149,7 +149,7 @@ export const dictionary = {
             image: "/images/hero-smartphones.svg",
           },
           {
-            title: "Game Consoles",
+            title: "Gaming & Zubehör",
             description: "Gaming-Zubehör und Beratung, Konsolen folgen.",
             path: "/gaming",
             image: "/images/hero-console.svg",
@@ -323,7 +323,7 @@ export const dictionary = {
     services: {
       heroTitle: "Services für jedes Gerät",
       heroSubtitle:
-        "Von Setup bis Sofort-Reparatur – wir liefern Premium-Service für Smartphone, Tablet und Konsole.",
+        "Von Setup bis Sofort-Reparatur – wir liefern Premium-Service für Smartphone, Tablet und Laptop.",
       categories: [
         {
           title: "Sofort-Reparatur",
@@ -835,7 +835,7 @@ export const dictionary = {
             image: "/images/hero-smartphones.svg",
           },
           {
-            title: "Game Consoles",
+            title: "Gaming & Accessories",
             description: "Gaming accessories and advice, consoles to follow.",
             path: "/gaming",
             image: "/images/hero-console.svg",
