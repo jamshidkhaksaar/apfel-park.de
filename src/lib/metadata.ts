@@ -46,7 +46,10 @@ export const createMetadata = async (
   const resolvedDescription = routeMetadata
     ? routeMetadata.description || description
     : description;
-  const keywords = splitKeywords(routeMetadata?.keywords || global.defaultKeywords[locale]);
+  const keywordLocale = allLocales.includes(locale) ? locale : "de";
+  const keywords = splitKeywords(
+    routeMetadata?.keywords || global.defaultKeywords[keywordLocale],
+  );
   const image = normalizeImageUrl(imageOverride || global.defaultOgImage);
   const index = !options?.noindex && (route ? route.index : true);
   const availableLocales = options?.locales?.length ? options.locales : allLocales;

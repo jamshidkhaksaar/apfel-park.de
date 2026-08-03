@@ -544,8 +544,8 @@ export const getSeoRouteIdByPath = (path: string): SeoRouteId | null => {
   return routePathMap[normalizedPath] ?? null;
 };
 
-export const splitKeywords = (keywords: string): string[] =>
-  keywords
+export const splitKeywords = (keywords?: string | null): string[] =>
+  (keywords ?? "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);

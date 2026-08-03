@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import {
   siApple,
   siGoogle,
@@ -11,7 +12,7 @@ import {
   siXiaomi,
 } from "simple-icons";
 
-import { getDictionary, type Locale } from "../../../lib/i18n";
+import { getDictionary, isLocale } from "../../../lib/i18n";
 import { createMetadata } from "../../../lib/metadata";
 import { getHomeContent } from "../../../lib/content";
 import { siteInfo } from "../../../lib/site";
@@ -31,9 +32,12 @@ export const generateMetadata = async ({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
   const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
+  if (!isLocale(lang)) {
+    notFound();
+  }
+  const dict = getDictionary(lang);
   return createMetadata(
-    lang as Locale,
+    lang,
     dict.meta.home.title,
     dict.meta.home.description,
     "",
@@ -42,9 +46,12 @@ export const generateMetadata = async ({
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
-  const home = await getHomeContent(lang as Locale);
-  const featuredProducts = await getFeaturedProducts(lang as Locale);
+  if (!isLocale(lang)) {
+    notFound();
+  }
+  const dict = getDictionary(lang);
+  const home = await getHomeContent(lang);
+  const featuredProducts = await getFeaturedProducts(lang);
   const heroMedia = await getHeroMediaSettings();
 
 
@@ -96,7 +103,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     <div className="page-surface text-foreground">
 
       {/* Hero Slider */}
-      <HeroSlider lang={lang as Locale} media={heroMedia} hero={home.hero} />
+      <HeroSlider lang={lang} media={heroMedia} hero={home.hero} />
 
       {/* Brands Bar */}
       <section className="border-y border-border bg-surface-strong py-5">
@@ -134,7 +141,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* Featured Store */}
-      <FeaturedStore products={featuredProducts} lang={lang as Locale} featured={dict.featuredStore} />
+      <FeaturedStore products={featuredProducts} lang={lang} featured={dict.featuredStore} />
 
       {/* Repair Process - Visual Timeline */}
       <AnimatedSection as="section" animation="fade-up" className="section-pad bg-surface-strong">
@@ -512,7 +519,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                         <div>
                           <p className="text-sm font-semibold text-foreground">{item}</p>
                           <p className="mt-1 text-xs text-muted">
-                            {supportDescriptions[lang as "de" | "en"][index]}
+                            {supportDescriptions[lang][index]}
                           </p>
                         </div>
                       </div>
@@ -582,7 +589,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           {/* Testimonials Carousel */}
           <TestimonialsCarousel 
             reviews={home.testimonials.items} 
-            lang={lang as "de" | "en"} 
+            lang={lang} 
           />
         </div>
       </AnimatedSection>
@@ -633,7 +640,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         </div>
       </AnimatedSection>
 
-      <OfficialPartners lang={lang as Locale} />
+      <OfficialPartners lang={lang} />
     </div>
   );
 }
