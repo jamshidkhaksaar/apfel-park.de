@@ -333,16 +333,19 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     labels: { de: "Open Box", en: "Open Box" },
     priority: 0.85,
     changeFrequency: "weekly",
+    // German buyers search "B-Ware" (430/mo, KD 0), not "Open Box" (10/mo).
+    // The title leads with the term people actually type; English keeps
+    // "open box", since B-Ware means nothing to an English reader.
     defaultTitle: {
-      de: "Open-Box Handys & Tablets kaufen",
+      de: "B-Ware & Open-Box Handys kaufen",
       en: "Buy Open-Box Phones & Tablets",
     },
     defaultDescription: {
-      de: "Was heißt Open Box? Originalgeräte, geöffnet, vollständig geprüft – deutlich günstiger als neu, mit Garantie. Aktuelle Open-Box-Angebote bei Apfel Park Hamburg.",
+      de: "B-Ware und Open-Box Smartphones bei Apfel Park Hamburg: geöffnete Originalgeräte, vollständig geprüft, mit Garantie und deutlich günstiger als neu.",
       en: "What does Open Box mean? Original devices, opened, fully tested – significantly cheaper than new, with warranty. Current open-box deals at Apfel Park Hamburg.",
     },
     defaultKeywords: {
-      de: "Open Box iPhone, iPhone Open Box kaufen, Open Box Smartphone, iPhone günstiger Hamburg",
+      de: "B-Ware Handy, B Ware Smartphone, B-Ware Hamburg, Open Box iPhone, Open Box Smartphone, iPhone günstiger Hamburg",
       en: "open box iPhone, buy open box iPhone, open box smartphone, cheap iPhone Hamburg",
     },
   },
