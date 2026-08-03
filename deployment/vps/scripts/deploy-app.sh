@@ -70,6 +70,14 @@ log "copying static assets into standalone"
 cp -r "$release/.next/static" "$release/.next/standalone/.next/static"
 cp -r "$release/public/." "$release/.next/standalone/public/"
 
+# /uploads is ~1.2GB of user uploads kept in shared/ (outside releases) and
+# served by nginx via alias. next/image resolves local paths against the
+# standalone public dir, so without this symlink every
+# /_next/image?url=/uploads/... returns 400 "not a valid image" and the
+# avif/webp config in next.config.ts is dead weight. Must exist before the
+# service starts -- Next resolves public/ at boot.
+ln -sfn "$APP_ROOT/shared/uploads" "$release/.next/standalone/public/uploads"
+
 previous="$(readlink -f "$CURRENT" 2>/dev/null || true)"
 
 log "activating"

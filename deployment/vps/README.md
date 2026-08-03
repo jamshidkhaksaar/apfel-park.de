@@ -67,7 +67,7 @@ fetches origin, exports the commit with `git archive` into a fresh
 the `current` symlink atomically, restarts the service, health-checks it, and
 prunes all but the newest 3 releases.
 
-Four things it enforces, each learned the hard way:
+Five things it enforces, each learned the hard way:
 
 - **It refuses any commit not reachable from an origin branch.** Releases used
   to be made by copying the previous release dir and editing in place, which
@@ -78,6 +78,11 @@ Four things it enforces, each learned the hard way:
   and no JS -- there is no error anywhere, it just looks broken.
 - **It runs the test suite before touching the symlink.** A failing test
   aborts the deploy with production still on the previous release.
+- **It symlinks `shared/uploads` into `.next/standalone/public/`.** Uploads
+  live outside releases and are served by nginx via `alias`, but `next/image`
+  resolves local paths against the standalone public dir. Without the symlink
+  every `/_next/image?url=/uploads/...` returns 400 and no product image is
+  ever optimized -- one 765KB PNG becomes a 5KB AVIF once it works.
 - **It health-checks and rolls back.** If `/de` does not return 200 within 40s
   the symlink is restored to the previous release and the service restarted.
   It also warns if `/xx` stops returning 404, which regressed into 500s before.
