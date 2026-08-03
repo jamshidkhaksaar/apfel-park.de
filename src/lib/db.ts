@@ -1,5 +1,7 @@
 import { Pool } from "pg";
 
+import { parseColumns, quoteIdentifier } from "./sql-identifier";
+
 type QueryResponse<T> = { data: T | null; error: { message: string } | null; count?: number | null };
 
 type Filter =
@@ -18,24 +20,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-const VALID_IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-
-const quoteIdentifier = (value: string): string => {
-  if (!VALID_IDENTIFIER.test(value)) {
-    throw new Error(`Invalid SQL identifier: ${value}`);
-  }
-  return `"${value}"`;
-};
-
-const parseColumns = (columns: string): string => {
-  if (columns.trim() === "*") return "*";
-  return columns
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .map((part) => quoteIdentifier(part))
-    .join(", ");
-};
 
 const buildWhere = (filters: Filter[], startIndex = 1): { sql: string; values: unknown[] } => {
   if (filters.length === 0) {
