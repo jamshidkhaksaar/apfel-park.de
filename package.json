@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "marketplace:worker": "tsx scripts/marketplace-worker.ts",
-    "qa:production": "tsx scripts/production-qa.ts"
+    "qa:production": "tsx scripts/production-qa.ts",
+    "db:status": "node scripts/migrate.mjs status",
+    "db:migrate": "node scripts/migrate.mjs up",
+    "db:baseline": "node scripts/migrate.mjs baseline"
   },
   "dependencies": {
     "@types/pdfkit": "^0.17.6",
@@ -17,12 +20,12 @@
     "he": "^1.2.0",
     "js-cookie": "^3.0.5",
     "next": "^16.2.6",
-    "nodemailer": "^8.0.7",
+    "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1",
     "pg": "^8.16.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.3",
     "simple-icons": "^16.14.0"
   },
   "devDependencies": {
@@ -40,5 +43,9 @@
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
+  },
+  "overrides": {
+    "sharp": "^0.35.3",
+    "postcss": "^8.5.25"
   }
 }

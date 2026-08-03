@@ -80,3 +80,21 @@ Three things it enforces, each learned the hard way:
   It also warns if `/xx` stops returning 404, which regressed into 500s before.
 
 Never edit files inside a `releases/` directory. Commit, push, then deploy.
+
+## Database migrations
+
+`supabase/migrations/*.sql` are plain SQL applied by `scripts/migrate.mjs`.
+(The directory name is leftover -- this project uses plain PostgreSQL via `pg`,
+not Supabase.)
+
+    npm run db:status     # list applied / pending
+    npm run db:migrate    # apply pending, each in a transaction
+    npm run db:baseline   # record all as applied WITHOUT running them
+
+Applied migrations are recorded in `public.schema_migrations` with a checksum,
+so an edit to an already-applied file shows up as `CHANGED` in `db:status`.
+Before 2026-08-03 there was no tracking at all and migrations were applied by
+hand; the existing ten were baselined rather than re-run.
+
+Use `db:baseline` only when standing up tracking against a database whose
+migrations were already applied manually. On a fresh database use `db:migrate`.
