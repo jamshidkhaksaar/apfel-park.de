@@ -5,6 +5,7 @@ export const repairServiceSlugs = [
   'water-damage',
   'camera',
   'samsung',
+  'harburg',
 ] as const;
 
 export type RepairServiceSlug = (typeof repairServiceSlugs)[number];
@@ -27,6 +28,11 @@ type RepairServiceCopy = {
 export type RepairService = {
   slug: RepairServiceSlug;
   serviceType: string;
+  /**
+   * 'location' pages serve a neighbouring district and are listed separately
+   * from the damage-type services, so the services grid stays coherent.
+   */
+  kind?: 'service' | 'location';
   copy: Record<Locale, RepairServiceCopy>;
 };
 
@@ -286,6 +292,73 @@ export const repairServices: RepairService[] = [
         ],
         trustTitle: 'Why Samsung differs from iPhone',
         trust: 'Samsung displays are firmly bonded and, depending on the model, cost more than comparable iPhone screens, particularly on Ultra, Fold and Flip devices. We therefore quote the price for your specific model before starting, rather than advertising a flat rate that will not apply to your device. Starting prices for listed Galaxy models are in the price finder.',
+      },
+    },
+  },
+  {
+    slug: 'harburg',
+    serviceType: 'Smartphone repair for Hamburg-Harburg',
+    kind: 'location',
+    copy: {
+      de: {
+        title: 'Handy Reparatur für Harburg',
+        shortTitle: 'Harburg',
+        description: 'Handy oder iPhone kaputt in Harburg? Apfel Park repariert in Hamburg-Wilhelmsburg, wenige Minuten entfernt – Preis und Dauer klären wir vorher.',
+        intro: 'Unser Laden liegt in Hamburg-Wilhelmsburg, gleich nördlich von Harburg. Viele Kundinnen und Kunden kommen aus Harburg, Heimfeld, Wilstorf und Eißendorf zu uns. Wir reparieren iPhone, Samsung und weitere Marken, prüfen dein Gerät vor Ort und nennen dir den Preis, bevor wir anfangen.',
+        symptomsTitle: 'Was wir reparieren',
+        symptoms: [
+          'Display und Touchscreen bei iPhone, Samsung Galaxy, Xiaomi und Google Pixel',
+          'Akkutausch, wenn das Gerät nicht mehr durch den Tag kommt',
+          'Ladebuchse, wenn das Kabel wackelt oder gar nicht mehr lädt',
+          'Kamera, Lautsprecher, Mikrofon und Tasten',
+          'Wasserschaden – je früher du kommst, desto besser stehen die Chancen',
+        ],
+        diagnosisTitle: 'So kommst du zu uns',
+        diagnosis: [
+          'Mit der S-Bahn: ab Hamburg-Harburg wenige Minuten bis Wilhelmsburg, danach kurzer Fußweg',
+          'Mit dem Auto: Richtung Norden, Parkplätze gibt es direkt am Luna Center',
+          'Adresse: Wilhelm-Strauß-Weg 2b, 21109 Hamburg',
+          'Geöffnet Montag bis Samstag von 09:30 bis 20:00 Uhr, ohne Termin',
+        ],
+        processTitle: 'So läuft die Reparatur ab',
+        process: [
+          'Gerät und Fehler online melden oder einfach ohne Termin vorbeikommen.',
+          'Wir prüfen das Gerät und bestätigen Preis, Ersatzteil und voraussichtliche Dauer.',
+          'Erst nach deiner Freigabe reparieren wir – viele Reparaturen sind am selben Tag fertig.',
+          'Du bekommst dein Gerät mit Reparaturbeleg zurück.',
+        ],
+        trustTitle: 'Ehrlich zur Lage',
+        trust: 'Wir sitzen nicht in Harburg selbst, sondern in Wilhelmsburg. Das sagen wir lieber direkt, statt so zu tun, als hätten wir eine Filiale um die Ecke. Der Weg lohnt sich trotzdem: feste Preise für gelistete Modelle, viele Reparaturen am selben Tag, und wir arbeiten an Samsung-Geräten genauso selbstverständlich wie an iPhones.',
+      },
+      en: {
+        title: 'Phone Repair for Hamburg-Harburg',
+        shortTitle: 'Harburg',
+        description: 'Broken phone in Harburg? Apfel Park repairs in Hamburg-Wilhelmsburg, a few minutes away, confirming price and timing before any work begins.',
+        intro: 'Our store is in Hamburg-Wilhelmsburg, just north of Harburg. Many of our customers come from Harburg, Heimfeld, Wilstorf and Eißendorf. We repair iPhone, Samsung and other brands, inspect your device on site and quote the price before we start.',
+        symptomsTitle: 'What we repair',
+        symptoms: [
+          'Screens and touch input on iPhone, Samsung Galaxy, Xiaomi and Google Pixel',
+          'Battery replacement when the device no longer lasts the day',
+          'Charging port when the cable wobbles or no longer charges',
+          'Camera, speakers, microphone and buttons',
+          'Water damage – the sooner you come in, the better the odds',
+        ],
+        diagnosisTitle: 'How to reach us',
+        diagnosis: [
+          'By S-Bahn: a few minutes from Hamburg-Harburg to Wilhelmsburg, then a short walk',
+          'By car: head north, parking is available at the Luna Center',
+          'Address: Wilhelm-Strauß-Weg 2b, 21109 Hamburg',
+          'Open Monday to Saturday, 09:30 to 20:00, no appointment needed',
+        ],
+        processTitle: 'How the repair works',
+        process: [
+          'Report the device and fault online, or simply drop in without an appointment.',
+          'We inspect the device and confirm price, replacement part and expected timing.',
+          'Only after your approval do we repair – many jobs are finished the same day.',
+          'You get your device back with a repair receipt.',
+        ],
+        trustTitle: 'Straight about the location',
+        trust: 'We are not in Harburg itself, we are in Wilhelmsburg. We would rather say that plainly than pretend to have a branch around the corner. The trip is still worth it: fixed prices for listed models, many repairs finished the same day, and we work on Samsung devices as readily as on iPhones.',
       },
     },
   },

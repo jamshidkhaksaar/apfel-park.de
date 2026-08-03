@@ -121,7 +121,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
             </p>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {repairServices.map((service) => {
+            {repairServices.filter((service) => service.kind !== "location").map((service) => {
               const copy = service.copy[lang];
               return (
                 <Link
@@ -138,6 +138,26 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
               );
             })}
           </div>
+
+          {/* Location pages: internal links so they are not orphaned. */}
+          {repairServices.some((service) => service.kind === "location") ? (
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <span className="text-sm text-muted">
+                {lang === "de" ? "Wir reparieren auch für:" : "We also repair for:"}
+              </span>
+              {repairServices
+                .filter((service) => service.kind === "location")
+                .map((service) => (
+                  <Link
+                    key={service.slug}
+                    href={`/${lang}/repairs/${service.slug}`}
+                    className="rounded-full border border-border/60 px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-gold/50 hover:text-gold"
+                  >
+                    {service.copy[lang].shortTitle}
+                  </Link>
+                ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
