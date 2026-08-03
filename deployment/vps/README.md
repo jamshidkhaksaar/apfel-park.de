@@ -67,7 +67,7 @@ fetches origin, exports the commit with `git archive` into a fresh
 the `current` symlink atomically, restarts the service, health-checks it, and
 prunes all but the newest 3 releases.
 
-Five things it enforces, each learned the hard way:
+Six things it enforces, each learned the hard way:
 
 - **It refuses any commit not reachable from an origin branch.** Releases used
   to be made by copying the previous release dir and editing in place, which
@@ -83,6 +83,10 @@ Five things it enforces, each learned the hard way:
   resolves local paths against the standalone public dir. Without the symlink
   every `/_next/image?url=/uploads/...` returns 400 and no product image is
   ever optimized -- one 765KB PNG becomes a 5KB AVIF once it works.
+- **It submits changed URLs to IndexNow.** Bing, Yandex, Seznam and Naver get
+  told within minutes instead of waiting for a crawl. The verification key had
+  been served since July with nothing ever submitting to it. Skips
+  automatically when the sitemap is unchanged; never fails a deploy.
 - **It health-checks and rolls back.** If `/de` does not return 200 within 40s
   the symlink is restored to the previous release and the service restarted.
   It also warns if `/xx` stops returning 404, which regressed into 500s before.
@@ -106,3 +110,17 @@ hand; the existing ten were baselined rather than re-run.
 
 Use `db:baseline` only when standing up tracking against a database whose
 migrations were already applied manually. On a fresh database use `db:migrate`.
+
+## IndexNow
+
+    npm run seo:indexnow              # submit sitemap URLs (skips if unchanged)
+    node scripts/indexnow.mjs --force # submit anyway
+    node scripts/indexnow.mjs <url>   # submit specific URLs
+
+The key is auto-discovered from the 32-hex `.txt` file in `public/`; the script
+refuses to run if its contents do not match its filename, which is what
+IndexNow validates. One POST to `api.indexnow.org` reaches every participating
+engine. Google does not participate and schedules its own crawling.
+
+State lives at `/srv/apfel-park/app/shared/indexnow-state.json` so the
+fingerprint survives releases.

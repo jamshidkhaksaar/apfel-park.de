@@ -64,3 +64,6 @@ lighthouse*.html
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IndexNow submission fingerprint (state lives in shared/ on the server)
+.indexnow-state.json

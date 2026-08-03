@@ -113,6 +113,15 @@ code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/xx" || true)"
 code="$(curl -s -o /dev/null -w '%{http_code}' --max-redirs 0 "$BASE_URL/" || true)"
 [ "$code" = "308" ] || log "WARNING: / returned $code, expected 308 (permanent redirect to /de)"
 
+# Tell Bing, Yandex, Seznam and Naver the content changed. The key file has
+# been served since July but nothing ever submitted to it. The script skips
+# automatically when the sitemap fingerprint is unchanged, so repeated deploys
+# do not spam. Non-fatal: a failed submission must not fail a deploy.
+log "indexnow"
+if INDEXNOW_STATE="$APP_ROOT/shared/indexnow-state.json" node scripts/indexnow.mjs; then :; else
+  log "  WARNING: IndexNow submission failed (non-fatal)"
+fi
+
 log "pruning old releases (keeping $KEEP)"
 ls -1dt "$RELEASES"/*/ 2>/dev/null | tail -n +$((KEEP + 1)) | while read -r old; do
   [ "$(readlink -f "$old")" = "$(readlink -f "$CURRENT")" ] && continue

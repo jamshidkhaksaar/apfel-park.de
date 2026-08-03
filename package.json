@@ -13,7 +13,8 @@
     "db:migrate": "node scripts/migrate.mjs up",
     "db:baseline": "node scripts/migrate.mjs baseline",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seo:indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@types/pdfkit": "^0.17.6",
