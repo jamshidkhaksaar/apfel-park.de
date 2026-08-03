@@ -4,7 +4,8 @@ This folder captures the production server layout needed to rebuild or migrate t
 
 ## Runtime layout
 
-- Next.js app release: `/srv/apfel-park/app/releases/repo`
+- Git source clone (deploys build from here): `/srv/apfel-park/app/source`
+- Built releases: `/srv/apfel-park/app/releases/<timestamp>-<sha>`
 - Active app symlink: `/srv/apfel-park/app/current`
 - Shared app env/uploads: `/srv/apfel-park/app/shared`
 - Mail stack: `/srv/apfel-park/mail`
@@ -44,13 +45,38 @@ Create replacement values from the `.example` files during migration, then resto
 ## Migration outline
 
 1. Provision an Ubuntu VPS with Docker, Nginx, Node.js 24.x, PostgreSQL if used locally, and Certbot.
-2. Clone the repository to `/srv/apfel-park/app/releases/repo`.
+2. Clone the repository to `/srv/apfel-park/app/source`.
 3. Create `/srv/apfel-park/app/shared/app.env` from `deployment/vps/app/app.env.example`.
 4. Copy `deployment/vps/nginx/apfel-park.conf` to `/etc/nginx/sites-available/apfel-park.conf` and enable it.
 5. Copy `deployment/vps/systemd/apfel-park-nextjs.service` to `/etc/systemd/system/` and run `systemctl daemon-reload`.
-6. Build the app with `npm ci && npm run build`, then start `apfel-park-nextjs.service`.
+6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then start `apfel-park-nextjs.service`.
 7. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
 8. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
 9. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.
 10. Recreate mail users with docker-mailserver `setup.sh email add/update`; do not reuse committed placeholder hashes as passwords.
 11. Restore latest mailbox and PostgreSQL backups separately, then verify DNS, SSL, SMTP, IMAP, Roundcube, and the app checkout flow.
+
+## Deploying
+
+    /srv/apfel-park/app/source/deployment/vps/scripts/deploy-app.sh [ref]
+
+Defaults to `origin/<branch checked out in the source clone>`. The script
+fetches origin, exports the commit with `git archive` into a fresh
+`releases/<timestamp>-<sha>` directory, runs `npm ci && npm run build`, flips
+the `current` symlink atomically, restarts the service, health-checks it, and
+prunes all but the newest 3 releases.
+
+Three things it enforces, each learned the hard way:
+
+- **It refuses any commit not reachable from an origin branch.** Releases used
+  to be made by copying the previous release dir and editing in place, which
+  left every release a dirty git checkout. On 2026-08-03 that had stranded 141
+  files of work that existed nowhere but this VPS.
+- **It copies `.next/static` and `public/` into `.next/standalone/`.**
+  `next build` does not do this. Skip it and the site returns 200 with no CSS
+  and no JS -- there is no error anywhere, it just looks broken.
+- **It health-checks and rolls back.** If `/de` does not return 200 within 40s
+  the symlink is restored to the previous release and the service restarted.
+  It also warns if `/xx` stops returning 404, which regressed into 500s before.
+
+Never edit files inside a `releases/` directory. Commit, push, then deploy.
