@@ -41,5 +41,4 @@ export function useBranding() {
   return useContext(BrandingContext);
 }
 
-export const shouldBypassImageOptimization = (src: string): boolean =>
-  src.startsWith("data:") || src.startsWith("/uploads/");
+export { shouldBypassImageOptimization } from "@/lib/image";

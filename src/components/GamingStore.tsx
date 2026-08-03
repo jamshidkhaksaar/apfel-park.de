@@ -8,6 +8,7 @@ import ProductStatusBadge from "./ProductStatusBadge";
 import { formatPrice } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 type GamingStoreProps = {
   lang: Locale;
@@ -70,7 +71,7 @@ export default function GamingStore({ lang, products }: GamingStoreProps) {
                     alt={product.title}
                     fill
                     className="object-contain p-5 transition-transform duration-500 group-hover:scale-105"
-                    unoptimized={product.image.startsWith("/uploads/")}
+                    unoptimized={shouldBypassImageOptimization(product.image)}
                     sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                   />
                   <ProductStatusBadge condition={product.condition} lang={lang} className="absolute right-3 top-3" />

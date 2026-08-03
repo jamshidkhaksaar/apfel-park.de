@@ -8,6 +8,7 @@ import ConditionBadge from "./ConditionBadge";
 import { formatPrice } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 type AccessoriesStoreProps = {
   lang: Locale;
@@ -138,7 +139,7 @@ export default function AccessoriesStore({ lang, products }: AccessoriesStorePro
                     alt={product.title}
                     fill
                     className="object-contain p-5 transition-transform duration-500 group-hover:scale-105"
-                    unoptimized={product.image.startsWith("/uploads/")}
+                    unoptimized={shouldBypassImageOptimization(product.image)}
                     sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                   />
                   <ConditionBadge condition={product.condition} lang={lang} className="pointer-events-none absolute right-3 top-3 z-20" />

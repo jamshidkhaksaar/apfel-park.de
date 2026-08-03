@@ -8,6 +8,7 @@ import ProductStatusBadge from "./ProductStatusBadge";
 import { formatPrice } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 type SmartphoneStoreProps = {
   lang: Locale;
@@ -164,7 +165,7 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
                     fill
                     className="object-contain p-5 transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                    unoptimized={phone.image.startsWith("/uploads/")}
+                    unoptimized={shouldBypassImageOptimization(phone.image)}
                   />
                   <ProductStatusBadge condition={phone.condition} lang={lang} className="pointer-events-none absolute right-3 top-3 z-20" />
                 </div>

@@ -14,6 +14,7 @@ import ProductStatusBadge from "../ProductStatusBadge";
 import { formatPrice } from "../../lib/format";
 import { type Locale } from "../../lib/i18n";
 import StoreFilters from "./StoreFilters";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 type StoreGridProps = {
   products: Product[];
@@ -203,7 +204,7 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
                   alt={product.title}
                   fill
                   className="object-contain transition-transform duration-700 ease-out group-hover:scale-105"
-                  unoptimized={product.image.startsWith("/uploads/")}
+                  unoptimized={shouldBypassImageOptimization(product.image)}
                 />
                 
                 {/* Badge */}

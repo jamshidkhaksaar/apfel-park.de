@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import type { Locale } from "../lib/i18n";
 import type { HeroMediaSettings } from "../lib/site-settings-server";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 export type HeroContent = {
   eyebrow: string;
@@ -27,7 +28,7 @@ export default function HeroSlider({
   const [videoReady, setVideoReady] = useState(false);
   const [mobileIndex, setMobileIndex] = useState(0);
   const fallbackImage = media?.posterUrl || media?.fallbackImageUrl || "/images/shop2.jpg";
-  const useUnoptimizedImage = fallbackImage.startsWith("/uploads/");
+  const useUnoptimizedImage = shouldBypassImageOptimization(fallbackImage);
   const configuredSlides = Array.isArray(media?.mobileImages)
     ? media.mobileImages.filter((value) => typeof value === "string" && value.trim().length > 0)
     : [];
@@ -59,7 +60,7 @@ export default function HeroSlider({
             fill
             priority={activeMobileIndex === 0}
             sizes="100vw"
-            unoptimized={mobileSlides[activeMobileIndex].startsWith("/uploads/")}
+            unoptimized={shouldBypassImageOptimization(mobileSlides[activeMobileIndex])}
             className="object-cover object-center"
           />
         </div>

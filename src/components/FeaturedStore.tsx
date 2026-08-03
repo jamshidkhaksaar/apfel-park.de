@@ -8,6 +8,7 @@ import ConditionBadge from "./ConditionBadge";
 import { formatPrice } from "../lib/format";
 import { type FeaturedStoreLabels, type Locale } from "../lib/i18n";
 import { type Product } from "../lib/products";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 export default function FeaturedStore({
   products,
@@ -89,7 +90,7 @@ export default function FeaturedStore({
                   alt={product.title}
                   fill
                   className="object-contain transition-transform duration-700 ease-out group-hover:scale-105"
-                  unoptimized={product.image.startsWith("/uploads/")}
+                  unoptimized={shouldBypassImageOptimization(product.image)}
                   sizes="(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 320px"
                 />
                 

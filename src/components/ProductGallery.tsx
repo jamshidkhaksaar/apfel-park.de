@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 type Props = {
   title: string;
@@ -38,7 +39,7 @@ export default function ProductGallery({ title, images }: Props) {
             priority
             className={`object-contain p-6 transition-opacity duration-200 ${fading ? "opacity-0" : "opacity-100"}`}
             sizes="(max-width: 1280px) 100vw, 760px"
-            unoptimized={activeImage.startsWith("/uploads/")}
+            unoptimized={shouldBypassImageOptimization(activeImage)}
           />
         </div>
       </div>
@@ -63,7 +64,7 @@ export default function ProductGallery({ title, images }: Props) {
                   fill
                   className={`object-contain p-2 transition-opacity duration-200 ${activeIndex === index ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
                   sizes="160px"
-                  unoptimized={image.startsWith("/uploads/")}
+                  unoptimized={shouldBypassImageOptimization(image)}
                 />
               </div>
             </button>

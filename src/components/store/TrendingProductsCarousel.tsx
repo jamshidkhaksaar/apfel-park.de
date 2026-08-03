@@ -8,6 +8,7 @@ import ProductStatusBadge from "@/components/ProductStatusBadge";
 import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
 import type { Product } from "@/lib/products";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 type TrendingProductsCarouselProps = {
   products: Product[];
@@ -116,7 +117,7 @@ export default function TrendingProductsCarousel({ products, lang }: TrendingPro
                 fill
                 sizes="(max-width: 640px) 82vw, (max-width: 1024px) 46vw, 24vw"
                 className="object-contain p-4 transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none"
-                unoptimized={product.image.startsWith("/uploads/")}
+                unoptimized={shouldBypassImageOptimization(product.image)}
               />
               <ProductStatusBadge condition={product.condition} lang={lang} className="absolute right-3 top-3" />
             </div>

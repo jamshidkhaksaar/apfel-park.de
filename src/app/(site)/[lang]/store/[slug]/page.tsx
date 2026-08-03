@@ -19,6 +19,7 @@ import { siteInfo } from "@/lib/site";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import ProductDetailExperience from "@/components/ProductDetailExperience";
 import { requireLocale } from "@/lib/route-locale";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 export const dynamic = "force-dynamic";
 
@@ -211,7 +212,7 @@ export default async function ProductDetailPage({
                       fill
                       sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
                       className="object-contain p-5 transition duration-500 group-hover:scale-105"
-                      unoptimized={related.image.startsWith("/uploads/")}
+                      unoptimized={shouldBypassImageOptimization(related.image)}
                     />
                   </div>
                   <div className="p-5">
