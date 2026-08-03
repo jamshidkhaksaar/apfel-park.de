@@ -11,7 +11,9 @@
     "qa:production": "tsx scripts/production-qa.ts",
     "db:status": "node scripts/migrate.mjs status",
     "db:migrate": "node scripts/migrate.mjs up",
-    "db:baseline": "node scripts/migrate.mjs baseline"
+    "db:baseline": "node scripts/migrate.mjs baseline",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@types/pdfkit": "^0.17.6",
@@ -42,7 +44,8 @@
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   },
   "overrides": {
     "sharp": "^0.35.3",

@@ -62,11 +62,12 @@ Create replacement values from the `.example` files during migration, then resto
 
 Defaults to `origin/<branch checked out in the source clone>`. The script
 fetches origin, exports the commit with `git archive` into a fresh
-`releases/<timestamp>-<sha>` directory, runs `npm ci && npm run build`, flips
+`releases/<timestamp>-<sha>` directory, runs `npm ci`, `npm test` and
+`npm run build`, flips
 the `current` symlink atomically, restarts the service, health-checks it, and
 prunes all but the newest 3 releases.
 
-Three things it enforces, each learned the hard way:
+Four things it enforces, each learned the hard way:
 
 - **It refuses any commit not reachable from an origin branch.** Releases used
   to be made by copying the previous release dir and editing in place, which
@@ -75,6 +76,8 @@ Three things it enforces, each learned the hard way:
 - **It copies `.next/static` and `public/` into `.next/standalone/`.**
   `next build` does not do this. Skip it and the site returns 200 with no CSS
   and no JS -- there is no error anywhere, it just looks broken.
+- **It runs the test suite before touching the symlink.** A failing test
+  aborts the deploy with production still on the previous release.
 - **It health-checks and rolls back.** If `/de` does not return 200 within 40s
   the symlink is restored to the previous release and the service restarted.
   It also warns if `/xx` stops returning 404, which regressed into 500s before.
