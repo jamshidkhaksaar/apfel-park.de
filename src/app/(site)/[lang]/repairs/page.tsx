@@ -120,7 +120,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
                 : "Learn about diagnosis, process and next steps. Price and repair are always confirmed before paid work starts."}
             </p>
           </div>
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {repairServices.map((service) => {
               const copy = service.copy[lang];
               return (
