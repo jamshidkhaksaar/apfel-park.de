@@ -1,5 +1,23 @@
 import type { NextConfig } from "next";
 
+// Every page under (site)/[lang]/ is also requested WITHOUT the locale prefix
+// in the wild -- people type and link /smartphones, not /de/smartphones. Those
+// were returning 404: Search Console listed 40 such URLs as "Not found",
+// including /smartphones, /laptops and /device-conditions. With only 18
+// referring domains, throwing away an inbound link is expensive.
+// 'impressum' is omitted because it already has an explicit redirect below.
+const LOCALE_ROUTES = [
+  'about', 'accessories', 'cart', 'checkout', 'contact', 'delivery-returns',
+  'device-conditions', 'faq', 'gaming', 'gebrauchte-handys', 'gebrauchte-iphones',
+  'iphone-17', 'laptops', 'open-box', 'privacy', 'repairs', 'smartphones',
+  'store', 'tablets', 'terms', 'withdrawal',
+] as const;
+
+const localePrefixRedirects = LOCALE_ROUTES.flatMap((route) => [
+  { source: `/${route}`, destination: `/de/${route}`, permanent: true },
+  { source: `/${route}/:path*`, destination: `/de/${route}/:path*`, permanent: true },
+]);
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   experimental: {
@@ -64,6 +82,7 @@ const nextConfig: NextConfig = {
       { source: '/privacy-policy', destination: '/de/privacy', permanent: true },
       { source: '/datenschutz', destination: '/de/privacy', permanent: true },
       { source: '/cdn-cgi/l/:path*', destination: '/de/contact', permanent: false },
+      ...localePrefixRedirects,
     ];
   },
 
