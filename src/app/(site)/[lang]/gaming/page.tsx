@@ -20,11 +20,16 @@ export const generateMetadata = async ({
   const { lang: rawLang } = await params;
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
+  // Noindexed until consoles are actually stocked: there is no gaming
+  // inventory yet, and an indexed page with no products and no service is
+  // thin content. Remove the option the day the first console is listed.
   return createMetadata(
     lang,
     dict.meta.gaming.title,
     dict.meta.gaming.description,
     "/gaming",
+    undefined,
+    { noindex: true },
   );
 };
 
@@ -52,89 +57,6 @@ export default async function GamingPage({
     locale: lang,
     filters: activeFilters,
   });
-
-  const serviceCards = [
-    {
-      title: lang === "de" ? "HDMI Port" : "HDMI Port",
-      description:
-        lang === "de"
-          ? "Austausch defekter HDMI-Anschlüsse bei PS4, PS5 und Xbox."
-          : "Replacement of defective HDMI ports for PS4, PS5, and Xbox.",
-      note: lang === "de" ? "Preis nach Diagnose" : "Price after diagnosis",
-      icon: (
-        <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-        </svg>
-      ),
-    },
-    {
-      title: lang === "de" ? "Laufwerk" : "Disc Drive",
-      description:
-        lang === "de"
-          ? "Reparatur oder Austausch von Blu-ray Laufwerken."
-          : "Repair or replacement of Blu-ray disc drives.",
-      note: lang === "de" ? "Preis nach Diagnose" : "Price after diagnosis",
-      icon: (
-        <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 9.563C9 9.252 9.252 9 9.563 9h4.874c.311 0 .563.252.563.563v4.874c0 .311-.252.563-.563.563H9.564A.562.562 0 019 14.437V9.564z" />
-        </svg>
-      ),
-    },
-    {
-      title: lang === "de" ? "Wärmeleitpaste" : "Thermal Paste",
-      description:
-        lang === "de"
-          ? "Erneuerung der Wärmeleitpaste gegen Überhitzung."
-          : "Renewal of thermal paste to prevent overheating.",
-      note: lang === "de" ? "Preis nach Diagnose" : "Price after diagnosis",
-      icon: (
-        <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />
-        </svg>
-      ),
-    },
-    {
-      title: lang === "de" ? "Lüfter-Reinigung" : "Fan Cleaning",
-      description:
-        lang === "de"
-          ? "Professionelle Reinigung gegen laute Lüftergeräusche."
-          : "Professional cleaning to reduce fan noise.",
-      note: lang === "de" ? "Preis nach Diagnose" : "Price after diagnosis",
-      icon: (
-        <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-        </svg>
-      ),
-    },
-    {
-      title: lang === "de" ? "Controller" : "Controller",
-      description:
-        lang === "de"
-          ? "Stick-Drift, Tasten und Akku-Reparatur."
-          : "Stick drift, button, and battery repair.",
-      note: lang === "de" ? "Preis nach Diagnose" : "Price after diagnosis",
-      icon: (
-        <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 11h4M8 9v4M15 12h.01M18 10h.01M17.5 5H6.5a4.5 4.5 0 00-4.5 4.5v4a4.5 4.5 0 004.5 4.5h11a4.5 4.5 0 004.5-4.5v-4A4.5 4.5 0 0017.5 5z" />
-        </svg>
-      ),
-    },
-    {
-      title: "SSD Upgrade",
-      description:
-        lang === "de"
-          ? "Speichererweiterung für PS5 und Xbox."
-          : "Storage expansion for PS5 and Xbox.",
-      note: lang === "de" ? "Preis nach Diagnose" : "Price after diagnosis",
-      icon: (
-        <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-        </svg>
-      ),
-    },
-  ];
 
   return (
     <div className="bg-background">
@@ -200,40 +122,6 @@ export default async function GamingPage({
       </section>
 
       {/* Repair Services */}
-      <section className="section-pad bg-surface/30">
-        <div className="container-page">
-          <div className="mb-12 text-center">
-            <span className="badge-gold mb-4 inline-flex">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
-              </svg>
-              {lang === "de" ? "Reparatur-Service" : "Repair Service"}
-            </span>
-            <h2 className="text-3xl font-bold text-foreground md:text-4xl">
-              {lang === "de" ? "Konsolen-Reparatur" : "Console Repair"}
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-muted">
-              {lang === "de"
-                ? "Professionelle Reparaturen für alle Gaming-Konsolen mit Garantie"
-                : "Professional repairs for all gaming consoles with warranty"}
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {serviceCards.map((service) => (
-              <div key={service.title} className="tech-card-hover group rounded-2xl p-6">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
-                  {service.icon}
-                </div>
-                <h3 className="text-xl font-bold text-foreground">{service.title}</h3>
-                <p className="mt-2 text-muted">{service.description}</p>
-                <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-gold">{service.note}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Why Choose Us */}
       <section className="section-pad">
         <div className="container-page">
@@ -245,7 +133,7 @@ export default async function GamingPage({
                 </svg>
               </div>
               <p className="text-lg font-bold text-foreground">{lang === "de" ? "Klare Diagnose" : "Clear diagnosis"}</p>
-              <p className="text-sm text-muted">{lang === "de" ? "Vor jeder Reparatur sprechen wir Aufwand und Freigabe mit dir ab." : "Before every repair we confirm scope and approval with you."}</p>
+              <p className="text-sm text-muted">{lang === "de" ? "Wir sagen dir ehrlich, welches Gerät zu dir passt – auch wenn es das günstigere ist." : "We tell you honestly which device suits you, even when that is the cheaper one."}</p>
             </div>
 
             <div className="tech-card rounded-2xl p-6 text-center">
@@ -265,7 +153,7 @@ export default async function GamingPage({
                 </svg>
               </div>
               <p className="text-lg font-bold text-foreground">{lang === "de" ? "Saubere Ausführung" : "Clean execution"}</p>
-              <p className="text-sm text-muted">{lang === "de" ? "Sorgfältige Reparaturen für typische HDMI-, Laufwerk- und Hitzeprobleme." : "Careful repair work for common HDMI, drive, and thermal issues."}</p>
+              <p className="text-sm text-muted">{lang === "de" ? "Jedes Gerät wird vor dem Verkauf geprüft, mit klar ausgewiesenem Zustand." : "Every device is tested before sale, with its condition clearly stated."}</p>
             </div>
 
             <div className="tech-card rounded-2xl p-6 text-center">
@@ -275,7 +163,7 @@ export default async function GamingPage({
                 </svg>
               </div>
               <p className="text-lg font-bold text-foreground">{lang === "de" ? "Persönliche Beratung" : "Personal advice"}</p>
-              <p className="text-sm text-muted">{lang === "de" ? "Bring deine Konsole vorbei oder ruf uns an, bevor du entscheidest." : "Bring your console in or call us before you decide."}</p>
+              <p className="text-sm text-muted">{lang === "de" ? "Komm im Laden in Wilhelmsburg vorbei oder ruf an, bevor du entscheidest." : "Drop into the Wilhelmsburg store or call us before you decide."}</p>
             </div>
           </div>
         </div>

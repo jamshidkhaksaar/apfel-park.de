@@ -304,8 +304,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: dictionary.en.meta.gaming.description,
     },
     defaultKeywords: {
-      de: "Konsolen Reparatur Hamburg, PlayStation Reparatur Hamburg, Gaming Zubehör Hamburg",
-      en: "console repair Hamburg, PlayStation repair Hamburg, gaming accessories Hamburg",
+      de: "Gaming Zubehör Hamburg, Controller kaufen Hamburg, Konsolen Zubehör Hamburg",
+      en: "gaming accessories Hamburg, buy controller Hamburg, console accessories Hamburg",
     },
   },
   {

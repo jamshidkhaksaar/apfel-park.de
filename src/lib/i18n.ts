@@ -86,9 +86,9 @@ export const dictionary = {
           "Tablets und iPads mit klar ausgewiesenem Zustand und Garantie. Online ansehen, nach Hamburg liefern lassen oder im Shop abholen.",
       },
       gaming: {
-        title: "Konsolen-Reparatur & Gaming Hamburg",
+        title: "Gaming & Konsolen Zubehör Hamburg",
         description:
-          "PlayStation- und Gaming-Services, Reparaturen, HDMI-Anschluss-Tausch und Zubehör im Apfel Park Hamburg mit Garantie.",
+          "Gaming-Zubehör bei Apfel Park in Hamburg-Wilhelmsburg. Konsolen folgen in Kürze – Controller, Kabel und Zubehör gibt es schon jetzt im Laden.",
       },
       laptops: {
         title: "Laptops & MacBooks kaufen Hamburg",
@@ -150,7 +150,7 @@ export const dictionary = {
           },
           {
             title: "Game Consoles",
-            description: "PlayStation-Reparaturen, Upgrades und Zubehör.",
+            description: "Gaming-Zubehör und Beratung, Konsolen folgen.",
             path: "/gaming",
             image: "/images/hero-console.svg",
           },
@@ -396,11 +396,11 @@ export const dictionary = {
     gaming: {
       heroTitle: "Gaming & Konsolen",
       heroSubtitle:
-        "PlayStation- und Konsolenservice, Upgrades und Zubehör in Hamburg.",
+        "Gaming-Zubehör in Hamburg-Wilhelmsburg. Konsolen nehmen wir demnächst ins Sortiment auf.",
       highlights: [
-        "Konsole Reparatur und Reinigung",
-        "Lüfter- und Temperaturservice",
         "Controller, Docking & Zubehör",
+        "Beratung im Laden statt online raten",
+        "Konsolen folgen in Kürze",
       ],
     },
     laptops: {
@@ -772,9 +772,9 @@ export const dictionary = {
           "Browse tablets and iPads with clearly stated condition and warranty. Order for delivery in Germany or collect at Apfel Park in Hamburg.",
       },
       gaming: {
-        title: "Console Repair & Gaming Hamburg",
+        title: "Gaming & Console Accessories Hamburg",
         description:
-          "PlayStation and console repairs, HDMI port replacement, cleaning, and gaming accessories at Apfel Park Hamburg. Fast service with warranty.",
+          "Gaming accessories at Apfel Park in Hamburg-Wilhelmsburg. Consoles are coming soon; controllers, cables and accessories are in store now.",
       },
       laptops: {
         title: "Buy Laptops & MacBooks in Hamburg",
@@ -836,7 +836,7 @@ export const dictionary = {
           },
           {
             title: "Game Consoles",
-            description: "PlayStation repairs, upgrades and accessories.",
+            description: "Gaming accessories and advice, consoles to follow.",
             path: "/gaming",
             image: "/images/hero-console.svg",
           },
@@ -1082,11 +1082,11 @@ export const dictionary = {
     gaming: {
       heroTitle: "Gaming & consoles",
       heroSubtitle:
-        "PlayStation service, repairs and accessories in Hamburg.",
+        "Gaming accessories in Hamburg-Wilhelmsburg. Consoles are joining the range soon.",
       highlights: [
-        "Console repair and cleaning",
-        "Cooling and temperature tuning",
         "Controllers, docks & accessories",
+        "Advice in store instead of guessing online",
+        "Consoles coming soon",
       ],
     },
     laptops: {

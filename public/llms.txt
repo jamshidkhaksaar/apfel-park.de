@@ -1,6 +1,6 @@
 # Apfel Park - Smartphone & Tech Shop Hamburg
 
-> Apfel Park is a certified smartphone sales, trade-in, and repair center in Hamburg-Wilhelmsburg, Germany. We offer new, open-box, and refurbished iPhones, smartphones, laptops, tablets, gaming consoles, and accessories with a 12-month warranty.
+> Apfel Park is a certified smartphone sales, trade-in, and repair center in Hamburg-Wilhelmsburg, Germany. We offer new, open-box, and refurbished iPhones, smartphones, laptops, tablets, and accessories with a 12-month warranty.
 
 ## Business Details
 - **Name**: Apfel Park
@@ -15,7 +15,6 @@
 - **Tablets & iPads**: Apple iPads, Samsung Galaxy Tabs.
 - **Laptops & MacBooks**: MacBooks and Windows laptops.
 - **Accessories**: Protective cases, tempered glass screen protectors, fast chargers, cables, headphones, power banks, and SD cards.
-- **Console Repair**: Professional HDMI port replacement, disc drive repair, thermal paste renewal, fan cleaning, and controller repair for PS4, PS5, Xbox, and Nintendo Switch.
 - **Smartphone Repair**: Instant screen repair, battery replacement, water damage repair, and camera repair.
 - **Trade-In / Ankauf**: Fair cash valuation and instant payout or trade-in credit for used devices.
 
