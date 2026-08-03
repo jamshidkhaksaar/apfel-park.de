@@ -4,11 +4,12 @@ import Link from "next/link";
 import PageIntro from "../../../../components/PageIntro";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
-import { getDictionary, type Locale } from "../../../../lib/i18n";
+import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getSmartphonesContent } from "../../../../lib/content";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +18,11 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
-  const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const dict = getDictionary(lang);
   return createMetadata(
-    lang as Locale,
+    lang,
     dict.meta.smartphones.title,
     dict.meta.smartphones.description,
     "/smartphones",
@@ -34,10 +36,11 @@ export default async function SmartphonesPage({
   params: Promise<{ lang: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   const query = await searchParams;
-  const dict = getDictionary(lang as Locale);
-  const smartphonesContent = await getSmartphonesContent(lang as Locale);
+  const dict = getDictionary(lang);
+  const smartphonesContent = await getSmartphonesContent(lang);
   const sort = parseStoreSort(query.sort);
   const page = parseStorePage(query.page);
   const activeFilters = parseStoreCatalogFilters(query);
@@ -46,7 +49,7 @@ export default async function SmartphonesPage({
     sort,
     page,
     pageSize: 24,
-    locale: lang as Locale,
+    locale: lang,
     filters: activeFilters,
   });
 
@@ -58,7 +61,7 @@ export default async function SmartphonesPage({
         eyebrow={dict.meta.smartphones.title}
       />
 
-      <StoreCollectionLinks lang={lang as Locale} />
+      <StoreCollectionLinks lang={lang} />
 
       {/* Trust Badges */}
       <section className="border-b border-white/5 bg-surface/30 py-8">
@@ -124,7 +127,7 @@ export default async function SmartphonesPage({
         <div className="container-page">
           <StoreGrid
             products={catalog.products}
-            lang={lang as Locale}
+            lang={lang}
             lockedCategory="smartphones"
             sortBy={sort}
             total={catalog.total}

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import CheckoutClient from "@/components/checkout/CheckoutClient";
 import { normalizeShippingMethod } from "@/lib/checkout";
 import { createMetadata } from "@/lib/metadata";
-import type { Locale } from "@/lib/i18n";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +12,10 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   return createMetadata(
-    lang as Locale,
+    lang,
     lang === "de" ? "Sicherer Checkout" : "Secure Checkout",
     lang === "de"
       ? "Schließe deine Bestellung bei Apfel Park sicher ab und bezahle bequem mit Stripe oder PayPal."

@@ -4,18 +4,19 @@ import PageIntro from "../../../../components/PageIntro";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import TrendingProductsCarousel from "../../../../components/store/TrendingProductsCarousel";
-import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStorePage, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
+import { requireLocale } from "@/lib/route-locale";
 
 export const generateMetadata = async ({
   params,
 }: {
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   return createMetadata(
-    lang as Locale,
+    lang,
     lang === "de" ? "Online Shop" : "Online Store",
     lang === "de" ? "Kaufen Sie geprüfte Smartphones, Laptops und Zubehör." : "Buy certified smartphones, laptops and accessories.",
     "/store",
@@ -26,8 +27,9 @@ const catalogCategories = new Set<StoreCatalogCategory>(["all", "smartphones", "
 const valueOf = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] ?? "" : value ?? "";
 
 export default async function StorePage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const { lang } = await params;
-  const locale = lang as Locale;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const locale = lang;
   const query = await searchParams;
   const requestedCategory = valueOf(query.category) as StoreCatalogCategory;
   const category = catalogCategories.has(requestedCategory) ? requestedCategory : "all";

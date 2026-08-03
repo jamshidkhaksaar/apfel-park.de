@@ -5,8 +5,9 @@ import type { ReactNode } from "react";
 
 import PageIntro from "../../../../components/PageIntro";
 import { getAboutContent } from "../../../../lib/content";
-import { getDictionary, type AboutStat, type Locale } from "../../../../lib/i18n";
+import { getDictionary, type AboutStat } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +16,11 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
-  const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const dict = getDictionary(lang);
   return createMetadata(
-    lang as Locale,
+    lang,
     dict.meta.about.title,
     dict.meta.about.description,
     "/about",
@@ -53,9 +55,10 @@ const FeatureIcon = ({ type }: { type: string }): ReactNode => {
 };
 
 export default async function AboutPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
-  const about = await getAboutContent(lang as Locale);
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const dict = getDictionary(lang);
+  const about = await getAboutContent(lang);
 
   return (
     <div className="bg-background">

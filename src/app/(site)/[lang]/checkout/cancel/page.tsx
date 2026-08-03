@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,8 @@ export const metadata: Metadata = {
 };
 
 export default async function CheckoutCancelPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   const locale = lang === "en" ? "en" : "de";
 
   return (

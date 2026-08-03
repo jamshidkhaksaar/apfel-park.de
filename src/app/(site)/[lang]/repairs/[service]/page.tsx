@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { type Locale, locales } from '@/lib/i18n';
+import { locales } from '@/lib/i18n';
 import { createMetadata } from '@/lib/metadata';
 import { getRepairService, repairServiceSlugs } from '@/lib/repair-services';
 import { safeJsonStringify } from '@/lib/security';
 import { siteInfo } from '@/lib/site';
+import { requireLocale } from "@/lib/route-locale";
 
 export const generateStaticParams = () =>
   locales.flatMap((lang) => repairServiceSlugs.map((service) => ({ lang, service })));
@@ -16,10 +17,11 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string; service: string }>;
 }): Promise<Metadata> => {
-  const { lang, service: slug } = await params;
+  const { lang: rawLang, service: slug } = await params;
+  const lang = requireLocale(rawLang);
   const service = getRepairService(slug);
   if (!service) return {};
-  const locale = lang as Locale;
+  const locale = lang;
   const copy = service.copy[locale];
   return createMetadata(locale, copy.title, copy.description, `/repairs/${service.slug}`);
 };
@@ -29,10 +31,11 @@ export default async function RepairServicePage({
 }: {
   params: Promise<{ lang: string; service: string }>;
 }) {
-  const { lang, service: slug } = await params;
+  const { lang: rawLang, service: slug } = await params;
+  const lang = requireLocale(rawLang);
   const service = getRepairService(slug);
   if (!service || (lang !== 'de' && lang !== 'en')) notFound();
-  const locale = lang as Locale;
+  const locale = lang;
   const copy = service.copy[locale];
   const pageUrl = `${siteInfo.url}/${locale}/repairs/${service.slug}`;
   const serviceJsonLd = {

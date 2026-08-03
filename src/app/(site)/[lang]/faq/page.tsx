@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 
 import PageIntro from "../../../../components/PageIntro";
-import { getDictionary, type Locale } from "../../../../lib/i18n";
+import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getFaqContent } from "../../../../lib/content";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +13,11 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
-  const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const dict = getDictionary(lang);
   return createMetadata(
-    lang as Locale,
+    lang,
     dict.meta.faq.title,
     dict.meta.faq.description,
     "/faq",
@@ -23,9 +25,10 @@ export const generateMetadata = async ({
 };
 
 export default async function FaqPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
-  const faq = await getFaqContent(lang as Locale);
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const dict = getDictionary(lang);
+  const faq = await getFaqContent(lang);
 
   return (
     <div className="bg-background">

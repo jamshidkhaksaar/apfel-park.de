@@ -18,6 +18,7 @@ import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import ProductDetailExperience from "@/components/ProductDetailExperience";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -57,12 +58,13 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string; slug: string }>;
 }): Promise<Metadata> => {
-  const { lang, slug } = await params;
-  const locale = lang as Locale;
+  const { lang: rawLang, slug } = await params;
+  const lang = requireLocale(rawLang);
+  const locale = lang;
   const product = await getProductBySlug(slug, locale);
   if (!product) {
     return createMetadata(
-      lang as Locale,
+      lang,
       lang === "de" ? "Produkt nicht gefunden" : "Product not found",
       lang === "de" ? "Dieses Produkt ist nicht verfügbar." : "This product is not available.",
       `/store/${slug}`,
@@ -89,7 +91,7 @@ export const generateMetadata = async ({
   );
 
   return createMetadata(
-    lang as Locale,
+    lang,
     seoTitle,
     seoDescription,
     `/store/${slug}`,
@@ -102,8 +104,9 @@ export default async function ProductDetailPage({
 }: {
   params: Promise<{ lang: string; slug: string }>;
 }) {
-  const { lang, slug } = await params;
-  const locale = lang as Locale;
+  const { lang: rawLang, slug } = await params;
+  const lang = requireLocale(rawLang);
+  const locale = lang;
   const product = await getProductBySlug(slug, locale);
 
   if (!product) {

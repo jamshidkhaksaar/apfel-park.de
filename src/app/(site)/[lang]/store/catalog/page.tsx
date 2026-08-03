@@ -6,6 +6,7 @@ import { type Locale } from "@/lib/i18n";
 import { createMetadata } from "@/lib/metadata";
 import { getProducts, type ProductCategory } from "@/lib/products";
 import { productConditionLabel } from "@/lib/schema";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,9 @@ const categoryName = (category: ProductCategory, locale: Locale) => {
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
-  const { lang } = await params;
-  const locale = lang as Locale;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const locale = lang;
   return createMetadata(
     locale,
     locale === "de" ? "Alle Produkte A–Z" : "All Products A–Z",
@@ -36,8 +38,9 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 export default async function ProductCatalogPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
-  const locale = lang as Locale;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const locale = lang;
   const products = (await getProducts(undefined, undefined, locale)).sort((a, b) =>
     a.title.localeCompare(b.title, locale === "de" ? "de-DE" : "en-US"),
   );

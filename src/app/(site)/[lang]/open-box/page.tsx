@@ -6,6 +6,7 @@ import StoreCollectionLinks from "../../../../components/store/StoreCollectionLi
 import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,8 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   const locale = (lang === "en" ? "en" : "de") as Locale;
   return createMetadata(locale, copy[locale].title, copy[locale].description, "/open-box");
 };
@@ -41,7 +43,8 @@ export default async function OpenBoxPage({
   params: Promise<{ lang: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   const query = await searchParams;
   const locale = (lang === "en" ? "en" : "de") as Locale;
   const sort = parseStoreSort(query.sort);

@@ -5,14 +5,16 @@ import PageIntro from "../../../../components/PageIntro";
 import WithdrawalForm from "../../../../components/WithdrawalForm";
 import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> => {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   const isGerman = lang !== "en";
   return createMetadata(
-    lang as Locale,
+    lang,
     isGerman ? "Vertrag widerrufen" : "Withdraw from contract",
     isGerman
       ? "Widerrufen Sie Ihren Online-Kauf bei Apfel Park in zwei Schritten - ohne Angabe von Gründen."
@@ -22,7 +24,8 @@ export const generateMetadata = async ({ params }: { params: Promise<{ lang: str
 };
 
 export default async function WithdrawalPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   const locale = (lang === "en" ? "en" : "de") as Locale;
   const isGerman = locale === "de";
 

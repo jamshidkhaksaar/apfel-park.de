@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import CheckoutSuccessClient from "@/components/checkout/CheckoutSuccessClient";
 import { getOrderForConfirmation } from "@/lib/checkout";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,8 @@ export default async function CheckoutSuccessPage({
   params: Promise<{ lang: string }>;
   searchParams: Promise<{ order_id?: string; provider?: string; token?: string }>;
 }) {
-  const [{ lang }, query] = await Promise.all([params, searchParams]);
-  const locale = lang === "en" ? "en" : "de";
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
+  const locale = requireLocale(rawLang);
   const order = query.order_id ? await getOrderForConfirmation(query.order_id).catch(() => null) : null;
   const paid = order?.payment_status === "paid";
 

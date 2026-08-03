@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import SafeEmailLink from "../../../../components/SafeEmailLink";
-import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +13,10 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   return createMetadata(
-    lang as Locale,
+    lang,
     lang === "de" ? "Impressum" : "Legal Notice",
     lang === "de"
       ? "Pflichtangaben gemäß § 5 DDG – Apfel Park, Hamburg."
@@ -53,7 +54,8 @@ export default async function ImpressumPage({
 }: {
   params: Promise<{ lang: string }>;
 }) {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   const isGerman = lang === "de";
 
   return (

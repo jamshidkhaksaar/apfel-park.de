@@ -5,10 +5,11 @@ import ExternalMapEmbed from "../../../../components/ExternalMapEmbed";
 import PageIntro from "../../../../components/PageIntro";
 import SafeEmailLink from "../../../../components/SafeEmailLink";
 import TrackedLink from "../../../../components/TrackedLink";
-import { getDictionary, type Locale } from "../../../../lib/i18n";
+import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
 import { getContactContent } from "../../../../lib/content";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +18,11 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
-  const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const dict = getDictionary(lang);
   return createMetadata(
-    lang as Locale,
+    lang,
     dict.meta.contact.title,
     dict.meta.contact.description,
     "/contact",
@@ -28,9 +30,10 @@ export const generateMetadata = async ({
 };
 
 export default async function ContactPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
-  const contact = await getContactContent(lang as Locale);
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const dict = getDictionary(lang);
+  const contact = await getContactContent(lang);
 
   return (
     <div className="bg-background">
@@ -129,7 +132,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
           <div className="container-page">
             <div className="overflow-hidden rounded-3xl border border-white/10">
               <ExternalMapEmbed
-                lang={lang as Locale}
+                lang={lang}
                 title="Apfel Park Map"
                 src={siteInfo.map.embedUrl}
                 directionsUrl={siteInfo.map.linkUrl}

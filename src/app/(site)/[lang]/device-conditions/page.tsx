@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import PageIntro from "../../../../components/PageIntro";
-import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> => {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   return createMetadata(
-    lang as Locale,
+    lang,
     lang === "de" ? "Gerätezustände & Ihre Rechte" : "Device conditions & your rights",
     lang === "de"
       ? "Was Versiegelt, Unboxed und Gebraucht bei Apfel Park bedeuten - und welche Rechte Sie beim Kauf haben."
@@ -20,7 +21,8 @@ export const generateMetadata = async ({ params }: { params: Promise<{ lang: str
 };
 
 export default async function DeviceConditionsPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   const isGerman = lang === "de";
 
   const sections = isGerman

@@ -2,19 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import PageIntro from "../../../../components/PageIntro";
-import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> => {
-  const { lang } = await params;
-  return createMetadata(lang as Locale, lang === "de" ? "Lieferung & Rückgabe" : "Delivery & Returns", lang === "de" ? "Informationen zu Versand, Widerruf und Rückgabe." : "Shipping, withdrawal, and return information.", "/delivery-returns");
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  return createMetadata(lang, lang === "de" ? "Lieferung & Rückgabe" : "Delivery & Returns", lang === "de" ? "Informationen zu Versand, Widerruf und Rückgabe." : "Shipping, withdrawal, and return information.", "/delivery-returns");
 };
 
 export default async function DeliveryReturnsPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
   const isGerman = lang === "de";
   const sections = isGerman
     ? [

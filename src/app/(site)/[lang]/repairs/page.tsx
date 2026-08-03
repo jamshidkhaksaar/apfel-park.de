@@ -4,12 +4,13 @@ import Link from "next/link";
 import PageIntro from "../../../../components/PageIntro";
 import RepairCatalogExplorer from "../../../../components/RepairCatalogExplorer";
 import RepairRequestForm from "../../../../components/RepairRequestForm";
-import { getDictionary, type Locale } from "../../../../lib/i18n";
+import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
 import { getRepairsContent } from "../../../../lib/content";
 import { getRepairCatalog } from "../../../../lib/repair-catalog";
 import { repairServices } from "../../../../lib/repair-services";
+import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +19,11 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> => {
-  const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const dict = getDictionary(lang);
   return createMetadata(
-    lang as Locale,
+    lang,
     dict.meta.repairs.title,
     dict.meta.repairs.description,
     "/repairs",
@@ -29,9 +31,10 @@ export const generateMetadata = async ({
 };
 
 export default async function RepairsPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
-  const dict = getDictionary(lang as Locale);
-  const repairs = await getRepairsContent(lang as Locale);
+  const { lang: rawLang } = await params;
+  const lang = requireLocale(rawLang);
+  const dict = getDictionary(lang);
+  const repairs = await getRepairsContent(lang);
   const repairCatalog = await getRepairCatalog();
 
   const repairIcons = [
@@ -74,7 +77,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
           </div>
           <div className="grid gap-5 md:grid-cols-3">
             {repairServices.map((service) => {
-              const copy = service.copy[lang as Locale];
+              const copy = service.copy[lang];
               return (
                 <Link
                   key={service.slug}
@@ -110,7 +113,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
             </p>
           </div>
 
-          <RepairCatalogExplorer lang={lang as Locale} catalog={repairCatalog} />
+          <RepairCatalogExplorer lang={lang} catalog={repairCatalog} />
         </div>
       </section>
 
@@ -131,7 +134,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
             </p>
           </div>
 
-          <RepairRequestForm lang={lang as Locale} catalog={repairCatalog} />
+          <RepairRequestForm lang={lang} catalog={repairCatalog} />
         </div>
       </section>
 

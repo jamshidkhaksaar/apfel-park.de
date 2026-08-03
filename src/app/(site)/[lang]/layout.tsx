@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { notFound } from "next/navigation";
 
 import LocaleSync from "../../../components/LocaleSync";
 import PageTransition from "../../../components/PageTransition";
 import SiteFooter from "../../../components/SiteFooter";
 import SiteHeader from "../../../components/SiteHeader";
-import { locales, getDictionary, isLocale, type Locale } from "../../../lib/i18n";
+import { locales, getDictionary } from "../../../lib/i18n";
+import { requireLocale } from "@/lib/route-locale";
 
 export const generateStaticParams = () =>
   locales.map((lang) => ({ lang }));
@@ -18,10 +18,7 @@ export default async function SiteLayout({
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  if (!isLocale(lang)) {
-    notFound();
-  }
-  const locale = lang as Locale;
+  const locale = requireLocale(lang);
   const dict = getDictionary(locale);
 
   return (
