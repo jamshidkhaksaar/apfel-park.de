@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 
-import ConditionBadge from "../../../../components/ConditionBadge";
 import PageIntro from "../../../../components/PageIntro";
+import StoreGrid from "../../../../components/store/StoreGrid";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getProducts } from "../../../../lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getLaptopsContent } from "../../../../lib/content";
 
@@ -27,11 +26,29 @@ export const generateMetadata = async ({
   );
 };
 
-export default async function LaptopsPage({ params }: { params: Promise<{ lang: string }> }) {
+export default async function LaptopsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { lang } = await params;
+  const query = await searchParams;
   const dict = getDictionary(lang as Locale);
   const laptops = await getLaptopsContent(lang as Locale);
-  const laptopProducts = await getProducts("laptops", undefined, lang as Locale);
+  const sort = parseStoreSort(query.sort);
+  const page = parseStorePage(query.page);
+  const activeFilters = parseStoreCatalogFilters(query);
+
+  const catalog = await getStoreCatalog({
+    category: "laptops",
+    sort,
+    page,
+    pageSize: 24,
+    locale: lang as Locale,
+    filters: activeFilters,
+  });
 
   return (
     <div className="bg-background">
@@ -51,57 +68,18 @@ export default async function LaptopsPage({ params }: { params: Promise<{ lang: 
             ))}
           </div>
 
-          <div className="mb-8 flex items-center justify-between gap-4">
-            <h2 className="text-3xl font-bold text-foreground md:text-4xl">
-              {lang === "de" ? "Laptop-Angebote" : "Laptop Offers"}
-            </h2>
-            <p className="text-sm text-muted">
-              {laptopProducts.length} {lang === "de" ? "Produkte" : "products"}
-            </p>
-          </div>
-
-          {laptopProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-surface/30 px-6 py-16 text-center">
-              <p className="text-lg font-medium text-muted">
-                {lang === "de"
-                  ? "Noch keine Laptops verfugbar. Bitte Produkte im Admin-Bereich anlegen."
-                  : "No laptops available yet. Please add products in the admin panel."}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {laptopProducts.map((product) => (
-                <article key={product.id} className="tech-card-hover overflow-hidden rounded-2xl">
-                  <div className="relative aspect-[4/3]">
-                    <Image
-                      src={product.image}
-                      alt={product.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 50vw, 33vw"
-                      unoptimized={product.image.startsWith("/uploads/")}
-                    />
-                  </div>
-                  <div className="p-6">
-                    <ConditionBadge condition={product.condition} lang={lang as Locale} className="mb-1" />
-                    <h3 className="text-lg font-bold text-foreground">{product.title}</h3>
-                    <p className="mt-2 text-sm text-muted">{product.description}</p>
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-2xl font-bold text-gold">€{product.price}</span>
-                        {product.compareAtPrice ? (
-                          <span className="text-xs text-muted line-through">€{product.compareAtPrice}</span>
-                        ) : null}
-                      </div>
-                      <Link href={`/${lang}/store/${product.slug}`} className="btn-primary">
-                        <span>{lang === "de" ? "Details" : "Details"}</span>
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
+          <StoreGrid
+            products={catalog.products}
+            lang={lang as Locale}
+            lockedCategory="laptops"
+            sortBy={sort}
+            total={catalog.total}
+            page={catalog.page}
+            pages={catalog.pages}
+            counts={catalog.counts}
+            facets={catalog.facets}
+            activeFilters={activeFilters}
+          />
         </div>
       </section>
 

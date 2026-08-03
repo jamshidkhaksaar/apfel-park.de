@@ -1,0 +1,228 @@
+import type { Locale } from '@/lib/i18n';
+
+export const repairServiceSlugs = [
+  'display-battery',
+  'water-damage',
+  'camera',
+] as const;
+
+export type RepairServiceSlug = (typeof repairServiceSlugs)[number];
+
+type RepairServiceCopy = {
+  title: string;
+  shortTitle: string;
+  description: string;
+  intro: string;
+  symptomsTitle: string;
+  symptoms: string[];
+  diagnosisTitle: string;
+  diagnosis: string[];
+  processTitle: string;
+  process: string[];
+  trustTitle: string;
+  trust: string;
+};
+
+export type RepairService = {
+  slug: RepairServiceSlug;
+  serviceType: string;
+  copy: Record<Locale, RepairServiceCopy>;
+};
+
+export const repairServices: RepairService[] = [
+  {
+    slug: 'display-battery',
+    serviceType: 'Smartphone display and battery repair',
+    copy: {
+      de: {
+        title: 'Display- & Akkureparatur in Hamburg',
+        shortTitle: 'Display & Akku',
+        description: 'Display oder Akku defekt? Apfel Park prüft Smartphones in Hamburg-Wilhelmsburg und nennt Preis, Teilequalität und Dauer vor der Reparatur.',
+        intro: 'Ein gesprungenes Display, Touch-Aussetzer oder ein schwacher Akku machen ein sonst gutes Smartphone schnell unzuverlässig. In unserem Laden in Hamburg-Wilhelmsburg prüfen wir zuerst Modell, Schaden und Gerätezustand. Danach erhältst du eine nachvollziehbare Empfehlung und einen Preis, bevor eine kostenpflichtige Reparatur beginnt.',
+        symptomsTitle: 'Wann eine Prüfung sinnvoll ist',
+        symptoms: [
+          'Glasbruch, schwarze Flecken, Linien oder flackernde Bildbereiche',
+          'Touchscreen reagiert verzögert, nur teilweise oder gar nicht',
+          'Akku entlädt sich ungewöhnlich schnell oder das Gerät schaltet ab',
+          'Gerät wird beim Laden heiß, lädt langsam oder zeigt schwankende Prozentwerte',
+        ],
+        diagnosisTitle: 'Was wir kontrollieren',
+        diagnosis: [
+          'Display, Touchfunktion, Rahmen und sichtbare Sturzschäden',
+          'Akkuzustand, Ladeverhalten und mögliche Ursachen im Ladeanschluss',
+          'Kamera, Lautsprecher, Mikrofon und Sensoren vor und nach der Arbeit',
+          'Passendes Ersatzteil und realistische Reparaturdauer für dein Modell',
+        ],
+        processTitle: 'So läuft die Reparatur ab',
+        process: [
+          'Gerät und Fehler online melden oder direkt im Laden vorbeibringen.',
+          'Wir prüfen das Gerät und bestätigen Preis, Ersatzteil und voraussichtliche Dauer.',
+          'Erst nach deiner Freigabe führen wir die Arbeit aus und testen die wichtigsten Funktionen.',
+          'Du erhältst dein Gerät mit Reparaturbeleg und Hinweisen zur weiteren Nutzung zurück.',
+        ],
+        trustTitle: 'Transparent statt pauschal',
+        trust: 'Der endgültige Preis hängt von Modell, Ersatzteil und zusätzlichen Schäden ab. Wir werben deshalb nicht mit einem Lockpreis, der für dein Gerät später nicht gilt. Nutze den Preisfinder für gelistete Modelle oder sende eine Anfrage für eine konkrete Einschätzung.',
+      },
+      en: {
+        title: 'Screen & Battery Repair in Hamburg',
+        shortTitle: 'Screen & Battery',
+        description: 'Broken screen or weak battery? Apfel Park checks smartphones in Hamburg-Wilhelmsburg and confirms price, part quality and timing first.',
+        intro: 'A cracked screen, unreliable touch input or a weak battery can make an otherwise good phone difficult to use. At our Hamburg-Wilhelmsburg store, we first inspect the model, the fault and the overall condition. You then receive a clear recommendation and price before any paid repair starts.',
+        symptomsTitle: 'When an inspection makes sense',
+        symptoms: [
+          'Cracked glass, black spots, lines or flickering areas',
+          'Touch input responds slowly, only partly or not at all',
+          'The battery drains unusually fast or the device switches off',
+          'The phone gets hot while charging, charges slowly or shows unstable percentages',
+        ],
+        diagnosisTitle: 'What we check',
+        diagnosis: [
+          'Display, touch function, frame and visible impact damage',
+          'Battery health, charging behaviour and possible charging-port causes',
+          'Camera, speakers, microphone and sensors before and after the work',
+          'The suitable replacement part and realistic repair time for your model',
+        ],
+        processTitle: 'How the repair works',
+        process: [
+          'Submit the device and fault online or bring it to the store.',
+          'We inspect it and confirm the price, replacement part and expected timing.',
+          'Only after your approval do we perform the repair and test the main functions.',
+          'You receive the device with a repair receipt and practical aftercare notes.',
+        ],
+        trustTitle: 'Clear pricing, not teaser pricing',
+        trust: 'The final price depends on the model, replacement part and any additional damage. We therefore do not promise a generic teaser price that may not apply to your device. Use the price finder for listed models or send a request for a specific assessment.',
+      },
+    },
+  },
+  {
+    slug: 'water-damage',
+    serviceType: 'Smartphone water damage diagnosis and repair',
+    copy: {
+      de: {
+        title: 'Handy-Wasserschaden prüfen in Hamburg',
+        shortTitle: 'Wasserschaden',
+        description: 'Smartphone nass geworden? Apfel Park untersucht Wasserschäden in Hamburg-Wilhelmsburg, dokumentiert den Befund und bespricht die Optionen.',
+        intro: 'Nach Kontakt mit Wasser, Getränken oder hoher Feuchtigkeit zählt ein vorsichtiger Umgang. Schalte das Gerät aus, trenne es vom Ladekabel und versuche nicht, es durch wiederholtes Einschalten zu testen. Reis oder starke Hitze entfernen keine Rückstände auf der Platine und können zusätzliche Probleme verursachen. Wir öffnen und prüfen das Gerät fachgerecht, bevor wir eine Reparatur empfehlen.',
+        symptomsTitle: 'Typische Anzeichen',
+        symptoms: [
+          'Gerät startet nicht, startet neu oder wird ungewöhnlich warm',
+          'Display, Kamera, Lautsprecher oder Mikrofon funktionieren unzuverlässig',
+          'Laden ist nicht möglich oder der Anschluss erkennt das Kabel nur zeitweise',
+          'Beschlag in Kameralinsen oder sichtbare Feuchtigkeit im Gerät',
+        ],
+        diagnosisTitle: 'Was die Diagnose umfasst',
+        diagnosis: [
+          'Sichtprüfung von Anschlüssen, Dichtungen und Flüssigkeitsindikatoren',
+          'Kontrolle auf Korrosion und Rückstände an erreichbaren Bauteilen',
+          'Funktionstest der betroffenen Baugruppen, sofern sicher möglich',
+          'Einschätzung, ob Reinigung, Teiletausch oder Datenrettungsberatung sinnvoll ist',
+        ],
+        processTitle: 'Was du jetzt tun solltest',
+        process: [
+          'Gerät ausschalten und nicht weiter laden.',
+          'SIM-Karte entfernen, sichtbare Flüssigkeit außen vorsichtig abtrocknen.',
+          'Gerät möglichst zeitnah zur Diagnose bringen und Flüssigkeitsart sowie Zeitpunkt nennen.',
+          'Vor weiteren Arbeiten erhältst du den Befund und eine Kostenentscheidung.',
+        ],
+        trustTitle: 'Keine unrealistischen Erfolgsversprechen',
+        trust: 'Der Verlauf eines Wasserschadens hängt von Flüssigkeit, Dauer, Korrosion und bereits erfolgten Einschaltversuchen ab. Deshalb kann eine Rettung nie pauschal garantiert werden. Wir erklären dir den Befund und ob eine Reparatur wirtschaftlich sinnvoll erscheint.',
+      },
+      en: {
+        title: 'Phone Water-Damage Check in Hamburg',
+        shortTitle: 'Water Damage',
+        description: 'Phone got wet? Apfel Park inspects water damage in Hamburg-Wilhelmsburg, documents the findings and discusses realistic options.',
+        intro: 'After contact with water, drinks or heavy moisture, careful handling matters. Switch the device off, disconnect the charger and do not repeatedly power it on to test it. Rice or strong heat cannot remove conductive residue from the board and may create further damage. We open and inspect the device properly before recommending repair work.',
+        symptomsTitle: 'Common warning signs',
+        symptoms: [
+          'The device will not start, keeps restarting or becomes unusually warm',
+          'Display, camera, speakers or microphone work intermittently',
+          'Charging fails or the port only detects a cable sometimes',
+          'Fogging in camera lenses or visible moisture inside the device',
+        ],
+        diagnosisTitle: 'What the diagnosis covers',
+        diagnosis: [
+          'Visual inspection of ports, seals and liquid-contact indicators',
+          'Checks for corrosion and residue on accessible components',
+          'Functional testing of affected assemblies where it is safe to do so',
+          'Assessment of cleaning, part replacement or data-recovery advice',
+        ],
+        processTitle: 'What to do now',
+        process: [
+          'Switch the device off and do not charge it again.',
+          'Remove the SIM and gently dry visible liquid from the exterior.',
+          'Bring it in promptly and tell us the liquid type and when exposure happened.',
+          'You receive the findings and cost options before further work.',
+        ],
+        trustTitle: 'No unrealistic recovery promises',
+        trust: 'The outcome depends on the liquid, exposure time, corrosion and any attempts to power the phone on. Recovery can therefore never be guaranteed in advance. We explain the findings and whether a repair appears economically sensible.',
+      },
+    },
+  },
+  {
+    slug: 'camera',
+    serviceType: 'Smartphone camera diagnosis and repair',
+    copy: {
+      de: {
+        title: 'Handy-Kamerareparatur in Hamburg',
+        shortTitle: 'Kamera',
+        description: 'Unscharfe, schwarze oder zitternde Handykamera? Apfel Park prüft Kamera, Glas und Software in Hamburg-Wilhelmsburg vor dem Teiletausch.',
+        intro: 'Unscharfe Bilder, ein zitternder Fokus oder eine schwarze Kameravorschau bedeuten nicht automatisch, dass das Kameramodul ersetzt werden muss. Auch Schutzglas, Verschmutzung, Sturzschäden, Software oder andere Bauteile können die Ursache sein. Wir grenzen den Fehler zuerst ein und besprechen danach die passende Lösung.',
+        symptomsTitle: 'Fehler, die wir prüfen',
+        symptoms: [
+          'Kamera fokussiert nicht, zittert oder erzeugt dauerhaft unscharfe Bilder',
+          'Kamera-App zeigt ein schwarzes Bild oder beendet sich',
+          'Kameraglas ist gebrochen, verkratzt oder innen beschlagen',
+          'Frontkamera, Blitz oder Bildstabilisierung funktionieren nicht korrekt',
+        ],
+        diagnosisTitle: 'Unsere Prüfschritte',
+        diagnosis: [
+          'Test von Haupt-, Ultraweitwinkel- und Frontkamera, soweit vorhanden',
+          'Kontrolle von Kameraglas, Rahmen, Steckverbindungen und sichtbaren Sturzspuren',
+          'Abgrenzung zwischen Softwareproblem und Hardwaredefekt',
+          'Funktionstest von Fokus, Blitz, Video und Mikrofon nach der Arbeit',
+        ],
+        processTitle: 'Von der Anfrage bis zur Abholung',
+        process: [
+          'Beschreibe Modell, Kamera und Fehler möglichst genau.',
+          'Wir prüfen das Gerät und nennen dir die wahrscheinliche Ursache.',
+          'Du bestätigst Preis und Reparatur, bevor ein Teil ersetzt wird.',
+          'Nach dem Abschlusstest erhältst du Gerät und Reparaturbeleg zurück.',
+        ],
+        trustTitle: 'Das passende Teil für den tatsächlichen Fehler',
+        trust: 'Kamerafehler können ähnlich aussehen, aber unterschiedliche Ursachen haben. Eine Diagnose verhindert unnötigen Teiletausch und schafft eine bessere Entscheidungsgrundlage. Bei zusätzlichen Schäden informieren wir dich, bevor Kosten entstehen.',
+      },
+      en: {
+        title: 'Phone Camera Repair in Hamburg',
+        shortTitle: 'Camera',
+        description: 'Blurry, black or shaking phone camera? Apfel Park checks the camera, lens glass and software in Hamburg-Wilhelmsburg before replacing parts.',
+        intro: 'Blurry photos, shaking focus or a black camera preview do not automatically mean the camera module must be replaced. Lens glass, dirt, impact damage, software or another component can cause similar symptoms. We isolate the fault first and then discuss the appropriate solution.',
+        symptomsTitle: 'Faults we inspect',
+        symptoms: [
+          'The camera will not focus, shakes or produces consistently blurry photos',
+          'The camera app shows a black image or closes unexpectedly',
+          'Lens glass is cracked, scratched or fogged on the inside',
+          'Front camera, flash or image stabilisation does not work correctly',
+        ],
+        diagnosisTitle: 'Our checks',
+        diagnosis: [
+          'Main, ultra-wide and front camera tests where fitted',
+          'Inspection of lens glass, frame, connectors and visible impact marks',
+          'Separation of software problems from hardware faults',
+          'Focus, flash, video and microphone tests after the work',
+        ],
+        processTitle: 'From request to collection',
+        process: [
+          'Describe the model, affected camera and fault as precisely as possible.',
+          'We inspect the device and explain the likely cause.',
+          'You approve the price and repair before a part is replaced.',
+          'After final testing, you receive the device and repair receipt.',
+        ],
+        trustTitle: 'The right part for the actual fault',
+        trust: 'Camera faults can look similar while having different causes. Diagnosis helps avoid unnecessary part replacement and gives you a better basis for deciding. If we find additional damage, we inform you before costs are incurred.',
+      },
+    },
+  },
+];
+
+export const getRepairService = (slug: string): RepairService | null =>
+  repairServices.find((service) => service.slug === slug) ?? null;

@@ -15,8 +15,12 @@ export const generateMetadata = async ({
   return createMetadata(
     lang as Locale,
     lang === "de" ? "Warenkorb" : "Cart",
-    lang === "de" ? "Prüfe deine Auswahl und starte den sicheren Checkout." : "Review your items and start secure checkout.",
+    lang === "de"
+      ? "Prüfe deine ausgewählten Geräte und Zubehörartikel und starte anschließend den sicheren Checkout bei Apfel Park."
+      : "Review your selected phones, devices and accessories, then continue to Apfel Park's secure checkout.",
     "/cart",
+    undefined,
+    { noindex: true },
   );
 };
 
@@ -32,4 +36,3 @@ export default async function CartPage({ params }: { params: Promise<{ lang: str
     </section>
   );
 }
-

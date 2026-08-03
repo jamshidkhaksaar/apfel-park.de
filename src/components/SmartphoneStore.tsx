@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import ConditionBadge from "./ConditionBadge";
+import ProductStatusBadge from "./ProductStatusBadge";
 import { formatPrice } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
@@ -14,20 +14,52 @@ type SmartphoneStoreProps = {
   phones: Product[];
 };
 
+const isTablet = (product: Product) => {
+  const text = [product.title, product.subtitle, product.model, ...product.featureBullets]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return /\bipad\b|\btablet\b|\btab\s?17|\btab17|\bgalaxy tab\b/.test(text);
+};
+
+const normalizedBrand = (brand: string | undefined) => {
+  const value = (brand ?? "").trim();
+  if (/^apple(?:\s+iphone)?$/i.test(value)) return "Apple";
+  if (/^samsung/i.test(value)) return "Samsung";
+  if (/^(xiaomi|redmi)/i.test(value)) return "Xiaomi";
+  if (/^google/i.test(value)) return "Google";
+  return value;
+};
+
 export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) {
+  const [activeAvailability, setActiveAvailability] = useState<"all" | "open-box" | "tablets">("all");
   const [activeBrand, setActiveBrand] = useState<string>("all");
+
+  const phoneProducts = useMemo(() => phones.filter((phone) => !isTablet(phone)), [phones]);
+  const tabletProducts = useMemo(() => phones.filter(isTablet), [phones]);
 
   const brands = useMemo(() => {
     const uniqueBrands = Array.from(
-      new Set(phones.map((phone) => phone.brand).filter((brand): brand is string => Boolean(brand))),
+      new Set(phoneProducts.map((phone) => normalizedBrand(phone.brand)).filter(Boolean)),
     );
     return ["all", ...uniqueBrands];
-  }, [phones]);
+  }, [phoneProducts]);
 
   const filteredPhones = useMemo(() => {
-    if (activeBrand === "all") return phones;
-    return phones.filter((phone) => phone.brand === activeBrand);
-  }, [activeBrand, phones]);
+    const availabilityFiltered = activeAvailability === "tablets"
+      ? tabletProducts
+      : activeAvailability === "open-box"
+        ? phoneProducts.filter((phone) => phone.isOpenBox)
+        : phoneProducts;
+
+    if (activeBrand === "all") return availabilityFiltered;
+    return availabilityFiltered.filter((phone) => normalizedBrand(phone.brand) === activeBrand);
+  }, [activeAvailability, activeBrand, phoneProducts, tabletProducts]);
+
+  const chooseAvailability = (next: "all" | "open-box" | "tablets") => {
+    setActiveAvailability(next);
+    setActiveBrand("all");
+  };
 
   return (
     <section className="section-pad" id="store">
@@ -43,7 +75,53 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
           </div>
         </div>
 
-        {brands.length > 1 && (
+        <div
+          className="mb-5 flex flex-wrap gap-2"
+          role="radiogroup"
+          aria-label={lang === "de" ? "Geräteauswahl" : "Device selection"}
+        >
+          <button
+            type="button"
+            role="radio"
+            aria-checked={activeAvailability === "all"}
+            onClick={() => chooseAvailability("all")}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeAvailability === "all"
+                ? "bg-gold text-black"
+                : "border border-white/10 bg-white/5 text-muted hover:border-gold/30 hover:text-gold"
+            }`}
+          >
+            {lang === "de" ? "Alle Smartphones" : "All Smartphones"} <span className="ml-1 opacity-65">{phoneProducts.length}</span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={activeAvailability === "open-box"}
+            onClick={() => chooseAvailability("open-box")}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeAvailability === "open-box"
+                ? "bg-gold text-black"
+                : "border border-white/10 bg-white/5 text-muted hover:border-gold/30 hover:text-gold"
+            }`}
+          >
+            {lang === "de" ? "Openbox / Gebraucht" : "Openbox / Used"} <span className="ml-1 opacity-65">{phoneProducts.filter((phone) => phone.isOpenBox).length}</span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={activeAvailability === "tablets"}
+            onClick={() => chooseAvailability("tablets")}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeAvailability === "tablets"
+                ? "bg-gold text-black"
+                : "border border-white/10 bg-white/5 text-muted hover:border-gold/30 hover:text-gold"
+            }`}
+          >
+            {lang === "de" ? "Tablets" : "Tablets"} <span className="ml-1 opacity-65">{tabletProducts.length}</span>
+          </button>
+        </div>
+
+        {activeAvailability !== "tablets" && brands.length > 1 && (
           <div
             className="mb-8 flex flex-wrap gap-2"
             role="radiogroup"
@@ -61,7 +139,7 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
                     : "border border-white/10 bg-white/5 text-muted hover:border-gold/30 hover:text-gold"
                 }`}
               >
-                {brand === "all" ? (lang === "de" ? "Alle" : "All") : brand}
+                {brand === "all" ? (lang === "de" ? "Alle Marken" : "All brands") : brand === "Apple" ? "Apple iPhone" : brand}
               </button>
             ))}
           </div>
@@ -71,8 +149,8 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
           <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-surface/30 px-6 py-16 text-center">
             <p className="text-lg font-medium text-muted">
               {lang === "de"
-                ? "Noch keine Smartphones verfugbar. Bitte Produkte im Admin-Bereich anlegen."
-                : "No smartphones available yet. Please add products in the admin panel."}
+                ? "Aktuell sind keine Smartphones in dieser Auswahl verfügbar. Neue Geräte folgen in Kürze."
+                : "No smartphones match this selection right now. New devices will appear here soon."}
             </p>
           </div>
         ) : (
@@ -88,12 +166,12 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
                     sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                     unoptimized={phone.image.startsWith("/uploads/")}
                   />
+                  <ProductStatusBadge condition={phone.condition} lang={lang} className="pointer-events-none absolute right-3 top-3 z-20" />
                 </div>
                 <div className="p-4">
                   {phone.brand && (
                     <p className="text-xs font-semibold uppercase tracking-wider text-gold">{phone.brand}</p>
                   )}
-                  <ConditionBadge condition={phone.condition} lang={lang} className="mt-1" />
                   <h3 className="mt-1 text-lg font-semibold text-foreground">{phone.title}</h3>
                   <p className="mt-2 text-sm text-muted">{phone.description}</p>
                   <div className="mt-4 flex items-end justify-between gap-3">

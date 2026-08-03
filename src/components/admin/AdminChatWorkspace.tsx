@@ -20,6 +20,8 @@ type ChatConversation = {
   lastMessageAt: string;
   adminUnreadCount: number;
   customerUnreadCount: number;
+  customerTyping: boolean;
+  adminTyping: boolean;
 };
 
 type ChatMessage = {
@@ -64,6 +66,11 @@ const copy = {
     email: "E-Mail",
     phone: "Telefon",
     messagePlaceholder: "Antworte professionell und klar...",
+    typing: "Kunde schreibt",
+    queue: "Unterhaltungen",
+    unread: "ungelesen",
+    error: "Chat-Daten konnten nicht aktualisiert werden.",
+    shortcut: "Strg + Enter zum Senden",
   },
   en: {
     eyebrow: "Customer chat",
@@ -93,6 +100,11 @@ const copy = {
     email: "Email",
     phone: "Phone",
     messagePlaceholder: "Reply clearly and professionally...",
+    typing: "Customer is typing",
+    queue: "Conversations",
+    unread: "unread",
+    error: "Chat data could not be refreshed.",
+    shortcut: "Ctrl + Enter to send",
   },
 } as const;
 
@@ -126,7 +138,12 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | ChatStatus>("all");
   const [reply, setReply] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const latestCustomerMessageIdRef = useRef<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const replyFormRef = useRef<HTMLFormElement | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
+  const typingSentRef = useRef(false);
 
   const selectedConversation = conversations.find((item) => item.id === selectedId) ?? null;
 
@@ -145,10 +162,20 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
     });
   }, [conversations, filter, search]);
 
+  const counts = useMemo(() => ({
+    all: conversations.length,
+    open: conversations.filter((item) => item.status === "open").length,
+    waiting: conversations.filter((item) => item.status === "waiting").length,
+    resolved: conversations.filter((item) => item.status === "resolved").length,
+    unread: conversations.reduce((sum, item) => sum + item.adminUnreadCount, 0),
+  }), [conversations]);
+
   const loadConversations = useCallback(async (silent = false) => {
     if (!silent) setLoadingThread(true);
+    setError(null);
     try {
       const response = await fetch("/api/admin/chat", { cache: "no-store" });
+      if (!response.ok) throw new Error("Failed to load conversations");
       const payload = (await response.json()) as { conversations?: ChatConversation[] };
       if (Array.isArray(payload.conversations)) {
         const currentLatest = payload.conversations
@@ -169,16 +196,20 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
           setSelectedId(payload.conversations[0].id);
         }
       }
+    } catch {
+      setError(text.error);
     } finally {
       if (!silent) setLoadingThread(false);
     }
-  }, [conversations, selectedId]);
+  }, [conversations, selectedId, text.error]);
 
   const loadThread = useCallback(async (id: string, silent = false) => {
     if (!id) return;
     if (!silent) setLoadingThread(true);
+    setError(null);
     try {
       const response = await fetch(`/api/admin/chat?id=${encodeURIComponent(id)}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Failed to load thread");
       const payload = (await response.json()) as { conversation?: ChatConversation; messages?: ChatMessage[] };
       if (payload.conversation) {
         setConversations((current) =>
@@ -193,10 +224,12 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
         latestCustomerMessageIdRef.current = latestCustomerMessage?.id ?? latestCustomerMessageIdRef.current;
         setMessages(payload.messages);
       }
+    } catch {
+      setError(text.error);
     } finally {
       if (!silent) setLoadingThread(false);
     }
-  }, []);
+  }, [text.error]);
 
   useEffect(() => {
     if (selectedId) {
@@ -210,14 +243,53 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
       if (selectedId) {
         void loadThread(selectedId, true);
       }
-    }, 5000);
+    }, 2000);
     return () => window.clearInterval(interval);
   }, [selectedId, loadConversations, loadThread]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: "end" });
+  }, [messages.length, selectedConversation?.customerTyping]);
+
+  const updateAdminTyping = useCallback(async (isTyping: boolean) => {
+    if (!selectedId) return;
+    try {
+      await fetch("/api/admin/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "typing", conversationId: selectedId, isTyping }),
+      });
+    } catch {
+      // Presence is best-effort and should never block a reply.
+    }
+  }, [selectedId]);
+
+  const handleReplyChange = (value: string) => {
+    setReply(value);
+    if (!typingSentRef.current) {
+      typingSentRef.current = true;
+      void updateAdminTyping(true);
+    }
+    if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = window.setTimeout(() => {
+      typingSentRef.current = false;
+      void updateAdminTyping(false);
+    }, 2200);
+  };
+
+  useEffect(() => () => {
+    if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+    if (typingSentRef.current) void updateAdminTyping(false);
+  }, [updateAdminTyping]);
 
   const handleReply = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedId || !reply.trim()) return;
     setSending(true);
+    setError(null);
+    if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+    typingSentRef.current = false;
+    void updateAdminTyping(false);
     try {
       const response = await fetch("/api/admin/chat", {
         method: "POST",
@@ -228,6 +300,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
           message: reply,
         }),
       });
+      if (!response.ok) throw new Error("Reply failed");
       const payload = (await response.json()) as { conversation?: ChatConversation; messages?: ChatMessage[] };
       if (payload.conversation) {
         setConversations((current) =>
@@ -239,6 +312,8 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
       }
       setReply("");
       void loadConversations(true);
+    } catch {
+      setError(text.error);
     } finally {
       setSending(false);
     }
@@ -246,6 +321,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
 
   const handleStatusChange = async (status: ChatStatus) => {
     if (!selectedId) return;
+    setError(null);
     const response = await fetch("/api/admin/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -255,6 +331,10 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
         status,
       }),
     });
+    if (!response.ok) {
+      setError(text.error);
+      return;
+    }
     const payload = (await response.json()) as { conversation?: ChatConversation };
     if (payload.conversation) {
       setConversations((current) =>
@@ -264,20 +344,27 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
   };
 
   return (
-    <div className="grid h-[calc(100vh-9rem)] gap-6 xl:grid-cols-[360px_1fr]">
-      <section className="glass-panel flex min-h-0 flex-col rounded-3xl p-4">
+    <div className="grid gap-5 xl:h-[calc(100dvh-9rem)] xl:grid-cols-[340px_minmax(0,1fr)]">
+      <section className="glass-panel flex min-h-[34rem] flex-col rounded-2xl p-4 xl:min-h-0">
         <div className="mb-4 px-2">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">{text.eyebrow}</p>
           <h2 className="mt-2 text-2xl font-bold text-foreground">{text.title}</h2>
           <p className="mt-2 text-sm text-muted">{text.intro}</p>
+          <div className="mt-4 flex items-center gap-3 text-xs text-muted">
+            <span><strong className="text-foreground">{counts.all}</strong> {text.queue.toLowerCase()}</span>
+            <span aria-hidden="true">•</span>
+            <span><strong className="text-gold">{counts.unread}</strong> {text.unread}</span>
+          </div>
         </div>
         <div className="px-2">
+          <label htmlFor="admin-chat-search" className="sr-only">{text.search}</label>
           <input
-            type="text"
+            id="admin-chat-search"
+            type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={text.search}
-            className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
+            className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
           />
           <div className="mt-3 flex flex-wrap gap-2">
             {(["all", "open", "waiting", "resolved"] as const).map((item) => (
@@ -285,11 +372,12 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
                 key={item}
                 type="button"
                 onClick={() => setFilter(item)}
-                className={`rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                aria-pressed={filter === item}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                   filter === item ? "bg-gold text-black" : "bg-black/20 text-muted"
                 }`}
               >
-                {text.filters[item]}
+                {text.filters[item]} <span className="ml-1 opacity-60">{counts[item]}</span>
               </button>
             ))}
           </div>
@@ -304,6 +392,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
                   key={conversation.id}
                   type="button"
                   onClick={() => setSelectedId(conversation.id)}
+                  aria-pressed={selectedId === conversation.id}
                   className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
                     selectedId === conversation.id
                       ? "border-gold/40 bg-gold/10"
@@ -340,7 +429,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
         </div>
       </section>
 
-      <section className="glass-panel flex min-h-0 flex-col rounded-3xl p-6">
+      <section className="glass-panel flex min-h-[42rem] flex-col rounded-2xl p-4 sm:p-6 xl:min-h-0">
         {!selectedConversation ? (
           <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-white/10 text-sm text-muted">
             {text.emptyDetail}
@@ -371,7 +460,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
               </div>
             </div>
 
-            <div className="mt-5 flex-1 space-y-3 overflow-y-auto">
+            <div className="mt-5 flex-1 space-y-3 overflow-y-auto pr-1" role="log" aria-live="polite" aria-relevant="additions text">
               {loadingThread && messages.length === 0 ? (
                 <div className="text-sm text-muted">Loading…</div>
               ) : (
@@ -398,17 +487,39 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
                   );
                 })
               )}
+              {selectedConversation.customerTyping ? (
+                <div className="flex justify-start" role="status">
+                  <div className="rounded-2xl border border-gold/20 bg-gold/5 px-4 py-3">
+                    <div className="flex items-center gap-2 text-xs text-muted">
+                      <span>{text.typing}</span>
+                      <span className="flex gap-1" aria-hidden="true">
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold motion-reduce:animate-none [animation-delay:-0.3s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold motion-reduce:animate-none [animation-delay:-0.15s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold motion-reduce:animate-none" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleReply} className="mt-5 border-t border-white/10 pt-5">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+            <form ref={replyFormRef} onSubmit={handleReply} className="mt-5 border-t border-white/10 bg-surface/40 pt-4">
+              <label htmlFor="admin-chat-reply" className="mb-2 block text-sm font-semibold text-foreground">
                 {text.reply}
               </label>
               <div className="flex gap-3">
                 <textarea
+                  id="admin-chat-reply"
                   rows={3}
                   value={reply}
-                  onChange={(event) => setReply(event.target.value)}
+                  onChange={(event) => handleReplyChange(event.target.value)}
+                  onKeyDown={(event) => {
+                    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                      event.preventDefault();
+                      replyFormRef.current?.requestSubmit();
+                    }
+                  }}
                   placeholder={text.messagePlaceholder}
                   className="min-h-[88px] flex-1 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
                 />
@@ -420,6 +531,11 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
                   {sending ? text.sending : text.send}
                 </button>
               </div>
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted">
+                <span>{text.shortcut}</span>
+                <span>{reply.length}/2000</span>
+              </div>
+              {error ? <p className="mt-2 text-sm text-red-400" role="alert">{error}</p> : null}
             </form>
           </>
         )}

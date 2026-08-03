@@ -8,6 +8,7 @@ export const dictionary = {
       { label: "Startseite", path: "" },
       { label: "Reparatur & Service", path: "/repairs" },
       { label: "Smartphones", path: "/smartphones" },
+      { label: "Tablets", path: "/tablets" },
       { label: "Zubehör", path: "/accessories" },
       { label: "Laptops", path: "/laptops" },
       { label: "Gaming", path: "/gaming" },
@@ -32,6 +33,7 @@ export const dictionary = {
       quickLinks: [
         { label: "Reparatur & Service", path: "/repairs" },
         { label: "Smartphones", path: "/smartphones" },
+        { label: "Tablets", path: "/tablets" },
         { label: "Zubehör", path: "/accessories" },
         { label: "Laptops", path: "/laptops" },
         { label: "Gaming", path: "/gaming" },
@@ -39,6 +41,8 @@ export const dictionary = {
       companyLinks: [
         { label: "Über uns", path: "/about" },
         { label: "FAQ", path: "/faq" },
+        { label: "Gerätezustände & Rechte", path: "/device-conditions" },
+        { label: "Vertrag widerrufen", path: "/withdrawal" },
         { label: "Datenschutz", path: "/privacy" },
         { label: "AGB", path: "/terms" },
         { label: "Impressum", path: "/impressum" },
@@ -52,74 +56,79 @@ export const dictionary = {
     },
     meta: {
       home: {
-        title: "Apfel Park | Smartphone & Repair Studio",
+        title: "iPhone & Smartphone kaufen Hamburg",
         description:
-          "Smart Phone. Smart Service. Smart Price. Premium Shop für Smartphones, Zubehör, Konsolen und Reparaturen in Hamburg.",
+          "Smartphones & iPhones in Hamburg: neu, Open Box & gebraucht mit Garantie. Sofort abholbar oder schneller Versand. Tel. 040 58978787.",
       },
       services: {
-        title: "Services",
+        title: "Services & Reparatur Hamburg",
         description:
           "Professionelle Services von Sofort-Reparatur bis Geräte-Setup – alles im Apfel Park Hamburg.",
       },
       repairs: {
-        title: "Reparaturen",
+        title: "Handy-Reparatur Hamburg – Display & Akku",
         description:
-          "Smartphone-, Tablet- und Konsolenreparaturen mit Premium-Teilen, Garantie und Express-Service.",
+          "Express-Reparatur für iPhone & Samsung in Hamburg-Wilhelmsburg: Display, Akku, Kamera & Wasserschaden mit Garantie. Tel. 040 58978787.",
       },
       accessories: {
-        title: "Zubehör",
+        title: "Handy-Zubehör in Hamburg kaufen",
         description:
-          "Handy-Zubehör, Schutz, Ladegeräte und Audio – sorgfältig ausgewählte Marken im Apfel Park.",
+          "Hüllen, Panzerglas, Ladegeräte, Kabel und Kopfhörer für iPhone, Samsung und mehr. Ausgewählte Qualität im Apfel Park Hamburg.",
       },
       smartphones: {
-        title: "Smartphones",
+        title: "Smartphones & iPhones kaufen Hamburg",
         description:
-          "Neue und geprüfte Smartphones führender Marken – sofort verfügbar im Apfel Park.",
+          "Geprüfte Smartphones von Apple, Samsung, Xiaomi und mehr. Neu, Open Box & gebraucht mit Garantie – online bestellen oder in Hamburg abholen.",
+      },
+      tablets: {
+        title: "Tablets & iPads in Hamburg kaufen",
+        description:
+          "Tablets und iPads mit klar ausgewiesenem Zustand und Garantie. Online ansehen, nach Hamburg liefern lassen oder im Shop abholen.",
       },
       gaming: {
-        title: "Gaming & Konsolen",
+        title: "Konsolen-Reparatur & Gaming Hamburg",
         description:
-          "PlayStation- und Gaming-Services, Reparaturen und Zubehör im Apfel Park.",
+          "PlayStation- und Gaming-Services, Reparaturen, HDMI-Anschluss-Tausch und Zubehör im Apfel Park Hamburg mit Garantie.",
       },
       laptops: {
-        title: "Laptops",
+        title: "Laptops & MacBooks kaufen Hamburg",
         description:
-          "Neue und gebrauchte Laptops kaufen – MacBooks, Windows-Laptops mit Garantie und bestem Preis-Leistungs-Verhältnis.",
+          "Neue und gebrauchte Laptops kaufen – MacBooks & Windows-Laptops mit Garantie und bestem Preis-Leistungs-Verhältnis in Hamburg.",
       },
       contact: {
-        title: "Kontakt",
+        title: "Kontakt & Anfahrt – Apfel Park Hamburg",
         description:
-          "Rufen Sie uns an oder besuchen Sie Apfel Park in Hamburg. Wir sind Montag bis Samstag für Sie da.",
+          "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg. Mo–Sa 9:30–20:00 Uhr. Tel. 040 58978787 – ruf an oder schreib per WhatsApp.",
       },
       about: {
-        title: "Über uns",
+        title: "Über uns – Smartphone-Experten Hamburg",
         description:
-          "Erfahre mehr über Apfel Park – der Premium-Shop für Smartphones, Zubehör und Reparaturen.",
+          "Apfel Park ist dein lokaler Shop für iPhones, Smartphones, Zubehör, Ankauf und Reparaturen in Hamburg-Wilhelmsburg. Lerne unser Team kennen.",
       },
       faq: {
-        title: "FAQ",
+        title: "Häufige Fragen & Antworten",
         description:
-          "Antworten auf die häufigsten Fragen rund um Reparatur, Zubehör und Service im Apfel Park.",
+          "Antworten auf die häufigsten Fragen zu Bestellung, Garantie, Open Box, Gerätezuständen, Ankauf und Reparatur bei Apfel Park Hamburg.",
       },
       privacy: {
-        title: "Datenschutz",
+        title: "Datenschutz – Apfel Park Hamburg",
         description:
           "Datenschutzinformationen für Apfel Park – transparent, sicher und DSGVO-konform.",
       },
       terms: {
-        title: "AGB",
+        title: "AGB – Apfel Park Hamburg",
         description:
-          "Allgemeine Geschäftsbedingungen für Reparaturen, Verkäufe und Services im Apfel Park.",
+          "Allgemeine Geschäftsbedingungen für Reparaturen, Verkäufe und Services im Apfel Park Hamburg.",
       },
     },
     home: {
       hero: {
-        eyebrow: "Hamburgs Premium-Mobilshop",
-        title: "Smart Phone. Smart Service. Smart Price.",
+        eyebrow: "Hamburgs Smartphone-Shop in Wilhelmsburg",
+        title: "iPhones & Smartphones – neu, Open Box & gebraucht",
         subtitle:
-          "Erlebe Premium-Smartphones, Zubehör und Express-Reparaturen im Apfel Park. Alles an einem Ort – schnell, transparent, professionell.",
-        primaryCta: "Reparatur starten",
-        secondaryCta: "Kontakt aufnehmen",
+          "Smart Phone. Smart Service. Smart Price. Geprüfte Geräte mit Garantie – sofort abholbar in Hamburg oder mit schnellem Versand in ganz Deutschland.",
+        primaryCta: "Smartphones entdecken",
+        secondaryCta: "Reparatur anfragen",
         cards: [
           {
             title: "Shop & Beratung",
@@ -457,7 +466,7 @@ export const dictionary = {
         },
         {
           title: "Schreib uns",
-          description: "info@apfel-park.de",
+          description: "info [at] apfel-park [dot] de",
         },
       ],
     },
@@ -552,7 +561,7 @@ export const dictionary = {
           title: "1. Verantwortlicher",
           body: [
             "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
-            "E-Mail: info@apfel-park.de | Telefon: 040 58978787",
+            "E-Mail: info [at] apfel-park [dot] de | Telefon: 040 58978787",
             "Bei Datenschutzanfragen können Sie uns jederzeit über die oben genannten Kontaktdaten erreichen.",
           ],
         },
@@ -582,6 +591,7 @@ export const dictionary = {
             "Kartendarstellungen erfolgen nur nach Einwilligung über Google Maps. Wenn aktiviert, kann Google dabei technische Nutzungsdaten verarbeiten.",
             "Wenn Spam-Schutz per Google reCAPTCHA aktiviert ist, wird dieser externe Dienst ebenfalls nur nach Einwilligung geladen.",
             "Wenn Marketing-Tracking aktiviert und von Ihnen freigegeben wurde, können Meta Pixel und TikTok Pixel technische Nutzungs- und Ereignisdaten für Reichweitenmessung, Kampagnenauswertung und Werbeattribution verarbeiten.",
+            "Für die Zahlungsabwicklung und Lieferung geben wir Bestell-, Kontakt- und Adressdaten nur an die jeweils ausgewählten oder erforderlichen Zahlungs- und Versanddienstleister weiter.",
             "Eine Weitergabe an weitere Empfänger erfolgt nur, wenn dies für die Vertragsabwicklung erforderlich ist oder wir gesetzlich dazu verpflichtet sind.",
           ],
         },
@@ -646,13 +656,31 @@ export const dictionary = {
           ],
         },
         {
-          title: "4. Garantie",
+          title: "4. Gerätezustand",
+          body: [
+            "Neu & versiegelt bezeichnet originalverpackte Ware. Open-Box bezeichnet ausgepackte, nicht als gebraucht verkaufte Geräte, etwa Ausstellungs- oder Retourenware.",
+            "Gebraucht A+ bezeichnet geprüfte, zuvor genutzte Geräte in sehr gutem Zustand. Artikelhinweise, echte Produktfotos und bei iPhones die angegebene Batteriekapazität beschreiben den jeweiligen Artikel.",
+            "Geöffnete oder aktivierte Retouren werden niemals als 'Neu & versiegelt' verkauft, sondern ausschließlich als Open-Box oder Gebraucht angeboten.",
+          ],
+        },
+        {
+          title: "5. Lieferung, Widerruf & Mängelrechte",
+          body: [
+            "Abholung im Store ist kostenlos. Versicherter Versand innerhalb Deutschlands kostet 6,90 € und erfolgt in der Regel innerhalb von 1–3 Werktagen nach Zahlungseingang.",
+            "Für online geschlossene Verbraucherverträge gilt grundsätzlich ein 14-tägiges Widerrufsrecht. Der Widerruf kann bequem über unsere Online-Widerrufsfunktion (Seite 'Vertrag widerrufen') erklärt werden; Sie erhalten unverzüglich eine Eingangsbestätigung.",
+            "Die unmittelbaren Kosten der Rücksendung tragen Sie. Die Erstattung erfolgt spätestens 14 Tage nach Eingang des Widerrufs über dasselbe Zahlungsmittel; wir dürfen sie bis zum Wareneingang oder Versandnachweis zurückhalten. Details und das Muster-Widerrufsformular finden Sie unter Lieferung & Rückgabe.",
+            "Ein Wertersatz kommt nur bei einem Umgang in Betracht, der über die Prüfung von Beschaffenheit, Eigenschaften und Funktionsweise hinausgeht, und bemisst sich stets am tatsächlichen, nachweisbaren Wertverlust. Eine Rücksendung ist auch ohne Originalverpackung möglich.",
+            "Für Waren gelten die gesetzlichen Mängelrechte. Die Verjährungsfrist wird für gebrauchte Geräte nicht verkürzt und beträgt zwei Jahre ab Übergabe.",
+          ],
+        },
+        {
+          title: "6. Garantie",
           body: [
             "12 Monate Garantie auf Ersatzteile und Reparaturleistungen, sofern kein Fremdverschulden vorliegt.",
           ],
         },
         {
-          title: "5. Haftung",
+          title: "7. Haftung",
           body: [
             "Für Datenverlust haften wir nur bei grober Fahrlässigkeit oder Vorsatz.",
             "Bitte sichern Sie Ihre Daten vor der Reparatur.",
@@ -666,6 +694,7 @@ export const dictionary = {
       { label: "Home", path: "" },
       { label: "Repair & Service", path: "/repairs" },
       { label: "Smartphones", path: "/smartphones" },
+      { label: "Tablets", path: "/tablets" },
       { label: "Accessories", path: "/accessories" },
       { label: "Laptops", path: "/laptops" },
       { label: "Gaming", path: "/gaming" },
@@ -690,6 +719,7 @@ export const dictionary = {
       quickLinks: [
         { label: "Repair & Service", path: "/repairs" },
         { label: "Smartphones", path: "/smartphones" },
+        { label: "Tablets", path: "/tablets" },
         { label: "Accessories", path: "/accessories" },
         { label: "Laptops", path: "/laptops" },
         { label: "Gaming", path: "/gaming" },
@@ -697,6 +727,8 @@ export const dictionary = {
       companyLinks: [
         { label: "About", path: "/about" },
         { label: "FAQ", path: "/faq" },
+        { label: "Device conditions & rights", path: "/device-conditions" },
+        { label: "Withdraw contract", path: "/withdrawal" },
         { label: "Privacy", path: "/privacy" },
         { label: "Terms", path: "/terms" },
         { label: "Impressum", path: "/impressum" },
@@ -710,59 +742,64 @@ export const dictionary = {
     },
     meta: {
       home: {
-        title: "Apfel Park | Smartphone & Repair Studio",
+        title: "Buy iPhones & Smartphones in Hamburg",
         description:
-          "Smart Phone. Smart Service. Smart Price. Premium smartphones, accessories, gaming and repairs in Hamburg.",
+          "Smartphones & iPhones in Hamburg: new, open box & used with warranty. Pick up in store or fast shipping across Germany. Call 040 58978787.",
       },
       services: {
-        title: "Services",
+        title: "Services & Repair Hamburg",
         description:
           "Professional services from instant repairs to device setup – all in one place in Hamburg.",
       },
       repairs: {
-        title: "Repairs",
+        title: "Phone Repair Hamburg – Screen & Battery",
         description:
-          "Smartphone, tablet and console repairs with premium parts, warranty and express service.",
+          "Screen, battery, camera or water damage: express repairs for iPhone & Samsung in Hamburg-Wilhelmsburg – with warranty. Call 040 58978787.",
       },
       accessories: {
-        title: "Accessories",
+        title: "Phone Accessories in Hamburg",
         description:
-          "Cases, protection, chargers and audio – curated accessories at Apfel Park.",
+          "Cases, screen protection, chargers, cables and headphones for iPhone, Samsung and more. Curated quality at Apfel Park Hamburg.",
       },
       smartphones: {
-        title: "Smartphones",
+        title: "Buy Smartphones & iPhones Hamburg",
         description:
-          "New and certified smartphones from leading brands – ready today.",
+          "Tested smartphones from Apple, Samsung, Xiaomi and more. New, open box and used with warranty – order online or collect in Hamburg.",
+      },
+      tablets: {
+        title: "Buy Tablets & iPads in Hamburg",
+        description:
+          "Browse tablets and iPads with clearly stated condition and warranty. Order for delivery in Germany or collect at Apfel Park in Hamburg.",
       },
       gaming: {
-        title: "Gaming & Consoles",
+        title: "Console Repair & Gaming Hamburg",
         description:
-          "PlayStation services, repairs and accessories at Apfel Park.",
+          "PlayStation and console repairs, HDMI port replacement, cleaning, and gaming accessories at Apfel Park Hamburg. Fast service with warranty.",
       },
       laptops: {
-        title: "Laptops",
+        title: "Buy Laptops & MacBooks in Hamburg",
         description:
-          "Buy new and refurbished laptops – MacBooks, Windows laptops with warranty and best value.",
+          "Buy new and refurbished laptops – MacBooks, Windows laptops with warranty and best value in Hamburg.",
       },
       contact: {
-        title: "Contact",
+        title: "Contact & Directions – Apfel Park Hamburg",
         description:
-          "Call or visit Apfel Park in Hamburg. We are open Monday to Saturday.",
+          "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg. Mon–Sat 9:30–20:00. Call 040 58978787 or message us on WhatsApp.",
       },
       about: {
-        title: "About",
+        title: "About Us – Smartphone Experts Hamburg",
         description:
-          "Learn more about Apfel Park – premium smartphones, accessories and repairs in Hamburg.",
+          "Apfel Park is your local shop for iPhones, smartphones, accessories, trade-in and repairs in Hamburg-Wilhelmsburg. Meet our team.",
       },
       faq: {
-        title: "FAQ",
+        title: "Frequently Asked Questions",
         description:
-          "Answers to the most common questions about repairs and services.",
+          "Answers to the most common questions about ordering, warranty, open box, device conditions, trade-in and repairs at Apfel Park Hamburg.",
       },
       privacy: {
-        title: "Privacy Policy",
+        title: "Privacy Policy – Apfel Park Hamburg",
         description:
-          "Privacy policy for Apfel Park – transparent, secure and GDPR compliant.",
+          "Privacy information for Apfel Park – transparent, secure, and GDPR compliant.",
       },
       terms: {
         title: "Terms & Conditions",
@@ -772,12 +809,12 @@ export const dictionary = {
     },
     home: {
       hero: {
-        eyebrow: "Hamburg’s premium mobile shop",
-        title: "Smart Phone. Smart Service. Smart Price.",
+        eyebrow: "Hamburg’s smartphone shop in Wilhelmsburg",
+        title: "iPhones & Smartphones – New, Open Box & Used",
         subtitle:
-          "Discover premium smartphones, accessories and express repairs at Apfel Park. Everything in one place – fast, transparent, professional.",
-        primaryCta: "Start a repair",
-        secondaryCta: "Contact us",
+          "Smart Phone. Smart Service. Smart Price. Tested devices with warranty – pick up today in Hamburg or fast shipping across Germany.",
+        primaryCta: "Browse smartphones",
+        secondaryCta: "Request a repair",
         cards: [
           {
             title: "Shop & Advice",
@@ -1115,7 +1152,7 @@ export const dictionary = {
         },
         {
           title: "Write to us",
-          description: "info@apfel-park.de",
+          description: "info [at] apfel-park [dot] de",
         },
       ],
     },
@@ -1210,7 +1247,7 @@ export const dictionary = {
           title: "1. Controller",
           body: [
             "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
-            "Email: info@apfel-park.de | Phone: 040 58978787",
+            "Email: info [at] apfel-park [dot] de | Phone: 040 58978787",
             "You can contact us at any time using the details above for privacy-related questions.",
           ],
         },
@@ -1240,6 +1277,7 @@ export const dictionary = {
             "Maps are provided only after consent through Google Maps. When enabled, Google may process technical usage data.",
             "If spam protection through Google reCAPTCHA is enabled, this external service is also loaded only after consent.",
             "If marketing tracking is configured and you allow external services, Meta Pixel and TikTok Pixel may process technical usage and event data for reach measurement, campaign reporting, and ad attribution.",
+            "For payment and delivery, we share order, contact, and address data only with the selected or necessary payment and shipping providers.",
             "We share data with other recipients only where necessary for contract performance or where we are legally required to do so.",
           ],
         },
@@ -1304,13 +1342,31 @@ export const dictionary = {
           ],
         },
         {
-          title: "4. Warranty",
+          title: "4. Device condition",
+          body: [
+            "New & sealed means goods in their original sealed packaging. Open-box means unboxed goods not sold as used, such as display or returned stock.",
+            "Used A+ means inspected, previously used devices in very good condition. Listing notes, real product photos and, for iPhones, stated battery health describe the individual item.",
+            "Opened or activated returns are never sold as 'New & sealed'; they are offered exclusively as Open-box or Used.",
+          ],
+        },
+        {
+          title: "5. Delivery, withdrawal & defect rights",
+          body: [
+            "Collection from the store is free. Insured shipping within Germany costs €6.90 and normally takes 1–3 business days after payment.",
+            "Online consumer purchases generally have a 14-day withdrawal right. Withdrawal can be declared conveniently via our online withdrawal function ('Withdraw contract' page); you immediately receive a receipt confirmation.",
+            "You bear the direct cost of return shipping. Refunds are made within 14 days of receiving the withdrawal using the same payment method; we may withhold the refund until the goods arrive or proof of shipment is provided. Details and the model withdrawal notice are available on Delivery & Returns.",
+            "A value-loss deduction only applies to handling beyond what is necessary to check the nature, characteristics, and functioning of the goods, and is always based on the actual, provable loss of value. Returns are possible without the original packaging.",
+            "Statutory defect rights apply to goods. We do not reduce the limitation period for used devices; it is two years from delivery.",
+          ],
+        },
+        {
+          title: "6. Warranty",
           body: [
             "12-month warranty on spare parts and repair services unless third-party damage occurs.",
           ],
         },
         {
-          title: "5. Liability",
+          title: "7. Liability",
           body: [
             "We are liable for data loss only in cases of gross negligence or intent.",
             "Please back up your data before repair.",

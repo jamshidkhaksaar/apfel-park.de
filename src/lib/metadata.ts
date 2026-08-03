@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import type { Locale } from "./i18n";
-import { getSeoRouteIdByPath, resolveSeoPage, splitKeywords } from "./seo";
+import { locales as allLocales, type Locale } from "./i18n";
+import { getSeoRouteIdByPath, getSeoSettings, splitKeywords } from "./seo";
 import { siteInfo } from "./site";
 
 const normalizePath = (path: string) => {
@@ -17,41 +17,59 @@ const normalizeImageUrl = (value: string) => {
   return `${siteInfo.url}${value.startsWith("/") ? value : `/${value}`}`;
 };
 
+export type CreateMetadataOptions = {
+  /** Force noindex regardless of route settings (cart, checkout, …). */
+  noindex?: boolean;
+  /** Locales this page exists in; limits hreflang alternates (default: all). */
+  locales?: Locale[];
+};
+
 export const createMetadata = async (
   locale: Locale,
   title: string,
   description: string,
   path: string,
   imageOverride?: string,
+  options?: CreateMetadataOptions,
 ): Promise<Metadata> => {
   const normalizedPath = normalizePath(path);
   const pathWithLocale = `/${locale}${normalizedPath}`;
   const canonical = `${siteInfo.url}${pathWithLocale}`;
   const routeId = getSeoRouteIdByPath(normalizedPath || "/");
-  const { global, route, metadata } = await resolveSeoPage(routeId, locale);
-  const resolvedTitle = metadata.title || title;
-  const resolvedDescription = metadata.description || description;
-  const keywords = splitKeywords(metadata.keywords || global.defaultKeywords[locale]);
+  const settings = await getSeoSettings();
+  const global = settings.global;
+  const route = routeId ? settings.pages[routeId] : null;
+  const routeMetadata = route ? route.locales[locale] : null;
+  // Registered routes: admin/default route copy wins so /admin/seo overrides work.
+  // Unregistered paths (products, articles, …): the page-supplied copy wins.
+  const resolvedTitle = routeMetadata ? routeMetadata.title || title : title;
+  const resolvedDescription = routeMetadata
+    ? routeMetadata.description || description
+    : description;
+  const keywords = splitKeywords(routeMetadata?.keywords || global.defaultKeywords[locale]);
   const image = normalizeImageUrl(imageOverride || global.defaultOgImage);
+  const index = !options?.noindex && (route ? route.index : true);
+  const availableLocales = options?.locales?.length ? options.locales : allLocales;
+  const languageAlternates: Record<string, string> = {};
+  for (const altLocale of availableLocales) {
+    languageAlternates[altLocale] = `${siteInfo.url}/${altLocale}${normalizedPath}`;
+  }
+  if (availableLocales.includes("de")) {
+    languageAlternates["x-default"] = `${siteInfo.url}/de${normalizedPath}`;
+  }
 
   return {
     title: resolvedTitle,
     description: resolvedDescription,
     keywords,
     robots: {
-      index: route.index,
-      follow: route.index,
+      index,
+      follow: index,
     },
-    alternates: global.forceCanonical
-      ? {
-          canonical,
-          languages: {
-            de: `${siteInfo.url}/de${normalizedPath}`,
-            en: `${siteInfo.url}/en${normalizedPath}`,
-            "x-default": `${siteInfo.url}/de${normalizedPath}`,
-          },
-        }
-      : undefined,
+    alternates: {
+      canonical,
+      languages: languageAlternates,
+    },
     openGraph: {
       title: resolvedTitle,
       description: resolvedDescription,

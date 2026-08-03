@@ -15,9 +15,13 @@ export const generateMetadata = async ({
   const { lang } = await params;
   return createMetadata(
     lang as Locale,
-    "Checkout",
-    lang === "de" ? "Sicher mit Stripe oder PayPal bezahlen." : "Pay securely with Stripe or PayPal.",
+    lang === "de" ? "Sicherer Checkout" : "Secure Checkout",
+    lang === "de"
+      ? "Schließe deine Bestellung bei Apfel Park sicher ab und bezahle bequem mit Stripe oder PayPal."
+      : "Complete your Apfel Park order securely and choose convenient payment with Stripe or PayPal.",
     "/checkout",
+    undefined,
+    { noindex: true },
   );
 };
 
@@ -39,4 +43,3 @@ export default async function CheckoutPage({
     </section>
   );
 }
-

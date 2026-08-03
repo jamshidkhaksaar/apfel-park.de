@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { createAdminDbClient } from "@/lib/admin-db";
 import { BrandingProvider, type BrandingAssets } from "@/components/BrandingProvider";
 import { getPromoProducts, getPromoPopupSettings } from "@/lib/products";
 import { safeJsonStringify } from "@/lib/security";
+import { merchantReturnPolicy } from "@/lib/schema";
 import { getSeoSettings, splitKeywords } from "@/lib/seo";
 import { siteInfo } from "@/lib/site";
 import { getMarketingIntegrations, getWhatsAppWidgetSettings } from "@/lib/site-settings-server";
@@ -36,13 +37,17 @@ export const generateMetadata = async (): Promise<Metadata> => {
   const seo = await getSeoSettings();
   const ogImage = normalizeImageUrl(seo.global.defaultOgImage);
 
+  const defaultTitle = "Apfel Park – iPhone & Smartphones kaufen in Hamburg";
+  const defaultDescription =
+    "Smartphones und iPhones in Hamburg-Wilhelmsburg: neu, Open Box und gebraucht – geprüft und mit Garantie. Ankauf und Reparatur vor Ort.";
+
   return {
     metadataBase: new URL("https://apfel-park.de"),
     title: {
-      default: "Apfel Park | Smartphone Repair & Tech Store",
+      default: defaultTitle,
       template: "%s | Apfel Park",
     },
-    description: "Express Smartphone Repairs. Premium Accessories. Expert Service.",
+    description: defaultDescription,
     keywords: splitKeywords(seo.global.defaultKeywords.de),
     verification: {
       google: seo.global.googleVerification || undefined,
@@ -52,8 +57,8 @@ export const generateMetadata = async (): Promise<Metadata> => {
       },
     },
     openGraph: {
-      title: "Apfel Park | Smartphone Repair & Tech Store",
-      description: "Express Smartphone Repairs. Premium Accessories. Expert Service.",
+      title: defaultTitle,
+      description: defaultDescription,
       type: "website",
       url: "https://apfel-park.de",
       siteName: "Apfel Park",
@@ -61,8 +66,8 @@ export const generateMetadata = async (): Promise<Metadata> => {
     },
     twitter: {
       card: "summary_large_image",
-      title: "Apfel Park | Smartphone Repair & Tech Store",
-      description: "Express Smartphone Repairs. Premium Accessories. Expert Service.",
+      title: defaultTitle,
+      description: defaultDescription,
       images: ogImage ? [ogImage] : undefined,
     },
   };
@@ -112,9 +117,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
+  const [cookieStore, requestHeaders] = await Promise.all([cookies(), headers()]);
   const langCookie = cookieStore.get("apfel-lang");
-  const lang = langCookie?.value ?? "de";
+  const pathLocale = requestHeaders.get("x-apfel-pathname")?.match(/^\/(de|en)(?:\/|$)/)?.[1];
+  const lang = pathLocale === "en" || pathLocale === "de"
+    ? pathLocale
+    : langCookie?.value === "en"
+      ? "en"
+      : "de";
   const themeCookie = cookieStore.get("apfel-theme");
   const theme = themeCookie?.value === "dark" || themeCookie?.value === "mono"
     ? themeCookie.value
@@ -129,24 +139,56 @@ export default async function RootLayout({
   ]);
   const organizationJsonLd = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    name: siteInfo.name,
-    url: siteInfo.url,
-    telephone: siteInfo.phone,
-    email: siteInfo.email,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: siteInfo.address.street,
-      addressLocality: siteInfo.address.city,
-      postalCode: siteInfo.address.postalCode,
-      addressCountry: "DE",
-    },
-  };
-  const websiteJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: siteInfo.name,
-    url: siteInfo.url,
+    "@graph": [
+      {
+        "@type": ["Store", "LocalBusiness"],
+        "@id": `${siteInfo.url}/#store`,
+        name: siteInfo.name,
+        legalName: siteInfo.legalName,
+        url: siteInfo.url,
+        telephone: siteInfo.phone,
+        email: siteInfo.email,
+        image: normalizeImageUrl(branding?.ogImage ?? ""),
+        logo: normalizeImageUrl(branding?.logo ?? ""),
+        vatID: siteInfo.vatId,
+        priceRange: "€€",
+        currenciesAccepted: "EUR",
+        paymentAccepted: "Cash, Credit Card, Debit Card, PayPal",
+        hasMerchantReturnPolicy: merchantReturnPolicy(),
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: siteInfo.address.street,
+          addressLocality: siteInfo.address.city,
+          postalCode: siteInfo.address.postalCode,
+          addressCountry: "DE",
+        },
+        openingHoursSpecification: [{
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+          opens: "09:30",
+          closes: "20:00",
+        }],
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: 53.498491,
+          longitude: 10.009589,
+        },
+        areaServed: {
+          "@type": "City",
+          name: "Hamburg",
+        },
+        hasMap: siteInfo.map.linkUrl,
+        sameAs: Object.values(siteInfo.social),
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${siteInfo.url}/#website`,
+        name: siteInfo.name,
+        url: siteInfo.url,
+        publisher: { "@id": `${siteInfo.url}/#store` },
+        inLanguage: ["de-DE", "en-DE"],
+      },
+    ],
   };
 
   return (
@@ -161,13 +203,11 @@ export default async function RootLayout({
         <ThemeScript />
         <link rel="icon" href={faviconHref} sizes="any" />
         <link rel="shortcut icon" href={faviconHref} />
+        <link rel="apple-touch-icon" href={faviconHref} />
+        <meta name="theme-color" content="#09090b" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonStringify(organizationJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonStringify(websiteJsonLd) }}
         />
       </head>
       <body

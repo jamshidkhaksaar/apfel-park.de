@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import type { AdminDictionary } from "@/lib/admin-i18n";
@@ -297,9 +298,18 @@ export default function AdminRepairsWorkspace({
                   </div>
                   <p className="mt-2 text-sm text-muted">{selectedRepair.device_model}</p>
                 </div>
-                <div className="rounded-2xl border border-border/60 bg-background/50 px-4 py-3 text-sm">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted">{repairsPage.createdAt}</p>
-                  <p className="mt-1 font-medium text-foreground">{formatDate(selectedRepair.created_at, locale)}</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/admin/repair-estimates/new?repairId=${selectedRepair.id}`}
+                    prefetch={false}
+                    className="btn-secondary"
+                  >
+                    {locale === "de" ? "Kostenvoranschlag erstellen" : "Create estimate"}
+                  </Link>
+                  <div className="rounded-2xl border border-border/60 bg-background/50 px-4 py-3 text-sm">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted">{repairsPage.createdAt}</p>
+                    <p className="mt-1 font-medium text-foreground">{formatDate(selectedRepair.created_at, locale)}</p>
+                  </div>
                 </div>
               </div>
 

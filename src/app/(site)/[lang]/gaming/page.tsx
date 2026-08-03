@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import PageIntro from "../../../../components/PageIntro";
-import GamingStore from "../../../../components/GamingStore";
+import StoreGrid from "../../../../components/store/StoreGrid";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getProducts } from "../../../../lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getGamingContent } from "../../../../lib/content";
 
@@ -26,11 +26,29 @@ export const generateMetadata = async ({
   );
 };
 
-export default async function GamingPage({ params }: { params: Promise<{ lang: string }> }) {
+export default async function GamingPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { lang } = await params;
+  const query = await searchParams;
   const dict = getDictionary(lang as Locale);
   const gaming = await getGamingContent(lang as Locale);
-  const products = await getProducts("consoles", undefined, lang as Locale);
+  const sort = parseStoreSort(query.sort);
+  const page = parseStorePage(query.page);
+  const activeFilters = parseStoreCatalogFilters(query);
+
+  const catalog = await getStoreCatalog({
+    category: "consoles",
+    sort,
+    page,
+    pageSize: 24,
+    locale: lang as Locale,
+    filters: activeFilters,
+  });
 
   const serviceCards = [
     {
@@ -161,7 +179,22 @@ export default async function GamingPage({ params }: { params: Promise<{ lang: s
       </section>
 
       {/* Gaming Store */}
-      <GamingStore lang={lang as Locale} products={products} />
+      <section className="section-pad" id="store">
+        <div className="container-page">
+          <StoreGrid
+            products={catalog.products}
+            lang={lang as Locale}
+            lockedCategory="consoles"
+            sortBy={sort}
+            total={catalog.total}
+            page={catalog.page}
+            pages={catalog.pages}
+            counts={catalog.counts}
+            facets={catalog.facets}
+            activeFilters={activeFilters}
+          />
+        </div>
+      </section>
 
       {/* Repair Services */}
       <section className="section-pad bg-surface/30">

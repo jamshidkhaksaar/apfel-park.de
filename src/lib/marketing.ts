@@ -94,7 +94,7 @@ type ProductPromotionPayload = {
   locale?: "de" | "en";
 };
 
-type EventSendResult = {
+export type EventSendResult = {
   success: boolean;
   target: "meta" | "tiktok";
   status?: number;
@@ -142,7 +142,7 @@ const hashValue = (value: string | null | undefined) => {
 };
 
 const hashPhone = (value: string | null | undefined) => {
-  const normalized = normalizeString(value).replace(/[^\d+]/g, "");
+  const normalized = normalizeString(value).replace(/\D/g, "");
   if (!normalized) return undefined;
   return createHash("sha256").update(normalized).digest("hex");
 };
@@ -209,13 +209,12 @@ const canTrack = (context: MarketingRequestContext) => context.consentMode === E
 
 const buildMetaUserData = (
   context: MarketingRequestContext,
-  fallbackExternalId?: string | null,
 ) => ({
   client_ip_address: context.ipAddress || undefined,
   client_user_agent: context.userAgent || undefined,
   fbp: context.fbp || undefined,
   fbc: context.fbc || undefined,
-  external_id: hashValue(context.externalId || fallbackExternalId),
+  external_id: hashValue(context.externalId),
 });
 
 const sendMetaLeadEvent = async (
@@ -302,7 +301,7 @@ const sendTikTokLeadEvent = async (
     event_source_id: config.tiktokPixelId,
     data: [
       {
-        event: payload.eventName,
+        event: "SubmitForm",
         event_time: Math.floor(Date.now() / 1000),
         event_id: eventId,
         page: {
@@ -367,7 +366,7 @@ export const sendLeadTrackingEvents = async (
   payload: LeadPayload,
   context: MarketingRequestContext,
 ) => {
-  if (!canTrack(context)) return;
+  if (!canTrack(context)) return [];
 
   const config = await getIntegrations();
   const [metaResult, tikTokResult] = await Promise.all([
@@ -376,6 +375,7 @@ export const sendLeadTrackingEvents = async (
   ]);
 
   logFailures([metaResult, tikTokResult]);
+  return [metaResult, tikTokResult];
 };
 
 const sendMetaViewContentEvent = async (
@@ -396,7 +396,7 @@ const sendMetaViewContentEvent = async (
         event_id: eventId,
         action_source: "website",
         event_source_url: context.url || "https://apfel-park.de",
-        user_data: buildMetaUserData(context, payload.productId),
+        user_data: buildMetaUserData(context),
         custom_data: {
           currency: payload.currency || "EUR",
           value: payload.price ?? 0,
@@ -448,7 +448,7 @@ const sendTikTokViewContentEvent = async (
     event_source_id: config.tiktokPixelId,
     data: [
       {
-        event: payload.eventName,
+        event: payload.eventName === "AddToCart" ? "AddToCart" : "ViewContent",
         event_time: Math.floor(Date.now() / 1000),
         event_id: eventId,
         page: { url: context.url || "https://apfel-park.de" },
@@ -495,7 +495,7 @@ export const sendViewContentTrackingEvents = async (
   payload: ViewContentPayload,
   context: MarketingRequestContext,
 ) => {
-  if (!canTrack(context)) return;
+  if (!canTrack(context)) return [];
 
   const config = await getIntegrations();
   const [metaResult, tikTokResult] = await Promise.all([
@@ -504,13 +504,14 @@ export const sendViewContentTrackingEvents = async (
   ]);
 
   logFailures([metaResult, tikTokResult]);
+  return [metaResult, tikTokResult];
 };
 
 export const sendAddToCartTrackingEvents = async (
   payload: AddToCartPayload,
   context: MarketingRequestContext,
 ) => {
-  if (!canTrack(context)) return;
+  if (!canTrack(context)) return [];
 
   const config = await getIntegrations();
   const [metaResult, tikTokResult] = await Promise.all([
@@ -519,6 +520,7 @@ export const sendAddToCartTrackingEvents = async (
   ]);
 
   logFailures([metaResult, tikTokResult]);
+  return [metaResult, tikTokResult];
 };
 
 const sendMetaPurchaseEvent = async (
@@ -540,7 +542,7 @@ const sendMetaPurchaseEvent = async (
         action_source: "website",
         event_source_url: context.url || "https://apfel-park.de/checkout/success",
         user_data: {
-          ...buildMetaUserData(context, payload.email || payload.phone || payload.orderId),
+          ...buildMetaUserData({ ...context, externalId: context.externalId || payload.email || payload.phone || null }),
           em: hashValue(payload.email),
           ph: hashPhone(payload.phone),
           fn: hashValue(payload.firstName),
@@ -598,7 +600,7 @@ const sendTikTokPurchaseEvent = async (
     event_source_id: config.tiktokPixelId,
     data: [
       {
-        event: "Purchase",
+        event: "CompletePayment",
         event_time: Math.floor(Date.now() / 1000),
         event_id: eventId,
         page: { url: context.url || "https://apfel-park.de/checkout/success" },
@@ -651,7 +653,7 @@ export const sendPurchaseTrackingEvents = async (
   payload: PurchasePayload,
   context: MarketingRequestContext,
 ) => {
-  if (!canTrack(context)) return;
+  if (!canTrack(context)) return [];
 
   const config = await getIntegrations();
   const [metaResult, tikTokResult] = await Promise.all([
@@ -660,6 +662,7 @@ export const sendPurchaseTrackingEvents = async (
   ]);
 
   logFailures([metaResult, tikTokResult]);
+  return [metaResult, tikTokResult];
 };
 
 export const sendTrackingTestEvents = async () => {

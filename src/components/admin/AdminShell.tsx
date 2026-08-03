@@ -54,6 +54,11 @@ const NavIcon = ({ type }: { type: string }) => {
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
       </svg>
     ),
+    marketplaces: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5v13.5H3.75zM3.75 9.75h16.5M8.25 5.25v4.5m7.5-4.5v4.5M7.5 14.25h3m3 0h3" />
+      </svg>
+    ),
     repairs: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
@@ -137,6 +142,7 @@ export default function AdminShell({
   const [clock, setClock] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [navigatingPath, setNavigatingPath] = useState<string | null>(null);
   const [badges, setBadges] = useState<AdminBadgeCounts>({ chat: 0, repairs: 0, orders: 0 });
 
   // Live clock
@@ -157,15 +163,37 @@ export default function AdminShell({
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
 
+  useEffect(() => {
+    setNavigatingPath(null);
+    setSidebarOpen(false);
+  }, [pathname]);
+
   // Badge polling
   useEffect(() => {
     let cancelled = false;
     let previous: AdminBadgeCounts | null = null;
+    let timer: number | null = null;
+    let retryDelay = 5000;
+
+    const schedule = (delay: number) => {
+      if (cancelled) return;
+      if (timer !== null) window.clearTimeout(timer);
+      timer = window.setTimeout(() => void loadBadges(), delay);
+    };
 
     const loadBadges = async () => {
+      if (cancelled) return;
+      if (document.hidden || !navigator.onLine) {
+        schedule(15000);
+        return;
+      }
+
       try {
         const res = await fetch("/api/admin/badges", { credentials: "include", cache: "no-store" });
-        if (!res.ok) return;
+        if (!res.ok) {
+          retryDelay = 15000;
+          return;
+        }
         const data = (await res.json()) as Partial<AdminBadgeCounts>;
         if (cancelled) return;
         const next = {
@@ -178,12 +206,29 @@ export default function AdminShell({
         }
         previous = next;
         setBadges(next);
-      } catch { /* keep shell usable */ }
+        retryDelay = 5000;
+      } catch {
+        // DNS and transient network failures should not hammer the endpoint.
+        retryDelay = Math.min(Math.max(retryDelay * 2, 10000), 60000);
+      } finally {
+        schedule(retryDelay);
+      }
     };
 
-    loadBadges();
-    const id = window.setInterval(loadBadges, 5000);
-    return () => { cancelled = true; window.clearInterval(id); };
+    const resumePolling = () => {
+      if (!document.hidden && navigator.onLine) schedule(250);
+    };
+
+    void loadBadges();
+    window.addEventListener("online", resumePolling);
+    document.addEventListener("visibilitychange", resumePolling);
+
+    return () => {
+      cancelled = true;
+      if (timer !== null) window.clearTimeout(timer);
+      window.removeEventListener("online", resumePolling);
+      document.removeEventListener("visibilitychange", resumePolling);
+    };
   }, []);
 
   const handleLangChange = (nextLang: 'de' | 'en') => {
@@ -209,7 +254,10 @@ export default function AdminShell({
 
   const managerItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
     { label: dict.sidebar.orders,    path: '/admin/orders',   icon: 'orders',  badge: badges.orders },
+    { label: 'Marketplaces', path: '/admin/marketplaces', icon: 'marketplaces' },
+    { label: dict.sidebar.withdrawals, path: '/admin/withdrawals', icon: 'orders' },
     { label: dict.sidebar.repairs,   path: '/admin/repairs',  icon: 'repairs', badge: badges.repairs },
+    { label: lang === 'de' ? 'Kostenvoranschläge' : 'Repair Estimates', path: '/admin/repair-estimates', icon: 'repairs' },
     { label: dict.sidebar.batchBuy,  path: '/admin/batch-buy', icon: 'batchBuy' },
     { label: dict.sidebar.chat,      path: '/admin/chat',     icon: 'chat',    badge: badges.chat },
     { label: dict.sidebar.reviews,   path: '/admin/reviews',  icon: 'reviews' },
@@ -241,8 +289,8 @@ export default function AdminShell({
   }));
 
   return (
-    <div className="admin-shell-root h-screen overflow-hidden bg-background text-foreground" translate="no">
-      <div className="flex h-screen overflow-hidden">
+    <div className="admin-shell-root fixed inset-0 h-dvh min-h-dvh w-full overflow-hidden bg-background text-foreground" translate="no">
+      <div className="flex h-full min-h-0 overflow-hidden">
 
         {/* ── Mobile backdrop ── */}
         <div
@@ -371,10 +419,20 @@ export default function AdminShell({
                   <li key={item.path}>
                     <Link
                       href={item.path}
+                      prefetch={false}
                       aria-current={pathname === item.path ? 'page' : undefined}
-                      onClick={closeSidebar}
+                      onMouseEnter={() => router.prefetch(item.path)}
+                      onFocus={() => router.prefetch(item.path)}
+                      onClick={(event) => {
+                        if (navigatingPath) {
+                          event.preventDefault();
+                          return;
+                        }
+                        closeSidebar();
+                        if (pathname !== item.path) setNavigatingPath(item.path);
+                      }}
                       title={sidebarCollapsed ? item.label : undefined}
-                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs transition-all duration-150 lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${
+                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs transition-all duration-150 lg:py-2 ${navigatingPath ? 'cursor-wait' : ''} ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${
                         isActive
                           ? 'border-l-2 border-gold bg-gold/5 pl-[10px] text-gold'
                           : 'border-l-2 border-transparent pl-[10px] text-muted/70 hover:bg-white/4 hover:text-foreground'
@@ -531,9 +589,10 @@ export default function AdminShell({
               </button>
             </div>
           </header>
+          {navigatingPath ? <div className="relative z-20 h-0.5 shrink-0 overflow-hidden bg-gold/15"><div className="h-full w-1/3 animate-pulse bg-gold" /></div> : null}
 
           {/* Page content */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 lg:p-6">
             {children}
           </main>
         </div>

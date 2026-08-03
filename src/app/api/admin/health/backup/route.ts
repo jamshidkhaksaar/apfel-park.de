@@ -26,11 +26,7 @@ export async function GET(request: NextRequest) {
     const child = spawn("pg_dump", ["--no-owner", "--no-privileges", databaseUrl], {
       stdio: ["ignore", "pipe", "pipe"],
     });
-
-    child.stderr.on("data", (chunk) => {
-      console.error("[Admin Backup] pg_dump:", chunk.toString());
-    });
-
+    child.stderr.on("data", (chunk) => console.error("[Admin Backup] pg_dump:", chunk.toString()));
     return new NextResponse(Readable.toWeb(child.stdout) as ReadableStream, {
       headers: {
         "Content-Type": "application/sql; charset=utf-8",
@@ -44,25 +40,14 @@ export async function GET(request: NextRequest) {
     const child = spawn(
       "tar",
       [
-        "-czf",
-        "-",
-        "--exclude=.next",
-        "--exclude=node_modules",
-        "--exclude=.git",
-        "-C",
-        "/srv/apfel-park/app",
-        "current",
-        "shared/uploads",
+        "-czf", "-",
+        "--exclude=.next", "--exclude=node_modules", "--exclude=.git",
+        "-C", "/srv/apfel-park/app",
+        "current", "shared/uploads", "shared/private",
       ],
-      {
-        stdio: ["ignore", "pipe", "pipe"],
-      },
+      { stdio: ["ignore", "pipe", "pipe"] },
     );
-
-    child.stderr.on("data", (chunk) => {
-      console.error("[Admin Backup] tar:", chunk.toString());
-    });
-
+    child.stderr.on("data", (chunk) => console.error("[Admin Backup] tar:", chunk.toString()));
     return new NextResponse(Readable.toWeb(child.stdout) as ReadableStream, {
       headers: {
         "Content-Type": "application/gzip",

@@ -100,9 +100,11 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
       "/admin/products",
       "/admin/orders",
       "/admin/repairs",
+      "/admin/repair-estimates",
       "/admin/batch-buy",
       "/admin/reviews",
       "/admin/chat",
+      "/admin/marketplaces",
     );
   } else if (role === "product_editor") {
     paths.push("/admin/products");
@@ -110,3 +112,5 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
 
   return paths;
 };
+
+export const canManageMarketplaces = (user: User | null): boolean => canManageOrders(user);

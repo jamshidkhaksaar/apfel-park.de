@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRef } from "react";
 
 import ConditionBadge from "./ConditionBadge";
 import { formatPrice } from "../lib/format";
@@ -17,6 +18,14 @@ export default function FeaturedStore({
   lang: Locale;
   featured: FeaturedStoreLabels; // Optimization: Passed as prop to avoid bundling entire dictionary in client
 }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const scrollProducts = (direction: -1 | 1) => {
+    scrollerRef.current?.scrollBy({
+      left: direction * Math.min(scrollerRef.current.clientWidth * 0.82, 920),
+      behavior: "smooth",
+    });
+  };
+
   return (
     <section
       className="section-pad relative overflow-hidden bg-surface-strong"
@@ -36,25 +45,30 @@ export default function FeaturedStore({
               {featured.title}
             </h2>
           </div>
-          <Link
-            href={`/${lang}/store`}
-            className="btn-secondary group"
-          >
-            {featured.cta}
-            <svg
-              className="h-4 w-4 transition-transform group-hover:translate-x-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden="true"
+          <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-2 md:flex" aria-label={lang === "de" ? "Produkte scrollen" : "Scroll products"}>
+              <button type="button" onClick={() => scrollProducts(-1)} aria-label={lang === "de" ? "Vorherige Produkte" : "Previous products"} className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-foreground transition hover:border-gold/40 hover:text-gold active:scale-95">←</button>
+              <button type="button" onClick={() => scrollProducts(1)} aria-label={lang === "de" ? "Weitere Produkte" : "Next products"} className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-foreground transition hover:border-gold/40 hover:text-gold active:scale-95">→</button>
+            </div>
+            <Link
+              href={`/${lang}/store`}
+              className="btn-secondary group"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
+              {featured.cta}
+              <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          ref={scrollerRef}
+          role="region"
+          aria-label={featured.title}
+          tabIndex={0}
+          className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-4 pb-5 pt-1 scroll-smooth [scrollbar-color:var(--gold)_transparent] [scrollbar-width:thin] sm:-mx-6 sm:gap-5 sm:px-6 lg:-mx-2 lg:px-2"
+        >
           {products.map((product) => (
             (() => {
               const hasDiscount = Boolean(product.compareAtPrice && product.compareAtPrice > product.price);
@@ -66,7 +80,7 @@ export default function FeaturedStore({
             <Link
               key={product.id}
               href={`/${lang}/store/${product.slug}`}
-              className="group relative flex flex-col overflow-hidden rounded-3xl ocean-card shadow-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gold/20 hover:ring-1 hover:ring-gold/30"
+              className="group relative flex w-[78vw] max-w-[300px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl ocean-card shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-gold/15 hover:ring-1 hover:ring-gold/30 sm:w-[280px] lg:w-[292px]"
             >
               {/* Image Area - Compact & Cleaner */}
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#f5f5f5] p-5">
@@ -75,8 +89,8 @@ export default function FeaturedStore({
                   alt={product.title}
                   fill
                   className="object-contain transition-transform duration-700 ease-out group-hover:scale-105"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 320px"
                   unoptimized={product.image.startsWith("/uploads/")}
+                  sizes="(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 320px"
                 />
                 
                 {/* Floating Badge */}

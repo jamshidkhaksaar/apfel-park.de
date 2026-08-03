@@ -30,6 +30,8 @@ const createPublicRedirect = (request: NextRequest, scope: "site" | "store") => 
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-apfel-pathname", pathname);
 
   if (request.nextUrl.pathname.startsWith("/admin/content")) {
     const protocol = request.headers.get("x-forwarded-proto") ?? "https";
@@ -71,7 +73,11 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {

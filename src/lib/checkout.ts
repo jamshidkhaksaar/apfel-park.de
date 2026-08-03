@@ -1,6 +1,7 @@
 import { randomUUID, timingSafeEqual, createHmac } from "node:crypto";
 
 import { query } from "@/lib/db";
+import { reserveInventory } from "@/lib/marketplaces/inventory";
 import { getProducts, type Product, type ProductVariant } from "@/lib/products";
 import { siteInfo } from "@/lib/site";
 
@@ -42,6 +43,14 @@ export type ValidatedCartLine = {
   lineAmount: number;
   lineAmountCents: number;
   stock?: number;
+  condition: string;
+};
+
+export type ConditionConsentRecord = {
+  accepted: boolean;
+  at: string;
+  textVersion: string;
+  items: Array<{ productId: string; title: string; condition: string }>;
 };
 
 export type ValidatedCart = {
@@ -196,6 +205,7 @@ export async function validateCartItems(
       lineAmount: fromCents(lineAmountCents),
       lineAmountCents,
       stock,
+      condition: product.condition ?? "new",
     });
   }
 
@@ -222,6 +232,36 @@ export async function validateCartItems(
   };
 }
 
+export async function getOrderByNumberAndEmail(
+  orderNumber: string,
+  email: string,
+): Promise<{ id: string } | null> {
+  const numeric = /^#?A?-?(\d+)$/i.exec(orderNumber.trim());
+  const parsed = numeric ? Number(numeric[1]) : null;
+  if (parsed === null || !Number.isFinite(parsed) || parsed > 2147483647) return null;
+  const result = await query(
+    `SELECT id FROM orders WHERE order_number = $1 AND lower(customer_email) = lower($2) LIMIT 1`,
+    [parsed, email.trim()],
+  );
+  return (result.rows[0] as { id: string } | undefined) ?? null;
+}
+
+export const buildConditionConsent = (
+  cart: ValidatedCart,
+  accepted: boolean,
+): ConditionConsentRecord | null => {
+  const items = cart.items
+    .filter((line) => line.condition !== "new")
+    .map((line) => ({ productId: line.productId, title: line.title, condition: line.condition }));
+  if (items.length === 0) return null;
+  return {
+    accepted,
+    at: new Date().toISOString(),
+    textVersion: "condition-consent-v1",
+    items,
+  };
+};
+
 export async function createPendingOrder(input: {
   cart: ValidatedCart;
   customer: CustomerDetails;
@@ -229,6 +269,7 @@ export async function createPendingOrder(input: {
   locale: "de" | "en";
   idempotencyKey?: string | null;
   consentMode?: string | null;
+  conditionConsent?: ConditionConsentRecord | null;
 }): Promise<CheckoutOrder> {
   const idempotencyKey = normalizeText(input.idempotencyKey) || randomUUID();
   const result = await query(
@@ -279,12 +320,19 @@ export async function createPendingOrder(input: {
       JSON.stringify({
         paymentMode: getPaymentMode(),
         createdBy: "checkout",
+        ...(input.conditionConsent ? { conditionConsent: input.conditionConsent } : {}),
       }),
     ],
   );
 
   const row = result.rows[0];
   if (!row) throw new Error("Order could not be created");
+  // The database reservation is the authoritative oversell guard. It happens
+  // before a payment session is handed to the customer; payment failures release it.
+  for (const item of input.cart.items) {
+    if (!item.sku) throw new Error(`${item.title} has no sellable SKU`);
+    await reserveInventory(item.sku, item.quantity, "checkout_order", row.id, "checkout");
+  }
   return {
     id: row.id,
     orderNumber: row.order_number ?? null,
@@ -358,7 +406,12 @@ export async function markOrderPaid(input: {
     [...values, input.providerPaymentId ?? null, input.providerStatus ?? "paid"],
   );
 
-  return result.rows[0] ?? null;
+  const order = result.rows[0] ?? null;
+  if (order) {
+    const { releaseInventoryReservation } = await import("@/lib/marketplaces/inventory");
+    await releaseInventoryReservation("checkout_order", order.id, true);
+  }
+  return order;
 }
 
 export async function markOrderCancelled(input: {
@@ -387,6 +440,10 @@ export async function markOrderCancelled(input: {
       input.providerStatus ?? null,
     ],
   );
+  if (input.orderId) {
+    const { releaseInventoryReservation } = await import("@/lib/marketplaces/inventory");
+    await releaseInventoryReservation("checkout_order", input.orderId, false);
+  }
 }
 
 export async function recordWebhookEvent(input: {

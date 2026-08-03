@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import PageIntro from "../../../../components/PageIntro";
-import SmartphoneStore from "../../../../components/SmartphoneStore";
+import StoreGrid from "../../../../components/store/StoreGrid";
+import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getProducts } from "../../../../lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getSmartphonesContent } from "../../../../lib/content";
 
@@ -28,13 +29,26 @@ export const generateMetadata = async ({
 
 export default async function SmartphonesPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { lang } = await params;
+  const query = await searchParams;
   const dict = getDictionary(lang as Locale);
   const smartphonesContent = await getSmartphonesContent(lang as Locale);
-  const smartphones = await getProducts("smartphones", undefined, lang as Locale);
+  const sort = parseStoreSort(query.sort);
+  const page = parseStorePage(query.page);
+  const activeFilters = parseStoreCatalogFilters(query);
+  const catalog = await getStoreCatalog({
+    category: "smartphones",
+    sort,
+    page,
+    pageSize: 24,
+    locale: lang as Locale,
+    filters: activeFilters,
+  });
 
   return (
     <div className="bg-background">
@@ -43,6 +57,8 @@ export default async function SmartphonesPage({
         subtitle={smartphonesContent.heroSubtitle}
         eyebrow={dict.meta.smartphones.title}
       />
+
+      <StoreCollectionLinks lang={lang as Locale} />
 
       {/* Trust Badges */}
       <section className="border-b border-white/5 bg-surface/30 py-8">
@@ -56,7 +72,7 @@ export default async function SmartphonesPage({
                 </svg>
               </div>
               <div>
-                <p className="text-lg font-bold text-foreground">24 {lang === "de" ? "Monate" : "Months"}</p>
+                <p className="text-lg font-bold text-foreground">12 {lang === "de" ? "Monate" : "Months"}</p>
                 <p className="text-sm text-muted">{lang === "de" ? "Garantie" : "Warranty"}</p>
               </div>
             </div>
@@ -70,7 +86,7 @@ export default async function SmartphonesPage({
               </div>
               <div>
                 <p className="text-lg font-bold text-foreground">100% {lang === "de" ? "Original" : "Genuine"}</p>
-                <p className="text-sm text-muted">{lang === "de" ? "Neuware" : "Brand New"}</p>
+                <p className="text-sm text-muted">{lang === "de" ? "Neu, Open-Box & gebraucht" : "New, open-box & used"}</p>
               </div>
             </div>
 
@@ -103,8 +119,23 @@ export default async function SmartphonesPage({
         </div>
       </section>
 
-      {/* Smartphone Store */}
-      <SmartphoneStore lang={lang as Locale} phones={smartphones} />
+      {/* Smartphone Store Grid with Filters */}
+      <section className="section-pad" id="store">
+        <div className="container-page">
+          <StoreGrid
+            products={catalog.products}
+            lang={lang as Locale}
+            lockedCategory="smartphones"
+            sortBy={sort}
+            total={catalog.total}
+            page={catalog.page}
+            pages={catalog.pages}
+            counts={catalog.counts}
+            facets={catalog.facets}
+            activeFilters={activeFilters}
+          />
+        </div>
+      </section>
 
       {/* Warranty Info Section */}
       <section className="section-pad bg-surface/30">
@@ -129,8 +160,8 @@ export default async function SmartphonesPage({
                   </h3>
                   <p className="mt-3 text-muted">
                     {lang === "de"
-                      ? "Alle Smartphones kommen mit voller Herstellergarantie. Bei uns kaufst du 100% originale Neuware mit Rechnung und vollem Support."
-                      : "All smartphones come with full manufacturer warranty. With us, you buy 100% genuine new devices with invoice and full support."}
+                      ? "Alle Smartphones werden mit klar ausgewiesenem Zustand, Rechnung und 12 Monaten Garantie angeboten."
+                      : "Every smartphone is offered with a clearly stated condition, invoice, and a 12-month warranty."}
                   </p>
 
                   {/* Warranty Benefits */}
@@ -142,7 +173,7 @@ export default async function SmartphonesPage({
                         </svg>
                       </div>
                       <span className="text-sm text-muted">
-                        {lang === "de" ? "24 Monate Garantie auf alle Geräte" : "24-month warranty on all devices"}
+                        {lang === "de" ? "12 Monate Garantie auf alle Geräte" : "12-month warranty on all devices"}
                       </span>
                     </div>
                     <div className="flex items-start gap-3">
@@ -152,7 +183,7 @@ export default async function SmartphonesPage({
                         </svg>
                       </div>
                       <span className="text-sm text-muted">
-                        {lang === "de" ? "Originalverpackt und versiegelt" : "Original packaging and sealed"}
+                        {lang === "de" ? "Zustand direkt am Produkt gekennzeichnet" : "Condition shown clearly on each product"}
                       </span>
                     </div>
                     <div className="flex items-start gap-3">
@@ -171,7 +202,7 @@ export default async function SmartphonesPage({
                 {/* Stats */}
                 <div className="flex shrink-0 gap-8">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-gold">24</p>
+                    <p className="text-3xl font-bold text-gold">12</p>
                     <p className="text-xs text-muted">{lang === "de" ? "Monate" : "Months"}</p>
                   </div>
                   <div className="text-center">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import SafeEmailLink from "../../../../components/SafeEmailLink";
 import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
@@ -116,9 +117,7 @@ export default async function ImpressumPage({
             <Row
               label={isGerman ? "E-Mail" : "Email"}
               value={
-                <a href={`mailto:${siteInfo.email}`} className="transition hover:text-gold">
-                  {siteInfo.email}
-                </a>
+                <SafeEmailLink email={siteInfo.email} className="transition hover:text-gold" />
               }
             />
             <Row

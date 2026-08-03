@@ -6,6 +6,14 @@ import { notFound } from "next/navigation";
 import { createMetadata } from "@/lib/metadata";
 import { getProductBySlug, getRelatedProducts } from "@/lib/products";
 import { type Locale } from "@/lib/i18n";
+import {
+  merchantReturnPolicy,
+  offerPriceValidUntil,
+  offerShippingDetails,
+  offerValidFrom,
+  productConditionLabel,
+  schemaItemCondition,
+} from "@/lib/schema";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import ProductViewTracker from "@/components/ProductViewTracker";
@@ -18,6 +26,31 @@ const formatMoney = (lang: Locale, value: number) =>
     style: "currency",
     currency: "EUR",
   }).format(value);
+
+const compactText = (value: string, maxLength: number): string => {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) return normalized;
+  const candidate = normalized.slice(0, maxLength + 1);
+  const lastSpace = candidate.lastIndexOf(' ');
+  const clipped = lastSpace >= Math.floor(maxLength * 0.65)
+    ? candidate.slice(0, lastSpace)
+    : normalized.slice(0, maxLength);
+  return `${clipped.replace(/[\s,;:.-]+$/, '')}…`;
+};
+
+const productVariantLabel = (title: string, subtitle: string): string => {
+  const parts = subtitle
+    .split(/[·|]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleKey = title.toLocaleLowerCase();
+  return parts.find((part) => !titleKey.includes(part.toLocaleLowerCase())) || "";
+};
+
+const productReference = (sku: string | undefined, slug: string): string => {
+  const compactSku = (sku || slug).replace(/[^a-z0-9]/gi, "").toUpperCase();
+  return compactSku.slice(-6);
+};
 
 export const generateMetadata = async ({
   params,
@@ -36,10 +69,29 @@ export const generateMetadata = async ({
     );
   }
 
+  const conditionLabel = productConditionLabel(locale, product.condition);
+  const price = formatMoney(locale, product.price);
+  const variantLabel = productVariantLabel(product.title, product.subtitle);
+  const reference = productReference(product.sku, product.slug);
+  const titlePrefix = locale === "en" ? "Buy " : "";
+  const titleSuffix = ` · ${reference}`;
+  const seoProductName = product.title.replace(/^Apple (?=iPhone\b)/i, "");
+  const descriptiveName = [product.title, variantLabel].filter(Boolean).join(" ");
+  const descriptiveTitle = [seoProductName, variantLabel].filter(Boolean).join(" ");
+  // The root layout adds " | Apfel Park"; keep the rendered title near 60 characters.
+  const compactName = compactText(descriptiveTitle, Math.max(24, 46 - titlePrefix.length - titleSuffix.length));
+  const seoTitle = `${titlePrefix}${compactName}${titleSuffix}`;
+  const seoDescription = compactText(
+    locale === "de"
+      ? `${descriptiveName} für ${price}: ${conditionLabel}, geprüft, mit Garantie. Artikel ${reference}. Abholung in Hamburg oder Versand in Deutschland.`
+      : `${descriptiveName} for ${price}: ${conditionLabel}, tested, with warranty. Item ${reference}. Hamburg pickup or shipping in Germany.`,
+    155,
+  );
+
   return createMetadata(
     lang as Locale,
-    product.title,
-    product.description || product.subtitle,
+    seoTitle,
+    seoDescription,
     `/store/${slug}`,
     product.image,
   );
@@ -59,6 +111,8 @@ export default async function ProductDetailPage({
   }
 
   const relatedProducts = await getRelatedProducts(product, 4, locale);
+  const gtinDigits = product.gtin?.replace(/\D/g, "");
+  const categoryPath = product.category === "consoles" ? "gaming" : product.category;
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -66,14 +120,24 @@ export default async function ProductDetailPage({
     description: product.description || product.subtitle,
     image: product.images.map((image) => image.startsWith("http") ? image : `${siteInfo.url}${image}`),
     sku: product.sku,
+    mpn: product.sku || product.model,
+    ...(gtinDigits?.length === 8 ? { gtin8: gtinDigits } : {}),
+    ...(gtinDigits?.length === 12 ? { gtin12: gtinDigits } : {}),
+    ...(gtinDigits?.length === 13 ? { gtin13: gtinDigits } : {}),
+    ...(gtinDigits?.length === 14 ? { gtin14: gtinDigits } : {}),
     brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
     offers: {
       "@type": "Offer",
       priceCurrency: "EUR",
       price: product.price.toFixed(2),
-      availability: product.stock && product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/LimitedAvailability",
+      validFrom: offerValidFrom(product.createdAt),
+      priceValidUntil: offerPriceValidUntil(),
+      availability: product.stock && product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       url: `${siteInfo.url}/${locale}/store/${product.slug}`,
-      itemCondition: "https://schema.org/NewCondition",
+      itemCondition: schemaItemCondition(product.condition),
+      seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
+      hasMerchantReturnPolicy: merchantReturnPolicy(),
+      shippingDetails: offerShippingDetails(),
     },
   };
   const breadcrumbJsonLd = {
@@ -81,7 +145,7 @@ export default async function ProductDetailPage({
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: locale === "de" ? "Shop" : "Store", item: `${siteInfo.url}/${locale}/store` },
-      { "@type": "ListItem", position: 2, name: product.category, item: `${siteInfo.url}/${locale}/store?category=${product.category}` },
+      { "@type": "ListItem", position: 2, name: product.category, item: `${siteInfo.url}/${locale}/${categoryPath}` },
       { "@type": "ListItem", position: 3, name: product.title, item: `${siteInfo.url}/${locale}/store/${product.slug}` },
     ],
   };

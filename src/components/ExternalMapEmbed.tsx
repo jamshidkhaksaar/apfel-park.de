@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { CONSENT_EVENT_NAME, type ConsentMode, readConsentMode, writeConsentMode } from "@/lib/consent";
 
@@ -29,20 +29,16 @@ const copy = {
   },
 } as const;
 
+const subscribeToConsent = (onStoreChange: () => void) => {
+  window.addEventListener(CONSENT_EVENT_NAME, onStoreChange);
+  return () => window.removeEventListener(CONSENT_EVENT_NAME, onStoreChange);
+};
+
+const getServerConsent = (): ConsentMode => "unset";
+
 export default function ExternalMapEmbed({ lang, title, src, directionsUrl, className = "h-96 w-full" }: Props) {
   const text = copy[lang];
-  const [mode, setMode] = useState<ConsentMode>(() => readConsentMode());
-
-  useEffect(() => {
-    const handleChange = (event: Event) => {
-      setMode((event as CustomEvent<ConsentMode>).detail ?? readConsentMode());
-    };
-
-    window.addEventListener(CONSENT_EVENT_NAME, handleChange as EventListener);
-    return () => {
-      window.removeEventListener(CONSENT_EVENT_NAME, handleChange as EventListener);
-    };
-  }, []);
+  const mode = useSyncExternalStore(subscribeToConsent, readConsentMode, getServerConsent);
 
   if (mode !== "external") {
     return (

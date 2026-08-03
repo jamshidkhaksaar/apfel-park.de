@@ -7,6 +7,7 @@ import { clearStoredCart } from "@/components/checkout/cart";
 type Props = {
   locale: "de" | "en";
   orderId?: string | null;
+  orderNumber?: number | null;
   provider?: string | null;
   paypalToken?: string | null;
   initiallyPaid: boolean;
@@ -23,6 +24,7 @@ const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
 export default function CheckoutSuccessClient({
   locale,
   orderId,
+  orderNumber,
   provider,
   paypalToken,
   initiallyPaid,
@@ -95,7 +97,17 @@ export default function CheckoutSuccessClient({
       {message ? <p className="mt-4 text-sm text-muted">{message}</p> : null}
       {orderId ? (
         <div className="mt-6 rounded-xl border border-border/60 bg-surface/40 p-4 text-sm text-muted">
-          <div>{locale === "de" ? "Bestell-ID" : "Order ID"}: <span className="font-mono text-foreground">{orderId.slice(0, 8)}</span></div>
+          <div>
+            {locale === "de" ? "Bestellnummer" : "Order number"}:{" "}
+            <span className="font-mono font-semibold text-foreground">
+              {orderNumber ? `#A-${orderNumber}` : orderId.slice(0, 8)}
+            </span>
+          </div>
+          <p className="mt-1 text-xs">
+            {locale === "de"
+              ? "Bitte notieren Sie diese Nummer für Rückfragen, Rückgabe oder Widerruf."
+              : "Please keep this number for questions, returns, or withdrawal."}
+          </p>
           {typeof totalAmount === "number" ? (
             <div className="mt-1">{locale === "de" ? "Summe" : "Total"}: <span className="text-foreground">{formatMoney(locale, totalAmount, currency || "EUR")}</span></div>
           ) : null}

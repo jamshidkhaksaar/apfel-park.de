@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   attachProviderReference,
+  buildConditionConsent,
   createPendingOrder,
   getCheckoutBaseUrl,
   normalizeShippingMethod,
@@ -19,6 +20,7 @@ type StripeCheckoutPayload = {
   shippingMethod?: string;
   locale?: "de" | "en";
   idempotencyKey?: string;
+  conditionConsent?: boolean;
 };
 
 const normalizeCustomer = (customer?: CustomerDetails): CustomerDetails => {
@@ -54,6 +56,21 @@ export async function POST(request: NextRequest) {
     const shippingMethod = normalizeShippingMethod(payload.shippingMethod);
     const customer = normalizeCustomer(payload.customer);
     const cart = await validateCartItems(payload.items ?? [], shippingMethod);
+
+    const hasNonNewItems = cart.items.some((line) => line.condition !== "new");
+    if (hasNonNewItems && payload.conditionConsent !== true) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            locale === "de"
+              ? "Bitte bestätigen Sie den Gerätezustand der Open-Box-/Gebrauchtartikel."
+              : "Please confirm the device condition of the open-box/used items.",
+        },
+        { status: 400 },
+      );
+    }
+
     const order = await createPendingOrder({
       cart,
       customer,
@@ -61,6 +78,7 @@ export async function POST(request: NextRequest) {
       locale,
       idempotencyKey: payload.idempotencyKey,
       consentMode: request.cookies.get("apfel-consent")?.value ?? null,
+      conditionConsent: buildConditionConsent(cart, true),
     });
 
     const origin = getCheckoutBaseUrl();

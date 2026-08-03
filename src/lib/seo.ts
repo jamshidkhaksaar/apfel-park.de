@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 import { createAdminDbClient } from "@/lib/admin-db";
 import { locales, type Locale } from "@/lib/i18n";
 import { getProducts } from "@/lib/products";
+import { repairServiceSlugs } from "@/lib/repair-services";
 import {
   buildDefaultSeoSettings,
   getSeoRouteIdByPath,
@@ -152,11 +153,14 @@ export const resolveSeoPage = async (routeId: SeoRouteId, locale: Locale) => {
   };
 };
 
+// Boot-time constant so static sitemap entries don't advertise a fake
+// per-request lastmod (Google ignores lastmod values that always change).
+const deployedAt = new Date();
+
 export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
   const settings = await getSeoSettings();
   if (!settings.global.enableSitemap) return [];
-
-  const now = new Date();
+  const products = await getProducts().catch(() => []);
 
   const staticEntries = seoRouteDefinitions.flatMap((route) => {
     const pageSettings = settings.pages[route.id];
@@ -164,7 +168,7 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
 
     return locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}${route.path}`,
-      lastModified: now,
+      lastModified: deployedAt,
       changeFrequency: pageSettings.changeFrequency,
       priority: pageSettings.priority,
       alternates: {
@@ -177,12 +181,15 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     }));
   });
 
-  const products = await getProducts().catch(() => []);
-  const productEntries = products.flatMap((product) =>
-    locales.map((locale) => ({
+  const productEntries = products.flatMap((product) => {
+    const createdAt = product.createdAt ? new Date(product.createdAt) : null;
+    const lastModified =
+      createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : deployedAt;
+
+    return locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}/store/${product.slug}`,
-      lastModified: now,
-      changeFrequency: "daily" as const,
+      lastModified,
+      changeFrequency: "weekly" as const,
       priority: product.isFeatured ? 0.85 : 0.72,
       alternates: {
         languages: {
@@ -191,10 +198,40 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
           "x-default": `${siteInfo.url}/de/store/${product.slug}`,
         },
       },
+    }));
+  });
+
+  const repairServiceEntries = repairServiceSlugs.flatMap((service) =>
+    locales.map((locale) => ({
+      url: `${siteInfo.url}/${locale}/repairs/${service}`,
+      lastModified: deployedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.82,
+      alternates: {
+        languages: {
+          de: `${siteInfo.url}/de/repairs/${service}`,
+          en: `${siteInfo.url}/en/repairs/${service}`,
+          "x-default": `${siteInfo.url}/de/repairs/${service}`,
+        },
+      },
     })),
   );
 
-  return [...staticEntries, ...productEntries];
+  const catalogEntries = locales.map((locale) => ({
+    url: `${siteInfo.url}/${locale}/store/catalog`,
+    lastModified: deployedAt,
+    changeFrequency: "daily" as const,
+    priority: 0.68,
+    alternates: {
+      languages: {
+        de: `${siteInfo.url}/de/store/catalog`,
+        en: `${siteInfo.url}/en/store/catalog`,
+        "x-default": `${siteInfo.url}/de/store/catalog`,
+      },
+    },
+  }));
+
+  return [...staticEntries, ...repairServiceEntries, ...catalogEntries, ...productEntries];
 };
 
 export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
@@ -219,7 +256,7 @@ export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/api/meta/catalog.csv"],
+        allow: ["/", "/api/meta/catalog.csv", "/google-merchant.xml", "/llms.txt"],
         disallow: ["/admin", "/login", "/api/"],
       },
     ],

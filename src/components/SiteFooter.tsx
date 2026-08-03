@@ -8,6 +8,8 @@ import CookieSettingsButton from "./CookieSettingsButton";
 import CopyAddressButton from "./CopyAddressButton";
 import ExternalMapEmbed from "./ExternalMapEmbed";
 import Logo from "./Logo";
+import PaymentBrandIcons from "./PaymentBrandIcons";
+import SafeEmailLink from "./SafeEmailLink";
 import TrackedLink from "./TrackedLink";
 
 export default async function SiteFooter({ lang }: { lang: Locale }) {
@@ -21,9 +23,9 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
         <div className="grid gap-12 py-16 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
           {/* Brand Column */}
           <div className="space-y-6">
-            <Link href={`/${lang}`} className="group inline-flex items-center gap-5">
+            <Link href={`/${lang}`} className="group inline-flex max-w-full flex-wrap items-center gap-5 sm:flex-nowrap">
               <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-gold/15 to-amber/10 ring-1 ring-white/10 transition-transform duration-300 group-hover:scale-105 shadow-xl">
-                <Logo size="lg" priority />
+                <Logo size="lg" />
               </div>
               <div>
                 <p className="text-3xl font-bold text-foreground tracking-tight">Apfel Park</p>
@@ -49,8 +51,8 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
                 {siteInfo.phone}
               </TrackedLink>
               
-              <TrackedLink
-                href={`mailto:${siteInfo.email}`}
+              <SafeEmailLink
+                email={siteInfo.email}
                 className="flex items-center gap-3 text-sm text-muted transition hover:text-gold"
                 eventName="contact_click"
                 eventPayload={{ type: "email", source: "footer" }}
@@ -60,9 +62,18 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                {siteInfo.email}
-              </TrackedLink>
+              </SafeEmailLink>
               
+              <address className="flex items-center gap-3 text-sm not-italic text-muted">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-strong">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                  </svg>
+                </div>
+                {siteInfo.address.street}, {siteInfo.address.postalCode} {siteInfo.address.city}
+              </address>
+
               <div className="flex items-center gap-3 text-sm text-muted">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-strong">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -167,7 +178,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             <p className="text-sm font-medium text-muted">
               {lang === "de" ? "Folge uns auf Social Media" : "Follow us on social media"}
             </p>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:justify-end">
               {/* Instagram */}
               <TrackedLink
                 href={socialLinks.instagram}
@@ -234,6 +245,13 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             </div>
           </div>
 
+          <div className="mb-8 flex flex-col items-center gap-3 text-center">
+            <p className="text-sm font-medium text-muted">
+              {lang === "de" ? "Sicher bezahlen mit" : "Pay securely with"}
+            </p>
+            <PaymentBrandIcons iconClassName="h-6 w-auto" />
+          </div>
+
           {/* Copyright Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6 text-xs text-muted">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -246,13 +264,21 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             </div>
             
             <div className="flex items-center gap-4">
+              <Link href={`/${lang}/delivery-returns`} className="transition hover:text-gold">
+                {lang === "de" ? "Lieferung & Rückgabe" : "Delivery & Returns"}
+              </Link>
+              <span className="hidden text-muted/40 sm:inline">|</span>
+              <Link href={`/${lang}/withdrawal`} className="font-semibold text-gold transition hover:underline">
+                {lang === "de" ? "Vertrag widerrufen" : "Withdraw contract"}
+              </Link>
+              <span className="hidden text-muted/40 sm:inline">|</span>
               <span className="flex items-center gap-2">
                 <span className="flex h-2 w-2 animate-pulse rounded-full bg-green" />
                 {lang === "de" ? "Shop geöffnet" : "Shop Open"}
               </span>
-              <span className="text-muted/40">|</span>
+              <span className="hidden text-muted/40 sm:inline">|</span>
               <span>{siteInfo.tagline}</span>
-              <span className="text-muted/40">|</span>
+              <span className="hidden text-muted/40 sm:inline">|</span>
               <CookieSettingsButton lang={lang} />
               <span className="text-muted/40">|</span>
               <Link 

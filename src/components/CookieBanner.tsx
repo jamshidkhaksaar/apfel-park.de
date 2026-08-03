@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   CONSENT_EVENT_NAME,
   CONSENT_OPEN_EVENT_NAME,
@@ -34,31 +34,33 @@ const copy = {
   },
 } as const;
 
+const subscribeToConsent = (onStoreChange: () => void) => {
+  window.addEventListener(CONSENT_EVENT_NAME, onStoreChange);
+  return () => window.removeEventListener(CONSENT_EVENT_NAME, onStoreChange);
+};
+
+const getServerConsent = (): ConsentMode => "unset";
+
 export default function CookieBanner({ lang }: Props) {
   const text = copy[lang];
-  const [visible, setVisible] = useState(() => readConsentMode() === "unset");
+  const mode = useSyncExternalStore(subscribeToConsent, readConsentMode, getServerConsent);
+  const [forceOpen, setForceOpen] = useState(false);
+  const visible = forceOpen || mode === "unset";
   const bannerRef = useRef<HTMLDivElement | null>(null);
 
   const applyConsent = (mode: "necessary" | "external") => {
-    setVisible(false);
+    setForceOpen(false);
     writeConsentMode(mode);
   };
 
   useEffect(() => {
-    const handleChange = (event: Event) => {
-      const next = (event as CustomEvent<ConsentMode>).detail ?? readConsentMode();
-      setVisible(next === "unset");
-    };
-
     const handleOpen = () => {
-      setVisible(true);
+      setForceOpen(true);
     };
 
-    window.addEventListener(CONSENT_EVENT_NAME, handleChange as EventListener);
     window.addEventListener(CONSENT_OPEN_EVENT_NAME, handleOpen);
 
     return () => {
-      window.removeEventListener(CONSENT_EVENT_NAME, handleChange as EventListener);
       window.removeEventListener(CONSENT_OPEN_EVENT_NAME, handleOpen);
     };
   }, []);

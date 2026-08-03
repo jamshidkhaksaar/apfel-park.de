@@ -77,6 +77,7 @@ class QueryBuilder<T = Record<string, unknown>> implements PromiseLike<QueryResp
   private filters: Filter[] = [];
   private orderBy: Order[] = [];
   private limitValue: number | null = null;
+  private offsetValue: number | null = null;
   private singleMode: "single" | "maybeSingle" | null = null;
   private action: QueryAction | null = null;
 
@@ -127,6 +128,12 @@ class QueryBuilder<T = Record<string, unknown>> implements PromiseLike<QueryResp
 
   limit(value: number) {
     this.limitValue = value;
+    return this;
+  }
+
+  range(from: number, to: number) {
+    this.offsetValue = Math.max(0, Math.floor(from));
+    this.limitValue = Math.max(0, Math.floor(to) - this.offsetValue + 1);
     return this;
   }
 
@@ -185,9 +192,10 @@ class QueryBuilder<T = Record<string, unknown>> implements PromiseLike<QueryResp
       this.singleMode || this.limitValue
         ? ` LIMIT ${this.singleMode ? 1 : this.limitValue}`
         : "";
+    const offsetSql = this.offsetValue !== null ? ` OFFSET ${this.offsetValue}` : "";
 
     const result = await pool.query(
-      `SELECT ${selectedColumns} FROM ${quoteIdentifier(this.table)}${whereSql}${orderSql}${limitSql}`,
+      `SELECT ${selectedColumns} FROM ${quoteIdentifier(this.table)}${whereSql}${orderSql}${limitSql}${offsetSql}`,
       values,
     );
 

@@ -53,6 +53,7 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<"stripe" | "paypal" | null>(null);
+  const [conditionConsent, setConditionConsent] = useState(false);
   const [idempotencyKey] = useState(createIdempotencyKey);
 
   const validate = useCallback(async (nextItems: StoredCartItem[], nextShipping: ShippingMethod) => {
@@ -87,20 +88,27 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
     return () => window.clearTimeout(timer);
   }, [items, shippingMethod, validate]);
 
+  const hasNonNewItems = useMemo(
+    () => Boolean(cart?.items.some((item) => item.condition && item.condition !== "new")),
+    [cart],
+  );
+
   const canSubmit = useMemo(() => {
     if (!cart || cart.items.length === 0) return false;
     if (!customer.name.trim() || !customer.email.trim()) return false;
     if (shippingMethod === "germany" && (!customer.line1.trim() || !customer.postalCode.trim() || !customer.city.trim())) {
       return false;
     }
+    if (hasNonNewItems && !conditionConsent) return false;
     return true;
-  }, [cart, customer, shippingMethod]);
+  }, [cart, customer, shippingMethod, hasNonNewItems, conditionConsent]);
 
   const buildPayload = () => ({
     items,
     shippingMethod,
     locale,
     idempotencyKey,
+    conditionConsent: hasNonNewItems ? conditionConsent : undefined,
     customer: {
       name: customer.name,
       email: customer.email,
@@ -252,7 +260,16 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
             <div className="mt-5 space-y-3 text-sm">
               {cart.items.map((item) => (
                 <div key={item.key} className="flex justify-between gap-4 text-muted">
-                  <span>{item.quantity} x {item.title}</span>
+                  <span>
+                    {item.quantity} x {item.title}
+                    {item.condition && item.condition !== "new" ? (
+                      <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
+                        {item.condition === "used"
+                          ? locale === "de" ? "Gebraucht" : "Used"
+                          : "Unboxed"}
+                      </span>
+                    ) : null}
+                  </span>
                   <span>{formatMoney(locale, item.lineAmount, cart.currency)}</span>
                 </div>
               ))}
@@ -269,6 +286,27 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
                 <span>{formatMoney(locale, cart.totalAmount, cart.currency)}</span>
               </div>
             </div>
+
+            {hasNonNewItems ? (
+              <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-xs leading-5 text-muted">
+                <input
+                  type="checkbox"
+                  checked={conditionConsent}
+                  onChange={(event) => setConditionConsent(event.target.checked)}
+                  className="mt-0.5"
+                  required
+                />
+                <span>
+                  {locale === "de"
+                    ? "Mir ist bekannt, dass diese Bestellung Open-Box- bzw. Gebrauchtgeräte enthält. Ich habe den auf der Produktseite ausgewiesenen Zustand zur Kenntnis genommen. "
+                    : "I am aware that this order contains open-box or used devices. I have taken note of the condition stated on the product page. "}
+                  <a href={`/${locale}/device-conditions`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
+                    {locale === "de" ? "Gerätezustände & Ihre Rechte" : "Device conditions & your rights"}
+                  </a>
+                  {" *"}
+                </span>
+              </label>
+            ) : null}
 
             <div className="mt-6 grid gap-3">
               <button type="button" disabled={!canSubmit || submitting !== null} className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void startCheckout("stripe")}>

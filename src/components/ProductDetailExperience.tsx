@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import ProductGallery from "@/components/ProductGallery";
+import PaymentBrandIcons from "@/components/PaymentBrandIcons";
 import { addStoredCartItem } from "@/components/checkout/cart";
 import ConditionBadge from "@/components/ConditionBadge";
 import { formatPrice } from "@/lib/format";
@@ -88,12 +89,17 @@ export default function ProductDetailExperience({ locale, product }: Props) {
   const isOutOfStock = activeStock === 0;
   const handleAddToCart = () => {
     if (isOutOfStock) return;
+    const eventId = createMarketingEventId("cart");
     addStoredCartItem(cartItem);
-    trackCart("add_to_cart");
-    sendServerAddToCart();
+    trackCart("add_to_cart", eventId);
+    sendServerAddToCart(eventId);
     setAdded(true);
   };
-  const trackCart = (eventName: "add_to_cart" | "begin_checkout") => {
+  const createMarketingEventId = (prefix: string) =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const trackCart = (eventName: "add_to_cart" | "begin_checkout", eventId = createMarketingEventId(eventName)) => {
     window.apfelTrack?.(eventName, {
       currency: "EUR",
       value: activePrice,
@@ -107,9 +113,9 @@ export default function ProductDetailExperience({ locale, product }: Props) {
       content_name: product.title,
       content_category: product.category,
       contents: [{ id: product.id, quantity: 1, item_price: activePrice }],
-    }, `${eventName}-${product.id}-${selectedVariant?.sku || selectedVariant?.color || "base"}`);
+    }, eventId);
   };
-  const sendServerAddToCart = () => {
+  const sendServerAddToCart = (eventId: string) => {
     void fetch("/api/marketing/add-to-cart", {
       method: "POST",
       headers: {
@@ -123,6 +129,10 @@ export default function ProductDetailExperience({ locale, product }: Props) {
         price: activePrice,
         locale,
         slug: product.slug,
+        eventId,
+        variantSku: selectedVariant?.sku,
+        variantColor: selectedVariant?.color,
+        variantStorage: selectedVariant?.storage,
       }),
       keepalive: true,
     }).catch(() => undefined);
@@ -135,8 +145,8 @@ export default function ProductDetailExperience({ locale, product }: Props) {
 
   return (
     <>
-    <div className="grid gap-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-      <div className="space-y-6">
+    <div className="grid min-w-0 gap-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+      <div className="order-2 min-w-0 space-y-6 xl:order-1">
         <ProductGallery key={`${selectedColor}-${selectedStorage}-${activeImage}`} title={product.title} images={galleryImages} />
 
         <div className="glass-panel rounded-[32px] p-8">
@@ -165,8 +175,8 @@ export default function ProductDetailExperience({ locale, product }: Props) {
         </div>
       </div>
 
-      <div className="space-y-6 xl:sticky xl:top-28 xl:self-start">
-        <div className="glass-panel rounded-[32px] p-8">
+      <div className="order-1 min-w-0 space-y-6 xl:order-2 xl:sticky xl:top-28 xl:self-start">
+        <div className="glass-panel min-w-0 max-w-full overflow-hidden rounded-[32px] p-5 sm:p-8">
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-full border border-border/60 bg-surface/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
               {product.brand || product.category}
@@ -179,7 +189,7 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             <ConditionBadge condition={product.condition} lang={locale} />
           </div>
 
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          <h1 className="mt-5 break-words text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             {product.title}
           </h1>
           {product.subtitle ? (
@@ -274,7 +284,7 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">SKU</p>
-              <p className="mt-2 text-sm font-medium text-foreground">{activeSku || "—"}</p>
+              <p className="mt-2 break-all text-sm font-medium text-foreground">{activeSku || "—"}</p>
             </div>
           </div>
 
@@ -311,17 +321,24 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             >
               <span>{locale === "de" ? "Direkt kaufen" : "Buy now"}</span>
             </Link>
-            <Link
-              href={`/${locale}/contact?device=${encodeURIComponent(product.title)}${selectedVariant ? `&variant=${encodeURIComponent(`${selectedVariant.color} ${selectedVariant.storage}`)}` : ""}`}
+            <button
+              type="button"
               className="btn-secondary justify-center"
-              onClick={() => window.apfelTrack?.("generate_lead", {
-                item_id: product.id,
-                item_name: product.title,
-                source: "product_detail",
-              })}
+              onClick={() => {
+                window.apfelTrack?.("generate_lead", {
+                  item_id: product.id,
+                  item_name: product.title,
+                  source: "product_detail",
+                });
+                const query = new URLSearchParams({ device: product.title });
+                if (selectedVariant) {
+                  query.set("variant", `${selectedVariant.color} ${selectedVariant.storage}`);
+                }
+                window.location.assign(`/${locale}/contact?${query.toString()}`);
+              }}
             >
               <span>{locale === "de" ? "Jetzt anfragen" : "Send inquiry"}</span>
-            </Link>
+            </button>
             <a
               href={whatsappUrl}
               target="_blank"
@@ -348,9 +365,38 @@ export default function ProductDetailExperience({ locale, product }: Props) {
 
           <div className="mt-6 grid gap-3 rounded-3xl border border-border/60 bg-surface/50 p-5 text-sm text-muted">
             <p>{locale === "de" ? "Abholung im Store oder versicherter Versand innerhalb Deutschlands." : "Store pickup or tracked shipping within Germany."}</p>
-            <p>{locale === "de" ? "Sichere Zahlung mit Karte oder PayPal. Preise inkl. gesetzlicher MwSt." : "Secure card or PayPal payment. Prices include VAT."}</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p>{locale === "de" ? "Sichere Zahlung mit Karte oder PayPal. Preise inkl. gesetzlicher MwSt." : "Secure card or PayPal payment. Prices include VAT."}</p>
+              <PaymentBrandIcons iconClassName="h-5 w-auto" />
+            </div>
             <p>{locale === "de" ? "Rückgabe und Gewährleistung nach geltendem Recht; Details bitte vor Ort bestätigen." : "Returns and warranty follow applicable law; confirm details in store."}</p>
           </div>
+
+          {product.condition !== "new" ? (
+            <div className="mt-4 rounded-3xl border border-emerald-500/25 bg-emerald-500/5 p-5 text-sm text-muted">
+              <p className="font-semibold text-foreground">
+                {product.condition === "used"
+                  ? locale === "de" ? "Gebraucht A+" : "Used A+"
+                  : "Open-Box"}
+              </p>
+              <p className="mt-2">{product.conditionNote || (locale === "de" ? "Zustand und Lieferumfang sind in der Produktbeschreibung dokumentiert." : "Condition and included accessories are documented in the product description.")}</p>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-foreground">
+                {product.hasRealProductPhotos ? <span>{locale === "de" ? "✓ Echte Produktfotos" : "✓ Real product photos"}</span> : null}
+                {product.batteryHealth ? <span>{locale === "de" ? `✓ Batteriekapazität: ${product.batteryHealth}%` : `✓ Battery health: ${product.batteryHealth}%`}</span> : null}
+              </div>
+              <p className="mt-3 text-xs">
+                <Link href={`/${locale}/device-conditions`} className="underline underline-offset-4 hover:text-gold">
+                  {locale === "de" ? "Was bedeutet das? Gerätezustände & Ihre Rechte" : "What does this mean? Device conditions & your rights"}
+                </Link>
+              </p>
+            </div>
+          ) : null}
+
+          <p className="mt-4 text-center text-xs text-muted">
+            <Link href={`/${locale}/delivery-returns`} className="underline underline-offset-4 hover:text-gold">
+              {locale === "de" ? "Lieferung, Rückgabe & Widerruf" : "Delivery, returns & withdrawal"}
+            </Link>
+          </p>
 
           {product.featureBullets.length > 0 ? (
             <div className="mt-8">

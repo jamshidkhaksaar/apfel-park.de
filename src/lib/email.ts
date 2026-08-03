@@ -52,12 +52,20 @@ type EmailSendResult = {
   error?: string;
 };
 
+export type EmailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+};
+
 type OutboundEmail = {
   to: string | string[];
   subject: string;
   text: string;
   html: string;
   replyTo?: string;
+  identity?: "repairs" | "sales";
+  attachments?: EmailAttachment[];
 };
 
 const parseBoolean = (value: string | undefined, fallback: boolean): boolean => {
@@ -82,12 +90,23 @@ const formatCurrency = (value: number | null | undefined, locale: string): strin
   }).format(value);
 };
 
-const getMailerConfig = () => {
+// Sender identities: "repairs" (default) for the repair flow, "sales" for
+// shop matters such as orders and withdrawal confirmations.
+export type EmailIdentity = "repairs" | "sales";
+
+const getMailerConfig = (identity: EmailIdentity = "repairs") => {
   const host = process.env.SMTP_HOST?.trim();
   const port = Number(process.env.SMTP_PORT ?? "587");
-  const user = process.env.SMTP_USER?.trim();
-  const pass = process.env.SMTP_PASS?.trim();
-  const from = process.env.SMTP_FROM_EMAIL?.trim() || user || process.env.RESEND_FROM_EMAIL?.trim() || null;
+  const defaultUser = process.env.SMTP_USER?.trim();
+  const defaultPass = process.env.SMTP_PASS?.trim();
+  const user = identity === "sales" ? process.env.SMTP_SALES_USER?.trim() || defaultUser : defaultUser;
+  const pass = identity === "sales" ? process.env.SMTP_SALES_PASS?.trim() || defaultPass : defaultPass;
+  const from =
+    (identity === "sales" ? process.env.SMTP_SALES_FROM?.trim() || process.env.SMTP_SALES_USER?.trim() : undefined) ||
+    process.env.SMTP_FROM_EMAIL?.trim() ||
+    user ||
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    null;
   const secure = parseBoolean(process.env.SMTP_SECURE, port === 465);
 
   return {
@@ -102,7 +121,7 @@ const getMailerConfig = () => {
 };
 
 const sendWithSmtp = async (email: OutboundEmail): Promise<EmailSendResult> => {
-  const config = getMailerConfig();
+  const config = getMailerConfig(email.identity ?? "repairs");
   if (!config.enabled || !config.host || !config.user || !config.pass || !config.from) {
     return { success: false, error: "SMTP is not configured" };
   }
@@ -129,6 +148,7 @@ const sendWithSmtp = async (email: OutboundEmail): Promise<EmailSendResult> => {
       subject: email.subject,
       text: email.text,
       html: email.html,
+      attachments: email.attachments,
     });
 
     return { success: true };
@@ -166,6 +186,11 @@ const sendWithResend = async (email: OutboundEmail): Promise<EmailSendResult> =>
         subject: email.subject,
         text: email.text,
         html: email.html,
+        attachments: email.attachments?.map((attachment) => ({
+          filename: attachment.filename,
+          content: attachment.content.toString("base64"),
+          content_type: attachment.contentType,
+        })),
       }),
     });
 
@@ -634,5 +659,142 @@ export const sendChatSummaryEmail = async (
     subject,
     text,
     html,
+  });
+};
+
+export type WithdrawalEmailData = {
+  customerName: string;
+  customerEmail: string;
+  orderNumber: string;
+  receivedDate?: string | null;
+  reason?: string | null;
+  locale: "de" | "en";
+  confirmedAt: string;
+};
+
+const buildWithdrawalCustomerEmail = (data: WithdrawalEmailData) => {
+  const isGerman = data.locale === "de";
+  const subject = isGerman
+    ? `Eingangsbestätigung: Ihr Widerruf (Bestellung ${data.orderNumber})`
+    : `Receipt confirmation: your withdrawal (order ${data.orderNumber})`;
+  const timestamp = new Date(data.confirmedAt).toLocaleString(isGerman ? "de-DE" : "en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/Berlin",
+  });
+
+  const lines = isGerman
+    ? [
+        `Hallo ${data.customerName},`,
+        "",
+        `hiermit bestätigen wir den Eingang Ihres Widerrufs am ${timestamp} (Bestellung ${data.orderNumber}).`,
+        "",
+        "Bitte senden Sie die Ware innerhalb von 14 Tagen an:",
+        "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
+        "",
+        "Wichtig vor der Rücksendung eines Telefons: Daten sichern, iPhone: Apple-ID abmelden und 'Wo ist?' deaktivieren (Einstellungen → Name → Abmelden, dann 'Alle Inhalte & Einstellungen löschen'); Android: Google-Konto entfernen.",
+        "",
+        "Die Erstattung erfolgt spätestens 14 Tage nach Eingang Ihres Widerrufs über dasselbe Zahlungsmittel; wir dürfen sie zurückhalten, bis die Ware bei uns eingegangen ist oder Sie den Versand nachgewiesen haben.",
+        "",
+        "Apfel Park",
+      ]
+    : [
+        `Hello ${data.customerName},`,
+        "",
+        `we hereby confirm receipt of your withdrawal on ${timestamp} (order ${data.orderNumber}).`,
+        "",
+        "Please return the goods within 14 days to:",
+        "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg, Germany",
+        "",
+        "Important before returning a phone: back up your data; iPhone: sign out of your Apple ID and disable Find My (Settings → your name → Sign Out, then 'Erase All Content and Settings'); Android: remove your Google account.",
+        "",
+        "The refund is made within 14 days of receiving your withdrawal using the same payment method; we may withhold it until we receive the goods or you provide proof of shipment.",
+        "",
+        "Apfel Park",
+      ];
+
+  const html = lines
+    .map((line) => (line ? `<p>${escapeHtml(line)}</p>` : ""))
+    .join("");
+
+  return { subject, text: lines.join("\n"), html };
+};
+
+export const sendWithdrawalCustomerEmail = async (data: WithdrawalEmailData): Promise<EmailSendResult> => {
+  const { subject, text, html } = buildWithdrawalCustomerEmail(data);
+  return sendTransactionalEmail({ to: data.customerEmail, subject, text, html, identity: "sales" });
+};
+
+export const sendWithdrawalAdminEmail = async (
+  data: WithdrawalEmailData & { orderMatched: boolean },
+): Promise<EmailSendResult> => {
+  const contactRecipient = await getContactRecipient();
+  // Withdrawals concern both the shop inbox and sales.
+  const recipient = Array.from(
+    new Set(
+      [contactRecipient, "info@apfel-park.de", "sales@apfel-park.de"].filter(
+        (value): value is string => Boolean(value),
+      ),
+    ),
+  );
+  if (recipient.length === 0) {
+    return { success: false, error: "No contact notification recipient configured" };
+  }
+
+  const subject = `⚠️ Widerruf eingegangen: Bestellung ${data.orderNumber}${data.orderMatched ? "" : " (keine Bestellung gefunden!)"}`;
+  const lines = [
+    `Widerruf eingegangen am ${new Date(data.confirmedAt).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Berlin" })}`,
+    `Name: ${data.customerName}`,
+    `E-Mail: ${data.customerEmail}`,
+    `Bestellnummer: ${data.orderNumber}`,
+    `Erhalten am: ${data.receivedDate || "-"}`,
+    `Grund (freiwillig): ${data.reason || "-"}`,
+    `Bestellung im System gefunden: ${data.orderMatched ? "ja" : "NEIN — bitte manuell prüfen"}`,
+    "",
+    "Frist: Erstattung spätestens 14 Tage nach Eingang (Zurückbehaltung bis Wareneingang/Versandnachweis zulässig).",
+  ];
+  const html = lines.map((line) => (line ? `<p>${escapeHtml(line)}</p>` : "")).join("");
+
+  return sendTransactionalEmail({ to: recipient, replyTo: data.customerEmail, subject, text: lines.join("\n"), html, identity: "sales" });
+};
+
+export const sendRepairEstimateEmail = async (data: {
+  recipients: string[];
+  estimateNumber: string;
+  deviceLabel: string;
+  language: "de" | "en";
+  attachment: EmailAttachment;
+  message?: string;
+}): Promise<EmailSendResult> => {
+  const isGerman = data.language === "de";
+  const subject = isGerman
+    ? `Kostenvoranschlag ${data.estimateNumber} | Apfel Park`
+    : `Repair cost estimate ${data.estimateNumber} | Apfel Park`;
+  const intro = isGerman
+    ? `Anbei erhalten Sie den Kostenvoranschlag ${data.estimateNumber} für ${data.deviceLabel}.`
+    : `Please find attached repair cost estimate ${data.estimateNumber} for ${data.deviceLabel}.`;
+  const closing = isGerman
+    ? "Bei Rückfragen antworten Sie bitte direkt auf diese E-Mail."
+    : "If you have any questions, please reply directly to this email.";
+  const optionalMessage = data.message?.trim();
+  const text = [intro, optionalMessage, closing, "", "Apfel Park"].filter(Boolean).join("\n\n");
+  const html = `
+    <div style="font-family:Arial,sans-serif;color:#202020;line-height:1.6">
+      <div style="border-left:4px solid #b88721;padding-left:16px">
+        <h2 style="margin:0 0 8px">${escapeHtml(subject)}</h2>
+        <p>${escapeHtml(intro)}</p>
+      </div>
+      ${optionalMessage ? `<p>${escapeHtml(optionalMessage).replace(/\n/g, "<br/>")}</p>` : ""}
+      <p>${escapeHtml(closing)}</p>
+      <p><strong>Apfel Park</strong><br/>Wilhelm-Strauß-Weg 2b<br/>21109 Hamburg</p>
+    </div>
+  `;
+  return sendTransactionalEmail({
+    to: data.recipients,
+    subject,
+    text,
+    html,
+    identity: "repairs",
+    attachments: [data.attachment],
   });
 };

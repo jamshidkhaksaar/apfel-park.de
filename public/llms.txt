@@ -1,0 +1,37 @@
+# Apfel Park - Smartphone & Tech Shop Hamburg
+
+> Apfel Park is a certified smartphone sales, trade-in, and repair center in Hamburg-Wilhelmsburg, Germany. We offer new, open-box, and refurbished iPhones, smartphones, laptops, tablets, gaming consoles, and accessories with a 12-month warranty.
+
+## Business Details
+- **Name**: Apfel Park
+- **Address**: Wilhelm-Strauß-Weg 2b, 21109 Hamburg, Germany
+- **Phone**: +49 40 58978787
+- **Email**: info@apfel-park.de
+- **Opening Hours**: Monday – Saturday, 09:30 – 20:00
+- **Website**: https://apfel-park.de
+
+## Core Services & Products
+- **Smartphones & iPhones**: New, Open-Box, and Certified Pre-Owned iPhones (iPhone 11 to iPhone 17 series), Samsung Galaxy, Google Pixel, Xiaomi.
+- **Tablets & iPads**: Apple iPads, Samsung Galaxy Tabs.
+- **Laptops & MacBooks**: MacBooks and Windows laptops.
+- **Accessories**: Protective cases, tempered glass screen protectors, fast chargers, cables, headphones, power banks, and SD cards.
+- **Console Repair**: Professional HDMI port replacement, disc drive repair, thermal paste renewal, fan cleaning, and controller repair for PS4, PS5, Xbox, and Nintendo Switch.
+- **Smartphone Repair**: Instant screen repair, battery replacement, water damage repair, and camera repair.
+- **Trade-In / Ankauf**: Fair cash valuation and instant payout or trade-in credit for used devices.
+
+## Key Policies
+- **Warranty**: 12-month warranty included on all certified devices.
+- **Condition Grading**: Clear labeling on every product (New, Open-Box, Used) with battery health transparency.
+- **Shipping & Returns**: Insured shipping within Germany (1-3 business days) or free in-store pickup in Hamburg. 14-day statutory right of withdrawal.
+
+## Main Pages
+- [Online Shop](https://apfel-park.de/de/store)
+- [Smartphones](https://apfel-park.de/de/smartphones)
+- [Tablets](https://apfel-park.de/de/tablets)
+- [Laptops](https://apfel-park.de/de/laptops)
+- [Accessories](https://apfel-park.de/de/accessories)
+- [Gaming & Consoles](https://apfel-park.de/de/gaming)
+- [Open-Box Items](https://apfel-park.de/de/open-box)
+- [Repairs Service](https://apfel-park.de/de/repairs)
+- [Contact & Location](https://apfel-park.de/de/contact)
+- [XML Sitemap](https://apfel-park.de/sitemap.xml)

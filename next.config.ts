@@ -37,6 +37,36 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 31536000,
   },
   
+  // 301s for legacy WordPress-era URLs still in Google's index (each maps to
+  // the closest relevant page; never blanket-redirect everything to home).
+  async redirects() {
+    return [
+      { source: '/urun/:slug*', destination: '/de/store', permanent: true },
+      { source: '/product/:slug*', destination: '/de/store', permanent: true },
+      { source: '/product-category/:path*', destination: '/de/store', permanent: true },
+      { source: '/shop', destination: '/de/store', permanent: true },
+      { source: '/shop/:path*', destination: '/de/store', permanent: true },
+      { source: '/tech-help', destination: '/de/repairs', permanent: true },
+      { source: '/tech-help/:path*', destination: '/de/repairs', permanent: true },
+      { source: '/service/smartphone-reparatur', destination: '/de/repairs', permanent: true },
+      { source: '/service/smartphone-reparatur/:path*', destination: '/de/repairs', permanent: true },
+      { source: '/handy-reparatur-hamburg', destination: '/de/repairs', permanent: true },
+      { source: '/smartphone-reparatur-hamburg', destination: '/de/repairs', permanent: true },
+      { source: '/iphone-reparatur-hamburg', destination: '/de/repairs', permanent: true },
+      { source: '/category/:path*', destination: '/de/store', permanent: true },
+      { source: '/team-member/:path*', destination: '/de/about', permanent: true },
+      { source: '/home-onepage', destination: '/de', permanent: true },
+      { source: '/contact-us', destination: '/de/contact', permanent: true },
+      { source: '/kontakt', destination: '/de/contact', permanent: true },
+      { source: '/about-us', destination: '/de/about', permanent: true },
+      { source: '/our-team', destination: '/de/about', permanent: true },
+      { source: '/impressum', destination: '/de/impressum', permanent: true },
+      { source: '/privacy-policy', destination: '/de/privacy', permanent: true },
+      { source: '/datenschutz', destination: '/de/privacy', permanent: true },
+      { source: '/cdn-cgi/l/:path*', destination: '/de/contact', permanent: false },
+    ];
+  },
+
   async headers() {
     return [
       {

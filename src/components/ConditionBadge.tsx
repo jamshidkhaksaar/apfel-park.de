@@ -7,17 +7,30 @@ type ConditionBadgeProps = {
   className?: string;
 };
 
+const STYLES: Record<string, string> = {
+  new: "bg-gold/15 text-gold ring-gold/30",
+  open_box: "bg-emerald-500/15 text-emerald-400 ring-emerald-500/30",
+  used: "bg-amber-500/15 text-amber-400 ring-amber-500/30",
+};
+
+const LABELS: Record<string, { de: string; en: string }> = {
+  new: { de: "Versiegelt", en: "Sealed" },
+  open_box: { de: "Unboxed", en: "Unboxed" },
+  used: { de: "Gebraucht A+", en: "Used A+" },
+};
+
 /**
- * Renders an "Open-Box" badge for products whose condition is not "new"
- * (refurbished or used). Returns null for new products.
+ * Shows the product condition as a small chip: Sealed (new), Unboxed
+ * (open_box) or Used. Renders for every condition so customers always
+ * see what they are buying.
  */
 export default function ConditionBadge({ condition, lang, className = "" }: ConditionBadgeProps) {
-  if (!condition || condition === "new") return null;
+  const key = condition && LABELS[condition] ? condition : "new";
   return (
     <span
-      className={`inline-flex items-center rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-400 ring-1 ring-emerald-500/30 ${className}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ring-1 ${STYLES[key]} ${className}`}
     >
-      {lang === "de" ? "Open-Box" : "Open-Box"}
+      {LABELS[key][lang === "de" ? "de" : "en"]}
     </span>
   );
 }

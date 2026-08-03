@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 
 import PageIntro from "../../../../components/PageIntro";
+import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import StoreGrid from "../../../../components/store/StoreGrid";
+import TrendingProductsCarousel from "../../../../components/store/TrendingProductsCarousel";
 import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getProducts } from "../../../../lib/products";
+import { getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStorePage, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
 
 export const generateMetadata = async ({
   params,
@@ -20,10 +22,22 @@ export const generateMetadata = async ({
   );
 };
 
-export default async function StorePage({ params }: { params: Promise<{ lang: string }> }) {
+const catalogCategories = new Set<StoreCatalogCategory>(["all", "smartphones", "tablets", "open-box-smartphones-tablets", "accessories", "consoles", "laptops"]);
+const valueOf = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] ?? "" : value ?? "";
+
+export default async function StorePage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { lang } = await params;
   const locale = lang as Locale;
-  const products = await getProducts(undefined, undefined, locale);
+  const query = await searchParams;
+  const requestedCategory = valueOf(query.category) as StoreCatalogCategory;
+  const category = catalogCategories.has(requestedCategory) ? requestedCategory : "all";
+  const sort = parseStoreSort(query.sort);
+  const page = parseStorePage(query.page);
+  const activeFilters = parseStoreCatalogFilters(query);
+  const [catalog, trendingProducts] = await Promise.all([
+    getStoreCatalog({ category, sort, page, pageSize: 24, locale, filters: activeFilters }),
+    getTrendingProducts(locale, 8),
+  ]);
 
   return (
     <div className="bg-background">
@@ -35,9 +49,12 @@ export default async function StorePage({ params }: { params: Promise<{ lang: st
         eyebrow={lang === "de" ? "Marktplatz" : "Marketplace"}
       />
 
+      <StoreCollectionLinks lang={locale} />
+
       <section className="section-pad">
         <div className="container-page">
-          <StoreGrid products={products} lang={locale} />
+          <TrendingProductsCarousel products={trendingProducts} lang={locale} />
+          <StoreGrid products={catalog.products} lang={locale} activeCategory={category} sortBy={sort} total={catalog.total} page={catalog.page} pages={catalog.pages} counts={catalog.counts} facets={catalog.facets} activeFilters={activeFilters} />
         </div>
       </section>
     </div>

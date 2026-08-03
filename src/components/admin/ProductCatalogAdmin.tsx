@@ -30,6 +30,9 @@ export type AdminProductRecord = {
   description: string;
   category: string;
   condition: string;
+  batteryHealth?: number | null;
+  hasRealProductPhotos?: boolean;
+  conditionNote?: string;
   brand: string;
   model: string;
   sku: string;
@@ -66,6 +69,8 @@ type Props = {
   locale: AdminLocale;
   products: AdminProductRecord[];
   promo: PromoSettings;
+  editorOnly?: boolean;
+  promotionsOnly?: boolean;
 };
 
 type ProductFormState = {
@@ -75,6 +80,9 @@ type ProductFormState = {
   description: string;
   category: string;
   condition: string;
+  batteryHealth: string;
+  hasRealProductPhotos: boolean;
+  conditionNote: string;
   brand: string;
   model: string;
   sku: string;
@@ -94,11 +102,12 @@ const imageSlotLabels = {
   en: ["Front", "Back", "Side", "Extra"],
 } as const;
 
-const categoryOptions = ["all", "smartphones", "accessories", "consoles", "laptops", "open-box", "discounted", "inactive"] as const;
+const categoryOptions = ["all", "smartphones", "tablets", "accessories", "consoles", "laptops", "open-box", "discounted", "inactive"] as const;
 
 const categoryLabel = (locale: AdminLocale, category: string) => {
   const labels: Record<string, string> = {
     smartphones: locale === "de" ? "Smartphones" : "Smartphones",
+    tablets: "Tablets",
     accessories: locale === "de" ? "Zubehör" : "Accessories",
     consoles: locale === "de" ? "Gaming" : "Gaming",
     laptops: locale === "de" ? "Laptops" : "Laptops",
@@ -170,6 +179,9 @@ const productToForm = (product: AdminProductRecord): ProductFormState => ({
   description: product.description,
   category: product.category,
   condition: product.condition || "new",
+  batteryHealth: product.batteryHealth ? String(product.batteryHealth) : "",
+  hasRealProductPhotos: Boolean(product.hasRealProductPhotos),
+  conditionNote: product.conditionNote || "",
   brand: product.brand,
   model: product.model,
   sku: product.sku,
@@ -232,7 +244,7 @@ const createEmptyVariant = (): ProductVariant => ({
   isDefault: false,
 });
 
-export default function ProductCatalogAdmin({ locale, products, promo }: Props) {
+export default function ProductCatalogAdmin({ locale, products, promo, editorOnly = false, promotionsOnly = false }: Props) {
   const [records, setRecords] = useState(products);
   const [selectedId, setSelectedId] = useState(products[0]?.id ?? "");
   const [search, setSearch] = useState("");
@@ -245,7 +257,7 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
   const [variantImagePreviews, setVariantImagePreviews] = useState<string[][]>([]);
   const [promoState, setPromoState] = useState(promo);
   const [promoMessage, setPromoMessage] = useState("");
-  const [activeTab, setActiveTab] = useState<"catalog" | "promo">("catalog");
+  const [activeTab, setActiveTab] = useState<"catalog" | "promo">(promotionsOnly ? "promo" : "catalog");
   const [isSaving, startSaving] = useTransition();
   const [isSavingPromo, startSavingPromo] = useTransition();
   const slotLabels = imageSlotLabels[locale];
@@ -281,6 +293,9 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
     description: "",
     category: "smartphones",
     condition: "new",
+    batteryHealth: "",
+    hasRealProductPhotos: false,
+    conditionNote: "",
     brand: "",
     model: "",
     sku: "",
@@ -331,6 +346,35 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
   }, [variantImageFiles]);
 
   const queueCount = filteredProducts.length;
+  const isDirty = useMemo(() => {
+    if (!selectedProduct) return false;
+    const formChanged = JSON.stringify(formState) !== JSON.stringify(productToForm(selectedProduct));
+    const hasPendingImages = imageFiles.some(Boolean) || variantImageFiles.some((slots) => slots.some(Boolean));
+    return formChanged || hasPendingImages;
+  }, [formState, imageFiles, selectedProduct, variantImageFiles]);
+
+  useEffect(() => {
+    if (!editorOnly || !isDirty) return;
+    const warning = locale === "de" ? "Ungespeicherte Änderungen gehen verloren." : "Unsaved changes will be lost.";
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const interceptLinks = (event: MouseEvent) => {
+      const anchor = (event.target as HTMLElement | null)?.closest("a");
+      if (!anchor || anchor.target === "_blank" || anchor.href === window.location.href) return;
+      if (!window.confirm(warning)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    document.addEventListener("click", interceptLinks, true);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnload);
+      document.removeEventListener("click", interceptLinks, true);
+    };
+  }, [editorOnly, isDirty, locale]);
 
   const submitProduct = () => {
     if (!formState.id) return;
@@ -386,6 +430,9 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
             description: formState.description,
             category: formState.category,
             condition: formState.condition,
+            batteryHealth: formState.batteryHealth ? Number(formState.batteryHealth) : null,
+            hasRealProductPhotos: formState.hasRealProductPhotos,
+            conditionNote: formState.conditionNote,
             brand: formState.brand,
             model: formState.model,
             sku: formState.sku,
@@ -416,6 +463,9 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
           description: formState.description,
           category: formState.category,
           condition: formState.condition,
+          batteryHealth: formState.batteryHealth ? Number(formState.batteryHealth) : null,
+          hasRealProductPhotos: formState.hasRealProductPhotos,
+          conditionNote: formState.conditionNote,
           brand: formState.brand,
           model: formState.model,
           sku: formState.sku,
@@ -489,32 +539,32 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
   };
 
   return (
-    <div className="space-y-6">
-      <section className="glass-panel rounded-3xl p-6">
+    <div className={editorOnly || promotionsOnly ? "mx-auto w-full max-w-[1500px]" : "space-y-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:gap-4 xl:space-y-0"}>
+      {!editorOnly && !promotionsOnly ? (
+      <>
+      <section className="glass-panel shrink-0 rounded-2xl px-5 py-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
               {locale === "de" ? "Produktkatalog" : "Product catalog"}
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-foreground">
-              {locale === "de" ? "Produkte, Rabatte und Aktionen" : "Products, discounts, and promotions"}
+            <h2 className="mt-1 text-xl font-semibold text-foreground">
+              {locale === "de" ? "Produkte verwalten" : "Manage products"}
             </h2>
-            <p className="mt-2 max-w-3xl text-sm text-muted">
-              {locale === "de"
-                ? "Suche nach Modell, Marke oder SKU, pflege Rabatte direkt im Produkt und steuere saisonale Popup-Aktionen zentral."
-                : "Search by model, brand, or SKU, manage discounts directly on the product, and control seasonal popup promotions centrally."}
+            <p className="mt-1 text-xs text-muted">
+              {records.length} {locale === "de" ? "Produkte im Katalog" : "products in catalog"}
             </p>
           </div>
           <Link
             href="/admin/products/new"
-            className="rounded-full bg-gold px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:bg-gold-deep"
+            className="rounded-xl bg-gold px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:-translate-y-0.5 hover:bg-gold-deep active:translate-y-0"
           >
             {locale === "de" ? "Neues Produkt" : "New product"}
           </Link>
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex shrink-0 flex-wrap gap-2">
         {([
           { key: "catalog", label: locale === "de" ? "Produktkatalog" : "Catalog" },
           { key: "promo", label: locale === "de" ? "Popup-Aktion" : "Promotion popup" },
@@ -533,10 +583,13 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
           </button>
         ))}
       </div>
+      </>
+      ) : null}
 
-      {activeTab === "catalog" ? (
-      <section className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="glass-panel flex min-h-[760px] flex-col rounded-3xl p-4">
+      {editorOnly || (!promotionsOnly && activeTab === "catalog") ? (
+      <section className={editorOnly ? "block" : "grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[320px_minmax(0,1fr)] xl:overflow-hidden"}>
+        {!editorOnly ? (
+        <aside className="glass-panel flex max-h-[560px] flex-col rounded-2xl p-4 xl:h-full xl:max-h-none">
           <div className="space-y-4 border-b border-border/60 pb-4">
             <input
               value={search}
@@ -565,7 +618,12 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
             </p>
           </div>
 
-          <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
+          <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+            {filteredProducts.length === 0 ? (
+              <p className="rounded-2xl border border-border/50 bg-surface/60 p-6 text-center text-sm text-muted">
+                {locale === "de" ? "Keine Produkte für diese Suche/Filter." : "No products match this search/filter."}
+              </p>
+            ) : null}
             {filteredProducts.map((product) => {
               const discount = discountPercentage(product.price, product.compareAtPrice);
               return (
@@ -586,8 +644,15 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                         {[product.brand, product.model || product.subtitle, product.sku].filter(Boolean).join(" · ")}
                       </p>
                     </div>
-                    <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${product.isActive ? "bg-green-400/10 text-green-300" : "bg-white/10 text-muted"}`}>
-                      {product.isActive ? (locale === "de" ? "Aktiv" : "Active") : (locale === "de" ? "Entwurf" : "Draft")}
+                    <span className="flex shrink-0 flex-col items-end gap-1">
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${product.isActive ? "bg-green-400/10 text-green-300" : "bg-white/10 text-muted"}`}>
+                        {product.isActive ? (locale === "de" ? "Aktiv" : "Active") : (locale === "de" ? "Entwurf" : "Draft")}
+                      </span>
+                      {product.condition && product.condition !== "new" ? (
+                        <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
+                          Open-Box
+                        </span>
+                      ) : null}
                     </span>
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
@@ -604,8 +669,10 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                         <span className="text-sm font-bold text-foreground">{formatMoney(locale, product.price)}</span>
                       )}
                     </div>
-                    <span className="text-xs text-muted">
-                      {locale === "de" ? "Lager" : "Stock"}: {product.stock}
+                    <span className={`text-xs ${product.stock <= 0 ? "font-semibold text-red-400" : "text-muted"}`}>
+                      {product.stock <= 0
+                        ? locale === "de" ? "Ausverkauft" : "Out of stock"
+                        : `${locale === "de" ? "Lager" : "Stock"}: ${product.stock}`}
                     </span>
                   </div>
                 </button>
@@ -613,41 +680,57 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
             })}
           </div>
         </aside>
+        ) : null}
 
-        <div className="space-y-6">
+        <div className={editorOnly ? "space-y-4" : "space-y-4 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1"}>
           {selectedProduct ? (
-            <section className="glass-panel rounded-3xl p-6">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
+            <section className="glass-panel rounded-2xl p-5">
+              <div className="sticky top-0 z-20 -mx-5 -mt-5 flex flex-wrap items-center justify-between gap-4 rounded-t-2xl border-b border-border/60 bg-background/95 px-5 py-4 backdrop-blur-xl">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                     {locale === "de" ? "Produkteditor" : "Product editor"}
                   </p>
-                  <h3 className="mt-2 text-2xl font-semibold text-foreground">{selectedProduct.title}</h3>
-                  <p className="mt-2 text-sm text-muted">
+                  <h3 className="mt-1 text-xl font-semibold text-foreground">{selectedProduct.title}</h3>
+                  <p className="mt-1 max-w-xl truncate text-xs text-muted">
                     /store/{selectedProduct.slug}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
+                  {isDirty ? <span className="inline-flex items-center rounded-lg bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-600">{locale === "de" ? "Ungespeichert" : "Unsaved"}</span> : null}
                   <a
                     href={`/${locale}/store/${selectedProduct.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-full border border-border/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground transition hover:border-gold/30 hover:text-gold"
+                    className="rounded-xl border border-border/60 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-foreground transition hover:border-gold/30 hover:text-gold"
                   >
                     {locale === "de" ? "Produkt ansehen" : "View product"}
                   </a>
                   <button
                     type="button"
                     onClick={removeProduct}
-                    className="rounded-full border border-red-500/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-red-300 transition hover:bg-red-500/10"
+                    disabled={isSaving}
+                    className="rounded-xl border border-red-500/30 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {locale === "de" ? "Löschen" : "Delete"}
                   </button>
                 </div>
+                {editorOnly ? (
+                  <nav aria-label={locale === "de" ? "Editorbereiche" : "Editor sections"} className="flex w-full gap-1 overflow-x-auto border-t border-border/50 pt-3 text-xs">
+                    {[
+                      ["basics", locale === "de" ? "Grunddaten" : "Basics"],
+                      ["pricing", locale === "de" ? "Preis & Lager" : "Pricing"],
+                      ["condition", locale === "de" ? "Zustand" : "Condition"],
+                      ["content", locale === "de" ? "Inhalt" : "Content"],
+                      ["variants", locale === "de" ? "Varianten" : "Variants"],
+                      ["images", locale === "de" ? "Bilder" : "Images"],
+                      ["publishing", locale === "de" ? "Veröffentlichung" : "Publishing"],
+                    ].map(([id, label]) => <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-lg px-3 py-1.5 text-muted transition hover:bg-gold/10 hover:text-gold">{label}</a>)}
+                  </nav>
+                ) : null}
               </div>
 
-              <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="space-y-4">
+              <div className="mt-5 grid gap-5 2xl:grid-cols-[minmax(0,1fr)_280px]">
+                <div id="basics" className="scroll-mt-40 space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="space-y-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Titel" : "Title"}</span>
@@ -679,11 +762,12 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                     <textarea rows={5} value={formState.description} onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
                   </label>
 
-                  <div className="grid gap-4 md:grid-cols-4">
+                  <div id="pricing" className="scroll-mt-40 grid gap-4 md:grid-cols-4">
                     <label className="space-y-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Kategorie" : "Category"}</span>
                       <select value={formState.category} onChange={(event) => setFormState((prev) => ({ ...prev, category: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground">
                         <option value="smartphones">{categoryLabel(locale, "smartphones")}</option>
+                        <option value="tablets">{categoryLabel(locale, "tablets")}</option>
                         <option value="accessories">{categoryLabel(locale, "accessories")}</option>
                         <option value="consoles">{categoryLabel(locale, "consoles")}</option>
                         <option value="laptops">{categoryLabel(locale, "laptops")}</option>
@@ -703,36 +787,42 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                     </label>
                   </div>
 
-                  <div className="rounded-2xl border border-border/60 bg-surface/60 px-4 py-3">
-                    <label className="flex items-center gap-3 text-sm text-foreground">
-                      <input
-                        type="checkbox"
-                        checked={formState.condition !== "new"}
-                        onChange={(event) =>
+                  <div id="condition" className="scroll-mt-40 rounded-2xl border border-border/60 bg-surface/60 p-4">
+                    <label className="space-y-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Gerätezustand" : "Device condition"}</span>
+                      <select
+                        value={formState.condition}
+                        onChange={(event) => {
+                          const nextCondition = event.target.value;
                           setFormState((prev) => ({
                             ...prev,
-                            condition: event.target.checked ? (prev.condition === "new" ? "refurbished" : prev.condition) : "new",
-                          }))
-                        }
-                      />
-                      {locale === "de" ? "Open-Box (geöffnetes Vorführ-/Retourengerät)" : "Open-Box (opened display/return unit)"}
+                            condition: nextCondition,
+                            // keep note/photos when switching between open_box and used;
+                            // only wipe them when the product becomes "new"
+                            ...(nextCondition === "new"
+                              ? { batteryHealth: "", hasRealProductPhotos: false, conditionNote: "" }
+                              : nextCondition !== "used"
+                                ? { batteryHealth: "" }
+                                : {}),
+                          }));
+                        }}
+                        className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"
+                      >
+                        <option value="new">{locale === "de" ? "Neu & versiegelt" : "New & sealed"}</option>
+                        <option value="open_box">{locale === "de" ? "Open-Box / ausgepackt" : "Open-box / unboxed"}</option>
+                        <option value="used">{locale === "de" ? "Gebraucht A+" : "Used A+"}</option>
+                      </select>
                     </label>
                     {formState.condition !== "new" ? (
-                      <label className="mt-3 flex items-center gap-3 text-sm text-foreground">
-                        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zustand" : "Condition"}</span>
-                        <select
-                          value={formState.condition}
-                          onChange={(event) => setFormState((prev) => ({ ...prev, condition: event.target.value }))}
-                          className="rounded-2xl border border-border/60 bg-surface/70 px-4 py-2 text-sm text-foreground"
-                        >
-                          <option value="refurbished">{locale === "de" ? "Generalüberholt" : "Refurbished"}</option>
-                          <option value="used">{locale === "de" ? "Gebraucht" : "Used"}</option>
-                        </select>
-                      </label>
+                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zustandshinweis" : "Condition note"}</span><input value={formState.conditionNote} onChange={(event) => setFormState((prev) => ({ ...prev, conditionNote: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                        {formState.condition === "used" ? <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Batteriekapazität (iPhone)" : "Battery health (iPhone)"}</span><input type="number" min="1" max="100" value={formState.batteryHealth} onChange={(event) => setFormState((prev) => ({ ...prev, batteryHealth: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label> : null}
+                        <label className="flex items-center gap-2 text-sm text-foreground md:col-span-2"><input type="checkbox" checked={formState.hasRealProductPhotos} onChange={(event) => setFormState((prev) => ({ ...prev, hasRealProductPhotos: event.target.checked }))} />{locale === "de" ? "Echte Fotos dieses Geräts hochgeladen" : "Real photos of this exact device uploaded"}</label>
+                      </div>
                     ) : null}
                   </div>
 
-                  <div className="grid gap-4 xl:grid-cols-2">
+                  <div id="content" className="scroll-mt-40 grid gap-4 xl:grid-cols-2">
                     <label className="space-y-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Highlights" : "Highlights"}</span>
                       <textarea
@@ -761,7 +851,7 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                   </div>
 
                   {formState.category === "smartphones" ? (
-                    <div className="rounded-3xl border border-border/60 bg-surface/35 p-5">
+                    <div id="variants" className="scroll-mt-40 rounded-2xl border border-border/60 bg-surface/35 p-5">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
@@ -1024,6 +1114,7 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                     </div>
                   ) : null}
 
+                  <div id="publishing" className="scroll-mt-40 space-y-3">
                   <label className="flex items-center gap-3 rounded-2xl border border-border/60 bg-surface/60 px-4 py-3 text-sm text-foreground">
                     <input
                       type="checkbox"
@@ -1041,8 +1132,9 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                     <input type="checkbox" checked={formState.isActive} onChange={(event) => setFormState((prev) => ({ ...prev, isActive: event.target.checked }))} />
                     {locale === "de" ? "Produkt aktiv veröffentlichen" : "Publish product as active"}
                   </label>
+                  </div>
 
-                  <div className="space-y-3">
+                  <div id="images" className="scroll-mt-40 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Bildergalerie" : "Image gallery"}</span>
                     </div>
@@ -1134,16 +1226,16 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                   </div>
                 </div>
 
-                <aside className="space-y-4 rounded-3xl border border-border/60 bg-surface/60 p-4">
+                <aside className="space-y-4 self-start rounded-2xl border border-border/60 bg-surface/60 p-4 2xl:sticky 2xl:top-20">
                   <div className="rounded-2xl border border-border/60 bg-background/50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Vorschau" : "Preview"}</p>
-                    <div className="relative mt-4 aspect-square overflow-hidden rounded-2xl bg-black/20">
+                    <div className="relative mt-4 aspect-[3/4] overflow-hidden rounded-xl bg-white">
                       {formState.images[0] ? (
                         <Image
                           src={formState.images[0]}
                           alt=""
                           fill
-                          className="object-cover"
+                          className="object-contain"
                           unoptimized={formState.images[0].startsWith("/uploads/")}
                         />
                       ) : null}
@@ -1162,11 +1254,16 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
                   <button
                     type="button"
                     onClick={submitProduct}
-                    disabled={isSaving}
-                    className="w-full rounded-full bg-gold px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:bg-gold-deep disabled:opacity-70"
+                    disabled={isSaving || !isDirty || !formState.title.trim() || !formState.price || Number(formState.price) <= 0}
+                    className="w-full rounded-xl bg-gold px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:-translate-y-0.5 hover:bg-gold-deep active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isSaving ? (locale === "de" ? "Speichern ..." : "Saving ...") : (locale === "de" ? "Produkt speichern" : "Save product")}
                   </button>
+                  {!formState.title.trim() || !formState.price || Number(formState.price) <= 0 ? (
+                    <p className="text-center text-xs text-muted">
+                      {locale === "de" ? "Titel und gültiger Preis sind erforderlich." : "Title and a valid price are required."}
+                    </p>
+                  ) : null}
                 </aside>
               </div>
             </section>
@@ -1179,7 +1276,7 @@ export default function ProductCatalogAdmin({ locale, products, promo }: Props) 
       </section>
       ) : null}
 
-      {activeTab === "promo" ? (
+      {promotionsOnly || activeTab === "promo" ? (
           <section className="glass-panel rounded-3xl p-6">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
               <div>

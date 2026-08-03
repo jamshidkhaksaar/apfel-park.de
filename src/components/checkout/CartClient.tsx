@@ -248,6 +248,9 @@ export default function CartClient({ locale }: Props) {
         >
           {locale === "de" ? "Zur Kasse" : "Checkout"}
         </Link>
+        <Link href={`/${locale}/delivery-returns`} className="mt-3 block text-center text-xs text-muted underline underline-offset-4 transition hover:text-gold">
+          {locale === "de" ? "Lieferung, Rückgabe & Widerruf" : "Delivery, returns & withdrawal"}
+        </Link>
       </aside>
     </div>
   );

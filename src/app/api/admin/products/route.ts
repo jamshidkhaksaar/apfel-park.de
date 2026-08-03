@@ -17,6 +17,9 @@ type ProductPayload = {
   compareAtPrice?: number | null;
   category?: string;
   condition?: string;
+  batteryHealth?: number | null;
+  hasRealProductPhotos?: boolean;
+  conditionNote?: string;
   brand?: string;
   model?: string;
   stock?: number;
@@ -49,15 +52,16 @@ const slugify = (value: string): string =>
 const normalizeCategory = (category: string): string | null => {
   const value = category.toLowerCase().trim();
   if (value === "smartphone" || value === "smartphones") return "smartphones";
+  if (value === "tablet" || value === "tablets") return "tablets";
   if (value === "accessory" || value === "accessories") return "accessories";
   if (value === "console" || value === "consoles" || value === "gaming") return "consoles";
   if (value === "laptop" || value === "laptops") return "laptops";
   return null;
 };
 
-const normalizeCondition = (condition: string | undefined): "new" | "refurbished" | "used" => {
+const normalizeCondition = (condition: string | undefined): "new" | "open_box" | "used" => {
   const value = (condition ?? "").toLowerCase().trim();
-  if (value === "refurbished") return "refurbished";
+  if (value === "open_box" || value === "open-box" || value === "refurbished") return "open_box";
   if (value === "used") return "used";
   return "new";
 };
@@ -169,6 +173,9 @@ const getMessages = (isEnglish: boolean) => ({
   priceRequired: isEnglish ? "Valid price is required" : "Gültiger Preis ist erforderlich",
   stockRequired: isEnglish ? "Valid stock is required" : "Gültiger Lagerwert ist erforderlich",
   comparePriceInvalid: isEnglish ? "Compare-at price must be higher than the current price" : "Streichpreis muss höher als der aktuelle Preis sein",
+  conditionDetailsRequired: isEnglish ? "Open-box and used products need a condition note and at least one real product photo" : "Open-Box- und Gebrauchtprodukte benötigen einen Zustandshinweis und mindestens ein echtes Produktfoto",
+  batteryHealthRequired: isEnglish ? "Used iPhones require battery health" : "Für gebrauchte iPhones ist die Batteriekapazität erforderlich",
+  batteryHealthInvalid: isEnglish ? "Battery health must be a whole number from 1 to 100" : "Die Batteriekapazität muss eine ganze Zahl von 1 bis 100 sein",
   createFailed: isEnglish ? "Failed to save product" : "Produkt konnte nicht gespeichert werden",
   inputTooLong: isEnglish ? "Input too long" : "Eingabe zu lang",
   missingId: isEnglish ? "Product id is required" : "Produkt-ID ist erforderlich",
@@ -203,6 +210,11 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   const sku = payload.sku ? sanitizeInput(payload.sku) : null;
   const category = payload.category ? normalizeCategory(payload.category) : null;
   const condition = normalizeCondition(payload.condition);
+  const batteryHealth = payload.batteryHealth === null || payload.batteryHealth === undefined
+    ? null
+    : Number(payload.batteryHealth);
+  const hasRealProductPhotos = Boolean(payload.hasRealProductPhotos);
+  const conditionNote = payload.conditionNote ? sanitizeInput(payload.conditionNote) : null;
   const price = parsePrice(payload.price);
   const compareAtPrice = parsePrice(payload.compareAtPrice);
   const stock = payload.stock === undefined ? 0 : Number(payload.stock);
@@ -223,6 +235,9 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
     compareAtPrice,
     stock,
     condition,
+    batteryHealth,
+    hasRealProductPhotos,
+    conditionNote,
     images,
     variants,
     featureBullets,
@@ -249,14 +264,19 @@ const syncHomepageFeatured = async (productId: string, shouldFeature: boolean) =
     ? Array.from(new Set([...currentIds, productId]))
     : currentIds.filter((id) => id !== productId);
 
-  await admin.from("store_settings").upsert(
+  // node-pg turns JS arrays into Postgres array literals ("{a,b}"), which is
+  // invalid for a jsonb column — stringify so the value is stored as JSON.
+  const { error } = await admin.from("store_settings").upsert(
     {
       key: "featured_product_ids",
-      value: nextIds,
+      value: JSON.stringify(nextIds),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "key" },
   );
+  if (error) {
+    console.error("syncHomepageFeatured failed:", error.message);
+  }
 };
 
 const validatePayload = (data: ReturnType<typeof buildPayload>, messages: ReturnType<typeof getMessages>) => {
@@ -267,6 +287,14 @@ const validatePayload = (data: ReturnType<typeof buildPayload>, messages: Return
   if (data.compareAtPrice !== null && (Number.isNaN(data.compareAtPrice) || data.compareAtPrice <= data.price)) {
     return messages.comparePriceInvalid;
   }
+  if (data.condition !== "new" && (!data.hasRealProductPhotos || data.images.length === 0 || !data.conditionNote)) {
+    return messages.conditionDetailsRequired;
+  }
+  if (data.batteryHealth !== null && (!Number.isInteger(data.batteryHealth) || data.batteryHealth < 1 || data.batteryHealth > 100)) {
+    return messages.batteryHealthInvalid;
+  }
+  const isUsedIphone = data.condition === "used" && /iphone/i.test(`${data.brand || ""} ${data.model || ""} ${data.title}`);
+  if (isUsedIphone && data.batteryHealth === null) return messages.batteryHealthRequired;
 
   if (
     !isValidInputLength(data.title, 255) ||
@@ -315,9 +343,12 @@ export async function POST(request: NextRequest) {
         "feature_bullets",
         "specs",
         "is_active",
-        "condition"
+        "condition",
+        "battery_health",
+        "has_real_product_photos",
+        "condition_note"
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20
       )
       RETURNING "id"`,
       [
@@ -338,6 +369,9 @@ export async function POST(request: NextRequest) {
         JSON.stringify(product.specs),
         product.isActive,
         product.condition,
+        product.batteryHealth,
+        product.hasRealProductPhotos,
+        product.conditionNote,
       ],
     );
 
@@ -414,7 +448,10 @@ export async function PATCH(request: NextRequest) {
         "feature_bullets" = $15,
         "specs" = $16::jsonb,
         "is_active" = $17,
-        "condition" = $18
+        "condition" = $18,
+        "battery_health" = $19,
+        "has_real_product_photos" = $20,
+        "condition_note" = $21
        WHERE "id" = $1`,
       [
         payload.id,
@@ -435,6 +472,9 @@ export async function PATCH(request: NextRequest) {
         JSON.stringify(product.specs),
         product.isActive,
         product.condition,
+        product.batteryHealth,
+        product.hasRealProductPhotos,
+        product.conditionNote,
       ],
     );
 

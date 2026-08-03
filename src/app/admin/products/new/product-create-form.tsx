@@ -10,8 +10,11 @@ type FormState = {
   title: string;
   subtitle: string;
   description: string;
-  category: "smartphones" | "accessories" | "consoles" | "laptops";
+  category: "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
   condition: string;
+  batteryHealth: string;
+  hasRealProductPhotos: boolean;
+  conditionNote: string;
   price: string;
   compareAtPrice: string;
   stock: string;
@@ -45,6 +48,9 @@ const initialState: FormState = {
   description: "",
   category: "smartphones",
   condition: "new",
+  batteryHealth: "",
+  hasRealProductPhotos: false,
+  conditionNote: "",
   price: "",
   compareAtPrice: "",
   stock: "0",
@@ -196,6 +202,9 @@ export default function ProductCreateForm() {
           description: state.description,
           category: state.category,
           condition: state.condition,
+          batteryHealth: state.batteryHealth ? Number(state.batteryHealth) : null,
+          hasRealProductPhotos: state.hasRealProductPhotos,
+          conditionNote: state.conditionNote,
           price: Number(state.price),
           compareAtPrice: state.compareAtPrice ? Number(state.compareAtPrice) : null,
           stock: Number(state.stock),
@@ -282,6 +291,7 @@ export default function ProductCreateForm() {
             className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
           >
             <option value="smartphones">{dict.productForm.categories.smartphones}</option>
+            <option value="tablets">Tablets</option>
             <option value="accessories">{dict.productForm.categories.accessories}</option>
             <option value="consoles">{dict.productForm.categories.consoles}</option>
             <option value="laptops">{dict.productForm.categories.laptops}</option>
@@ -371,32 +381,36 @@ export default function ProductCreateForm() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-black/20 px-4 py-3">
-        <label className="flex items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            checked={state.condition !== "new"}
-            onChange={(event) =>
-              setState((prev) => ({
-                ...prev,
-                condition: event.target.checked ? (prev.condition === "new" ? "refurbished" : prev.condition) : "new",
-              }))
-            }
-          />
-          {dict.productForm.openBox}
+      <div className="rounded-xl border border-border/60 bg-black/20 p-4">
+        <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+          {isGerman ? "Gerätezustand" : "Device condition"}
         </label>
+        <select
+          value={state.condition}
+          onChange={(event) => setState((prev) => ({ ...prev, condition: event.target.value, batteryHealth: "", hasRealProductPhotos: false, conditionNote: "" }))}
+          className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
+        >
+          <option value="new">{isGerman ? "Neu & versiegelt" : "New & sealed"}</option>
+          <option value="open_box">{isGerman ? "Open-Box / ungeöffnetes Gerät" : "Open-box / unboxed device"}</option>
+          <option value="used">{isGerman ? "Gebraucht A+" : "Used A+"}</option>
+        </select>
         {state.condition !== "new" ? (
-          <label className="mt-3 flex items-center gap-3 text-sm text-muted">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em]">{dict.productForm.condition}</span>
-            <select
-              value={state.condition}
-              onChange={(event) => setState((prev) => ({ ...prev, condition: event.target.value }))}
-              className="rounded-xl border border-border/60 bg-black/30 px-4 py-2 text-sm text-foreground"
-            >
-              <option value="refurbished">{dict.productForm.conditionRefurbished}</option>
-              <option value="used">{dict.productForm.conditionUsed}</option>
-            </select>
-          </label>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{isGerman ? "Zustandshinweis" : "Condition note"}</span>
+              <input required value={state.conditionNote} onChange={(event) => setState((prev) => ({ ...prev, conditionNote: event.target.value }))} placeholder={isGerman ? "z. B. Ausstellungsgerät, leichte Verpackungsspuren" : "e.g. display unit, light box wear"} className="w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
+            </label>
+            {state.condition === "used" ? (
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{isGerman ? "Batteriekapazität (iPhone)" : "Battery health (iPhone)"}</span>
+                <input type="number" min="1" max="100" value={state.batteryHealth} onChange={(event) => setState((prev) => ({ ...prev, batteryHealth: event.target.value }))} placeholder="e.g. 92" className="w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
+              </label>
+            ) : null}
+            <label className="flex items-center gap-2 text-sm text-foreground md:col-span-2">
+              <input type="checkbox" checked={state.hasRealProductPhotos} onChange={(event) => setState((prev) => ({ ...prev, hasRealProductPhotos: event.target.checked }))} />
+              {isGerman ? "Echte Fotos dieses Geräts hochgeladen" : "Real photos of this exact device uploaded"}
+            </label>
+          </div>
         ) : null}
       </div>
 

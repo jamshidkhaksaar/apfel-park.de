@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import ContactForm from "../../../../components/ContactForm";
 import ExternalMapEmbed from "../../../../components/ExternalMapEmbed";
 import PageIntro from "../../../../components/PageIntro";
+import SafeEmailLink from "../../../../components/SafeEmailLink";
 import TrackedLink from "../../../../components/TrackedLink";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
@@ -58,7 +59,14 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                     </div>
                     <div>
                       <h2 className="font-semibold text-foreground">{item.title}</h2>
-                      <p className="mt-1 text-sm text-muted">{item.description}</p>
+                      {index === 2 ? (
+                        <SafeEmailLink
+                          email={siteInfo.email}
+                          className="mt-1 inline-flex text-sm text-muted transition hover:text-gold"
+                        />
+                      ) : (
+                        <p className="mt-1 text-sm text-muted">{item.description}</p>
+                      )}
                     </div>
                   </div>
                 </div>

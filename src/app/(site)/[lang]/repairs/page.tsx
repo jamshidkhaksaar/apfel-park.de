@@ -9,6 +9,7 @@ import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
 import { getRepairsContent } from "../../../../lib/content";
 import { getRepairCatalog } from "../../../../lib/repair-catalog";
+import { repairServices } from "../../../../lib/repair-services";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,42 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
         eyebrow={dict.meta.repairs.title}
         compact
       />
+
+      <section className="section-pad border-b border-border/60">
+        <div className="container-page">
+          <div className="mb-10 text-center">
+            <span className="badge-gold mb-4 inline-flex">
+              {lang === "de" ? "Reparatur-Schwerpunkte" : "Repair services"}
+            </span>
+            <h2 className="text-3xl font-bold text-foreground md:text-4xl">
+              {lang === "de" ? "Häufige Defekte gezielt prüfen" : "Focused checks for common faults"}
+            </h2>
+            <p className="mx-auto mt-4 max-w-3xl text-muted">
+              {lang === "de"
+                ? "Informiere dich über Diagnose, Ablauf und nächste Schritte. Preis und Reparatur werden immer vor kostenpflichtigen Arbeiten bestätigt."
+                : "Learn about diagnosis, process and next steps. Price and repair are always confirmed before paid work starts."}
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {repairServices.map((service) => {
+              const copy = service.copy[lang as Locale];
+              return (
+                <Link
+                  key={service.slug}
+                  href={`/${lang}/repairs/${service.slug}`}
+                  className="tech-card-hover rounded-2xl p-6"
+                >
+                  <h3 className="text-xl font-semibold text-foreground">{copy.shortTitle}</h3>
+                  <p className="mt-3 text-sm leading-6 text-muted">{copy.description}</p>
+                  <span className="mt-5 inline-flex text-sm font-semibold text-gold">
+                    {lang === "de" ? "Mehr erfahren" : "Learn more"} →
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       {/* ── 1. Price finder ─────────────────────────────────────────────── */}
       <section className="section-pad bg-surface/20">

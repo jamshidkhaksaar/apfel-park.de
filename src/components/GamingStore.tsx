@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
-import ConditionBadge from "./ConditionBadge";
+import ProductStatusBadge from "./ProductStatusBadge";
 import { formatPrice } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
@@ -70,12 +70,12 @@ export default function GamingStore({ lang, products }: GamingStoreProps) {
                     alt={product.title}
                     fill
                     className="object-contain p-5 transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                     unoptimized={product.image.startsWith("/uploads/")}
+                    sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                   />
+                  <ProductStatusBadge condition={product.condition} lang={lang} className="absolute right-3 top-3" />
                 </div>
                 <div className="p-4">
-                  <ConditionBadge condition={product.condition} lang={lang} className="mb-1" />
                   <h3 className="text-lg font-semibold text-foreground">{product.title}</h3>
                   <p className="mt-2 line-clamp-2 text-sm text-muted">{product.description}</p>
                   <div className="mt-4 flex items-center justify-between">

@@ -381,7 +381,7 @@ function PartsPanel({
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/5">
           {model.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={model.image} alt={model.name} className="h-10 w-auto max-w-full object-contain" />
+            <img src={model.image} alt={model.name} loading="lazy" decoding="async" className="h-10 w-auto max-w-full object-contain" />
           ) : (
             <DeviceSilhouette family={family} />
           )}
@@ -620,6 +620,8 @@ function ModelGrid({
                   <img
                     src={model.image}
                     alt={model.name}
+                    loading="lazy"
+                    decoding="async"
                     className="max-h-full max-w-full object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (

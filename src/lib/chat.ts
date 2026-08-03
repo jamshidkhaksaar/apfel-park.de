@@ -21,6 +21,8 @@ export type ChatConversationSummary = {
   lastMessageAt: string;
   adminUnreadCount: number;
   customerUnreadCount: number;
+  customerTyping: boolean;
+  adminTyping: boolean;
 };
 
 export type ChatMessage = {
@@ -40,6 +42,27 @@ const MAX_MESSAGE_LENGTH = 2000;
 const MAX_NAME_LENGTH = 120;
 const MAX_PHONE_LENGTH = 60;
 const MAX_SOURCE_LENGTH = 255;
+let typingColumnsReady: Promise<void> | null = null;
+
+const ensureTypingColumns = () => {
+  if (!typingColumnsReady) {
+    typingColumnsReady = query(
+      `ALTER TABLE chat_conversations
+       ADD COLUMN IF NOT EXISTS customer_typing_until TIMESTAMPTZ,
+       ADD COLUMN IF NOT EXISTS admin_typing_until TIMESTAMPTZ`,
+    ).then(() => undefined).catch((error) => {
+      typingColumnsReady = null;
+      throw error;
+    });
+  }
+  return typingColumnsReady;
+};
+
+const isTypingUntil = (value: unknown) => {
+  if (!value) return false;
+  const timestamp = new Date(String(value)).getTime();
+  return Number.isFinite(timestamp) && timestamp > Date.now();
+};
 
 const toStatus = (value: string | null | undefined): ChatStatus => {
   if (value === "waiting" || value === "resolved") return value;
@@ -60,7 +83,33 @@ const mapConversation = (row: Record<string, unknown>): ChatConversationSummary 
   lastMessageAt: String(row.last_message_at ?? row.updated_at ?? row.created_at),
   adminUnreadCount: Number(row.admin_unread_count ?? 0),
   customerUnreadCount: Number(row.customer_unread_count ?? 0),
+  customerTyping: isTypingUntil(row.customer_typing_until),
+  adminTyping: isTypingUntil(row.admin_typing_until),
 });
+
+export const setCustomerTyping = async (publicToken: string, isTyping: boolean) => {
+  await ensureTypingColumns();
+  const result = await query(
+    `UPDATE chat_conversations
+     SET customer_typing_until = CASE WHEN $2 THEN NOW() + INTERVAL '6 seconds' ELSE NULL END
+     WHERE public_token = $1
+     RETURNING id`,
+    [publicToken, isTyping],
+  );
+  return Boolean(result.rows[0]);
+};
+
+export const setAdminTyping = async (conversationId: string, isTyping: boolean) => {
+  await ensureTypingColumns();
+  const result = await query(
+    `UPDATE chat_conversations
+     SET admin_typing_until = CASE WHEN $2 THEN NOW() + INTERVAL '6 seconds' ELSE NULL END
+     WHERE id = $1
+     RETURNING id`,
+    [conversationId, isTyping],
+  );
+  return Boolean(result.rows[0]);
+};
 
 const mapMessage = (row: Record<string, unknown>): ChatMessage => ({
   id: String(row.id),
@@ -96,7 +145,7 @@ export const validateChatStart = (payload: {
   const errors: Record<string, string> = {};
 
   if (!customerName) errors.customerName = "required";
-  if (!customerEmail || !isValidEmail(customerEmail)) errors.customerEmail = "required";
+  if (customerEmail && !isValidEmail(customerEmail)) errors.customerEmail = "invalid";
   if (!message) errors.message = "required";
   if (!isValidInputLength(customerName, MAX_NAME_LENGTH)) errors.customerName = "too_long";
   if (!isValidInputLength(customerPhone, MAX_PHONE_LENGTH)) errors.customerPhone = "too_long";
@@ -149,7 +198,7 @@ export const createConversation = async (payload: {
     [
       publicToken,
       payload.customerName,
-      payload.customerEmail,
+      payload.customerEmail || null,
       payload.customerPhone || null,
       payload.locale,
       payload.sourcePage || null,

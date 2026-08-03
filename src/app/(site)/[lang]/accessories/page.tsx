@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import PageIntro from "../../../../components/PageIntro";
-import AccessoriesStore from "../../../../components/AccessoriesStore";
+import StoreGrid from "../../../../components/store/StoreGrid";
 import { getDictionary, type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getProducts } from "../../../../lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getAccessoriesContent } from "../../../../lib/content";
 
@@ -28,13 +28,27 @@ export const generateMetadata = async ({
 
 export default async function AccessoriesPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { lang } = await params;
+  const query = await searchParams;
   const dict = getDictionary(lang as Locale);
   const accessoriesContent = await getAccessoriesContent(lang as Locale);
-  const products = await getProducts("accessories", undefined, lang as Locale);
+  const sort = parseStoreSort(query.sort);
+  const page = parseStorePage(query.page);
+  const activeFilters = parseStoreCatalogFilters(query);
+
+  const catalog = await getStoreCatalog({
+    category: "accessories",
+    sort,
+    page,
+    pageSize: 24,
+    locale: lang as Locale,
+    filters: activeFilters,
+  });
 
   return (
     <div className="bg-background">
@@ -44,36 +58,23 @@ export default async function AccessoriesPage({
         eyebrow={dict.meta.accessories.title}
       />
 
-      {/* Category Quick Links */}
-      <section className="border-b border-white/5 bg-surface/30 py-6">
+      {/* Accessories Store with Filters & Sorting */}
+      <section className="section-pad" id="store">
         <div className="container-page">
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {[
-              { id: "all", labelDe: "Alle", labelEn: "All" },
-              { id: "cases", labelDe: "Hüllen", labelEn: "Cases" },
-              { id: "screen-protectors", labelDe: "Displayschutz", labelEn: "Screen Protectors" },
-              { id: "chargers", labelDe: "Ladegeräte", labelEn: "Chargers" },
-              { id: "cables", labelDe: "Kabel", labelEn: "Cables" },
-              { id: "headphones", labelDe: "Kopfhörer", labelEn: "Headphones" },
-              { id: "bluetooth", labelDe: "Bluetooth", labelEn: "Bluetooth" },
-              { id: "power-banks", labelDe: "Powerbanks", labelEn: "Power Banks" },
-              { id: "sd-cards", labelDe: "SD-Karten", labelEn: "SD Cards" },
-              { id: "smart-home", labelDe: "Smart Home", labelEn: "Smart Home" },
-            ].map((cat) => (
-              <a
-                key={cat.id}
-                href={`#${cat.id}`}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-muted transition hover:border-gold/30 hover:bg-gold/10 hover:text-gold"
-              >
-                {lang === "de" ? cat.labelDe : cat.labelEn}
-              </a>
-            ))}
-          </div>
+          <StoreGrid
+            products={catalog.products}
+            lang={lang as Locale}
+            lockedCategory="accessories"
+            sortBy={sort}
+            total={catalog.total}
+            page={catalog.page}
+            pages={catalog.pages}
+            counts={catalog.counts}
+            facets={catalog.facets}
+            activeFilters={activeFilters}
+          />
         </div>
       </section>
-
-      {/* Accessories Store with Filters */}
-      <AccessoriesStore lang={lang as Locale} products={products} />
 
       {/* Featured Categories */}
       <section className="section-pad bg-surface/30">

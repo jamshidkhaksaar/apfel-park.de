@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   createConversation,
   getConversationByToken,
+  setCustomerTyping,
   type ChatLocale,
   validateChatStart,
 } from "@/lib/chat";
@@ -85,6 +86,24 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[Chat Session API] Failed:", error);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = (await request.json()) as { token?: string; isTyping?: boolean };
+    const token = typeof body.token === "string" ? body.token.trim() : "";
+    if (!token) {
+      return NextResponse.json({ success: false, error: "Missing token" }, { status: 400 });
+    }
+    const success = await setCustomerTyping(token, body.isTyping === true);
+    if (!success) {
+      return NextResponse.json({ success: false, error: "Conversation not found" }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[Chat Session API] Typing update failed:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

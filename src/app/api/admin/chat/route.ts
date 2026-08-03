@@ -7,6 +7,7 @@ import {
   getAdminConversation,
   listAdminConversations,
   markConversationReadByAdmin,
+  setAdminTyping,
   type ChatStatus,
   updateAdminConversationStatus,
   validateChatMessage,
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
       conversationId?: string;
       message?: string;
       status?: string;
+      isTyping?: boolean;
     };
 
     const conversationId = typeof body.conversationId === "string" ? body.conversationId.trim() : "";
@@ -70,6 +72,14 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json({ success: true, ...conversation });
+    }
+
+    if (body.action === "typing") {
+      const success = await setAdminTyping(conversationId, body.isTyping === true);
+      if (!success) {
+        return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+      }
+      return NextResponse.json({ success: true });
     }
 
     if (body.action === "status") {

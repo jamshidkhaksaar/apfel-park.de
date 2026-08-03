@@ -18,6 +18,8 @@ type ChatConversation = {
   customerLocale: ChatLocale;
   lastMessageAt: string;
   customerUnreadCount: number;
+  customerTyping: boolean;
+  adminTyping: boolean;
 };
 
 type ChatMessage = {
@@ -47,10 +49,12 @@ const STORAGE_KEY = "apfel-chat-token";
 
 const copy = {
   de: {
-    launcher: "Live-Chat",
+    launcher: "Nachricht senden",
     contactUs: "Kontakt",
     contactSubtitle: "",
     chatOption: "Im Website-Chat schreiben",
+    websiteLabel: "Website",
+    back: "Zurück",
     whatsappOption: "Mit WhatsApp chatten",
     whatsappHint: "Schnell auf dem Handy oder in WhatsApp Web.",
     websiteHint: "Direkt hier auf der Website mit Verlauf.",
@@ -66,17 +70,20 @@ const copy = {
     sending: "Wird gesendet...",
     send: "Senden",
     placeholder: "Wie können wir helfen?",
-    waiting: "Unser Team antwortet in Kürze.",
+    waiting: "Antwort während der Öffnungszeiten.",
     resolved: "Diese Unterhaltung wurde als erledigt markiert. Du kannst trotzdem erneut schreiben.",
     recaptcha:
       "Dieser Chat ist durch reCAPTCHA geschützt. Es gelten die Google Datenschutzrichtlinien und Nutzungsbedingungen.",
     welcome: "Wir sind online und antworten so schnell wie möglich.",
+    typing: "Apfel Park schreibt",
   },
   en: {
-    launcher: "Live chat",
+    launcher: "Message us",
     contactUs: "Contact",
     contactSubtitle: "",
     chatOption: "Use website chat",
+    websiteLabel: "Website",
+    back: "Back",
     whatsappOption: "Chat on WhatsApp",
     whatsappHint: "Fast on mobile or in WhatsApp Web.",
     websiteHint: "Stay here on the website with message history.",
@@ -92,11 +99,25 @@ const copy = {
     sending: "Sending...",
     send: "Send",
     placeholder: "How can we help?",
-    waiting: "Our team will reply shortly.",
+    waiting: "Replies during opening hours.",
     resolved: "This conversation has been marked as resolved. You can still send a new message.",
     recaptcha:
       "This chat is protected by reCAPTCHA. Google Privacy Policy and Terms of Service apply.",
     welcome: "We are online and will reply as quickly as possible.",
+    typing: "Apfel Park is typing",
+  },
+} as const;
+
+const fieldErrorCopy = {
+  de: {
+    name: "Bitte gib deinen Namen ein.",
+    email: "Bitte gib eine gültige E-Mail-Adresse ein.",
+    message: "Bitte schreibe kurz, wie wir helfen können.",
+  },
+  en: {
+    name: "Please enter your name.",
+    email: "Please enter a valid email address.",
+    message: "Please tell us briefly how we can help.",
   },
 } as const;
 
@@ -129,6 +150,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
   const [mode, setMode] = useState<"chooser" | "local">("chooser");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Partial<Record<"customerName" | "customerEmail" | "message", string>>>({});
   const [token, setToken] = useState("");
   const [conversation, setConversation] = useState<ChatConversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -140,6 +162,11 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
     message: "",
   });
   const lastAdminMessageIdRef = useRef<string | null>(null);
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
+  const typingSentRef = useRef(false);
 
   const {
     token: recaptchaToken,
@@ -204,9 +231,40 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
     if (!open || !token) return;
     const interval = window.setInterval(() => {
       void syncSession(token, true);
-    }, 5000);
+    }, 2000);
     return () => window.clearInterval(interval);
   }, [open, token, syncSession]);
+
+  const updateTyping = useCallback(async (isTyping: boolean) => {
+    if (!token) return;
+    try {
+      await fetch("/api/chat/session", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, isTyping }),
+      });
+    } catch {
+      // Typing presence is best-effort and must never interrupt messaging.
+    }
+  }, [token]);
+
+  const handleDraftChange = (value: string) => {
+    setMessageDraft(value);
+    if (!typingSentRef.current) {
+      typingSentRef.current = true;
+      void updateTyping(true);
+    }
+    if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = window.setTimeout(() => {
+      typingSentRef.current = false;
+      void updateTyping(false);
+    }, 2200);
+  };
+
+  useEffect(() => () => {
+    if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+    if (typingSentRef.current) void updateTyping(false);
+  }, [updateTyping]);
 
   useEffect(() => {
     if (open && token) {
@@ -231,6 +289,25 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
     return () => window.cancelAnimationFrame(frame);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    panelRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      window.requestAnimationFrame(() => launcherRef.current?.focus());
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || mode !== "local" || conversation) return;
+    window.requestAnimationFrame(() => nameInputRef.current?.focus());
+  }, [conversation, mode, open]);
+
   if (hidden) {
     return null;
   }
@@ -238,6 +315,15 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
   const handleStartChat = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    const nextErrors: Partial<Record<"customerName" | "customerEmail" | "message", string>> = {};
+    const fieldText = fieldErrorCopy[lang];
+    if (!form.customerName.trim()) nextErrors.customerName = fieldText.name;
+    if (form.customerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())) {
+      nextErrors.customerEmail = fieldText.email;
+    }
+    if (!form.message.trim()) nextErrors.message = fieldText.message;
+    setFormErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
     setLoading(true);
 
     try {
@@ -267,6 +353,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
       setConversation(payload.conversation);
       setMessages(payload.messages || []);
       setForm({ customerName: "", customerEmail: "", customerPhone: "", message: "" });
+      setFormErrors({});
       lastAdminMessageIdRef.current = null;
       setMode("local");
     } catch (submitError) {
@@ -283,6 +370,9 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
 
     setLoading(true);
     setError(null);
+    if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+    typingSentRef.current = false;
+    void updateTyping(false);
 
     try {
       const response = await fetch("/api/chat/messages", {
@@ -309,19 +399,24 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
 
   return (
     <div
-      className="fixed left-4 z-[130] md:left-6"
-      style={{ bottom: `calc(1rem + var(--apfel-cookie-banner-height, 0px) + ${whatsapp.widgetEnabled ? "4.75rem" : "0px"})` }}
+      className="fixed right-4 z-[130] md:right-6"
+      style={{ bottom: "calc(1rem + var(--apfel-cookie-banner-height, 0px))" }}
     >
       {open ? (
         <div
-          className={`w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-[28px] border border-white/10 bg-[#101010]/95 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-300 ease-out md:w-[360px] ${
+          ref={panelRef}
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="apfel-chat-title"
+          tabIndex={-1}
+          className={`max-h-[calc(100dvh-2rem-var(--apfel-cookie-banner-height,0px))] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-[24px] border border-white/10 bg-[#101010]/95 shadow-[0_20px_80px_rgba(0,0,0,0.38)] backdrop-blur-xl transition-all duration-300 ease-out motion-reduce:transition-none md:w-[360px] ${
             panelEntered ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
           }`}
         >
           <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-gradient-to-r from-gold/90 via-amber/80 to-bronze/80 px-5 py-4 text-black">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.24em]">{conversation || mode === "local" ? text.launcher : text.contactUs}</p>
-              <h3 className="mt-1 text-lg font-semibold">{conversation || mode === "local" ? text.title : text.contactUs}</h3>
+              <h3 id="apfel-chat-title" className="mt-1 text-lg font-semibold">{conversation || mode === "local" ? text.title : text.contactUs}</h3>
               {conversation ? <p className="mt-1 text-xs text-black/70">{text.waiting}</p> : null}
               {!conversation && mode === "local" ? <p className="mt-1 text-xs text-black/70">{text.subtitle}</p> : null}
               {!conversation && mode === "chooser" && text.contactSubtitle ? (
@@ -335,13 +430,14 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
                   onClick={() => setMode("chooser")}
                   className="rounded-full border border-black/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-black/70"
                 >
-                  Back
+                  {text.back}
                 </button>
               ) : null}
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 className="rounded-full border border-black/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-black/70"
+                aria-label={lang === "de" ? "Chat minimieren" : "Minimize chat"}
               >
                 {text.closed}
               </button>
@@ -390,44 +486,69 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
                     <span className="mt-0.5 block text-xs text-white/65">{text.websiteHint}</span>
                   </span>
                 </div>
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Live</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">{text.websiteLabel}</span>
               </button>
             </div>
           ) : !conversation ? (
-            <form onSubmit={handleStartChat} className="space-y-4 p-5 text-white">
+            <form onSubmit={handleStartChat} noValidate className="space-y-4 p-5 text-white">
               <p className="text-sm text-white/70">{text.intro}</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  type="text"
-                  value={form.customerName}
-                  onChange={(event) => setForm((current) => ({ ...current, customerName: event.target.value }))}
-                  placeholder={text.name}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:border-gold focus:outline-none"
-                />
-                <input
-                  type="email"
-                  value={form.customerEmail}
-                  onChange={(event) => setForm((current) => ({ ...current, customerEmail: event.target.value }))}
-                  placeholder={text.email}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:border-gold focus:outline-none"
-                />
+                <label className="space-y-1.5 text-xs font-medium text-white/75">
+                  <span>{text.name} <span className="text-gold">*</span></span>
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    autoComplete="name"
+                    value={form.customerName}
+                    aria-invalid={Boolean(formErrors.customerName)}
+                    aria-describedby={formErrors.customerName ? "chat-name-error" : undefined}
+                    onChange={(event) => { setForm((current) => ({ ...current, customerName: event.target.value })); setFormErrors((current) => ({ ...current, customerName: undefined })); }}
+                    className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-3 text-sm text-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
+                  />
+                  {formErrors.customerName ? <span id="chat-name-error" className="block text-red-300">{formErrors.customerName}</span> : null}
+                </label>
+                <label className="space-y-1.5 text-xs font-medium text-white/75">
+                  <span>{text.email} <span className="font-normal text-white/40">({lang === "de" ? "optional" : "optional"})</span></span>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    value={form.customerEmail}
+                    aria-invalid={Boolean(formErrors.customerEmail)}
+                    aria-describedby={formErrors.customerEmail ? "chat-email-error" : undefined}
+                    onChange={(event) => { setForm((current) => ({ ...current, customerEmail: event.target.value })); setFormErrors((current) => ({ ...current, customerEmail: undefined })); }}
+                    className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-3 text-sm text-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
+                  />
+                  {formErrors.customerEmail ? <span id="chat-email-error" className="block text-red-300">{formErrors.customerEmail}</span> : null}
+                </label>
               </div>
-              <input
-                type="text"
-                value={form.customerPhone}
-                onChange={(event) => setForm((current) => ({ ...current, customerPhone: event.target.value }))}
-                placeholder={text.phone}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:border-gold focus:outline-none"
-              />
-              <textarea
-                rows={4}
-                value={form.message}
-                onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
-                placeholder={text.placeholder}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:border-gold focus:outline-none"
-              />
-              {error ? <p className="text-xs text-red-300">{error}</p> : null}
-              {recaptchaError ? <p className="text-xs text-red-300">{recaptchaError}</p> : null}
+              <label className="space-y-1.5 text-xs font-medium text-white/75">
+                <span>{text.phone} <span className="font-normal text-white/40">({lang === "de" ? "optional" : "optional"})</span></span>
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  value={form.customerPhone}
+                  onChange={(event) => setForm((current) => ({ ...current, customerPhone: event.target.value }))}
+                  className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-3 text-sm text-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
+                />
+              </label>
+              <label className="space-y-1.5 text-xs font-medium text-white/75">
+                <span>{text.message} <span className="text-gold">*</span></span>
+                <textarea
+                  rows={4}
+                  value={form.message}
+                  aria-invalid={Boolean(formErrors.message)}
+                  aria-describedby={formErrors.message ? "chat-message-error" : undefined}
+                  onChange={(event) => { setForm((current) => ({ ...current, message: event.target.value })); setFormErrors((current) => ({ ...current, message: undefined })); }}
+                  className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-3 text-sm text-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
+                />
+                {formErrors.message ? <span id="chat-message-error" className="block text-red-300">{formErrors.message}</span> : null}
+              </label>
+              <div role="status" aria-live="polite" aria-atomic="true">
+                {error ? <p className="text-xs text-red-300">{error}</p> : null}
+                {recaptchaError ? <p className="text-xs text-red-300">{recaptchaError}</p> : null}
+              </div>
               <p className="text-[11px] text-white/45">{text.recaptcha}</p>
               <ReCaptchaComponent />
               <button
@@ -440,7 +561,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
             </form>
           ) : (
             <>
-              <div className="max-h-[380px] space-y-3 overflow-y-auto p-5">
+              <div className="max-h-[min(380px,50dvh)] space-y-3 overflow-y-auto p-5" aria-live="polite" aria-relevant="additions text">
                 <p className="text-xs text-white/45">{text.welcome}</p>
                 {conversation.status === "resolved" ? (
                   <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-white/70">
@@ -469,6 +590,20 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
                     </div>
                   );
                 })}
+                {conversation.adminTyping ? (
+                  <div className="flex justify-start" role="status" aria-live="polite">
+                    <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-white">
+                      <div className="flex items-center gap-2 text-xs text-white/60">
+                        <span>{text.typing}</span>
+                        <span className="flex gap-1" aria-hidden="true">
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold motion-reduce:animate-none [animation-delay:-0.3s]" />
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold motion-reduce:animate-none [animation-delay:-0.15s]" />
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold motion-reduce:animate-none" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <form onSubmit={handleSendMessage} className="border-t border-white/10 p-4">
@@ -476,7 +611,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
                   <textarea
                     rows={2}
                     value={messageDraft}
-                    onChange={(event) => setMessageDraft(event.target.value)}
+                    onChange={(event) => handleDraftChange(event.target.value)}
                     placeholder={text.placeholder}
                     className="min-h-[58px] flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:border-gold focus:outline-none"
                   />
@@ -495,27 +630,27 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
         </div>
       ) : (
         <button
+          ref={launcherRef}
           type="button"
           onClick={() => {
             setMode(conversation ? "local" : "chooser");
             setOpen(true);
           }}
-          className="group relative flex items-center gap-2 rounded-full border border-gold/30 bg-[#101010]/95 px-3 py-2 text-white shadow-[0_14px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-gold hover:shadow-[0_18px_50px_rgba(212,158,66,0.18)] md:gap-3 md:px-4 md:py-2.5"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={lang === "de" ? "Nachricht an Apfel Park senden" : "Message Apfel Park"}
+          className="group relative flex items-center gap-2 rounded-full border border-gold/30 bg-[#101010]/95 px-2.5 py-2 text-white shadow-[0_12px_32px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-gold motion-reduce:transform-none motion-reduce:transition-none md:gap-2.5 md:px-3 md:py-2"
         >
           <span className="absolute inset-0 rounded-full bg-gold/10 opacity-60 blur-xl transition-opacity duration-300 group-hover:opacity-100" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
-            <span className="relative inline-flex h-3.5 w-3.5 rounded-full border border-[#101010] bg-emerald-400" />
-          </span>
-          <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gold text-black shadow-lg md:h-11 md:w-11">
+          <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gold text-black shadow-lg md:h-10 md:w-10">
             <svg className="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75h6.75m-6.75 3h4.5m7.125-1.125c0 4.142-3.693 7.5-8.25 7.5a8.841 8.841 0 01-3.348-.646L3.75 20.25l1.113-3.338A7.16 7.16 0 013.75 13.5C3.75 9.358 7.443 6 12 6s8.25 3.358 8.25 7.5z" />
             </svg>
           </span>
           <span className="relative hidden text-left sm:block">
-            <span className="block text-[11px] font-bold uppercase tracking-[0.24em] text-gold">{text.launcher}</span>
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-gold">{text.launcher}</span>
             <span className="mt-0.5 block text-xs text-white/75">
-              {lang === "de" ? "Jetzt live erreichbar" : "Live and ready to help"}
+              {lang === "de" ? "Antwort während der Öffnungszeiten" : "Replies during opening hours"}
             </span>
           </span>
         </button>

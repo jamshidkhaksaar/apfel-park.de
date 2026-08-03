@@ -56,11 +56,11 @@ type TikTokQueue = Array<unknown[]> & {
 
 const setupGoogleAnalytics = (gaId: string) => {
   if (!gaId || window.gtag) return;
-  loadScript("ga-script", `https://www.googletagmanager.com/gtag/js?id=${gaId}`);
   window.dataLayer = window.dataLayer || [];
   window.gtag = (...args: unknown[]) => { window.dataLayer!.push(args); };
   window.gtag("js", new Date());
   window.gtag("config", gaId, { send_page_view: false });
+  loadScript("ga-script", `https://www.googletagmanager.com/gtag/js?id=${gaId}`);
 };
 
 const loadScript = (id: string, src: string) => {
@@ -160,8 +160,23 @@ const setupTikTokPixel = (pixelId: string) => {
     };
 
     ttq.load(pixelId);
-    ttq.page?.();
   })(window, document, "ttq");
+};
+
+const updateMarketingConsent = (granted: boolean) => {
+  if (window.fbq) {
+    window.fbq("consent", granted ? "grant" : "revoke");
+  }
+
+  if (window.ttq) {
+    if (granted) {
+      window.ttq.grantConsent?.();
+      window.ttq.enableCookie?.();
+    } else {
+      window.ttq.revokeConsent?.();
+      window.ttq.disableCookie?.();
+    }
+  }
 };
 
 const toMetaEventName = (eventName: string) => {
@@ -235,8 +250,10 @@ export default function MarketingConsentScripts({
     };
 
     const applyConsent = (mode: ConsentMode) => {
-      if (mode !== "external") return;
-      if (isExcludedPath(pathname)) return;
+      if (mode !== "external" || isExcludedPath(pathname)) {
+        updateMarketingConsent(false);
+        return;
+      }
 
       if (isConversionPath(pathname) && metaPixelEnabled && metaPixelId) {
         setupMetaPixel(metaPixelId);
@@ -245,6 +262,8 @@ export default function MarketingConsentScripts({
       if (isConversionPath(pathname) && tiktokPixelEnabled && tiktokPixelId) {
         setupTikTokPixel(tiktokPixelId);
       }
+
+      updateMarketingConsent(true);
 
       if (googleAnalyticsEnabled && googleAnalyticsId) {
         setupGoogleAnalytics(googleAnalyticsId);

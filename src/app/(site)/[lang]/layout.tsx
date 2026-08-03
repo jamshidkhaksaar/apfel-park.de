@@ -25,7 +25,7 @@ export default async function SiteLayout({
   const dict = getDictionary(locale);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-clip">
       <LocaleSync locale={locale} />
       <SiteHeader
         lang={locale}

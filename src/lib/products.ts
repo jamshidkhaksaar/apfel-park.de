@@ -1,9 +1,9 @@
 import { createDbClient } from "@/lib/db";
 import type { Locale } from "@/lib/i18n";
 
-export type ProductCategory = "smartphones" | "accessories" | "consoles" | "laptops";
+export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
 
-export type ProductCondition = "new" | "refurbished" | "used";
+export type ProductCondition = "new" | "open_box" | "used";
 
 export type ProductSpec = {
   label: string;
@@ -32,11 +32,15 @@ export type Product = {
   category: ProductCategory;
   condition: ProductCondition;
   isOpenBox: boolean;
+  batteryHealth?: number;
+  hasRealProductPhotos: boolean;
+  conditionNote?: string;
   image: string;
   images: string[];
   brand?: string;
   model?: string;
   sku?: string;
+  gtin?: string;
   stock?: number;
   slug: string;
   featureBullets: string[];
@@ -45,6 +49,7 @@ export type Product = {
   isFeatured?: boolean;
   discountPercentage?: number;
   hasDiscount: boolean;
+  createdAt?: string;
 };
 
 type LocalizedText = {
@@ -69,9 +74,14 @@ type DbProduct = {
   compare_at_price: number | string | null;
   category: string;
   condition?: string | null;
+  battery_health?: number | string | null;
+  has_real_product_photos?: boolean | null;
+  condition_note?: string | null;
+  import_metadata?: { conditionNoteI18n?: LocalizedText | null } | null;
   brand: string | null;
   model: string | null;
   sku: string | null;
+  gtin?: string | null;
   stock: number | null;
   slug: string | null;
   images: string[] | null;
@@ -80,6 +90,7 @@ type DbProduct = {
   specs: unknown;
   specs_i18n?: LocalizedSpec[] | null;
   variants: unknown;
+  created_at?: string | null;
 };
 
 export type PromoPopupSettings = {
@@ -89,6 +100,10 @@ export type PromoPopupSettings = {
   ctaLabel: { de: string; en: string };
   ctaHref: string;
   pinnedProductIds?: string[];
+};
+
+type TrendingProductsSetting = {
+  productIds?: string[];
 };
 
 const DEFAULT_PROMO_POPUP: PromoPopupSettings = {
@@ -111,6 +126,7 @@ const DEFAULT_PROMO_POPUP: PromoPopupSettings = {
 const normalizeCategory = (category: string): ProductCategory | null => {
   const value = category.toLowerCase().trim();
   if (value === "smartphone" || value === "smartphones") return "smartphones";
+  if (value === "tablet" || value === "tablets") return "tablets";
   if (value === "accessory" || value === "accessories") return "accessories";
   if (value === "console" || value === "consoles" || value === "gaming" || value === "game") return "consoles";
   if (value === "laptop" || value === "laptops") return "laptops";
@@ -119,13 +135,14 @@ const normalizeCategory = (category: string): ProductCategory | null => {
 
 const normalizeCondition = (condition: string | null | undefined): ProductCondition => {
   const value = (condition ?? "").toLowerCase().trim();
-  if (value === "refurbished") return "refurbished";
+  if (value === "open_box" || value === "open-box" || value === "refurbished") return "open_box";
   if (value === "used") return "used";
   return "new";
 };
 
 const fallbackImageByCategory: Record<ProductCategory, string> = {
   smartphones: "/images/slider_images/iphone.png",
+  tablets: "/images/ipad.png",
   accessories: "/images/slider_images/accessories.png",
   consoles: "/images/slider_images/ps5.png",
   laptops: "/images/slider_images/laptop.png",
@@ -133,6 +150,7 @@ const fallbackImageByCategory: Record<ProductCategory, string> = {
 
 const categoryFilters: Record<ProductCategory, string> = {
   smartphones: "category.ilike.*smartphone*,category.ilike.*smartphones*",
+  tablets: "category.ilike.*tablet*,category.ilike.*tablets*",
   accessories: "category.ilike.*accessory*,category.ilike.*accessories*",
   consoles: "category.ilike.*console*,category.ilike.*consoles*,category.ilike.*gaming*,category.ilike.*game*",
   laptops: "category.ilike.*laptop*,category.ilike.*laptops*",
@@ -258,6 +276,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
   const price = toNumber(row.price) ?? 0;
   const compareAtPrice = toNumber(row.compare_at_price);
   const condition = normalizeCondition(row.condition);
+  const batteryHealth = toNumber(row.battery_health);
   const discountPercentage = computeDiscountPercentage(price, compareAtPrice);
   const images = row.images?.filter(Boolean) ?? [];
   const image = images[0] ?? fallbackImageByCategory[category];
@@ -273,11 +292,15 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     category,
     condition,
     isOpenBox: condition !== "new",
+    batteryHealth: batteryHealth !== undefined ? Math.max(1, Math.min(100, Math.round(batteryHealth))) : undefined,
+    hasRealProductPhotos: Boolean(row.has_real_product_photos),
+    conditionNote: localizedText(row.import_metadata?.conditionNoteI18n, locale, row.condition_note) || undefined,
     image,
     images: images.length > 0 ? images : [image],
     brand: row.brand ?? undefined,
     model: row.model ?? undefined,
     sku: row.sku ?? undefined,
+    gtin: row.gtin?.trim() || undefined,
     stock: row.stock ?? undefined,
     slug: row.slug,
     featureBullets: localizedStringArray(row.feature_bullets_i18n, locale, row.feature_bullets),
@@ -285,11 +308,12 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     variants,
     discountPercentage,
     hasDiscount: Boolean(discountPercentage),
+    createdAt: row.created_at ?? undefined,
   };
 };
 
 const baseSelect =
-  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,brand,model,sku,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants";
+  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at";
 
 /**
  * Fetches products from the database.
@@ -323,6 +347,360 @@ export async function getProducts(category?: ProductCategory, limit?: number, lo
   return products.filter((product) => product.category === category);
 }
 
+export type StoreCatalogCategory = "all" | ProductCategory | "open-box-smartphones-tablets";
+export type StoreCatalogCollection = "iphone-17" | "used-phones" | "used-iphones";
+export type StoreCatalogSort = "featured" | "price-asc" | "price-desc" | "newest";
+
+export type StoreCatalogFilters = {
+  brands: string[];
+  models: string[];
+  storages: string[];
+  conditions: ProductCondition[];
+  accessoryTypes: string[];
+  priceMin?: number;
+  priceMax?: number;
+};
+
+export type FacetOption = { value: string; count: number };
+
+export type StoreCatalogFacets = {
+  brands: FacetOption[];
+  models: FacetOption[];
+  storages: FacetOption[];
+  conditions: FacetOption[];
+  accessoryTypes: FacetOption[];
+  priceMin: number;
+  priceMax: number;
+};
+
+export type StoreCatalogResult = {
+  products: Product[];
+  total: number;
+  page: number;
+  pages: number;
+  counts: Record<StoreCatalogCategory, number>;
+  facets: StoreCatalogFacets;
+};
+
+/**
+ * Canonical brand label used for filter facets + matching. Collapses
+ * duplicates (Apple/Apple iphone, GUESS/Guess, XBYTE/XByte) to one option.
+ */
+export const normalizeProductBrand = (brand?: string): string | null => {
+  const value = (brand ?? "").trim();
+  if (!value) return null;
+  if (/^apple(?:\s+iphone)?$/i.test(value)) return "Apple";
+  if (/^samsung/i.test(value)) return "Samsung";
+  if (/^(xiaomi|redmi)/i.test(value)) return "Xiaomi";
+  if (/^google/i.test(value)) return "Google";
+  const lower = value.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+};
+
+const bestBrandDisplay = (current: string | undefined, next: string): string => {
+  if (!current) return next;
+  if (current === current.toUpperCase() && next !== next.toUpperCase()) return next;
+  return current;
+};
+
+const normalizeStorageValue = (storage?: string): { label: string; gb: number } | null => {
+  if (!storage) return null;
+  const match = storage.trim().match(/(\d+(?:\.\d+)?)\s*(gb|tb)/i);
+  if (!match) return null;
+  const num = parseFloat(match[1]);
+  if (!Number.isFinite(num) || num <= 0) return null;
+  const isTb = /tb/i.test(match[2]);
+  const gb = isTb ? num * 1024 : num;
+  const clean = num % 1 === 0 ? String(num) : String(num).replace(/0+$/, "").replace(/\.$/, "");
+  return { label: `${clean}${isTb ? "TB" : "GB"}`, gb };
+};
+
+const productStorages = (product: Product): string[] => {
+  const seen = new Set<string>();
+  for (const variant of product.variants ?? []) {
+    const normalized = normalizeStorageValue(variant.storage);
+    if (normalized) seen.add(normalized.label);
+  }
+  return Array.from(seen);
+};
+
+const modelSortKey = (model: string): number => {
+  const match = model.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
+};
+
+const CONDITION_VALUES: ProductCondition[] = ["new", "open_box", "used"];
+
+/** Parse URL query params into StoreCatalogFilters (shared by all store pages). */
+export const parseStoreCatalogFilters = (
+  query: Record<string, string | string[] | undefined>,
+): StoreCatalogFilters => {
+  const get = (key: string): string => {
+    const value = query[key];
+    return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+  };
+  const list = (key: string): string[] =>
+    get(key).split(",").map((v) => v.trim()).filter(Boolean);
+  const num = (key: string): number | undefined => {
+    const raw = get(key);
+    if (raw === "") return undefined;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+  return {
+    brands: list("brand"),
+    models: list("model"),
+    storages: list("storage"),
+    conditions: list("condition").filter((v): v is ProductCondition =>
+      CONDITION_VALUES.includes(v as ProductCondition),
+    ),
+    accessoryTypes: list("atype").filter((v): v is AccessoryType =>
+      (ACCESSORY_TYPES as readonly string[]).includes(v),
+    ),
+    priceMin: num("pmin"),
+    priceMax: num("pmax"),
+  };
+};
+
+const STORE_SORT_SET = new Set<StoreCatalogSort>(["featured", "newest", "price-asc", "price-desc"]);
+const valueOfParam = (value: string | string[] | undefined): string =>
+  Array.isArray(value) ? value[0] ?? "" : value ?? "";
+
+export const parseStoreSort = (value: string | string[] | undefined): StoreCatalogSort => {
+  const str = valueOfParam(value) as StoreCatalogSort;
+  return STORE_SORT_SET.has(str) ? str : "featured";
+};
+
+export const parseStorePage = (value: string | string[] | undefined): number => {
+  return Math.max(1, Number.parseInt(valueOfParam(value) || "1", 10) || 1);
+};
+
+export const ACCESSORY_TYPES = [
+  "cases",
+  "screen-protectors",
+  "chargers",
+  "cables",
+  "headphones",
+  "bluetooth",
+  "power-banks",
+  "sd-cards",
+  "smart-home",
+] as const;
+export type AccessoryType = (typeof ACCESSORY_TYPES)[number];
+
+const accessorySearchText = (product: Product): string =>
+  [product.title, product.subtitle, product.description, product.brand, product.model, ...product.featureBullets]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+/** All accessory-type buckets a product matches (a product can match several). */
+export const productAccessoryTypes = (product: Product): AccessoryType[] => {
+  if (product.category !== "accessories") return [];
+  const text = accessorySearchText(product);
+  const types: AccessoryType[] = [];
+  if (/\bcase\b|cover|hülle|schutzhülle|handytasche|crossbody/.test(text)) types.push("cases");
+  if (/screen protector|displayschutz|panzerglas|schutzfolie|tempered glass/.test(text)) types.push("screen-protectors");
+  if (/charger|ladegerät|netzteil|charging adapter|wall adapter/.test(text)) types.push("chargers");
+  if (/\bcable\b|\bkabel\b|usb-c kabel|lightning kabel/.test(text)) types.push("cables");
+  if (/headphone|kopfhörer|earbud|headset|airpods|over-ear|in-ear/.test(text)) types.push("headphones");
+  if (/bluetooth|true wireless|\btws\b/.test(text)) types.push("bluetooth");
+  else if (/wireless|kabellos|kabellose/.test(text) && /headphone|kopfhörer|earbud|headset|airpods|speaker|lautsprecher|over-ear|in-ear/.test(text)) types.push("bluetooth");
+  if (/powerbank|power bank|externer akku|external battery/.test(text)) types.push("power-banks");
+  if (/sd card|sd-karte|microsd|memory card|speicherkarte/.test(text)) types.push("sd-cards");
+  if (/smart home|smarthome|homekit|smart plug|smart light|wifi camera/.test(text)) types.push("smart-home");
+  return types;
+};
+
+export async function getStoreCatalog({
+  category = "all",
+  collection,
+  sort = "featured",
+  page = 1,
+  pageSize = 24,
+  locale = "de",
+  filters,
+}: {
+  category?: StoreCatalogCategory;
+  collection?: StoreCatalogCollection;
+  sort?: StoreCatalogSort;
+  page?: number;
+  pageSize?: number;
+  locale?: Locale;
+  filters?: StoreCatalogFilters;
+} = {}): Promise<StoreCatalogResult> {
+  const normalizedPageSize = Math.min(48, Math.max(1, Math.floor(pageSize)));
+
+  // The catalog is small (~100 products), so fetch all active products once
+  // and do faceting, filtering, sorting and pagination in JS. This gives
+  // accurate facet counts and keeps the logic in one place.
+  const all = await getProducts(undefined, undefined, locale);
+
+  // Category tab counts (across the whole catalog).
+  const counts: Record<StoreCatalogCategory, number> = {
+    all: 0,
+    smartphones: 0,
+    tablets: 0,
+    accessories: 0,
+    consoles: 0,
+    laptops: 0,
+    "open-box-smartphones-tablets": 0,
+  };
+  for (const product of all) {
+    counts.all += 1;
+    counts[product.category] += 1;
+    if ((product.category === "smartphones" || product.category === "tablets") && product.isOpenBox) {
+      counts["open-box-smartphones-tablets"] += 1;
+    }
+  }
+
+  // Scope to the requested category.
+  const categoryScoped = category === "all"
+    ? all
+    : category === "open-box-smartphones-tablets"
+      ? all.filter((p) => (p.category === "smartphones" || p.category === "tablets") && p.isOpenBox)
+      : all.filter((p) => p.category === category);
+
+  // SEO collection pages are inventory-backed views rather than duplicated
+  // product records. Applying the collection scope before building facets
+  // keeps counts and filters accurate as products are added or sold.
+  const scoped = categoryScoped.filter((product) => {
+    if (!collection) return true;
+    if (collection === "used-phones") {
+      return product.category === "smartphones" && product.condition !== "new";
+    }
+    if (collection === "used-iphones") {
+      return product.category === "smartphones"
+        && product.condition !== "new"
+        && normalizeProductBrand(product.brand) === "Apple";
+    }
+    const identity = [product.brand, product.model, product.title]
+      .filter(Boolean)
+      .join(" ");
+    return product.category === "smartphones"
+      && normalizeProductBrand(product.brand) === "Apple"
+      && /\biphone\s*17\b/i.test(identity);
+  });
+
+  // Build facets from the scoped set (before user filters) so the sidebar
+  // always shows every available option for the current category.
+  const brandCounts = new Map<string, number>();
+  const brandDisplay = new Map<string, string>();
+  const modelCounts = new Map<string, number>();
+  const modelDisplay = new Map<string, string>();
+  const storageCounts = new Map<string, { count: number; gb: number }>();
+  const conditionCounts = new Map<ProductCondition, number>();
+  const accessoryTypeCounts = new Map<AccessoryType, number>();
+  let priceMin = Number.POSITIVE_INFINITY;
+  let priceMax = 0;
+
+  for (const product of scoped) {
+    const brand = normalizeProductBrand(product.brand);
+    if (brand) {
+      const key = brand.toLowerCase();
+      brandCounts.set(key, (brandCounts.get(key) ?? 0) + 1);
+      brandDisplay.set(key, bestBrandDisplay(brandDisplay.get(key), brand));
+    }
+    const model = product.model?.trim();
+    if (model) {
+      const key = model.toLowerCase();
+      modelCounts.set(key, (modelCounts.get(key) ?? 0) + 1);
+      if (!modelDisplay.has(key)) modelDisplay.set(key, model);
+    }
+    for (const storage of productStorages(product)) {
+      const normalized = normalizeStorageValue(storage);
+      if (!normalized) continue;
+      const existing = storageCounts.get(normalized.label);
+      storageCounts.set(normalized.label, { count: (existing?.count ?? 0) + 1, gb: normalized.gb });
+    }
+    conditionCounts.set(product.condition, (conditionCounts.get(product.condition) ?? 0) + 1);
+    for (const type of productAccessoryTypes(product)) {
+      accessoryTypeCounts.set(type, (accessoryTypeCounts.get(type) ?? 0) + 1);
+    }
+    priceMin = Math.min(priceMin, product.price);
+    priceMax = Math.max(priceMax, product.price);
+  }
+
+  if (!Number.isFinite(priceMin)) priceMin = 0;
+
+  const toOptions = (countsMap: Map<string, number>, display: Map<string, string>, sorter: (a: string, b: string) => number): FacetOption[] =>
+    Array.from(countsMap.entries())
+      .map(([key, count]) => ({ value: display.get(key) ?? key, count }))
+      .sort((a, b) => sorter(a.value, b.value));
+
+  const facets: StoreCatalogFacets = {
+    brands: toOptions(brandCounts, brandDisplay, (a, b) => a.localeCompare(b, "de")),
+    models: toOptions(modelCounts, modelDisplay, (a, b) => modelSortKey(a) - modelSortKey(b) || a.localeCompare(b, "de")),
+    storages: Array.from(storageCounts.entries())
+      .map(([label, meta]) => ({ value: label, count: meta.count, gb: meta.gb }))
+      .sort((a, b) => a.gb - b.gb)
+      .map(({ value, count }) => ({ value, count })),
+    conditions: (["new", "open_box", "used"] as ProductCondition[])
+      .filter((condition) => (conditionCounts.get(condition) ?? 0) > 0)
+      .map((condition) => ({ value: condition, count: conditionCounts.get(condition) ?? 0 })),
+    accessoryTypes: ACCESSORY_TYPES
+      .filter((type) => (accessoryTypeCounts.get(type) ?? 0) > 0)
+      .map((type) => ({ value: type, count: accessoryTypeCounts.get(type) ?? 0 })),
+    priceMin,
+    priceMax,
+  };
+
+  // Apply user filters.
+  const activeBrands = new Set((filters?.brands ?? []).map((b) => b.toLowerCase()));
+  const activeModels = new Set((filters?.models ?? []).map((m) => m.toLowerCase()));
+  const activeStorages = new Set(filters?.storages ?? []);
+  const activeConditions = new Set(filters?.conditions ?? []);
+  const activeAccessoryTypes = new Set(filters?.accessoryTypes ?? []);
+  const minPrice = typeof filters?.priceMin === "number" ? filters.priceMin : undefined;
+  const maxPrice = typeof filters?.priceMax === "number" ? filters.priceMax : undefined;
+
+  const filtered = scoped.filter((product) => {
+    if (activeBrands.size > 0) {
+      const brand = normalizeProductBrand(product.brand);
+      if (!brand || !activeBrands.has(brand.toLowerCase())) return false;
+    }
+    if (activeModels.size > 0) {
+      const model = product.model?.trim();
+      if (!model || !activeModels.has(model.toLowerCase())) return false;
+    }
+    if (activeStorages.size > 0) {
+      const storages = productStorages(product);
+      if (!storages.some((s) => activeStorages.has(s))) return false;
+    }
+    if (activeConditions.size > 0 && !activeConditions.has(product.condition)) return false;
+    if (activeAccessoryTypes.size > 0) {
+      const types = productAccessoryTypes(product);
+      if (!types.some((t) => activeAccessoryTypes.has(t))) return false;
+    }
+    if (minPrice !== undefined && product.price < minPrice) return false;
+    if (maxPrice !== undefined && product.price > maxPrice) return false;
+    return true;
+  });
+
+  // Sort.
+  const sorted = [...filtered];
+  if (sort === "price-asc") sorted.sort((a, b) => a.price - b.price);
+  else if (sort === "price-desc") sorted.sort((a, b) => b.price - a.price);
+  else if (sort === "newest") sorted.sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
+  else {
+    // featured: discounted first, then newest.
+    sorted.sort((a, b) => {
+      const discount = Number(b.hasDiscount) - Number(a.hasDiscount);
+      if (discount !== 0) return discount;
+      return String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""));
+    });
+  }
+
+  // Paginate.
+  const total = sorted.length;
+  const pages = Math.max(1, Math.ceil(total / normalizedPageSize));
+  const normalizedPage = Math.min(pages, Math.max(1, Math.floor(page)));
+  const from = (normalizedPage - 1) * normalizedPageSize;
+  const products = sorted.slice(from, from + normalizedPageSize);
+
+  return { products, total, page: normalizedPage, pages, counts, facets };
+}
+
 export async function getFeaturedProducts(locale: Locale = "de"): Promise<Product[]> {
   const db = createDbClient();
   const [{ data: featuredRow }, products] = await Promise.all([
@@ -345,8 +723,52 @@ export async function getFeaturedProducts(locale: Locale = "de"): Promise<Produc
   const byId = new Map(products.map((product) => [product.id, product] as const));
   return featuredIds
     .map((id) => byId.get(id))
-    .filter((product): product is Product => Boolean(product))
+    .filter((product): product is Product => Boolean(product && (product.stock ?? 0) > 0))
     .map((product) => ({ ...product, isFeatured: true }));
+}
+
+export async function getTrendingProducts(locale: Locale = "de", limit = 8): Promise<Product[]> {
+  const db = createDbClient();
+  const [{ data: settingRow }, products] = await Promise.all([
+    db
+      .from<{ value: unknown }>("store_settings")
+      .select("value")
+      .eq("key", "trending_products")
+      .maybeSingle(),
+    getProducts(undefined, undefined, locale),
+  ]);
+
+  const available = products.filter((product) => (product.stock ?? 0) > 0);
+  const setting = settingRow?.value && typeof settingRow.value === "object"
+    ? settingRow.value as TrendingProductsSetting
+    : null;
+  const configuredIds = Array.isArray(setting?.productIds)
+    ? setting.productIds.filter((id): id is string => typeof id === "string")
+    : [];
+  const byId = new Map(available.map((product) => [product.id, product] as const));
+  const configured = configuredIds
+    .map((id) => byId.get(id))
+    .filter((product): product is Product => Boolean(product));
+
+  const score = (product: Product) => {
+    const text = `${product.title} ${product.model ?? ""}`.toLowerCase();
+    let value = 0;
+    if (/iphone\s*17/.test(text)) value += 1_000;
+    else if (/iphone\s*16/.test(text)) value += 700;
+    else if (/iphone\s*15/.test(text)) value += 500;
+    if (/pro\s*max/.test(text)) value += 120;
+    else if (/\bpro\b/.test(text)) value += 90;
+    if (/\bair\b/.test(text)) value += 60;
+    if (product.hasDiscount) value += 40;
+    value += Math.min(product.stock ?? 0, 10);
+    return value;
+  };
+  const configuredSet = new Set(configured.map((product) => product.id));
+  const fallback = available
+    .filter((product) => !configuredSet.has(product.id))
+    .sort((a, b) => score(b) - score(a) || String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
+
+  return [...configured, ...fallback].slice(0, Math.max(1, limit));
 }
 
 export async function getProductBySlug(slug: string, locale: Locale = "de"): Promise<Product | null> {

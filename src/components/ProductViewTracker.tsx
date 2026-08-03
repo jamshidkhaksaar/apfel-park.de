@@ -36,6 +36,10 @@ export default function ProductViewTracker({
         return;
       }
 
+      const eventId = typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `view-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
       sentRef.current = true;
       window.apfelTrack?.("view_item", {
         currency: "EUR",
@@ -49,7 +53,7 @@ export default function ProductViewTracker({
         content_category: category,
         content_condition: condition ?? "new",
         contents: [{ id: productId, quantity: 1, item_price: price ?? 0 }],
-      }, `view-${productId}`);
+      }, eventId);
 
       void fetch("/api/marketing/view-content", {
         method: "POST",
@@ -64,6 +68,7 @@ export default function ProductViewTracker({
           locale,
           slug,
           condition: condition ?? "new",
+          eventId,
         }),
         keepalive: true,
       }).catch(() => {

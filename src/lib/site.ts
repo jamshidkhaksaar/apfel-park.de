@@ -29,7 +29,7 @@ export const siteInfo = {
     query: "Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
     embedUrl: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
       ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=Wilhelm-Strau%C3%9F-Weg+2b,+21109+Hamburg`
-      : "",
+      : "https://www.google.com/maps?q=Wilhelm-Strau%C3%9F-Weg+2b%2C+21109+Hamburg&output=embed",
     linkUrl: "https://maps.google.com/?q=Wilhelm-Strau%C3%9F-Weg+2b+21109+Hamburg",
   },
 };

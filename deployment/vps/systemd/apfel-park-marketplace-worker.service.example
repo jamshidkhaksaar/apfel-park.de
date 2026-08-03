@@ -1,0 +1,11 @@
+[Unit]
+Description=Apfel Park marketplace queue worker
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/apfel-park/app/releases/repo
+EnvironmentFile=/srv/apfel-park/app/shared/env/production.env
+ExecStart=/usr/bin/npx tsx scripts/marketplace-worker.ts
+User=apfel-park
+

@@ -23,6 +23,7 @@ const META_CATALOG_HEADERS = [
 
 const categoryMap: Record<Product["category"], string> = {
   smartphones: "Electronics > Communications > Telephony > Mobile Phones",
+  tablets: "Electronics > Computers > Tablet Computers",
   accessories: "Electronics > Electronics Accessories",
   consoles: "Electronics > Video Game Consoles",
   laptops: "Electronics > Computers > Laptops",

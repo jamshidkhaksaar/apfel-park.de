@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import CheckoutSuccessClient from "@/components/checkout/CheckoutSuccessClient";
 import { getOrderForConfirmation } from "@/lib/checkout";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function CheckoutSuccessPage({
   params,
@@ -23,6 +28,7 @@ export default async function CheckoutSuccessPage({
         <CheckoutSuccessClient
           locale={locale}
           orderId={query.order_id ?? null}
+          orderNumber={order?.order_number ?? null}
           provider={query.provider ?? null}
           paypalToken={query.token ?? null}
           initiallyPaid={paid}

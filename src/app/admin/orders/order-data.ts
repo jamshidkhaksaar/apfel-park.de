@@ -42,6 +42,12 @@ export type OrderDetail = {
   currency: string | null;
   items: OrderItem[] | null;
   tracking_id: string | null;
+  condition_consent: {
+    accepted?: boolean;
+    at?: string;
+    textVersion?: string;
+    items?: Array<{ productId?: string; title?: string; condition?: string }>;
+  } | null;
 };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -53,7 +59,8 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
             customer_address, status, payment_status, shipping_method, provider,
             provider_payment_id, provider_session_id, checkout_locale,
             total_amount, subtotal_amount, shipping_amount, vat_amount, currency, items,
-            metadata->>'trackingId' AS tracking_id
+            metadata->>'trackingId' AS tracking_id,
+            metadata->'conditionConsent' AS condition_consent
      FROM orders WHERE id = $1`,
     [id],
   );

@@ -50,6 +50,14 @@ export default async function OrderDetailPage({
     [t.paymentId, order.provider_payment_id ?? "-"],
     [t.sessionId, order.provider_session_id ?? "-"],
     [t.trackingId, order.tracking_id ?? "-"],
+    [
+      "Condition consent",
+      order.condition_consent?.accepted
+        ? `✓ ${order.condition_consent.at ? formatDate(order.condition_consent.at) : ""} (${(order.condition_consent.items ?? [])
+            .map((item) => `${item.title ?? "?"}: ${item.condition ?? "?"}`)
+            .join(", ")})`
+        : "-",
+    ],
     [t.locale, order.checkout_locale?.toUpperCase() ?? "-"],
   ];
 

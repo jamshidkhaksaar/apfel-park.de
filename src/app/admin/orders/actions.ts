@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { isAdminUser } from "@/lib/admin-auth";
+import { canManageOrders } from "@/lib/admin-auth";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import { query } from "@/lib/db";
+import { enqueueMarketplaceJob } from "@/lib/marketplaces";
 import { sanitizeInput } from "@/lib/security";
 
 const ALLOWED_STATUSES = new Set(["pending", "paid", "shipped", "delivered", "cancelled"]);
@@ -19,7 +20,7 @@ export async function updateOrderFulfillment(formData: FormData) {
     error: authError,
   } = await adminClient.auth.getUser();
 
-  if (authError || !isAdminUser(user)) {
+  if (authError || !canManageOrders(user)) {
     redirect("/admin/orders?error=auth");
   }
 
@@ -42,6 +43,21 @@ export async function updateOrderFulfillment(formData: FormData) {
        WHERE id = $1`,
       [id, nextStatus, trackingId || null],
     );
+    if (trackingId && (nextStatus === "shipped" || nextStatus === "delivered")) {
+      const marketplaceOrders = await query(
+        `SELECT marketplace, external_order_id FROM marketplace_orders WHERE order_id = $1`,
+        [id],
+      );
+      await Promise.all(
+        marketplaceOrders.rows.map((order: { marketplace: "amazon_de" | "ebay_de"; external_order_id: string }) =>
+          enqueueMarketplaceJob(order.marketplace, "confirm_shipment", undefined, {
+            externalOrderId: order.external_order_id,
+            carrier: "other",
+            trackingNumber: trackingId,
+          }),
+        ),
+      );
+    }
   } else {
     await query(`UPDATE orders SET status = $2, updated_at = now() WHERE id = $1`, [id, nextStatus]);
   }

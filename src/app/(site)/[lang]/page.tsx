@@ -19,8 +19,8 @@ import HeroSlider from "../../../components/HeroSlider";
 import FeaturedStore from "../../../components/FeaturedStore";
 import TestimonialsCarousel from "../../../components/TestimonialsCarousel";
 import { getFeaturedProducts } from "../../../lib/products";
-import { safeJsonStringify } from "../../../lib/security";
 import AnimatedSection from "../../../components/AnimatedSection";
+import OfficialPartners from "../../../components/OfficialPartners";
 import { getHeroMediaSettings } from "../../../lib/site-settings-server";
 
 export const dynamic = "force-dynamic";
@@ -47,57 +47,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const featuredProducts = await getFeaturedProducts(lang as Locale);
   const heroMedia = await getHeroMediaSettings();
 
-  const serviceItems = home.services.items.map((item: { title: string; description: string }) => ({
-    "@type": "Service",
-    name: item.title,
-    description: item.description,
-  }));
-
-  const productItems = featuredProducts.map((product) => ({
-    "@type": "Product",
-    name: product.title,
-    description: product.description,
-    image: product.image,
-    offers: {
-      "@type": "Offer",
-      price: product.price,
-      priceCurrency: "EUR",
-      availability: "https://schema.org/InStock",
-    },
-  }));
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    name: siteInfo.name,
-    url: siteInfo.url,
-    telephone: siteInfo.phone,
-    email: siteInfo.email,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: siteInfo.address.street,
-      postalCode: siteInfo.address.postalCode,
-      addressLocality: siteInfo.address.city,
-      addressCountry: "DE",
-    },
-    openingHours: "Mo-Sa 09:30-20:00",
-    hasOfferCatalog: {
-      "@type": "OfferCatalog",
-      name: "Apfel Park Services and Products",
-      itemListElement: [
-        {
-          "@type": "OfferCatalog",
-          name: "Services",
-          itemListElement: serviceItems,
-        },
-        {
-          "@type": "OfferCatalog",
-          name: "Products",
-          itemListElement: productItems,
-        },
-      ],
-    },
-  };
 
   const deviceBrands = [
     {
@@ -145,13 +94,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
   return (
     <div className="page-surface text-foreground">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonStringify(jsonLd) }}
-      />
 
       {/* Hero Slider */}
-      <HeroSlider lang={lang as Locale} media={heroMedia} />
+      <HeroSlider lang={lang as Locale} media={heroMedia} hero={home.hero} />
 
       {/* Brands Bar */}
       <section className="border-y border-border bg-surface-strong py-5">
@@ -687,6 +632,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
         </div>
       </AnimatedSection>
+
+      <OfficialPartners lang={lang as Locale} />
     </div>
   );
 }
