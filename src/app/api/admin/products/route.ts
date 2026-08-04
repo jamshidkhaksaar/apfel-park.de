@@ -469,7 +469,8 @@ export async function PATCH(request: NextRequest) {
         "condition" = $18,
         "battery_health" = $19,
         "has_real_product_photos" = $20,
-        "condition_note" = $21
+        "condition_note" = $21,
+        "updated_at" = now()
        WHERE "id" = $1`,
       [
         payload.id,

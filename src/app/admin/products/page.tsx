@@ -23,7 +23,27 @@ type CatalogRow = {
   is_active: boolean | null;
   images: string[] | null;
   updated_at: string | null;
+  edited_minutes_ago: number | null;
 };
+
+const EDIT_BADGE_WINDOW_MINUTES = 24 * 60;
+
+// An edited product carries a badge for a day, then falls back to a plain
+// timestamp so the column stays readable for the rest of the catalog. The age
+// is measured by the database clock -- the same one that writes updated_at.
+const wasJustEdited = (minutesAgo: number | null) =>
+  minutesAgo !== null && minutesAgo < EDIT_BADGE_WINDOW_MINUTES;
+
+const sinceEdit = (locale: "de" | "en", minutesAgo: number) => {
+  const minutes = Math.max(0, minutesAgo);
+  const format = new Intl.RelativeTimeFormat(locale === "de" ? "de-DE" : "en-US", { numeric: "auto" });
+  return minutes < 60 ? format.format(-minutes, "minute") : format.format(-Math.round(minutes / 60), "hour");
+};
+
+const editedAt = (locale: "de" | "en", updatedAt: string) =>
+  new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(
+    new Date(updatedAt),
+  );
 
 const PAGE_SIZE = 25;
 const valueOf = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
@@ -59,7 +79,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const orderBy: Record<string, string> = {
-    newest: "created_at DESC",
+    newest: "updated_at DESC",
     oldest: "created_at ASC",
     "price-asc": "price ASC",
     "price-desc": "price DESC",
@@ -71,7 +91,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const page = Math.min(requestedPage, pages);
   values.push(PAGE_SIZE, (page - 1) * PAGE_SIZE);
   const productsResult = await query(
-    `SELECT id,title,brand,model,sku,category,condition,price,stock,slug,is_active,images,created_at AS updated_at
+    `SELECT id,title,brand,model,sku,category,condition,price,stock,slug,is_active,images,updated_at,(extract(epoch from (now() - updated_at)) / 60)::int AS edited_minutes_ago
      FROM products ${where} ORDER BY ${orderBy[sort] ?? orderBy.newest} LIMIT $${values.length - 1} OFFSET $${values.length}`,
     values,
   );
@@ -125,7 +145,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                       <td className="px-4 py-3 text-sm text-muted">{product.category}</td><td className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? (locale === "de" ? "Gebraucht" : "Used") : (locale === "de" ? "Neu" : "New")}</td>
                       <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ${product.is_active ? "bg-emerald-500/10 text-emerald-600" : "bg-surface text-muted"}`}>{product.is_active ? (locale === "de" ? "Aktiv" : "Active") : (locale === "de" ? "Entwurf" : "Draft")}</span></td>
                       <td className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{money(locale, product.price)}</td><td className={`px-4 py-3 text-right text-sm tabular-nums ${(product.stock ?? 0) <= 0 ? "font-medium text-red-500" : "text-muted"}`}>{product.stock ?? 0}</td>
-                      <td className="px-4 py-3 text-sm text-muted">{product.updated_at ? new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-US", { dateStyle: "medium" }).format(new Date(product.updated_at)) : "—"}</td>
+                      <td className="px-4 py-3 text-sm text-muted">{product.updated_at ? (product.is_active && wasJustEdited(product.edited_minutes_ago) ? <span title={editedAt(locale, product.updated_at)} className="inline-flex items-center gap-1.5 rounded-md bg-gold/15 px-2 py-1 text-xs font-medium text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}<span className="font-normal opacity-70">{sinceEdit(locale, product.edited_minutes_ago ?? 0)}</span></span> : editedAt(locale, product.updated_at)) : "—"}</td>
                       <td className="px-4 py-3"><Link href={`/admin/products/${product.id}`} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link></td>
                     </tr>
                   ))}
