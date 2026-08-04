@@ -326,6 +326,10 @@ export async function POST(request: NextRequest) {
         title: product.title,
         condition: product.condition,
         reason: validationError,
+        hasRealProductPhotos: product.hasRealProductPhotos,
+        imageCount: product.images.length,
+        conditionNoteLength: (product.conditionNote ?? "").length,
+        batteryHealth: product.batteryHealth,
       });
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
@@ -426,6 +430,10 @@ export async function PATCH(request: NextRequest) {
         id: payload.id,
         condition: product.condition,
         reason: validationError,
+        hasRealProductPhotos: product.hasRealProductPhotos,
+        imageCount: product.images.length,
+        conditionNoteLength: (product.conditionNote ?? "").length,
+        batteryHealth: product.batteryHealth,
       });
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
