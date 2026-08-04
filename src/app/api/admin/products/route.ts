@@ -173,7 +173,7 @@ const getMessages = (isEnglish: boolean) => ({
   priceRequired: isEnglish ? "Valid price is required" : "Gültiger Preis ist erforderlich",
   stockRequired: isEnglish ? "Valid stock is required" : "Gültiger Lagerwert ist erforderlich",
   comparePriceInvalid: isEnglish ? "Compare-at price must be higher than the current price" : "Streichpreis muss höher als der aktuelle Preis sein",
-  conditionDetailsRequired: isEnglish ? "Open-box and used products need a condition note and at least one real product photo" : "Open-Box- und Gebrauchtprodukte benötigen einen Zustandshinweis und mindestens ein echtes Produktfoto",
+  conditionDetailsRequired: isEnglish ? "Open-box and used products need a condition note, at least one image, and confirmation of real product photos" : "Open-Box- und Gebrauchtprodukte benötigen einen Zustandshinweis, mindestens ein Bild und die Bestätigung echter Produktfotos",
   batteryHealthRequired: isEnglish ? "Used iPhones require battery health" : "Für gebrauchte iPhones ist die Batteriekapazität erforderlich",
   batteryHealthInvalid: isEnglish ? "Battery health must be a whole number from 1 to 100" : "Die Batteriekapazität muss eine ganze Zahl von 1 bis 100 sein",
   createFailed: isEnglish ? "Failed to save product" : "Produkt konnte nicht gespeichert werden",
@@ -322,6 +322,11 @@ export async function POST(request: NextRequest) {
     const product = buildPayload(payload, slug);
     const validationError = validatePayload(product, auth.messages);
     if (validationError) {
+      console.warn("Product create rejected", {
+        title: product.title,
+        condition: product.condition,
+        reason: validationError,
+      });
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
@@ -417,6 +422,11 @@ export async function PATCH(request: NextRequest) {
     const product = buildPayload(payload);
     const validationError = validatePayload(product, auth.messages);
     if (validationError) {
+      console.warn("Product update rejected", {
+        id: payload.id,
+        condition: product.condition,
+        reason: validationError,
+      });
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 

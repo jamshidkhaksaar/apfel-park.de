@@ -5,6 +5,7 @@ import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useAdmin } from "@/lib/admin-context";
+import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 
 type FormState = {
   title: string;
@@ -119,6 +120,7 @@ export default function ProductCreateForm() {
   );
 
   const slotLabels = imageSlotLabels[isGerman ? "de" : "en"];
+  const isUsedIphone = state.condition === "used" && isIphoneProduct(state);
 
   useEffect(() => {
     const previews = imageFiles
@@ -141,10 +143,30 @@ export default function ProductCreateForm() {
     };
   }, [variantImageFiles]);
 
+  const getConditionValidationError = () =>
+    validateAdminProductCondition({
+      condition: state.condition,
+      conditionNote: state.conditionNote,
+      hasRealProductPhotos: state.hasRealProductPhotos,
+      imageCount: imageFiles.some(Boolean) ? 1 : 0,
+      batteryHealth: state.batteryHealth,
+      title: state.title,
+      brand: state.brand,
+      model: state.model,
+      locale: isGerman ? "de" : "en",
+    });
+
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+
+    const conditionValidationError = getConditionValidationError();
+    if (conditionValidationError) {
+      setError(conditionValidationError);
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const imageUrls: string[] = [];
@@ -387,7 +409,7 @@ export default function ProductCreateForm() {
         </label>
         <select
           value={state.condition}
-          onChange={(event) => setState((prev) => ({ ...prev, condition: event.target.value, batteryHealth: "", hasRealProductPhotos: false, conditionNote: "" }))}
+          onChange={(event) => { setError(null); setState((prev) => ({ ...prev, condition: event.target.value, batteryHealth: "", hasRealProductPhotos: false, conditionNote: "" })); }}
           className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
         >
           <option value="new">{isGerman ? "Neu & versiegelt" : "New & sealed"}</option>
@@ -397,21 +419,22 @@ export default function ProductCreateForm() {
         {state.condition !== "new" ? (
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="space-y-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{isGerman ? "Zustandshinweis" : "Condition note"}</span>
-              <input required value={state.conditionNote} onChange={(event) => setState((prev) => ({ ...prev, conditionNote: event.target.value }))} placeholder={isGerman ? "z. B. Ausstellungsgerät, leichte Verpackungsspuren" : "e.g. display unit, light box wear"} className="w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{isGerman ? "Zustandshinweis *" : "Condition note *"}</span>
+              <input required data-condition-field="true" onInvalid={() => { const validationError = getConditionValidationError(); if (validationError) setError(validationError); }} value={state.conditionNote} onChange={(event) => setState((prev) => ({ ...prev, conditionNote: event.target.value }))} placeholder={isGerman ? "z. B. Ausstellungsgerät, leichte Verpackungsspuren" : "e.g. display unit, light box wear"} className="w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
             </label>
-            {state.condition === "used" ? (
+            {isUsedIphone ? (
               <label className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{isGerman ? "Batteriekapazität (iPhone)" : "Battery health (iPhone)"}</span>
-                <input type="number" min="1" max="100" value={state.batteryHealth} onChange={(event) => setState((prev) => ({ ...prev, batteryHealth: event.target.value }))} placeholder="e.g. 92" className="w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{isGerman ? "Batteriekapazität (iPhone) *" : "Battery health (iPhone) *"}</span>
+                <input required data-condition-field="true" onInvalid={() => { const validationError = getConditionValidationError(); if (validationError) setError(validationError); }} type="number" min="1" max="100" value={state.batteryHealth} onChange={(event) => setState((prev) => ({ ...prev, batteryHealth: event.target.value }))} placeholder="e.g. 92" className="w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
               </label>
             ) : null}
             <label className="flex items-center gap-2 text-sm text-foreground md:col-span-2">
-              <input type="checkbox" checked={state.hasRealProductPhotos} onChange={(event) => setState((prev) => ({ ...prev, hasRealProductPhotos: event.target.checked }))} />
-              {isGerman ? "Echte Fotos dieses Geräts hochgeladen" : "Real photos of this exact device uploaded"}
+              <input required data-condition-field="true" onInvalid={() => { const validationError = getConditionValidationError(); if (validationError) setError(validationError); }} type="checkbox" checked={state.hasRealProductPhotos} onChange={(event) => setState((prev) => ({ ...prev, hasRealProductPhotos: event.target.checked }))} />
+              {isGerman ? "Echte Fotos dieses Geräts hochgeladen *" : "Real photos of this exact device uploaded *"}
             </label>
           </div>
         ) : null}
+        {error && state.condition !== "new" ? <p className="mt-3 text-sm text-red-400" role="alert">{error}</p> : null}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -713,7 +736,7 @@ export default function ProductCreateForm() {
 
       <div>
         <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-          {isGerman ? "Bildergalerie" : "Image gallery"}
+          {isGerman ? `Bildergalerie${state.condition !== "new" ? " *" : ""}` : `Image gallery${state.condition !== "new" ? " *" : ""}`}
         </label>
         <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {slotLabels.map((slotLabel, index) => {
@@ -742,6 +765,8 @@ export default function ProductCreateForm() {
                 </div>
                 <input
                   type="file"
+                  required={state.condition !== "new" && index === 0 && !imageFiles.some(Boolean)}
+                  onInvalid={() => { const validationError = getConditionValidationError(); if (validationError) setError(validationError); }}
                   accept="image/png,image/jpeg,image/webp,image/svg+xml"
                   onChange={(event) => {
                     const nextFile = event.target.files?.[0] ?? null;
@@ -756,8 +781,8 @@ export default function ProductCreateForm() {
         </div>
         <p className="mt-2 text-xs text-muted">
           {isGerman
-            ? "Bis zu 4 optionale Bilder. Empfohlene Reihenfolge: Front, Ruckseite, Seite, Extra."
-            : "Up to 4 optional images. Recommended order: Front, Back, Side, Extra."}
+            ? state.condition !== "new" ? "Mindestens ein Bild ist für Open-Box- und Gebrauchtprodukte erforderlich. Empfohlene Reihenfolge: Front, Ruckseite, Seite, Extra." : "Bis zu 4 optionale Bilder. Empfohlene Reihenfolge: Front, Ruckseite, Seite, Extra."
+            : state.condition !== "new" ? "At least one image is required for open-box and used products. Recommended order: Front, Back, Side, Extra." : "Up to 4 optional images. Recommended order: Front, Back, Side, Extra."}
         </p>
         {pendingImageNames ? (
           <p className="mt-2 text-xs text-muted">{pendingImageNames}</p>

@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
+import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
+
 type AdminLocale = "de" | "en";
 
 type ProductSpec = {
@@ -250,6 +252,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<(typeof categoryOptions)[number]>("all");
   const [saveError, setSaveError] = useState("");
+  const [conditionError, setConditionError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [imageFiles, setImageFiles] = useState<Array<File | null>>([null, null, null, null]);
   const [variantImageFiles, setVariantImageFiles] = useState<Array<Array<File | null>>>([]);
@@ -317,6 +320,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
       setVariantImageFiles(selectedProduct.variants.map(() => [null, null, null, null]));
       setImagePreviews([]);
       setVariantImagePreviews([]);
+      setConditionError("");
       setSaveError("");
       setSaveMessage("");
     }
@@ -346,6 +350,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   }, [variantImageFiles]);
 
   const queueCount = filteredProducts.length;
+  const isUsedIphone = formState.condition === "used" && isIphoneProduct(formState);
   const isDirty = useMemo(() => {
     if (!selectedProduct) return false;
     const formChanged = JSON.stringify(formState) !== JSON.stringify(productToForm(selectedProduct));
@@ -379,8 +384,27 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const submitProduct = () => {
     if (!formState.id) return;
 
+    const conditionValidationError = validateAdminProductCondition({
+      condition: formState.condition,
+      conditionNote: formState.conditionNote,
+      hasRealProductPhotos: formState.hasRealProductPhotos,
+      imageCount: formState.images.length + (imageFiles.some(Boolean) ? 1 : 0),
+      batteryHealth: formState.batteryHealth,
+      title: formState.title,
+      brand: formState.brand,
+      model: formState.model,
+      locale,
+    });
+    if (conditionValidationError) {
+      setConditionError(conditionValidationError);
+      setSaveError("");
+      setSaveMessage("");
+      return;
+    }
+
     startSaving(async () => {
       setSaveError("");
+      setConditionError("");
       setSaveMessage("");
 
       try {
@@ -794,6 +818,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                         value={formState.condition}
                         onChange={(event) => {
                           const nextCondition = event.target.value;
+                          setConditionError("");
                           setFormState((prev) => ({
                             ...prev,
                             condition: nextCondition,
@@ -815,11 +840,12 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     </label>
                     {formState.condition !== "new" ? (
                       <div className="mt-4 grid gap-3 md:grid-cols-2">
-                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zustandshinweis" : "Condition note"}</span><input value={formState.conditionNote} onChange={(event) => setFormState((prev) => ({ ...prev, conditionNote: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                        {formState.condition === "used" ? <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Batteriekapazität (iPhone)" : "Battery health (iPhone)"}</span><input type="number" min="1" max="100" value={formState.batteryHealth} onChange={(event) => setFormState((prev) => ({ ...prev, batteryHealth: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label> : null}
-                        <label className="flex items-center gap-2 text-sm text-foreground md:col-span-2"><input type="checkbox" checked={formState.hasRealProductPhotos} onChange={(event) => setFormState((prev) => ({ ...prev, hasRealProductPhotos: event.target.checked }))} />{locale === "de" ? "Echte Fotos dieses Geräts hochgeladen" : "Real photos of this exact device uploaded"}</label>
+                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zustandshinweis *" : "Condition note *"}</span><input required data-condition-field="true" value={formState.conditionNote} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, conditionNote: event.target.value })); }} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                        {isUsedIphone ? <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Batteriekapazität (iPhone) *" : "Battery health (iPhone) *"}</span><input required data-condition-field="true" type="number" min="1" max="100" value={formState.batteryHealth} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, batteryHealth: event.target.value })); }} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label> : null}
+                        <label className="flex items-center gap-2 text-sm text-foreground md:col-span-2"><input required data-condition-field="true" type="checkbox" checked={formState.hasRealProductPhotos} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, hasRealProductPhotos: event.target.checked })); }} />{locale === "de" ? "Echte Fotos dieses Geräts hochgeladen *" : "Real photos of this exact device uploaded *"}</label>
                       </div>
                     ) : null}
+                    {conditionError ? <p className="mt-3 text-sm text-red-300" role="alert">{conditionError}</p> : null}
                   </div>
 
                   <div id="content" className="scroll-mt-40 grid gap-4 xl:grid-cols-2">
@@ -1136,12 +1162,12 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
 
                   <div id="images" className="scroll-mt-40 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Bildergalerie" : "Image gallery"}</span>
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? `Bildergalerie${formState.condition !== "new" ? " *" : ""}` : `Image gallery${formState.condition !== "new" ? " *" : ""}`}</span>
                     </div>
                     <p className="text-xs text-muted">
                       {locale === "de"
-                        ? "Bis zu 4 optionale Bilder. Beste Reihenfolge: Front, Ruckseite, Seite, Extra."
-                        : "Up to 4 optional images. Recommended order: Front, Back, Side, Extra."}
+                        ? formState.condition !== "new" ? "Mindestens ein Bild ist für Open-Box- und Gebrauchtprodukte erforderlich. Beste Reihenfolge: Front, Ruckseite, Seite, Extra." : "Bis zu 4 optionale Bilder. Beste Reihenfolge: Front, Ruckseite, Seite, Extra."
+                        : formState.condition !== "new" ? "At least one image is required for open-box and used products. Recommended order: Front, Back, Side, Extra." : "Up to 4 optional images. Recommended order: Front, Back, Side, Extra."}
                     </p>
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                       {slotLabels.map((slotLabel, index) => {
@@ -1170,6 +1196,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                             </div>
                             <input
                               type="file"
+                              required={formState.condition !== "new" && index === 0 && formState.images.length === 0 && !imageFiles.some(Boolean)}
                               accept="image/png,image/jpeg,image/webp,image/svg+xml"
                               onChange={(event) => {
                                 const nextFile = event.target.files?.[0] ?? null;
