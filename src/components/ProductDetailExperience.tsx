@@ -86,11 +86,13 @@ export default function ProductDetailExperience({ locale, product }: Props) {
     : (activeImage
       ? [activeImage, ...product.images.filter((image) => image !== activeImage)]
       : product.images);
+  const [quantity, setQuantity] = useState(1);
+  const maxQuantity = Math.max(1, Math.min(10, activeStock ?? 10));
   const cartItem = {
     productId: product.id,
     variantColor: selectedVariant?.color ?? null,
     variantStorage: selectedVariant?.storage ?? null,
-    quantity: 1,
+    quantity: Math.min(quantity, maxQuantity),
   };
   const isOutOfStock = activeStock === 0;
   const handleAddToCart = () => {
@@ -401,9 +403,42 @@ export default function ProductDetailExperience({ locale, product }: Props) {
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">SKU</p>
               <p className="mt-2 break-all text-sm font-medium text-foreground">{activeSku || "—"}</p>
             </div>
+            {product.mpn ? (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">MPN</p>
+                <p className="mt-2 break-all text-sm font-medium text-foreground">{product.mpn}</p>
+              </div>
+            ) : null}
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          <div className="mt-8 flex items-center gap-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
+              {locale === "de" ? "Menge" : "Quantity"}
+            </p>
+            <div className="flex items-center rounded-xl border border-border/60 bg-surface/50">
+              <button
+                type="button"
+                aria-label={locale === "de" ? "Menge verringern" : "Decrease quantity"}
+                className="px-3.5 py-2 text-lg text-muted transition hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={quantity <= 1 || isOutOfStock}
+                onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+              >
+                −
+              </button>
+              <span className="min-w-8 text-center text-sm font-semibold text-foreground">{Math.min(quantity, maxQuantity)}</span>
+              <button
+                type="button"
+                aria-label={locale === "de" ? "Menge erhöhen" : "Increase quantity"}
+                className="px-3.5 py-2 text-lg text-muted transition hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={quantity >= maxQuantity || isOutOfStock}
+                onClick={() => setQuantity((prev) => Math.min(maxQuantity, prev + 1))}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3">
             <button
               type="button"
               className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-50"
@@ -436,39 +471,31 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             >
               <span>{locale === "de" ? "Direkt kaufen" : "Buy now"}</span>
             </Link>
-            <button
-              type="button"
-              className="btn-secondary justify-center"
-              onClick={() => {
-                window.apfelTrack?.("generate_lead", {
-                  item_id: product.id,
-                  item_name: product.title,
-                  source: "product_detail",
-                });
-                const query = new URLSearchParams({ device: product.title });
-                if (selectedVariant) {
-                  query.set("variant", `${selectedVariant.color} ${selectedVariant.storage}`);
-                }
-                window.location.assign(`/${locale}/contact?${query.toString()}`);
-              }}
-            >
-              <span>{locale === "de" ? "Jetzt anfragen" : "Send inquiry"}</span>
-            </button>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-secondary justify-center"
-              onClick={() => window.apfelTrack?.("whatsapp_click", {
-                source: "product_detail",
-                item_id: product.id,
-                item_name: product.title,
-                product_url: productUrl,
-              })}
-            >
-              <span>WhatsApp</span>
-            </a>
           </div>
+
+          <div className="mt-4 grid gap-1.5 text-xs text-muted">
+            <p>
+              {locale === "de"
+                ? "✓ Abholung: heute abholbereit in Hamburg-Wilhelmsburg (Mo–Sa 09:30–20:00)"
+                : "✓ Pickup: ready today in Hamburg-Wilhelmsburg (Mon–Sat 9:30–20:00)"}
+            </p>
+            <p>
+              {locale === "de"
+                ? "✓ Versand: Zustellung in 1–3 Werktagen innerhalb Deutschlands"
+                : "✓ Shipping: delivered within 1–3 business days in Germany"}
+            </p>
+          </div>
+
+          {product.featureBullets.length > 0 ? (
+            <ul className="mt-5 grid gap-2 text-sm text-foreground">
+              {product.featureBullets.slice(0, 5).map((bullet) => (
+                <li key={bullet} className="flex items-start gap-2.5">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
           {added ? (
             <p className="mt-4 text-center text-sm font-medium text-gold">
@@ -495,12 +522,49 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             </p>
           </div>
 
-          {product.condition !== "new" ? (
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-6 text-sm text-muted">
+            <button
+              type="button"
+              className="underline underline-offset-4 transition hover:text-gold"
+              onClick={() => {
+                window.apfelTrack?.("generate_lead", {
+                  item_id: product.id,
+                  item_name: product.title,
+                  source: "product_detail",
+                });
+                const query = new URLSearchParams({ device: product.title });
+                if (selectedVariant) {
+                  query.set("variant", `${selectedVariant.color} ${selectedVariant.storage}`);
+                }
+                window.location.assign(`/${locale}/contact?${query.toString()}`);
+              }}
+            >
+              {locale === "de" ? "Jetzt anfragen" : "Send inquiry"}
+            </button>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-4 transition hover:text-gold"
+              onClick={() => window.apfelTrack?.("whatsapp_click", {
+                source: "product_detail",
+                item_id: product.id,
+                item_name: product.title,
+                product_url: productUrl,
+              })}
+            >
+              WhatsApp
+            </a>
+          </div>
+
+          {product.condition !== "new" || product.conditionNote || product.batteryHealth ? (
             <div className="mt-4 rounded-3xl border border-emerald-500/25 bg-emerald-500/5 p-5 text-sm text-muted">
               <p className="font-semibold text-foreground">
                 {product.condition === "used"
                   ? locale === "de" ? "Gebraucht A+" : "Used A+"
-                  : "Open-Box"}
+                  : product.condition === "open_box"
+                    ? "Open-Box"
+                    : locale === "de" ? "Neu & versiegelt" : "New & sealed"}
               </p>
               <p className="mt-2">{product.conditionNote || (locale === "de" ? "Zustand und Lieferumfang sind in der Produktbeschreibung dokumentiert." : "Condition and included accessories are documented in the product description.")}</p>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-foreground">
@@ -521,26 +585,16 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             </Link>
           </p>
 
-          {product.featureBullets.length > 0 ? (
-            <div className="mt-8">
-              <h2 className="text-lg font-semibold text-foreground">
-                {locale === "de" ? "Highlights" : "Highlights"}
-              </h2>
-              <ul className="mt-4 grid gap-3">
-                {product.featureBullets.map((bullet) => (
-                  <li key={bullet} className="flex items-start gap-3 rounded-2xl border border-border/60 bg-surface/50 px-4 py-3 text-sm text-foreground">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
-                    <span>{bullet}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
         </div>
       </div>
     </div>
     <div className="fixed inset-x-0 bottom-0 z-[90] border-t border-border/60 bg-background/95 p-3 shadow-2xl backdrop-blur md:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
+      <div className="mx-auto max-w-md">
+        <div className="mb-2 flex items-baseline justify-between px-1">
+          <span className="text-lg font-bold text-foreground">{formatMoney(locale, activePrice)}</span>
+          {activeDiscount ? <span className="text-xs font-semibold text-red-500">−{activeDiscount}%</span> : null}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
           className="btn-secondary justify-center disabled:cursor-not-allowed disabled:opacity-50"
@@ -578,6 +632,7 @@ export default function ProductDetailExperience({ locale, product }: Props) {
               ? "Kaufen"
               : "Buy"}
         </Link>
+        </div>
       </div>
     </div>
     </>

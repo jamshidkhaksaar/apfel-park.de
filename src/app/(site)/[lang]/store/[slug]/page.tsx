@@ -78,7 +78,8 @@ export const generateMetadata = async ({
   const variantLabel = productVariantLabel(product.title, product.subtitle);
   const reference = productReference(product.sku, product.slug);
   const titlePrefix = locale === "en" ? "Buy " : "";
-  const titleSuffix = ` · ${reference}`;
+  // The SKU fragment (" · 7PM256") wasted title budget and meant nothing to searchers.
+  const titleSuffix = "";
   const seoProductName = product.title.replace(/^Apple (?=iPhone\b)/i, "");
   const descriptiveName = [product.title, variantLabel].filter(Boolean).join(" ");
   const descriptiveTitle = [seoProductName, variantLabel].filter(Boolean).join(" ");
@@ -92,13 +93,22 @@ export const generateMetadata = async ({
     155,
   );
 
-  return createMetadata(
+  const metadata = createMetadata(
     lang,
     seoTitle,
     seoDescription,
     `/store/${slug}`,
     product.image,
   );
+  return {
+    ...metadata,
+    other: {
+      "og:type": "product",
+      "product:price:amount": product.price.toFixed(2),
+      "product:price:currency": "EUR",
+      "og:availability": (product.stock ?? 0) > 0 ? "instock" : "out of stock",
+    },
+  };
 };
 
 export default async function ProductDetailPage({

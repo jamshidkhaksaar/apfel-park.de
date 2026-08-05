@@ -1,4 +1,4 @@
-import { siMastercard, siStripe, siVisa } from "simple-icons";
+import { siMastercard, siPaypal, siStripe, siVisa } from "simple-icons";
 
 type PaymentBrandIconsProps = {
   className?: string;
@@ -9,6 +9,7 @@ const paymentBrands = [
   { icon: siStripe, label: "Stripe" },
   { icon: siVisa, label: "Visa" },
   { icon: siMastercard, label: "Mastercard" },
+  { icon: siPaypal, label: "PayPal" },
 ] as const;
 
 export default function PaymentBrandIcons({
