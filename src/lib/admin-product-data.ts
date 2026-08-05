@@ -13,6 +13,7 @@ export type ProductRow = {
   brand: string | null;
   model: string | null;
   sku: string | null;
+  mpn: string | null;
   price: number | string;
   compare_at_price: number | string | null;
   stock: number | null;
@@ -79,6 +80,7 @@ export const mapAdminProduct = (row: ProductRow, featuredIds: string[] = []): Ad
   brand: row.brand ?? "",
   model: row.model ?? "",
   sku: row.sku ?? "",
+  mpn: row.mpn ?? "",
   price: toNumber(row.price),
   compareAtPrice: row.compare_at_price == null ? null : toNumber(row.compare_at_price),
   stock: row.stock ?? 0,

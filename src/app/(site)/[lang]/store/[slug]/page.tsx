@@ -124,7 +124,7 @@ export default async function ProductDetailPage({
     description: product.description || product.subtitle,
     image: product.images.map((image) => image.startsWith("http") ? image : `${siteInfo.url}${image}`),
     sku: product.sku,
-    mpn: product.sku || product.model,
+    mpn: product.mpn,
     ...(gtinDigits?.length === 8 ? { gtin8: gtinDigits } : {}),
     ...(gtinDigits?.length === 12 ? { gtin12: gtinDigits } : {}),
     ...(gtinDigits?.length === 13 ? { gtin13: gtinDigits } : {}),

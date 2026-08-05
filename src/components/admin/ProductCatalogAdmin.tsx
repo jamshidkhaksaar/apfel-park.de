@@ -19,6 +19,7 @@ type ProductVariant = {
   price?: number;
   compareAtPrice?: number;
   stock?: number;
+  mpn?: string;
   sku?: string;
   imageIndex?: number;
   images?: string[];
@@ -37,6 +38,7 @@ export type AdminProductRecord = {
   conditionNote?: string;
   brand: string;
   model: string;
+  mpn: string;
   sku: string;
   price: number;
   compareAtPrice: number | null;
@@ -87,6 +89,7 @@ type ProductFormState = {
   conditionNote: string;
   brand: string;
   model: string;
+  mpn: string;
   sku: string;
   price: string;
   compareAtPrice: string;
@@ -187,6 +190,7 @@ const productToForm = (product: AdminProductRecord): ProductFormState => ({
   brand: product.brand,
   model: product.model,
   sku: product.sku,
+  mpn: product.mpn ?? "",
   price: String(product.price),
   compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : "",
   stock: String(product.stock),
@@ -242,6 +246,7 @@ const createEmptyVariant = (): ProductVariant => ({
   compareAtPrice: undefined,
   stock: undefined,
   sku: "",
+  mpn: "",
   imageIndex: undefined,
   isDefault: false,
 });
@@ -302,6 +307,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     brand: "",
     model: "",
     sku: "",
+    mpn: "",
     price: "",
     compareAtPrice: "",
     stock: "0",
@@ -460,6 +466,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
             brand: formState.brand,
             model: formState.model,
             sku: formState.sku,
+            mpn: formState.mpn,
             price: Number(formState.price),
             compareAtPrice: formState.compareAtPrice ? Number(formState.compareAtPrice) : null,
             stock: Number(formState.stock),
@@ -493,6 +500,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           brand: formState.brand,
           model: formState.model,
           sku: formState.sku,
+          mpn: formState.mpn,
           price: Number(formState.price),
           compareAtPrice: formState.compareAtPrice ? Number(formState.compareAtPrice) : null,
           stock: Number(formState.stock),
@@ -778,6 +786,10 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     <label className="space-y-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">SKU</span>
                       <input value={formState.sku} onChange={(event) => setFormState((prev) => ({ ...prev, sku: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">MPN</span>
+                      <input value={formState.mpn} onChange={(event) => setFormState((prev) => ({ ...prev, mpn: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
                     </label>
                   </div>
 

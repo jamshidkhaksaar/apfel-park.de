@@ -40,6 +40,7 @@ export type Product = {
   brand?: string;
   model?: string;
   sku?: string;
+  mpn?: string;
   gtin?: string;
   stock?: number;
   slug: string;
@@ -81,6 +82,7 @@ type DbProduct = {
   brand: string | null;
   model: string | null;
   sku: string | null;
+  mpn?: string | null;
   gtin?: string | null;
   stock: number | null;
   slug: string | null;
@@ -300,6 +302,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     brand: row.brand ?? undefined,
     model: row.model ?? undefined,
     sku: row.sku ?? undefined,
+    mpn: row.mpn?.trim() || undefined,
     gtin: row.gtin?.trim() || undefined,
     stock: row.stock ?? undefined,
     slug: row.slug,
@@ -313,7 +316,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
 };
 
 const baseSelect =
-  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at";
+  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at";
 
 /**
  * Fetches products from the database.

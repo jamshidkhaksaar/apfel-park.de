@@ -43,7 +43,9 @@ const itemXml = (product: Product): string => {
     product.compareAtPrice && product.compareAtPrice > product.price,
   );
   const regularPrice = hasSalePrice ? product.compareAtPrice! : product.price;
-  const identifier = product.sku?.trim() || product.model?.trim();
+  // Only a real manufacturer part number belongs here. Our own stock codes
+  // used to be published as <g:mpn>, which asserted identifiers that do not exist.
+  const identifier = product.mpn?.trim();
   const gtin = product.gtin?.replace(/\D/g, '');
   const additionalImages = product.images
     .slice(1, 11)
