@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import AdminFilterForm from "@/components/admin/AdminFilterForm";
 import AdminShell from "@/components/admin/AdminShell";
 import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
@@ -58,30 +59,47 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const category = valueOf(params.category);
   const condition = valueOf(params.condition);
   const subcategory = valueOf(params.subcategory);
+  const brand = valueOf(params.brand).toLowerCase();
   const status = valueOf(params.status);
   const sort = valueOf(params.sort) || "newest";
   const requestedPage = Math.max(1, Number.parseInt(valueOf(params.page) || "1", 10) || 1);
 
-  const clauses: string[] = [];
-  const values: unknown[] = [];
-  const add = (sql: string, value: unknown) => {
-    values.push(value);
-    clauses.push(sql.replace("?", `$${values.length}`));
+  const CATEGORIES = ["smartphones", "tablets", "accessories", "consoles", "laptops"];
+  const SUBCATEGORIES = [...ACCESSORY_SUBCATEGORIES, ...CATEGORIES] as readonly string[];
+
+  // Each dropdown's options are counted with its own filter removed, so the
+  // numbers show what picking that option would actually return rather than
+  // what the current page already shows.
+  const buildWhere = (exclude?: "brand" | "subcategory") => {
+    const clauses: string[] = [];
+    const values: unknown[] = [];
+    const p = (value: unknown) => {
+      values.push(value);
+      return `$${values.length}`;
+    };
+
+    if (q) {
+      const i = p(`%${q}%`);
+      clauses.push(`(title ILIKE ${i} OR brand ILIKE ${i} OR model ILIKE ${i} OR sku ILIKE ${i})`);
+    }
+    if (CATEGORIES.includes(category)) clauses.push(`category = ${p(category)}`);
+    if (["new", "open_box", "used"].includes(condition)) clauses.push(`condition = ${p(condition)}`);
+    if (exclude !== "subcategory" && SUBCATEGORIES.includes(subcategory)) {
+      clauses.push(`subcategory = ${p(subcategory)}`);
+    }
+    // Matched case-insensitively: the catalog holds both "Guess" and "GUESS".
+    if (exclude !== "brand" && brand) clauses.push(`lower(brand) = ${p(brand)}`);
+    if (status === "active") clauses.push("is_active = true");
+    if (status === "inactive") clauses.push("is_active = false");
+    if (status === "out-of-stock") clauses.push("stock <= 0");
+
+    return { where: clauses.length ? `WHERE ${clauses.join(" AND ")}` : "", values };
   };
 
-  if (q) {
-    values.push(`%${q}%`);
-    const index = values.length;
-    clauses.push(`(title ILIKE $${index} OR brand ILIKE $${index} OR model ILIKE $${index} OR sku ILIKE $${index})`);
-  }
-  if (["smartphones", "tablets", "accessories", "consoles", "laptops"].includes(category)) add("category = ?", category);
-  if (["new", "open_box", "used"].includes(condition)) add("condition = ?", condition);
-  if ((ACCESSORY_SUBCATEGORIES as readonly string[]).includes(subcategory)) add("subcategory = ?", subcategory);
-  if (status === "active") clauses.push("is_active = true");
-  if (status === "inactive") clauses.push("is_active = false");
-  if (status === "out-of-stock") clauses.push("stock <= 0");
+  const { where, values } = buildWhere();
+  const brandFacet = buildWhere("brand");
+  const subcategoryFacet = buildWhere("subcategory");
 
-  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const orderBy: Record<string, string> = {
     newest: "updated_at DESC",
     oldest: "created_at ASC",
@@ -89,7 +107,21 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     "price-desc": "price DESC",
     title: "title ASC",
   };
-  const countResult = await query(`SELECT COUNT(*)::int AS total FROM products ${where}`, values);
+  const [countResult, brandResult, subcategoryResult] = await Promise.all([
+    query(`SELECT COUNT(*)::int AS total FROM products ${where}`, values),
+    query(
+      `SELECT min(brand) AS label, lower(brand) AS value, COUNT(*)::int AS n FROM products ${brandFacet.where}${brandFacet.where ? " AND" : " WHERE"} brand IS NOT NULL AND brand <> ''
+       GROUP BY lower(brand) ORDER BY n DESC, label ASC`,
+      brandFacet.values,
+    ),
+    query(
+      `SELECT subcategory AS value, COUNT(*)::int AS n FROM products ${subcategoryFacet.where}${subcategoryFacet.where ? " AND" : " WHERE"} subcategory IS NOT NULL
+       GROUP BY subcategory ORDER BY n DESC`,
+      subcategoryFacet.values,
+    ),
+  ]);
+  const brandOptions = brandResult.rows as { label: string; value: string; n: number }[];
+  const subcategoryOptions = subcategoryResult.rows as { value: string; n: number }[];
   const total = (countResult.rows[0] as { total?: number } | undefined)?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(requestedPage, pages);
@@ -106,6 +138,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     if (category) next.set("category", category);
     if (condition) next.set("condition", condition);
     if (subcategory) next.set("subcategory", subcategory);
+    if (brand) next.set("brand", brand);
     if (status) next.set("status", status);
     if (sort) next.set("sort", sort);
     next.set("page", String(nextPage));
@@ -127,15 +160,16 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           </div>
         </header>
 
-        <form className="glass-panel grid gap-3 rounded-2xl p-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_repeat(5,minmax(130px,auto))_auto]" action="/admin/products">
+        <AdminFilterForm className="glass-panel grid gap-3 rounded-2xl p-4 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(125px,auto))_auto]" action="/admin/products">
           <input name="q" defaultValue={q} placeholder={locale === "de" ? "Produkt, Modell oder SKU suchen" : "Search product, model, or SKU"} className="rounded-xl border border-border/60 bg-surface/70 px-3.5 py-2.5 text-sm text-foreground" />
+          <select name="brand" defaultValue={brand} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Marken" : "All brands"}</option>{brandOptions.map((item) => (<option key={item.value} value={item.value}>{item.label} ({item.n})</option>))}</select>
           <select name="category" defaultValue={category} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Kategorien" : "All categories"}</option><option value="smartphones">Smartphones</option><option value="tablets">Tablets</option><option value="accessories">Accessories</option><option value="laptops">Laptops</option><option value="consoles">Consoles</option></select>
-          <select name="subcategory" defaultValue={subcategory} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Unterkategorien" : "All subcategories"}</option>{ACCESSORY_SUBCATEGORIES.map((slug) => (<option key={slug} value={slug}>{subcategoryLabel(slug, locale)}</option>))}</select>
+          <select name="subcategory" defaultValue={subcategory} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Unterkategorien" : "All subcategories"}</option>{subcategoryOptions.map((item) => (<option key={item.value} value={item.value}>{subcategoryLabel(item.value, locale)} ({item.n})</option>))}</select>
           <select name="condition" defaultValue={condition} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Zustände" : "All conditions"}</option><option value="new">{locale === "de" ? "Neu" : "New"}</option><option value="open_box">Open-box</option><option value="used">{locale === "de" ? "Gebraucht" : "Used"}</option></select>
           <select name="status" defaultValue={status} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Status" : "All statuses"}</option><option value="active">{locale === "de" ? "Aktiv" : "Active"}</option><option value="inactive">{locale === "de" ? "Entwurf" : "Draft"}</option><option value="out-of-stock">{locale === "de" ? "Ausverkauft" : "Out of stock"}</option></select>
           <select name="sort" defaultValue={sort} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="newest">{locale === "de" ? "Zuletzt geändert" : "Recently updated"}</option><option value="oldest">{locale === "de" ? "Älteste" : "Oldest"}</option><option value="title">A–Z</option><option value="price-asc">{locale === "de" ? "Preis aufsteigend" : "Price low-high"}</option><option value="price-desc">{locale === "de" ? "Preis absteigend" : "Price high-low"}</option></select>
           <button className="rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background">{locale === "de" ? "Anwenden" : "Apply"}</button>
-        </form>
+        </AdminFilterForm>
 
         <section className="glass-panel overflow-hidden rounded-2xl">
           {products.length === 0 ? (
