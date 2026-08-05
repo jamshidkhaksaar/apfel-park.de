@@ -1,4 +1,5 @@
-import { createDbClient } from "@/lib/db";
+import { createDbClient, query } from "@/lib/db";
+import { deviceModelNeedles } from "@/lib/device-model";
 import type { Locale } from "@/lib/i18n";
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
@@ -30,6 +31,7 @@ export type Product = {
   price: number;
   compareAtPrice?: number;
   category: ProductCategory;
+  subcategory?: string;
   condition: ProductCondition;
   isOpenBox: boolean;
   batteryHealth?: number;
@@ -148,6 +150,7 @@ type DbProduct = {
   safety_documents?: string[] | null;
   eprel_id?: string | null;
   energy_label?: unknown;
+  subcategory?: string | null;
   stock: number | null;
   slug: string | null;
   images: string[] | null;
@@ -383,6 +386,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     })(),
     eprelId: row.eprel_id?.trim() || undefined,
     energyLabel: toEnergyLabel(row.energy_label),
+    subcategory: row.subcategory ?? undefined,
     discountPercentage,
     hasDiscount: Boolean(discountPercentage),
     createdAt: row.created_at ?? undefined,
@@ -390,7 +394,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
 };
 
 const baseSelect =
-  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label";
+  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,subcategory";
 
 /**
  * Fetches products from the database.
@@ -862,8 +866,111 @@ export async function getProductBySlug(slug: string, locale: Locale = "de"): Pro
 }
 
 export async function getRelatedProducts(product: Product, limit = 4, locale: Locale = "de"): Promise<Product[]> {
-  const products = await getProducts(product.category, undefined, locale);
-  return products.filter((candidate) => candidate.id !== product.id).slice(0, limit);
+  // A phone page should sell its accessories (2,820 of 2,902 products are
+  // accessories, subcategorised); an accessory page should offer alternatives
+  // for the same device. The old implementation returned the first N products
+  // of the same category, which put the same four featured accessories on
+  // every page and Samsung phones on Apple pages.
+  const isDevice = product.category === "smartphones" || product.category === "tablets";
+  const needles = deviceModelNeedles(`${product.brand ?? ""} ${product.model ?? ""} ${product.title}`);
+  const collected: Product[] = [];
+  const seen = new Set<string>([product.id]);
+
+  const push = (rows: unknown[] | null | undefined, max: number) => {
+    for (const row of rows ?? []) {
+      if (collected.length >= max) break;
+      const mapped = mapProduct(row as DbProduct, locale);
+      if (!mapped || seen.has(mapped.id)) continue;
+      seen.add(mapped.id);
+      collected.push(mapped);
+    }
+  };
+
+  try {
+    if (isDevice) {
+      if (needles.length > 0) {
+        const likeClauses = needles.map((_, index) => `title ILIKE $${index + 1}`).join(" OR ");
+        const params: unknown[] = needles.map((needle) => `%${needle}%`);
+        // DISTINCT ON (subcategory) gives one case, one glass, one cable --
+        // variety instead of four near-identical cases.
+        const accessories = await query(
+          `SELECT * FROM (
+             SELECT DISTINCT ON (subcategory) ${baseSelect}
+             FROM products
+             WHERE is_active = true AND category = 'accessories' AND (${likeClauses})
+             ORDER BY subcategory, (stock > 0) DESC, created_at DESC
+           ) matches`,
+          params,
+        );
+        const priority = ["cases-hard", "cases-silicone", "cases-wallet", "cases-clear", "cases-other", "screen-protection", "charging"];
+        const rank = (row: DbProduct) => {
+          const index = priority.indexOf(row.subcategory ?? "");
+          return index === -1 ? priority.length : index;
+        };
+        const rows = (accessories.rows as DbProduct[]).slice().sort((a, b) => rank(a) - rank(b));
+        push(rows, Math.max(limit - 1, 0));
+      }
+      if (collected.length < limit && product.brand) {
+        const siblings = await query(
+          `SELECT ${baseSelect} FROM products
+           WHERE is_active = true AND stock > 0 AND category = $1 AND lower(brand) = lower($2) AND id <> $3
+           ORDER BY abs(price - $4) ASC
+           LIMIT $5`,
+          [product.category, product.brand, product.id, product.price, limit - collected.length],
+        );
+        push(siblings.rows as unknown[], limit);
+      }
+    } else {
+      const params: unknown[] = [product.id];
+      const needleClause =
+        needles.length > 0
+          ? needles
+              .map((needle) => {
+                params.push(`%${needle}%`);
+                return `title ILIKE $${params.length}`;
+              })
+              .join(" OR ")
+          : "false";
+      params.push(product.subcategory ?? "");
+      const subcategoryParam = `$${params.length}`;
+      params.push((product.brand ?? "").toLowerCase());
+      const brandParam = `$${params.length}`;
+      params.push(limit);
+      const alternatives = await query(
+        `SELECT ${baseSelect},
+                (CASE WHEN (${needleClause}) THEN 3 ELSE 0 END +
+                 CASE WHEN subcategory = ${subcategoryParam} THEN 2 ELSE 0 END +
+                 CASE WHEN lower(brand) = ${brandParam} THEN 1 ELSE 0 END) AS relevance
+         FROM products
+         WHERE is_active = true AND id <> $1
+           AND (subcategory = ${subcategoryParam} OR (${needleClause}) OR lower(brand) = ${brandParam})
+         ORDER BY relevance DESC, (stock > 0) DESC, created_at DESC
+         LIMIT $${params.length}`,
+        params,
+      );
+      push(alternatives.rows as unknown[], limit);
+    }
+  } catch (error) {
+    console.error("getRelatedProducts query failed:", error);
+  }
+
+  if (collected.length < limit) {
+    // Two passes: in-stock products first, then on-request ones. Only ~160 of
+    // 2,902 products carry stock, so a hard stock filter would leave most
+    // pages with an empty recommendation strip.
+    const fallback = await getProducts(product.category, undefined, locale);
+    for (const requireStock of [true, false]) {
+      for (const item of fallback) {
+        if (collected.length >= limit) break;
+        if (seen.has(item.id)) continue;
+        if (requireStock && (item.stock ?? 0) <= 0) continue;
+        seen.add(item.id);
+        collected.push(item);
+      }
+    }
+  }
+
+  return collected.slice(0, limit);
 }
 
 export async function getDiscountedProducts(limit = 6, locale: Locale = "de"): Promise<Product[]> {

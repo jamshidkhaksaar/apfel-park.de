@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { createMetadata } from "@/lib/metadata";
 import { getProductBySlug, getRelatedProducts } from "@/lib/products";
+import { subcategoryLabel } from "@/lib/product-subcategory";
 import { type Locale } from "@/lib/i18n";
 import {
   merchantReturnPolicy,
@@ -227,6 +228,19 @@ export default async function ProductDetailPage({
                   </div>
                   <div className="p-5">
                     <p className="text-sm font-semibold text-foreground">{related.title}</p>
+                    {(() => {
+                      const tags = [
+                        related.subcategory && related.subcategory !== related.category
+                          ? subcategoryLabel(related.subcategory, locale)
+                          : null,
+                        related.condition !== "new"
+                          ? related.condition === "used"
+                            ? locale === "de" ? "Gebraucht A+" : "Used A+"
+                            : "Open-Box"
+                          : null,
+                      ].filter(Boolean);
+                      return tags.length > 0 ? <p className="mt-1 text-xs text-muted">{tags.join(" · ")}</p> : null;
+                    })()}
                     <p className="mt-2 text-sm text-muted">{formatMoney(locale, related.price)}</p>
                   </div>
                 </Link>
