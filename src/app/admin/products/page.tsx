@@ -4,6 +4,7 @@ import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
 import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
+import { ACCESSORY_SUBCATEGORIES, subcategoryLabel } from "@/lib/product-subcategory";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ type CatalogRow = {
   slug: string | null;
   is_active: boolean | null;
   images: string[] | null;
+  subcategory: string | null;
   updated_at: string | null;
   edited_minutes_ago: number | null;
 };
@@ -55,6 +57,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const q = valueOf(params.q).trim().slice(0, 100);
   const category = valueOf(params.category);
   const condition = valueOf(params.condition);
+  const subcategory = valueOf(params.subcategory);
   const status = valueOf(params.status);
   const sort = valueOf(params.sort) || "newest";
   const requestedPage = Math.max(1, Number.parseInt(valueOf(params.page) || "1", 10) || 1);
@@ -73,6 +76,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   }
   if (["smartphones", "tablets", "accessories", "consoles", "laptops"].includes(category)) add("category = ?", category);
   if (["new", "open_box", "used"].includes(condition)) add("condition = ?", condition);
+  if ((ACCESSORY_SUBCATEGORIES as readonly string[]).includes(subcategory)) add("subcategory = ?", subcategory);
   if (status === "active") clauses.push("is_active = true");
   if (status === "inactive") clauses.push("is_active = false");
   if (status === "out-of-stock") clauses.push("stock <= 0");
@@ -91,7 +95,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const page = Math.min(requestedPage, pages);
   values.push(PAGE_SIZE, (page - 1) * PAGE_SIZE);
   const productsResult = await query(
-    `SELECT id,title,brand,model,sku,category,condition,price,stock,slug,is_active,images,updated_at,(extract(epoch from (now() - updated_at)) / 60)::int AS edited_minutes_ago
+    `SELECT id,title,brand,model,sku,category,condition,price,stock,slug,is_active,images,subcategory,updated_at,(extract(epoch from (now() - updated_at)) / 60)::int AS edited_minutes_ago
      FROM products ${where} ORDER BY ${orderBy[sort] ?? orderBy.newest} LIMIT $${values.length - 1} OFFSET $${values.length}`,
     values,
   );
@@ -101,6 +105,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     if (q) next.set("q", q);
     if (category) next.set("category", category);
     if (condition) next.set("condition", condition);
+    if (subcategory) next.set("subcategory", subcategory);
     if (status) next.set("status", status);
     if (sort) next.set("sort", sort);
     next.set("page", String(nextPage));
@@ -122,9 +127,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           </div>
         </header>
 
-        <form className="glass-panel grid gap-3 rounded-2xl p-4 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_repeat(4,minmax(140px,auto))_auto]" action="/admin/products">
+        <form className="glass-panel grid gap-3 rounded-2xl p-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_repeat(5,minmax(130px,auto))_auto]" action="/admin/products">
           <input name="q" defaultValue={q} placeholder={locale === "de" ? "Produkt, Modell oder SKU suchen" : "Search product, model, or SKU"} className="rounded-xl border border-border/60 bg-surface/70 px-3.5 py-2.5 text-sm text-foreground" />
           <select name="category" defaultValue={category} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Kategorien" : "All categories"}</option><option value="smartphones">Smartphones</option><option value="tablets">Tablets</option><option value="accessories">Accessories</option><option value="laptops">Laptops</option><option value="consoles">Consoles</option></select>
+          <select name="subcategory" defaultValue={subcategory} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Unterkategorien" : "All subcategories"}</option>{ACCESSORY_SUBCATEGORIES.map((slug) => (<option key={slug} value={slug}>{subcategoryLabel(slug, locale)}</option>))}</select>
           <select name="condition" defaultValue={condition} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Zustände" : "All conditions"}</option><option value="new">{locale === "de" ? "Neu" : "New"}</option><option value="open_box">Open-box</option><option value="used">{locale === "de" ? "Gebraucht" : "Used"}</option></select>
           <select name="status" defaultValue={status} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Status" : "All statuses"}</option><option value="active">{locale === "de" ? "Aktiv" : "Active"}</option><option value="inactive">{locale === "de" ? "Entwurf" : "Draft"}</option><option value="out-of-stock">{locale === "de" ? "Ausverkauft" : "Out of stock"}</option></select>
           <select name="sort" defaultValue={sort} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="newest">{locale === "de" ? "Zuletzt geändert" : "Recently updated"}</option><option value="oldest">{locale === "de" ? "Älteste" : "Oldest"}</option><option value="title">A–Z</option><option value="price-asc">{locale === "de" ? "Preis aufsteigend" : "Price low-high"}</option><option value="price-desc">{locale === "de" ? "Preis absteigend" : "Price high-low"}</option></select>
@@ -144,7 +150,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                     return (
                     <tr key={product.id} className={`group transition hover:bg-gold/[0.04] ${justEdited ? "bg-gold/[0.05]" : ""}`}>
                       <td className="px-4 py-3"><Link href={`/admin/products/${product.id}`} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex items-center gap-2"><span className="truncate text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block truncate text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span></span></Link></td>
-                      <td className="px-4 py-3 text-sm text-muted">{product.category}</td><td className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? (locale === "de" ? "Gebraucht" : "Used") : (locale === "de" ? "Neu" : "New")}</td>
+                      <td className="px-4 py-3 text-sm text-muted">{product.category}{product.subcategory && product.subcategory !== product.category ? <span className="mt-0.5 block text-xs text-muted/70">{subcategoryLabel(product.subcategory, locale)}</span> : null}</td><td className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? (locale === "de" ? "Gebraucht" : "Used") : (locale === "de" ? "Neu" : "New")}</td>
                       <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ${product.is_active ? "bg-emerald-500/10 text-emerald-600" : "bg-surface text-muted"}`}>{product.is_active ? (locale === "de" ? "Aktiv" : "Active") : (locale === "de" ? "Entwurf" : "Draft")}</span></td>
                       <td className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{money(locale, product.price)}</td><td className={`px-4 py-3 text-right text-sm tabular-nums ${(product.stock ?? 0) <= 0 ? "font-medium text-red-500" : "text-muted"}`}>{product.stock ?? 0}</td>
                       <td className="px-4 py-3 text-sm text-muted">{product.updated_at ? (justEdited ? <span title={editedAt(locale, product.updated_at)} className="inline-flex items-center gap-1.5 rounded-md bg-gold/15 px-2 py-1 text-xs font-medium text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}<span className="font-normal opacity-70">{sinceEdit(locale, product.edited_minutes_ago ?? 0)}</span></span> : editedAt(locale, product.updated_at)) : "—"}</td>

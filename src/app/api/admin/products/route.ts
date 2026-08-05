@@ -7,6 +7,7 @@ import { createAdminDbClient } from "@/lib/admin-db";
 import { query } from "@/lib/db";
 import { autoPublishProductPromotion } from "@/lib/marketing";
 import { isValidInputLength, sanitizeInput } from "@/lib/security";
+import { classifySubcategory } from "@/lib/product-subcategory";
 
 type ProductPayload = {
   id?: string;
@@ -210,6 +211,7 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   const sku = payload.sku ? sanitizeInput(payload.sku) : null;
   const category = payload.category ? normalizeCategory(payload.category) : null;
   const condition = normalizeCondition(payload.condition);
+  const subcategory = classifySubcategory(category, `${title} ${subtitle ?? ""} ${model ?? ""}`);
   const batteryHealth = payload.batteryHealth === null || payload.batteryHealth === undefined
     ? null
     : Number(payload.batteryHealth);
@@ -231,6 +233,7 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
     model,
     sku,
     category,
+    subcategory,
     price,
     compareAtPrice,
     stock,
@@ -355,9 +358,10 @@ export async function POST(request: NextRequest) {
         "condition",
         "battery_health",
         "has_real_product_photos",
-        "condition_note"
+        "condition_note",
+        "subcategory"
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21
       )
       RETURNING "id"`,
       [
@@ -381,6 +385,7 @@ export async function POST(request: NextRequest) {
         product.batteryHealth,
         product.hasRealProductPhotos,
         product.conditionNote,
+        product.subcategory,
       ],
     );
 
@@ -470,6 +475,7 @@ export async function PATCH(request: NextRequest) {
         "battery_health" = $19,
         "has_real_product_photos" = $20,
         "condition_note" = $21,
+        "subcategory" = $22,
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -494,6 +500,7 @@ export async function PATCH(request: NextRequest) {
         product.batteryHealth,
         product.hasRealProductPhotos,
         product.conditionNote,
+        product.subcategory,
       ],
     );
 
