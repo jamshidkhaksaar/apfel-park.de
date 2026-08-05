@@ -21,6 +21,7 @@ type StripeCheckoutPayload = {
   locale?: "de" | "en";
   idempotencyKey?: string;
   conditionConsent?: boolean;
+  termsConsent?: boolean;
 };
 
 const normalizeCustomer = (customer?: CustomerDetails): CustomerDetails => {
@@ -71,6 +72,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // §312j BGB: the order may only be placed after the customer accepted the
+    // AGB and the Widerrufsbelehrung; the client checkbox alone is not enough.
+    if (payload.termsConsent !== true) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            locale === "de"
+              ? "Bitte akzeptieren Sie die AGB und die Widerrufsbelehrung."
+              : "Please accept the terms and conditions and the withdrawal policy.",
+        },
+        { status: 400 },
+      );
+    }
+
     const order = await createPendingOrder({
       cart,
       customer,
@@ -79,6 +95,7 @@ export async function POST(request: NextRequest) {
       idempotencyKey: payload.idempotencyKey,
       consentMode: request.cookies.get("apfel-consent")?.value ?? null,
       conditionConsent: buildConditionConsent(cart, true),
+      termsConsentAt: new Date().toISOString(),
     });
 
     const origin = getCheckoutBaseUrl();

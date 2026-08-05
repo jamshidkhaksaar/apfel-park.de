@@ -14,6 +14,12 @@ export type ProductRow = {
   model: string | null;
   sku: string | null;
   mpn: string | null;
+  manufacturer?: unknown;
+  eu_responsible_person?: unknown;
+  safety_warnings?: string[] | null;
+  safety_documents?: string[] | null;
+  eprel_id?: string | null;
+  energy_label?: unknown;
   price: number | string;
   compare_at_price: number | string | null;
   stock: number | null;
@@ -25,6 +31,35 @@ export type ProductRow = {
   variants: unknown;
   created_at: string | null;
   updated_at?: string | null;
+};
+
+const toParty = (value: unknown): { name?: string; address?: string; email?: string } | null => {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as { name?: string; address?: string; email?: string };
+  if (typeof candidate.name !== "string" || !candidate.name.trim()) return null;
+  return {
+    name: candidate.name.trim(),
+    address: typeof candidate.address === "string" && candidate.address.trim() ? candidate.address.trim() : undefined,
+    email: typeof candidate.email === "string" && candidate.email.trim() ? candidate.email.trim() : undefined,
+  };
+};
+
+const toEnergyLabel = (value: unknown): AdminProductRecord["energyLabel"] => {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Record<string, unknown>;
+  const str = (input: unknown) => (typeof input === "string" && input.trim() ? input.trim() : undefined);
+  const label = {
+    efficiencyClass: str(candidate.efficiencyClass),
+    batteryEndurance: str(candidate.batteryEndurance),
+    batteryCycles:
+      typeof candidate.batteryCycles === "number" && Number.isFinite(candidate.batteryCycles)
+        ? Math.round(candidate.batteryCycles)
+        : undefined,
+    reliabilityClass: str(candidate.reliabilityClass),
+    repairabilityClass: str(candidate.repairabilityClass),
+    ipRating: str(candidate.ipRating),
+  };
+  return Object.values(label).some((entry) => entry !== undefined) ? label : null;
 };
 
 const toNumber = (value: string | number | null | undefined): number => {
@@ -81,6 +116,12 @@ export const mapAdminProduct = (row: ProductRow, featuredIds: string[] = []): Ad
   model: row.model ?? "",
   sku: row.sku ?? "",
   mpn: row.mpn ?? "",
+  manufacturer: toParty(row.manufacturer),
+  euResponsiblePerson: toParty(row.eu_responsible_person),
+  safetyWarnings: (row.safety_warnings ?? []).filter(Boolean),
+  safetyDocuments: (row.safety_documents ?? []).filter(Boolean),
+  eprelId: row.eprel_id ?? "",
+  energyLabel: toEnergyLabel(row.energy_label),
   price: toNumber(row.price),
   compareAtPrice: row.compare_at_price == null ? null : toNumber(row.compare_at_price),
   stock: row.stock ?? 0,

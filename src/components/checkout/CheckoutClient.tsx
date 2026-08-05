@@ -54,6 +54,7 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<"stripe" | "paypal" | null>(null);
   const [conditionConsent, setConditionConsent] = useState(false);
+  const [termsConsent, setTermsConsent] = useState(false);
   const [idempotencyKey] = useState(createIdempotencyKey);
 
   const validate = useCallback(async (nextItems: StoredCartItem[], nextShipping: ShippingMethod) => {
@@ -100,14 +101,16 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
       return false;
     }
     if (hasNonNewItems && !conditionConsent) return false;
+    if (!termsConsent) return false;
     return true;
-  }, [cart, customer, shippingMethod, hasNonNewItems, conditionConsent]);
+  }, [cart, customer, shippingMethod, hasNonNewItems, conditionConsent, termsConsent]);
 
   const buildPayload = () => ({
     items,
     shippingMethod,
     locale,
     idempotencyKey,
+    termsConsent,
     conditionConsent: hasNonNewItems ? conditionConsent : undefined,
     customer: {
       name: customer.name,
@@ -308,12 +311,33 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
               </label>
             ) : null}
 
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-surface/40 p-4 text-xs leading-5 text-muted">
+              <input
+                type="checkbox"
+                checked={termsConsent}
+                onChange={(event) => setTermsConsent(event.target.checked)}
+                className="mt-0.5"
+                required
+              />
+              <span>
+                {locale === "de" ? "Ich habe die " : "I have read and accept the "}
+                <a href={`/${locale}/terms`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
+                  {locale === "de" ? "AGB" : "terms and conditions"}
+                </a>
+                {locale === "de" ? " und die " : " and the "}
+                <a href={`/${locale}/withdrawal`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
+                  {locale === "de" ? "Widerrufsbelehrung" : "withdrawal policy"}
+                </a>
+                {locale === "de" ? " gelesen und akzeptiere sie. *" : ". *"}
+              </span>
+            </label>
+
             <div className="mt-6 grid gap-3">
               <button type="button" disabled={!canSubmit || submitting !== null} className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void startCheckout("stripe")}>
-                {submitting === "stripe" ? (locale === "de" ? "Stripe wird geöffnet..." : "Opening Stripe...") : (locale === "de" ? "Mit Karte bezahlen" : "Pay by card")}
+                {submitting === "stripe" ? (locale === "de" ? "Stripe wird geöffnet..." : "Opening Stripe...") : (locale === "de" ? "Zahlungspflichtig bestellen" : "Order with obligation to pay")}
               </button>
               <button type="button" disabled={!canSubmit || submitting !== null} className="btn-secondary justify-center disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void startCheckout("paypal")}>
-                {submitting === "paypal" ? (locale === "de" ? "PayPal wird geöffnet..." : "Opening PayPal...") : "PayPal"}
+                {submitting === "paypal" ? (locale === "de" ? "PayPal wird geöffnet..." : "Opening PayPal...") : (locale === "de" ? "Zahlungspflichtig mit PayPal bestellen" : "Binding order with PayPal")}
               </button>
             </div>
             <p className="mt-4 text-xs leading-5 text-muted">

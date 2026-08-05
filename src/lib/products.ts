@@ -47,10 +47,68 @@ export type Product = {
   featureBullets: string[];
   specs: ProductSpec[];
   variants: ProductVariant[];
+  gpsr?: {
+    manufacturer?: GpsrParty;
+    euResponsible?: GpsrParty;
+    safetyWarnings: string[];
+    safetyDocuments: string[];
+  };
+  eprelId?: string;
+  energyLabel?: EnergyLabel;
   isFeatured?: boolean;
   discountPercentage?: number;
   hasDiscount: boolean;
   createdAt?: string;
+};
+
+export type EnergyLabel = {
+  efficiencyClass?: string;
+  batteryEndurance?: string;
+  batteryCycles?: number;
+  reliabilityClass?: string;
+  repairabilityClass?: string;
+  ipRating?: string;
+};
+
+// EU 2023/1669: smartphones/tablets placed on the market since 2025-06-20 must
+// show the energy label online. Values are entered in the admin per model.
+const toEnergyLabel = (value: unknown): EnergyLabel | undefined => {
+  if (!value || typeof value !== "object") return undefined;
+  const candidate = value as Record<string, unknown>;
+  const str = (input: unknown) => (typeof input === "string" && input.trim() ? input.trim() : undefined);
+  const label: EnergyLabel = {
+    efficiencyClass: str(candidate.efficiencyClass)?.toUpperCase(),
+    batteryEndurance: str(candidate.batteryEndurance),
+    batteryCycles:
+      typeof candidate.batteryCycles === "number" && Number.isFinite(candidate.batteryCycles)
+        ? Math.round(candidate.batteryCycles)
+        : undefined,
+    reliabilityClass: str(candidate.reliabilityClass)?.toUpperCase(),
+    repairabilityClass: str(candidate.repairabilityClass)?.toUpperCase(),
+    ipRating: str(candidate.ipRating),
+  };
+  return Object.values(label).some((entry) => entry !== undefined) ? label : undefined;
+};
+
+export type GpsrParty = {
+  name: string;
+  address?: string;
+  email?: string;
+};
+
+// GPSR (EU 2023/988): manufacturer / EU responsible person / warnings must be
+// shown to the buyer before purchase. Columns default to {} and '{}' -- treat
+// those as absent so the section only renders once real data is entered.
+const toGpsrParty = (value: unknown): GpsrParty | undefined => {
+  if (!value || typeof value !== "object") return undefined;
+  const candidate = value as { name?: unknown; address?: unknown; email?: unknown };
+  const name = typeof candidate.name === "string" ? candidate.name.trim() : "";
+  if (!name) return undefined;
+  return {
+    name,
+    address: typeof candidate.address === "string" && candidate.address.trim() ? candidate.address.trim() : undefined,
+    email: typeof candidate.email === "string" && candidate.email.trim() ? candidate.email.trim() : undefined,
+  };
 };
 
 type LocalizedText = {
@@ -84,6 +142,12 @@ type DbProduct = {
   sku: string | null;
   mpn?: string | null;
   gtin?: string | null;
+  manufacturer?: unknown;
+  eu_responsible_person?: unknown;
+  safety_warnings?: string[] | null;
+  safety_documents?: string[] | null;
+  eprel_id?: string | null;
+  energy_label?: unknown;
   stock: number | null;
   slug: string | null;
   images: string[] | null;
@@ -309,6 +373,16 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     featureBullets: localizedStringArray(row.feature_bullets_i18n, locale, row.feature_bullets),
     specs: toLocalizedSpecs(row.specs_i18n, locale, row.specs),
     variants,
+    gpsr: (() => {
+      const manufacturer = toGpsrParty(row.manufacturer);
+      const euResponsible = toGpsrParty(row.eu_responsible_person);
+      const safetyWarnings = (row.safety_warnings ?? []).filter(Boolean);
+      const safetyDocuments = (row.safety_documents ?? []).filter(Boolean);
+      if (!manufacturer && !euResponsible && safetyWarnings.length === 0 && safetyDocuments.length === 0) return undefined;
+      return { manufacturer, euResponsible, safetyWarnings, safetyDocuments };
+    })(),
+    eprelId: row.eprel_id?.trim() || undefined,
+    energyLabel: toEnergyLabel(row.energy_label),
     discountPercentage,
     hasDiscount: Boolean(discountPercentage),
     createdAt: row.created_at ?? undefined,
@@ -316,7 +390,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
 };
 
 const baseSelect =
-  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at";
+  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label";
 
 /**
  * Fetches products from the database.

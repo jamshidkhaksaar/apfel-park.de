@@ -49,6 +49,19 @@ export type AdminProductRecord = {
   featureBullets: string[];
   specs: ProductSpec[];
   variants: ProductVariant[];
+  manufacturer?: { name?: string; address?: string; email?: string } | null;
+  euResponsiblePerson?: { name?: string; address?: string; email?: string } | null;
+  safetyWarnings?: string[];
+  safetyDocuments?: string[];
+  eprelId?: string;
+  energyLabel?: {
+    efficiencyClass?: string;
+    batteryEndurance?: string;
+    batteryCycles?: number;
+    reliabilityClass?: string;
+    repairabilityClass?: string;
+    ipRating?: string;
+  } | null;
   isHomepageFeatured?: boolean;
   createdAt: string;
 };
@@ -90,6 +103,21 @@ type ProductFormState = {
   brand: string;
   model: string;
   mpn: string;
+  manufacturerName: string;
+  manufacturerAddress: string;
+  manufacturerEmail: string;
+  euResponsibleName: string;
+  euResponsibleAddress: string;
+  euResponsibleEmail: string;
+  safetyWarningsText: string;
+  safetyDocumentsText: string;
+  eprelId: string;
+  energyEfficiencyClass: string;
+  energyBatteryEndurance: string;
+  energyBatteryCycles: string;
+  energyReliabilityClass: string;
+  energyRepairabilityClass: string;
+  energyIpRating: string;
   sku: string;
   price: string;
   compareAtPrice: string;
@@ -191,6 +219,21 @@ const productToForm = (product: AdminProductRecord): ProductFormState => ({
   model: product.model,
   sku: product.sku,
   mpn: product.mpn ?? "",
+  manufacturerName: product.manufacturer?.name ?? "",
+  manufacturerAddress: product.manufacturer?.address ?? "",
+  manufacturerEmail: product.manufacturer?.email ?? "",
+  euResponsibleName: product.euResponsiblePerson?.name ?? "",
+  euResponsibleAddress: product.euResponsiblePerson?.address ?? "",
+  euResponsibleEmail: product.euResponsiblePerson?.email ?? "",
+  safetyWarningsText: (product.safetyWarnings ?? []).join("\n"),
+  safetyDocumentsText: (product.safetyDocuments ?? []).join("\n"),
+  eprelId: product.eprelId ?? "",
+  energyEfficiencyClass: product.energyLabel?.efficiencyClass ?? "",
+  energyBatteryEndurance: product.energyLabel?.batteryEndurance ?? "",
+  energyBatteryCycles: product.energyLabel?.batteryCycles != null ? String(product.energyLabel.batteryCycles) : "",
+  energyReliabilityClass: product.energyLabel?.reliabilityClass ?? "",
+  energyRepairabilityClass: product.energyLabel?.repairabilityClass ?? "",
+  energyIpRating: product.energyLabel?.ipRating ?? "",
   price: String(product.price),
   compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : "",
   stock: String(product.stock),
@@ -246,7 +289,6 @@ const createEmptyVariant = (): ProductVariant => ({
   compareAtPrice: undefined,
   stock: undefined,
   sku: "",
-  mpn: "",
   imageIndex: undefined,
   isDefault: false,
 });
@@ -308,6 +350,21 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     model: "",
     sku: "",
     mpn: "",
+    manufacturerName: "",
+    manufacturerAddress: "",
+    manufacturerEmail: "",
+    euResponsibleName: "",
+    euResponsibleAddress: "",
+    euResponsibleEmail: "",
+    safetyWarningsText: "",
+    safetyDocumentsText: "",
+    eprelId: "",
+    energyEfficiencyClass: "",
+    energyBatteryEndurance: "",
+    energyBatteryCycles: "",
+    energyReliabilityClass: "",
+    energyRepairabilityClass: "",
+    energyIpRating: "",
     price: "",
     compareAtPrice: "",
     stock: "0",
@@ -467,6 +524,19 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
             model: formState.model,
             sku: formState.sku,
             mpn: formState.mpn,
+            manufacturer: { name: formState.manufacturerName, address: formState.manufacturerAddress, email: formState.manufacturerEmail },
+            euResponsiblePerson: { name: formState.euResponsibleName, address: formState.euResponsibleAddress, email: formState.euResponsibleEmail },
+            safetyWarnings: formState.safetyWarningsText.split("\n").map((item) => item.trim()).filter(Boolean),
+            safetyDocuments: formState.safetyDocumentsText.split("\n").map((item) => item.trim()).filter(Boolean),
+            eprelId: formState.eprelId,
+            energyLabel: {
+              efficiencyClass: formState.energyEfficiencyClass,
+              batteryEndurance: formState.energyBatteryEndurance,
+              batteryCycles: formState.energyBatteryCycles ? Number(formState.energyBatteryCycles) : undefined,
+              reliabilityClass: formState.energyReliabilityClass,
+              repairabilityClass: formState.energyRepairabilityClass,
+              ipRating: formState.energyIpRating,
+            },
             price: Number(formState.price),
             compareAtPrice: formState.compareAtPrice ? Number(formState.compareAtPrice) : null,
             stock: Number(formState.stock),
@@ -501,6 +571,26 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           model: formState.model,
           sku: formState.sku,
           mpn: formState.mpn,
+          manufacturer: formState.manufacturerName
+            ? { name: formState.manufacturerName, address: formState.manufacturerAddress || undefined, email: formState.manufacturerEmail || undefined }
+            : null,
+          euResponsiblePerson: formState.euResponsibleName
+            ? { name: formState.euResponsibleName, address: formState.euResponsibleAddress || undefined, email: formState.euResponsibleEmail || undefined }
+            : null,
+          safetyWarnings: formState.safetyWarningsText.split("\n").map((item) => item.trim()).filter(Boolean),
+          safetyDocuments: formState.safetyDocumentsText.split("\n").map((item) => item.trim()).filter(Boolean),
+          eprelId: formState.eprelId,
+          energyLabel:
+            formState.energyEfficiencyClass || formState.energyBatteryEndurance || formState.energyIpRating
+              ? {
+                  efficiencyClass: formState.energyEfficiencyClass || undefined,
+                  batteryEndurance: formState.energyBatteryEndurance || undefined,
+                  batteryCycles: formState.energyBatteryCycles ? Number(formState.energyBatteryCycles) : undefined,
+                  reliabilityClass: formState.energyReliabilityClass || undefined,
+                  repairabilityClass: formState.energyRepairabilityClass || undefined,
+                  ipRating: formState.energyIpRating || undefined,
+                }
+              : null,
           price: Number(formState.price),
           compareAtPrice: formState.compareAtPrice ? Number(formState.compareAtPrice) : null,
           stock: Number(formState.stock),
@@ -792,6 +882,35 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                       <input value={formState.mpn} onChange={(event) => setFormState((prev) => ({ ...prev, mpn: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
                     </label>
                   </div>
+                  <div className="mt-4 rounded-2xl border border-border/60 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Produktsicherheit (GPSR)" : "Product safety (GPSR)"}</p>
+                    <div className="mt-3 grid gap-3 md:grid-cols-3">
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Hersteller" : "Manufacturer"}</span><input value={formState.manufacturerName} onChange={(event) => setFormState((prev) => ({ ...prev, manufacturerName: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Hersteller-Adresse" : "Manufacturer address"}</span><input value={formState.manufacturerAddress} onChange={(event) => setFormState((prev) => ({ ...prev, manufacturerAddress: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Hersteller-E-Mail" : "Manufacturer email"}</span><input value={formState.manufacturerEmail} onChange={(event) => setFormState((prev) => ({ ...prev, manufacturerEmail: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EU-Verantwortlicher" : "EU responsible person"}</span><input value={formState.euResponsibleName} onChange={(event) => setFormState((prev) => ({ ...prev, euResponsibleName: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EU-Verantwortlicher Adresse" : "EU responsible address"}</span><input value={formState.euResponsibleAddress} onChange={(event) => setFormState((prev) => ({ ...prev, euResponsibleAddress: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EU-Verantwortlicher E-Mail" : "EU responsible email"}</span><input value={formState.euResponsibleEmail} onChange={(event) => setFormState((prev) => ({ ...prev, euResponsibleEmail: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                    </div>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Sicherheitshinweise (einer pro Zeile)" : "Safety warnings (one per line)"}</span><textarea rows={3} value={formState.safetyWarningsText} onChange={(event) => setFormState((prev) => ({ ...prev, safetyWarningsText: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Sicherheitsdokumente URLs (eine pro Zeile)" : "Safety document URLs (one per line)"}</span><textarea rows={3} value={formState.safetyDocumentsText} onChange={(event) => setFormState((prev) => ({ ...prev, safetyDocumentsText: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                    </div>
+                  </div>
+                  {formState.category === "smartphones" || formState.category === "tablets" ? (
+                    <div className="mt-4 rounded-2xl border border-border/60 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EU-Energielabel (EPREL)" : "EU energy label (EPREL)"}</p>
+                      <div className="mt-3 grid gap-3 md:grid-cols-3">
+                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EPREL-ID" : "EPREL ID"}</span><input value={formState.eprelId} onChange={(event) => setFormState((prev) => ({ ...prev, eprelId: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Energieeffizienzklasse" : "Energy class"}</span><select value={formState.energyEfficiencyClass} onChange={(event) => setFormState((prev) => ({ ...prev, energyEfficiencyClass: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></label>
+                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Akkulaufzeit je Ladung" : "Battery endurance per cycle"}</span><input placeholder="38 h 42 min" value={formState.energyBatteryEndurance} onChange={(event) => setFormState((prev) => ({ ...prev, energyBatteryEndurance: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Akku-Ladezyklen" : "Battery cycles"}</span><input type="number" min="1" value={formState.energyBatteryCycles} onChange={(event) => setFormState((prev) => ({ ...prev, energyBatteryCycles: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zuverlässigkeitsklasse" : "Reliability class"}</span><select value={formState.energyReliabilityClass} onChange={(event) => setFormState((prev) => ({ ...prev, energyReliabilityClass: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></label>
+                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Reparierbarkeitsklasse" : "Repairability class"}</span><select value={formState.energyRepairabilityClass} onChange={(event) => setFormState((prev) => ({ ...prev, energyRepairabilityClass: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></label>
+                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Schutzart (IP)" : "IP rating"}</span><input placeholder="IP68" value={formState.energyIpRating} onChange={(event) => setFormState((prev) => ({ ...prev, energyIpRating: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                      </div>
+                    </div>
+                  ) : null}
 
                   <label className="space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Beschreibung" : "Description"}</span>

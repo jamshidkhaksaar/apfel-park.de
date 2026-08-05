@@ -270,6 +270,7 @@ export async function createPendingOrder(input: {
   idempotencyKey?: string | null;
   consentMode?: string | null;
   conditionConsent?: ConditionConsentRecord | null;
+  termsConsentAt?: string | null;
 }): Promise<CheckoutOrder> {
   const idempotencyKey = normalizeText(input.idempotencyKey) || randomUUID();
   const result = await query(
@@ -321,6 +322,7 @@ export async function createPendingOrder(input: {
         paymentMode: getPaymentMode(),
         createdBy: "checkout",
         ...(input.conditionConsent ? { conditionConsent: input.conditionConsent } : {}),
+        ...(input.termsConsentAt ? { termsConsentAt: input.termsConsentAt } : {}),
       }),
     ],
   );

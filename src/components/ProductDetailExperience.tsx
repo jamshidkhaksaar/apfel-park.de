@@ -19,6 +19,12 @@ type Props = {
 
 const formatMoney = formatPrice;
 
+// Official EU label class colours; D and E are light and need dark text.
+const ENERGY_CLASS_BG: Record<string, string> = {
+  A: "#00a651", B: "#4cb748", C: "#bfd730", D: "#fff200", E: "#fdb913", F: "#f37021", G: "#ed1c24",
+};
+const ENERGY_CLASS_FG: Record<string, string> = { C: "#111111", D: "#111111", E: "#111111" };
+
 const getDiscount = (price: number, compareAtPrice?: number) => {
   if (!compareAtPrice || compareAtPrice <= price) return null;
   return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
@@ -173,6 +179,89 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             </div>
           ) : null}
         </div>
+
+        {product.energyLabel ? (
+          <div className="glass-panel rounded-[32px] p-8">
+            <h2 className="text-xl font-semibold text-foreground">{locale === "de" ? "EU-Energielabel" : "EU energy label"}</h2>
+            <div className="mt-4 overflow-hidden rounded-3xl border border-border/60">
+              {[
+                [locale === "de" ? "Energieeffizienzklasse" : "Energy efficiency class", product.energyLabel.efficiencyClass],
+                [locale === "de" ? "Akkulaufzeit je Ladezyklus" : "Battery endurance per cycle", product.energyLabel.batteryEndurance],
+                [locale === "de" ? "Akku-Ladezyklen" : "Battery endurance in cycles", product.energyLabel.batteryCycles != null ? String(product.energyLabel.batteryCycles) : undefined],
+                [locale === "de" ? "Zuverlässigkeitsklasse" : "Repeated free fall reliability class", product.energyLabel.reliabilityClass],
+                [locale === "de" ? "Reparierbarkeitsklasse" : "Repairability class", product.energyLabel.repairabilityClass],
+                [locale === "de" ? "Schutzart (IP)" : "Ingress protection rating", product.energyLabel.ipRating],
+              ]
+                .filter((row): row is [string, string] => Boolean(row[1]))
+                .map(([label, value]) => (
+                  <div key={label} className="grid gap-3 border-b border-border/50 bg-surface/40 px-5 py-4 last:border-b-0 md:grid-cols-[240px_minmax(0,1fr)]">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{label}</span>
+                    <span className="text-sm text-foreground">{value}</span>
+                  </div>
+                ))}
+            </div>
+            {product.eprelId ? (
+              <p className="mt-4 text-xs text-muted">
+                <a
+                  href={`https://eprel.ec.europa.eu/screen/product/smartphonestablets2023/${product.eprelId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-gold"
+                >
+                  {locale === "de" ? "Offizielles Produktdatenblatt in der EPREL-Datenbank" : "Official product datasheet in the EPREL database"}
+                </a>
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {product.gpsr ? (
+          <details className="glass-panel rounded-[32px] p-8">
+            <summary className="cursor-pointer text-xl font-semibold text-foreground">
+              {locale === "de" ? "Produkt- und Sicherheitsinformationen" : "Product and safety information"}
+            </summary>
+            <div className="mt-5 grid gap-5 text-sm text-muted md:grid-cols-2">
+              {product.gpsr.manufacturer ? (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Hersteller" : "Manufacturer"}</p>
+                  <p className="mt-2 text-foreground">{product.gpsr.manufacturer.name}</p>
+                  {product.gpsr.manufacturer.address ? <p className="mt-1 whitespace-pre-line">{product.gpsr.manufacturer.address}</p> : null}
+                  {product.gpsr.manufacturer.email ? <p className="mt-1">{product.gpsr.manufacturer.email}</p> : null}
+                </div>
+              ) : null}
+              {product.gpsr.euResponsible ? (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Verantwortliche Person in der EU" : "Responsible person in the EU"}</p>
+                  <p className="mt-2 text-foreground">{product.gpsr.euResponsible.name}</p>
+                  {product.gpsr.euResponsible.address ? <p className="mt-1 whitespace-pre-line">{product.gpsr.euResponsible.address}</p> : null}
+                  {product.gpsr.euResponsible.email ? <p className="mt-1">{product.gpsr.euResponsible.email}</p> : null}
+                </div>
+              ) : null}
+              {product.gpsr.safetyWarnings.length > 0 ? (
+                <div className="md:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Sicherheitshinweise" : "Safety warnings"}</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    {product.gpsr.safetyWarnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {product.gpsr.safetyDocuments.length > 0 ? (
+                <div className="md:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Sicherheitsdokumente" : "Safety documents"}</p>
+                  <ul className="mt-2 space-y-1">
+                    {product.gpsr.safetyDocuments.map((doc) => (
+                      <li key={doc}>
+                        <a href={doc} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2 break-all">{doc}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          </details>
+        ) : null}
       </div>
 
       <div className="order-1 min-w-0 space-y-6 xl:order-2 xl:sticky xl:top-28 xl:self-start">
@@ -204,6 +293,32 @@ export default function ProductDetailExperience({ locale, product }: Props) {
               </span>
             ) : null}
           </div>
+
+          {product.energyLabel?.efficiencyClass ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
+              <span
+                className="inline-flex h-7 min-w-9 items-center justify-center rounded-md px-2 text-sm font-black"
+                style={{
+                  backgroundColor: ENERGY_CLASS_BG[product.energyLabel.efficiencyClass] ?? "#4b5563",
+                  color: ENERGY_CLASS_FG[product.energyLabel.efficiencyClass] ?? "#ffffff",
+                }}
+              >
+                {product.energyLabel.efficiencyClass}
+              </span>
+              {product.eprelId ? (
+                <a
+                  href={`https://eprel.ec.europa.eu/screen/product/smartphonestablets2023/${product.eprelId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-gold"
+                >
+                  {locale === "de" ? "EU-Energielabel & Produktdatenblatt" : "EU energy label & product datasheet"}
+                </a>
+              ) : (
+                <span>{locale === "de" ? "EU-Energielabel" : "EU energy label"}</span>
+              )}
+            </div>
+          ) : null}
 
           {colors.length > 0 ? (
             <div className="mt-8 rounded-3xl border border-border/60 bg-surface/50 p-5">
@@ -369,7 +484,15 @@ export default function ProductDetailExperience({ locale, product }: Props) {
               <p>{locale === "de" ? "Sichere Zahlung mit Karte oder PayPal. Preise inkl. gesetzlicher MwSt." : "Secure card or PayPal payment. Prices include VAT."}</p>
               <PaymentBrandIcons iconClassName="h-5 w-auto" />
             </div>
-            <p>{locale === "de" ? "Rückgabe und Gewährleistung nach geltendem Recht; Details bitte vor Ort bestätigen." : "Returns and warranty follow applicable law; confirm details in store."}</p>
+            <p>
+              {product.condition === "used"
+                ? locale === "de"
+                  ? "14 Tage Widerrufsrecht · 12 Monate Gewährleistung auf Gebrauchtgeräte."
+                  : "14-day right of withdrawal · 12-month warranty on used devices."
+                : locale === "de"
+                  ? "14 Tage Widerrufsrecht · 24 Monate Gewährleistung."
+                  : "14-day right of withdrawal · 24-month statutory warranty."}
+            </p>
           </div>
 
           {product.condition !== "new" ? (

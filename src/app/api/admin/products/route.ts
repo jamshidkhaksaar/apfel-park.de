@@ -26,6 +26,19 @@ type ProductPayload = {
   stock?: number;
   sku?: string;
   mpn?: string;
+  manufacturer?: { name?: string; address?: string; email?: string } | null;
+  euResponsiblePerson?: { name?: string; address?: string; email?: string } | null;
+  safetyWarnings?: string[];
+  safetyDocuments?: string[];
+  eprelId?: string;
+  energyLabel?: {
+    efficiencyClass?: string;
+    batteryEndurance?: string;
+    batteryCycles?: number;
+    reliabilityClass?: string;
+    repairabilityClass?: string;
+    ipRating?: string;
+  } | null;
   images?: string[];
   variants?: Array<{
     color?: string;
@@ -211,6 +224,41 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   const model = payload.model ? sanitizeInput(payload.model) : null;
   const sku = payload.sku ? sanitizeInput(payload.sku) : null;
   const mpn = payload.mpn ? sanitizeInput(payload.mpn) : null;
+  const gpsrParty = (value: { name?: string; address?: string; email?: string } | null | undefined) => {
+    const name = value?.name ? sanitizeInput(value.name) : "";
+    if (!name) return {};
+    const party: Record<string, string> = { name };
+    const address = value?.address ? sanitizeInput(value.address) : "";
+    const email = value?.email ? sanitizeInput(value.email) : "";
+    if (address) party.address = address;
+    if (email) party.email = email;
+    return party;
+  };
+  const manufacturer = gpsrParty(payload.manufacturer);
+  const euResponsiblePerson = gpsrParty(payload.euResponsiblePerson);
+  const safetyWarnings = sanitizeStringArray(payload.safetyWarnings, 500);
+  const safetyDocuments = sanitizeStringArray(payload.safetyDocuments, 1000);
+  const eprelId = payload.eprelId ? sanitizeInput(payload.eprelId).slice(0, 32) : null;
+  const energyText = (value: unknown, uppercase = false) => {
+    if (typeof value !== "string") return undefined;
+    const clean = sanitizeInput(value);
+    if (!clean) return undefined;
+    return uppercase ? clean.toUpperCase() : clean;
+  };
+  const energyLabel: Record<string, string | number> = {};
+  const efficiencyClass = energyText(payload.energyLabel?.efficiencyClass, true);
+  if (efficiencyClass) energyLabel.efficiencyClass = efficiencyClass;
+  const batteryEndurance = energyText(payload.energyLabel?.batteryEndurance);
+  if (batteryEndurance) energyLabel.batteryEndurance = batteryEndurance;
+  if (typeof payload.energyLabel?.batteryCycles === "number" && Number.isFinite(payload.energyLabel.batteryCycles)) {
+    energyLabel.batteryCycles = Math.round(payload.energyLabel.batteryCycles);
+  }
+  const reliabilityClass = energyText(payload.energyLabel?.reliabilityClass, true);
+  if (reliabilityClass) energyLabel.reliabilityClass = reliabilityClass;
+  const repairabilityClass = energyText(payload.energyLabel?.repairabilityClass, true);
+  if (repairabilityClass) energyLabel.repairabilityClass = repairabilityClass;
+  const ipRating = energyText(payload.energyLabel?.ipRating);
+  if (ipRating) energyLabel.ipRating = ipRating;
   const category = payload.category ? normalizeCategory(payload.category) : null;
   const condition = normalizeCondition(payload.condition);
   const subcategory = classifySubcategory(category, `${title} ${subtitle ?? ""} ${model ?? ""}`);
@@ -235,6 +283,12 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
     model,
     sku,
     mpn,
+    manufacturer,
+    euResponsiblePerson,
+    safetyWarnings,
+    safetyDocuments,
+    eprelId,
+    energyLabel,
     category,
     subcategory,
     price,
@@ -363,9 +417,15 @@ export async function POST(request: NextRequest) {
         "has_real_product_photos",
         "condition_note",
         "subcategory",
-        "mpn"
+        "mpn",
+        "manufacturer",
+        "eu_responsible_person",
+        "safety_warnings",
+        "safety_documents",
+        "eprel_id",
+        "energy_label"
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23::jsonb,$24::jsonb,$25,$26,$27,$28::jsonb
       )
       RETURNING "id"`,
       [
@@ -391,6 +451,12 @@ export async function POST(request: NextRequest) {
         product.conditionNote,
         product.subcategory,
         product.mpn,
+        JSON.stringify(product.manufacturer),
+        JSON.stringify(product.euResponsiblePerson),
+        product.safetyWarnings,
+        product.safetyDocuments,
+        product.eprelId,
+        JSON.stringify(product.energyLabel),
       ],
     );
 
@@ -482,6 +548,12 @@ export async function PATCH(request: NextRequest) {
         "condition_note" = $21,
         "subcategory" = $22,
         "mpn" = $23,
+        "manufacturer" = $24::jsonb,
+        "eu_responsible_person" = $25::jsonb,
+        "safety_warnings" = $26,
+        "safety_documents" = $27,
+        "eprel_id" = $28,
+        "energy_label" = $29::jsonb,
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -508,6 +580,12 @@ export async function PATCH(request: NextRequest) {
         product.conditionNote,
         product.subcategory,
         product.mpn,
+        JSON.stringify(product.manufacturer),
+        JSON.stringify(product.euResponsiblePerson),
+        product.safetyWarnings,
+        product.safetyDocuments,
+        product.eprelId,
+        JSON.stringify(product.energyLabel),
       ],
     );
 

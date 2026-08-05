@@ -14,7 +14,7 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
   const [{ id }, locale, promo] = await Promise.all([params, getAdminLocale(), getPromoPopupSettings()]);
   const [productResult, featuredResult] = await Promise.all([
     query(
-      `SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,created_at AS updated_at FROM products WHERE id = $1 LIMIT 1`,
+      `SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,created_at AS updated_at FROM products WHERE id = $1 LIMIT 1`,
       [id],
     ),
     query(`SELECT value FROM store_settings WHERE key = 'featured_product_ids' LIMIT 1`),

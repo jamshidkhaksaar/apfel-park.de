@@ -130,6 +130,16 @@ export default async function ProductDetailPage({
     ...(gtinDigits?.length === 13 ? { gtin13: gtinDigits } : {}),
     ...(gtinDigits?.length === 14 ? { gtin14: gtinDigits } : {}),
     brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
+    manufacturer: product.gpsr?.manufacturer
+      ? { "@type": "Organization", name: product.gpsr.manufacturer.name }
+      : undefined,
+    hasEnergyConsumptionDetails:
+      product.energyLabel?.efficiencyClass && /^[A-G]$/.test(product.energyLabel.efficiencyClass)
+        ? {
+            "@type": "EnergyConsumptionDetails",
+            hasEnergyEfficiencyCategory: `https://schema.org/EUEnergyEfficiencyCategory${product.energyLabel.efficiencyClass}`,
+          }
+        : undefined,
     offers: {
       "@type": "Offer",
       priceCurrency: "EUR",
