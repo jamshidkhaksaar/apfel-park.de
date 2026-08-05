@@ -106,7 +106,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <HeroSlider lang={lang} media={heroMedia} hero={home.hero} />
 
       {/* Brands Bar */}
-      <section className="border-y border-border bg-surface-strong py-5">
+      <section className="border-y border-border bg-surface-strong py-7">
         <div className="container-page">
           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
             <span className="shrink-0 text-[10px] uppercase tracking-[0.28em] text-gold/70 font-semibold">
@@ -115,22 +115,23 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <div className="mx-4 h-4 w-px bg-border hidden md:block" />
             <ul className="flex flex-wrap items-center justify-center gap-5 md:gap-8" role="list">
               {deviceBrands.map((brand) => (
-                <li key={brand.name} className="group flex items-center gap-2 transition-transform duration-200 hover:scale-105">
-                  <div
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg shadow-sm"
-                    style={{ backgroundColor: brand.color }}
-                  >
+                <li key={brand.name} className="group flex items-center gap-2.5 transition-transform duration-200 hover:scale-105">
+                  {/* White chip so each mark shows in its own colour: the bar is
+                      #121214 in dark and #f9f6f0 in light, and Apple's brand
+                      black would disappear against one while Sony's white
+                      disappears against the other. */}
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/5">
                     {brand.path ? (
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5 text-white" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6" style={{ color: brand.color }} aria-hidden="true">
                         <path d={brand.path} />
                       </svg>
                     ) : (
-                      <span className="text-[9px] font-black text-white leading-none">
+                      <span className="text-base font-black leading-none" style={{ color: brand.color }}>
                         {brand.letter}
                       </span>
                     )}
                   </div>
-                  <span className="text-sm font-bold tracking-tight text-muted/65 transition-colors group-hover:text-gold">
+                  <span className="text-sm font-bold tracking-tight text-muted transition-colors group-hover:text-gold">
                     {brand.name}
                   </span>
                 </li>
