@@ -53,7 +53,9 @@ printf '%s\n' "$sha" > "$release/.deployed-sha"
 
 cd "$release"
 log "npm ci"
-npm ci --no-audit --no-fund
+# --include=dev because an inherited NODE_ENV=production makes npm skip
+# devDependencies, which silently removes vitest and fails the test gate.
+npm ci --no-audit --no-fund --include=dev
 
 # Gate the release on the test suite. This runs before anything touches the
 # `current` symlink, so a failure leaves production untouched.
