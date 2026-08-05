@@ -511,6 +511,20 @@ export async function PATCH(request: NextRequest) {
       ],
     );
 
+    // Keep the reservation ledger in step with the stock the admin just set.
+    // on_hand can never drop below what is already reserved for open orders.
+    if (product.sku) {
+      await query(
+        `INSERT INTO inventory_skus (product_id, sku, location, on_hand, reserved, safety_buffer)
+         VALUES ($1, $2, 'local', greatest($3, 0), 0, 0)
+         ON CONFLICT (sku, location) DO UPDATE
+           SET on_hand = greatest(excluded.on_hand, inventory_skus.reserved),
+               product_id = excluded.product_id,
+               updated_at = now()`,
+        [payload.id, product.sku, product.stock],
+      );
+    }
+
     await syncHomepageFeatured(payload.id, product.isHomepageFeatured);
 
     const socialPublishing = await autoPublishProductPromotion(
