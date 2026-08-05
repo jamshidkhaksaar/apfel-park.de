@@ -25,6 +25,7 @@ type ProductPayload = {
   model?: string;
   stock?: number;
   sku?: string;
+  mpn?: string;
   images?: string[];
   variants?: Array<{
     color?: string;
@@ -209,6 +210,7 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   const brand = payload.brand ? sanitizeInput(payload.brand) : null;
   const model = payload.model ? sanitizeInput(payload.model) : null;
   const sku = payload.sku ? sanitizeInput(payload.sku) : null;
+  const mpn = payload.mpn ? sanitizeInput(payload.mpn) : null;
   const category = payload.category ? normalizeCategory(payload.category) : null;
   const condition = normalizeCondition(payload.condition);
   const subcategory = classifySubcategory(category, `${title} ${subtitle ?? ""} ${model ?? ""}`);
@@ -232,6 +234,7 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
     brand,
     model,
     sku,
+    mpn,
     category,
     subcategory,
     price,
@@ -359,9 +362,10 @@ export async function POST(request: NextRequest) {
         "battery_health",
         "has_real_product_photos",
         "condition_note",
-        "subcategory"
+        "subcategory",
+        "mpn"
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22
       )
       RETURNING "id"`,
       [
@@ -386,6 +390,7 @@ export async function POST(request: NextRequest) {
         product.hasRealProductPhotos,
         product.conditionNote,
         product.subcategory,
+        product.mpn,
       ],
     );
 
@@ -476,6 +481,7 @@ export async function PATCH(request: NextRequest) {
         "has_real_product_photos" = $20,
         "condition_note" = $21,
         "subcategory" = $22,
+        "mpn" = $23,
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -501,6 +507,7 @@ export async function PATCH(request: NextRequest) {
         product.hasRealProductPhotos,
         product.conditionNote,
         product.subcategory,
+        product.mpn,
       ],
     );
 
