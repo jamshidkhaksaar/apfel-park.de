@@ -100,19 +100,36 @@ const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
 await client.connect();
 
 const { rows } = await client.query(
-  `SELECT id, title FROM products WHERE is_active = true ORDER BY title`,
+  `SELECT id, title, title_i18n FROM products WHERE is_active = true ORDER BY title`,
 );
 
 const updates = [];
 for (const row of rows) {
   const next = normalizeTitle(row.title);
-  if (next !== row.title) updates.push({ id: row.id, from: row.title, to: next });
+  const i18n = row.title_i18n && typeof row.title_i18n === "object" ? row.title_i18n : {};
+  const nextI18n = {};
+  let i18nChanged = false;
+  for (const locale of Object.keys(i18n)) {
+    if (typeof i18n[locale] !== "string") continue;
+    const corrected = normalizeTitle(i18n[locale]);
+    nextI18n[locale] = corrected;
+    if (corrected !== i18n[locale]) i18nChanged = true;
+  }
+  if (next !== row.title || i18nChanged) {
+    updates.push({
+      id: row.id,
+      from: row.title,
+      to: next,
+      i18n: i18nChanged ? { ...i18n, ...nextI18n } : null,
+    });
+  }
 }
 
 console.log(`${updates.length} of ${rows.length} active titles would change\n`);
 for (const u of updates.slice(0, 50)) {
   console.log(`  ${u.from}`);
   console.log(`  -> ${u.to}\n`);
+  if (u.i18n) console.log(`     (title_i18n also updated)\n`);
 }
 if (updates.length > 50) {
   console.log(`  …and ${updates.length - 50} more`);
@@ -127,7 +144,10 @@ if (!APPLY) {
 await client.query("BEGIN");
 try {
   for (const u of updates) {
-    await client.query(`UPDATE products SET title = $2, updated_at = now() WHERE id = $1`, [u.id, u.to]);
+    await client.query(
+      `UPDATE products SET title = $2, title_i18n = $3::jsonb, updated_at = now() WHERE id = $1`,
+      [u.id, u.to, u.i18n ? JSON.stringify(u.i18n) : undefined],
+    );
   }
   await client.query("COMMIT");
 } catch (error) {
