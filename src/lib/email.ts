@@ -798,3 +798,67 @@ export const sendRepairEstimateEmail = async (data: {
     attachments: [data.attachment],
   });
 };
+
+export type ReviewInviteData = {
+  email: string;
+  name: string;
+  locale: "de" | "en";
+  orderLabel: string;
+  links: Array<{ title: string; url: string }>;
+};
+
+/**
+ * Asks a customer to review what they bought, a week after payment.
+ *
+ * Each link is signed, so a review written through it is marked as a verified
+ * purchase. One invitation per order -- scripts/review-invites.mjs records the
+ * send on the order so nobody is asked twice.
+ */
+export const sendReviewInviteEmail = async (data: ReviewInviteData): Promise<EmailSendResult> => {
+  const de = data.locale === "de";
+  const greeting = data.name ? `${de ? "Hallo" : "Hi"} ${data.name},` : de ? "Hallo," : "Hi,";
+  const subject = de
+    ? `Wie zufrieden bist du mit deiner Bestellung ${data.orderLabel}?`
+    : `How happy are you with your order ${data.orderLabel}?`;
+
+  const intro = de
+    ? "vielen Dank für deinen Einkauf bei Apfel Park. Wenn du kurz Zeit hast: Deine Bewertung hilft anderen bei der Entscheidung – und uns, besser zu werden."
+    : "thank you for shopping at Apfel Park. If you have a moment, your review helps others decide and helps us improve.";
+  const outro = de
+    ? "Falls etwas nicht in Ordnung war, antworte einfach auf diese E-Mail – wir kümmern uns darum."
+    : "If something was not right, just reply to this email and we will sort it out.";
+
+  const text = [
+    greeting,
+    "",
+    intro,
+    "",
+    ...data.links.map((link) => `${link.title}: ${link.url}`),
+    "",
+    outro,
+    "",
+    "Apfel Park · Hamburg-Wilhelmsburg",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;">
+      <p>${greeting}</p>
+      <p>${intro}</p>
+      ${data.links
+        .map(
+          (link) => `
+        <p style="margin:18px 0;">
+          <strong>${link.title}</strong><br />
+          <a href="${link.url}" style="display:inline-block;margin-top:8px;background:#c8a862;color:#111;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:600;">
+            ${de ? "Jetzt bewerten" : "Write a review"}
+          </a>
+        </p>`,
+        )
+        .join("")}
+      <p style="color:#555;font-size:14px;">${outro}</p>
+      <p style="color:#777;font-size:12px;">Apfel Park · Hamburg-Wilhelmsburg</p>
+    </div>
+  `;
+
+  return sendTransactionalEmail({ to: data.email, subject, text, html, identity: "sales" });
+};

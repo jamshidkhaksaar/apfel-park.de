@@ -261,6 +261,7 @@ export default function AdminShell({
     { label: dict.sidebar.batchBuy,  path: '/admin/batch-buy', icon: 'batchBuy' },
     { label: dict.sidebar.chat,      path: '/admin/chat',     icon: 'chat',    badge: badges.chat },
     { label: dict.sidebar.reviews,   path: '/admin/reviews',  icon: 'reviews' },
+    { label: lang === 'de' ? 'Produktbewertungen' : 'Product reviews', path: '/admin/product-reviews', icon: 'reviews' },
   ];
 
   const adminItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [

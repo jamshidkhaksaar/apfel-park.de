@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import { createMetadata } from "@/lib/metadata";
 import { getProductBySlug, getRelatedProducts } from "@/lib/products";
 import { subcategoryLabel } from "@/lib/product-subcategory";
+import ProductReviews from "@/components/ProductReviews";
+import { getApprovedReviews, getRatingSummary } from "@/lib/product-reviews";
 import { type Locale } from "@/lib/i18n";
 import {
   merchantReturnPolicy,
@@ -108,10 +110,14 @@ export const generateMetadata = async ({
 
 export default async function ProductDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string; slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { lang: rawLang, slug } = await params;
+  // A post-purchase invitation arrives as ?order=<id>&rt=<token>.
+  const invitation = (await searchParams) ?? {};
   const lang = requireLocale(rawLang);
   const locale = lang;
   const product = await getProductBySlug(slug, locale);
@@ -120,7 +126,11 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  const relatedProducts = await getRelatedProducts(product, 4, locale);
+  const [relatedProducts, reviews, ratingSummary] = await Promise.all([
+    getRelatedProducts(product, 4, locale),
+    getApprovedReviews(product.id),
+    getRatingSummary(product.id),
+  ]);
   const gtinDigits = product.gtin?.replace(/\D/g, "");
   const categoryPath = product.category === "consoles" ? "gaming" : product.category;
   const productJsonLd = {
@@ -136,6 +146,15 @@ export default async function ProductDetailPage({
     ...(gtinDigits?.length === 13 ? { gtin13: gtinDigits } : {}),
     ...(gtinDigits?.length === 14 ? { gtin14: gtinDigits } : {}),
     brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
+    aggregateRating: ratingSummary
+      ? {
+          "@type": "AggregateRating",
+          ratingValue: ratingSummary.average,
+          reviewCount: ratingSummary.count,
+          bestRating: 5,
+          worstRating: 1,
+        }
+      : undefined,
     manufacturer: product.gpsr?.manufacturer
       ? { "@type": "Organization", name: product.gpsr.manufacturer.name }
       : undefined,
@@ -219,7 +238,18 @@ export default async function ProductDetailPage({
             <span className="text-foreground">{product.title}</span>
           </div>
 
-          <ProductDetailExperience locale={locale} product={product} />
+          <ProductDetailExperience locale={locale} product={product} ratingSummary={ratingSummary} />
+
+      <section className="container-page pb-4">
+        <ProductReviews
+          locale={locale}
+          productId={product.id}
+          reviews={reviews}
+          summary={ratingSummary}
+          orderId={typeof invitation.order === "string" ? invitation.order : null}
+          token={typeof invitation.rt === "string" ? invitation.rt : null}
+        />
+      </section>
         </div>
       </section>
 

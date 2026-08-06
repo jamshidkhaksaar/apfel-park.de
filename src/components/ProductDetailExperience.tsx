@@ -7,6 +7,8 @@ import ProductGallery from "@/components/ProductGallery";
 import PaymentBrandIcons from "@/components/PaymentBrandIcons";
 import { addStoredCartItem } from "@/components/checkout/cart";
 import { MINI_CART_OPEN_EVENT } from "@/components/checkout/MiniCart";
+import { ProductRatingBadge } from "@/components/ProductReviews";
+import type { ProductRatingSummary } from "@/lib/product-reviews";
 import ConditionBadge from "@/components/ConditionBadge";
 import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
@@ -16,6 +18,7 @@ import { siteInfo } from "@/lib/site";
 type Props = {
   locale: Locale;
   product: Product;
+  ratingSummary?: ProductRatingSummary | null;
 };
 
 const formatMoney = formatPrice;
@@ -34,7 +37,7 @@ const getDiscount = (price: number, compareAtPrice?: number) => {
 const getDefaultVariant = (variants: ProductVariant[]) =>
   variants.find((variant) => variant.isDefault) ?? variants[0] ?? null;
 
-export default function ProductDetailExperience({ locale, product }: Props) {
+export default function ProductDetailExperience({ locale, product, ratingSummary }: Props) {
   const defaultVariant = getDefaultVariant(product.variants);
   const [selectedColor, setSelectedColor] = useState(defaultVariant?.color ?? "");
   const [selectedStorage, setSelectedStorage] = useState(defaultVariant?.storage ?? "");
@@ -328,6 +331,7 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             <ConditionBadge condition={product.condition} lang={locale} />
           </div>
 
+          {ratingSummary ? <ProductRatingBadge locale={locale} summary={ratingSummary} /> : null}
           <h1 className="mt-5 break-words text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             {product.title}
           </h1>
