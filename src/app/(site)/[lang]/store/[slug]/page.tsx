@@ -141,6 +141,10 @@ export default async function ProductDetailPage({
   ]);
   const gtinDigits = product.gtin?.replace(/\D/g, "");
   const categoryPath = product.category === "consoles" ? "gaming" : product.category;
+  const defaultVariantColor =
+    product.variants.find((variant) => variant.isDefault)?.color ||
+    product.variants[0]?.color ||
+    "";
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -153,6 +157,18 @@ export default async function ProductDetailPage({
     ...(gtinDigits?.length === 12 ? { gtin12: gtinDigits } : {}),
     ...(gtinDigits?.length === 13 ? { gtin13: gtinDigits } : {}),
     ...(gtinDigits?.length === 14 ? { gtin14: gtinDigits } : {}),
+    category: productCategoryLabel(locale, product.category),
+    ...(product.model ? { model: product.model } : {}),
+    ...(defaultVariantColor ? { color: defaultVariantColor } : {}),
+    ...(product.specs.length > 0
+      ? {
+          additionalProperty: product.specs.map((spec) => ({
+            "@type": "PropertyValue",
+            name: spec.label,
+            value: spec.value,
+          })),
+        }
+      : {}),
     brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
     aggregateRating: ratingSummary
       ? {
