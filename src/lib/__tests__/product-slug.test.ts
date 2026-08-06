@@ -109,6 +109,16 @@ describe("buildBaseSlug", () => {
     expect(slug).not.toMatch(/--/);
   });
 
+  it("does not repeat a condition the title already ends with", () => {
+    // Real title from the catalog: "Apple iphone 17 pro max 256GB-Neu".
+    expect(buildBaseSlug({ brand: "Apple", title: "Apple iphone 17 pro max 256GB-Neu", condition: "new" })).toBe(
+      "apple-iphone-17-pro-max-256gb-neu",
+    );
+    expect(buildBaseSlug({ brand: "Apple", title: "iPhone 14 gebraucht", condition: "used" })).toBe(
+      "apple-iphone-14-gebraucht",
+    );
+  });
+
   it("falls back to brand and model, then to a generic slug", () => {
     expect(buildBaseSlug({ brand: "Apple", model: "iPhone 15", condition: "new" })).toBe("apple-iphone-15-neu");
     expect(buildBaseSlug({})).toBe("produkt");

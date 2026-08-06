@@ -113,7 +113,12 @@ export const buildBaseSlug = (source: SlugSource): string => {
   const storage = extractStorage([source.title, source.subtitle]) ? null : extractStorage((source.variants ?? []).map((variant) => variant.storage));
   const withStorage = storage ? `${withBrand}-${storage}` : withBrand;
 
-  return `${truncateOnWord(withStorage, MAX_BASE_LENGTH)}-${condition}`;
+  const trimmed = truncateOnWord(withStorage, MAX_BASE_LENGTH);
+  // Some titles already end in the condition ("iPhone 17 Pro Max 256GB-Neu"),
+  // which would otherwise produce "...-neu-neu".
+  const conditionLabels = Object.values(CONDITION_LABELS);
+  const alreadyLabelled = conditionLabels.some((label) => trimmed.endsWith(`-${label}`));
+  return alreadyLabelled ? trimmed : `${trimmed}-${condition}`;
 };
 
 /**
