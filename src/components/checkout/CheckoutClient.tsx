@@ -15,6 +15,7 @@ import {
 import PaymentBrandIcons from "@/components/PaymentBrandIcons";
 import StripePaymentElement from "@/components/checkout/StripePaymentElement";
 import { shouldBypassImageOptimization } from "@/lib/image";
+import { siteInfo } from "@/lib/site";
 
 type Props = {
   locale: "de" | "en";
@@ -34,6 +35,8 @@ type CustomerState = {
   city: string;
 };
 
+const MONEY = "tabular-nums";
+
 const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
   new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-US", {
     style: "currency",
@@ -41,8 +44,46 @@ const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
   }).format(value);
 
 const FIELD_CLASS =
-  "mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition " +
-  "placeholder:text-muted/50 focus:border-gold/50 focus:ring-2 focus:ring-gold/20";
+  "mt-2 w-full rounded-lg border border-border/60 bg-background/60 px-4 py-3 text-[15px] text-foreground outline-none transition " +
+  "placeholder:text-muted-strong focus:border-gold/60 focus:bg-background focus:ring-1 focus:ring-gold/30";
+
+const LABEL_CLASS = "text-[11px] font-medium uppercase tracking-[0.14em] text-muted-strong";
+
+const SECTION_HEADING = "text-[13px] font-semibold uppercase tracking-[0.18em] text-foreground";
+
+/**
+ * Whether the shop is open right now, in Berlin time.
+ *
+ * The one thing this shop has that a marketplace does not is a counter you can
+ * walk up to, so the pickup option states the real address and whether the door
+ * is open rather than being an anonymous radio button.
+ */
+const berlinNow = () => {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Berlin",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return { weekday: get("weekday"), minutes: Number(get("hour")) * 60 + Number(get("minute")) };
+};
+
+const OPEN_FROM = 9 * 60 + 30;
+const OPEN_UNTIL = 20 * 60;
+
+/**
+ * Opening hours depend on the visitor's clock, so the server renders nothing
+ * and the browser fills it in. A string snapshot keeps the value stable within
+ * a minute, which useSyncExternalStore compares by value.
+ */
+const subscribeClock = () => () => {};
+const clockSnapshot = () => {
+  const { weekday, minutes } = berlinNow();
+  return `${weekday}:${minutes}`;
+};
+const serverClockSnapshot = () => null;
 
 const createIdempotencyKey = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -69,6 +110,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
   const [termsConsent, setTermsConsent] = useState(false);
   const [idempotencyKey] = useState(createIdempotencyKey);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const clock = useSyncExternalStore(subscribeClock, clockSnapshot, serverClockSnapshot);
   const embeddedPayments = Boolean(stripePublishableKey);
 
   const validate = useCallback(async (nextItems: StoredCartItem[], nextShipping: ShippingMethod) => {
@@ -214,318 +256,309 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
     window.location.href = redirectUrl;
   };
 
+  const storeOpen = clock !== null
+    && clock.split(":")[0] !== "Sun"
+    && Number(clock.split(":")[1]) >= OPEN_FROM
+    && Number(clock.split(":")[1]) < OPEN_UNTIL;
+
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="space-y-6">
-        <div className="glass-panel rounded-2xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">
-                {locale === "de" ? "Sichere Bestellung" : "Secure checkout"}
-              </p>
-              <h1 className="mt-2 text-3xl font-semibold text-foreground">
-                {locale === "de" ? "Kontakt & Lieferung" : "Contact and delivery"}
-              </h1>
-            </div>
-            <Link href={`/${locale}/cart`} className="text-sm text-muted underline underline-offset-4 transition hover:text-gold">
-              {locale === "de" ? "← Zurück zum Warenkorb" : "← Back to cart"}
-            </Link>
-          </div>
-
-          {/* Where the customer is in the flow: cart is done, payment is next. */}
-          <ol className="mt-6 flex items-center gap-2 text-xs font-medium">
-            {[
-              { label: locale === "de" ? "Warenkorb" : "Cart", state: "done" },
-              { label: locale === "de" ? "Kontakt & Lieferung" : "Contact & delivery", state: "current" },
-              { label: locale === "de" ? "Zahlung" : "Payment", state: "todo" },
-            ].map((step, index, all) => (
-              <li key={step.label} className="flex flex-1 items-center gap-2">
-                <span
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                    step.state === "done"
-                      ? "bg-gold/20 text-gold"
-                      : step.state === "current"
-                        ? "bg-gold text-black"
-                        : "border border-border/60 text-muted"
-                  }`}
-                >
-                  {step.state === "done" ? "✓" : index + 1}
-                </span>
-                <span className={step.state === "todo" ? "text-muted" : "text-foreground"}>{step.label}</span>
-                {index < all.length - 1 ? <span className="hidden h-px flex-1 bg-border/60 sm:block" /> : null}
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-6">
+    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
+      <div className="min-w-0 space-y-10">
+        <header>
+          <Link
+            href={`/${locale}/cart`}
+            className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-strong transition hover:text-gold"
+          >
+            {locale === "de" ? "← Warenkorb" : "← Cart"}
+          </Link>
+          <h1 className="mt-4 font-display text-[2rem] font-semibold leading-tight tracking-tight text-heading sm:text-[2.5rem]">
+            {locale === "de" ? "Bestellung abschließen" : "Complete your order"}
+          </h1>
+          <p className="mt-3 max-w-md text-[15px] leading-relaxed text-muted">
+            {locale === "de"
+              ? "Wir melden uns nach der Zahlung persönlich – per E-Mail und, wenn du magst, telefonisch."
+              : "We get in touch personally after payment — by email, and by phone if you prefer."}
+          </p>
+        </header>
 
         {error ? (
-          <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100" role="alert">
             {error}
           </div>
         ) : null}
 
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="flex items-center gap-2.5 text-lg font-semibold text-foreground">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-[11px] font-bold text-gold">1</span>
-            {locale === "de" ? "Kontaktdaten" : "Contact details"}
+        <section>
+          <div className="flex items-baseline justify-between gap-4 border-b border-border/60 pb-3">
+            <h2 className={SECTION_HEADING}>{locale === "de" ? "Kontakt" : "Contact"}</h2>
+            <p className="text-[11px] text-muted-strong">{locale === "de" ? "* Pflichtfeld" : "* Required"}</p>
+          </div>
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <label className="block">
+              <span className={LABEL_CLASS}>{locale === "de" ? "Name *" : "Name *"}</span>
+              <input required autoComplete="name" className={FIELD_CLASS} value={customer.name} onChange={(event) => setCustomer({ ...customer, name: event.target.value })} />
+            </label>
+            <label className="block">
+              <span className={LABEL_CLASS}>{locale === "de" ? "E-Mail *" : "Email *"}</span>
+              <input required type="email" autoComplete="email" className={FIELD_CLASS} value={customer.email} onChange={(event) => setCustomer({ ...customer, email: event.target.value })} />
+            </label>
+            <label className="block md:col-span-2">
+              <span className={LABEL_CLASS}>{locale === "de" ? "Telefon (optional)" : "Phone (optional)"}</span>
+              <input autoComplete="tel" className={FIELD_CLASS} value={customer.phone} onChange={(event) => setCustomer({ ...customer, phone: event.target.value })} />
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2 className={`${SECTION_HEADING} border-b border-border/60 pb-3`}>
+            {locale === "de" ? "Lieferung" : "Delivery"}
           </h2>
-          <p className="text-xs text-muted">{locale === "de" ? "* Pflichtfeld" : "* Required field"}</p>
-        </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-medium text-foreground">{locale === "de" ? "Name" : "Name"} *</span>
-            <input required className={FIELD_CLASS} value={customer.name} onChange={(event) => setCustomer({ ...customer, name: event.target.value })} autoComplete="name" />
-          </label>
-          <label className="block">
-            <span className="text-sm font-medium text-foreground">{locale === "de" ? "E-Mail" : "Email"} *</span>
-            <input required className={FIELD_CLASS} value={customer.email} onChange={(event) => setCustomer({ ...customer, email: event.target.value })} autoComplete="email" type="email" />
-          </label>
-          <label className="block md:col-span-2">
-            <span className="text-sm font-medium text-foreground">{locale === "de" ? "Telefon optional" : "Phone optional"}</span>
-            <input className={FIELD_CLASS} value={customer.phone} onChange={(event) => setCustomer({ ...customer, phone: event.target.value })} autoComplete="tel" />
-          </label>
-        </div>
-
-        <h2 className="mt-9 flex items-center gap-2.5 text-lg font-semibold text-foreground">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-[11px] font-bold text-gold">2</span>
-          {locale === "de" ? "Lieferung" : "Delivery"}
-        </h2>
-
-        {/* Selected state has to be obvious: the old radios looked identical
-            whether chosen or not, and the price only appeared after choosing. */}
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {([
-            {
-              value: "pickup" as const,
-              title: locale === "de" ? "Abholung im Store" : "Store pickup",
-              note: locale === "de" ? "Hamburg-Wilhelmsburg · Mo–Sa 09:30–20:00" : "Hamburg-Wilhelmsburg · Mon–Sat 9:30–20:00",
-              price: locale === "de" ? "Kostenlos" : "Free",
-            },
-            {
-              value: "germany" as const,
-              title: locale === "de" ? "Versand Deutschland" : "Germany shipping",
-              note: locale === "de" ? "Versichert · 1–3 Werktage" : "Insured · 1–3 business days",
-              price: formatMoney(locale, germanyShippingAmount),
-            },
-          ]).map((option) => {
-            const active = shippingMethod === option.value;
-            return (
-              <label
-                key={option.value}
-                className={`relative flex cursor-pointer flex-col gap-1 rounded-2xl border p-4 transition ${
-                  active
-                    ? "border-gold/60 bg-gold/[0.06] ring-2 ring-gold/20"
-                    : "border-border/60 bg-surface/40 hover:border-gold/30"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="shipping"
-                  className="sr-only"
-                  checked={active}
-                  onChange={() => setShippingMethod(option.value)}
-                />
-                <span className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-semibold text-foreground">{option.title}</span>
-                  <span className={`text-sm font-semibold ${active ? "text-gold" : "text-muted"}`}>{option.price}</span>
+          <div className="mt-6 grid gap-4">
+            {/* Pickup leads: it is free, it is same-day, and it is the only
+                thing here a marketplace cannot offer. */}
+            <label
+              className={`group relative block cursor-pointer rounded-xl border p-5 transition ${
+                shippingMethod === "pickup"
+                  ? "border-gold/70 bg-gradient-to-br from-gold/[0.08] to-transparent"
+                  : "border-border/60 hover:border-border"
+              }`}
+            >
+              <input type="radio" name="shipping" className="sr-only" checked={shippingMethod === "pickup"} onChange={() => setShippingMethod("pickup")} />
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[15px] font-semibold text-foreground">
+                    {locale === "de" ? "Im Laden abholen" : "Collect in store"}
+                  </p>
+                  <p className="mt-1.5 text-sm text-muted">
+                    {siteInfo.address.street}, {siteInfo.address.postalCode} {siteInfo.address.city}
+                  </p>
+                  {clock ? (
+                    <p className="mt-2 flex items-center gap-2 text-xs">
+                      <span className={`h-1.5 w-1.5 rounded-full ${storeOpen ? "bg-emerald-400" : "bg-muted-strong"}`} />
+                      <span className={storeOpen ? "text-emerald-400" : "text-muted-strong"}>
+                        {storeOpen
+                          ? locale === "de" ? "Jetzt geöffnet bis 20:00 Uhr" : "Open now until 20:00"
+                          : locale === "de" ? "Geschlossen · Mo–Sa ab 09:30 Uhr" : "Closed · Mon–Sat from 09:30"}
+                      </span>
+                    </p>
+                  ) : null}
+                </div>
+                <span className={`shrink-0 font-display text-lg font-semibold ${MONEY} ${shippingMethod === "pickup" ? "text-gold" : "text-muted-strong"}`}>
+                  {locale === "de" ? "Gratis" : "Free"}
                 </span>
-                <span className="text-xs text-muted">{option.note}</span>
-                {active ? (
-                  <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[11px] font-bold text-black">
-                    ✓
-                  </span>
-                ) : null}
+              </div>
+            </label>
+
+            <label
+              className={`group relative block cursor-pointer rounded-xl border p-5 transition ${
+                shippingMethod === "germany"
+                  ? "border-gold/70 bg-gradient-to-br from-gold/[0.08] to-transparent"
+                  : "border-border/60 hover:border-border"
+              }`}
+            >
+              <input type="radio" name="shipping" className="sr-only" checked={shippingMethod === "germany"} onChange={() => setShippingMethod("germany")} />
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[15px] font-semibold text-foreground">
+                    {locale === "de" ? "Versand nach Deutschland" : "Delivery within Germany"}
+                  </p>
+                  <p className="mt-1.5 text-sm text-muted">
+                    {locale === "de" ? "Versichert, mit Sendungsverfolgung" : "Insured, with tracking"}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-strong">
+                    {locale === "de" ? "In 1–3 Werktagen bei dir" : "With you in 1–3 business days"}
+                  </p>
+                </div>
+                <span className={`shrink-0 font-display text-lg font-semibold ${MONEY} ${shippingMethod === "germany" ? "text-gold" : "text-muted-strong"}`}>
+                  {formatMoney(locale, germanyShippingAmount)}
+                </span>
+              </div>
+            </label>
+          </div>
+
+          {shippingMethod === "germany" ? (
+            <div className="mt-6 grid gap-5 md:grid-cols-2">
+              <label className="block md:col-span-2">
+                <span className={LABEL_CLASS}>{locale === "de" ? "Straße und Hausnummer *" : "Street and number *"}</span>
+                <input required autoComplete="address-line1" className={FIELD_CLASS} value={customer.line1} onChange={(event) => setCustomer({ ...customer, line1: event.target.value })} />
               </label>
-            );
-          })}
-        </div>
-
-        {shippingMethod === "germany" ? (
-          <>
-          <h2 className="mt-9 flex items-center gap-2.5 text-lg font-semibold text-foreground">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-[11px] font-bold text-gold">3</span>
-            {locale === "de" ? "Lieferadresse" : "Delivery address"}
-          </h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="block md:col-span-2">
-              <span className="text-sm font-medium text-foreground">{locale === "de" ? "Adresse" : "Address"} *</span>
-              <input required className={FIELD_CLASS} value={customer.line1} onChange={(event) => setCustomer({ ...customer, line1: event.target.value })} autoComplete="address-line1" />
-            </label>
-            <label className="block md:col-span-2">
-              <span className="text-sm font-medium text-foreground">{locale === "de" ? "Adresszusatz optional" : "Address line 2 optional"}</span>
-              <input className={FIELD_CLASS} value={customer.line2} onChange={(event) => setCustomer({ ...customer, line2: event.target.value })} autoComplete="address-line2" />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium text-foreground">{locale === "de" ? "PLZ" : "Postal code"} *</span>
-              <input required className={FIELD_CLASS} value={customer.postalCode} onChange={(event) => setCustomer({ ...customer, postalCode: event.target.value })} autoComplete="postal-code" />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium text-foreground">{locale === "de" ? "Ort" : "City"} *</span>
-              <input required className={FIELD_CLASS} value={customer.city} onChange={(event) => setCustomer({ ...customer, city: event.target.value })} autoComplete="address-level2" />
-            </label>
-          </div>
-          </>
-        ) : null}
-        </div>
-
-        {/* Reassurance where the decision is made, not buried in the footer. */}
-        <div className="glass-panel rounded-2xl p-5">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              locale === "de" ? "14 Tage Widerrufsrecht" : "14-day right of withdrawal",
-              locale === "de" ? "24 Monate Gewährleistung" : "24-month warranty",
-              locale === "de" ? "Versand & Abholung in Hamburg" : "Shipping & Hamburg pickup",
-            ].map((item) => (
-              <p key={item} className="flex items-start gap-2 text-xs text-muted">
-                <span className="mt-0.5 text-gold">✓</span>
-                <span>{item}</span>
-              </p>
-            ))}
-          </div>
-        </div>
+              <label className="block md:col-span-2">
+                <span className={LABEL_CLASS}>{locale === "de" ? "Adresszusatz (optional)" : "Address line 2 (optional)"}</span>
+                <input autoComplete="address-line2" className={FIELD_CLASS} value={customer.line2} onChange={(event) => setCustomer({ ...customer, line2: event.target.value })} />
+              </label>
+              <label className="block">
+                <span className={LABEL_CLASS}>{locale === "de" ? "PLZ *" : "Postal code *"}</span>
+                <input required autoComplete="postal-code" className={FIELD_CLASS} value={customer.postalCode} onChange={(event) => setCustomer({ ...customer, postalCode: event.target.value })} />
+              </label>
+              <label className="block">
+                <span className={LABEL_CLASS}>{locale === "de" ? "Ort *" : "City *"}</span>
+                <input required autoComplete="address-level2" className={FIELD_CLASS} value={customer.city} onChange={(event) => setCustomer({ ...customer, city: event.target.value })} />
+              </label>
+            </div>
+          ) : null}
+        </section>
       </div>
 
-      <aside className="glass-panel h-fit rounded-2xl p-6 lg:sticky lg:top-28">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-foreground">{locale === "de" ? "Zusammenfassung" : "Order summary"}</h2>
-          <PaymentBrandIcons iconClassName="h-4 w-auto" />
-        </div>
-        {loading ? (
-          <p className="mt-5 text-sm text-muted">{locale === "de" ? "Warenkorb wird geprüft..." : "Checking cart..."}</p>
-        ) : cart ? (
-          <>
-            <div className="mt-5 space-y-3 text-sm">
-              {cart.items.map((item) => (
-                <div key={item.key} className="flex items-start gap-3">
-                  {item.image ? (
-                    <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-[#f5f5f5]">
-                      <Image
-                        src={item.image}
-                        alt={item.title}
-                        fill
-                        sizes="48px"
-                        className="object-contain p-1"
-                        unoptimized={shouldBypassImageOptimization(item.image)}
-                      />
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-black">
-                        {item.quantity}
-                      </span>
-                    </span>
-                  ) : null}
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm text-foreground">{item.title}</span>
-                    {item.condition && item.condition !== "new" ? (
-                      <span className="mt-1 inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
-                        {item.condition === "used"
-                          ? locale === "de" ? "Gebraucht" : "Used"
-                          : "Unboxed"}
+      <aside className="h-fit lg:sticky lg:top-28">
+        <div className="rounded-xl border border-border/60 bg-surface/50 p-6">
+          <h2 className={`${SECTION_HEADING} border-b border-border/60 pb-3`}>
+            {locale === "de" ? "Deine Bestellung" : "Your order"}
+          </h2>
+
+          {loading && !cart ? (
+            <p className="mt-6 text-sm text-muted">{locale === "de" ? "Einen Moment…" : "One moment…"}</p>
+          ) : cart ? (
+            <>
+              <ul className="mt-6 space-y-4">
+                {cart.items.map((item) => (
+                  <li key={item.key} className="flex items-start gap-3.5">
+                    {item.image ? (
+                      <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-[#f5f5f5]">
+                        <Image src={item.image} alt={item.title} fill sizes="56px" className="object-contain p-1" unoptimized={shouldBypassImageOptimization(item.image)} />
+                        <span className={`absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-bl-md bg-black/80 px-1 text-[10px] font-semibold text-white ${MONEY}`}>
+                          {item.quantity}
+                        </span>
                       </span>
                     ) : null}
-                  </span>
-                  <span className="shrink-0 text-foreground">{formatMoney(locale, item.lineAmount, cart.currency)}</span>
-                </div>
-              ))}
-              <div className="flex justify-between border-t border-border/60 pt-3 text-muted">
-                <span>{locale === "de" ? "Versand" : "Shipping"}</span>
-                <span>{formatMoney(locale, cart.shippingAmount, cart.currency)}</span>
-              </div>
-              <div className="flex justify-between text-xs text-muted">
-                <span>{locale === "de" ? "Enthaltene MwSt." : "VAT included"}</span>
-                <span>{formatMoney(locale, cart.vatAmount, cart.currency)}</span>
-              </div>
-              <div className="flex justify-between border-t border-border/60 pt-4 text-lg font-semibold text-foreground">
-                <span>{locale === "de" ? "Gesamt" : "Total"}</span>
-                <span>{formatMoney(locale, cart.totalAmount, cart.currency)}</span>
-              </div>
-            </div>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm leading-snug text-foreground">{item.title}</span>
+                      {item.condition && item.condition !== "new" ? (
+                        <span className="mt-1 inline-block text-[11px] uppercase tracking-[0.12em] text-emerald-400">
+                          {item.condition === "used" ? (locale === "de" ? "Gebraucht A+" : "Used A+") : "Open-Box"}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className={`shrink-0 text-sm text-foreground ${MONEY}`}>
+                      {formatMoney(locale, item.lineAmount, cart.currency)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
 
-            {hasNonNewItems ? (
-              <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-xs leading-5 text-muted">
-                <input
-                  type="checkbox"
-                  checked={conditionConsent}
-                  onChange={(event) => setConditionConsent(event.target.checked)}
-                  className="mt-0.5"
-                  required
-                />
+              <dl className="mt-6 space-y-2.5 border-t border-border/60 pt-5 text-sm">
+                <div className="flex justify-between text-muted">
+                  <dt>{locale === "de" ? "Zwischensumme" : "Subtotal"}</dt>
+                  <dd className={MONEY}>{formatMoney(locale, cart.subtotalAmount, cart.currency)}</dd>
+                </div>
+                <div className="flex justify-between text-muted">
+                  <dt>{locale === "de" ? "Versand" : "Shipping"}</dt>
+                  <dd className={MONEY}>
+                    {cart.shippingAmount === 0
+                      ? locale === "de" ? "Gratis" : "Free"
+                      : formatMoney(locale, cart.shippingAmount, cart.currency)}
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="mt-5 flex items-baseline justify-between border-t border-border/60 pt-5">
+                <span className="text-[13px] font-semibold uppercase tracking-[0.18em] text-foreground">
+                  {locale === "de" ? "Gesamt" : "Total"}
+                </span>
+                <span className={`font-display text-[1.75rem] font-semibold leading-none text-gold ${MONEY}`}>
+                  {formatMoney(locale, cart.totalAmount, cart.currency)}
+                </span>
+              </div>
+              <p className={`mt-2 text-right text-[11px] text-muted-strong ${MONEY}`}>
+                {locale === "de" ? "inkl. " : "incl. "}
+                {formatMoney(locale, cart.vatAmount, cart.currency)}
+                {locale === "de" ? " MwSt." : " VAT"}
+              </p>
+
+              {hasNonNewItems ? (
+                <label className="mt-6 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted">
+                  <input type="checkbox" checked={conditionConsent} onChange={(event) => setConditionConsent(event.target.checked)} className="mt-0.5 accent-[color:var(--gold)]" required />
+                  <span>
+                    {locale === "de"
+                      ? "Mir ist bekannt, dass diese Bestellung Open-Box- bzw. Gebrauchtgeräte enthält. "
+                      : "I am aware that this order contains open-box or used devices. "}
+                    <a href={`/${locale}/device-conditions`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
+                      {locale === "de" ? "Gerätezustände" : "Device conditions"}
+                    </a>
+                    {" *"}
+                  </span>
+                </label>
+              ) : null}
+
+              <label className="mt-4 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted">
+                <input type="checkbox" checked={termsConsent} onChange={(event) => setTermsConsent(event.target.checked)} className="mt-0.5 accent-[color:var(--gold)]" required />
                 <span>
-                  {locale === "de"
-                    ? "Mir ist bekannt, dass diese Bestellung Open-Box- bzw. Gebrauchtgeräte enthält. Ich habe den auf der Produktseite ausgewiesenen Zustand zur Kenntnis genommen. "
-                    : "I am aware that this order contains open-box or used devices. I have taken note of the condition stated on the product page. "}
-                  <a href={`/${locale}/device-conditions`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
-                    {locale === "de" ? "Gerätezustände & Ihre Rechte" : "Device conditions & your rights"}
+                  {locale === "de" ? "Ich akzeptiere die " : "I accept the "}
+                  <a href={`/${locale}/terms`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
+                    {locale === "de" ? "AGB" : "terms"}
+                  </a>
+                  {locale === "de" ? " und die " : " and the "}
+                  <a href={`/${locale}/withdrawal`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
+                    {locale === "de" ? "Widerrufsbelehrung" : "withdrawal policy"}
                   </a>
                   {" *"}
                 </span>
               </label>
-            ) : null}
 
-            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-surface/40 p-4 text-xs leading-5 text-muted">
-              <input
-                type="checkbox"
-                checked={termsConsent}
-                onChange={(event) => setTermsConsent(event.target.checked)}
-                className="mt-0.5"
-                required
-              />
-              <span>
-                {locale === "de" ? "Ich habe die " : "I have read and accept the "}
-                <a href={`/${locale}/terms`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
-                  {locale === "de" ? "AGB" : "terms and conditions"}
-                </a>
-                {locale === "de" ? " und die " : " and the "}
-                <a href={`/${locale}/withdrawal`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
-                  {locale === "de" ? "Widerrufsbelehrung" : "withdrawal policy"}
-                </a>
-                {locale === "de" ? " gelesen und akzeptiere sie. *" : ". *"}
-              </span>
-            </label>
+              {embeddedPayments && clientSecret && stripePublishableKey ? (
+                <StripePaymentElement
+                  locale={locale}
+                  clientSecret={clientSecret}
+                  publishableKey={stripePublishableKey}
+                  returnUrl={`${typeof window === "undefined" ? "" : window.location.origin}/${locale}/checkout/success?provider=stripe`}
+                  disabled={!canSubmit}
+                  onError={setError}
+                />
+              ) : null}
 
-            {embeddedPayments && clientSecret && stripePublishableKey ? (
-              <StripePaymentElement
-                locale={locale}
-                clientSecret={clientSecret}
-                publishableKey={stripePublishableKey}
-                returnUrl={`${typeof window === "undefined" ? "" : window.location.origin}/${locale}/checkout/success?provider=stripe`}
-                disabled={!canSubmit}
-                onError={setError}
-              />
-            ) : null}
+              <div className="mt-6 grid gap-2.5">
+                {clientSecret ? null : (
+                  <button
+                    type="button"
+                    disabled={!canSubmit || submitting !== null}
+                    className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => void startCheckout("stripe")}
+                  >
+                    {submitting === "stripe"
+                      ? locale === "de" ? "Wird vorbereitet…" : "Preparing…"
+                      : embeddedPayments
+                        ? locale === "de" ? "Mit Karte oder Wallet zahlen" : "Pay by card or wallet"
+                        : locale === "de" ? "Zahlungspflichtig bestellen" : "Order with obligation to pay"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={!canSubmit || submitting !== null}
+                  className="btn-secondary justify-center disabled:cursor-not-allowed disabled:opacity-40"
+                  onClick={() => void startCheckout("paypal")}
+                >
+                  {submitting === "paypal"
+                    ? locale === "de" ? "PayPal wird geöffnet…" : "Opening PayPal…"
+                    : locale === "de" ? "Mit PayPal bestellen" : "Order with PayPal"}
+                </button>
+              </div>
 
-            <div className="mt-6 grid gap-3">
-              {clientSecret ? null : (
-              <button type="button" disabled={!canSubmit || submitting !== null} className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void startCheckout("stripe")}>
-                {submitting === "stripe"
-                  ? locale === "de" ? "Wird vorbereitet..." : "Preparing..."
-                  : embeddedPayments
-                    ? locale === "de" ? "Mit Karte, Apple Pay oder Google Pay zahlen" : "Pay by card, Apple Pay or Google Pay"
-                    : locale === "de" ? "Zahlungspflichtig bestellen" : "Order with obligation to pay"}
-              </button>
-              )}
-              <button type="button" disabled={!canSubmit || submitting !== null} className="btn-secondary justify-center disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void startCheckout("paypal")}>
-                {submitting === "paypal" ? (locale === "de" ? "PayPal wird geöffnet..." : "Opening PayPal...") : (locale === "de" ? "Zahlungspflichtig mit PayPal bestellen" : "Binding order with PayPal")}
-              </button>
+              <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/60 pt-5">
+                <PaymentBrandIcons iconClassName="h-4 w-auto" />
+                <span className="text-[11px] text-muted-strong">
+                  {locale === "de" ? "SSL-verschlüsselt" : "SSL encrypted"}
+                </span>
+              </div>
+
+              <ul className="mt-4 space-y-1.5 text-[11px] leading-relaxed text-muted-strong">
+                <li>{locale === "de" ? "14 Tage Widerrufsrecht" : "14-day right of withdrawal"}</li>
+                <li>{locale === "de" ? "24 Monate Gewährleistung" : "24-month warranty"}</li>
+                <li>
+                  {locale === "de" ? "Fragen? " : "Questions? "}
+                  <a href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="text-muted underline underline-offset-2 transition hover:text-gold">
+                    {siteInfo.phone}
+                  </a>
+                </li>
+              </ul>
+            </>
+          ) : (
+            <div className="mt-6 space-y-4">
+              <p className="text-sm text-muted">{locale === "de" ? "Dein Warenkorb ist leer." : "Your cart is empty."}</p>
+              <Link href={`/${locale}/store`} className="btn-secondary justify-center">
+                {locale === "de" ? "Weiter einkaufen" : "Continue shopping"}
+              </Link>
             </div>
-            <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted">
-              <svg viewBox="0 0 24 24" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="4" y="11" width="16" height="10" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              </svg>
-              <span>
-                {locale === "de"
-                  ? "SSL-verschlüsselte Zahlung. Preise inkl. gesetzlicher MwSt. Die Bestellung gilt erst nach Bestätigung des Zahlungsanbieters als bezahlt."
-                  : "SSL-encrypted payment. Prices include VAT. An order counts as paid only after the payment provider confirms it."}
-              </span>
-            </p>
-          </>
-        ) : (
-          <div className="mt-5 rounded-xl border border-border/60 bg-surface/40 p-5 text-sm text-muted">
-            {locale === "de" ? "Dein Warenkorb ist leer." : "Your cart is empty."}
-          </div>
-        )}
+          )}
+        </div>
       </aside>
     </div>
   );
