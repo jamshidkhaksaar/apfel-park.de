@@ -39,7 +39,11 @@ export default async function CheckoutPage({
   return (
     <section className="section-pad bg-background">
       <div className="container-page">
-        <CheckoutClient locale={locale} initialShippingMethod={normalizeShippingMethod(query.shipping)} />
+        <CheckoutClient
+          locale={locale}
+          initialShippingMethod={normalizeShippingMethod(query.shipping)}
+          stripePublishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() || null}
+        />
       </div>
     </section>
   );

@@ -11,8 +11,12 @@ import {
   type StoredCartItem,
 } from "@/components/checkout/cart";
 
+import StripePaymentElement from "@/components/checkout/StripePaymentElement";
+
 type Props = {
   locale: "de" | "en";
+  /** When absent the checkout keeps using the hosted Stripe redirect. */
+  stripePublishableKey?: string | null;
   initialShippingMethod: ShippingMethod;
 };
 
@@ -37,7 +41,7 @@ const createIdempotencyKey = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-export default function CheckoutClient({ locale, initialShippingMethod }: Props) {
+export default function CheckoutClient({ locale, initialShippingMethod, stripePublishableKey }: Props) {
   const items = useSyncExternalStore(subscribeStoredCart, readStoredCart, getServerCartSnapshot);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>(initialShippingMethod);
   const [cart, setCart] = useState<ValidatedCart | null>(null);
@@ -56,10 +60,15 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
   const [conditionConsent, setConditionConsent] = useState(false);
   const [termsConsent, setTermsConsent] = useState(false);
   const [idempotencyKey] = useState(createIdempotencyKey);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const embeddedPayments = Boolean(stripePublishableKey);
 
   const validate = useCallback(async (nextItems: StoredCartItem[], nextShipping: ShippingMethod) => {
     setLoading(true);
     setError("");
+    // An intent is created for one specific amount, so drop it whenever the
+    // cart is re-priced; otherwise the customer could pay a stale total.
+    setClientSecret(null);
     if (nextItems.length === 0) {
       setCart(null);
       setLoading(false);
@@ -146,6 +155,28 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
         item_price: item.unitAmount,
       })),
     });
+
+    // Embedded card payment: fetch a client secret and render the Payment
+    // Element in place instead of redirecting to the hosted Checkout page.
+    if (provider === "stripe" && embeddedPayments) {
+      const intentResponse = await fetch("/api/checkout/stripe/intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload()),
+      });
+      const intentData = (await intentResponse.json()) as {
+        success: boolean;
+        error?: string;
+        clientSecret?: string;
+      };
+      setSubmitting(null);
+      if (!intentResponse.ok || !intentData.success || !intentData.clientSecret) {
+        setError(intentData.error || (locale === "de" ? "Zahlung konnte nicht gestartet werden." : "Payment could not be started."));
+        return;
+      }
+      setClientSecret(intentData.clientSecret);
+      return;
+    }
 
     const endpoint = provider === "stripe" ? "/api/checkout/stripe" : "/api/checkout/paypal/create";
     const response = await fetch(endpoint, {
@@ -332,10 +363,27 @@ export default function CheckoutClient({ locale, initialShippingMethod }: Props)
               </span>
             </label>
 
+            {embeddedPayments && clientSecret && stripePublishableKey ? (
+              <StripePaymentElement
+                locale={locale}
+                clientSecret={clientSecret}
+                publishableKey={stripePublishableKey}
+                returnUrl={`${typeof window === "undefined" ? "" : window.location.origin}/${locale}/checkout/success?provider=stripe`}
+                disabled={!canSubmit}
+                onError={setError}
+              />
+            ) : null}
+
             <div className="mt-6 grid gap-3">
+              {clientSecret ? null : (
               <button type="button" disabled={!canSubmit || submitting !== null} className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void startCheckout("stripe")}>
-                {submitting === "stripe" ? (locale === "de" ? "Stripe wird geöffnet..." : "Opening Stripe...") : (locale === "de" ? "Zahlungspflichtig bestellen" : "Order with obligation to pay")}
+                {submitting === "stripe"
+                  ? locale === "de" ? "Wird vorbereitet..." : "Preparing..."
+                  : embeddedPayments
+                    ? locale === "de" ? "Mit Karte, Apple Pay oder Google Pay zahlen" : "Pay by card, Apple Pay or Google Pay"
+                    : locale === "de" ? "Zahlungspflichtig bestellen" : "Order with obligation to pay"}
               </button>
+              )}
               <button type="button" disabled={!canSubmit || submitting !== null} className="btn-secondary justify-center disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void startCheckout("paypal")}>
                 {submitting === "paypal" ? (locale === "de" ? "PayPal wird geöffnet..." : "Opening PayPal...") : (locale === "de" ? "Zahlungspflichtig mit PayPal bestellen" : "Binding order with PayPal")}
               </button>

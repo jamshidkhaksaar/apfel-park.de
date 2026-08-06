@@ -72,6 +72,47 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // The embedded Payment Element pays a PaymentIntent directly; there is no
+  // Checkout Session, so the hosted-flow branch above never fires for it.
+  if (event.type === "payment_intent.succeeded") {
+    const order = await markOrderPaid({
+      orderId,
+      provider: "stripe",
+      providerOrderId: session.id,
+      providerPaymentId: session.id,
+      providerStatus: "succeeded",
+    });
+
+    if (order) {
+      await sendPurchaseTrackingEvents(
+        {
+          eventId: `purchase-${order.id}`,
+          orderId: order.id,
+          email: order.customer_email,
+          firstName: order.customer_name,
+          value: Number(order.total_amount),
+          currency: order.currency || "EUR",
+          items: Array.isArray(order.items) ? order.items : [],
+        },
+        {
+          consentMode: order.consent_mode,
+          url: "https://apfel-park.de/checkout/success",
+        },
+      );
+    }
+  }
+
+  // A failed intent must release the stock it reserved, otherwise an abandoned
+  // attempt keeps the item unsellable.
+  if (event.type === "payment_intent.payment_failed" || event.type === "payment_intent.canceled") {
+    await markOrderCancelled({
+      orderId,
+      provider: "stripe",
+      providerOrderId: session.id,
+      providerStatus: event.type === "payment_intent.canceled" ? "canceled" : "payment_failed",
+    });
+  }
+
   if (event.type === "checkout.session.expired") {
     await markOrderCancelled({
       orderId,
