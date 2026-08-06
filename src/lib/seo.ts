@@ -167,6 +167,11 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     const pageSettings = settings.pages[route.id];
     if (!pageSettings.index) return [];
 
+    // /gaming is noindexed (there is no console inventory yet) and telling
+    // Google to crawl a page it must not index is a contradiction. It returns
+    // to the sitemap when consoles are actually stocked.
+    if (route.id === "gaming") return [];
+
     return locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}${route.path}`,
       lastModified: deployedAt,
