@@ -10,6 +10,8 @@ import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSo
 import { siteInfo } from "../../../../lib/site";
 import { getSmartphonesContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
+import { safeJsonStringify } from "@/lib/security";
+import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -53,8 +55,28 @@ export default async function SmartphonesPage({
     filters: activeFilters,
   });
 
+  const pageUrl = `${siteInfo.url}/${lang}/smartphones`;
+  const smartphonesName = dict.meta.smartphones.title;
+  const collectionPage = buildCollectionPageSchema({
+    lang,
+    name: smartphonesName,
+    description: dict.meta.smartphones.description,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+  const breadcrumb = buildListingBreadcrumbSchema({
+    lang,
+    name: smartphonesName,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+
   return (
     <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
       <PageIntro
         title={smartphonesContent.heroTitle}
         subtitle={smartphonesContent.heroSubtitle}

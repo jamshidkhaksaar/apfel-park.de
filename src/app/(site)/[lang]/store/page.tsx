@@ -7,6 +7,9 @@ import TrendingProductsCarousel from "../../../../components/store/TrendingProdu
 import { createMetadata } from "../../../../lib/metadata";
 import { getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStorePage, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
 import { requireLocale } from "@/lib/route-locale";
+import { safeJsonStringify } from "@/lib/security";
+import { siteInfo } from "@/lib/site";
+import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
 
 export const generateMetadata = async ({
   params,
@@ -41,8 +44,27 @@ export default async function StorePage({ params, searchParams }: { params: Prom
     getTrendingProducts(locale, 8),
   ]);
 
+  const pageUrl = `${siteInfo.url}/${lang}/store`;
+  const storeName = lang === "de" ? "Online Shop" : "Online Store";
+  const collectionPage = buildCollectionPageSchema({
+    lang: locale,
+    name: storeName,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+  const breadcrumb = buildListingBreadcrumbSchema({
+    lang: locale,
+    name: storeName,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+
   return (
     <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
       <PageIntro
         title={lang === "de" ? "Online Shop" : "Online Store"}
         subtitle={lang === "de" 

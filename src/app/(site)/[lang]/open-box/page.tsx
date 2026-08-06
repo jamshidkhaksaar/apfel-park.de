@@ -7,6 +7,9 @@ import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { requireLocale } from "@/lib/route-locale";
+import { safeJsonStringify } from "@/lib/security";
+import { siteInfo } from "@/lib/site";
+import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -71,8 +74,27 @@ export default async function OpenBoxPage({
     filters: activeFilters,
   });
 
+  const pageUrl = `${siteInfo.url}/${locale}/open-box`;
+  const collectionPage = buildCollectionPageSchema({
+    lang: locale,
+    name: t.title,
+    description: t.description,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+  const breadcrumb = buildListingBreadcrumbSchema({
+    lang: locale,
+    name: t.title,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+
   return (
     <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
       <PageIntro title={t.title} subtitle={t.description} eyebrow={t.title} />
 
       <section className="border-b border-border/60 pb-8">

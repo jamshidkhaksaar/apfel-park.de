@@ -9,6 +9,8 @@ import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSo
 import { siteInfo } from "../../../../lib/site";
 import { getLaptopsContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
+import { safeJsonStringify } from "@/lib/security";
+import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -53,8 +55,28 @@ export default async function LaptopsPage({
     filters: activeFilters,
   });
 
+  const pageUrl = `${siteInfo.url}/${lang}/laptops`;
+  const laptopsName = dict.meta.laptops.title;
+  const collectionPage = buildCollectionPageSchema({
+    lang,
+    name: laptopsName,
+    description: dict.meta.laptops.description,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+  const breadcrumb = buildListingBreadcrumbSchema({
+    lang,
+    name: laptopsName,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+
   return (
     <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
       <PageIntro
         title={laptops.heroTitle}
         subtitle={laptops.heroSubtitle}

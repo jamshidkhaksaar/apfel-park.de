@@ -6,6 +6,9 @@ import { getDictionary } from "@/lib/i18n";
 import { createMetadata } from "@/lib/metadata";
 import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "@/lib/products";
 import { requireLocale } from "@/lib/route-locale";
+import { safeJsonStringify } from "@/lib/security";
+import { siteInfo } from "@/lib/site";
+import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +43,32 @@ export default async function TabletsPage({
     filters: activeFilters,
   });
 
+  const pageUrl = `${siteInfo.url}/${locale}/tablets`;
+  const tabletsName = locale === "de" ? "Tablets" : "Tablets";
+  const tabletsDescription =
+    locale === "de"
+      ? "Geräte mit klar ausgewiesenem Zustand, Garantie und persönlicher Beratung in Hamburg."
+      : "Devices with clearly stated condition, warranty, and personal advice in Hamburg.";
+  const collectionPage = buildCollectionPageSchema({
+    lang: locale,
+    name: tabletsName,
+    description: tabletsDescription,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+  const breadcrumb = buildListingBreadcrumbSchema({
+    lang: locale,
+    name: tabletsName,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+
   return (
     <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
       <PageIntro
         eyebrow={locale === "de" ? "Tablets" : "Tablets"}
         title={locale === "de" ? "Tablets und iPads" : "Tablets and iPads"}
