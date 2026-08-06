@@ -54,6 +54,7 @@ export type AdminProductRecord = {
   safetyWarnings?: string[];
   safetyDocuments?: string[];
   eprelId?: string;
+  faq?: { de: Array<{ q: string; a: string }>; en: Array<{ q: string; a: string }> } | null;
   energyLabel?: {
     efficiencyClass?: string;
     batteryEndurance?: string;
@@ -118,6 +119,8 @@ type ProductFormState = {
   energyReliabilityClass: string;
   energyRepairabilityClass: string;
   energyIpRating: string;
+  faqDeText: string;
+  faqEnText: string;
   sku: string;
   price: string;
   compareAtPrice: string;
@@ -227,6 +230,8 @@ const productToForm = (product: AdminProductRecord): ProductFormState => ({
   euResponsibleEmail: product.euResponsiblePerson?.email ?? "",
   safetyWarningsText: (product.safetyWarnings ?? []).join("\n"),
   safetyDocumentsText: (product.safetyDocuments ?? []).join("\n"),
+  faqDeText: (product.faq?.de ?? []).map((entry) => `${entry.q}\n${entry.a}`).join("\n\n"),
+  faqEnText: (product.faq?.en ?? []).map((entry) => `${entry.q}\n${entry.a}`).join("\n\n"),
   eprelId: product.eprelId ?? "",
   energyEfficiencyClass: product.energyLabel?.efficiencyClass ?? "",
   energyBatteryEndurance: product.energyLabel?.batteryEndurance ?? "",
@@ -281,6 +286,18 @@ const discountPercentage = (price: number, compareAtPrice?: number | null) => {
   if (!compareAtPrice || compareAtPrice <= price) return null;
   return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
 };
+
+
+const parseFaqText = (text: string): Array<{ q: string; a: string }> =>
+  text
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+      if (lines.length < 2) return null;
+      return { q: lines[0], a: lines.slice(1).join("\n") };
+    })
+    .filter((entry): entry is { q: string; a: string } => entry !== null)
+    .slice(0, 10);
 
 const createEmptyVariant = (): ProductVariant => ({
   color: "",
@@ -365,6 +382,8 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     energyReliabilityClass: "",
     energyRepairabilityClass: "",
     energyIpRating: "",
+    faqDeText: "",
+    faqEnText: "",
     price: "",
     compareAtPrice: "",
     stock: "0",
@@ -528,6 +547,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
             euResponsiblePerson: { name: formState.euResponsibleName, address: formState.euResponsibleAddress, email: formState.euResponsibleEmail },
             safetyWarnings: formState.safetyWarningsText.split("\n").map((item) => item.trim()).filter(Boolean),
             safetyDocuments: formState.safetyDocumentsText.split("\n").map((item) => item.trim()).filter(Boolean),
+            faq: { de: parseFaqText(formState.faqDeText), en: parseFaqText(formState.faqEnText) },
             eprelId: formState.eprelId,
             energyLabel: {
               efficiencyClass: formState.energyEfficiencyClass,
@@ -579,6 +599,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
             : null,
           safetyWarnings: formState.safetyWarningsText.split("\n").map((item) => item.trim()).filter(Boolean),
           safetyDocuments: formState.safetyDocumentsText.split("\n").map((item) => item.trim()).filter(Boolean),
+          faq: { de: parseFaqText(formState.faqDeText), en: parseFaqText(formState.faqEnText) },
           eprelId: formState.eprelId,
           energyLabel:
             formState.energyEfficiencyClass || formState.energyBatteryEndurance || formState.energyIpRating
@@ -911,6 +932,13 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                       </div>
                     </div>
                   ) : null}
+                  <div className="mt-4 rounded-2xl border border-border/60 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Produkt-FAQ (Frage in einer Zeile, Antwort darunter, Paare durch Leerzeile trennen)" : "Product FAQ (question on one line, answer below, blank line between pairs)"}</p>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">FAQ (DE)</span><textarea rows={6} value={formState.faqDeText} onChange={(event) => setFormState((prev) => ({ ...prev, faqDeText: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">FAQ (EN)</span><textarea rows={6} value={formState.faqEnText} onChange={(event) => setFormState((prev) => ({ ...prev, faqEnText: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                    </div>
+                  </div>
 
                   <label className="space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Beschreibung" : "Description"}</span>

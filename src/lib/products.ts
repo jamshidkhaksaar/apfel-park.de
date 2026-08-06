@@ -48,6 +48,7 @@ export type Product = {
   slug: string;
   featureBullets: string[];
   specs: ProductSpec[];
+  faq: ProductFaqEntry[];
   variants: ProductVariant[];
   gpsr?: {
     manufacturer?: GpsrParty;
@@ -61,6 +62,34 @@ export type Product = {
   discountPercentage?: number;
   hasDiscount: boolean;
   createdAt?: string;
+};
+
+export type ProductFaqEntry = {
+  question: string;
+  answer: string;
+};
+
+// faq is stored as { de: [{q, a}], en: [{q, a}] }; fall back to German when a
+// locale has no entries, mirroring how the *_i18n columns behave.
+const toFaq = (value: unknown, locale: Locale): ProductFaqEntry[] => {
+  if (!value || typeof value !== "object") return [];
+  const record = value as Record<string, unknown>;
+  const pick = (key: string): ProductFaqEntry[] => {
+    const list = record[key];
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((entry) => {
+        if (!entry || typeof entry !== "object") return null;
+        const candidate = entry as { q?: unknown; a?: unknown };
+        const question = typeof candidate.q === "string" ? candidate.q.trim() : "";
+        const answer = typeof candidate.a === "string" ? candidate.a.trim() : "";
+        if (!question || !answer) return null;
+        return { question, answer };
+      })
+      .filter((entry): entry is ProductFaqEntry => entry !== null);
+  };
+  const localized = pick(locale);
+  return localized.length > 0 ? localized : pick("de");
 };
 
 export type EnergyLabel = {
@@ -151,6 +180,7 @@ type DbProduct = {
   eprel_id?: string | null;
   energy_label?: unknown;
   subcategory?: string | null;
+  faq?: unknown;
   stock: number | null;
   slug: string | null;
   images: string[] | null;
@@ -387,6 +417,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     eprelId: row.eprel_id?.trim() || undefined,
     energyLabel: toEnergyLabel(row.energy_label),
     subcategory: row.subcategory ?? undefined,
+    faq: toFaq(row.faq, locale),
     discountPercentage,
     hasDiscount: Boolean(discountPercentage),
     createdAt: row.created_at ?? undefined,
@@ -394,7 +425,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
 };
 
 const baseSelect =
-  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,subcategory";
+  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,subcategory,faq";
 
 /**
  * Fetches products from the database.

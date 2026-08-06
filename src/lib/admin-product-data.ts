@@ -20,6 +20,7 @@ export type ProductRow = {
   safety_documents?: string[] | null;
   eprel_id?: string | null;
   energy_label?: unknown;
+  faq?: unknown;
   price: number | string;
   compare_at_price: number | string | null;
   stock: number | null;
@@ -42,6 +43,28 @@ const toParty = (value: unknown): { name?: string; address?: string; email?: str
     address: typeof candidate.address === "string" && candidate.address.trim() ? candidate.address.trim() : undefined,
     email: typeof candidate.email === "string" && candidate.email.trim() ? candidate.email.trim() : undefined,
   };
+};
+
+const toFaqRecord = (value: unknown): AdminProductRecord["faq"] => {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const pick = (key: string) => {
+    const list = record[key];
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((entry) => {
+        if (!entry || typeof entry !== "object") return null;
+        const candidate = entry as { q?: unknown; a?: unknown };
+        const q = typeof candidate.q === "string" ? candidate.q.trim() : "";
+        const a = typeof candidate.a === "string" ? candidate.a.trim() : "";
+        if (!q || !a) return null;
+        return { q, a };
+      })
+      .filter((entry): entry is { q: string; a: string } => entry !== null);
+  };
+  const de = pick("de");
+  const en = pick("en");
+  return de.length > 0 || en.length > 0 ? { de, en } : null;
 };
 
 const toEnergyLabel = (value: unknown): AdminProductRecord["energyLabel"] => {
@@ -121,6 +144,7 @@ export const mapAdminProduct = (row: ProductRow, featuredIds: string[] = []): Ad
   safetyWarnings: (row.safety_warnings ?? []).filter(Boolean),
   safetyDocuments: (row.safety_documents ?? []).filter(Boolean),
   eprelId: row.eprel_id ?? "",
+  faq: toFaqRecord(row.faq),
   energyLabel: toEnergyLabel(row.energy_label),
   price: toNumber(row.price),
   compareAtPrice: row.compare_at_price == null ? null : toNumber(row.compare_at_price),

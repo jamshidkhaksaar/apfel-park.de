@@ -165,6 +165,19 @@ export default async function ProductDetailPage({
       shippingDetails: offerShippingDetails(),
     },
   };
+  const faqJsonLd =
+    product.faq.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: product.faq.map((entry) => ({
+            "@type": "Question",
+            name: entry.question,
+            acceptedAnswer: { "@type": "Answer", text: entry.answer },
+          })),
+        }
+      : null;
+
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -184,6 +197,12 @@ export default async function ProductDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumbJsonLd) }}
       />
+      {faqJsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonStringify(faqJsonLd) }}
+        />
+      ) : null}
       <ProductViewTracker
         productId={product.id}
         title={product.title}

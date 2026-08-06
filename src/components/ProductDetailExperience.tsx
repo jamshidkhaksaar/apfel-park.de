@@ -264,6 +264,51 @@ export default function ProductDetailExperience({ locale, product }: Props) {
             </div>
           </details>
         ) : null}
+
+        {product.faq.length > 0 ? (
+          <div className="glass-panel rounded-[32px] p-8">
+            <h2 className="text-xl font-semibold text-foreground">
+              {locale === "de" ? "Häufige Fragen" : "Frequently asked questions"}
+            </h2>
+            <div className="mt-4 space-y-3">
+              {product.faq.map((entry) => (
+                <details key={entry.question} className="rounded-2xl border border-border/60 bg-surface/40 px-5 py-4">
+                  <summary className="cursor-pointer text-sm font-semibold text-foreground">{entry.question}</summary>
+                  <p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted">{entry.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {product.category === "smartphones" ? (
+          <div className="glass-panel rounded-[32px] p-8">
+            <h2 className="text-xl font-semibold text-foreground">
+              {locale === "de" ? `Für wen eignet sich das ${product.model || product.title}?` : `Who is the ${product.model || product.title} for?`}
+            </h2>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {[
+                locale === "de"
+                  ? ["Business & Vielnutzer", "Zuverlässige Leistung, lange Akkulaufzeit und sichere Entsperrung für den Arbeitsalltag."]
+                  : ["Business & heavy users", "Reliable performance, long battery life and secure unlocking for the working day."],
+                locale === "de"
+                  ? ["Foto & Video", "Starke Kamera für Fotos, Videos und Social Media – direkt aus der Hosentasche."]
+                  : ["Photo & video", "A strong camera for photos, videos and social media, straight from your pocket."],
+                locale === "de"
+                  ? ["Gaming & Performance", "Flüssige Darstellung und schnelle Chips für Spiele und anspruchsvolle Apps."]
+                  : ["Gaming & performance", "Smooth rendering and fast chips for games and demanding apps."],
+                locale === "de"
+                  ? ["Alltag & Familie", "Einfache Bedienung, regelmäßige Updates und bei uns geprüft mit Garantie."]
+                  : ["Everyday & family", "Easy to use, regularly updated, and tested by us with warranty."],
+              ].map(([heading, text]) => (
+                <div key={heading} className="rounded-2xl border border-border/60 bg-surface/40 p-5">
+                  <p className="text-sm font-semibold text-foreground">{heading}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="order-1 min-w-0 space-y-6 xl:order-2 xl:sticky xl:top-28 xl:self-start">

@@ -31,6 +31,7 @@ type ProductPayload = {
   safetyWarnings?: string[];
   safetyDocuments?: string[];
   eprelId?: string;
+  faq?: { de?: Array<{ q?: string; a?: string }>; en?: Array<{ q?: string; a?: string }> } | null;
   energyLabel?: {
     efficiencyClass?: string;
     batteryEndurance?: string;
@@ -239,6 +240,17 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   const safetyWarnings = sanitizeStringArray(payload.safetyWarnings, 500);
   const safetyDocuments = sanitizeStringArray(payload.safetyDocuments, 1000);
   const eprelId = payload.eprelId ? sanitizeInput(payload.eprelId).slice(0, 32) : null;
+  const sanitizeFaqList = (list: Array<{ q?: string; a?: string }> | undefined) =>
+    (Array.isArray(list) ? list : [])
+      .map((entry) => ({
+        q: sanitizeInput(entry?.q ?? "").slice(0, 300),
+        a: sanitizeInput(entry?.a ?? "").slice(0, 1000),
+      }))
+      .filter((entry) => entry.q && entry.a)
+      .slice(0, 10);
+  const faqDe = sanitizeFaqList(payload.faq?.de);
+  const faqEn = sanitizeFaqList(payload.faq?.en);
+  const faq = faqDe.length > 0 || faqEn.length > 0 ? { de: faqDe, en: faqEn } : null;
   const energyText = (value: unknown, uppercase = false) => {
     if (typeof value !== "string") return undefined;
     const clean = sanitizeInput(value);
@@ -289,6 +301,7 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
     safetyDocuments,
     eprelId,
     energyLabel,
+    faq,
     category,
     subcategory,
     price,
@@ -423,9 +436,10 @@ export async function POST(request: NextRequest) {
         "safety_warnings",
         "safety_documents",
         "eprel_id",
-        "energy_label"
+        "energy_label",
+        "faq"
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23::jsonb,$24::jsonb,$25,$26,$27,$28::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23::jsonb,$24::jsonb,$25,$26,$27,$28::jsonb,$29::jsonb
       )
       RETURNING "id"`,
       [
@@ -457,6 +471,7 @@ export async function POST(request: NextRequest) {
         product.safetyDocuments,
         product.eprelId,
         JSON.stringify(product.energyLabel),
+        product.faq ? JSON.stringify(product.faq) : null,
       ],
     );
 
@@ -554,6 +569,7 @@ export async function PATCH(request: NextRequest) {
         "safety_documents" = $27,
         "eprel_id" = $28,
         "energy_label" = $29::jsonb,
+        "faq" = $30::jsonb,
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -586,6 +602,7 @@ export async function PATCH(request: NextRequest) {
         product.safetyDocuments,
         product.eprelId,
         JSON.stringify(product.energyLabel),
+        product.faq ? JSON.stringify(product.faq) : null,
       ],
     );
 
