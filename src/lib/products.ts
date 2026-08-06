@@ -627,6 +627,29 @@ export const productAccessoryTypes = (product: Product): AccessoryType[] => {
   return types;
 };
 
+/**
+ * Counts sellable products in an accessory subcategory.
+ *
+ * Only 160 of 2,902 products are active (the rest are zero-stock drafts), so a
+ * landing page can legitimately end up empty. generateMetadata and the sitemap
+ * use this to keep empty pages out of the index rather than publishing thin
+ * content. It is a COUNT rather than getStoreCatalog because that loads the
+ * whole catalog into memory.
+ */
+export async function countActiveSubcategoryProducts(subcategory: string): Promise<number> {
+  try {
+    const result = await query(
+      `SELECT count(*)::int AS total FROM products
+       WHERE is_active = true AND category = 'accessories' AND subcategory = $1`,
+      [subcategory],
+    );
+    return (result.rows[0] as { total?: number } | undefined)?.total ?? 0;
+  } catch (error) {
+    console.error("countActiveSubcategoryProducts failed:", error);
+    return 0;
+  }
+}
+
 export async function getStoreCatalog({
   category = "all",
   subcategory,

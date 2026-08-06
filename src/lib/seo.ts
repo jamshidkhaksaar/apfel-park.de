@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 
 import { createAdminDbClient } from "@/lib/admin-db";
 import { locales, type Locale } from "@/lib/i18n";
-import { getProducts } from "@/lib/products";
+import { accessoryCollectionSlugs, getAccessoryCollection } from "@/lib/accessory-collections";
+import { countActiveSubcategoryProducts, getProducts } from "@/lib/products";
 import { repairServiceSlugs } from "@/lib/repair-services";
 import {
   buildDefaultSeoSettings,
@@ -204,6 +205,34 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     }));
   });
 
+  // Skip subcategories with nothing sellable; those pages are noindexed, so
+  // listing them would advertise thin content.
+  const stockedCollectionSlugs = (
+    await Promise.all(
+      accessoryCollectionSlugs.map(async (slug) => {
+        const copy = getAccessoryCollection(slug, "de");
+        if (!copy) return null;
+        return (await countActiveSubcategoryProducts(copy.subcategory)) > 0 ? slug : null;
+      }),
+    )
+  ).filter((slug): slug is string => slug !== null);
+
+  const accessoryCollectionEntries = stockedCollectionSlugs.flatMap((slug) =>
+    locales.map((locale) => ({
+      url: `${siteInfo.url}/${locale}/accessories/${slug}`,
+      lastModified: deployedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.75,
+      alternates: {
+        languages: {
+          de: `${siteInfo.url}/de/accessories/${slug}`,
+          en: `${siteInfo.url}/en/accessories/${slug}`,
+          "x-default": `${siteInfo.url}/de/accessories/${slug}`,
+        },
+      },
+    })),
+  );
+
   const repairServiceEntries = repairServiceSlugs.flatMap((service) =>
     locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}/repairs/${service}`,
@@ -234,7 +263,7 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     },
   }));
 
-  return [...staticEntries, ...repairServiceEntries, ...catalogEntries, ...productEntries];
+  return [...staticEntries, ...repairServiceEntries, ...accessoryCollectionEntries, ...catalogEntries, ...productEntries];
 };
 
 export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {

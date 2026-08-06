@@ -7,6 +7,7 @@ import StoreGrid from "@/components/store/StoreGrid";
 import { requireLocale } from "@/lib/route-locale";
 import { createMetadata } from "@/lib/metadata";
 import {
+  countActiveSubcategoryProducts,
   getStoreCatalog,
   parseStoreCatalogFilters,
   parseStorePage,
@@ -34,7 +35,12 @@ export const generateMetadata = async ({
       `/accessories/${subcategory}`,
     );
   }
-  return createMetadata(lang, copy.metaTitle, copy.description, `/accessories/${copy.slug}`);
+  // An empty subcategory is thin content; keep it out of the index until it
+  // has stock rather than publishing a page with no products on it.
+  const available = await countActiveSubcategoryProducts(copy.subcategory);
+  return createMetadata(lang, copy.metaTitle, copy.description, `/accessories/${copy.slug}`, undefined, {
+    noindex: available === 0,
+  });
 };
 
 export default async function AccessorySubcategoryPage({
@@ -129,6 +135,23 @@ export default async function AccessorySubcategoryPage({
 
       <section className="section-pad" id="store">
         <div className="container-page">
+          {catalog.total === 0 ? (
+            <div className="rounded-2xl border border-border/60 bg-surface/40 p-8 text-center">
+              <p className="text-foreground">
+                {lang === "de"
+                  ? "Aktuell ist in dieser Kategorie nichts vorrätig."
+                  : "Nothing is in stock in this category right now."}
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                {lang === "de"
+                  ? "Schreib uns kurz mit deinem Gerätemodell – wir bestellen passendes Zubehör für dich."
+                  : "Send us your device model and we will order the right accessory for you."}
+              </p>
+              <Link href={`/${lang}/contact`} className="btn-primary mt-5 inline-flex">
+                {lang === "de" ? "Anfrage senden" : "Send inquiry"}
+              </Link>
+            </div>
+          ) : null}
           <StoreGrid
             products={catalog.products}
             lang={lang}
