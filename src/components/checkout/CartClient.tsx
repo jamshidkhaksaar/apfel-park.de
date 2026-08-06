@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import type { ShippingMethod, ValidatedCart } from "@/lib/checkout";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import {
+  addStoredCartItem,
   getServerCartSnapshot,
   readStoredCart,
   subscribeStoredCart,
@@ -16,6 +17,15 @@ import {
 
 type Props = {
   locale: "de" | "en";
+};
+
+type CartSuggestion = {
+  id: string;
+  slug: string;
+  title: string;
+  image: string;
+  price: number;
+  subcategory?: string;
 };
 
 const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
@@ -28,6 +38,7 @@ export default function CartClient({ locale }: Props) {
   const items = useSyncExternalStore(subscribeStoredCart, readStoredCart, getServerCartSnapshot);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("pickup");
   const [cart, setCart] = useState<ValidatedCart | null>(null);
+  const [suggestions, setSuggestions] = useState<CartSuggestion[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -41,6 +52,7 @@ export default function CartClient({ locale }: Props) {
     setError("");
     if (nextItems.length === 0) {
       setCart(null);
+      setSuggestions([]);
       setLoading(false);
       return;
     }
@@ -48,16 +60,23 @@ export default function CartClient({ locale }: Props) {
     const response = await fetch("/api/cart/validate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: nextItems, shippingMethod: nextShipping }),
+      body: JSON.stringify({ items: nextItems, shippingMethod: nextShipping, locale }),
     });
-    const data = (await response.json()) as { success: boolean; cart?: ValidatedCart; error?: string };
+    const data = (await response.json()) as {
+      success: boolean;
+      cart?: ValidatedCart;
+      suggestions?: CartSuggestion[];
+      error?: string;
+    };
     if (!response.ok || !data.success || !data.cart) {
       setError(data.error || (locale === "de" ? "Warenkorb konnte nicht geprüft werden." : "Cart could not be validated."));
       setCart(null);
+      setSuggestions([]);
       setLoading(false);
       return;
     }
     setCart(data.cart);
+    setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
     setLoading(false);
   }, [locale]);
 
@@ -94,6 +113,11 @@ export default function CartClient({ locale }: Props) {
     void validate(next, shippingMethod);
   };
 
+  const addSuggestion = (suggestion: CartSuggestion) => {
+    const next = addStoredCartItem({ productId: suggestion.id, quantity: 1 });
+    void validate(next, shippingMethod);
+  };
+
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
       <div className="glass-panel rounded-2xl p-6">
@@ -120,7 +144,8 @@ export default function CartClient({ locale }: Props) {
         {loading ? (
           <div className="mt-8 text-sm text-muted">{locale === "de" ? "Warenkorb wird geprüft..." : "Checking cart..."}</div>
         ) : cart && cart.items.length > 0 ? (
-          <div className="mt-8 divide-y divide-border/60">
+          <>
+            <div className="mt-8 divide-y divide-border/60">
             {cart.items.map((line) => (
               <div key={line.key} className="grid gap-4 py-5 md:grid-cols-[1fr_auto]">
                 <div className="flex gap-4">
@@ -208,6 +233,50 @@ export default function CartClient({ locale }: Props) {
               </div>
             ))}
           </div>
+
+          {suggestions.length > 0 ? (
+            <div className="mt-8 border-t border-border/60 pt-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
+                {locale === "de" ? "Passt zu deinem Gerät" : "Fits your device"}
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {suggestions.slice(0, 4).map((suggestion) => (
+                  <div key={suggestion.id} className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface/40 p-3">
+                    {suggestion.image ? (
+                      <Link
+                        href={`/${locale}/store/${suggestion.slug}`}
+                        className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-[#f5f5f5]"
+                      >
+                        <Image
+                          src={suggestion.image}
+                          alt={suggestion.title}
+                          fill
+                          sizes="56px"
+                          className="object-contain p-1"
+                          unoptimized={shouldBypassImageOptimization(suggestion.image)}
+                        />
+                      </Link>
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/${locale}/store/${suggestion.slug}`} className="line-clamp-2 text-sm font-medium text-foreground transition hover:text-gold">
+                        {suggestion.title}
+                      </Link>
+                      <p className="mt-1 text-sm text-muted">{formatMoney(locale, suggestion.price)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="shrink-0 rounded-full border border-gold/40 px-3 py-1 text-sm font-medium text-gold transition hover:bg-gold/10"
+                      aria-label={locale === "de" ? `${suggestion.title} in den Warenkorb` : `Add ${suggestion.title} to cart`}
+                      onClick={() => addSuggestion(suggestion)}
+                    >
+                      {locale === "de" ? "Hinzufügen" : "Add"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          </>
         ) : (
           <div className="mt-8 rounded-xl border border-border/60 bg-surface/40 p-8 text-center">
             <p className="text-muted">{locale === "de" ? "Dein Warenkorb ist leer." : "Your cart is empty."}</p>
