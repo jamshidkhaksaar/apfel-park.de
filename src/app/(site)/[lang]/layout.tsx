@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import LocaleSync from "../../../components/LocaleSync";
+import MiniCart from "../../../components/checkout/MiniCart";
 import PageTransition from "../../../components/PageTransition";
 import SiteFooter from "../../../components/SiteFooter";
 import SiteHeader from "../../../components/SiteHeader";
@@ -33,6 +34,7 @@ export default async function SiteLayout({
         <PageTransition>{children}</PageTransition>
       </main>
       <SiteFooter lang={locale} />
+      <MiniCart locale={locale} />
     </div>
   );
 }

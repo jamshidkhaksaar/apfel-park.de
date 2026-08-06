@@ -13,6 +13,9 @@ type Props = {
   initiallyPaid: boolean;
   totalAmount?: number | null;
   currency?: string | null;
+  items?: Array<{ title: string; quantity: number; lineAmount: number | null }>;
+  shippingMethod?: string | null;
+  customerEmail?: string | null;
 };
 
 const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
@@ -30,6 +33,9 @@ export default function CheckoutSuccessClient({
   initiallyPaid,
   totalAmount,
   currency,
+  items = [],
+  shippingMethod,
+  customerEmail,
 }: Props) {
   const [paid, setPaid] = useState(initiallyPaid);
   const [message, setMessage] = useState(() =>
@@ -108,9 +114,56 @@ export default function CheckoutSuccessClient({
               ? "Bitte notieren Sie diese Nummer für Rückfragen, Rückgabe oder Widerruf."
               : "Please keep this number for questions, returns, or withdrawal."}
           </p>
+          {items.length > 0 ? (
+            <ul className="mt-3 space-y-1 border-t border-border/60 pt-3 text-left">
+              {items.map((item, index) => (
+                <li key={`${item.title}-${index}`} className="flex justify-between gap-4">
+                  <span className="min-w-0 truncate text-foreground">
+                    {item.quantity} × {item.title}
+                  </span>
+                  {typeof item.lineAmount === "number" ? (
+                    <span className="shrink-0">{formatMoney(locale, item.lineAmount, currency || "EUR")}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {typeof totalAmount === "number" ? (
             <div className="mt-1">{locale === "de" ? "Summe" : "Total"}: <span className="text-foreground">{formatMoney(locale, totalAmount, currency || "EUR")}</span></div>
           ) : null}
+        </div>
+      ) : null}
+
+      {orderId ? (
+        <div className="mt-5 rounded-xl border border-border/60 bg-surface/40 p-5 text-left text-sm text-muted">
+          <p className="font-semibold text-foreground">
+            {locale === "de" ? "Wie es weitergeht" : "What happens next"}
+          </p>
+          <ol className="mt-3 space-y-2">
+            <li>
+              {locale === "de"
+                ? customerEmail
+                  ? `1. Bestellbestätigung geht an ${customerEmail}.`
+                  : "1. Du erhältst eine Bestellbestätigung per E-Mail."
+                : customerEmail
+                  ? `1. An order confirmation is on its way to ${customerEmail}.`
+                  : "1. You will receive an order confirmation by email."}
+            </li>
+            <li>
+              {shippingMethod === "pickup"
+                ? locale === "de"
+                  ? "2. Wir melden uns, sobald dein Gerät abholbereit ist – Hamburg-Wilhelmsburg, Mo–Sa 09:30–20:00."
+                  : "2. We will let you know as soon as your device is ready for pickup — Hamburg-Wilhelmsburg, Mon–Sat 9:30–20:00."
+                : locale === "de"
+                  ? "2. Wir versenden versichert innerhalb Deutschlands, Zustellung in 1–3 Werktagen."
+                  : "2. We ship insured within Germany, delivered in 1–3 business days."}
+            </li>
+            <li>
+              {locale === "de"
+                ? "3. Die Rechnung liegt der Lieferung bei bzw. wird bei Abholung ausgehändigt."
+                : "3. Your invoice is included with the delivery or handed over at pickup."}
+            </li>
+          </ol>
         </div>
       ) : null}
     </div>

@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import type { ShippingMethod, ValidatedCart } from "@/lib/checkout";
+import { shouldBypassImageOptimization } from "@/lib/image";
 import {
   getServerCartSnapshot,
   readStoredCart,
@@ -121,14 +123,49 @@ export default function CartClient({ locale }: Props) {
           <div className="mt-8 divide-y divide-border/60">
             {cart.items.map((line) => (
               <div key={line.key} className="grid gap-4 py-5 md:grid-cols-[1fr_auto]">
-                <div>
+                <div className="flex gap-4">
+                  {line.image ? (
+                    <Link
+                      href={`/${locale}/store/${line.slug}`}
+                      className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-[#f5f5f5]"
+                    >
+                      <Image
+                        src={line.image}
+                        alt={line.title}
+                        fill
+                        sizes="80px"
+                        className="object-contain p-1.5"
+                        unoptimized={shouldBypassImageOptimization(line.image)}
+                      />
+                    </Link>
+                  ) : null}
+                  <div className="min-w-0 flex-1">
                   <Link href={`/${locale}/store/${line.slug}`} className="font-semibold text-foreground transition hover:text-gold">
                     {line.title}
                   </Link>
+                  {line.variantColor || line.variantStorage ? (
+                    <p className="mt-1 text-sm text-muted">
+                      {[line.variantColor, line.variantStorage].filter(Boolean).join(" · ")}
+                    </p>
+                  ) : null}
                   <p className="mt-1 text-sm text-muted">
                     {line.sku ? `SKU ${line.sku} · ` : ""}
                     {formatMoney(locale, line.unitAmount, cart.currency)}
                   </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {line.condition && line.condition !== "new" ? (
+                      <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-500">
+                        {line.condition === "used"
+                          ? locale === "de" ? "Gebraucht A+" : "Used A+"
+                          : "Open-Box"}
+                      </span>
+                    ) : null}
+                    {typeof line.stock === "number" && line.stock > 0 && line.stock <= 3 ? (
+                      <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-500">
+                        {locale === "de" ? `Nur noch ${line.stock} verfügbar` : `Only ${line.stock} left`}
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <button
                       type="button"
@@ -162,6 +199,7 @@ export default function CartClient({ locale }: Props) {
                         {locale === "de" ? "Max. 10 pro Artikel" : "Max. 10 per item"}
                       </span>
                     ) : null}
+                  </div>
                   </div>
                 </div>
                 <div className="text-left font-semibold text-foreground md:text-right">

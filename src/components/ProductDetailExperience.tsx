@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import ProductGallery from "@/components/ProductGallery";
 import PaymentBrandIcons from "@/components/PaymentBrandIcons";
 import { addStoredCartItem } from "@/components/checkout/cart";
+import { MINI_CART_OPEN_EVENT } from "@/components/checkout/MiniCart";
 import ConditionBadge from "@/components/ConditionBadge";
 import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
@@ -102,6 +103,8 @@ export default function ProductDetailExperience({ locale, product }: Props) {
     trackCart("add_to_cart", eventId);
     sendServerAddToCart(eventId);
     setAdded(true);
+    // Confirm the add in place rather than making the customer navigate away.
+    window.dispatchEvent(new Event(MINI_CART_OPEN_EVENT));
   };
   const createMarketingEventId = (prefix: string) =>
     typeof crypto !== "undefined" && "randomUUID" in crypto
