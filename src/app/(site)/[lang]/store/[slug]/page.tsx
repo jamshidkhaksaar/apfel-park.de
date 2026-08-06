@@ -93,7 +93,7 @@ export const generateMetadata = async ({
     155,
   );
 
-  const metadata = createMetadata(
+  const metadata = await createMetadata(
     lang,
     seoTitle,
     seoDescription,
