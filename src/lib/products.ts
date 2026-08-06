@@ -62,6 +62,7 @@ export type Product = {
   discountPercentage?: number;
   hasDiscount: boolean;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 export type ProductFaqEntry = {
@@ -181,6 +182,7 @@ type DbProduct = {
   energy_label?: unknown;
   subcategory?: string | null;
   faq?: unknown;
+  updated_at?: string | null;
   stock: number | null;
   slug: string | null;
   images: string[] | null;
@@ -421,11 +423,12 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     discountPercentage,
     hasDiscount: Boolean(discountPercentage),
     createdAt: row.created_at ?? undefined,
+    updatedAt: row.updated_at ?? undefined,
   };
 };
 
 const baseSelect =
-  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,subcategory,faq";
+  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,subcategory,faq,updated_at";
 
 /**
  * Fetches products from the database.
@@ -626,6 +629,7 @@ export const productAccessoryTypes = (product: Product): AccessoryType[] => {
 
 export async function getStoreCatalog({
   category = "all",
+  subcategory,
   collection,
   sort = "featured",
   page = 1,
@@ -634,6 +638,8 @@ export async function getStoreCatalog({
   filters,
 }: {
   category?: StoreCatalogCategory;
+  /** Narrows an accessory category to one subcategory landing page. */
+  subcategory?: string;
   collection?: StoreCatalogCollection;
   sort?: StoreCatalogSort;
   page?: number;
@@ -673,10 +679,14 @@ export async function getStoreCatalog({
       ? all.filter((p) => (p.category === "smartphones" || p.category === "tablets") && p.isOpenBox)
       : all.filter((p) => p.category === category);
 
+  const subcategoryScoped = subcategory
+    ? categoryScoped.filter((product) => product.subcategory === subcategory)
+    : categoryScoped;
+
   // SEO collection pages are inventory-backed views rather than duplicated
   // product records. Applying the collection scope before building facets
   // keeps counts and filters accurate as products are added or sold.
-  const scoped = categoryScoped.filter((product) => {
+  const scoped = subcategoryScoped.filter((product) => {
     if (!collection) return true;
     if (collection === "used-phones") {
       return product.category === "smartphones" && product.condition !== "new";

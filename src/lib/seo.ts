@@ -182,9 +182,12 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
   });
 
   const productEntries = products.flatMap((product) => {
-    const createdAt = product.createdAt ? new Date(product.createdAt) : null;
+    // updated_at, not created_at: a price, stock or content edit has to move
+    // the sitemap lastmod or crawlers keep the stale copy.
+    const stamp = product.updatedAt ?? product.createdAt;
+    const changedAt = stamp ? new Date(stamp) : null;
     const lastModified =
-      createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : deployedAt;
+      changedAt && !Number.isNaN(changedAt.getTime()) ? changedAt : deployedAt;
 
     return locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}/store/${product.slug}`,

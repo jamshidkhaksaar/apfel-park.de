@@ -1,0 +1,164 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import PageIntro from "@/components/PageIntro";
+import StoreGrid from "@/components/store/StoreGrid";
+import { requireLocale } from "@/lib/route-locale";
+import { createMetadata } from "@/lib/metadata";
+import {
+  getStoreCatalog,
+  parseStoreCatalogFilters,
+  parseStorePage,
+  parseStoreSort,
+} from "@/lib/products";
+import { safeJsonStringify } from "@/lib/security";
+import { siteInfo } from "@/lib/site";
+import { getAccessoryCollection } from "@/lib/accessory-collections";
+
+export const dynamic = "force-dynamic";
+
+export const generateMetadata = async ({
+  params,
+}: {
+  params: Promise<{ lang: string; subcategory: string }>;
+}): Promise<Metadata> => {
+  const { lang: rawLang, subcategory } = await params;
+  const lang = requireLocale(rawLang);
+  const copy = getAccessoryCollection(subcategory, lang);
+  if (!copy) {
+    return createMetadata(
+      lang,
+      lang === "de" ? "Kategorie nicht gefunden" : "Category not found",
+      lang === "de" ? "Diese Kategorie ist nicht verfügbar." : "This category is not available.",
+      `/accessories/${subcategory}`,
+    );
+  }
+  return createMetadata(lang, copy.metaTitle, copy.description, `/accessories/${copy.slug}`);
+};
+
+export default async function AccessorySubcategoryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string; subcategory: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { lang: rawLang, subcategory } = await params;
+  const lang = requireLocale(rawLang);
+  const copy = getAccessoryCollection(subcategory, lang);
+  if (!copy) notFound();
+
+  const query = await searchParams;
+  const sort = parseStoreSort(query.sort);
+  const page = parseStorePage(query.page);
+  const activeFilters = parseStoreCatalogFilters(query);
+  const catalog = await getStoreCatalog({
+    category: "accessories",
+    subcategory: copy.subcategory,
+    sort,
+    page,
+    pageSize: 24,
+    locale: lang,
+    filters: activeFilters,
+  });
+
+  const pageUrl = `${siteInfo.url}/${lang}/accessories/${copy.slug}`;
+  const collectionPage = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: copy.title,
+    description: copy.description,
+    url: pageUrl,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: catalog.total,
+      itemListElement: catalog.products.map((product, index) => ({
+        "@type": "ListItem",
+        position: (catalog.page - 1) * 24 + index + 1,
+        name: product.title,
+        url: `${siteInfo.url}/${lang}/store/${product.slug}`,
+      })),
+    },
+  };
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: lang === "de" ? "Startseite" : "Home", item: `${siteInfo.url}/${lang}` },
+      { "@type": "ListItem", position: 2, name: lang === "de" ? "Zubehör" : "Accessories", item: `${siteInfo.url}/${lang}/accessories` },
+      { "@type": "ListItem", position: 3, name: copy.title, item: pageUrl },
+    ],
+  };
+  const faq = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: copy.faq.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+
+  return (
+    <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(faq) }} />
+
+      <PageIntro title={copy.title} subtitle={copy.description} eyebrow={copy.eyebrow} />
+
+      <nav className="container-page pt-6 text-xs uppercase tracking-[0.2em] text-muted" aria-label="Breadcrumb">
+        <Link href={`/${lang}/accessories`} className="transition hover:text-gold">
+          {lang === "de" ? "Zubehör" : "Accessories"}
+        </Link>
+        <span className="px-2">/</span>
+        <span className="text-foreground">{copy.title}</span>
+      </nav>
+
+      <section className="border-b border-white/5 py-10">
+        <div className="container-page">
+          <h2 className="text-2xl font-bold text-foreground md:text-3xl">{copy.introTitle}</h2>
+          {copy.intro.map((paragraph) => (
+            <p key={paragraph} className="mt-4 max-w-3xl leading-7 text-muted">
+              {paragraph}
+            </p>
+          ))}
+        </div>
+      </section>
+
+      <section className="section-pad" id="store">
+        <div className="container-page">
+          <StoreGrid
+            products={catalog.products}
+            lang={lang}
+            lockedCategory="accessories"
+            sortBy={sort}
+            total={catalog.total}
+            page={catalog.page}
+            pages={catalog.pages}
+            counts={catalog.counts}
+            facets={catalog.facets}
+            activeFilters={activeFilters}
+          />
+        </div>
+      </section>
+
+      <section className="section-pad bg-surface/30">
+        <div className="container-page max-w-3xl">
+          <h2 className="text-2xl font-bold text-foreground md:text-3xl">
+            {lang === "de" ? "Häufige Fragen" : "Frequently asked questions"}
+          </h2>
+          <div className="mt-6 space-y-3">
+            {copy.faq.map((item) => (
+              <details key={item.question} className="rounded-2xl border border-border/60 bg-surface/40 px-5 py-4">
+                <summary className="cursor-pointer text-sm font-semibold text-foreground">{item.question}</summary>
+                <p className="mt-3 leading-7 text-muted">{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

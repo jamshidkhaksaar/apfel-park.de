@@ -5,6 +5,7 @@ import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getFaqContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
+import { safeJsonStringify } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +31,21 @@ export default async function FaqPage({ params }: { params: Promise<{ lang: stri
   const dict = getDictionary(lang);
   const faq = await getFaqContent(lang);
 
+  // The page rendered its Q&A as plain headings and emitted nothing machine
+  // readable, so it was ineligible for FAQ rich results.
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.items.map((item: { question: string; answer: string }) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+
   return (
     <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(faqJsonLd) }} />
       <PageIntro
         title={faq.heroTitle}
         subtitle={faq.heroSubtitle}

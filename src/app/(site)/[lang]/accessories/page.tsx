@@ -95,7 +95,7 @@ export default async function AccessoriesPage({
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {/* Cases */}
-            <div className="tech-card-hover group overflow-hidden rounded-2xl">
+            <Link href={`/${lang}/accessories/hardcases`} className="tech-card-hover group block overflow-hidden rounded-2xl">
               <div className="relative aspect-square bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10 p-8">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
@@ -117,10 +117,10 @@ export default async function AccessoriesPage({
                   </svg>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Headphones */}
-            <div className="tech-card-hover group overflow-hidden rounded-2xl">
+            <Link href={`/${lang}/accessories/kopfhoerer-audio`} className="tech-card-hover group block overflow-hidden rounded-2xl">
               <div className="relative aspect-square bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10 p-8">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.5}>
@@ -144,10 +144,10 @@ export default async function AccessoriesPage({
                   </svg>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Chargers */}
-            <div className="tech-card-hover group overflow-hidden rounded-2xl">
+            <Link href={`/${lang}/accessories/ladegeraete-kabel`} className="tech-card-hover group block overflow-hidden rounded-2xl">
               <div className="relative aspect-square bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10 p-8">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
@@ -169,10 +169,10 @@ export default async function AccessoriesPage({
                   </svg>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Screen Protectors */}
-            <div className="tech-card-hover group overflow-hidden rounded-2xl">
+            <Link href={`/${lang}/accessories/displayschutz`} className="tech-card-hover group block overflow-hidden rounded-2xl">
               <div className="relative aspect-square bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10 p-8">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
@@ -194,7 +194,7 @@ export default async function AccessoriesPage({
                   </svg>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </section>

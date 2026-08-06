@@ -73,7 +73,10 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
     laptops: products.filter((product) => product.category === "laptops").length,
     "open-box-smartphones-tablets": products.filter((product) => (product.category === "smartphones" || product.category === "tablets") && product.isOpenBox).length,
   };
-  const navigate = (updates: { category?: StoreCatalogCategory; sort?: StoreCatalogSort; page?: number }) => {
+  // Categories and pagination render as real hrefs so crawlers can reach page
+  // 2+ and each category; the click handler still does a soft push so the SPA
+  // feel is unchanged. Both go through this builder to stay identical.
+  const buildHref = (updates: { category?: StoreCatalogCategory; sort?: StoreCatalogSort; page?: number }) => {
     const next = new URLSearchParams(searchParams.toString());
     if (updates.category !== undefined) {
       if (updates.category === "all") next.delete("category");
@@ -84,7 +87,11 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
       else next.set("sort", updates.sort);
     }
     if (updates.page !== undefined && updates.page > 1) next.set("page", String(updates.page)); else next.delete("page");
-    router.push(`${pathname}${next.size ? `?${next.toString()}` : ""}`, { scroll: false });
+    return `${pathname}${next.size ? `?${next.toString()}` : ""}`;
+  };
+
+  const navigate = (updates: { category?: StoreCatalogCategory; sort?: StoreCatalogSort; page?: number }) => {
+    router.push(buildHref(updates), { scroll: false });
   };
 
   return (
@@ -106,11 +113,11 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
             </h2>
             <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby="store-categories-heading">
               {categories.map((cat) => (
-                <button
+                <Link
                   key={cat}
-                  role="radio"
-                  aria-checked={activeCategory === cat}
-                  onClick={() => navigate({ category: cat, page: 1 })}
+                  href={buildHref({ category: cat, page: 1 })}
+                  scroll={false}
+                  aria-current={activeCategory === cat ? "page" : undefined}
                   className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all
                     ${activeCategory === cat
                       ? "bg-gold text-contrast-adaptive font-bold"
@@ -124,7 +131,7 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
                   <span className="text-xs opacity-60">
                     {localCounts[cat]}
                   </span>
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -256,13 +263,44 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
         )}
         {pages > 1 ? (
           <nav className="mt-8 flex items-center justify-center gap-3" aria-label={lang === "de" ? "Seitennavigation" : "Pagination"}>
-            <button type="button" disabled={page <= 1} onClick={() => navigate({ page: page - 1 })} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground transition hover:border-gold disabled:cursor-not-allowed disabled:opacity-40">
-              {lang === "de" ? "Zurück" : "Previous"}
-            </button>
+            {page > 1 ? (
+              <Link href={buildHref({ page: page - 1 })} scroll={false} rel="prev" className="rounded-lg border border-border px-4 py-2 text-sm text-foreground transition hover:border-gold">
+                {lang === "de" ? "Zurück" : "Previous"}
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-border px-4 py-2 text-sm text-foreground opacity-40">
+                {lang === "de" ? "Zurück" : "Previous"}
+              </span>
+            )}
             <span className="text-sm text-muted">{lang === "de" ? "Seite" : "Page"} {page} / {pages}</span>
-            <button type="button" disabled={page >= pages} onClick={() => navigate({ page: page + 1 })} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground transition hover:border-gold disabled:cursor-not-allowed disabled:opacity-40">
-              {lang === "de" ? "Weiter" : "Next"}
-            </button>
+            <span className="hidden items-center gap-1.5 sm:flex">
+              {Array.from({ length: pages }, (_, index) => index + 1)
+                .filter((entry) => entry === 1 || entry === pages || Math.abs(entry - page) <= 2)
+                .map((entry, index, list) => (
+                  <span key={entry} className="flex items-center gap-1.5">
+                    {index > 0 && entry - list[index - 1] > 1 ? <span className="text-xs text-muted">…</span> : null}
+                    <Link
+                      href={buildHref({ page: entry })}
+                      scroll={false}
+                      aria-current={entry === page ? "page" : undefined}
+                      className={`rounded-md px-2.5 py-1 text-sm transition ${
+                        entry === page ? "bg-gold font-semibold text-contrast-adaptive" : "text-muted hover:text-gold"
+                      }`}
+                    >
+                      {entry}
+                    </Link>
+                  </span>
+                ))}
+            </span>
+            {page < pages ? (
+              <Link href={buildHref({ page: page + 1 })} scroll={false} rel="next" className="rounded-lg border border-border px-4 py-2 text-sm text-foreground transition hover:border-gold">
+                {lang === "de" ? "Weiter" : "Next"}
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-border px-4 py-2 text-sm text-foreground opacity-40">
+                {lang === "de" ? "Weiter" : "Next"}
+              </span>
+            )}
           </nav>
         ) : null}
       </div>
