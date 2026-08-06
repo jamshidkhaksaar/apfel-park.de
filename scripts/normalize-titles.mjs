@@ -54,32 +54,35 @@ const WORD_CASINGS = [
   [/nothing phone/gi, "Nothing Phone"],
   [/nothing\b/gi, "Nothing"],
 
-  // Technology that must keep its all-caps form.
-  [/usb-c/gi, "USB-C"],
-  [/usb c/gi, "USB-C"],
-  [/type-c/gi, "Type-C"],
-  [/usb/gi, "USB"],
-  [/led/gi, "LED"],
-  [/oled/gi, "OLED"],
-  [/lte/gi, "LTE"],
-  [/5g/gi, "5G"],
-  [/4g/gi, "4G"],
-  [/wifi/gi, "WiFi"],
-  [/wi-fi/gi, "Wi-Fi"],
-  [/bluetooth/gi, "Bluetooth"],
-  [/nfc/gi, "NFC"],
-  [/tpu/gi, "TPU"],
-  [/ip68/gi, "IP68"],
-  [/ip67/gi, "IP67"],
-  [/ip65/gi, "IP65"],
+  // Technology that must keep its all-caps form. Every pattern is
+  // word-boundary protected so a bare "lte" cannot match inside a German word
+  // like "abgewinkelte" (-> "abgewinkeLTEs") or "Halter" (-> "HaLTEr").
+  [/\busb-c\b/gi, "USB-C"],
+  [/\busb c\b/gi, "USB-C"],
+  [/\btype-c\b/gi, "Type-C"],
+  [/\busb\b/gi, "USB"],
+  [/\bled\b/gi, "LED"],
+  [/\boled\b/gi, "OLED"],
+  [/\blte\b/gi, "LTE"],
+  [/\b5g\b/gi, "5G"],
+  [/\b4g\b/gi, "4G"],
+  [/\bwifi\b/gi, "WiFi"],
+  [/\bwi-fi\b/gi, "Wi-Fi"],
+  [/\bbluetooth\b/gi, "Bluetooth"],
+  [/\bnfc\b/gi, "NFC"],
+  [/\btpu\b/gi, "TPU"],
+  [/\bip68\b/gi, "IP68"],
+  [/\bip67\b/gi, "IP67"],
+  [/\bip65\b/gi, "IP65"],
 
-  // German condition and generic words that must be capitalised.
-  [/neu/gi, "Neu"],
-  [/gebraucht/gi, "Gebraucht"],
-  [/refurbished/gi, "Refurbished"],
-  [/pro\b/gi, "Pro"],
-  [/max\b/gi, "Max"],
-] ;
+  // German condition and generic words that must be capitalised. Word
+  // boundaries prevent "neu" from rewriting "Neutral" or "Tenne".
+  [/\bneu\b/gi, "Neu"],
+  [/\bgebraucht\b/gi, "Gebraucht"],
+  [/\brefurbished\b/gi, "Refurbished"],
+  [/\bpro\b/gi, "Pro"],
+  [/\bmax\b/gi, "Max"],
+];
 
 /**
  * Apply the curated casings to a title. A word already spelled correctly is a
