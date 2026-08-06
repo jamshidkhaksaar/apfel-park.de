@@ -12,6 +12,7 @@ import type { ProductRatingSummary } from "@/lib/product-reviews";
 import ConditionBadge from "@/components/ConditionBadge";
 import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
+import { groupSpecs } from "@/lib/product-spec-group";
 import type { Product, ProductVariant } from "@/lib/products";
 import { siteInfo } from "@/lib/site";
 
@@ -177,10 +178,19 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                 {locale === "de" ? "Technische Daten" : "Specifications"}
               </h2>
               <div className="mt-4 overflow-hidden rounded-3xl border border-border/60">
-                {product.specs.map((spec) => (
-                  <div key={`${spec.label}-${spec.value}`} className="grid gap-3 border-b border-border/50 bg-surface/40 px-5 py-4 last:border-b-0 md:grid-cols-[180px_minmax(0,1fr)]">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{spec.label}</span>
-                    <span className="text-sm text-foreground">{spec.value}</span>
+                {groupSpecs(product.specs).map(({ group, items }) => (
+                  <div key={group || "ungrouped"}>
+                    {group ? (
+                      <p className="bg-surface/60 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-foreground">
+                        {group}
+                      </p>
+                    ) : null}
+                    {items.map((spec) => (
+                      <div key={`${spec.label}-${spec.value}`} className="grid gap-3 border-t border-border/50 bg-surface/40 px-5 py-4 md:grid-cols-[180px_minmax(0,1fr)] first:border-t-0">
+                        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{spec.label}</span>
+                        <span className="text-sm text-foreground">{spec.value}</span>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>

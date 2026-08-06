@@ -9,6 +9,9 @@ export type ProductCondition = "new" | "open_box" | "used";
 export type ProductSpec = {
   label: string;
   value: string;
+  /** Optional group heading (Display / Akku / Kamera …). Specs without a
+   *  group render in one unlabelled block, so existing data is unchanged. */
+  group?: string;
 };
 
 export type ProductVariant = {
@@ -151,6 +154,7 @@ type LocalizedText = {
 type LocalizedSpec = {
   label?: LocalizedText | string | null;
   value?: LocalizedText | string | null;
+  group?: LocalizedText | string | null;
 };
 
 type DbProduct = {
@@ -296,7 +300,8 @@ const toLocalizedSpecs = (value: unknown, locale: Locale, fallback: unknown): Pr
       const label = localizedSpecValue(candidate.label, locale);
       const specValue = localizedSpecValue(candidate.value, locale);
       if (!label || !specValue) return null;
-      return { label, value: specValue };
+      const group = localizedSpecValue(candidate.group, locale);
+      return { label, value: specValue, ...(group ? { group } : {}) };
     })
     .filter((entry): entry is ProductSpec => entry !== null);
 
@@ -309,12 +314,13 @@ const toSpecs = (value: unknown): ProductSpec[] => {
   return value
     .map((entry) => {
       if (!entry || typeof entry !== "object") return null;
-      const candidate = entry as { label?: unknown; value?: unknown };
+      const candidate = entry as { label?: unknown; value?: unknown; group?: unknown };
       if (typeof candidate.label !== "string" || typeof candidate.value !== "string") return null;
       const label = candidate.label.trim();
       const specValue = candidate.value.trim();
       if (!label || !specValue) return null;
-      return { label, value: specValue };
+      const group = typeof candidate.group === "string" ? candidate.group.trim() : "";
+      return { label, value: specValue, ...(group ? { group } : {}) };
     })
     .filter((entry): entry is ProductSpec => entry !== null);
 };

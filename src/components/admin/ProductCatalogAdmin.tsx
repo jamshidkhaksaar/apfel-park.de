@@ -11,6 +11,8 @@ type AdminLocale = "de" | "en";
 type ProductSpec = {
   label: string;
   value: string;
+  /** Optional group heading (Display / Akku / Kamera …) set via "## Group". */
+  group?: string;
 };
 
 type ProductVariant = {
@@ -247,7 +249,15 @@ const productToForm = (product: AdminProductRecord): ProductFormState => ({
   variants: product.variants,
   isHomepageFeatured: Boolean(product.isHomepageFeatured),
   featureBulletsText: product.featureBullets.join("\n"),
-  specsText: product.specs.map((item) => `${item.label}: ${item.value}`).join("\n"),
+  // Serialise grouped specs back to the textarea format: "## Group" heading
+  // lines before the rows that belong to that group.
+  specsText: product.specs
+    .map((item, index, all) => {
+      const groupChanged = item.group && (index === 0 || all[index - 1]?.group !== item.group);
+      const line = `${item.label}: ${item.value}`;
+      return groupChanged ? `## ${item.group}\n${line}` : line;
+    })
+    .join("\n"),
 });
 
 const parseFeatureBullets = (value: string) =>
@@ -256,25 +266,29 @@ const parseFeatureBullets = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-const parseSpecs = (value: string) =>
-  value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const match = line.match(/^(.+?)(?:\s*[:=]\s*|\s+[–-]\s+|\t+)(.+)$/);
-      if (!match) return null;
+const parseSpecs = (value: string) => {
+  let group = "";
+  const specs: ProductSpec[] = [];
+  for (const rawLine of value.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    // "## Display" starts a new spec group; it applies to every following row.
+    const heading = line.match(/^##\s+(.+)$/);
+    if (heading) {
+      group = heading[1]?.trim() ?? "";
+      continue;
+    }
+    const match = line.match(/^(.+?)(?:\s*[:=]\s*|\s+[–-]\s+|\t+)(.+)$/);
+    if (!match) continue;
 
-      const label = match[1]?.trim() ?? "";
-      const specValue = match[2]?.trim() ?? "";
-      if (!label || !specValue) return null;
+    const label = match[1]?.trim() ?? "";
+    const specValue = match[2]?.trim() ?? "";
+    if (!label || !specValue) continue;
 
-      return {
-        label,
-        value: specValue,
-      };
-    })
-    .filter((item): item is ProductSpec => Boolean(item?.label && item.value));
+    specs.push({ label, value: specValue, ...(group ? { group } : {}) });
+  }
+  return specs;
+};
 
 const formatMoney = (locale: AdminLocale, value: number) =>
   new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-US", {
@@ -1024,13 +1038,13 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                         rows={6}
                         value={formState.specsText}
                         onChange={(event) => setFormState((prev) => ({ ...prev, specsText: event.target.value }))}
-                        placeholder={locale === "de" ? "Display: 6,1 Zoll\nSpeicher: 128 GB" : "Display: 6.1-inch\nStorage: 128 GB"}
+                        placeholder={locale === "de" ? "## Display\nDisplay: 6,1 Zoll\nSpeicher: 128 GB" : "## Display\nDisplay: 6.1-inch\nStorage: 128 GB"}
                         className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"
                       />
                       <p className="text-xs text-muted">
                         {locale === "de"
-                          ? "Eine Spezifikation pro Zeile. Erlaubte Formate: Label: Wert, Label = Wert oder Label - Wert."
-                          : "One specification per line. Accepted formats: Label: Value, Label = Value, or Label - Value."}
+                          ? "Eine Spezifikation pro Zeile. Erlaubte Formate: Label: Wert, Label = Wert oder Label - Wert. Eine Zeile \"## Gruppe\" gruppiert die folgenden Zeilen (z. B. ## Display)."
+                          : "One specification per line. Accepted formats: Label: Value, Label = Value, or Label - Value. A \"## Group\" line groups the rows that follow (e.g. ## Display)."}
                       </p>
                     </label>
                   </div>

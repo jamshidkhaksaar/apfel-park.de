@@ -89,14 +89,16 @@ const sanitizeSpecs = (items: unknown) => {
   return items
     .map((entry) => {
       if (!entry || typeof entry !== "object") return null;
-      const candidate = entry as { label?: unknown; value?: unknown };
+      const candidate = entry as { label?: unknown; value?: unknown; group?: unknown };
       const label = sanitizeInput(typeof candidate.label === "string" ? candidate.label : "");
       const value = sanitizeInput(typeof candidate.value === "string" ? candidate.value : "");
       if (!label || !value) return null;
       if (!isValidInputLength(label, 100) || !isValidInputLength(value, 255)) return null;
-      return { label, value };
+      const group = sanitizeInput(typeof candidate.group === "string" ? candidate.group : "");
+      if (group && !isValidInputLength(group, 100)) return null;
+      return { label, value, ...(group ? { group } : {}) };
     })
-    .filter((entry): entry is { label: string; value: string } => entry !== null);
+    .filter((entry): entry is { label: string; value: string; group?: string } => entry !== null);
 };
 
 const sanitizeVariants = (items: unknown) => {
