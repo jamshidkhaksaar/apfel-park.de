@@ -22,6 +22,8 @@ type Props = {
   /** When absent the checkout keeps using the hosted Stripe redirect. */
   stripePublishableKey?: string | null;
   germanyShippingAmount?: number;
+  /** PayPal is only offered when its credentials are configured. */
+  paypalEnabled?: boolean;
   initialShippingMethod: ShippingMethod;
 };
 
@@ -90,7 +92,7 @@ const createIdempotencyKey = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-export default function CheckoutClient({ locale, initialShippingMethod, stripePublishableKey, germanyShippingAmount = 6.9 }: Props) {
+export default function CheckoutClient({ locale, initialShippingMethod, stripePublishableKey, germanyShippingAmount = 6.9, paypalEnabled = false }: Props) {
   const items = useSyncExternalStore(subscribeStoredCart, readStoredCart, getServerCartSnapshot);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>(initialShippingMethod);
   const [cart, setCart] = useState<ValidatedCart | null>(null);
@@ -520,20 +522,22 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                         : locale === "de" ? "Zahlungspflichtig bestellen" : "Order with obligation to pay"}
                   </button>
                 )}
-                <button
-                  type="button"
-                  disabled={!canSubmit || submitting !== null}
-                  className="btn-secondary justify-center disabled:cursor-not-allowed disabled:opacity-40"
-                  onClick={() => void startCheckout("paypal")}
-                >
-                  {submitting === "paypal"
-                    ? locale === "de" ? "PayPal wird geöffnet…" : "Opening PayPal…"
-                    : locale === "de" ? "Mit PayPal bestellen" : "Order with PayPal"}
-                </button>
+                {paypalEnabled ? (
+                  <button
+                    type="button"
+                    disabled={!canSubmit || submitting !== null}
+                    className="btn-secondary justify-center disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => void startCheckout("paypal")}
+                  >
+                    {submitting === "paypal"
+                      ? locale === "de" ? "PayPal wird geöffnet…" : "Opening PayPal…"
+                      : locale === "de" ? "Mit PayPal bestellen" : "Order with PayPal"}
+                  </button>
+                ) : null}
               </div>
 
               <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/60 pt-5">
-                <PaymentBrandIcons iconClassName="h-4 w-auto" />
+                <PaymentBrandIcons iconClassName="h-4 w-auto" includePayPal={paypalEnabled} />
                 <span className="text-[11px] text-muted">
                   {locale === "de" ? "SSL-verschlüsselt" : "SSL encrypted"}
                 </span>

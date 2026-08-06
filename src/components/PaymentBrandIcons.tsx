@@ -3,6 +3,8 @@ import { siMastercard, siPaypal, siStripe, siVisa } from "simple-icons";
 type PaymentBrandIconsProps = {
   className?: string;
   iconClassName?: string;
+  /** Drop the PayPal mark where PayPal is not actually available. */
+  includePayPal?: boolean;
 };
 
 const paymentBrands = [
@@ -15,10 +17,15 @@ const paymentBrands = [
 export default function PaymentBrandIcons({
   className = "",
   iconClassName = "h-5 w-auto",
+  includePayPal = true,
 }: PaymentBrandIconsProps) {
+  const brands = includePayPal
+    ? paymentBrands
+    : paymentBrands.filter((brand) => brand.label !== "PayPal");
+
   return (
     <div className={`flex items-center gap-3 ${className}`} aria-label="Accepted payment methods" role="img">
-      {paymentBrands.map(({ icon, label }) => (
+      {brands.map(({ icon, label }) => (
         <svg
           key={icon.slug}
           aria-label={label}
