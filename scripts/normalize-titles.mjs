@@ -144,10 +144,20 @@ if (!APPLY) {
 await client.query("BEGIN");
 try {
   for (const u of updates) {
-    await client.query(
-      `UPDATE products SET title = $2, title_i18n = $3::jsonb, updated_at = now() WHERE id = $1`,
-      [u.id, u.to, u.i18n ? JSON.stringify(u.i18n) : undefined],
-    );
+    // Only touch title_i18n when it actually changed. node-postgres sends
+    // undefined as NULL, so writing it unconditionally would wipe the
+    // localized titles of every product whose base title alone needed fixing.
+    if (u.i18n) {
+      await client.query(
+        `UPDATE products SET title = $2, title_i18n = $3::jsonb, updated_at = now() WHERE id = $1`,
+        [u.id, u.to, JSON.stringify(u.i18n)],
+      );
+    } else {
+      await client.query(
+        `UPDATE products SET title = $2, updated_at = now() WHERE id = $1`,
+        [u.id, u.to],
+      );
+    }
   }
   await client.query("COMMIT");
 } catch (error) {

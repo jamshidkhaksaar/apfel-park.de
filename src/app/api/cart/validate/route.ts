@@ -21,7 +21,9 @@ export async function POST(request: NextRequest) {
     // query already finds accessories that fit that device. Keep only the
     // accessories, de-duplicate, and cap at four so the strip stays quiet.
     const byId = new Map<string, string>();
-    const seen = new Set<string>();
+    // Seed with everything already in the cart: suggesting an item the customer
+    // has already added just bumps its quantity and reads as a broken shop.
+    const seen = new Set<string>(cart.items.map((line) => line.productId));
     const suggestions: Array<{ id: string; slug: string; title: string; image: string; price: number; subcategory?: string }> = [];
     for (const line of cart.items) {
       if (line.category !== "smartphones" && line.category !== "tablets") continue;
