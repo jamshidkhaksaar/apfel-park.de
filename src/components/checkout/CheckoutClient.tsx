@@ -277,15 +277,15 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-foreground">{locale === "de" ? "Name" : "Name"} *</span>
-            <input required className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.name} onChange={(event) => setCustomer({ ...customer, name: event.target.value })} autoComplete="name" />
+            <input required className={FIELD_CLASS} value={customer.name} onChange={(event) => setCustomer({ ...customer, name: event.target.value })} autoComplete="name" />
           </label>
           <label className="block">
             <span className="text-sm font-medium text-foreground">{locale === "de" ? "E-Mail" : "Email"} *</span>
-            <input required className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.email} onChange={(event) => setCustomer({ ...customer, email: event.target.value })} autoComplete="email" type="email" />
+            <input required className={FIELD_CLASS} value={customer.email} onChange={(event) => setCustomer({ ...customer, email: event.target.value })} autoComplete="email" type="email" />
           </label>
           <label className="block md:col-span-2">
             <span className="text-sm font-medium text-foreground">{locale === "de" ? "Telefon optional" : "Phone optional"}</span>
-            <input className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.phone} onChange={(event) => setCustomer({ ...customer, phone: event.target.value })} autoComplete="tel" />
+            <input className={FIELD_CLASS} value={customer.phone} onChange={(event) => setCustomer({ ...customer, phone: event.target.value })} autoComplete="tel" />
           </label>
         </div>
 
@@ -352,19 +352,19 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block md:col-span-2">
               <span className="text-sm font-medium text-foreground">{locale === "de" ? "Adresse" : "Address"} *</span>
-              <input required className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.line1} onChange={(event) => setCustomer({ ...customer, line1: event.target.value })} autoComplete="address-line1" />
+              <input required className={FIELD_CLASS} value={customer.line1} onChange={(event) => setCustomer({ ...customer, line1: event.target.value })} autoComplete="address-line1" />
             </label>
             <label className="block md:col-span-2">
               <span className="text-sm font-medium text-foreground">{locale === "de" ? "Adresszusatz optional" : "Address line 2 optional"}</span>
-              <input className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.line2} onChange={(event) => setCustomer({ ...customer, line2: event.target.value })} autoComplete="address-line2" />
+              <input className={FIELD_CLASS} value={customer.line2} onChange={(event) => setCustomer({ ...customer, line2: event.target.value })} autoComplete="address-line2" />
             </label>
             <label className="block">
               <span className="text-sm font-medium text-foreground">{locale === "de" ? "PLZ" : "Postal code"} *</span>
-              <input required className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.postalCode} onChange={(event) => setCustomer({ ...customer, postalCode: event.target.value })} autoComplete="postal-code" />
+              <input required className={FIELD_CLASS} value={customer.postalCode} onChange={(event) => setCustomer({ ...customer, postalCode: event.target.value })} autoComplete="postal-code" />
             </label>
             <label className="block">
               <span className="text-sm font-medium text-foreground">{locale === "de" ? "Ort" : "City"} *</span>
-              <input required className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.city} onChange={(event) => setCustomer({ ...customer, city: event.target.value })} autoComplete="address-level2" />
+              <input required className={FIELD_CLASS} value={customer.city} onChange={(event) => setCustomer({ ...customer, city: event.target.value })} autoComplete="address-level2" />
             </label>
           </div>
           </>
