@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
@@ -11,12 +12,15 @@ import {
   type StoredCartItem,
 } from "@/components/checkout/cart";
 
+import PaymentBrandIcons from "@/components/PaymentBrandIcons";
 import StripePaymentElement from "@/components/checkout/StripePaymentElement";
+import { shouldBypassImageOptimization } from "@/lib/image";
 
 type Props = {
   locale: "de" | "en";
   /** When absent the checkout keeps using the hosted Stripe redirect. */
   stripePublishableKey?: string | null;
+  germanyShippingAmount?: number;
   initialShippingMethod: ShippingMethod;
 };
 
@@ -36,12 +40,16 @@ const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
     currency,
   }).format(value);
 
+const FIELD_CLASS =
+  "mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition " +
+  "placeholder:text-muted/50 focus:border-gold/50 focus:ring-2 focus:ring-gold/20";
+
 const createIdempotencyKey = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-export default function CheckoutClient({ locale, initialShippingMethod, stripePublishableKey }: Props) {
+export default function CheckoutClient({ locale, initialShippingMethod, stripePublishableKey, germanyShippingAmount = 6.9 }: Props) {
   const items = useSyncExternalStore(subscribeStoredCart, readStoredCart, getServerCartSnapshot);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>(initialShippingMethod);
   const [cart, setCart] = useState<ValidatedCart | null>(null);
@@ -208,20 +216,49 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="glass-panel rounded-2xl p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
-              {locale === "de" ? "Checkout" : "Checkout"}
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold text-foreground">
-              {locale === "de" ? "Kontakt & Lieferung" : "Contact and delivery"}
-            </h1>
+      <div className="space-y-6">
+        <div className="glass-panel rounded-2xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">
+                {locale === "de" ? "Sichere Bestellung" : "Secure checkout"}
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold text-foreground">
+                {locale === "de" ? "Kontakt & Lieferung" : "Contact and delivery"}
+              </h1>
+            </div>
+            <Link href={`/${locale}/cart`} className="text-sm text-muted underline underline-offset-4 transition hover:text-gold">
+              {locale === "de" ? "← Zurück zum Warenkorb" : "← Back to cart"}
+            </Link>
           </div>
-          <Link href={`/${locale}/cart`} className="btn-secondary">
-            {locale === "de" ? "Zurück zum Warenkorb" : "Back to cart"}
-          </Link>
+
+          {/* Where the customer is in the flow: cart is done, payment is next. */}
+          <ol className="mt-6 flex items-center gap-2 text-xs font-medium">
+            {[
+              { label: locale === "de" ? "Warenkorb" : "Cart", state: "done" },
+              { label: locale === "de" ? "Kontakt & Lieferung" : "Contact & delivery", state: "current" },
+              { label: locale === "de" ? "Zahlung" : "Payment", state: "todo" },
+            ].map((step, index, all) => (
+              <li key={step.label} className="flex flex-1 items-center gap-2">
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                    step.state === "done"
+                      ? "bg-gold/20 text-gold"
+                      : step.state === "current"
+                        ? "bg-gold text-black"
+                        : "border border-border/60 text-muted"
+                  }`}
+                >
+                  {step.state === "done" ? "✓" : index + 1}
+                </span>
+                <span className={step.state === "todo" ? "text-muted" : "text-foreground"}>{step.label}</span>
+                {index < all.length - 1 ? <span className="hidden h-px flex-1 bg-border/60 sm:block" /> : null}
+              </li>
+            ))}
+          </ol>
         </div>
+
+        <div className="glass-panel rounded-2xl p-6">
 
         {error ? (
           <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
@@ -229,9 +266,15 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
           </div>
         ) : null}
 
-        <p className="mt-8 text-xs text-muted">{locale === "de" ? "* Pflichtfeld" : "* Required field"}</p>
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="flex items-center gap-2.5 text-lg font-semibold text-foreground">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-[11px] font-bold text-gold">1</span>
+            {locale === "de" ? "Kontaktdaten" : "Contact details"}
+          </h2>
+          <p className="text-xs text-muted">{locale === "de" ? "* Pflichtfeld" : "* Required field"}</p>
+        </div>
 
-        <div className="mt-3 grid gap-4 md:grid-cols-2">
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-foreground">{locale === "de" ? "Name" : "Name"} *</span>
             <input required className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.name} onChange={(event) => setCustomer({ ...customer, name: event.target.value })} autoComplete="name" />
@@ -246,25 +289,67 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
           </label>
         </div>
 
-        <div className="mt-8 grid gap-3">
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-surface/40 p-4">
-            <input type="radio" name="shipping" checked={shippingMethod === "pickup"} onChange={() => setShippingMethod("pickup")} className="mt-1" />
-            <span>
-              <span className="block text-sm font-semibold text-foreground">{locale === "de" ? "Abholung im Store" : "Store pickup"}</span>
-              <span className="mt-1 block text-xs text-muted">{locale === "de" ? "Du erhältst nach Zahlung eine Bestätigung." : "You receive confirmation after payment."}</span>
-            </span>
-          </label>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-surface/40 p-4">
-            <input type="radio" name="shipping" checked={shippingMethod === "germany"} onChange={() => setShippingMethod("germany")} className="mt-1" />
-            <span>
-              <span className="block text-sm font-semibold text-foreground">{locale === "de" ? "Versand Deutschland" : "Germany shipping"}</span>
-              <span className="mt-1 block text-xs text-muted">{locale === "de" ? "Versicherter Versand an deine Adresse." : "Tracked shipping to your address."}</span>
-            </span>
-          </label>
+        <h2 className="mt-9 flex items-center gap-2.5 text-lg font-semibold text-foreground">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-[11px] font-bold text-gold">2</span>
+          {locale === "de" ? "Lieferung" : "Delivery"}
+        </h2>
+
+        {/* Selected state has to be obvious: the old radios looked identical
+            whether chosen or not, and the price only appeared after choosing. */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {([
+            {
+              value: "pickup" as const,
+              title: locale === "de" ? "Abholung im Store" : "Store pickup",
+              note: locale === "de" ? "Hamburg-Wilhelmsburg · Mo–Sa 09:30–20:00" : "Hamburg-Wilhelmsburg · Mon–Sat 9:30–20:00",
+              price: locale === "de" ? "Kostenlos" : "Free",
+            },
+            {
+              value: "germany" as const,
+              title: locale === "de" ? "Versand Deutschland" : "Germany shipping",
+              note: locale === "de" ? "Versichert · 1–3 Werktage" : "Insured · 1–3 business days",
+              price: formatMoney(locale, germanyShippingAmount),
+            },
+          ]).map((option) => {
+            const active = shippingMethod === option.value;
+            return (
+              <label
+                key={option.value}
+                className={`relative flex cursor-pointer flex-col gap-1 rounded-2xl border p-4 transition ${
+                  active
+                    ? "border-gold/60 bg-gold/[0.06] ring-2 ring-gold/20"
+                    : "border-border/60 bg-surface/40 hover:border-gold/30"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="shipping"
+                  className="sr-only"
+                  checked={active}
+                  onChange={() => setShippingMethod(option.value)}
+                />
+                <span className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold text-foreground">{option.title}</span>
+                  <span className={`text-sm font-semibold ${active ? "text-gold" : "text-muted"}`}>{option.price}</span>
+                </span>
+                <span className="text-xs text-muted">{option.note}</span>
+                {active ? (
+                  <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[11px] font-bold text-black">
+                    ✓
+                  </span>
+                ) : null}
+              </label>
+            );
+          })}
         </div>
 
         {shippingMethod === "germany" ? (
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <>
+          <h2 className="mt-9 flex items-center gap-2.5 text-lg font-semibold text-foreground">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-[11px] font-bold text-gold">3</span>
+            {locale === "de" ? "Lieferadresse" : "Delivery address"}
+          </h2>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block md:col-span-2">
               <span className="text-sm font-medium text-foreground">{locale === "de" ? "Adresse" : "Address"} *</span>
               <input required className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.line1} onChange={(event) => setCustomer({ ...customer, line1: event.target.value })} autoComplete="address-line1" />
@@ -282,29 +367,65 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
               <input required className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground" value={customer.city} onChange={(event) => setCustomer({ ...customer, city: event.target.value })} autoComplete="address-level2" />
             </label>
           </div>
+          </>
         ) : null}
+        </div>
+
+        {/* Reassurance where the decision is made, not buried in the footer. */}
+        <div className="glass-panel rounded-2xl p-5">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              locale === "de" ? "14 Tage Widerrufsrecht" : "14-day right of withdrawal",
+              locale === "de" ? "24 Monate Gewährleistung" : "24-month warranty",
+              locale === "de" ? "Versand & Abholung in Hamburg" : "Shipping & Hamburg pickup",
+            ].map((item) => (
+              <p key={item} className="flex items-start gap-2 text-xs text-muted">
+                <span className="mt-0.5 text-gold">✓</span>
+                <span>{item}</span>
+              </p>
+            ))}
+          </div>
+        </div>
       </div>
 
       <aside className="glass-panel h-fit rounded-2xl p-6 lg:sticky lg:top-28">
-        <h2 className="text-lg font-semibold text-foreground">{locale === "de" ? "Zahlung" : "Payment"}</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">{locale === "de" ? "Zusammenfassung" : "Order summary"}</h2>
+          <PaymentBrandIcons iconClassName="h-4 w-auto" />
+        </div>
         {loading ? (
           <p className="mt-5 text-sm text-muted">{locale === "de" ? "Warenkorb wird geprüft..." : "Checking cart..."}</p>
         ) : cart ? (
           <>
             <div className="mt-5 space-y-3 text-sm">
               {cart.items.map((item) => (
-                <div key={item.key} className="flex justify-between gap-4 text-muted">
-                  <span>
-                    {item.quantity} x {item.title}
+                <div key={item.key} className="flex items-start gap-3">
+                  {item.image ? (
+                    <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-[#f5f5f5]">
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        fill
+                        sizes="48px"
+                        className="object-contain p-1"
+                        unoptimized={shouldBypassImageOptimization(item.image)}
+                      />
+                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-black">
+                        {item.quantity}
+                      </span>
+                    </span>
+                  ) : null}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm text-foreground">{item.title}</span>
                     {item.condition && item.condition !== "new" ? (
-                      <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
+                      <span className="mt-1 inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
                         {item.condition === "used"
                           ? locale === "de" ? "Gebraucht" : "Used"
                           : "Unboxed"}
                       </span>
                     ) : null}
                   </span>
-                  <span>{formatMoney(locale, item.lineAmount, cart.currency)}</span>
+                  <span className="shrink-0 text-foreground">{formatMoney(locale, item.lineAmount, cart.currency)}</span>
                 </div>
               ))}
               <div className="flex justify-between border-t border-border/60 pt-3 text-muted">
@@ -388,10 +509,16 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 {submitting === "paypal" ? (locale === "de" ? "PayPal wird geöffnet..." : "Opening PayPal...") : (locale === "de" ? "Zahlungspflichtig mit PayPal bestellen" : "Binding order with PayPal")}
               </button>
             </div>
-            <p className="mt-4 text-xs leading-5 text-muted">
-              {locale === "de"
-                ? "Preise enthalten die gesetzliche MwSt. Zahlung wird erst nach Bestätigung durch den Anbieter als bezahlt markiert."
-                : "Prices include VAT. Orders are marked paid only after provider confirmation."}
+            <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted">
+              <svg viewBox="0 0 24 24" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="4" y="11" width="16" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+              <span>
+                {locale === "de"
+                  ? "SSL-verschlüsselte Zahlung. Preise inkl. gesetzlicher MwSt. Die Bestellung gilt erst nach Bestätigung des Zahlungsanbieters als bezahlt."
+                  : "SSL-encrypted payment. Prices include VAT. An order counts as paid only after the payment provider confirms it."}
+              </span>
             </p>
           </>
         ) : (

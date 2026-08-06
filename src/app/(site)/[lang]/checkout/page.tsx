@@ -43,6 +43,8 @@ export default async function CheckoutPage({
           locale={locale}
           initialShippingMethod={normalizeShippingMethod(query.shipping)}
           stripePublishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() || null}
+          // Shown on the shipping options so the cost is visible before choosing.
+          germanyShippingAmount={Number(process.env.SHOP_GERMANY_SHIPPING_AMOUNT ?? "6.9")}
         />
       </div>
     </section>
