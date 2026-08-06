@@ -93,22 +93,17 @@ export const generateMetadata = async ({
     155,
   );
 
-  const metadata = await createMetadata(
+  // No og:type=product here: Next's `other` emits name= attributes, but the
+  // OpenGraph product namespace needs property=, so the tags were inert and
+  // og:type ended up declared twice with conflicting values. Price, condition
+  // and availability already reach Google through the Product JSON-LD below.
+  return createMetadata(
     lang,
     seoTitle,
     seoDescription,
     `/store/${slug}`,
     product.image,
   );
-  return {
-    ...metadata,
-    other: {
-      "og:type": "product",
-      "product:price:amount": product.price.toFixed(2),
-      "product:price:currency": "EUR",
-      "og:availability": (product.stock ?? 0) > 0 ? "instock" : "out of stock",
-    },
-  };
 };
 
 export default async function ProductDetailPage({
