@@ -8,6 +8,7 @@ import { query } from "@/lib/db";
 import { autoPublishProductPromotion } from "@/lib/marketing";
 import { isValidInputLength, sanitizeInput } from "@/lib/security";
 import { classifySubcategory } from "@/lib/product-subcategory";
+import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 
 type ProductPayload = {
   id?: string;
@@ -56,14 +57,6 @@ type ProductPayload = {
   isActive?: boolean;
   isHomepageFeatured?: boolean;
 };
-
-const slugify = (value: string): string =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
 
 const normalizeCategory = (category: string): string | null => {
   const value = category.toLowerCase().trim();
@@ -391,7 +384,20 @@ export async function POST(request: NextRequest) {
   try {
     const payload = (await request.json()) as ProductPayload;
     const title = sanitizeInput(payload.title);
-    const slug = `${slugify(title)}-${Date.now()}`;
+    const base = buildBaseSlug({
+      brand: payload.brand,
+      model: payload.model,
+      title,
+      subtitle: payload.subtitle,
+      condition: payload.condition,
+      variants: payload.variants,
+    });
+    // Only the slugs that could actually collide with this base, rather than
+    // every slug in a 2,900-row table on each create. products.slug is UNIQUE,
+    // so a lost race surfaces as a constraint error rather than a duplicate.
+    const { rows } = await query(`SELECT slug FROM products WHERE slug LIKE $1`, [`${base}%`]);
+    const taken = new Set((rows as Array<{ slug: string }>).map((r) => r.slug));
+    const slug = uniquifySlug(base, taken);
     const product = buildPayload(payload, slug);
     const validationError = validatePayload(product, auth.messages);
     if (validationError) {
@@ -536,7 +542,23 @@ export async function PATCH(request: NextRequest) {
       .eq("id", payload.id)
       .maybeSingle();
 
-    const nextSlug = existing?.slug || `${slugify(product.title)}-${Date.now()}`;
+    // An existing slug is never rewritten on edit: a live URL that changes
+    // under an editor's feet costs the ranking it already earned. Re-slugging
+    // is a deliberate migration (scripts/migrate-slugs.mjs), which records the
+    // old value in product_slug_history so the old URL keeps resolving.
+    const nextSlug =
+      existing?.slug ||
+      uniquifySlug(
+        buildBaseSlug({
+          brand: payload.brand,
+          model: payload.model,
+          title: product.title,
+          subtitle: product.subtitle,
+          condition: product.condition,
+          variants: payload.variants,
+        }),
+        new Set(),
+      );
 
     await query(
       `UPDATE "products"

@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { uploadProductImage } from "@/lib/blob";
 import { query } from "@/lib/db";
+import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 import { isValidInputLength, sanitizeInput, validateImageFileExtension } from "@/lib/security";
 
 export const runtime = "nodejs";
@@ -55,14 +56,6 @@ const mimeFromExtension = (filePath: string): string | null => {
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const MAX_IMAGES = 6;
-
-const slugify = (value: string): string =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
 
 const normalizeCategory = (category: string): string | null => {
   const value = category.toLowerCase().trim();
@@ -353,7 +346,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const slug = `${slugify(baseTitle)}-${Date.now()}`;
+    // Was `slugify(title)-<Date.now()>`: imported drafts would have kept
+    // minting timestamped slugs and slowly undone the URL migration.
+    const { rows: slugRows } = await query(
+      `SELECT slug FROM products WHERE slug LIKE $1`,
+      [`${buildBaseSlug({ brand, model, title: baseTitle, condition })}%`],
+    );
+    const slug = uniquifySlug(
+      buildBaseSlug({ brand, model, title: baseTitle, condition }),
+      new Set((slugRows as Array<{ slug: string }>).map((row) => row.slug)),
+    );
     const specsBase = specs.map((entry) => ({ label: entry.label.de || entry.label.en, value: entry.value.de || entry.value.en }));
 
     const insertResult = await query(

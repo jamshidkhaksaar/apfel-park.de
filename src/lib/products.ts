@@ -929,6 +929,24 @@ export async function getProductBySlug(slug: string, locale: Locale = "de"): Pro
   return mapProduct(data as DbProduct, locale);
 }
 
+/**
+ * Resolve an old product slug to its current one, if the slug was rewritten
+ * and recorded in product_slug_history. Returns null when there is no history
+ * entry, so the caller can 404.
+ */
+export async function getCurrentSlugForOldSlug(oldSlug: string): Promise<string | null> {
+  const { rows } = await query(
+    `SELECT p.slug
+     FROM product_slug_history h
+     JOIN products p ON p.id = h.product_id
+     WHERE h.old_slug = $1
+       AND p.is_active = true
+     LIMIT 1`,
+    [oldSlug],
+  );
+  return (rows[0] as { slug?: string } | undefined)?.slug ?? null;
+}
+
 export async function getRelatedProducts(product: Product, limit = 4, locale: Locale = "de"): Promise<Product[]> {
   // A phone page should sell its accessories (2,820 of 2,902 products are
   // accessories, subcategorised); an accessory page should offer alternatives

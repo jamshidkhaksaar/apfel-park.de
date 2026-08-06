@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { createMetadata } from "@/lib/metadata";
-import { getProductBySlug, getRelatedProducts } from "@/lib/products";
+import { getProductBySlug, getCurrentSlugForOldSlug, getRelatedProducts } from "@/lib/products";
 import { subcategoryLabel } from "@/lib/product-subcategory";
 import ProductReviews from "@/components/ProductReviews";
 import { getApprovedReviews, getRatingSummary } from "@/lib/product-reviews";
@@ -123,6 +123,13 @@ export default async function ProductDetailPage({
   const product = await getProductBySlug(slug, locale);
 
   if (!product) {
+    const currentSlug = await getCurrentSlugForOldSlug(slug);
+    if (currentSlug) {
+      // 308, not 307: redirect() is a TEMPORARY redirect, which leaves the old
+      // URL indexed and does not consolidate link equity onto the new slug --
+      // the whole point of keeping slug history. Same trap as src/app/page.tsx.
+      permanentRedirect(`/${locale}/store/${currentSlug}`);
+    }
     notFound();
   }
 
