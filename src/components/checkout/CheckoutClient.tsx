@@ -45,9 +45,9 @@ const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
 
 const FIELD_CLASS =
   "mt-2 w-full rounded-lg border border-border/60 bg-background/60 px-4 py-3 text-[15px] text-foreground outline-none transition " +
-  "placeholder:text-muted-strong focus:border-gold/60 focus:bg-background focus:ring-1 focus:ring-gold/30";
+  "placeholder:text-muted/60 focus:border-gold/60 focus:bg-background focus:ring-1 focus:ring-gold/30";
 
-const LABEL_CLASS = "text-[11px] font-medium uppercase tracking-[0.14em] text-muted-strong";
+const LABEL_CLASS = "text-[11px] font-medium uppercase tracking-[0.14em] text-muted";
 
 const SECTION_HEADING = "text-[13px] font-semibold uppercase tracking-[0.18em] text-foreground";
 
@@ -267,7 +267,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
         <header>
           <Link
             href={`/${locale}/cart`}
-            className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-strong transition hover:text-gold"
+            className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted transition hover:text-gold"
           >
             {locale === "de" ? "← Warenkorb" : "← Cart"}
           </Link>
@@ -290,7 +290,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
         <section>
           <div className="flex items-baseline justify-between gap-4 border-b border-border/60 pb-3">
             <h2 className={SECTION_HEADING}>{locale === "de" ? "Kontakt" : "Contact"}</h2>
-            <p className="text-[11px] text-muted-strong">{locale === "de" ? "* Pflichtfeld" : "* Required"}</p>
+            <p className="text-[11px] text-muted">{locale === "de" ? "* Pflichtfeld" : "* Required"}</p>
           </div>
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             <label className="block">
@@ -335,7 +335,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                   {clock ? (
                     <p className="mt-2 flex items-center gap-2 text-xs">
                       <span className={`h-1.5 w-1.5 rounded-full ${storeOpen ? "bg-emerald-400" : "bg-muted-strong"}`} />
-                      <span className={storeOpen ? "text-emerald-400" : "text-muted-strong"}>
+                      <span className={storeOpen ? "text-emerald-400" : "text-muted"}>
                         {storeOpen
                           ? locale === "de" ? "Jetzt geöffnet bis 20:00 Uhr" : "Open now until 20:00"
                           : locale === "de" ? "Geschlossen · Mo–Sa ab 09:30 Uhr" : "Closed · Mon–Sat from 09:30"}
@@ -343,7 +343,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                     </p>
                   ) : null}
                 </div>
-                <span className={`shrink-0 font-display text-lg font-semibold ${MONEY} ${shippingMethod === "pickup" ? "text-gold" : "text-muted-strong"}`}>
+                <span className={`shrink-0 font-display text-lg font-semibold ${MONEY} ${shippingMethod === "pickup" ? "text-gold" : "text-muted"}`}>
                   {locale === "de" ? "Gratis" : "Free"}
                 </span>
               </div>
@@ -365,11 +365,11 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                   <p className="mt-1.5 text-sm text-muted">
                     {locale === "de" ? "Versichert, mit Sendungsverfolgung" : "Insured, with tracking"}
                   </p>
-                  <p className="mt-2 text-xs text-muted-strong">
+                  <p className="mt-2 text-xs text-muted">
                     {locale === "de" ? "In 1–3 Werktagen bei dir" : "With you in 1–3 business days"}
                   </p>
                 </div>
-                <span className={`shrink-0 font-display text-lg font-semibold ${MONEY} ${shippingMethod === "germany" ? "text-gold" : "text-muted-strong"}`}>
+                <span className={`shrink-0 font-display text-lg font-semibold ${MONEY} ${shippingMethod === "germany" ? "text-gold" : "text-muted"}`}>
                   {formatMoney(locale, germanyShippingAmount)}
                 </span>
               </div>
@@ -400,7 +400,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
       </div>
 
       <aside className="h-fit lg:sticky lg:top-28">
-        <div className="rounded-xl border border-border/60 bg-surface/50 p-6">
+        <div className="rounded-xl border border-border/60 bg-background-alt p-6">
           <h2 className={`${SECTION_HEADING} border-b border-border/60 pb-3`}>
             {locale === "de" ? "Deine Bestellung" : "Your order"}
           </h2>
@@ -458,7 +458,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                   {formatMoney(locale, cart.totalAmount, cart.currency)}
                 </span>
               </div>
-              <p className={`mt-2 text-right text-[11px] text-muted-strong ${MONEY}`}>
+              <p className={`mt-2 text-right text-[11px] text-muted/80 ${MONEY}`}>
                 {locale === "de" ? "inkl. " : "incl. "}
                 {formatMoney(locale, cart.vatAmount, cart.currency)}
                 {locale === "de" ? " MwSt." : " VAT"}
@@ -534,12 +534,12 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
 
               <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/60 pt-5">
                 <PaymentBrandIcons iconClassName="h-4 w-auto" />
-                <span className="text-[11px] text-muted-strong">
+                <span className="text-[11px] text-muted">
                   {locale === "de" ? "SSL-verschlüsselt" : "SSL encrypted"}
                 </span>
               </div>
 
-              <ul className="mt-4 space-y-1.5 text-[11px] leading-relaxed text-muted-strong">
+              <ul className="mt-4 space-y-1.5 text-[11px] leading-relaxed text-muted/80">
                 <li>{locale === "de" ? "14 Tage Widerrufsrecht" : "14-day right of withdrawal"}</li>
                 <li>{locale === "de" ? "24 Monate Gewährleistung" : "24-month warranty"}</li>
                 <li>
