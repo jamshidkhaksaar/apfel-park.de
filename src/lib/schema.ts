@@ -1,5 +1,5 @@
 import type { Locale } from "@/lib/i18n";
-import type { ProductCondition } from "@/lib/products";
+import type { ProductCategory, ProductCondition } from "@/lib/products";
 
 /**
  * Shared structured-data helpers so Product JSON-LD, feeds (Google Merchant /
@@ -14,6 +14,26 @@ export const productConditionLabel = (
   if (condition === "open_box") return "Open Box";
   if (condition === "used") return locale === "de" ? "Gebraucht" : "Used";
   return locale === "de" ? "Neu" : "New";
+};
+
+/**
+ * Human-readable category name for breadcrumbs and Product JSON-LD. The raw
+ * database value ("accessories") must never be shown to a visitor; "consoles"
+ * is presented as "Gaming" to match the public URL and page title.
+ */
+export const productCategoryLabel = (locale: Locale, category: ProductCategory): string => {
+  switch (category) {
+    case "smartphones":
+      return "Smartphones";
+    case "tablets":
+      return "Tablets";
+    case "accessories":
+      return locale === "de" ? "Zubehör" : "Accessories";
+    case "laptops":
+      return "Laptops";
+    case "consoles":
+      return "Gaming";
+  }
 };
 
 // Schema.org has no "open box" value. An opened package cannot be advertised

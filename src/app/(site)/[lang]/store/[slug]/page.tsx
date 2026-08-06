@@ -14,6 +14,7 @@ import {
   offerPriceValidUntil,
   offerShippingDetails,
   offerValidFrom,
+  productCategoryLabel,
   productConditionLabel,
   schemaItemCondition,
 } from "@/lib/schema";
@@ -204,7 +205,7 @@ export default async function ProductDetailPage({
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: locale === "de" ? "Shop" : "Store", item: `${siteInfo.url}/${locale}/store` },
-      { "@type": "ListItem", position: 2, name: product.category, item: `${siteInfo.url}/${locale}/${categoryPath}` },
+      { "@type": "ListItem", position: 2, name: productCategoryLabel(locale, product.category), item: `${siteInfo.url}/${locale}/${categoryPath}` },
       { "@type": "ListItem", position: 3, name: product.title, item: `${siteInfo.url}/${locale}/store/${product.slug}` },
     ],
   };
@@ -240,7 +241,9 @@ export default async function ProductDetailPage({
               {locale === "de" ? "Shop" : "Store"}
             </Link>
             <span>/</span>
-            <span>{product.category}</span>
+            <Link href={`/${locale}/${categoryPath}`} className="transition hover:text-gold">
+              {productCategoryLabel(locale, product.category)}
+            </Link>
             <span>/</span>
             <span className="text-foreground">{product.title}</span>
           </div>
