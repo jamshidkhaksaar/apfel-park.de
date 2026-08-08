@@ -109,10 +109,18 @@ export default async function ImpressumPage({
           {/* Contact */}
           <Section title={isGerman ? "Kontakt" : "Contact"}>
             <Row
-              label={isGerman ? "Telefon" : "Phone"}
+              label={isGerman ? "Telefon / WhatsApp" : "Phone / WhatsApp"}
               value={
                 <a href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="transition hover:text-gold">
                   {siteInfo.phone}
+                </a>
+              }
+            />
+            <Row
+              label={isGerman ? "Telefon Ladengeschäft" : "Store landline"}
+              value={
+                <a href={`tel:${siteInfo.landline.replace(/\s/g, "")}`} className="transition hover:text-gold">
+                  {siteInfo.landline}
                 </a>
               }
             />

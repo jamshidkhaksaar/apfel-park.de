@@ -146,8 +146,27 @@ export default async function RootLayout({
         name: siteInfo.name,
         legalName: siteInfo.legalName,
         url: siteInfo.url,
-        telephone: siteInfo.phone,
+        // E.164 so Google can match this against the Business Profile
+        // without guessing the country code.
+        telephone: siteInfo.phoneE164,
         email: siteInfo.email,
+        contactPoint: [
+          {
+            "@type": "ContactPoint",
+            telephone: siteInfo.phoneE164,
+            contactType: "customer service",
+            contactOption: "TollFree",
+            areaServed: "DE",
+            availableLanguage: ["de", "en"],
+          },
+          {
+            "@type": "ContactPoint",
+            telephone: siteInfo.landlineE164,
+            contactType: "customer service",
+            areaServed: "DE",
+            availableLanguage: ["de", "en"],
+          },
+        ],
         image: normalizeImageUrl(branding?.ogImage ?? ""),
         logo: normalizeImageUrl(branding?.logo ?? ""),
         vatID: siteInfo.vatId,

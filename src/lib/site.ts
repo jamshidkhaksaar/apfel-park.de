@@ -2,7 +2,7 @@ export const defaultSocialLinks = {
   instagram: "https://www.instagram.com/apfelpark_harburg/",
   facebook: "https://www.facebook.com/apfelpark.harburg",
   tiktok: "https://www.tiktok.com/@apfelpark",
-  whatsapp: "https://wa.me/494058978787",
+  whatsapp: "https://wa.me/491637786476",
 };
 
 export const siteInfo = {
@@ -11,8 +11,17 @@ export const siteInfo = {
   vatId: "DE345074336",
   tagline: "Smart Phone. Smart Service. Smart Price.",
   url: "https://apfel-park.de",
-  phone: "040 58978787",
-  whatsapp: "494058978787", // WhatsApp Business number (without + sign) - Germany +49, Hamburg 40, number 58978787
+  // Primary contact: the WhatsApp Business line. This is also the number on the
+  // Google Business Profile, and Google reads a mismatch between the profile
+  // and the site as a sign the business is not well established -- so these two
+  // must stay identical.
+  phone: "0163 7786476",
+  phoneE164: "+491637786476",
+  // The shop landline, shown alongside the primary number for people who
+  // would rather call the counter.
+  landline: "040 58978787",
+  landlineE164: "+494058978787",
+  whatsapp: "491637786476", // WhatsApp Business number, no + sign
   email: "info@apfel-park.de",
   address: {
     street: "Wilhelm-Strauß-Weg 2b",

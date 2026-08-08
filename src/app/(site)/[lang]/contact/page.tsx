@@ -95,6 +95,25 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
               </div>
             </div>
 
+            <div className="mb-4 grid gap-2 rounded-2xl border border-border/60 bg-surface/40 p-4 text-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
+                  {lang === "de" ? "Telefon & WhatsApp" : "Phone & WhatsApp"}
+                </span>
+                <a href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="font-semibold text-foreground transition hover:text-gold">
+                  {siteInfo.phone}
+                </a>
+              </div>
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
+                  {lang === "de" ? "Ladengeschäft" : "Store landline"}
+                </span>
+                <a href={`tel:${siteInfo.landline.replace(/\s/g, "")}`} className="font-semibold text-foreground transition hover:text-gold">
+                  {siteInfo.landline}
+                </a>
+              </div>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2">
               <TrackedLink
                 href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
