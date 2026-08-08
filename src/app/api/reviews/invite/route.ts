@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * constant time. Not reachable from a browser.
  */
 export async function POST(request: NextRequest) {
-  const secret = (process.env.APP_SESSION_SECRET || process.env.REVIEW_TOKEN_SECRET || "").trim();
+  const secret = (process.env.REVIEW_TOKEN_SECRET || process.env.APP_SESSION_SECRET || "").trim();
   const provided = request.headers.get("x-review-invite-secret") ?? "";
   if (!secret) {
     return NextResponse.json({ success: false, error: "Not configured" }, { status: 503 });

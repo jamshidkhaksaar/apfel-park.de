@@ -27,7 +27,7 @@ if (!DATABASE_URL) {
   console.error("ERROR: DATABASE_URL is not set");
   process.exit(1);
 }
-const secret = (APP_SESSION_SECRET || REVIEW_TOKEN_SECRET || "").trim();
+const secret = (REVIEW_TOKEN_SECRET || APP_SESSION_SECRET || "").trim();
 if (!secret) {
   console.error("ERROR: APP_SESSION_SECRET (or REVIEW_TOKEN_SECRET) is required to sign review links");
   process.exit(1);

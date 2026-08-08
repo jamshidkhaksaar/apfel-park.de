@@ -41,8 +41,12 @@ export const REVIEW_MAX_RATING = 5;
  * Signs a review invitation so the link in a post-purchase email proves the
  * sender bought the product, without exposing an editable order id.
  */
+// REVIEW_TOKEN_SECRET first: this signs links that go out in emails, and the
+// admin session secret must not double as a public link signer -- a leak of one
+// should never hand over the other. APP_SESSION_SECRET stays as a fallback so
+// existing deployments keep working until the dedicated secret is set.
 const reviewTokenSecret = () =>
-  process.env.APP_SESSION_SECRET?.trim() || process.env.REVIEW_TOKEN_SECRET?.trim() || "";
+  process.env.REVIEW_TOKEN_SECRET?.trim() || process.env.APP_SESSION_SECRET?.trim() || "";
 
 export const buildReviewToken = (orderId: string, productId: string): string | null => {
   const secret = reviewTokenSecret();
