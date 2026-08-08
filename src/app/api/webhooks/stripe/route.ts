@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { markOrderCancelled, markOrderPaid, recordWebhookEvent, verifyStripeSignature } from "@/lib/checkout";
+import { getOrderAmountCents, markOrderCancelled, markOrderPaid, recordWebhookEvent, verifyStripeSignature } from "@/lib/checkout";
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
 
 type StripeEvent = {
@@ -13,6 +13,11 @@ type StripeEvent = {
       payment_status?: string;
       status?: string;
       payment_intent?: string;
+      /** Checkout Session total, in cents. */
+      amount_total?: number;
+      /** PaymentIntent amount, in cents. */
+      amount?: number;
+      currency?: string;
       metadata?: Record<string, string>;
     };
   };
@@ -44,7 +49,30 @@ export async function POST(request: NextRequest) {
   const session = event.data.object;
   const orderId = session.metadata?.order_id || session.client_reference_id || null;
 
-  if (event.type === "checkout.session.completed" && session.payment_status === "paid") {
+  /**
+   * A paid event must carry the amount the order is actually for.
+   *
+   * Fails open when the event carries no amount at all, so an unexpected
+   * payload shape can never strand a real payment; it only refuses when an
+   * amount is present and disagrees with the order.
+   */
+  const amountMatchesOrder = async (): Promise<boolean> => {
+    const claimed = session.amount_total ?? session.amount;
+    if (typeof claimed !== "number" || !orderId) return true;
+    const expected = await getOrderAmountCents(orderId);
+    if (expected === null) return true;
+    if (claimed === expected) return true;
+    console.error("Stripe webhook amount mismatch -- refusing to mark paid", {
+      orderId,
+      eventId: event.id,
+      eventType: event.type,
+      claimedCents: claimed,
+      expectedCents: expected,
+    });
+    return false;
+  };
+
+  if (event.type === "checkout.session.completed" && session.payment_status === "paid" && (await amountMatchesOrder())) {
     const order = await markOrderPaid({
       orderId,
       provider: "stripe",
@@ -74,7 +102,7 @@ export async function POST(request: NextRequest) {
 
   // The embedded Payment Element pays a PaymentIntent directly; there is no
   // Checkout Session, so the hosted-flow branch above never fires for it.
-  if (event.type === "payment_intent.succeeded") {
+  if (event.type === "payment_intent.succeeded" && (await amountMatchesOrder())) {
     const order = await markOrderPaid({
       orderId,
       provider: "stripe",

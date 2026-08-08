@@ -368,6 +368,28 @@ export async function attachProviderReference(input: {
   );
 }
 
+/**
+ * The amount an order is expected to be paid, in cents.
+ *
+ * The webhook uses this to refuse a "paid" event whose amount does not match
+ * the order. Without it, anyone able to produce a valid webhook signature and
+ * an order id could mark an order paid without paying -- and customers see
+ * their own order id in the checkout success URL.
+ */
+export async function getOrderAmountCents(orderId: string): Promise<number | null> {
+  try {
+    const result = await query(
+      `SELECT round(total_amount * 100)::int AS cents FROM orders WHERE id = $1 LIMIT 1`,
+      [orderId],
+    );
+    const row = result.rows[0] as { cents?: number } | undefined;
+    return typeof row?.cents === "number" ? row.cents : null;
+  } catch (error) {
+    console.error("getOrderAmountCents failed:", error);
+    return null;
+  }
+}
+
 export async function markOrderPaid(input: {
   orderId?: string | null;
   provider: PaymentProvider;
