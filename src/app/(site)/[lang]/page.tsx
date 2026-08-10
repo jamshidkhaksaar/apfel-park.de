@@ -492,13 +492,13 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 {home.support.bullets.map((item: string, index: number) => {
                   const supportDescriptions = {
                     de: [
-                      "Schnelle Diagnose in wenigen Minuten.",
+                      "Diagnose und Zeitrahmen nach Prüfung vor Ort.",
                       "Direktstart auf deinem neuen Gerät.",
                       "Sicherheitscheck und Datensicherung.",
                       "Flexible Finanzierung & Trade-In.",
                     ],
                     en: [
-                      "Fast diagnosis in minutes.",
+                      "Diagnosis and timing after an in-store inspection.",
                       "Ready-to-go setup on your new device.",
                       "Security check and data backup.",
                       "Flexible financing & trade-in.",
@@ -538,8 +538,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                     </svg>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-foreground">12 {lang === "de" ? "Monate" : "Months"}</p>
-                    <p className="text-xs text-muted">{lang === "de" ? "Garantie" : "Warranty"}</p>
+                    <p className="text-lg font-bold text-foreground">1–3 {lang === "de" ? "Tage" : "Days"}</p>
+                    <p className="text-xs text-muted">{lang === "de" ? "Versand" : "Shipping"}</p>
                   </div>
                 </div>
                 
@@ -550,8 +550,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                     </svg>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-foreground">&lt;1 {lang === "de" ? "Stunde" : "Hour"}</p>
-                    <p className="text-xs text-muted">{lang === "de" ? "Express-Service" : "Express Service"}</p>
+                    <p className="text-lg font-bold text-foreground">Hamburg</p>
+                    <p className="text-xs text-muted">{lang === "de" ? "Abholung" : "Collection"}</p>
                   </div>
                 </div>
               </div>
