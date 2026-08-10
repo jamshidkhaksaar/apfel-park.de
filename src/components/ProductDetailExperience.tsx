@@ -606,7 +606,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           <div className="mt-6 grid gap-3 rounded-3xl border border-border/60 bg-surface/50 p-5 text-sm text-muted">
             <p>{locale === "de" ? "Abholung im Store oder versicherter Versand innerhalb Deutschlands." : "Store pickup or tracked shipping within Germany."}</p>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p>{locale === "de" ? "Sichere Zahlung mit Karte oder PayPal. Preise inkl. gesetzlicher MwSt." : "Secure card or PayPal payment. Prices include VAT."}</p>
+              <p>{locale === "de" ? "Sichere Zahlung mit Kreditkarte, Apple Pay oder Klarna. Preise inkl. gesetzlicher MwSt." : "Secure payment by credit card, Apple Pay, or Klarna. Prices include VAT."}</p>
               <PaymentBrandIcons iconClassName="h-5 w-auto" />
             </div>
             <p>
