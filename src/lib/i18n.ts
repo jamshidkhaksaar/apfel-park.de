@@ -568,7 +568,7 @@ export const dictionary = {
         },
         {
           question: "Welche Zahlungsmöglichkeiten gibt es?",
-          answer: "Online kannst du sicher mit Karte oder PayPal bezahlen. Im Geschäft sind Barzahlung sowie Karten- und Debitkartenzahlung möglich.",
+          answer: "Online kannst du sicher mit Kreditkarte (Visa, Mastercard), Apple Pay oder Klarna bezahlen. Im Geschäft sind Barzahlung sowie Karten- und Debitkartenzahlung möglich.",
         },
         {
           question: "Erhalte ich eine Rechnung?",
@@ -678,7 +678,7 @@ export const dictionary = {
           title: "3. Preise & Zahlung",
           body: [
             "Alle Preise verstehen sich inkl. gesetzlicher MwSt.",
-            "Zahlung per PayPal, Klarna, Sofort, Giropay, SEPA, Stripe oder Barzahlung vor Ort.",
+            "Zahlung per Kreditkarte, Apple Pay oder Klarna – im Geschäft auch bar.",
           ],
         },
         {
@@ -1280,7 +1280,7 @@ export const dictionary = {
         },
         {
           question: "Which payment methods are available?",
-          answer: "Online you can pay securely by card or PayPal. In store, cash, credit cards and debit cards are accepted.",
+          answer: "Online you can pay securely by credit card (Visa, Mastercard), Apple Pay, or Klarna. In store, cash, credit cards and debit cards are accepted.",
         },
         {
           question: "Will I receive an invoice?",
@@ -1390,7 +1390,7 @@ export const dictionary = {
           title: "3. Pricing & payment",
           body: [
             "All prices include statutory VAT.",
-            "Payment via PayPal, Klarna, Sofort, Giropay, SEPA, Stripe, or cash in store.",
+            "Payment by credit card, Apple Pay, or Klarna – cash in store.",
           ],
         },
         {
