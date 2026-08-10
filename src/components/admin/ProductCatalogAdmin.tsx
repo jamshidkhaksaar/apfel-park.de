@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
+import EprelPicker, { type EprelMatch } from "@/components/admin/EprelPicker";
 
 type AdminLocale = "de" | "en";
 
@@ -935,6 +936,26 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                   {formState.category === "smartphones" || formState.category === "tablets" ? (
                     <div className="mt-4 rounded-2xl border border-border/60 p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EU-Energielabel (EPREL)" : "EU energy label (EPREL)"}</p>
+                      <EprelPicker
+                        locale={locale}
+                        onSelect={(match: EprelMatch) => {
+                          // Straight from the register: never edited on the way in.
+                          setFormState((prev) => ({
+                            ...prev,
+                            eprelId: match.registration_number,
+                            energyEfficiencyClass: match.energy_class ?? "",
+                            energyBatteryEndurance: match.battery_endurance_hours
+                              ? `${match.battery_endurance_hours} h`
+                              : "",
+                            energyBatteryCycles: match.battery_endurance_cycles
+                              ? String(match.battery_endurance_cycles)
+                              : "",
+                            energyReliabilityClass: match.reliability_class ?? "",
+                            energyRepairabilityClass: match.repairability_class ?? "",
+                            energyIpRating: match.ingress_protection ?? "",
+                          }));
+                        }}
+                      />
                       <div className="mt-3 grid gap-3 md:grid-cols-3">
                         <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EPREL-ID" : "EPREL ID"}</span><input value={formState.eprelId} onChange={(event) => setFormState((prev) => ({ ...prev, eprelId: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
                         <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Energieeffizienzklasse" : "Energy class"}</span><select value={formState.energyEfficiencyClass} onChange={(event) => setFormState((prev) => ({ ...prev, energyEfficiencyClass: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></label>
