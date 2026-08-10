@@ -154,29 +154,28 @@ export const resolveSeoPage = async (routeId: SeoRouteId, locale: Locale) => {
   };
 };
 
-// Boot-time constant so static sitemap entries don't advertise a fake
-// per-request lastmod (Google ignores lastmod values that always change).
-const deployedAt = new Date();
-
 export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
   const settings = await getSeoSettings();
   if (!settings.global.enableSitemap) return [];
   const products = await getProducts().catch(() => []);
+  const stockedCategories = new Set(products.map((product) => product.category));
+  const categoryRoutes: Partial<Record<SeoRouteId, string>> = {
+    smartphones: "smartphones",
+    tablets: "tablets",
+    accessories: "accessories",
+    laptops: "laptops",
+    gaming: "consoles",
+  };
 
   const staticEntries = seoRouteDefinitions.flatMap((route) => {
     const pageSettings = settings.pages[route.id];
     if (!pageSettings.index) return [];
 
-    // /gaming is noindexed (there is no console inventory yet) and telling
-    // Google to crawl a page it must not index is a contradiction. It returns
-    // to the sitemap when consoles are actually stocked.
-    if (route.id === "gaming") return [];
+    const category = categoryRoutes[route.id];
+    if (category && !stockedCategories.has(category as (typeof products)[number]["category"])) return [];
 
     return locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}${route.path}`,
-      lastModified: deployedAt,
-      changeFrequency: pageSettings.changeFrequency,
-      priority: pageSettings.priority,
       alternates: {
         languages: {
           de: `${siteInfo.url}/de${route.path}`,
@@ -192,14 +191,11 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     // the sitemap lastmod or crawlers keep the stale copy.
     const stamp = product.updatedAt ?? product.createdAt;
     const changedAt = stamp ? new Date(stamp) : null;
-    const lastModified =
-      changedAt && !Number.isNaN(changedAt.getTime()) ? changedAt : deployedAt;
+    const lastModified = changedAt && !Number.isNaN(changedAt.getTime()) ? changedAt : undefined;
 
     return locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}/store/${product.slug}`,
       lastModified,
-      changeFrequency: "weekly" as const,
-      priority: product.isFeatured ? 0.85 : 0.72,
       alternates: {
         languages: {
           de: `${siteInfo.url}/de/store/${product.slug}`,
@@ -225,9 +221,6 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
   const accessoryCollectionEntries = stockedCollectionSlugs.flatMap((slug) =>
     locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}/accessories/${slug}`,
-      lastModified: deployedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.75,
       alternates: {
         languages: {
           de: `${siteInfo.url}/de/accessories/${slug}`,
@@ -241,9 +234,6 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
   const repairServiceEntries = repairServiceSlugs.flatMap((service) =>
     locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}/repairs/${service}`,
-      lastModified: deployedAt,
-      changeFrequency: "monthly" as const,
-      priority: 0.82,
       alternates: {
         languages: {
           de: `${siteInfo.url}/de/repairs/${service}`,
@@ -256,9 +246,6 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
 
   const catalogEntries = locales.map((locale) => ({
     url: `${siteInfo.url}/${locale}/store/catalog`,
-    lastModified: deployedAt,
-    changeFrequency: "daily" as const,
-    priority: 0.68,
     alternates: {
       languages: {
         de: `${siteInfo.url}/de/store/catalog`,
@@ -294,7 +281,7 @@ export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
       {
         userAgent: "*",
         allow: ["/", "/api/meta/catalog.csv", "/google-merchant.xml", "/llms.txt"],
-        disallow: ["/admin", "/login", "/api/"],
+        disallow: ["/admin", "/api/"],
       },
     ],
   };

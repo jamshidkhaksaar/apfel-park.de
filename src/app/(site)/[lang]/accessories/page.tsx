@@ -232,12 +232,12 @@ export default async function AccessoriesPage({
                 </svg>
               </div>
               <h3 className="text-lg font-bold text-foreground">
-                {lang === "de" ? "Geprüfte Qualität" : "Certified Quality"}
+                {lang === "de" ? "Klare Produktdetails" : "Clear product details"}
               </h3>
               <p className="mt-2 text-sm text-muted">
                 {lang === "de"
-                  ? "Nur geprüfte Markenprodukte in unserem Sortiment"
-                  : "Only certified brand products in our selection"}
+                  ? "Marke, Modell und Kompatibilität direkt am Produkt"
+                  : "Brand, model and compatibility shown on each product"}
               </p>
             </div>
 

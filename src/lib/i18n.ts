@@ -50,7 +50,7 @@ export const dictionary = {
       support: [
         "Sofort-Diagnose & transparente Preise",
         "Express-Reparatur im Shop",
-        "Original- und Premium-Ersatzteile",
+        "Passende Qualitäts-Ersatzteile",
         "Datenrettung & Geräteschutz",
       ],
     },
@@ -203,7 +203,7 @@ export const dictionary = {
         items: [
           {
             title: "Smartphone Reparatur",
-            description: "Schneller Austausch, Originalteile, Service mit Garantie.",
+            description: "Schneller Austausch mit passenden Ersatzteilen und zusätzlicher Garantie.",
           },
           {
             title: "Tablet & iPad",
@@ -349,7 +349,7 @@ export const dictionary = {
         "Reparaturen ohne Stress in Hamburg-Wilhelmsburg – unsere Werkstatt löst auch komplexe Schäden, inklusive Board-Level Reparaturen.",
       highlights: [
         "Express-Service in Hamburg",
-        "Original- und Premium-Ersatzteile",
+        "Passende Qualitäts-Ersatzteile",
         "12 Monate Garantie",
         "Faire Preise ohne Überraschungen",
       ],
@@ -426,10 +426,10 @@ export const dictionary = {
         },
       },
       highlights: [
-        "12 Monate Garantie auf alle Geräte",
-        "Professionelle Qualitätsprüfung",
-        "Beste Preise in Hamburg",
-        "Kostenlose Erstberatung",
+        "12 Monate zusätzliche Garantie",
+        "Zustand direkt am Artikel",
+        "Transparente Preise",
+        "Persönliche Beratung im Shop",
       ],
       brands: ["Apple MacBook", "Lenovo", "HP", "Dell", "ASUS", "Acer"],
       accessories: [
@@ -471,23 +471,23 @@ export const dictionary = {
       ],
     },
     about: {
-      heroTitle: "Apfel Park – Premium seit Tag 1",
+      heroTitle: "Apfel Park in Hamburg-Wilhelmsburg",
       heroSubtitle:
         "Dein vertrauenswürdiger Partner für Smartphones, Zubehör und Reparaturen in Hamburg.",
-      intro: "Willkommen bei Apfel Park – deinem Premium-Shop für Smartphones, Zubehör und professionelle Reparaturen im Herzen von Hamburg. Seit unserer Gründung setzen wir auf Qualität, Transparenz und persönlichen Service.",
+      intro: "Apfel Park verbindet einen lokalen Smartphone-Shop in Hamburg-Wilhelmsburg mit einem deutschlandweiten Online-Shop. Bei Geräten, Zubehör und Reparaturen setzen wir auf klare Angaben, nachvollziehbare Preise und persönliche Beratung.",
       story: {
         title: "Unsere Geschichte",
-        content: "Was als kleine Werkstatt begann, ist heute einer der führenden Smartphone-Shops in Hamburg. Unser Gründer, selbst begeisterter Technik-Enthusiast, wollte einen Ort schaffen, an dem Kunden nicht nur hochwertige Produkte finden, sondern auch ehrliche Beratung und schnelle Hilfe bei Problemen. Dieser Traum ist Apfel Park.",
+        content: "In unserem Geschäft am Wilhelm-Strauß-Weg 2b kannst du Smartphones und Zubehör ansehen, Bestellungen abholen und Reparaturen besprechen. Online zeigen wir Preis, Verfügbarkeit, Gerätezustand und die wichtigsten Produktdetails, damit du vor dem Kauf vergleichen kannst.",
       },
       features: [
         {
-          title: "100% Original-Produkte",
-          description: "Wir verkaufen ausschließlich Original-Geräte und zertifiziertes Zubehör. Keine Fälschungen, keine Kompromisse – nur Premium-Qualität von führenden Marken.",
+          title: "Klare Produktangaben",
+          description: "Marke, Modell, Zustand, Speicher, Preis und Verfügbarkeit werden am jeweiligen Produkt ausgewiesen. Hersteller-Barcodes tragen wir nur ein, wenn sie verifiziert sind.",
           icon: "genuine",
         },
         {
           title: "12 Monate Garantie",
-          description: "Alle unsere Produkte und Reparaturen sind mit einer 12-monatigen Garantie abgesichert. Wir stehen hinter unserer Arbeit und unseren Produkten.",
+          description: "Zusätzlich zu den gesetzlichen Rechten gilt unsere 12-monatige Garantie für Produkte und Reparaturleistungen nach den jeweiligen Bedingungen.",
           icon: "warranty",
         },
         {
@@ -512,7 +512,7 @@ export const dictionary = {
       },
       cta: {
         title: "Entdecke unser Sortiment",
-        description: "Stöbere durch unsere Auswahl an Smartphones, Laptops und Zubehör – alles Original, alles mit Garantie.",
+        description: "Stöbere durch Smartphones und Zubehör mit klar ausgewiesenem Zustand, Preis, Verfügbarkeit und Garantie.",
         buttons: {
           smartphones: "Smartphones entdecken",
           accessories: "Zubehör ansehen",
@@ -520,10 +520,10 @@ export const dictionary = {
         },
       },
       stats: [
-        { value: "5+", label: "Jahre Erfahrung" },
-        { value: "10.000+", label: "Zufriedene Kunden" },
-        { value: "15.000+", label: "Reparaturen" },
-        { value: "4.9", label: "Google Bewertung" },
+        { value: "Hamburg", label: "Standort Wilhelmsburg" },
+        { value: "Mo–Sa", label: "6 Tage geöffnet" },
+        { value: "09:30", label: "Öffnung" },
+        { value: "20:00", label: "Ladenschluss" },
       ],
     },
     faq: {
@@ -533,7 +533,7 @@ export const dictionary = {
         {
           question: "Wie schnell ist eine Reparatur?",
           answer:
-            "Die meisten Reparaturen sind in weniger als einer Stunde erledigt. Bei komplexen Schäden informieren wir dich sofort über den Zeitrahmen.",
+            "Nach der Diagnose nennen wir dir den voraussichtlichen Zeitrahmen. Die Dauer hängt von Gerät, Schaden, Ersatzteilverfügbarkeit und Auslastung ab.",
         },
         {
           question: "Gibt es Garantie?",
@@ -549,6 +549,30 @@ export const dictionary = {
           question: "Kann ich ohne Termin kommen?",
           answer:
             "Ja, unsere Sofort-Diagnose ist ohne Termin möglich. Bei hoher Auslastung vereinbaren wir kurzfristige Slots.",
+        },
+        {
+          question: "Wie lange dauert der Versand?",
+          answer: "Innerhalb Deutschlands erfolgt die Zustellung in der Regel in 1–3 Werktagen. Der versicherte Standardversand kostet 6,90 €; die Abholung im Store ist kostenlos.",
+        },
+        {
+          question: "Wie lange kann ich einen Online-Kauf widerrufen?",
+          answer: "Verbraucher haben bei Online-Käufen grundsätzlich 14 Tage Widerrufsrecht. Die unmittelbaren Rücksendekosten trägt der Kunde; Einzelheiten stehen auf unserer Seite Lieferung & Rückgabe.",
+        },
+        {
+          question: "Was bedeuten Neu, Open-Box und Gebraucht A+?",
+          answer: "Neu bedeutet versiegelt. Open-Box bezeichnet geöffnete Verpackungen, etwa Ausstellungs- oder Retourenware. Gebraucht A+ wurde bereits genutzt und wird mit konkretem Zustandshinweis angeboten.",
+        },
+        {
+          question: "Sind die angebotenen iPhone 17 versiegelt?",
+          answer: "Die aktuell angebotenen iPhone-17-Geräte sind neu und versiegelt. Der Zustand steht zusätzlich auf jeder Produktseite und in der Bestellung.",
+        },
+        {
+          question: "Welche Zahlungsmöglichkeiten gibt es?",
+          answer: "Online kannst du sicher mit Karte oder PayPal bezahlen. Im Geschäft sind Barzahlung sowie Karten- und Debitkartenzahlung möglich.",
+        },
+        {
+          question: "Erhalte ich eine Rechnung?",
+          answer: "Ja. Zu jedem Kauf erhältst du eine Rechnung mit den Angaben zur Bestellung und zum gekauften Artikel.",
         },
       ],
     },
@@ -737,7 +761,7 @@ export const dictionary = {
       support: [
         "Instant diagnostics with clear pricing",
         "Express in-store repairs",
-        "Original & premium spare parts",
+        "Suitable quality replacement parts",
         "Data recovery & device protection",
       ],
     },
@@ -831,7 +855,7 @@ export const dictionary = {
           },
           {
             title: "Smartphones",
-            description: "New & certified devices, trade-in and setup.",
+            description: "New and clearly described devices, trade-in and setup.",
             path: "/smartphones",
             image: "/images/hero-smartphones.svg",
           },
@@ -1036,7 +1060,7 @@ export const dictionary = {
         "Repairs without stress in Hamburg-Wilhelmsburg – our workshop resolves complex damage, including board-level repairs.",
       highlights: [
         "Express service in Hamburg",
-        "Original & premium parts",
+        "Suitable quality replacement parts",
         "12-month warranty",
         "Fair prices with clarity",
       ],
@@ -1073,7 +1097,7 @@ export const dictionary = {
     smartphones: {
       heroTitle: "Smartphones available today",
       heroSubtitle:
-        "New and certified devices, trade-in and setup services in-store.",
+        "New and clearly described devices, trade-in and setup services in-store.",
       highlights: [
         "Top brands & flagship models",
         "Financing and trade-in",
@@ -1113,10 +1137,10 @@ export const dictionary = {
         },
       },
       highlights: [
-        "12-month warranty on all devices",
-        "Professional quality inspection",
-        "Best prices in Hamburg",
-        "Free initial consultation",
+        "Additional 12-month warranty",
+        "Condition shown on each item",
+        "Transparent prices",
+        "Personal in-store advice",
       ],
       brands: ["Apple MacBook", "Lenovo", "HP", "Dell", "ASUS", "Acer"],
       accessories: [
@@ -1158,23 +1182,23 @@ export const dictionary = {
       ],
     },
     about: {
-      heroTitle: "Apfel Park – Premium from Day One",
+      heroTitle: "Apfel Park in Hamburg-Wilhelmsburg",
       heroSubtitle:
         "Your trusted partner for smartphones, accessories and repairs in Hamburg.",
-      intro: "Welcome to Apfel Park – your premium destination for smartphones, accessories and professional repairs in the heart of Hamburg. Since day one, we've focused on quality, transparency and personal service.",
+      intro: "Apfel Park combines a local smartphone shop in Hamburg-Wilhelmsburg with an online store serving Germany. For devices, accessories and repairs, we focus on clear information, transparent prices and personal advice.",
       story: {
         title: "Our Story",
-        content: "What started as a small workshop is now one of Hamburg's leading smartphone shops. Our founder, a passionate tech enthusiast, wanted to create a place where customers not only find high-quality products but also honest advice and quick solutions to their problems. That dream is Apfel Park.",
+        content: "At Wilhelm-Strauß-Weg 2b you can view smartphones and accessories, collect orders and discuss repairs. Online we show price, availability, device condition and key product details so you can compare before buying.",
       },
       features: [
         {
-          title: "100% Genuine Products",
-          description: "We only sell original devices and certified accessories. No fakes, no compromises – just premium quality from leading brands.",
+          title: "Clear Product Information",
+          description: "Brand, model, condition, storage, price and availability are shown on each product. We add manufacturer barcodes only after verification.",
           icon: "genuine",
         },
         {
           title: "12-Month Warranty",
-          description: "All our products and repairs come with a 12-month warranty. We stand behind our work and our products.",
+          description: "In addition to statutory rights, our 12-month commercial warranty applies to products and repair services under its respective terms.",
           icon: "warranty",
         },
         {
@@ -1199,7 +1223,7 @@ export const dictionary = {
       },
       cta: {
         title: "Explore Our Products",
-        description: "Browse our selection of smartphones, laptops and accessories – all genuine, all with warranty.",
+        description: "Browse smartphones and accessories with clearly stated condition, price, availability and warranty.",
         buttons: {
           smartphones: "Browse Smartphones",
           accessories: "View Accessories",
@@ -1207,10 +1231,10 @@ export const dictionary = {
         },
       },
       stats: [
-        { value: "5+", label: "Years Experience" },
-        { value: "10,000+", label: "Happy Customers" },
-        { value: "15,000+", label: "Repairs Done" },
-        { value: "4.9", label: "Google Rating" },
+        { value: "Hamburg", label: "Wilhelmsburg location" },
+        { value: "Mon–Sat", label: "Open six days" },
+        { value: "09:30", label: "Opening time" },
+        { value: "20:00", label: "Closing time" },
       ],
     },
     faq: {
@@ -1220,7 +1244,7 @@ export const dictionary = {
         {
           question: "How fast is a repair?",
           answer:
-            "Most repairs are completed in under one hour. For complex damage we immediately share the timeline.",
+            "After diagnosis, we give you an estimated timeline. Duration depends on the device, damage, part availability and current workload.",
         },
         {
           question: "Do you offer warranty?",
@@ -1236,6 +1260,30 @@ export const dictionary = {
           question: "Can I walk in without appointment?",
           answer:
             "Yes, instant diagnostics are available without appointment. During peak times we schedule quick slots.",
+        },
+        {
+          question: "How long does delivery take?",
+          answer: "Delivery within Germany normally takes 1–3 business days. Insured standard shipping costs €6.90, while collection from the store is free.",
+        },
+        {
+          question: "How long can I cancel an online purchase?",
+          answer: "Consumers generally have a 14-day right of withdrawal for online purchases. The customer bears the direct return cost; details are on our Delivery & Returns page.",
+        },
+        {
+          question: "What do New, Open Box and Used A+ mean?",
+          answer: "New means sealed. Open box means the packaging has been opened, for example for a display or return item. Used A+ has been used before and is listed with a specific condition note.",
+        },
+        {
+          question: "Are the listed iPhone 17 devices sealed?",
+          answer: "The iPhone 17 devices currently listed are new and sealed. The condition is also shown on every product page and in the order.",
+        },
+        {
+          question: "Which payment methods are available?",
+          answer: "Online you can pay securely by card or PayPal. In store, cash, credit cards and debit cards are accepted.",
+        },
+        {
+          question: "Will I receive an invoice?",
+          answer: "Yes. Every purchase includes an invoice with the order and product details.",
         },
       ],
     },

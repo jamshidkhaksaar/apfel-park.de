@@ -610,13 +610,9 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
               <PaymentBrandIcons iconClassName="h-5 w-auto" />
             </div>
             <p>
-              {product.condition === "used"
-                ? locale === "de"
-                  ? "14 Tage Widerrufsrecht · 12 Monate Gewährleistung auf Gebrauchtgeräte."
-                  : "14-day right of withdrawal · 12-month warranty on used devices."
-                : locale === "de"
-                  ? "14 Tage Widerrufsrecht · 24 Monate Gewährleistung."
-                  : "14-day right of withdrawal · 24-month statutory warranty."}
+              {locale === "de"
+                ? "14 Tage Widerrufsrecht · 24 Monate gesetzliche Gewährleistung · zusätzlich 12 Monate Garantie."
+                : "14-day right of withdrawal · 24-month statutory warranty · plus a 12-month commercial warranty."}
             </p>
           </div>
 

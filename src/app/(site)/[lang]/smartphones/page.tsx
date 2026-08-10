@@ -102,7 +102,7 @@ export default async function SmartphonesPage({
               </div>
             </div>
 
-            {/* Original */}
+            {/* Product details */}
             <div className="flex flex-col items-center gap-3 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-amber/20">
                 <svg className="h-7 w-7 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -110,8 +110,8 @@ export default async function SmartphonesPage({
                 </svg>
               </div>
               <div>
-                <p className="text-lg font-bold text-foreground">100% {lang === "de" ? "Original" : "Genuine"}</p>
-                <p className="text-sm text-muted">{lang === "de" ? "Neu, Open-Box & gebraucht" : "New, open-box & used"}</p>
+                <p className="text-lg font-bold text-foreground">{lang === "de" ? "Klare Angaben" : "Clear details"}</p>
+                <p className="text-sm text-muted">{lang === "de" ? "Marke, Modell & Zustand" : "Brand, model & condition"}</p>
               </div>
             </div>
 
@@ -123,8 +123,8 @@ export default async function SmartphonesPage({
                 </svg>
               </div>
               <div>
-                <p className="text-lg font-bold text-foreground">{lang === "de" ? "Beste Preise" : "Best Prices"}</p>
-                <p className="text-sm text-muted">{lang === "de" ? "Garantiert" : "Guaranteed"}</p>
+                <p className="text-lg font-bold text-foreground">{lang === "de" ? "Transparente Preise" : "Transparent prices"}</p>
+                <p className="text-sm text-muted">{lang === "de" ? "Inkl. gesetzlicher MwSt." : "VAT included"}</p>
               </div>
             </div>
 
@@ -218,7 +218,7 @@ export default async function SmartphonesPage({
                         </svg>
                       </div>
                       <span className="text-sm text-muted">
-                        {lang === "de" ? "Rechnung für Geschäftskunden" : "Invoice for business customers"}
+                        {lang === "de" ? "Rechnung zu jedem Kauf" : "Invoice with every purchase"}
                       </span>
                     </div>
                   </div>
@@ -231,8 +231,8 @@ export default async function SmartphonesPage({
                     <p className="text-xs text-muted">{lang === "de" ? "Monate" : "Months"}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-gold">100%</p>
-                    <p className="text-xs text-muted">{lang === "de" ? "Original" : "Genuine"}</p>
+                    <p className="text-2xl font-bold text-gold">{lang === "de" ? "Rechnung" : "Invoice"}</p>
+                    <p className="text-xs text-muted">{lang === "de" ? "Zu jedem Kauf" : "With every purchase"}</p>
                   </div>
                 </div>
               </div>

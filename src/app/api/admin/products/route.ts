@@ -9,6 +9,7 @@ import { autoPublishProductPromotion } from "@/lib/marketing";
 import { isValidInputLength, sanitizeInput } from "@/lib/security";
 import { classifySubcategory } from "@/lib/product-subcategory";
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
+import { validatedGtin } from "@/lib/product-identifiers";
 
 type ProductPayload = {
   id?: string;
@@ -27,6 +28,7 @@ type ProductPayload = {
   stock?: number;
   sku?: string;
   mpn?: string;
+  gtin?: string;
   manufacturer?: { name?: string; address?: string; email?: string } | null;
   euResponsiblePerson?: { name?: string; address?: string; email?: string } | null;
   safetyWarnings?: string[];
@@ -184,6 +186,7 @@ const getMessages = (isEnglish: boolean) => ({
   priceRequired: isEnglish ? "Valid price is required" : "Gültiger Preis ist erforderlich",
   stockRequired: isEnglish ? "Valid stock is required" : "Gültiger Lagerwert ist erforderlich",
   comparePriceInvalid: isEnglish ? "Compare-at price must be higher than the current price" : "Streichpreis muss höher als der aktuelle Preis sein",
+  gtinInvalid: isEnglish ? "GTIN/EAN must be a valid 8, 12, 13, or 14-digit manufacturer barcode" : "GTIN/EAN muss ein gültiger 8-, 12-, 13- oder 14-stelliger Hersteller-Barcode sein",
   conditionDetailsRequired: isEnglish ? "Open-box and used products need a condition note, at least one image, and confirmation of real product photos" : "Open-Box- und Gebrauchtprodukte benötigen einen Zustandshinweis, mindestens ein Bild und die Bestätigung echter Produktfotos",
   batteryHealthRequired: isEnglish ? "Used iPhones require battery health" : "Für gebrauchte iPhones ist die Batteriekapazität erforderlich",
   batteryHealthInvalid: isEnglish ? "Battery health must be a whole number from 1 to 100" : "Die Batteriekapazität muss eine ganze Zahl von 1 bis 100 sein",
@@ -220,6 +223,8 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   const model = payload.model ? sanitizeInput(payload.model) : null;
   const sku = payload.sku ? sanitizeInput(payload.sku) : null;
   const mpn = payload.mpn ? sanitizeInput(payload.mpn) : null;
+  const gtinInput = payload.gtin ? sanitizeInput(payload.gtin) : null;
+  const gtin = validatedGtin(gtinInput);
   const gpsrParty = (value: { name?: string; address?: string; email?: string } | null | undefined) => {
     const name = value?.name ? sanitizeInput(value.name) : "";
     if (!name) return {};
@@ -290,6 +295,8 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
     model,
     sku,
     mpn,
+    gtin,
+    gtinInput,
     manufacturer,
     euResponsiblePerson,
     safetyWarnings,
@@ -361,6 +368,7 @@ const validatePayload = (data: ReturnType<typeof buildPayload>, messages: Return
   if (data.batteryHealth !== null && (!Number.isInteger(data.batteryHealth) || data.batteryHealth < 1 || data.batteryHealth > 100)) {
     return messages.batteryHealthInvalid;
   }
+  if (data.gtinInput && !data.gtin) return messages.gtinInvalid;
   const isUsedIphone = data.condition === "used" && /iphone/i.test(`${data.brand || ""} ${data.model || ""} ${data.title}`);
   if (isUsedIphone && data.batteryHealth === null) return messages.batteryHealthRequired;
 
@@ -439,6 +447,7 @@ export async function POST(request: NextRequest) {
         "condition_note",
         "subcategory",
         "mpn",
+        "gtin",
         "manufacturer",
         "eu_responsible_person",
         "safety_warnings",
@@ -447,7 +456,7 @@ export async function POST(request: NextRequest) {
         "energy_label",
         "faq"
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23::jsonb,$24::jsonb,$25,$26,$27,$28::jsonb,$29::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23,$24::jsonb,$25::jsonb,$26,$27,$28,$29::jsonb,$30::jsonb
       )
       RETURNING "id"`,
       [
@@ -473,6 +482,7 @@ export async function POST(request: NextRequest) {
         product.conditionNote,
         product.subcategory,
         product.mpn,
+        product.gtin,
         JSON.stringify(product.manufacturer),
         JSON.stringify(product.euResponsiblePerson),
         product.safetyWarnings,
@@ -587,13 +597,14 @@ export async function PATCH(request: NextRequest) {
         "condition_note" = $21,
         "subcategory" = $22,
         "mpn" = $23,
-        "manufacturer" = $24::jsonb,
-        "eu_responsible_person" = $25::jsonb,
-        "safety_warnings" = $26,
-        "safety_documents" = $27,
-        "eprel_id" = $28,
-        "energy_label" = $29::jsonb,
-        "faq" = $30::jsonb,
+        "gtin" = $24,
+        "manufacturer" = $25::jsonb,
+        "eu_responsible_person" = $26::jsonb,
+        "safety_warnings" = $27,
+        "safety_documents" = $28,
+        "eprel_id" = $29,
+        "energy_label" = $30::jsonb,
+        "faq" = $31::jsonb,
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -620,6 +631,7 @@ export async function PATCH(request: NextRequest) {
         product.conditionNote,
         product.subcategory,
         product.mpn,
+        product.gtin,
         JSON.stringify(product.manufacturer),
         JSON.stringify(product.euResponsiblePerson),
         product.safetyWarnings,

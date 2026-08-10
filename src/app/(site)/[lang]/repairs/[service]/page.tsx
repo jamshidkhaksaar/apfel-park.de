@@ -120,7 +120,7 @@ export default async function RepairServicePage({
             <h2 className="text-3xl font-semibold text-foreground">{copy.trustTitle}</h2>
             <p className="mt-5 text-lg leading-8 text-muted">{copy.trust}</p>
             <p className="mt-6 text-sm text-muted">
-              {siteInfo.name} · {siteInfo.address.street}, {siteInfo.address.postalCode} {siteInfo.address.city} · {siteInfo.hours.days}, {siteInfo.hours.time}
+              {siteInfo.name} · {siteInfo.address.street}, {siteInfo.address.postalCode} {siteInfo.address.city} · {lang === "de" ? siteInfo.hours.days : "Monday – Saturday"}, {siteInfo.hours.time}
             </p>
           </div>
         </div>

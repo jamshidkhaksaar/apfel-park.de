@@ -1,4 +1,5 @@
 import { getProducts, type Product } from '@/lib/products';
+import { validatedGtin } from '@/lib/product-identifiers';
 import { germanyShippingAmount } from '@/lib/schema';
 import { siteInfo } from '@/lib/site';
 
@@ -46,7 +47,8 @@ const itemXml = (product: Product): string => {
   // Only a real manufacturer part number belongs here. Our own stock codes
   // used to be published as <g:mpn>, which asserted identifiers that do not exist.
   const identifier = product.mpn?.trim();
-  const gtin = product.gtin?.replace(/\D/g, '');
+  const gtin = validatedGtin(product.gtin);
+  const defaultColor = product.variants.find((variant) => variant.isDefault)?.color || product.variants[0]?.color;
   const additionalImages = product.images
     .slice(1, 11)
     .map((image) => `      <g:additional_image_link>${xmlEscape(absoluteUrl(image))}</g:additional_image_link>`)
@@ -64,10 +66,10 @@ const itemXml = (product: Product): string => {
     `      <g:condition>${conditionFor(product)}</g:condition>`,
     `      <g:price>${regularPrice.toFixed(2)} EUR</g:price>`,
     hasSalePrice ? `      <g:sale_price>${product.price.toFixed(2)} EUR</g:sale_price>` : '',
-    `      <g:brand>${xmlEscape(product.brand || siteInfo.name)}</g:brand>`,
+    product.brand ? `      <g:brand>${xmlEscape(product.brand)}</g:brand>` : '',
     gtin ? `      <g:gtin>${xmlEscape(gtin)}</g:gtin>` : '',
     identifier ? `      <g:mpn>${xmlEscape(identifier)}</g:mpn>` : '',
-    !gtin && !identifier ? '      <g:identifier_exists>no</g:identifier_exists>' : '',
+    defaultColor ? `      <g:color>${xmlEscape(defaultColor)}</g:color>` : '',
     `      <g:google_product_category>${xmlEscape(categoryMap[product.category])}</g:google_product_category>`,
     `      <g:product_type>${xmlEscape(product.category)}</g:product_type>`,
     `      <g:custom_label_0>${xmlEscape(product.condition)}</g:custom_label_0>`,

@@ -21,7 +21,7 @@ export const generateMetadata = async ({
   return createMetadata(
     lang,
     lang === "de" ? "Online Shop" : "Online Store",
-    lang === "de" ? "Kaufen Sie geprüfte Smartphones, Laptops und Zubehör." : "Buy certified smartphones, laptops and accessories.",
+    lang === "de" ? "Smartphones, Tablets und Zubehör mit klaren Angaben zu Zustand, Preis und Verfügbarkeit kaufen." : "Buy smartphones, tablets and accessories with clear condition, price and availability details.",
     "/store",
   );
 };
@@ -68,8 +68,8 @@ export default async function StorePage({ params, searchParams }: { params: Prom
       <PageIntro
         title={lang === "de" ? "Online Shop" : "Online Store"}
         subtitle={lang === "de" 
-          ? "Geprüfte Geräte, Premium Zubehör und mehr. Alles mit Garantie." 
-          : "Certified devices, premium accessories and more. All with warranty."}
+          ? "Smartphones, Tablets und Zubehör mit klar ausgewiesenem Zustand, Preis und Verfügbarkeit."
+          : "Smartphones, tablets and accessories with clearly stated condition, price and availability."}
         eyebrow={lang === "de" ? "Marktplatz" : "Marketplace"}
       />
 

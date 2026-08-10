@@ -20,16 +20,14 @@ export const generateMetadata = async ({
   const { lang: rawLang } = await params;
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
-  // Noindexed until consoles are actually stocked: there is no gaming
-  // inventory yet, and an indexed page with no products and no service is
-  // thin content. Remove the option the day the first console is listed.
+  const catalog = await getStoreCatalog({ category: "consoles", page: 1, pageSize: 1, locale: lang });
   return createMetadata(
     lang,
     dict.meta.gaming.title,
     dict.meta.gaming.description,
     "/gaming",
     undefined,
-    { noindex: true },
+    { noindex: catalog.total === 0 },
   );
 };
 

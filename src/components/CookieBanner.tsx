@@ -17,7 +17,7 @@ const copy = {
   de: {
     title: "Datenschutz & Cookies",
     body:
-      "Wir verwenden notwendige Cookies für Sprache, Theme und sichere Admin-Sitzungen. Externe Dienste und Marketing-Integrationen wie Google Maps, Google reCAPTCHA sowie gegebenenfalls Meta Pixel, TikTok Pixel und Google Analytics laden wir erst nach deiner Zustimmung.",
+      "Notwendige Cookies sichern Sprache und Sitzungen. Karten, Analyse- und Marketingdienste laden erst nach deiner Zustimmung.",
     necessary: "Nur notwendige",
     external: "Externe Dienste erlauben",
     manage: "Cookie-Einstellungen",
@@ -26,7 +26,7 @@ const copy = {
   en: {
     title: "Privacy & cookies",
     body:
-      "We use necessary cookies for language, theme, and secure admin sessions. External services and marketing integrations such as Google Maps, Google reCAPTCHA, and, if configured, Meta Pixel, TikTok Pixel, and Google Analytics are loaded only after your consent.",
+      "Necessary cookies preserve language and secure sessions. Maps, analytics, and marketing services load only with your consent.",
     necessary: "Necessary only",
     external: "Allow external services",
     manage: "Cookie settings",
@@ -105,7 +105,7 @@ export default function CookieBanner({ lang }: Props) {
           <p className="text-sm font-semibold text-foreground">{text.title}</p>
           <p className="mt-1 text-sm text-muted">
             {text.body}{" "}
-            <a href={`/${lang}/privacy`} className="font-medium text-gold hover:text-gold-soft">
+            <a href={`/${lang}/privacy`} className="inline-flex min-h-11 items-center font-medium text-gold hover:text-gold-soft">
               {text.privacy}
             </a>
           </p>
@@ -114,14 +114,14 @@ export default function CookieBanner({ lang }: Props) {
           <button
             type="button"
             onClick={() => applyConsent("necessary")}
-            className="rounded-full border border-border/70 bg-background/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground"
+            className="min-h-12 rounded-full border border-border/70 bg-background/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground"
           >
             {text.necessary}
           </button>
           <button
             type="button"
             onClick={() => applyConsent("external")}
-            className="rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold"
+            className="min-h-12 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold"
           >
             {text.external}
           </button>

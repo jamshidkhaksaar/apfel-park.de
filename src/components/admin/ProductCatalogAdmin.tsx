@@ -43,6 +43,7 @@ export type AdminProductRecord = {
   brand: string;
   model: string;
   mpn: string;
+  gtin: string;
   sku: string;
   price: number;
   compareAtPrice: number | null;
@@ -108,6 +109,7 @@ type ProductFormState = {
   brand: string;
   model: string;
   mpn: string;
+  gtin: string;
   manufacturerName: string;
   manufacturerAddress: string;
   manufacturerEmail: string;
@@ -226,6 +228,7 @@ const productToForm = (product: AdminProductRecord): ProductFormState => ({
   model: product.model,
   sku: product.sku,
   mpn: product.mpn ?? "",
+  gtin: product.gtin ?? "",
   manufacturerName: product.manufacturer?.name ?? "",
   manufacturerAddress: product.manufacturer?.address ?? "",
   manufacturerEmail: product.manufacturer?.email ?? "",
@@ -383,6 +386,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     model: "",
     sku: "",
     mpn: "",
+    gtin: "",
     manufacturerName: "",
     manufacturerAddress: "",
     manufacturerEmail: "",
@@ -559,6 +563,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
             model: formState.model,
             sku: formState.sku,
             mpn: formState.mpn,
+            gtin: formState.gtin,
             manufacturer: { name: formState.manufacturerName, address: formState.manufacturerAddress, email: formState.manufacturerEmail },
             euResponsiblePerson: { name: formState.euResponsibleName, address: formState.euResponsibleAddress, email: formState.euResponsibleEmail },
             safetyWarnings: formState.safetyWarningsText.split("\n").map((item) => item.trim()).filter(Boolean),
@@ -607,6 +612,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           model: formState.model,
           sku: formState.sku,
           mpn: formState.mpn,
+          gtin: formState.gtin,
           manufacturer: formState.manufacturerName
             ? { name: formState.manufacturerName, address: formState.manufacturerAddress || undefined, email: formState.manufacturerEmail || undefined }
             : null,
@@ -917,6 +923,20 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     <label className="space-y-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">MPN</span>
                       <input value={formState.mpn} onChange={(event) => setFormState((prev) => ({ ...prev, mpn: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">GTIN / EAN</span>
+                      <input
+                        inputMode="numeric"
+                        value={formState.gtin}
+                        onChange={(event) => setFormState((prev) => ({ ...prev, gtin: event.target.value }))}
+                        className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"
+                      />
+                      <span className="block text-xs normal-case tracking-normal text-muted">
+                        {locale === "de"
+                          ? "Nur den vom Hersteller vergebenen Barcode eintragen; keine interne SKU."
+                          : "Enter only the manufacturer-assigned barcode, never an internal SKU."}
+                      </span>
                     </label>
                   </div>
                   <div className="mt-4 rounded-2xl border border-border/60 p-4">

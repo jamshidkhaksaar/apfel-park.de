@@ -30,7 +30,7 @@ export default async function DeviceConditionsPage({ params }: { params: Promise
         {
           title: "Versiegelt (Neu)",
           body: [
-            "Originalverpackte, ungeöffnete Neuware mit voller Herstellergarantie.",
+            "Originalverpackte, ungeöffnete Neuware. Zusätzliche Garantieangaben stehen am jeweiligen Produkt.",
             "Gesetzliche Gewährleistung: 24 Monate.",
           ],
         },
@@ -76,7 +76,7 @@ export default async function DeviceConditionsPage({ params }: { params: Promise
         {
           title: "Sealed (New)",
           body: [
-            "Factory-sealed, unopened new devices with full manufacturer warranty.",
+            "Factory-sealed, unopened new devices. Any additional warranty is stated on the product page.",
             "Statutory warranty: 24 months.",
           ],
         },

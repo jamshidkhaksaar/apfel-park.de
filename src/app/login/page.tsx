@@ -1,9 +1,20 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
 import { readSessionUser } from "@/lib/session";
 
 import LoginForm from "./LoginForm";
+
+export const metadata: Metadata = {
+  title: "Admin Login",
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+    nosnippet: true,
+  },
+};
 
 export default async function LoginPage() {
   const user = await readSessionUser();

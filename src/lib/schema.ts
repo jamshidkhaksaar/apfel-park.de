@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n";
 import type { ProductCategory, ProductCondition } from "@/lib/products";
+import { siteInfo } from "@/lib/site";
 
 /**
  * Shared structured-data helpers so Product JSON-LD, feeds (Google Merchant /
@@ -53,30 +54,39 @@ export const germanyShippingAmount = (): number => {
 
 // Matches /delivery-returns: insured shipping within Germany, 1-3 business
 // days after payment.
-export const offerShippingDetails = () => ({
-  "@type": "OfferShippingDetails",
-  shippingRate: {
-    "@type": "MonetaryAmount",
-    value: germanyShippingAmount().toFixed(2),
-    currency: "EUR",
-  },
-  shippingDestination: {
-    "@type": "DefinedRegion",
-    addressCountry: "DE",
-  },
-  deliveryTime: {
-    "@type": "ShippingDeliveryTime",
-    handlingTime: {
-      "@type": "QuantitativeValue",
-      minValue: 0,
-      maxValue: 1,
-      unitCode: "DAY",
+export const organizationShippingService = () => ({
+  "@type": "ShippingService",
+  "@id": `${siteInfo.url}/#standard-shipping-de`,
+  name: "Standardversand Deutschland",
+  description: "Versicherter Versand innerhalb Deutschlands mit Zustellung in 1–3 Werktagen.",
+  fulfillmentType: "https://schema.org/FulfillmentTypeDelivery",
+  shippingConditions: {
+    "@type": "ShippingConditions",
+    shippingDestination: {
+      "@type": "DefinedRegion",
+      addressCountry: "DE",
+    },
+    shippingRate: {
+      "@type": "MonetaryAmount",
+      value: germanyShippingAmount(),
+      currency: "EUR",
     },
     transitTime: {
-      "@type": "QuantitativeValue",
-      minValue: 1,
-      maxValue: 3,
-      unitCode: "DAY",
+      "@type": "ServicePeriod",
+      duration: {
+        "@type": "QuantitativeValue",
+        minValue: 1,
+        maxValue: 3,
+        unitCode: "DAY",
+      },
+      businessDays: [
+        "https://schema.org/Monday",
+        "https://schema.org/Tuesday",
+        "https://schema.org/Wednesday",
+        "https://schema.org/Thursday",
+        "https://schema.org/Friday",
+        "https://schema.org/Saturday",
+      ],
     },
   },
 });
@@ -85,11 +95,14 @@ export const offerShippingDetails = () => ({
 // customer bears the direct cost of the return shipment.
 export const merchantReturnPolicy = () => ({
   "@type": "MerchantReturnPolicy",
+  "@id": `${siteInfo.url}/#return-policy`,
   applicableCountry: "DE",
+  returnPolicyCountry: "DE",
   returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
   merchantReturnDays: 14,
   returnMethod: "https://schema.org/ReturnByMail",
   returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+  merchantReturnLink: `${siteInfo.url}/de/delivery-returns`,
 });
 
 export const offerValidFrom = (createdAt?: string): string => {

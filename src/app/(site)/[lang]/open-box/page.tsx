@@ -23,17 +23,17 @@ const copy = {
   de: {
     title: "B-Ware & Open-Box Handys kaufen",
     description:
-      "B-Ware und Open-Box Smartphones bei Apfel Park Hamburg: geöffnete Vorführ- und Retourengeräte in einwandfreiem Zustand, geprüft, mit Garantie und deutlich günstiger als neu.",
+      "B-Ware und Open-Box Smartphones bei Apfel Park Hamburg: geöffnete Vorführ- und Retourengeräte mit konkretem Zustandshinweis, Produktfotos und Garantie.",
     explainer:
-      "B-Ware heißt bei uns nicht beschädigt. Es sind Originalgeräte, deren Verpackung geöffnet wurde – Vorführgeräte, Retouren oder Umtausch. Jedes Gerät wird vollständig geprüft, bevor es in den Verkauf geht, und du bekommst dieselbe Garantie wie auf Neuware. Anders als bei vielen B-Ware-Angeboten verkaufen wir keine Geräte mit Kratzern oder Gebrauchsspuren – dafür haben wir die Kategorie gebrauchte Geräte.",
+      "Open-Box bedeutet, dass die Verpackung geöffnet wurde – etwa bei Vorführgeräten, Retouren oder Umtausch. Der konkrete Zustand, Lieferumfang und sichtbare Spuren werden am jeweiligen Artikel beschrieben und mit Produktfotos dokumentiert. Zuvor genutzte Geräte führen wir getrennt als gebraucht.",
     empty: "Aktuell sind keine B-Ware- oder Open-Box-Artikel verfügbar. Schau bald wieder vorbei.",
   },
   en: {
     title: "Buy Open-Box Phones & Tablets",
     description:
-      "Open-box smartphones at Apfel Park Hamburg: opened display and return units in flawless condition, fully tested, with warranty, and noticeably cheaper than new.",
+      "Open-box smartphones at Apfel Park Hamburg: opened display and return units with a specific condition note, product photos and warranty.",
     explainer:
-      "Open box does not mean damaged. These are original devices whose packaging was opened – display units, returns or exchanges. Every device is fully tested before it goes on sale, and you get the same warranty as on new stock. Unlike many discounted listings, we do not sell devices with scratches or visible wear; those belong in our used category.",
+      "Open box means the packaging was opened, for example for a display unit, return or exchange. The exact condition, included items and visible marks are described on the listing and documented with product photos. Previously used devices are listed separately as used.",
     empty: "No open-box items are available right now. Check back soon.",
   },
 } as const;

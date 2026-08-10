@@ -13,7 +13,7 @@ export default async function ProductPromotionsPage() {
   const [locale, promo, productsResult] = await Promise.all([
     getAdminLocale(),
     getPromoPopupSettings(),
-    query(`SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,created_at AS updated_at FROM products ORDER BY created_at DESC`),
+    query(`SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,gtin,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,created_at AS updated_at FROM products ORDER BY created_at DESC`),
   ]);
   const products = (productsResult.rows as ProductRow[]).map((row) => mapAdminProduct(row));
   return (

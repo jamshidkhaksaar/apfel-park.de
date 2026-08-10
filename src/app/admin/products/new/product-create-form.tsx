@@ -22,6 +22,8 @@ type FormState = {
   brand: string;
   model: string;
   sku: string;
+  mpn: string;
+  gtin: string;
   variants: Array<{
     color: string;
     storage: string;
@@ -58,6 +60,8 @@ const initialState: FormState = {
   brand: "",
   model: "",
   sku: "",
+  mpn: "",
+  gtin: "",
   variants: [],
   featureBulletsText: "",
   specsText: "",
@@ -233,6 +237,8 @@ export default function ProductCreateForm() {
           brand: state.brand,
           model: state.model,
           sku: state.sku,
+          mpn: state.mpn,
+          gtin: state.gtin,
           variants: variantsToSave,
           images: imageUrls,
           featureBullets: parseFeatureBullets(state.featureBulletsText),
@@ -297,7 +303,7 @@ export default function ProductCreateForm() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div>
           <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
             {dict.productForm.category}
@@ -354,6 +360,31 @@ export default function ProductCreateForm() {
             onChange={(event) => setState((prev) => ({ ...prev, sku: event.target.value }))}
             className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
           />
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">MPN</label>
+          <input
+            type="text"
+            value={state.mpn}
+            onChange={(event) => setState((prev) => ({ ...prev, mpn: event.target.value }))}
+            className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">GTIN / EAN</label>
+          <input
+            inputMode="numeric"
+            value={state.gtin}
+            onChange={(event) => setState((prev) => ({ ...prev, gtin: event.target.value }))}
+            className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
+          />
+          <p className="mt-2 text-xs text-muted">
+            {isGerman
+              ? "Nur den vom Hersteller vergebenen Barcode eintragen; keine interne SKU."
+              : "Enter only the manufacturer-assigned barcode, never an internal SKU."}
+          </p>
         </div>
       </div>
 

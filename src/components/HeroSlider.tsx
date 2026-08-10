@@ -26,6 +26,7 @@ export default function HeroSlider({
   hero?: HeroContent | null;
 }) {
   const [videoReady, setVideoReady] = useState(false);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const [mobileIndex, setMobileIndex] = useState(0);
   const fallbackImage = media?.posterUrl || media?.fallbackImageUrl || "/images/shop2.jpg";
   const useUnoptimizedImage = shouldBypassImageOptimization(fallbackImage);
@@ -38,6 +39,54 @@ export default function HeroSlider({
     Boolean(media?.enabled) &&
     media?.sourceType !== "image" &&
     Boolean(media?.videoUrl);
+
+  useEffect(() => {
+    if (!hasVideo) {
+      return undefined;
+    }
+
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let idleCallback: number | undefined;
+
+    const cancelScheduledLoad = () => {
+      if (timer !== undefined) globalThis.clearTimeout(timer);
+      if (idleCallback !== undefined && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleCallback);
+      }
+      timer = undefined;
+      idleCallback = undefined;
+    };
+
+    const scheduleLoad = () => {
+      cancelScheduledLoad();
+      if (!desktop.matches || reducedMotion.matches || connection?.saveData) {
+        return;
+      }
+
+      const enableVideo = () => setShouldLoadVideo(true);
+      if ("requestIdleCallback" in window) {
+        idleCallback = window.requestIdleCallback(enableVideo, { timeout: 2500 });
+      } else {
+        timer = globalThis.setTimeout(enableVideo, 1500);
+      }
+    };
+
+    const onPageReady = () => scheduleLoad();
+    if (document.readyState === "complete") scheduleLoad();
+    else window.addEventListener("load", onPageReady, { once: true });
+    desktop.addEventListener("change", scheduleLoad);
+    reducedMotion.addEventListener("change", scheduleLoad);
+
+    return () => {
+      cancelScheduledLoad();
+      window.removeEventListener("load", onPageReady);
+      desktop.removeEventListener("change", scheduleLoad);
+      reducedMotion.removeEventListener("change", scheduleLoad);
+    };
+  }, [hasVideo, media?.videoUrl]);
 
   useEffect(() => {
     if (mobileSlides.length <= 1) return undefined;
@@ -76,7 +125,7 @@ export default function HeroSlider({
             unoptimized={useUnoptimizedImage}
           />
         </div>
-        {hasVideo ? (
+        {hasVideo && shouldLoadVideo ? (
           <video
             key={media?.videoUrl}
             className={`absolute inset-0 hidden h-full w-full object-cover object-center transition-opacity duration-700 md:block ${
@@ -86,9 +135,8 @@ export default function HeroSlider({
             muted
             loop
             playsInline
-            preload="metadata"
-            poster={fallbackImage}
-            aria-label={media?.title || "Hero background video"}
+            preload="none"
+            aria-hidden="true"
             onCanPlay={() => setVideoReady(true)}
             onLoadedData={() => setVideoReady(true)}
             onPlaying={() => setVideoReady(true)}

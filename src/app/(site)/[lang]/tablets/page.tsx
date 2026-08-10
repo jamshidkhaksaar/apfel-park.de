@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import PageIntro from "@/components/PageIntro";
 import StoreGrid from "@/components/store/StoreGrid";
@@ -88,6 +89,43 @@ export default async function TabletsPage({
             facets={catalog.facets}
             activeFilters={activeFilters}
           />
+
+          <div className="mt-14 border-t border-border/60 pt-10">
+            <h2 className="text-2xl font-semibold text-foreground">
+              {locale === "de" ? "Tablet vor dem Kauf vergleichen" : "Compare a tablet before buying"}
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">
+              {locale === "de"
+                ? "Auf jeder Produktseite findest du den konkreten Gerätezustand, Preis, Lagerbestand und verfügbare Varianten. So kannst du Neuware, Open-Box und gebrauchte Geräte getrennt bewerten."
+                : "Each product page shows the exact device condition, price, stock and available variants, so you can assess new, open-box and used devices separately."}
+            </p>
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <div className="tech-card rounded-2xl p-5">
+                <h3 className="font-semibold text-foreground">{locale === "de" ? "Zustand" : "Condition"}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {locale === "de" ? "Neu ist versiegelt; geöffnete oder zuvor genutzte Ware wird separat gekennzeichnet." : "New stock is sealed; opened or previously used stock is labelled separately."}
+                </p>
+                <Link href={`/${locale}/device-conditions`} className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-gold hover:text-gold-soft">
+                  {locale === "de" ? "Gerätezustände verstehen" : "Understand device conditions"}
+                </Link>
+              </div>
+              <div className="tech-card rounded-2xl p-5">
+                <h3 className="font-semibold text-foreground">{locale === "de" ? "Lieferung oder Abholung" : "Delivery or collection"}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {locale === "de" ? "Kostenlose Abholung in Hamburg-Wilhelmsburg oder versicherter Versand innerhalb Deutschlands." : "Free collection in Hamburg-Wilhelmsburg or insured delivery within Germany."}
+                </p>
+                <Link href={`/${locale}/delivery-returns`} className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-gold hover:text-gold-soft">
+                  {locale === "de" ? "Lieferung & Rückgabe" : "Delivery & returns"}
+                </Link>
+              </div>
+              <div className="tech-card rounded-2xl p-5">
+                <h3 className="font-semibold text-foreground">{locale === "de" ? "Rechte & Garantie" : "Rights & warranty"}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {locale === "de" ? "14 Tage Widerrufsrecht beim Online-Kauf, gesetzliche Mängelrechte und zusätzlich 12 Monate Garantie." : "A 14-day online withdrawal right, statutory defect rights and an additional 12-month commercial warranty."}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>

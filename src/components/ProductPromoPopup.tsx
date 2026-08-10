@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { CONSENT_EVENT_NAME, readConsentMode } from "@/lib/consent";
 
 type PromoProduct = {
   id: string;
@@ -41,13 +43,25 @@ const getDiscount = (price: number, compareAtPrice?: number) => {
 export default function ProductPromoPopup({ lang, promo, discountedProducts }: Props) {
   const [open, setOpen] = useState(false);
   const [entered, setEntered] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const [consentResolved, setConsentResolved] = useState(false);
 
   const deals = useMemo(() => discountedProducts.slice(0, 3), [discountedProducts]);
   const dismissKey = useMemo(() => getDismissKey(deals.map((item) => item.slug)), [deals]);
+  const ctaHref = useMemo(() => {
+    const href = promo.ctaHref || "/store";
+    if (/^\/(de|en)(?:\/|$)/.test(href)) return href.replace(/^\/(de|en)/, `/${lang}`);
+    return href.startsWith("/") ? `/${lang}${href}` : href;
+  }, [lang, promo.ctaHref]);
 
   useEffect(() => {
-    if (!promo.enabled || deals.length === 0) return;
+    const updateConsent = () => setConsentResolved(readConsentMode() !== "unset");
+    updateConsent();
+    window.addEventListener(CONSENT_EVENT_NAME, updateConsent);
+    return () => window.removeEventListener(CONSENT_EVENT_NAME, updateConsent);
+  }, []);
+
+  useEffect(() => {
+    if (!promo.enabled || deals.length === 0 || !consentResolved) return;
 
     try {
       if (window.localStorage.getItem(dismissKey) === "dismissed") return;
@@ -59,10 +73,10 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
       setOpen(true);
       // give browser a frame to mount, then trigger CSS enter transition
       requestAnimationFrame(() => requestAnimationFrame(() => setEntered(true)));
-    }, 1800);
+    }, 30000);
 
     return () => window.clearTimeout(timer);
-  }, [dismissKey, deals.length, promo.enabled]);
+  }, [consentResolved, dismissKey, deals.length, promo.enabled]);
 
   // Close on Escape key
   useEffect(() => {
@@ -90,27 +104,16 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
   if (!promo.enabled || deals.length === 0 || !open) return null;
 
   return (
-    /* z-[150]: above chat (z-130) and WhatsApp (z-120), below cookie banner (z-160) */
-    <div
-      role="dialog"
-      aria-modal="true"
+    <aside
       aria-label={promo.title[lang]}
-      className={`fixed inset-0 z-[150] flex items-center justify-center p-4 transition-opacity duration-300 ${
+      className={`fixed inset-x-4 bottom-24 z-[100] ml-auto w-auto max-w-[420px] transition-all duration-300 md:bottom-4 md:right-4 md:left-auto ${
         entered ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
-      {/* Backdrop — clicking it dismisses */}
-      <div
-        className="absolute inset-0 bg-black/55 backdrop-blur-sm"
-        onClick={dismiss}
-        aria-hidden="true"
-      />
-
       {/* Panel */}
       <div
-        ref={dialogRef}
-        className={`relative z-10 w-full max-w-[460px] overflow-hidden rounded-[28px] border border-border/70 bg-background shadow-[0_32px_96px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] transition-all duration-300 ease-out ${
-          entered ? "translate-y-0 scale-100" : "translate-y-5 scale-[0.97]"
+        className={`relative w-full overflow-hidden rounded-[24px] border border-border/70 bg-background shadow-[0_24px_72px_rgba(0,0,0,0.48),0_0_0_1px_rgba(255,255,255,0.04)] transition-all duration-300 ease-out ${
+          entered ? "translate-y-0" : "translate-y-5"
         }`}
       >
         {/* Gold header strip */}
@@ -139,7 +142,7 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
           <button
             type="button"
             onClick={dismiss}
-            className="relative flex h-7 w-7 items-center justify-center rounded-full bg-black/15 text-black/70 transition hover:bg-black/25 hover:text-black"
+            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-black/15 text-black/70 transition hover:bg-black/25 hover:text-black"
             aria-label={lang === "de" ? "Schließen" : "Close"}
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
@@ -149,7 +152,7 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
         </div>
 
         {/* Body */}
-        <div className="p-6">
+        <div className="p-5">
           <h3 className="text-xl font-semibold leading-snug text-foreground">
             {promo.title[lang]}
           </h3>
@@ -158,10 +161,10 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
           </p>
 
           {/* Divider */}
-          <div className="my-5 h-px bg-border/60" />
+          <div className="my-4 h-px bg-border/60" />
 
           {/* Product rows */}
-          <ul className="space-y-2.5">
+          <ul className="space-y-2">
             {deals.map((product) => {
               const discount = getDiscount(product.price, product.compareAtPrice);
               return (
@@ -169,7 +172,7 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
                   <Link
                     href={`/${lang}/store/${product.slug}`}
                     onClick={dismiss}
-                    className="group flex items-center gap-4 rounded-2xl border border-border/60 bg-surface/60 px-4 py-3.5 transition-all duration-200 hover:border-gold/40 hover:bg-surface hover:shadow-[0_0_0_1px_rgba(212,158,66,0.12)]"
+                    className="group flex min-h-12 items-center gap-3 rounded-2xl border border-border/60 bg-surface/60 px-3 py-2.5 transition-all duration-200 hover:border-gold/40 hover:bg-surface hover:shadow-[0_0_0_1px_rgba(212,158,66,0.12)]"
                   >
                     {/* Badge */}
                     {discount ? (
@@ -219,9 +222,9 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
           {/* CTA row */}
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Link
-              href={promo.ctaHref}
+              href={ctaHref}
               onClick={dismiss}
-              className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-black transition hover:bg-gold-soft"
+              className="inline-flex min-h-12 items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-black transition hover:bg-gold-soft"
             >
               {promo.ctaLabel[lang]}
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
@@ -231,13 +234,13 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
             <button
               type="button"
               onClick={dismiss}
-              className="text-xs font-medium text-muted transition hover:text-foreground"
+              className="inline-flex min-h-12 items-center px-2 text-xs font-medium text-muted transition hover:text-foreground"
             >
               {lang === "de" ? "Nicht jetzt" : "Maybe later"}
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

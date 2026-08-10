@@ -6,10 +6,10 @@ import { createAdminDbClient } from "@/lib/admin-db";
 import { BrandingProvider, type BrandingAssets } from "@/components/BrandingProvider";
 import { getPromoProducts, getPromoPopupSettings } from "@/lib/products";
 import { safeJsonStringify } from "@/lib/security";
-import { merchantReturnPolicy } from "@/lib/schema";
+import { merchantReturnPolicy, organizationShippingService } from "@/lib/schema";
 import { getSeoSettings, splitKeywords } from "@/lib/seo";
 import { siteInfo } from "@/lib/site";
-import { getMarketingIntegrations, getWhatsAppWidgetSettings } from "@/lib/site-settings-server";
+import { getMarketingIntegrations, getSiteSocialLinks, getWhatsAppWidgetSettings } from "@/lib/site-settings-server";
 
 import "./globals.css";
 import AppWrapper from "../components/AppWrapper";
@@ -73,30 +73,6 @@ export const generateMetadata = async (): Promise<Metadata> => {
   };
 };
 
-const getFaviconHref = async (): Promise<string> => {
-  try {
-    const admin = createAdminDbClient();
-    const { data } = await admin
-      .from("store_settings")
-      .select("value, updated_at")
-      .eq("key", "branding_assets")
-      .maybeSingle();
-
-    const value = (data?.value as { favicon?: string } | null) ?? null;
-    const favicon = value?.favicon;
-    if (!favicon) return "/favicon.ico";
-
-    const updatedAtValue = typeof data?.updated_at === "string" ? data.updated_at : null;
-    const updatedAt = updatedAtValue ? new Date(updatedAtValue).getTime() : null;
-    if (!updatedAt) return favicon;
-
-    const separator = favicon.includes("?") ? "&" : "?";
-    return `${favicon}${separator}v=${updatedAt}`;
-  } catch {
-    return "/favicon.ico";
-  }
-};
-
 const getBrandingAssets = async (): Promise<BrandingAssets | null> => {
   try {
     const admin = createAdminDbClient();
@@ -130,12 +106,12 @@ export default async function RootLayout({
     ? themeCookie.value
     : "mono";
   const promo = await getPromoPopupSettings();
-  const [branding, faviconHref, promoProducts, marketing, whatsapp] = await Promise.all([
+  const [branding, promoProducts, marketing, whatsapp, socialLinks] = await Promise.all([
     getBrandingAssets(),
-    getFaviconHref(),
     getPromoProducts(promo.pinnedProductIds),
     getMarketingIntegrations(),
     getWhatsAppWidgetSettings(),
+    getSiteSocialLinks(),
   ]);
   const organizationJsonLd = {
     "@context": "https://schema.org",
@@ -155,7 +131,6 @@ export default async function RootLayout({
             "@type": "ContactPoint",
             telephone: siteInfo.phoneE164,
             contactType: "customer service",
-            contactOption: "TollFree",
             areaServed: "DE",
             availableLanguage: ["de", "en"],
           },
@@ -174,6 +149,7 @@ export default async function RootLayout({
         currenciesAccepted: "EUR",
         paymentAccepted: "Cash, Credit Card, Debit Card, PayPal",
         hasMerchantReturnPolicy: merchantReturnPolicy(),
+        hasShippingService: organizationShippingService(),
         address: {
           "@type": "PostalAddress",
           streetAddress: siteInfo.address.street,
@@ -197,7 +173,7 @@ export default async function RootLayout({
           name: "Hamburg",
         },
         hasMap: siteInfo.map.linkUrl,
-        sameAs: Object.values(siteInfo.social),
+        sameAs: Object.values(socialLinks),
       },
       {
         "@type": "WebSite",
@@ -220,9 +196,6 @@ export default async function RootLayout({
     >
       <head>
         <ThemeScript />
-        <link rel="icon" href={faviconHref} sizes="any" />
-        <link rel="shortcut icon" href={faviconHref} />
-        <link rel="apple-touch-icon" href={faviconHref} />
         <meta name="theme-color" content="#09090b" />
         <script
           type="application/ld+json"

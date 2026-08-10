@@ -10,9 +10,7 @@ import ProductReviews from "@/components/ProductReviews";
 import { getApprovedReviews, getRatingSummary } from "@/lib/product-reviews";
 import { type Locale } from "@/lib/i18n";
 import {
-  merchantReturnPolicy,
   offerPriceValidUntil,
-  offerShippingDetails,
   offerValidFrom,
   productCategoryLabel,
   productConditionLabel,
@@ -24,6 +22,7 @@ import ProductViewTracker from "@/components/ProductViewTracker";
 import ProductDetailExperience from "@/components/ProductDetailExperience";
 import { requireLocale } from "@/lib/route-locale";
 import { shouldBypassImageOptimization } from "@/lib/image";
+import { validatedGtin } from "@/lib/product-identifiers";
 
 export const dynamic = "force-dynamic";
 
@@ -139,7 +138,7 @@ export default async function ProductDetailPage({
     getApprovedReviews(product.id),
     getRatingSummary(product.id),
   ]);
-  const gtinDigits = product.gtin?.replace(/\D/g, "");
+  const gtinDigits = validatedGtin(product.gtin);
   const categoryPath = product.category === "consoles" ? "gaming" : product.category;
   const defaultVariantColor =
     product.variants.find((variant) => variant.isDefault)?.color ||
@@ -192,15 +191,13 @@ export default async function ProductDetailPage({
     offers: {
       "@type": "Offer",
       priceCurrency: "EUR",
-      price: product.price.toFixed(2),
+      price: product.price,
       validFrom: offerValidFrom(product.createdAt),
       priceValidUntil: offerPriceValidUntil(),
       availability: product.stock && product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       url: `${siteInfo.url}/${locale}/store/${product.slug}`,
       itemCondition: schemaItemCondition(product.condition),
       seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
-      hasMerchantReturnPolicy: merchantReturnPolicy(),
-      shippingDetails: offerShippingDetails(),
     },
   };
   const faqJsonLd =

@@ -94,7 +94,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                {siteInfo.hours.days} · {siteInfo.hours.time}
+                {lang === "de" ? siteInfo.hours.days : "Monday – Saturday"} · {siteInfo.hours.time}
               </div>
             </div>
           </div>
@@ -287,20 +287,13 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
               </Link>
               <span className="hidden text-muted/40 sm:inline">|</span>
               <span className="flex items-center gap-2">
-                <span className="flex h-2 w-2 animate-pulse rounded-full bg-green" />
-                {lang === "de" ? "Shop geöffnet" : "Shop Open"}
+                <span className="flex h-2 w-2 rounded-full bg-green" />
+                {lang === "de" ? "Vor Ort & online" : "In-store & online"}
               </span>
               <span className="hidden text-muted/40 sm:inline">|</span>
               <span>{siteInfo.tagline}</span>
               <span className="hidden text-muted/40 sm:inline">|</span>
               <CookieSettingsButton lang={lang} />
-              <span className="text-muted/40">|</span>
-              <Link 
-                href="/login" 
-                className="transition hover:text-gold"
-              >
-                Admin
-              </Link>
             </div>
           </div>
         </div>

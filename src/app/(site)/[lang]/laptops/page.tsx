@@ -22,11 +22,14 @@ export const generateMetadata = async ({
   const { lang: rawLang } = await params;
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
+  const catalog = await getStoreCatalog({ category: "laptops", page: 1, pageSize: 1, locale: lang });
   return createMetadata(
     lang,
     dict.meta.laptops.title,
     dict.meta.laptops.description,
     "/laptops",
+    undefined,
+    { noindex: catalog.total === 0 },
   );
 };
 

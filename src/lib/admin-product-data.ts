@@ -14,6 +14,7 @@ export type ProductRow = {
   model: string | null;
   sku: string | null;
   mpn: string | null;
+  gtin?: string | null;
   manufacturer?: unknown;
   eu_responsible_person?: unknown;
   safety_warnings?: string[] | null;
@@ -139,6 +140,7 @@ export const mapAdminProduct = (row: ProductRow, featuredIds: string[] = []): Ad
   model: row.model ?? "",
   sku: row.sku ?? "",
   mpn: row.mpn ?? "",
+  gtin: row.gtin ?? "",
   manufacturer: toParty(row.manufacturer),
   euResponsiblePerson: toParty(row.eu_responsible_person),
   safetyWarnings: (row.safety_warnings ?? []).filter(Boolean),

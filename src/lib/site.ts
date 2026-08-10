@@ -1,7 +1,7 @@
 export const defaultSocialLinks = {
-  instagram: "https://www.instagram.com/apfelpark_harburg/",
-  facebook: "https://www.facebook.com/apfelpark.harburg",
-  tiktok: "https://www.tiktok.com/@apfelpark",
+  instagram: "https://www.instagram.com/apfelpark.hh/",
+  facebook: "https://www.facebook.com/profile.php?id=61589053646278",
+  tiktok: "https://www.tiktok.com/@apfelpark.hh",
   whatsapp: "https://wa.me/491637786476",
 };
 
