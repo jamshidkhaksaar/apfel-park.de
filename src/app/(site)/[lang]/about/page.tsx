@@ -124,23 +124,6 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
                 <p className="mt-6 text-muted leading-relaxed">
                   {about.story.content}
                 </p>
-                <div className="mt-8 flex items-center gap-4">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-surface bg-gradient-to-br from-gold/30 to-amber/20"
-                      >
-                        <svg className="h-5 w-5 text-gold" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                        </svg>
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-sm text-muted">
-                    {lang === "de" ? "Unser Team in Hamburg" : "Our team in Hamburg"}
-                  </span>
-                </div>
               </div>
             </div>
           </div>
