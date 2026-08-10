@@ -9,6 +9,7 @@ export type EprelMatch = {
   device_type: string | null;
   energy_class: string | null;
   battery_endurance_hours: string | number | null;
+  battery_endurance_minutes: number | null;
   battery_endurance_cycles: number | null;
   repairability_class: string | null;
   reliability_class: string | null;

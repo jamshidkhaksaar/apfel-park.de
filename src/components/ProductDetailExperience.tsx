@@ -1,6 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+
+import { eprelProductUrl } from "@/lib/eprel";
 import { useEffect, useMemo, useState } from "react";
 
 import ProductGallery from "@/components/ProductGallery";
@@ -201,7 +204,29 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
         {product.energyLabel ? (
           <div className="glass-panel rounded-[32px] p-8">
             <h2 className="text-xl font-semibold text-foreground">{locale === "de" ? "EU-Energielabel" : "EU energy label"}</h2>
-            <div className="mt-4 overflow-hidden rounded-3xl border border-border/60">
+            <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,200px)_minmax(0,1fr)]">
+              {product.energyLabel.labelImage ? (
+                /* The artwork EPREL generates for this exact registration, mirrored
+                   locally so the page does not break if EPREL is unreachable. */
+                <a
+                  href={product.energyLabel.labelImage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block self-start rounded-2xl border border-border/60 bg-white p-3"
+                >
+                  <Image
+                    src={product.energyLabel.labelImage}
+                    alt={locale === "de" ? "EU-Energielabel" : "EU energy label"}
+                    width={1134}
+                    height={2268}
+                    /* Served byte-for-byte: this is a regulated document, so it
+                       is shown exactly as EPREL generated it. */
+                    unoptimized
+                    className="h-auto w-full"
+                  />
+                </a>
+              ) : null}
+              <div className="overflow-hidden rounded-3xl border border-border/60">
               {[
                 [locale === "de" ? "Energieeffizienzklasse" : "Energy efficiency class", product.energyLabel.efficiencyClass],
                 [locale === "de" ? "Akkulaufzeit je Ladezyklus" : "Battery endurance per cycle", product.energyLabel.batteryEndurance],
@@ -217,19 +242,30 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                     <span className="text-sm text-foreground">{value}</span>
                   </div>
                 ))}
+              </div>
             </div>
-            {product.eprelId ? (
-              <p className="mt-4 text-xs text-muted">
+            <p className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted">
+              {(locale === "de" ? product.energyLabel.ficheDe : product.energyLabel.ficheEn) ? (
                 <a
-                  href={`https://eprel.ec.europa.eu/screen/product/smartphonestablets2023/${product.eprelId}`}
+                  href={(locale === "de" ? product.energyLabel.ficheDe : product.energyLabel.ficheEn) as string}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline underline-offset-2 hover:text-gold"
                 >
-                  {locale === "de" ? "Offizielles Produktdatenblatt in der EPREL-Datenbank" : "Official product datasheet in the EPREL database"}
+                  {locale === "de" ? "Produktdatenblatt (PDF)" : "Product information sheet (PDF)"}
                 </a>
-              </p>
-            ) : null}
+              ) : null}
+              {product.eprelId ? (
+                <a
+                  href={eprelProductUrl(product.eprelId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-gold"
+                >
+                  {locale === "de" ? "Eintrag in der EPREL-Datenbank" : "Entry in the EPREL database"}
+                </a>
+              ) : null}
+            </p>
           </div>
         ) : null}
 
@@ -371,7 +407,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
               </span>
               {product.eprelId ? (
                 <a
-                  href={`https://eprel.ec.europa.eu/screen/product/smartphonestablets2023/${product.eprelId}`}
+                  href={eprelProductUrl(product.eprelId)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline underline-offset-2 hover:text-gold"

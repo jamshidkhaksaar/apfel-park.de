@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import EprelPicker, { type EprelMatch } from "@/components/admin/EprelPicker";
+import { eprelCycles, eprelEndurance } from "@/lib/eprel";
 
 type AdminLocale = "de" | "en";
 
@@ -944,12 +945,8 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                             ...prev,
                             eprelId: match.registration_number,
                             energyEfficiencyClass: match.energy_class ?? "",
-                            energyBatteryEndurance: match.battery_endurance_hours
-                              ? `${match.battery_endurance_hours} h`
-                              : "",
-                            energyBatteryCycles: match.battery_endurance_cycles
-                              ? String(match.battery_endurance_cycles)
-                              : "",
+                            energyBatteryEndurance: eprelEndurance(match.battery_endurance_minutes) ?? "",
+                            energyBatteryCycles: String(eprelCycles(match.battery_endurance_cycles) ?? ""),
                             energyReliabilityClass: match.reliability_class ?? "",
                             energyRepairabilityClass: match.repairability_class ?? "",
                             energyIpRating: match.ingress_protection ?? "",

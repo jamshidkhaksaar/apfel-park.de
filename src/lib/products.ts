@@ -103,6 +103,11 @@ export type EnergyLabel = {
   reliabilityClass?: string;
   repairabilityClass?: string;
   ipRating?: string;
+  /** Official label artwork, mirrored from EPREL and served from /public. */
+  labelImage?: string;
+  /** Product information sheet (Produktdatenblatt), mirrored per locale. */
+  ficheDe?: string;
+  ficheEn?: string;
 };
 
 // EU 2023/1669: smartphones/tablets placed on the market since 2025-06-20 must
@@ -121,6 +126,9 @@ const toEnergyLabel = (value: unknown): EnergyLabel | undefined => {
     reliabilityClass: str(candidate.reliabilityClass)?.toUpperCase(),
     repairabilityClass: str(candidate.repairabilityClass)?.toUpperCase(),
     ipRating: str(candidate.ipRating),
+    labelImage: str(candidate.labelImage),
+    ficheDe: str(candidate.ficheDe),
+    ficheEn: str(candidate.ficheEn),
   };
   return Object.values(label).some((entry) => entry !== undefined) ? label : undefined;
 };
