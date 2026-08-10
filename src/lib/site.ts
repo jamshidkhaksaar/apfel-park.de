@@ -33,8 +33,7 @@ export const siteInfo = {
     roleEn: "Owner",
     phone: "+49 176 30126041",
     phoneE164: "+4917630126041",
-    // Empty until the portrait is in place; OwnerCard falls back to a monogram.
-    photo: "",
+    photo: "/images/owner/bismiallah-safi.webp",
   },
   address: {
     street: "Wilhelm-Strauß-Weg 2b",
