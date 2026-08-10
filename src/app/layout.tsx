@@ -151,7 +151,7 @@ export default async function RootLayout({
         vatID: siteInfo.vatId,
         priceRange: "€€",
         currenciesAccepted: "EUR",
-        paymentAccepted: "Cash, Credit Card, Debit Card, PayPal",
+        paymentAccepted: "Cash, Credit Card, Debit Card, Apple Pay, Klarna",
         hasMerchantReturnPolicy: merchantReturnPolicy(),
         hasShippingService: organizationShippingService(),
         address: {

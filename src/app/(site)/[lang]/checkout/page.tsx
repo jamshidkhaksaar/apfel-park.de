@@ -18,8 +18,8 @@ export const generateMetadata = async ({
     lang,
     lang === "de" ? "Sicherer Checkout" : "Secure Checkout",
     lang === "de"
-      ? "Schließe deine Bestellung bei Apfel Park sicher ab und bezahle bequem mit Stripe oder PayPal."
-      : "Complete your Apfel Park order securely and choose convenient payment with Stripe or PayPal.",
+      ? "Schließe deine Bestellung bei Apfel Park sicher ab und bezahle bequem per Kreditkarte, Apple Pay oder Klarna."
+      : "Complete your Apfel Park order securely and pay by credit card, Apple Pay, or Klarna.",
     "/checkout",
     undefined,
     { noindex: true },

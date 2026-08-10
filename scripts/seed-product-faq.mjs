@@ -99,11 +99,11 @@ const buildFaq = (row) => {
 
   de.push({
     q: "Wie kann ich bezahlen?",
-    a: "Online per Karte oder PayPal, bei Abholung im Store auch bar oder mit Karte. Alle Preise enthalten die gesetzliche MwSt.",
+    a: "Online per Kreditkarte, Apple Pay oder Klarna, bei Abholung im Store auch bar oder mit Karte. Alle Preise enthalten die gesetzliche MwSt.",
   });
   en.push({
     q: "How can I pay?",
-    a: "Online by card or PayPal; in store also cash or card on pickup. All prices include VAT.",
+    a: "Online by credit card, Apple Pay, or Klarna; in store also cash or card on pickup. All prices include VAT.",
   });
 
   return { de, en };
