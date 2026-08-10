@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import ContactForm from "../../../../components/ContactForm";
+import OwnerCard from "@/components/OwnerCard";
 import ExternalMapEmbed from "../../../../components/ExternalMapEmbed";
 import PageIntro from "../../../../components/PageIntro";
 import SafeEmailLink from "../../../../components/SafeEmailLink";
@@ -112,6 +113,13 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                   {siteInfo.landline}
                 </a>
               </div>
+            </div>
+
+            <div className="mb-4 rounded-2xl border border-border/60 bg-surface/40 p-4">
+              <p className="mb-3 text-xs font-medium uppercase tracking-[0.14em] text-muted">
+                {lang === "de" ? "Ihr Ansprechpartner" : "Your contact"}
+              </p>
+              <OwnerCard locale={lang} variant="compact" />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">

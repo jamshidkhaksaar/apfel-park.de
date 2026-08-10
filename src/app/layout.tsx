@@ -144,6 +144,10 @@ export default async function RootLayout({
         ],
         image: normalizeImageUrl(branding?.ogImage ?? ""),
         logo: normalizeImageUrl(branding?.logo ?? ""),
+        founder: {
+          "@type": "Person",
+          name: siteInfo.owner.name,
+        },
         vatID: siteInfo.vatId,
         priceRange: "€€",
         currenciesAccepted: "EUR",

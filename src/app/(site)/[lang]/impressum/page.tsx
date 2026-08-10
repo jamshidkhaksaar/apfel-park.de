@@ -90,6 +90,10 @@ export default async function ImpressumPage({
             <Row label={isGerman ? "Unternehmensname" : "Company name"} value={siteInfo.legalName} />
             <Row
               label={isGerman ? "Inhaber" : "Owner"}
+              value={siteInfo.owner.name}
+            />
+            <Row
+              label={isGerman ? "Inhaber" : "Owner"}
               value="Apfel Park"
             />
             <Row
@@ -167,6 +171,8 @@ export default async function ImpressumPage({
           >
             <p>
               Apfel Park
+              <br />
+              {siteInfo.owner.name}
               <br />
               {siteInfo.address.street}, {siteInfo.address.postalCode} {siteInfo.address.city}
             </p>

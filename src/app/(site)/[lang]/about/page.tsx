@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+
+import OwnerCard from "@/components/OwnerCard";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -142,6 +144,13 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Who runs the shop -- named because people trust a face, not a brand. */}
+      <section className="pb-16">
+        <div className="container-page">
+          <OwnerCard locale={lang} />
         </div>
       </section>
 

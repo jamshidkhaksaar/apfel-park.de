@@ -23,6 +23,19 @@ export const siteInfo = {
   landlineE164: "+494058978787",
   whatsapp: "491637786476", // WhatsApp Business number, no + sign
   email: "info@apfel-park.de",
+  // Section 5 DDG requires the natural person behind an Einzelunternehmen to be
+  // named, and the Impressum did not name anyone. Kept out of the LocalBusiness
+  // telephone and contactPoint on purpose: those must keep matching the Google
+  // Business Profile exactly, and a third number there reads as a mismatch.
+  owner: {
+    name: "Bismaillah Safi",
+    roleDe: "Inhaber",
+    roleEn: "Owner",
+    phone: "+49 176 30126041",
+    phoneE164: "+4917630126041",
+    // Empty until the portrait is in place; OwnerCard falls back to a monogram.
+    photo: "",
+  },
   address: {
     street: "Wilhelm-Strauß-Weg 2b",
     city: "Hamburg",
