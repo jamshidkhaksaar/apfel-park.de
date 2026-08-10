@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { clearStoredCart } from "@/components/checkout/cart";
+import TrustpilotInvitation from "@/components/checkout/TrustpilotInvitation";
 
 type Props = {
   locale: "de" | "en";
@@ -13,9 +14,11 @@ type Props = {
   initiallyPaid: boolean;
   totalAmount?: number | null;
   currency?: string | null;
-  items?: Array<{ title: string; quantity: number; lineAmount: number | null }>;
+  items?: Array<{ title: string; quantity: number; lineAmount: number | null; sku?: string | null }>;
   shippingMethod?: string | null;
   customerEmail?: string | null;
+  customerName?: string | null;
+  trustpilotInviteKey?: string;
 };
 
 const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
@@ -36,6 +39,8 @@ export default function CheckoutSuccessClient({
   items = [],
   shippingMethod,
   customerEmail,
+  customerName,
+  trustpilotInviteKey = "",
 }: Props) {
   const [paid, setPaid] = useState(initiallyPaid);
   const [message, setMessage] = useState(() =>
@@ -87,6 +92,18 @@ export default function CheckoutSuccessClient({
 
   return (
     <div className="glass-panel mx-auto max-w-2xl rounded-2xl p-8 text-center">
+      {/* Only once the payment is confirmed: asking someone to review a
+          purchase that never completed is worse than not asking. */}
+      {paid && trustpilotInviteKey && customerEmail && orderId ? (
+        <TrustpilotInvitation
+          inviteKey={trustpilotInviteKey}
+          email={customerEmail}
+          name={customerName}
+          reference={orderNumber ? `A-${orderNumber}` : orderId}
+          skus={items.map((item) => item.sku).filter((sku): sku is string => Boolean(sku))}
+          locale={locale}
+        />
+      ) : null}
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
         {paid ? (locale === "de" ? "Bestellung bestätigt" : "Order confirmed") : (locale === "de" ? "Bestellung eingegangen" : "Order received")}
       </p>

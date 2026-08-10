@@ -25,11 +25,12 @@ export default async function CheckoutSuccessPage({
   // orders.items is the JSON snapshot taken when the order was created, so the
   // recap shows what was actually bought even if a price changes later.
   const orderItems = Array.isArray(order?.items)
-    ? (order.items as Array<{ title?: unknown; quantity?: unknown; lineAmount?: unknown }>)
+    ? (order.items as Array<{ title?: unknown; quantity?: unknown; lineAmount?: unknown; sku?: unknown }>)
         .map((item) => ({
           title: typeof item?.title === "string" ? item.title : "",
           quantity: typeof item?.quantity === "number" ? item.quantity : 1,
           lineAmount: typeof item?.lineAmount === "number" ? item.lineAmount : null,
+          sku: typeof item?.sku === "string" ? item.sku : null,
         }))
         .filter((item) => item.title)
     : [];
@@ -49,6 +50,8 @@ export default async function CheckoutSuccessPage({
           items={orderItems}
           shippingMethod={typeof order?.shipping_method === "string" ? order.shipping_method : null}
           customerEmail={typeof order?.customer_email === "string" ? order.customer_email : null}
+          customerName={typeof order?.customer_name === "string" ? order.customer_name : null}
+          trustpilotInviteKey={process.env.NEXT_PUBLIC_TRUSTPILOT_INVITE_KEY?.trim() || ""}
         />
         <div className="mt-8 flex justify-center gap-3">
           <Link href={`/${locale}/store`} className="btn-secondary">
