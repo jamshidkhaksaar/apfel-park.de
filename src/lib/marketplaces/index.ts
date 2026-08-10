@@ -1,4 +1,3 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
 import { query } from '@/lib/db';
 import type { ListingInput, Marketplace, MarketplaceAdapter, MarketplaceOperation, MarketplaceValidation } from './types';
 const renewed = new Set(['used', 'open_box', 'refurbished']);
@@ -18,5 +17,4 @@ const adapter = (marketplace: Marketplace): MarketplaceAdapter => ({ validate: (
 export const getMarketplaceAdapter = (marketplace: Marketplace): MarketplaceAdapter => adapter(marketplace);
 export const validateMarketplaceProduct = (marketplace: Marketplace, input: ListingInput): MarketplaceValidation => adapter(marketplace).validate(input);
 export const enqueueMarketplaceJob = async (marketplace: Marketplace, operation: MarketplaceOperation, sku?: string, payload: Record<string, unknown> = {}): Promise<void> => { await query('INSERT INTO marketplace_jobs (marketplace, operation, sku, payload) VALUES ($1, $2, $3, $4)', [marketplace, operation, sku ?? null, JSON.stringify(payload)]); };
-export const verifyEbayNotificationSignature = (body: string, signature: string | null): boolean => { const secret = process.env.EBAY_NOTIFICATION_SECRET; if (!secret || !signature) return false; const expected = createHmac('sha256', secret).update(body).digest('hex'); const left = Buffer.from(expected); const right = Buffer.from(signature); return left.length === right.length && timingSafeEqual(left, right); };
 export const recordMarketplaceEvent = async (marketplace: Marketplace, eventId: string, eventType: string, payload: unknown): Promise<boolean> => { const result = await query('INSERT INTO marketplace_event_receipts (marketplace, external_event_id, event_type, payload, processed_at) VALUES ($1, $2, $3, $4, now()) ON CONFLICT (marketplace, external_event_id) DO NOTHING RETURNING id', [marketplace, eventId, eventType, JSON.stringify(payload)]); return result.rowCount === 1; };
