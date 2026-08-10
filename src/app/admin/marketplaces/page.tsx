@@ -62,6 +62,7 @@ export default async function MarketplacesPage({
     jobResult,
     complianceResult,
     orderResult,
+    deletionResult,
     ebayConnections,
   ] = await Promise.all([
     searchParams,
@@ -78,6 +79,9 @@ export default async function MarketplacesPage({
     query(
       "SELECT marketplace, external_order_id, status, imported_at FROM marketplace_orders ORDER BY imported_at DESC LIMIT 20",
     ),
+    query(
+      "SELECT count(*)::int AS pending_count FROM marketplace_account_deletion_requests WHERE status = 'pending_review'",
+    ),
     listEbayConnectionSummaries().catch(() => []),
   ]);
 
@@ -89,6 +93,7 @@ export default async function MarketplacesPage({
   const jobs = jobResult.rows as Job[];
   const sandboxConnected = ebayConnections.some((item) => item.environment === "sandbox");
   const productionConnected = ebayConnections.some((item) => item.environment === "production");
+  const pendingDeletionCount = Number(deletionResult.rows[0]?.pending_count ?? 0);
   const displayedError = errorMessage(params.error);
 
   return (
@@ -138,6 +143,13 @@ export default async function MarketplacesPage({
             <p className="mt-2 text-xs text-muted">
               OAuth access does not publish products. German payment, fulfillment and return policies
               plus an approved pilot SKU are still required.
+            </p>
+            <p
+              className={`mt-2 text-xs ${
+                pendingDeletionCount ? "text-amber-600" : "text-muted"
+              }`}
+            >
+              Account-deletion requests pending review: {pendingDeletionCount}
             </p>
             {isAdmin ? (
               <div className="mt-4 flex flex-wrap gap-2">

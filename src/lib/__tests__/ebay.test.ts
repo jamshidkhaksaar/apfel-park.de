@@ -38,8 +38,10 @@ describe("eBay security helpers", () => {
     expect(encrypted).not.toContain("secret-refresh-token");
     expect(decryptEbayToken(encrypted, key)).toBe("secret-refresh-token");
 
-    const replacement = encrypted.endsWith("A") ? "B" : "A";
-    expect(() => decryptEbayToken(`${encrypted.slice(0, -1)}${replacement}`, key)).toThrow();
+    const tamperedParts = encrypted.split(".");
+    const ciphertext = tamperedParts[3];
+    tamperedParts[3] = `${ciphertext.startsWith("A") ? "B" : "A"}${ciphertext.slice(1)}`;
+    expect(() => decryptEbayToken(tamperedParts.join("."), key)).toThrow();
   });
 
   it("signs, validates, and expires OAuth state", () => {

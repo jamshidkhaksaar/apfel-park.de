@@ -8,6 +8,7 @@ import {
   createEbayNotificationChallengeResponse,
   verifyEbayNotificationSignature,
 } from "@/lib/marketplaces/ebay";
+import { recordEbayAccountDeletionRequest } from "@/lib/marketplaces/ebay-privacy";
 import type { Marketplace } from "@/lib/marketplaces/types";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +72,11 @@ export async function POST(
   const eventId = payload.notification?.notificationId ?? payload.notificationId ?? payload.eventId;
   const eventType = payload.metadata?.topic ?? payload.eventType ?? "unknown";
   if (!eventId) return NextResponse.json({ error: "Missing event id" }, { status: 400 });
+
+  if (marketplace === "ebay_de" && eventType === "MARKETPLACE_ACCOUNT_DELETION") {
+    const accepted = await recordEbayAccountDeletionRequest(payload);
+    return NextResponse.json({ accepted });
+  }
 
   const accepted = await recordMarketplaceEvent(marketplace, eventId, eventType, payload);
   if (accepted && eventType.includes("ORDER")) {
