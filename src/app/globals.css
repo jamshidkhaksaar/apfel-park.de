@@ -2285,12 +2285,12 @@
 /* ========================================
    GOOGLE CUSTOMER REVIEWS BADGE
    ========================================
-   Google injects a fixed-position iframe and knows nothing about this site.
-   Bottom left is the free corner -- the right carries the WhatsApp button and
-   the back-to-top control -- but the chat launcher already sits there, so the
-   badge is lifted clear of it and of the cookie banner using the same variable
-   the other floating widgets use. Google sets these inline, hence !important. */
+   Only the stacking order is settled here. Google writes bottom and right as
+   inline !important declarations, which no stylesheet can beat, so the actual
+   placement is applied onto the element in GoogleReviewsBadge.tsx.
+
+   Google ships z-index 2147483647, which would cover the cookie banner. This
+   sits the badge below the banner (160) and the chat launcher (130) instead. */
 #google-merchantwidget-iframe-wrapper {
-  bottom: calc(5.75rem + var(--apfel-cookie-banner-height, 0px)) !important;
   z-index: 110 !important;
 }
