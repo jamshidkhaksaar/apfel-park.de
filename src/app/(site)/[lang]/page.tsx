@@ -199,9 +199,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {index === 0 && "~5 min"}
-                      {index === 1 && "~20-60 min"}
-                      {index === 2 && "~5 min"}
+                      {index === 0 && (lang === "de" ? "Vor Ort" : "In store")}
+                      {index === 1 && (lang === "de" ? "Nach Diagnose" : "After diagnosis")}
+                      {index === 2 && (lang === "de" ? "Vor Übergabe" : "Before handover")}
                     </div>
                   </div>
                 </div>

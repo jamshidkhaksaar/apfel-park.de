@@ -157,8 +157,8 @@ export const dictionary = {
         ],
       },
       highlights: [
-        { label: "Sofort-Reparatur", value: "< 1 Std." },
-        { label: "Premium-Beratung", value: "100%" },
+        { label: "Versand", value: "1–3 Tage" },
+        { label: "Abholung", value: "Hamburg" },
         { label: "Garantie", value: "12 Monate" },
       ],
       services: {
@@ -868,8 +868,8 @@ export const dictionary = {
         ],
       },
       highlights: [
-        { label: "Express repair", value: "< 1 hr" },
-        { label: "Premium advice", value: "100%" },
+        { label: "Delivery", value: "1–3 days" },
+        { label: "Collection", value: "Hamburg" },
         { label: "Warranty", value: "12 months" },
       ],
       services: {

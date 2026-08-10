@@ -117,7 +117,7 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
         }`}
       >
         {/* Gold header strip */}
-        <div className="relative flex items-center justify-between overflow-hidden bg-gradient-to-r from-gold via-amber to-gold-soft px-6 py-4">
+        <div className="relative flex items-center justify-between overflow-hidden bg-gradient-to-r from-gold via-amber to-gold-soft px-5 py-3">
           {/* Shimmer sweep */}
           <div
             className="pointer-events-none absolute inset-0 bg-[length:200%_100%] animate-[shimmer_4s_linear_infinite]"
@@ -152,11 +152,11 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
         </div>
 
         {/* Body */}
-        <div className="p-5">
-          <h3 className="text-xl font-semibold leading-snug text-foreground">
+        <div className="p-4 md:p-5">
+          <h3 className="text-lg font-semibold leading-snug text-foreground md:text-xl">
             {promo.title[lang]}
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
+          <p className="mt-2 hidden text-sm leading-relaxed text-muted sm:block">
             {promo.description[lang]}
           </p>
 
@@ -165,10 +165,10 @@ export default function ProductPromoPopup({ lang, promo, discountedProducts }: P
 
           {/* Product rows */}
           <ul className="space-y-2">
-            {deals.map((product) => {
+            {deals.map((product, index) => {
               const discount = getDiscount(product.price, product.compareAtPrice);
               return (
-                <li key={product.id}>
+                <li key={product.id} className={index > 0 ? "hidden md:list-item" : undefined}>
                   <Link
                     href={`/${lang}/store/${product.slug}`}
                     onClick={dismiss}

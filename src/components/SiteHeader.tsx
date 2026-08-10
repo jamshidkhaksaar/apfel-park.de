@@ -78,11 +78,11 @@ export default function SiteHeader({
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 animate-gold-pulse rounded-full bg-gold" />
             <span className="font-medium text-gold">
-              {lang === "de" ? "Express-Reparatur verfügbar" : "Express Repair Available"}
+              {lang === "de" ? "Versand in Deutschland" : "Delivery within Germany"}
             </span>
             <span className="text-muted/60">•</span>
             <span className="text-muted/80">
-              {lang === "de" ? "Meiste Reparaturen in 30 Min" : "Most repairs in 30 min"}
+              {lang === "de" ? "Abholung in Wilhelmsburg" : "Collection in Wilhelmsburg"}
             </span>
           </div>
           <div className="hidden items-center gap-4 text-muted/80 md:flex">
