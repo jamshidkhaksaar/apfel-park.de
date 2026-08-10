@@ -26,6 +26,10 @@ export const siteInfo = {
   // Google Merchant Center id. Public by design -- it ships in the Customer
   // Reviews opt-in on the confirmation page -- so it is config, not a secret.
   googleMerchantId: "5829541150",
+  // The badge shows the seller rating, but with no ratings yet Google renders
+  // "no rating available" on every page it appears on. Set this to false to
+  // remove it until the first ratings come in.
+  googleReviewsBadge: true,
   // Section 5 DDG requires the natural person behind an Einzelunternehmen to be
   // named, and the Impressum did not name anyone. Kept out of the LocalBusiness
   // telephone and contactPoint on purpose: those must keep matching the Google

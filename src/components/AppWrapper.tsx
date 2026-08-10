@@ -4,9 +4,11 @@ import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import MarketingConsentScripts from "./MarketingConsentScripts";
+import { siteInfo } from "@/lib/site";
 
 const CookieBanner = dynamic(() => import("./CookieBanner"), { ssr: false });
 const ChatWidget = dynamic(() => import("./ChatWidget"), { ssr: false });
+const GoogleReviewsBadge = dynamic(() => import("./GoogleReviewsBadge"), { ssr: false });
 const ProductPromoPopup = dynamic(() => import("./ProductPromoPopup"), { ssr: false });
 
 type AppWrapperProps = {
@@ -128,6 +130,9 @@ export default function AppWrapper({ children, lang, promo, discountedProducts, 
       <MarketingConsentScripts {...marketing} />
       <ProductPromoPopup lang={effectiveLang} promo={promo} discountedProducts={discountedProducts} />
       <ChatWidget lang={effectiveLang} whatsapp={whatsapp} />
+      {siteInfo.googleReviewsBadge ? (
+        <GoogleReviewsBadge merchantId={siteInfo.googleMerchantId} locale={effectiveLang} />
+      ) : null}
       <CookieBanner lang={effectiveLang} />
     </>
   );
