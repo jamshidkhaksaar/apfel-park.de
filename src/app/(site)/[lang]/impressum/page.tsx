@@ -93,10 +93,6 @@ export default async function ImpressumPage({
               value={siteInfo.owner.name}
             />
             <Row
-              label={isGerman ? "Inhaber" : "Owner"}
-              value="Apfel Park"
-            />
-            <Row
               label={isGerman ? "Anschrift" : "Address"}
               value={
                 <>

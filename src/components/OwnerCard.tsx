@@ -81,8 +81,8 @@ export default function OwnerCard({
           <h2 className="mt-4 text-2xl font-bold text-foreground md:text-3xl">{owner.name}</h2>
           <p className="mt-4 leading-relaxed text-muted">
             {isGerman
-              ? "Bei Apfel Park steht kein Callcenter zwischen Ihnen und Ihrem Gerät. Wer Ihr Smartphone repariert, steht selbst im Laden am Wilhelm-Strauß-Weg – und ist persönlich erreichbar, wenn einmal etwas nicht stimmt."
-              : "At Apfel Park there is no call centre between you and your device. The person who repairs your phone stands in the shop on Wilhelm-Strauß-Weg, and is reachable in person if something is ever not right."}
+              ? "Bei Apfel Park erreichen Sie Ihren persönlichen Ansprechpartner direkt im Geschäft am Wilhelm-Strauß-Weg – vor dem Kauf, bei einer Reparaturanfrage und wenn später noch Fragen offen sind."
+              : "At Apfel Park you can reach your personal contact directly at the Wilhelm-Strauß-Weg store—before a purchase, with a repair enquiry, or if you have questions later."}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a
