@@ -489,13 +489,30 @@ export async function recordWebhookEvent(input: {
 
 export async function getOrderForConfirmation(orderId: string) {
   const result = await query(
-    `SELECT id, order_number, customer_email, customer_name, total_amount, currency, payment_status, status, items, shipping_method
+    `SELECT id, order_number, customer_email, customer_name, total_amount, currency, payment_status, status, items, shipping_method, created_at, customer_address
      FROM orders
      WHERE id = $1
      LIMIT 1`,
     [orderId],
   );
   return result.rows[0] ?? null;
+}
+
+/**
+ * GTINs for the products in an order, for the Google Customer Reviews opt-in.
+ *
+ * Returns nothing today because no product carries a GTIN yet, so the opt-in
+ * omits the optional products field entirely -- Google rejects empty
+ * identifiers. It starts working on its own once the identifiers are imported.
+ */
+export async function getOrderProductGtins(productIds: string[]): Promise<string[]> {
+  if (productIds.length === 0) return [];
+  const result = await query(
+    `SELECT gtin FROM products
+      WHERE id::text = ANY($1::text[]) AND gtin IS NOT NULL AND gtin <> ''`,
+    [productIds],
+  );
+  return result.rows.map((row) => String(row.gtin)).filter(Boolean);
 }
 
 export const verifyStripeSignature = (payload: string, signatureHeader: string, secret: string) => {

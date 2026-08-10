@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import CheckoutSuccessClient from "@/components/checkout/CheckoutSuccessClient";
-import { getOrderForConfirmation } from "@/lib/checkout";
+import { getOrderForConfirmation, getOrderProductGtins } from "@/lib/checkout";
+import { deliveryCountryCode, estimatedDeliveryDate } from "@/lib/delivery-estimate";
+import { siteInfo } from "@/lib/site";
 import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +37,23 @@ export default async function CheckoutSuccessPage({
         .filter((item) => item.title)
     : [];
 
+  // Google Customer Reviews enrols the buyer from this page. Only a paid order
+  // is enrolled, so a failed payment never triggers a survey.
+  const productIds = Array.isArray(order?.items)
+    ? (order.items as Array<{ productId?: unknown }>)
+        .map((item) => (typeof item?.productId === "string" ? item.productId : null))
+        .filter((id): id is string => Boolean(id))
+    : [];
+  const productGtins = paid ? await getOrderProductGtins(productIds) : [];
+  const placedAt = order?.created_at ? new Date(order.created_at as string) : null;
+  const deliveryEstimate =
+    placedAt && !Number.isNaN(placedAt.getTime())
+      ? estimatedDeliveryDate(
+          placedAt,
+          typeof order?.shipping_method === "string" ? order.shipping_method : null,
+        )
+      : "";
+
   return (
     <section className="section-pad bg-background">
       <div className="container-page">
@@ -52,6 +71,12 @@ export default async function CheckoutSuccessPage({
           customerEmail={typeof order?.customer_email === "string" ? order.customer_email : null}
           customerName={typeof order?.customer_name === "string" ? order.customer_name : null}
           trustpilotInviteKey={process.env.NEXT_PUBLIC_TRUSTPILOT_INVITE_KEY?.trim() || ""}
+          googleMerchantId={siteInfo.googleMerchantId}
+          deliveryCountry={deliveryCountryCode(
+            (order?.customer_address as { country?: unknown } | null | undefined)?.country,
+          )}
+          estimatedDeliveryDate={deliveryEstimate}
+          productGtins={productGtins}
         />
         <div className="mt-8 flex justify-center gap-3">
           <Link href={`/${locale}/store`} className="btn-secondary">

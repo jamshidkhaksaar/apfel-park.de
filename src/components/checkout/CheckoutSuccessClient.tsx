@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { clearStoredCart } from "@/components/checkout/cart";
+import GoogleCustomerReviews from "@/components/checkout/GoogleCustomerReviews";
 import TrustpilotInvitation from "@/components/checkout/TrustpilotInvitation";
 
 type Props = {
@@ -19,6 +20,10 @@ type Props = {
   customerEmail?: string | null;
   customerName?: string | null;
   trustpilotInviteKey?: string;
+  googleMerchantId?: string;
+  deliveryCountry?: string;
+  estimatedDeliveryDate?: string;
+  productGtins?: string[];
 };
 
 const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
@@ -41,6 +46,10 @@ export default function CheckoutSuccessClient({
   customerEmail,
   customerName,
   trustpilotInviteKey = "",
+  googleMerchantId = "",
+  deliveryCountry = "DE",
+  estimatedDeliveryDate = "",
+  productGtins,
 }: Props) {
   const [paid, setPaid] = useState(initiallyPaid);
   const [message, setMessage] = useState(() =>
@@ -94,6 +103,18 @@ export default function CheckoutSuccessClient({
     <div className="glass-panel mx-auto max-w-2xl rounded-2xl p-8 text-center">
       {/* Only once the payment is confirmed: asking someone to review a
           purchase that never completed is worse than not asking. */}
+      {/* Google surveys the buyer after the estimated delivery date, so an
+          order with no usable date is left out rather than enrolled early. */}
+      {paid && googleMerchantId && customerEmail && orderId && estimatedDeliveryDate ? (
+        <GoogleCustomerReviews
+          merchantId={googleMerchantId}
+          orderId={orderNumber ? `A-${orderNumber}` : orderId}
+          email={customerEmail}
+          deliveryCountry={deliveryCountry}
+          estimatedDeliveryDate={estimatedDeliveryDate}
+          gtins={productGtins}
+        />
+      ) : null}
       {paid && trustpilotInviteKey && customerEmail && orderId ? (
         <TrustpilotInvitation
           inviteKey={trustpilotInviteKey}

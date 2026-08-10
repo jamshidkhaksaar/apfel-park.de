@@ -23,6 +23,9 @@ export const siteInfo = {
   landlineE164: "+494058978787",
   whatsapp: "491637786476", // WhatsApp Business number, no + sign
   email: "info@apfel-park.de",
+  // Google Merchant Center id. Public by design -- it ships in the Customer
+  // Reviews opt-in on the confirmation page -- so it is config, not a secret.
+  googleMerchantId: "5829541150",
   // Section 5 DDG requires the natural person behind an Einzelunternehmen to be
   // named, and the Impressum did not name anyone. Kept out of the LocalBusiness
   // telephone and contactPoint on purpose: those must keep matching the Google
