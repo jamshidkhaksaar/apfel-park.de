@@ -108,7 +108,17 @@ export const prepareEbayAccountDeletionRequest = (
 export const recordEbayAccountDeletionRequest = async (payload: unknown): Promise<boolean> => {
   const prepared = prepareEbayAccountDeletionRequest(payload);
   const result = await query(
-    `INSERT INTO marketplace_account_deletion_requests (
+    `WITH marketplace_state AS (
+      SELECT
+        EXISTS (
+          SELECT 1 FROM marketplace_orders WHERE marketplace = 'ebay_de'
+        ) OR EXISTS (
+          SELECT 1
+          FROM marketplace_event_receipts
+          WHERE marketplace = 'ebay_de' AND event_type LIKE '%ORDER%'
+        ) AS has_customer_data
+    )
+    INSERT INTO marketplace_account_deletion_requests (
       marketplace,
       external_event_id,
       event_date,
@@ -116,8 +126,27 @@ export const recordEbayAccountDeletionRequest = async (payload: unknown): Promis
       publish_attempt_count,
       username_hash,
       user_id_hash,
-      eias_token_hash
-    ) VALUES ('ebay_de', $1, $2, $3, $4, $5, $6, $7)
+      eias_token_hash,
+      status,
+      resolved_at,
+      resolution_note
+    )
+    SELECT
+      'ebay_de',
+      $1,
+      $2,
+      $3,
+      $4,
+      $5,
+      $6,
+      $7,
+      CASE WHEN has_customer_data THEN 'pending_review' ELSE 'resolved_deleted' END,
+      CASE WHEN has_customer_data THEN NULL ELSE now() END,
+      CASE
+        WHEN has_customer_data THEN NULL
+        ELSE 'No eBay order or order-event customer data was stored when this request arrived.'
+      END
+    FROM marketplace_state
     ON CONFLICT (marketplace, external_event_id) DO NOTHING
     RETURNING id`,
     [
