@@ -399,7 +399,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
 
   return (
     <div
-      className="fixed right-4 z-[130] md:right-6"
+      className="fixed left-4 z-[130] md:left-6"
       style={{ bottom: "calc(1rem + var(--apfel-cookie-banner-height, 0px))" }}
     >
       {open ? (
