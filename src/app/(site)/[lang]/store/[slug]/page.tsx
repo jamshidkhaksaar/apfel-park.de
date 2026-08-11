@@ -10,7 +10,9 @@ import ProductReviews from "@/components/ProductReviews";
 import { getApprovedReviews, getRatingSummary } from "@/lib/product-reviews";
 import { type Locale } from "@/lib/i18n";
 import {
+  merchantReturnPolicy,
   offerPriceValidUntil,
+  offerShippingDetails,
   offerValidFrom,
   productCategoryLabel,
   productConditionLabel,
@@ -198,6 +200,8 @@ export default async function ProductDetailPage({
       url: `${siteInfo.url}/${locale}/store/${product.slug}`,
       itemCondition: schemaItemCondition(product.condition),
       seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
+      hasMerchantReturnPolicy: merchantReturnPolicy(),
+      shippingDetails: offerShippingDetails(),
     },
   };
   const faqJsonLd =

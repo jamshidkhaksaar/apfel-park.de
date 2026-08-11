@@ -91,6 +91,38 @@ export const organizationShippingService = () => ({
   },
 });
 
+// Google Merchant listings requires OfferShippingDetails directly on every
+// Product Offer. The organization-level ShippingService above describes the
+// same policy for the business entity, but it does not satisfy this
+// offer-level rich-result field.
+export const offerShippingDetails = () => ({
+  "@type": "OfferShippingDetails",
+  shippingRate: {
+    "@type": "MonetaryAmount",
+    value: germanyShippingAmount(),
+    currency: "EUR",
+  },
+  shippingDestination: {
+    "@type": "DefinedRegion",
+    addressCountry: "DE",
+  },
+  deliveryTime: {
+    "@type": "ShippingDeliveryTime",
+    handlingTime: {
+      "@type": "QuantitativeValue",
+      minValue: 0,
+      maxValue: 1,
+      unitCode: "DAY",
+    },
+    transitTime: {
+      "@type": "QuantitativeValue",
+      minValue: 1,
+      maxValue: 3,
+      unitCode: "DAY",
+    },
+  },
+});
+
 // Matches /withdrawal + /delivery-returns: 14-day statutory withdrawal,
 // customer bears the direct cost of the return shipment.
 export const merchantReturnPolicy = () => ({
