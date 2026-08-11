@@ -66,6 +66,12 @@ log "npm run build"
 set -a; . "$ENV_FILE"; set +a
 npm run build
 
+# Apply additive schema changes before switching the live symlink. A failed
+# migration stops the release here; the currently running app remains active.
+# Migrations are transactional and recorded in schema_migrations.
+log "database migrations"
+npm run db:migrate
+
 # `next build` does NOT copy these into .next/standalone. Forgetting it yields
 # a site that returns 200 with no CSS and no JS -- silent, and easy to miss.
 log "copying static assets into standalone"

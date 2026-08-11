@@ -10,6 +10,14 @@ import { isValidInputLength, sanitizeInput } from "@/lib/security";
 import { classifySubcategory } from "@/lib/product-subcategory";
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 import { validatedGtin } from "@/lib/product-identifiers";
+import {
+  evaluateProductChannelReadiness,
+  type BatteryDetails,
+  type MarketplaceAttributes,
+  type MarketplaceCategoryMappings,
+  type ProductChannelFacts,
+  type ProductIdentifierStatus,
+} from "@/lib/product-channel-readiness";
 
 type ProductPayload = {
   id?: string;
@@ -29,6 +37,23 @@ type ProductPayload = {
   sku?: string;
   mpn?: string;
   gtin?: string;
+  identifierStatus?: ProductIdentifierStatus;
+  asin?: string;
+  ebayEpid?: string;
+  countryOfOrigin?: string;
+  packageWeightKg?: number | null;
+  packageLengthCm?: number | null;
+  packageWidthCm?: number | null;
+  packageHeightCm?: number | null;
+  chargerIncluded?: boolean | null;
+  chargingPowerMinW?: number | null;
+  chargingPowerMaxW?: number | null;
+  usbPdSupported?: boolean | null;
+  batteryDetails?: BatteryDetails | null;
+  marketplaceCategoryMappings?: MarketplaceCategoryMappings;
+  marketplaceAttributes?: MarketplaceAttributes;
+  amazonGtinExemption?: boolean;
+  amazonRenewedApproved?: boolean;
   manufacturer?: { name?: string; address?: string; email?: string } | null;
   euResponsiblePerson?: { name?: string; address?: string; email?: string } | null;
   safetyWarnings?: string[];
@@ -51,7 +76,13 @@ type ProductPayload = {
     compareAtPrice?: number | null;
     stock?: number | null;
     sku?: string;
+    mpn?: string;
+    gtin?: string;
+    identifierStatus?: ProductIdentifierStatus;
+    asin?: string;
+    ebayEpid?: string;
     imageIndex?: number | null;
+    images?: string[];
     isDefault?: boolean;
   }>;
   featureBullets?: string[];
@@ -103,10 +134,85 @@ const sanitizeSpecs = (items: unknown) => {
     .filter((entry): entry is { label: string; value: string; group?: string } => entry !== null);
 };
 
-const sanitizeVariants = (items: unknown) => {
-  if (!Array.isArray(items)) return [];
+const normalizeIdentifierStatus = (value: unknown): ProductIdentifierStatus =>
+  value === "assigned" || value === "not_applicable" ? value : "unknown";
 
-  return items
+const sanitizeMarketplaceCategoryMappings = (value: unknown): MarketplaceCategoryMappings => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const source = value as Record<string, unknown>;
+  const result: MarketplaceCategoryMappings = {};
+
+  if (source.google && typeof source.google === "object" && !Array.isArray(source.google)) {
+    const category = sanitizeInput(String((source.google as Record<string, unknown>).category ?? "")).slice(0, 255);
+    if (category) result.google = { category };
+  }
+  if (source.ebay_de && typeof source.ebay_de === "object" && !Array.isArray(source.ebay_de)) {
+    const ebay = source.ebay_de as Record<string, unknown>;
+    const categoryId = sanitizeInput(String(ebay.categoryId ?? "")).slice(0, 12);
+    const categoryName = sanitizeInput(String(ebay.categoryName ?? "")).slice(0, 200);
+    const requiredAspects = sanitizeStringArray(ebay.requiredAspects, 120).slice(0, 100);
+    if (/^\d+$/.test(categoryId)) result.ebay_de = { categoryId, categoryName, requiredAspects };
+  }
+  if (source.amazon_de && typeof source.amazon_de === "object" && !Array.isArray(source.amazon_de)) {
+    const productType = sanitizeInput(String((source.amazon_de as Record<string, unknown>).productType ?? ""))
+      .toUpperCase()
+      .replace(/[^A-Z0-9_]/g, "")
+      .slice(0, 120);
+    if (productType) result.amazon_de = { productType };
+  }
+  return result;
+};
+
+class DuplicateSkuError extends Error {}
+
+const sanitizeMarketplaceAttributes = (value: unknown): MarketplaceAttributes => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const source = value as Record<string, unknown>;
+  const result: MarketplaceAttributes = {};
+  if (source.ebay_de && typeof source.ebay_de === "object" && !Array.isArray(source.ebay_de)) {
+    const attributes: Record<string, string[]> = {};
+    for (const [rawKey, rawValue] of Object.entries(source.ebay_de as Record<string, unknown>).slice(0, 150)) {
+      const key = sanitizeInput(rawKey).slice(0, 120);
+      if (!key) continue;
+      const values = sanitizeStringArray(rawValue, 250).slice(0, 20);
+      if (values.length > 0) attributes[key] = values;
+    }
+    if (Object.keys(attributes).length > 0) result.ebay_de = attributes;
+  }
+  return result;
+};
+
+const sanitizeBatteryDetails = (value: unknown): BatteryDetails => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const source = value as Record<string, unknown>;
+  const result: BatteryDetails = {};
+  if (typeof source.included === "boolean") result.included = source.included;
+  if (typeof source.cellComposition === "string") {
+    const composition = sanitizeInput(source.cellComposition).toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 50);
+    if (composition) result.cellComposition = composition;
+  }
+  const number = (input: unknown, integer = false) => {
+    const parsed = Number(input);
+    if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+    return integer ? Math.round(parsed) : parsed;
+  };
+  result.count = number(source.count, true);
+  result.weightGrams = number(source.weightGrams);
+  result.wattHours = number(source.wattHours);
+  if (typeof source.unNumber === "string") {
+    const unNumber = sanitizeInput(source.unNumber).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    if (/^UN\d{4}$/.test(unNumber)) result.unNumber = unNumber;
+  }
+  return Object.fromEntries(Object.entries(result).filter(([, entry]) => entry !== undefined)) as BatteryDetails;
+};
+
+const sanitizeVariants = (items: unknown) => {
+  if (!Array.isArray(items)) return { variants: [], invalidGtin: false, invalidAsin: false };
+
+  let invalidGtin = false;
+  let invalidAsin = false;
+
+  const variants = items
     .map((entry) => {
       if (!entry || typeof entry !== "object") return null;
       const candidate = entry as {
@@ -116,7 +222,13 @@ const sanitizeVariants = (items: unknown) => {
         compareAtPrice?: unknown;
         stock?: unknown;
         sku?: unknown;
+        mpn?: unknown;
+        gtin?: unknown;
+        identifierStatus?: unknown;
+        asin?: unknown;
+        ebayEpid?: unknown;
         imageIndex?: unknown;
+        images?: unknown;
         isDefault?: unknown;
       };
 
@@ -129,6 +241,15 @@ const sanitizeVariants = (items: unknown) => {
       const compareAtPrice = parsePrice(candidate.compareAtPrice);
       const stock = candidate.stock === null || candidate.stock === undefined || candidate.stock === "" ? undefined : Number(candidate.stock);
       const sku = sanitizeInput(typeof candidate.sku === "string" ? candidate.sku : "");
+      const mpn = sanitizeInput(typeof candidate.mpn === "string" ? candidate.mpn : "").slice(0, 120);
+      const gtinInput = sanitizeInput(typeof candidate.gtin === "string" ? candidate.gtin : "");
+      const gtin = validatedGtin(gtinInput);
+      if (gtinInput && !gtin) invalidGtin = true;
+      const asinInput = sanitizeInput(typeof candidate.asin === "string" ? candidate.asin : "").toUpperCase();
+      if (asinInput && !/^[A-Z0-9]{10}$/.test(asinInput)) invalidAsin = true;
+      const asin = asinInput.slice(0, 10);
+      const ebayEpid = sanitizeInput(typeof candidate.ebayEpid === "string" ? candidate.ebayEpid : "").slice(0, 40);
+      const images = sanitizeStringArray(candidate.images, 1000).slice(0, 4);
       const imageIndex =
         candidate.imageIndex === null || candidate.imageIndex === undefined || candidate.imageIndex === ""
           ? undefined
@@ -148,7 +269,13 @@ const sanitizeVariants = (items: unknown) => {
         compareAtPrice: compareAtPrice === null ? undefined : compareAtPrice,
         stock,
         sku: sku || undefined,
+        mpn: mpn || undefined,
+        gtin: gtin || undefined,
+        identifierStatus: normalizeIdentifierStatus(candidate.identifierStatus),
+        asin: asin || undefined,
+        ebayEpid: ebayEpid || undefined,
         imageIndex,
+        images: images.length > 0 ? images : undefined,
         isDefault: Boolean(candidate.isDefault),
       };
     })
@@ -163,9 +290,17 @@ const sanitizeVariants = (items: unknown) => {
       compareAtPrice?: number;
       stock?: number;
       sku?: string;
+      mpn?: string;
+      gtin?: string;
+      identifierStatus: ProductIdentifierStatus;
+      asin?: string;
+      ebayEpid?: string;
       imageIndex?: number;
+      images?: string[];
       isDefault?: boolean;
     }>;
+
+  return { variants, invalidGtin, invalidAsin };
 };
 
 const parsePrice = (value: unknown) => {
@@ -187,6 +322,12 @@ const getMessages = (isEnglish: boolean) => ({
   stockRequired: isEnglish ? "Valid stock is required" : "Gültiger Lagerwert ist erforderlich",
   comparePriceInvalid: isEnglish ? "Compare-at price must be higher than the current price" : "Streichpreis muss höher als der aktuelle Preis sein",
   gtinInvalid: isEnglish ? "GTIN/EAN must be a valid 8, 12, 13, or 14-digit manufacturer barcode" : "GTIN/EAN muss ein gültiger 8-, 12-, 13- oder 14-stelliger Hersteller-Barcode sein",
+  variantGtinInvalid: isEnglish ? "At least one variant has an invalid GTIN/EAN checksum" : "Mindestens eine Variante hat eine ungültige GTIN/EAN-Prüfziffer",
+  variantAsinInvalid: isEnglish ? "At least one variant has an invalid Amazon ASIN" : "Mindestens eine Variante hat eine ungültige Amazon-ASIN",
+  asinInvalid: isEnglish ? "ASIN must contain exactly 10 letters or digits" : "Die ASIN muss genau 10 Buchstaben oder Ziffern enthalten",
+  countryInvalid: isEnglish ? "Country of origin must be a two-letter ISO code" : "Das Ursprungsland muss als zweistelliger ISO-Code angegeben werden",
+  packageInvalid: isEnglish ? "Package weight and dimensions must be greater than zero" : "Paketgewicht und -maße müssen größer als null sein",
+  chargingInvalid: isEnglish ? "Charging power must be zero or greater and maximum power cannot be below minimum power" : "Die Ladeleistung muss mindestens null sein und die Maximalleistung darf nicht unter der Minimalleistung liegen",
   conditionDetailsRequired: isEnglish ? "Open-box and used products need a condition note, at least one image, and confirmation of real product photos" : "Open-Box- und Gebrauchtprodukte benötigen einen Zustandshinweis, mindestens ein Bild und die Bestätigung echter Produktfotos",
   batteryHealthRequired: isEnglish ? "Used iPhones require battery health" : "Für gebrauchte iPhones ist die Batteriekapazität erforderlich",
   batteryHealthInvalid: isEnglish ? "Battery health must be a whole number from 1 to 100" : "Die Batteriekapazität muss eine ganze Zahl von 1 bis 100 sein",
@@ -194,6 +335,7 @@ const getMessages = (isEnglish: boolean) => ({
   inputTooLong: isEnglish ? "Input too long" : "Eingabe zu lang",
   missingId: isEnglish ? "Product id is required" : "Produkt-ID ist erforderlich",
   deleteFailed: isEnglish ? "Failed to delete product" : "Produkt konnte nicht gelöscht werden",
+  activeNotReady: isEnglish ? "This product is not ready for the live store and Google Merchant feed. Save it as an inactive draft and complete the listed requirements." : "Dieses Produkt ist noch nicht für den Live-Shop und den Google-Merchant-Feed bereit. Als inaktiven Entwurf speichern und die angezeigten Anforderungen vervollständigen.",
 });
 
 const ensureAdmin = async (request: NextRequest) => {
@@ -225,6 +367,23 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   const mpn = payload.mpn ? sanitizeInput(payload.mpn) : null;
   const gtinInput = payload.gtin ? sanitizeInput(payload.gtin) : null;
   const gtin = validatedGtin(gtinInput);
+  const identifierStatus = normalizeIdentifierStatus(payload.identifierStatus);
+  const asinInput = payload.asin ? sanitizeInput(payload.asin).toUpperCase() : null;
+  const asin = asinInput?.slice(0, 10) || null;
+  const ebayEpid = payload.ebayEpid ? sanitizeInput(payload.ebayEpid).slice(0, 40) : null;
+  const countryOfOriginInput = payload.countryOfOrigin ? sanitizeInput(payload.countryOfOrigin).toUpperCase() : null;
+  const countryOfOrigin = countryOfOriginInput?.slice(0, 2) || null;
+  const packageWeightKg = parsePrice(payload.packageWeightKg);
+  const packageLengthCm = parsePrice(payload.packageLengthCm);
+  const packageWidthCm = parsePrice(payload.packageWidthCm);
+  const packageHeightCm = parsePrice(payload.packageHeightCm);
+  const chargerIncluded = typeof payload.chargerIncluded === "boolean" ? payload.chargerIncluded : null;
+  const chargingPowerMinW = parsePrice(payload.chargingPowerMinW);
+  const chargingPowerMaxW = parsePrice(payload.chargingPowerMaxW);
+  const usbPdSupported = typeof payload.usbPdSupported === "boolean" ? payload.usbPdSupported : null;
+  const batteryDetails = sanitizeBatteryDetails(payload.batteryDetails);
+  const marketplaceCategoryMappings = sanitizeMarketplaceCategoryMappings(payload.marketplaceCategoryMappings);
+  const marketplaceAttributes = sanitizeMarketplaceAttributes(payload.marketplaceAttributes);
   const gpsrParty = (value: { name?: string; address?: string; email?: string } | null | undefined) => {
     const name = value?.name ? sanitizeInput(value.name) : "";
     if (!name) return {};
@@ -283,7 +442,7 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   const compareAtPrice = parsePrice(payload.compareAtPrice);
   const stock = payload.stock === undefined ? 0 : Number(payload.stock);
   const images = sanitizeStringArray(payload.images, 1000);
-  const variants = sanitizeVariants(payload.variants);
+  const variantResult = sanitizeVariants(payload.variants);
   const featureBullets = sanitizeStringArray(payload.featureBullets, 200);
   const specs = sanitizeSpecs(payload.specs);
 
@@ -297,6 +456,25 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
     mpn,
     gtin,
     gtinInput,
+    identifierStatus,
+    asin,
+    asinInput,
+    ebayEpid,
+    countryOfOrigin,
+    countryOfOriginInput,
+    packageWeightKg,
+    packageLengthCm,
+    packageWidthCm,
+    packageHeightCm,
+    chargerIncluded,
+    chargingPowerMinW,
+    chargingPowerMaxW,
+    usbPdSupported,
+    batteryDetails,
+    marketplaceCategoryMappings,
+    marketplaceAttributes,
+    amazonGtinExemption: Boolean(payload.amazonGtinExemption),
+    amazonRenewedApproved: Boolean(payload.amazonRenewedApproved),
     manufacturer,
     euResponsiblePerson,
     safetyWarnings,
@@ -314,10 +492,12 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
     hasRealProductPhotos,
     conditionNote,
     images,
-    variants,
+    variants: variantResult.variants,
+    invalidVariantGtin: variantResult.invalidGtin,
+    invalidVariantAsin: variantResult.invalidAsin,
     featureBullets,
     specs,
-    isActive: payload.isActive ?? true,
+    isActive: payload.isActive ?? false,
     isHomepageFeatured: Boolean(payload.isHomepageFeatured),
     slug,
   };
@@ -369,6 +549,19 @@ const validatePayload = (data: ReturnType<typeof buildPayload>, messages: Return
     return messages.batteryHealthInvalid;
   }
   if (data.gtinInput && !data.gtin) return messages.gtinInvalid;
+  if (data.invalidVariantGtin) return messages.variantGtinInvalid;
+  if (data.invalidVariantAsin) return messages.variantAsinInvalid;
+  if (data.asinInput && !/^[A-Z0-9]{10}$/.test(data.asinInput)) return messages.asinInvalid;
+  if (data.countryOfOriginInput && !/^[A-Z]{2}$/.test(data.countryOfOriginInput)) return messages.countryInvalid;
+  if ([data.packageWeightKg, data.packageLengthCm, data.packageWidthCm, data.packageHeightCm].some((value) => value !== null && (!Number.isFinite(value) || value <= 0))) {
+    return messages.packageInvalid;
+  }
+  if (
+    [data.chargingPowerMinW, data.chargingPowerMaxW].some((value) => value !== null && (!Number.isFinite(value) || value < 0)) ||
+    (data.chargingPowerMinW !== null && data.chargingPowerMaxW !== null && data.chargingPowerMaxW < data.chargingPowerMinW)
+  ) {
+    return messages.chargingInvalid;
+  }
   const isUsedIphone = data.condition === "used" && /iphone/i.test(`${data.brand || ""} ${data.model || ""} ${data.title}`);
   if (isUsedIphone && data.batteryHealth === null) return messages.batteryHealthRequired;
 
@@ -386,6 +579,104 @@ const validatePayload = (data: ReturnType<typeof buildPayload>, messages: Return
 
   return null;
 };
+
+const productInventoryUnits = (product: ReturnType<typeof buildPayload>) => {
+  const units = !product.isActive
+    ? []
+    : product.variants.length > 0
+      ? product.variants.map((variant) => ({ sku: variant.sku, stock: variant.stock ?? product.stock }))
+      : [{ sku: product.sku ?? undefined, stock: product.stock }];
+  return Array.from(
+    new Map(
+      units
+        .filter((unit): unit is { sku: string; stock: number } => Boolean(unit.sku))
+        .map((unit) => [unit.sku, unit]),
+    ).values(),
+  );
+};
+
+const assertInventorySkuAvailability = async (productId: string | null, product: ReturnType<typeof buildPayload>) => {
+  const skus = productInventoryUnits(product).map((unit) => unit.sku);
+  if (skus.length === 0) return;
+  const result = productId
+    ? await query(
+        `SELECT sku FROM inventory_skus
+          WHERE location = 'local' AND sku = ANY($1::text[]) AND product_id IS DISTINCT FROM $2::uuid
+          LIMIT 1`,
+        [skus, productId],
+      )
+    : await query(
+        `SELECT sku FROM inventory_skus WHERE location = 'local' AND sku = ANY($1::text[]) LIMIT 1`,
+        [skus],
+      );
+  if (result.rows[0]) throw new DuplicateSkuError(`SKU is already assigned to another product: ${String(result.rows[0].sku)}`);
+};
+
+const syncProductInventory = async (productId: string, product: ReturnType<typeof buildPayload>) => {
+  const sellable = productInventoryUnits(product);
+  // Preserve legacy active products that predate SKU enforcement. They can be
+  // completed in the admin without silently zeroing an existing reservation row.
+  if (product.isActive && sellable.length === 0) return;
+
+  for (const unit of sellable) {
+    const result = await query(
+      `INSERT INTO inventory_skus (product_id, sku, location, on_hand, reserved, safety_buffer)
+       VALUES ($1, $2, 'local', greatest($3, 0), 0, 0)
+       ON CONFLICT (sku, location) DO UPDATE
+         SET on_hand = greatest(excluded.on_hand, inventory_skus.reserved),
+             product_id = excluded.product_id,
+             updated_at = now()
+         WHERE inventory_skus.product_id = excluded.product_id
+       RETURNING id`,
+      [productId, unit.sku, Math.max(0, Math.floor(unit.stock))],
+    );
+    if (result.rowCount !== 1) throw new DuplicateSkuError(`SKU is already assigned to another product: ${unit.sku}`);
+  }
+
+  const activeSkus = sellable.map((unit) => unit.sku);
+  await query(
+    `UPDATE inventory_skus
+        SET on_hand = reserved, updated_at = now()
+      WHERE product_id = $1
+        AND location = 'local'
+        AND NOT (sku = ANY($2::text[]))`,
+    [productId, activeSkus],
+  );
+};
+
+const channelReadiness = (data: ReturnType<typeof buildPayload>) =>
+  evaluateProductChannelReadiness({
+    title: data.title,
+    description: data.description ?? "",
+    category: data.category ?? "",
+    condition: data.condition,
+    conditionNote: data.conditionNote ?? "",
+    hasRealProductPhotos: data.hasRealProductPhotos,
+    brand: data.brand ?? "",
+    price: data.price ?? undefined,
+    stock: data.stock,
+    sku: data.sku ?? "",
+    mpn: data.mpn ?? "",
+    gtin: data.gtin ?? "",
+    identifierStatus: data.identifierStatus,
+    asin: data.asin ?? "",
+    ebayEpid: data.ebayEpid ?? "",
+    images: data.images,
+    variants: data.variants,
+    manufacturer: data.manufacturer,
+    euResponsiblePerson: data.euResponsiblePerson,
+    safetyWarnings: data.safetyWarnings,
+    countryOfOrigin: data.countryOfOrigin ?? "",
+    packageWeightKg: data.packageWeightKg,
+    packageLengthCm: data.packageLengthCm,
+    packageWidthCm: data.packageWidthCm,
+    packageHeightCm: data.packageHeightCm,
+    batteryDetails: data.batteryDetails,
+    marketplaceCategoryMappings: data.marketplaceCategoryMappings,
+    marketplaceAttributes: data.marketplaceAttributes,
+    amazonGtinExemption: data.amazonGtinExemption,
+    amazonRenewedApproved: data.amazonRenewedApproved,
+  } satisfies ProductChannelFacts);
 
 export async function POST(request: NextRequest) {
   const auth = await ensureAdmin(request);
@@ -422,6 +713,11 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
+    const readiness = channelReadiness(product);
+    if (product.isActive && (!readiness.store.ready || !readiness.google.ready)) {
+      return NextResponse.json({ error: auth.messages.activeNotReady, readiness }, { status: 400 });
+    }
+    await assertInventorySkuAvailability(null, product);
 
     const insertResult = await query(
       `INSERT INTO "products" (
@@ -454,9 +750,27 @@ export async function POST(request: NextRequest) {
         "safety_documents",
         "eprel_id",
         "energy_label",
-        "faq"
+        "faq",
+        "asin",
+        "ebay_epid",
+        "identifier_status",
+        "country_of_origin",
+        "package_weight_kg",
+        "package_length_cm",
+        "package_width_cm",
+        "package_height_cm",
+        "charger_included",
+        "charging_power_min_w",
+        "charging_power_max_w",
+        "usb_pd_supported",
+        "battery_details",
+        "marketplace_category_mappings",
+        "marketplace_attributes",
+        "amazon_gtin_exemption",
+        "amazon_renewed_approved"
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23,$24::jsonb,$25::jsonb,$26,$27,$28,$29::jsonb,$30::jsonb
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23,$24::jsonb,$25::jsonb,$26,$27,$28,$29::jsonb,$30::jsonb,
+        $31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43::jsonb,$44::jsonb,$45::jsonb,$46,$47
       )
       RETURNING "id"`,
       [
@@ -490,6 +804,23 @@ export async function POST(request: NextRequest) {
         product.eprelId,
         JSON.stringify(product.energyLabel),
         product.faq ? JSON.stringify(product.faq) : null,
+        product.asin,
+        product.ebayEpid,
+        product.identifierStatus,
+        product.countryOfOrigin,
+        product.packageWeightKg,
+        product.packageLengthCm,
+        product.packageWidthCm,
+        product.packageHeightCm,
+        product.chargerIncluded,
+        product.chargingPowerMinW,
+        product.chargingPowerMaxW,
+        product.usbPdSupported,
+        JSON.stringify(product.batteryDetails),
+        JSON.stringify(product.marketplaceCategoryMappings),
+        JSON.stringify(product.marketplaceAttributes),
+        product.amazonGtinExemption,
+        product.amazonRenewedApproved,
       ],
     );
 
@@ -499,25 +830,29 @@ export async function POST(request: NextRequest) {
     }
 
     await syncHomepageFeatured(data.id, product.isHomepageFeatured);
+    await syncProductInventory(data.id, product);
 
-    const socialPublishing = await autoPublishProductPromotion(
-      {
-        id: data.id,
-        title: product.title,
-        subtitle: product.subtitle,
-        description: product.description,
-        slug: product.slug || slug,
-        imageUrl: product.images[0] || null,
-        price: product.price,
-        compareAtPrice: product.compareAtPrice,
-        locale: auth.isEnglish ? "en" : "de",
-      },
-      hasDiscountPrice(product.price, product.compareAtPrice) ? "discount" : "new",
-    );
+    const socialPublishing = product.isActive
+      ? await autoPublishProductPromotion(
+          {
+            id: data.id,
+            title: product.title,
+            subtitle: product.subtitle,
+            description: product.description,
+            slug: product.slug || slug,
+            imageUrl: product.images[0] || null,
+            price: product.price,
+            compareAtPrice: product.compareAtPrice,
+            locale: auth.isEnglish ? "en" : "de",
+          },
+          hasDiscountPrice(product.price, product.compareAtPrice) ? "discount" : "new",
+        )
+      : [];
 
     return NextResponse.json({ success: true, id: data.id, socialPublishing });
   } catch (error) {
     console.error("Create product failed:", error);
+    if (error instanceof DuplicateSkuError) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ error: auth.messages.createFailed }, { status: 500 });
   }
 }
@@ -548,11 +883,18 @@ export async function PATCH(request: NextRequest) {
     }
 
     const admin = createAdminDbClient();
-    const { data: existing } = await admin
-      .from<{ slug: string | null }>("products")
-      .select("slug")
+    const { data: existing, error: existingError } = await admin
+      .from<{ slug: string | null; is_active: boolean | null }>("products")
+      .select("slug,is_active")
       .eq("id", payload.id)
       .maybeSingle();
+    if (existingError) throw new Error(`Could not load existing product: ${existingError.message}`);
+
+    const readiness = channelReadiness(product);
+    if (product.isActive && !existing?.is_active && (!readiness.store.ready || !readiness.google.ready)) {
+      return NextResponse.json({ error: auth.messages.activeNotReady, readiness }, { status: 400 });
+    }
+    await assertInventorySkuAvailability(payload.id, product);
 
     // An existing slug is never rewritten on edit: a live URL that changes
     // under an editor's feet costs the ranking it already earned. Re-slugging
@@ -605,6 +947,23 @@ export async function PATCH(request: NextRequest) {
         "eprel_id" = $29,
         "energy_label" = $30::jsonb,
         "faq" = $31::jsonb,
+        "asin" = $32,
+        "ebay_epid" = $33,
+        "identifier_status" = $34,
+        "country_of_origin" = $35,
+        "package_weight_kg" = $36,
+        "package_length_cm" = $37,
+        "package_width_cm" = $38,
+        "package_height_cm" = $39,
+        "charger_included" = $40,
+        "charging_power_min_w" = $41,
+        "charging_power_max_w" = $42,
+        "usb_pd_supported" = $43,
+        "battery_details" = $44::jsonb,
+        "marketplace_category_mappings" = $45::jsonb,
+        "marketplace_attributes" = $46::jsonb,
+        "amazon_gtin_exemption" = $47,
+        "amazon_renewed_approved" = $48,
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -639,43 +998,53 @@ export async function PATCH(request: NextRequest) {
         product.eprelId,
         JSON.stringify(product.energyLabel),
         product.faq ? JSON.stringify(product.faq) : null,
+        product.asin,
+        product.ebayEpid,
+        product.identifierStatus,
+        product.countryOfOrigin,
+        product.packageWeightKg,
+        product.packageLengthCm,
+        product.packageWidthCm,
+        product.packageHeightCm,
+        product.chargerIncluded,
+        product.chargingPowerMinW,
+        product.chargingPowerMaxW,
+        product.usbPdSupported,
+        JSON.stringify(product.batteryDetails),
+        JSON.stringify(product.marketplaceCategoryMappings),
+        JSON.stringify(product.marketplaceAttributes),
+        product.amazonGtinExemption,
+        product.amazonRenewedApproved,
       ],
     );
 
-    // Keep the reservation ledger in step with the stock the admin just set.
-    // on_hand can never drop below what is already reserved for open orders.
-    if (product.sku) {
-      await query(
-        `INSERT INTO inventory_skus (product_id, sku, location, on_hand, reserved, safety_buffer)
-         VALUES ($1, $2, 'local', greatest($3, 0), 0, 0)
-         ON CONFLICT (sku, location) DO UPDATE
-           SET on_hand = greatest(excluded.on_hand, inventory_skus.reserved),
-               product_id = excluded.product_id,
-               updated_at = now()`,
-        [payload.id, product.sku, product.stock],
-      );
-    }
+    // Keep every sellable variant in the reservation ledger. on_hand never
+    // drops below quantities already reserved for open orders.
+    await syncProductInventory(payload.id, product);
 
     await syncHomepageFeatured(payload.id, product.isHomepageFeatured);
 
-    const socialPublishing = await autoPublishProductPromotion(
-      {
-        id: payload.id,
-        title: product.title,
-        subtitle: product.subtitle,
-        description: product.description,
-        slug: nextSlug,
-        imageUrl: product.images[0] || null,
-        price: product.price,
-        compareAtPrice: product.compareAtPrice,
-        locale: auth.isEnglish ? "en" : "de",
-      },
-      hasDiscountPrice(product.price, product.compareAtPrice) ? "discount" : "new",
-    );
+    const socialPublishing = product.isActive
+      ? await autoPublishProductPromotion(
+          {
+            id: payload.id,
+            title: product.title,
+            subtitle: product.subtitle,
+            description: product.description,
+            slug: nextSlug,
+            imageUrl: product.images[0] || null,
+            price: product.price,
+            compareAtPrice: product.compareAtPrice,
+            locale: auth.isEnglish ? "en" : "de",
+          },
+          hasDiscountPrice(product.price, product.compareAtPrice) ? "discount" : "new",
+        )
+      : [];
 
     return NextResponse.json({ success: true, socialPublishing });
   } catch (error) {
     console.error("Update product failed:", error);
+    if (error instanceof DuplicateSkuError) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ error: auth.messages.createFailed }, { status: 500 });
   }
 }

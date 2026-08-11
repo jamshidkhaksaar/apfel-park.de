@@ -1,6 +1,11 @@
 import { createDbClient, query } from "@/lib/db";
 import { deviceModelNeedles } from "@/lib/device-model";
 import type { Locale } from "@/lib/i18n";
+import type {
+  BatteryDetails,
+  MarketplaceCategoryMappings,
+  ProductIdentifierStatus,
+} from "@/lib/product-channel-readiness";
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
 
@@ -21,6 +26,11 @@ export type ProductVariant = {
   compareAtPrice?: number;
   stock?: number;
   sku?: string;
+  mpn?: string;
+  gtin?: string;
+  identifierStatus?: ProductIdentifierStatus;
+  asin?: string;
+  ebayEpid?: string;
   imageIndex?: number;
   images?: string[];
   isDefault?: boolean;
@@ -47,6 +57,22 @@ export type Product = {
   sku?: string;
   mpn?: string;
   gtin?: string;
+  identifierStatus: ProductIdentifierStatus;
+  asin?: string;
+  ebayEpid?: string;
+  countryOfOrigin?: string;
+  packageWeightKg?: number;
+  packageLengthCm?: number;
+  packageWidthCm?: number;
+  packageHeightCm?: number;
+  charging?: {
+    chargerIncluded?: boolean;
+    minimumPowerW?: number;
+    maximumPowerW?: number;
+    usbPdSupported?: boolean;
+  };
+  batteryDetails?: BatteryDetails;
+  marketplaceCategoryMappings?: MarketplaceCategoryMappings;
   stock?: number;
   slug: string;
   featureBullets: string[];
@@ -186,6 +212,20 @@ type DbProduct = {
   sku: string | null;
   mpn?: string | null;
   gtin?: string | null;
+  identifier_status?: ProductIdentifierStatus | null;
+  asin?: string | null;
+  ebay_epid?: string | null;
+  country_of_origin?: string | null;
+  package_weight_kg?: number | string | null;
+  package_length_cm?: number | string | null;
+  package_width_cm?: number | string | null;
+  package_height_cm?: number | string | null;
+  marketplace_category_mappings?: unknown;
+  charger_included?: boolean | null;
+  charging_power_min_w?: number | string | null;
+  charging_power_max_w?: number | string | null;
+  usb_pd_supported?: boolean | null;
+  battery_details?: unknown;
   manufacturer?: unknown;
   eu_responsible_person?: unknown;
   safety_warnings?: string[] | null;
@@ -350,7 +390,13 @@ const toVariants = (value: unknown, locale: Locale = "de"): ProductVariant[] => 
         compareAtPrice?: unknown;
         stock?: unknown;
         sku?: unknown;
+        mpn?: unknown;
+        gtin?: unknown;
+        identifierStatus?: unknown;
+        asin?: unknown;
+        ebayEpid?: unknown;
         imageIndex?: unknown;
+        images?: unknown;
         isDefault?: unknown;
       };
 
@@ -372,7 +418,18 @@ const toVariants = (value: unknown, locale: Locale = "de"): ProductVariant[] => 
         compareAtPrice,
         stock,
         sku: typeof candidate.sku === "string" && candidate.sku.trim() ? candidate.sku.trim() : undefined,
+        mpn: typeof candidate.mpn === "string" && candidate.mpn.trim() ? candidate.mpn.trim() : undefined,
+        gtin: typeof candidate.gtin === "string" && candidate.gtin.trim() ? candidate.gtin.trim() : undefined,
+        identifierStatus:
+          candidate.identifierStatus === "assigned" || candidate.identifierStatus === "not_applicable"
+            ? candidate.identifierStatus
+            : "unknown",
+        asin: typeof candidate.asin === "string" && candidate.asin.trim() ? candidate.asin.trim() : undefined,
+        ebayEpid: typeof candidate.ebayEpid === "string" && candidate.ebayEpid.trim() ? candidate.ebayEpid.trim() : undefined,
         imageIndex: imageIndex !== undefined ? Math.max(0, Math.floor(imageIndex)) : undefined,
+        images: Array.isArray(candidate.images)
+          ? candidate.images.filter((image): image is string => typeof image === "string" && Boolean(image.trim())).slice(0, 4)
+          : undefined,
         isDefault: Boolean(candidate.isDefault),
       };
     })
@@ -417,6 +474,33 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     sku: row.sku ?? undefined,
     mpn: row.mpn?.trim() || undefined,
     gtin: row.gtin?.trim() || undefined,
+    identifierStatus: row.identifier_status === "assigned" || row.identifier_status === "not_applicable"
+      ? row.identifier_status
+      : "unknown",
+    asin: row.asin?.trim() || undefined,
+    ebayEpid: row.ebay_epid?.trim() || undefined,
+    countryOfOrigin: row.country_of_origin?.trim() || undefined,
+    packageWeightKg: toNumber(row.package_weight_kg),
+    packageLengthCm: toNumber(row.package_length_cm),
+    packageWidthCm: toNumber(row.package_width_cm),
+    packageHeightCm: toNumber(row.package_height_cm),
+    charging:
+      row.charger_included != null || row.charging_power_min_w != null || row.charging_power_max_w != null || row.usb_pd_supported != null
+        ? {
+            chargerIncluded: row.charger_included ?? undefined,
+            minimumPowerW: toNumber(row.charging_power_min_w),
+            maximumPowerW: toNumber(row.charging_power_max_w),
+            usbPdSupported: row.usb_pd_supported ?? undefined,
+          }
+        : undefined,
+    batteryDetails:
+      row.battery_details && typeof row.battery_details === "object" && !Array.isArray(row.battery_details)
+        ? row.battery_details as BatteryDetails
+        : undefined,
+    marketplaceCategoryMappings:
+      row.marketplace_category_mappings && typeof row.marketplace_category_mappings === "object" && !Array.isArray(row.marketplace_category_mappings)
+        ? row.marketplace_category_mappings as MarketplaceCategoryMappings
+        : undefined,
     stock: row.stock ?? undefined,
     slug: row.slug,
     featureBullets: localizedStringArray(row.feature_bullets_i18n, locale, row.feature_bullets),
@@ -442,7 +526,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
 };
 
 const baseSelect =
-  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,subcategory,faq,updated_at";
+  "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,identifier_status,asin,ebay_epid,country_of_origin,package_weight_kg,package_length_cm,package_width_cm,package_height_cm,charger_included,charging_power_min_w,charging_power_max_w,usb_pd_supported,battery_details,marketplace_category_mappings,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,subcategory,faq,updated_at";
 
 /**
  * Fetches products from the database.

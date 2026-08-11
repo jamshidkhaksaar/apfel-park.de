@@ -6,6 +6,16 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useAdmin } from "@/lib/admin-context";
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
+import EprelPicker, { type EprelMatch } from "@/components/admin/EprelPicker";
+import {
+  createEmptyProductChannelFields,
+  ProductChannelFields,
+  ProductChannelReadinessPanel,
+  productChannelPayload,
+  type ProductChannelFieldState,
+} from "@/components/admin/ProductChannelFields";
+import { eprelCycles, eprelEndurance } from "@/lib/eprel";
+import type { ProductChannelFacts, ProductIdentifierStatus } from "@/lib/product-channel-readiness";
 
 type FormState = {
   title: string;
@@ -24,6 +34,22 @@ type FormState = {
   sku: string;
   mpn: string;
   gtin: string;
+  manufacturerName: string;
+  manufacturerAddress: string;
+  manufacturerEmail: string;
+  euResponsibleName: string;
+  euResponsibleAddress: string;
+  euResponsibleEmail: string;
+  safetyWarningsText: string;
+  safetyDocumentsText: string;
+  eprelId: string;
+  energyEfficiencyClass: string;
+  energyBatteryEndurance: string;
+  energyBatteryCycles: string;
+  energyReliabilityClass: string;
+  energyRepairabilityClass: string;
+  energyIpRating: string;
+  channelFields: ProductChannelFieldState;
   variants: Array<{
     color: string;
     storage: string;
@@ -31,6 +57,11 @@ type FormState = {
     compareAtPrice?: number;
     stock?: number;
     sku?: string;
+    mpn?: string;
+    gtin?: string;
+    identifierStatus?: ProductIdentifierStatus;
+    asin?: string;
+    ebayEpid?: string;
     imageIndex?: number;
     isDefault?: boolean;
   }>;
@@ -62,11 +93,27 @@ const initialState: FormState = {
   sku: "",
   mpn: "",
   gtin: "",
+  manufacturerName: "",
+  manufacturerAddress: "",
+  manufacturerEmail: "",
+  euResponsibleName: "",
+  euResponsibleAddress: "",
+  euResponsibleEmail: "",
+  safetyWarningsText: "",
+  safetyDocumentsText: "",
+  eprelId: "",
+  energyEfficiencyClass: "",
+  energyBatteryEndurance: "",
+  energyBatteryCycles: "",
+  energyReliabilityClass: "",
+  energyRepairabilityClass: "",
+  energyIpRating: "",
+  channelFields: createEmptyProductChannelFields(),
   variants: [],
   featureBulletsText: "",
   specsText: "",
   isHomepageFeatured: false,
-  isActive: true,
+  isActive: false,
 };
 
 const createEmptyVariant = () => ({
@@ -76,6 +123,11 @@ const createEmptyVariant = () => ({
   compareAtPrice: undefined,
   stock: undefined,
   sku: "",
+  mpn: "",
+  gtin: "",
+  identifierStatus: "unknown" as ProductIdentifierStatus,
+  asin: "",
+  ebayEpid: "",
   imageIndex: undefined,
   isDefault: false,
 });
@@ -125,6 +177,27 @@ export default function ProductCreateForm() {
 
   const slotLabels = imageSlotLabels[isGerman ? "de" : "en"];
   const isUsedIphone = state.condition === "used" && isIphoneProduct(state);
+  const channelPayload = productChannelPayload(state.channelFields);
+  const readinessFacts: ProductChannelFacts = {
+    title: state.title,
+    description: state.description,
+    category: state.category,
+    condition: state.condition,
+    conditionNote: state.conditionNote,
+    hasRealProductPhotos: state.hasRealProductPhotos,
+    brand: state.brand,
+    price: Number(state.price),
+    stock: Number(state.stock),
+    sku: state.sku,
+    mpn: state.mpn,
+    gtin: state.gtin,
+    images: imageFiles.filter(Boolean).map((_, index) => `pending-${index}`),
+    variants: state.variants,
+    manufacturer: { name: state.manufacturerName, address: state.manufacturerAddress, email: state.manufacturerEmail },
+    euResponsiblePerson: { name: state.euResponsibleName, address: state.euResponsibleAddress, email: state.euResponsibleEmail },
+    safetyWarnings: state.safetyWarningsText.split("\n").map((item) => item.trim()).filter(Boolean),
+    ...channelPayload,
+  };
 
   useEffect(() => {
     const previews = imageFiles
@@ -159,6 +232,15 @@ export default function ProductCreateForm() {
       model: state.model,
       locale: isGerman ? "de" : "en",
     });
+
+  const patchVariant = (index: number, patch: Partial<FormState["variants"][number]>) => {
+    setState((previous) => ({
+      ...previous,
+      variants: previous.variants.map((variant, variantIndex) =>
+        variantIndex === index ? { ...variant, ...patch } : variant,
+      ),
+    }));
+  };
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -239,6 +321,20 @@ export default function ProductCreateForm() {
           sku: state.sku,
           mpn: state.mpn,
           gtin: state.gtin,
+          ...channelPayload,
+          manufacturer: { name: state.manufacturerName, address: state.manufacturerAddress, email: state.manufacturerEmail },
+          euResponsiblePerson: { name: state.euResponsibleName, address: state.euResponsibleAddress, email: state.euResponsibleEmail },
+          safetyWarnings: state.safetyWarningsText.split("\n").map((item) => item.trim()).filter(Boolean),
+          safetyDocuments: state.safetyDocumentsText.split("\n").map((item) => item.trim()).filter(Boolean),
+          eprelId: state.eprelId,
+          energyLabel: {
+            efficiencyClass: state.energyEfficiencyClass,
+            batteryEndurance: state.energyBatteryEndurance,
+            batteryCycles: state.energyBatteryCycles ? Number(state.energyBatteryCycles) : undefined,
+            reliabilityClass: state.energyReliabilityClass,
+            repairabilityClass: state.energyRepairabilityClass,
+            ipRating: state.energyIpRating,
+          },
           variants: variantsToSave,
           images: imageUrls,
           featureBullets: parseFeatureBullets(state.featureBulletsText),
@@ -388,6 +484,72 @@ export default function ProductCreateForm() {
         </div>
       </div>
 
+      <section className="rounded-3xl border border-border/60 bg-black/15 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+          {isGerman ? "Produktsicherheit (GPSR)" : "Product safety (GPSR)"}
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          {isGerman
+            ? "Hersteller- und Sicherheitsangaben müssen dem Käufer vor dem Kauf angezeigt werden. Nur bestätigte Angaben eintragen."
+            : "Manufacturer and safety information must be shown before purchase. Enter verified facts only."}
+        </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {([
+            ["manufacturerName", isGerman ? "Hersteller" : "Manufacturer"],
+            ["manufacturerAddress", isGerman ? "Hersteller-Adresse" : "Manufacturer address"],
+            ["manufacturerEmail", isGerman ? "Hersteller-E-Mail" : "Manufacturer email"],
+            ["euResponsibleName", isGerman ? "EU-Verantwortlicher" : "EU responsible person"],
+            ["euResponsibleAddress", isGerman ? "EU-Verantwortlicher Adresse" : "EU responsible address"],
+            ["euResponsibleEmail", isGerman ? "EU-Verantwortlicher E-Mail" : "EU responsible email"],
+          ] as const).map(([key, label]) => (
+            <label key={key}>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{label}</span>
+              <input value={state[key]} onChange={(event) => setState((previous) => ({ ...previous, [key]: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
+            </label>
+          ))}
+        </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label>
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{isGerman ? "Sicherheitshinweise (einer pro Zeile)" : "Safety warnings (one per line)"}</span>
+            <textarea rows={3} value={state.safetyWarningsText} onChange={(event) => setState((previous) => ({ ...previous, safetyWarningsText: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
+          </label>
+          <label>
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{isGerman ? "Sicherheitsdokumente URLs (eine pro Zeile)" : "Safety document URLs (one per line)"}</span>
+            <textarea rows={3} value={state.safetyDocumentsText} onChange={(event) => setState((previous) => ({ ...previous, safetyDocumentsText: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
+          </label>
+        </div>
+      </section>
+
+      {state.category === "smartphones" || state.category === "tablets" ? (
+        <section className="rounded-3xl border border-border/60 bg-black/15 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{isGerman ? "EU-Energielabel (EPREL)" : "EU energy label (EPREL)"}</p>
+          <div className="mt-4">
+            <EprelPicker
+              locale={isGerman ? "de" : "en"}
+              onSelect={(match: EprelMatch) => setState((previous) => ({
+                ...previous,
+                eprelId: match.registration_number,
+                energyEfficiencyClass: match.energy_class ?? "",
+                energyBatteryEndurance: eprelEndurance(match.battery_endurance_minutes) ?? "",
+                energyBatteryCycles: String(eprelCycles(match.battery_endurance_cycles) ?? ""),
+                energyReliabilityClass: match.reliability_class ?? "",
+                energyRepairabilityClass: match.repairability_class ?? "",
+                energyIpRating: match.ingress_protection ?? "",
+              }))}
+            />
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <label><span className="text-xs text-muted">EPREL ID</span><input value={state.eprelId} onChange={(event) => setState((previous) => ({ ...previous, eprelId: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" /></label>
+            <label><span className="text-xs text-muted">{isGerman ? "Energieklasse" : "Energy class"}</span><select value={state.energyEfficiencyClass} onChange={(event) => setState((previous) => ({ ...previous, energyEfficiencyClass: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"><option value="">–</option>{["A", "B", "C", "D", "E", "F", "G"].map((grade) => <option key={grade} value={grade}>{grade}</option>)}</select></label>
+            <label><span className="text-xs text-muted">{isGerman ? "Akkulaufzeit" : "Battery endurance"}</span><input value={state.energyBatteryEndurance} onChange={(event) => setState((previous) => ({ ...previous, energyBatteryEndurance: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" /></label>
+            <label><span className="text-xs text-muted">{isGerman ? "Akku-Ladezyklen" : "Battery cycles"}</span><input type="number" min="1" value={state.energyBatteryCycles} onChange={(event) => setState((previous) => ({ ...previous, energyBatteryCycles: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" /></label>
+            <label><span className="text-xs text-muted">{isGerman ? "Zuverlässigkeitsklasse" : "Reliability class"}</span><input value={state.energyReliabilityClass} onChange={(event) => setState((previous) => ({ ...previous, energyReliabilityClass: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" /></label>
+            <label><span className="text-xs text-muted">{isGerman ? "Reparierbarkeitsklasse" : "Repairability class"}</span><input value={state.energyRepairabilityClass} onChange={(event) => setState((previous) => ({ ...previous, energyRepairabilityClass: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" /></label>
+            <label><span className="text-xs text-muted">{isGerman ? "Schutzart (IP)" : "IP rating"}</span><input value={state.energyIpRating} onChange={(event) => setState((previous) => ({ ...previous, energyIpRating: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" /></label>
+          </div>
+        </section>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-3">
         <div>
           <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
@@ -501,7 +663,7 @@ export default function ProductCreateForm() {
         </div>
       </div>
 
-      {state.category === "smartphones" ? (
+      {state.category === "smartphones" || state.category === "tablets" ? (
         <div className="rounded-3xl border border-border/60 bg-black/15 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -608,6 +770,32 @@ export default function ProductCreateForm() {
                         }
                         className="w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground"
                       />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+                        {isGerman ? "Identifikatoren" : "Identifiers"}
+                      </span>
+                      <select value={variant.identifierStatus ?? "unknown"} onChange={(event) => patchVariant(index, { identifierStatus: event.target.value as ProductIdentifierStatus })} className="w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground">
+                        <option value="unknown">{isGerman ? "Noch nicht geprüft" : "Not checked"}</option>
+                        <option value="assigned">{isGerman ? "Vorhanden" : "Assigned"}</option>
+                        <option value="not_applicable">{isGerman ? "Keine vorhanden" : "None exist"}</option>
+                      </select>
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">GTIN / EAN</span>
+                      <input inputMode="numeric" value={variant.gtin ?? ""} onChange={(event) => patchVariant(index, { gtin: event.target.value })} className="w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground" />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">MPN</span>
+                      <input value={variant.mpn ?? ""} onChange={(event) => patchVariant(index, { mpn: event.target.value })} className="w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground" />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Amazon ASIN</span>
+                      <input maxLength={10} value={variant.asin ?? ""} onChange={(event) => patchVariant(index, { asin: event.target.value.toUpperCase() })} className="w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground" />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">eBay ePID</span>
+                      <input value={variant.ebayEpid ?? ""} onChange={(event) => patchVariant(index, { ebayEpid: event.target.value })} className="w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground" />
                     </label>
                     <label className="space-y-2">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
@@ -764,6 +952,15 @@ export default function ProductCreateForm() {
           </div>
         </div>
       ) : null}
+
+      <ProductChannelFields
+        locale={isGerman ? "de" : "en"}
+        category={state.category}
+        condition={state.condition}
+        value={state.channelFields}
+        onChange={(channelFields) => setState((previous) => ({ ...previous, channelFields }))}
+      />
+      <ProductChannelReadinessPanel locale={isGerman ? "de" : "en"} facts={readinessFacts} />
 
       <div>
         <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">

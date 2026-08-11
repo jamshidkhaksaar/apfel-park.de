@@ -1,4 +1,10 @@
 import type { AdminProductRecord } from "@/components/admin/ProductCatalogAdmin";
+import type {
+  BatteryDetails,
+  MarketplaceAttributes,
+  MarketplaceCategoryMappings,
+  ProductIdentifierStatus,
+} from "@/lib/product-channel-readiness";
 
 export type ProductRow = {
   id: string;
@@ -15,6 +21,23 @@ export type ProductRow = {
   sku: string | null;
   mpn: string | null;
   gtin?: string | null;
+  identifier_status?: ProductIdentifierStatus | null;
+  asin?: string | null;
+  ebay_epid?: string | null;
+  country_of_origin?: string | null;
+  package_weight_kg?: number | string | null;
+  package_length_cm?: number | string | null;
+  package_width_cm?: number | string | null;
+  package_height_cm?: number | string | null;
+  battery_details?: unknown;
+  charger_included?: boolean | null;
+  charging_power_min_w?: number | string | null;
+  charging_power_max_w?: number | string | null;
+  usb_pd_supported?: boolean | null;
+  marketplace_category_mappings?: unknown;
+  marketplace_attributes?: unknown;
+  amazon_gtin_exemption?: boolean | null;
+  amazon_renewed_approved?: boolean | null;
   manufacturer?: unknown;
   eu_responsible_person?: unknown;
   safety_warnings?: string[] | null;
@@ -91,6 +114,15 @@ const toNumber = (value: string | number | null | undefined): number => {
   return Number.isFinite(parsed) ? Number(parsed) : 0;
 };
 
+const toOptionalNumber = (value: string | number | null | undefined): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const number = toNumber(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const toRecord = <T extends object>(value: unknown): T =>
+  value && typeof value === "object" && !Array.isArray(value) ? value as T : {} as T;
+
 const toSpecs = (value: unknown) => {
   if (!Array.isArray(value)) return [];
   return value
@@ -118,6 +150,14 @@ const toVariants = (value: unknown) => {
         compareAtPrice: item.compareAtPrice == null ? undefined : toNumber(item.compareAtPrice as string | number),
         stock: item.stock == null ? undefined : toNumber(item.stock as string | number),
         sku: typeof item.sku === "string" ? item.sku : "",
+        mpn: typeof item.mpn === "string" ? item.mpn : "",
+        gtin: typeof item.gtin === "string" ? item.gtin : "",
+        identifierStatus:
+          item.identifierStatus === "assigned" || item.identifierStatus === "not_applicable"
+            ? item.identifierStatus as ProductIdentifierStatus
+            : "unknown" as ProductIdentifierStatus,
+        asin: typeof item.asin === "string" ? item.asin : "",
+        ebayEpid: typeof item.ebayEpid === "string" ? item.ebayEpid : "",
         imageIndex: item.imageIndex == null ? undefined : toNumber(item.imageIndex as string | number),
         images: Array.isArray(item.images) ? item.images.filter((image): image is string => typeof image === "string") : undefined,
         isDefault: Boolean(item.isDefault),
@@ -141,6 +181,23 @@ export const mapAdminProduct = (row: ProductRow, featuredIds: string[] = []): Ad
   sku: row.sku ?? "",
   mpn: row.mpn ?? "",
   gtin: row.gtin ?? "",
+  identifierStatus: row.identifier_status ?? "unknown",
+  asin: row.asin ?? "",
+  ebayEpid: row.ebay_epid ?? "",
+  countryOfOrigin: row.country_of_origin ?? "",
+  packageWeightKg: toOptionalNumber(row.package_weight_kg),
+  packageLengthCm: toOptionalNumber(row.package_length_cm),
+  packageWidthCm: toOptionalNumber(row.package_width_cm),
+  packageHeightCm: toOptionalNumber(row.package_height_cm),
+  batteryDetails: toRecord<BatteryDetails>(row.battery_details),
+  chargerIncluded: row.charger_included,
+  chargingPowerMinW: toOptionalNumber(row.charging_power_min_w),
+  chargingPowerMaxW: toOptionalNumber(row.charging_power_max_w),
+  usbPdSupported: row.usb_pd_supported,
+  marketplaceCategoryMappings: toRecord<MarketplaceCategoryMappings>(row.marketplace_category_mappings),
+  marketplaceAttributes: toRecord<MarketplaceAttributes>(row.marketplace_attributes),
+  amazonGtinExemption: Boolean(row.amazon_gtin_exemption),
+  amazonRenewedApproved: Boolean(row.amazon_renewed_approved),
   manufacturer: toParty(row.manufacturer),
   euResponsiblePerson: toParty(row.eu_responsible_person),
   safetyWarnings: (row.safety_warnings ?? []).filter(Boolean),

@@ -57,6 +57,20 @@ type PublicKeyResponse = {
   key: string;
 };
 
+export type EbayCategorySuggestion = {
+  categoryId: string;
+  categoryName: string;
+  breadcrumb: string;
+};
+
+export type EbayCategoryAspect = {
+  name: string;
+  required: boolean;
+  variationEnabled: boolean;
+  mode: "FREE_TEXT" | "SELECTION_ONLY" | string;
+  values: string[];
+};
+
 const TOKEN_AAD = Buffer.from("apfel-park:ebay-token:v1", "utf8");
 const OAUTH_STATE_MAX_AGE_SECONDS = 10 * 60;
 const PUBLIC_KEY_CACHE_MS = 60 * 60 * 1000;
@@ -351,6 +365,106 @@ const getApplicationAccessToken = async (environment: EbayEnvironment): Promise<
     expiresAt: Date.now() + token.expires_in * 1000,
   });
   return token.access_token;
+};
+
+const ebayTaxonomyRequest = async <T>(environment: EbayEnvironment, path: string): Promise<T> => {
+  const token = await getApplicationAccessToken(environment);
+  const response = await fetch(`${getApiBaseUrl(environment)}${path}`, {
+    headers: {
+      Accept: "application/json",
+      "Accept-Language": "de-DE",
+      Authorization: `Bearer ${token}`,
+      "Content-Language": "de-DE",
+      "X-EBAY-C-MARKETPLACE-ID": "EBAY_DE",
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`eBay taxonomy request failed with HTTP ${response.status}`);
+  return response.json() as Promise<T>;
+};
+
+const getEbayDeCategoryTreeId = async (environment: EbayEnvironment): Promise<string> => {
+  const result = await ebayTaxonomyRequest<{ categoryTreeId?: string }>(
+    environment,
+    "/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=EBAY_DE",
+  );
+  if (!result.categoryTreeId) throw new Error("eBay did not return the Germany category tree");
+  return result.categoryTreeId;
+};
+
+export const searchEbayDeCategories = async (
+  queryText: string,
+  environment: EbayEnvironment = "production",
+): Promise<EbayCategorySuggestion[]> => {
+  const term = queryText.trim().slice(0, 100);
+  if (term.length < 2) return [];
+  const categoryTreeId = await getEbayDeCategoryTreeId(environment);
+  const result = await ebayTaxonomyRequest<{
+    categorySuggestions?: Array<{
+      category?: { categoryId?: string; categoryName?: string };
+      categoryTreeNodeAncestors?: Array<{ category?: { categoryName?: string } }>;
+    }>;
+  }>(
+    environment,
+    `/commerce/taxonomy/v1/category_tree/${encodeURIComponent(categoryTreeId)}` +
+      `/get_category_suggestions?q=${encodeURIComponent(term)}`,
+  );
+  return (result.categorySuggestions ?? [])
+    .map((suggestion) => {
+      const categoryId = suggestion.category?.categoryId?.trim() ?? "";
+      const categoryName = suggestion.category?.categoryName?.trim() ?? "";
+      if (!categoryId || !categoryName) return null;
+      const ancestors = (suggestion.categoryTreeNodeAncestors ?? [])
+        .map((ancestor) => ancestor.category?.categoryName?.trim())
+        .filter((name): name is string => Boolean(name));
+      return {
+        categoryId,
+        categoryName,
+        breadcrumb: [...ancestors, categoryName].join(" > "),
+      };
+    })
+    .filter((suggestion): suggestion is EbayCategorySuggestion => suggestion !== null);
+};
+
+export const getEbayDeCategoryAspects = async (
+  categoryId: string,
+  environment: EbayEnvironment = "production",
+): Promise<EbayCategoryAspect[]> => {
+  const normalizedCategoryId = categoryId.trim();
+  if (!/^\d{1,12}$/.test(normalizedCategoryId)) throw new Error("Invalid eBay category id");
+  const categoryTreeId = await getEbayDeCategoryTreeId(environment);
+  const result = await ebayTaxonomyRequest<{
+    aspects?: Array<{
+      localizedAspectName?: string;
+      aspectConstraint?: {
+        aspectRequired?: boolean;
+        aspectEnabledForVariations?: boolean;
+        aspectMode?: string;
+      };
+      aspectValues?: Array<{ localizedValue?: string }>;
+    }>;
+  }>(
+    environment,
+    `/commerce/taxonomy/v1/category_tree/${encodeURIComponent(categoryTreeId)}` +
+      `/get_item_aspects_for_category?category_id=${encodeURIComponent(normalizedCategoryId)}`,
+  );
+  return (result.aspects ?? [])
+    .map((aspect) => {
+      const name = aspect.localizedAspectName?.trim() ?? "";
+      if (!name) return null;
+      return {
+        name,
+        required: Boolean(aspect.aspectConstraint?.aspectRequired),
+        variationEnabled: Boolean(aspect.aspectConstraint?.aspectEnabledForVariations),
+        mode: aspect.aspectConstraint?.aspectMode ?? "FREE_TEXT",
+        values: (aspect.aspectValues ?? [])
+          .map((value) => value.localizedValue?.trim())
+          .filter((value): value is string => Boolean(value))
+          .slice(0, 250),
+      };
+    })
+    .filter((aspect): aspect is EbayCategoryAspect => aspect !== null)
+    .sort((left, right) => Number(right.required) - Number(left.required) || left.name.localeCompare(right.name, "de"));
 };
 
 export const getEbayNotificationEndpoint = (): string => {

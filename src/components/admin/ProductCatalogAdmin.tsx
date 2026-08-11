@@ -7,6 +7,20 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import EprelPicker, { type EprelMatch } from "@/components/admin/EprelPicker";
 import { eprelCycles, eprelEndurance } from "@/lib/eprel";
+import {
+  createEmptyProductChannelFields,
+  ProductChannelFields,
+  ProductChannelReadinessPanel,
+  productChannelPayload,
+  type ProductChannelFieldState,
+} from "@/components/admin/ProductChannelFields";
+import type {
+  BatteryDetails,
+  MarketplaceAttributes,
+  MarketplaceCategoryMappings,
+  ProductChannelFacts,
+  ProductIdentifierStatus,
+} from "@/lib/product-channel-readiness";
 
 type AdminLocale = "de" | "en";
 
@@ -24,6 +38,10 @@ type ProductVariant = {
   compareAtPrice?: number;
   stock?: number;
   mpn?: string;
+  gtin?: string;
+  identifierStatus?: ProductIdentifierStatus;
+  asin?: string;
+  ebayEpid?: string;
   sku?: string;
   imageIndex?: number;
   images?: string[];
@@ -44,6 +62,23 @@ export type AdminProductRecord = {
   model: string;
   mpn: string;
   gtin: string;
+  identifierStatus?: ProductIdentifierStatus;
+  asin?: string;
+  ebayEpid?: string;
+  countryOfOrigin?: string;
+  packageWeightKg?: number | null;
+  packageLengthCm?: number | null;
+  packageWidthCm?: number | null;
+  packageHeightCm?: number | null;
+  batteryDetails?: BatteryDetails;
+  chargerIncluded?: boolean | null;
+  chargingPowerMinW?: number | null;
+  chargingPowerMaxW?: number | null;
+  usbPdSupported?: boolean | null;
+  marketplaceCategoryMappings?: MarketplaceCategoryMappings;
+  marketplaceAttributes?: MarketplaceAttributes;
+  amazonGtinExemption?: boolean;
+  amazonRenewedApproved?: boolean;
   sku: string;
   price: number;
   compareAtPrice: number | null;
@@ -137,6 +172,7 @@ type ProductFormState = {
   isHomepageFeatured: boolean;
   featureBulletsText: string;
   specsText: string;
+  channelFields: ProductChannelFieldState;
 };
 
 const imageSlotLabels = {
@@ -263,6 +299,34 @@ const productToForm = (product: AdminProductRecord): ProductFormState => ({
       return groupChanged ? `## ${item.group}\n${line}` : line;
     })
     .join("\n"),
+  channelFields: {
+    identifierStatus: product.identifierStatus ?? "unknown",
+    asin: product.asin ?? "",
+    ebayEpid: product.ebayEpid ?? "",
+    countryOfOrigin: product.countryOfOrigin ?? "",
+    packageWeightKg: product.packageWeightKg != null ? String(product.packageWeightKg) : "",
+    packageLengthCm: product.packageLengthCm != null ? String(product.packageLengthCm) : "",
+    packageWidthCm: product.packageWidthCm != null ? String(product.packageWidthCm) : "",
+    packageHeightCm: product.packageHeightCm != null ? String(product.packageHeightCm) : "",
+    batteryIncluded: product.batteryDetails?.included == null ? "" : product.batteryDetails.included ? "yes" : "no",
+    batteryCellComposition: product.batteryDetails?.cellComposition ?? "",
+    batteryCount: product.batteryDetails?.count != null ? String(product.batteryDetails.count) : "",
+    batteryWeightGrams: product.batteryDetails?.weightGrams != null ? String(product.batteryDetails.weightGrams) : "",
+    batteryWattHours: product.batteryDetails?.wattHours != null ? String(product.batteryDetails.wattHours) : "",
+    batteryUnNumber: product.batteryDetails?.unNumber ?? "",
+    chargerIncluded: product.chargerIncluded == null ? "" : product.chargerIncluded ? "yes" : "no",
+    chargingPowerMinW: product.chargingPowerMinW != null ? String(product.chargingPowerMinW) : "",
+    chargingPowerMaxW: product.chargingPowerMaxW != null ? String(product.chargingPowerMaxW) : "",
+    usbPdSupported: product.usbPdSupported == null ? "" : product.usbPdSupported ? "yes" : "no",
+    googleProductCategory: product.marketplaceCategoryMappings?.google?.category ?? "",
+    ebayCategoryId: product.marketplaceCategoryMappings?.ebay_de?.categoryId ?? "",
+    ebayCategoryName: product.marketplaceCategoryMappings?.ebay_de?.categoryName ?? "",
+    ebayRequiredAspects: product.marketplaceCategoryMappings?.ebay_de?.requiredAspects ?? [],
+    ebayAspects: product.marketplaceAttributes?.ebay_de ?? {},
+    amazonProductType: product.marketplaceCategoryMappings?.amazon_de?.productType ?? "",
+    amazonGtinExemption: Boolean(product.amazonGtinExemption),
+    amazonRenewedApproved: Boolean(product.amazonRenewedApproved),
+  },
 });
 
 const parseFeatureBullets = (value: string) =>
@@ -325,6 +389,11 @@ const createEmptyVariant = (): ProductVariant => ({
   compareAtPrice: undefined,
   stock: undefined,
   sku: "",
+  mpn: "",
+  gtin: "",
+  identifierStatus: "unknown",
+  asin: "",
+  ebayEpid: "",
   imageIndex: undefined,
   isDefault: false,
 });
@@ -413,6 +482,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     featureBulletsText: "",
     specsText: "",
     isHomepageFeatured: false,
+    channelFields: createEmptyProductChannelFields(),
   }));
 
   useEffect(() => {
@@ -453,6 +523,27 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
 
   const queueCount = filteredProducts.length;
   const isUsedIphone = formState.condition === "used" && isIphoneProduct(formState);
+  const channelPayload = productChannelPayload(formState.channelFields);
+  const readinessFacts: ProductChannelFacts = {
+    title: formState.title,
+    description: formState.description,
+    category: formState.category,
+    condition: formState.condition,
+    conditionNote: formState.conditionNote,
+    hasRealProductPhotos: formState.hasRealProductPhotos,
+    brand: formState.brand,
+    price: Number(formState.price),
+    stock: Number(formState.stock),
+    sku: formState.sku,
+    mpn: formState.mpn,
+    gtin: formState.gtin,
+    images: [...formState.images, ...imageFiles.filter(Boolean).map((_, index) => `pending-${index}`)],
+    variants: formState.variants,
+    manufacturer: { name: formState.manufacturerName, address: formState.manufacturerAddress, email: formState.manufacturerEmail },
+    euResponsiblePerson: { name: formState.euResponsibleName, address: formState.euResponsibleAddress, email: formState.euResponsibleEmail },
+    safetyWarnings: formState.safetyWarningsText.split("\n").map((item) => item.trim()).filter(Boolean),
+    ...channelPayload,
+  };
   const isDirty = useMemo(() => {
     if (!selectedProduct) return false;
     const formChanged = JSON.stringify(formState) !== JSON.stringify(productToForm(selectedProduct));
@@ -482,6 +573,15 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
       document.removeEventListener("click", interceptLinks, true);
     };
   }, [editorOnly, isDirty, locale]);
+
+  const patchVariant = (index: number, patch: Partial<ProductVariant>) => {
+    setFormState((previous) => ({
+      ...previous,
+      variants: previous.variants.map((variant, variantIndex) =>
+        variantIndex === index ? { ...variant, ...patch } : variant,
+      ),
+    }));
+  };
 
   const submitProduct = () => {
     if (!formState.id) return;
@@ -564,6 +664,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
             sku: formState.sku,
             mpn: formState.mpn,
             gtin: formState.gtin,
+            ...channelPayload,
             manufacturer: { name: formState.manufacturerName, address: formState.manufacturerAddress, email: formState.manufacturerEmail },
             euResponsiblePerson: { name: formState.euResponsibleName, address: formState.euResponsibleAddress, email: formState.euResponsibleEmail },
             safetyWarnings: formState.safetyWarningsText.split("\n").map((item) => item.trim()).filter(Boolean),
@@ -613,6 +714,23 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           sku: formState.sku,
           mpn: formState.mpn,
           gtin: formState.gtin,
+          identifierStatus: formState.channelFields.identifierStatus,
+          asin: formState.channelFields.asin,
+          ebayEpid: formState.channelFields.ebayEpid,
+          countryOfOrigin: formState.channelFields.countryOfOrigin,
+          packageWeightKg: channelPayload.packageWeightKg,
+          packageLengthCm: channelPayload.packageLengthCm,
+          packageWidthCm: channelPayload.packageWidthCm,
+          packageHeightCm: channelPayload.packageHeightCm,
+          batteryDetails: channelPayload.batteryDetails,
+          chargerIncluded: channelPayload.chargerIncluded,
+          chargingPowerMinW: channelPayload.chargingPowerMinW,
+          chargingPowerMaxW: channelPayload.chargingPowerMaxW,
+          usbPdSupported: channelPayload.usbPdSupported,
+          marketplaceCategoryMappings: channelPayload.marketplaceCategoryMappings,
+          marketplaceAttributes: channelPayload.marketplaceAttributes,
+          amazonGtinExemption: channelPayload.amazonGtinExemption,
+          amazonRenewedApproved: channelPayload.amazonRenewedApproved,
           manufacturer: formState.manufacturerName
             ? { name: formState.manufacturerName, address: formState.manufacturerAddress || undefined, email: formState.manufacturerEmail || undefined }
             : null,
@@ -887,6 +1005,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                       ["condition", locale === "de" ? "Zustand" : "Condition"],
                       ["content", locale === "de" ? "Inhalt" : "Content"],
                       ["variants", locale === "de" ? "Varianten" : "Variants"],
+                      ["channels", locale === "de" ? "Kanäle" : "Channels"],
                       ["images", locale === "de" ? "Bilder" : "Images"],
                       ["publishing", locale === "de" ? "Veröffentlichung" : "Publishing"],
                     ].map(([id, label]) => <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-lg px-3 py-1.5 text-muted transition hover:bg-gold/10 hover:text-gold">{label}</a>)}
@@ -1087,7 +1206,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     </label>
                   </div>
 
-                  {formState.category === "smartphones" ? (
+                  {formState.category === "smartphones" || formState.category === "tablets" ? (
                     <div id="variants" className="scroll-mt-40 rounded-2xl border border-border/60 bg-surface/35 p-5">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
@@ -1311,6 +1430,36 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                     className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
                                   />
                                 </label>
+                                <label className="space-y-2">
+                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+                                    {locale === "de" ? "Identifikatoren" : "Identifiers"}
+                                  </span>
+                                  <select
+                                    value={variant.identifierStatus ?? "unknown"}
+                                    onChange={(event) => patchVariant(index, { identifierStatus: event.target.value as ProductIdentifierStatus })}
+                                    className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
+                                  >
+                                    <option value="unknown">{locale === "de" ? "Noch nicht geprüft" : "Not checked"}</option>
+                                    <option value="assigned">{locale === "de" ? "Vorhanden" : "Assigned"}</option>
+                                    <option value="not_applicable">{locale === "de" ? "Keine vorhanden" : "None exist"}</option>
+                                  </select>
+                                </label>
+                                <label className="space-y-2">
+                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">GTIN / EAN</span>
+                                  <input inputMode="numeric" value={variant.gtin ?? ""} onChange={(event) => patchVariant(index, { gtin: event.target.value })} className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground" />
+                                </label>
+                                <label className="space-y-2">
+                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">MPN</span>
+                                  <input value={variant.mpn ?? ""} onChange={(event) => patchVariant(index, { mpn: event.target.value })} className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground" />
+                                </label>
+                                <label className="space-y-2">
+                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Amazon ASIN</span>
+                                  <input maxLength={10} value={variant.asin ?? ""} onChange={(event) => patchVariant(index, { asin: event.target.value.toUpperCase() })} className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground" />
+                                </label>
+                                <label className="space-y-2">
+                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">eBay ePID</span>
+                                  <input value={variant.ebayEpid ?? ""} onChange={(event) => patchVariant(index, { ebayEpid: event.target.value })} className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground" />
+                                </label>
 
                                 <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border/50 bg-background/30 px-4 py-3 md:col-span-2 2xl:col-span-1">
                                   <label className="flex items-center gap-2 text-xs text-foreground">
@@ -1350,6 +1499,17 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                       </div>
                     </div>
                   ) : null}
+
+                  <div id="channels" className="scroll-mt-40 space-y-4">
+                    <ProductChannelFields
+                      locale={locale}
+                      category={formState.category}
+                      condition={formState.condition}
+                      value={formState.channelFields}
+                      onChange={(channelFields) => setFormState((previous) => ({ ...previous, channelFields }))}
+                    />
+                    <ProductChannelReadinessPanel locale={locale} facts={readinessFacts} />
+                  </div>
 
                   <div id="publishing" className="scroll-mt-40 space-y-3">
                   <label className="flex items-center gap-3 rounded-2xl border border-border/60 bg-surface/60 px-4 py-3 text-sm text-foreground">

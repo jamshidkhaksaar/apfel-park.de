@@ -59,6 +59,15 @@ const productReference = (sku: string | undefined, slug: string): string => {
   return compactSku.slice(-6);
 };
 
+const gtinProperties = (value: string | undefined) => {
+  const digits = validatedGtin(value);
+  if (digits?.length === 8) return { gtin8: digits };
+  if (digits?.length === 12) return { gtin12: digits };
+  if (digits?.length === 13) return { gtin13: digits };
+  if (digits?.length === 14) return { gtin14: digits };
+  return {};
+};
+
 export const generateMetadata = async ({
   params,
 }: {
@@ -140,27 +149,20 @@ export default async function ProductDetailPage({
     getApprovedReviews(product.id),
     getRatingSummary(product.id),
   ]);
-  const gtinDigits = validatedGtin(product.gtin);
   const categoryPath = product.category === "consoles" ? "gaming" : product.category;
-  const defaultVariantColor =
-    product.variants.find((variant) => variant.isDefault)?.color ||
-    product.variants[0]?.color ||
-    "";
   const productJsonLd = {
     "@context": "https://schema.org",
-    "@type": "Product",
+    "@type": product.variants.length > 0 ? "ProductGroup" : "Product",
     name: product.title,
     description: product.description || product.subtitle,
+    url: `${siteInfo.url}/${locale}/store/${product.slug}`,
     image: product.images.map((image) => image.startsWith("http") ? image : `${siteInfo.url}${image}`),
-    sku: product.sku,
-    mpn: product.mpn,
-    ...(gtinDigits?.length === 8 ? { gtin8: gtinDigits } : {}),
-    ...(gtinDigits?.length === 12 ? { gtin12: gtinDigits } : {}),
-    ...(gtinDigits?.length === 13 ? { gtin13: gtinDigits } : {}),
-    ...(gtinDigits?.length === 14 ? { gtin14: gtinDigits } : {}),
+    sku: product.variants.length > 0 ? undefined : product.sku,
+    mpn: product.variants.length > 0 ? undefined : product.mpn,
+    ...(product.variants.length > 0 ? {} : gtinProperties(product.gtin)),
+    ...(product.variants.length > 0 ? { productGroupID: product.id } : {}),
     category: productCategoryLabel(locale, product.category),
     ...(product.model ? { model: product.model } : {}),
-    ...(defaultVariantColor ? { color: defaultVariantColor } : {}),
     ...(product.specs.length > 0
       ? {
           additionalProperty: product.specs.map((spec) => ({
@@ -183,6 +185,14 @@ export default async function ProductDetailPage({
     manufacturer: product.gpsr?.manufacturer
       ? { "@type": "Organization", name: product.gpsr.manufacturer.name }
       : undefined,
+    hasCertification: product.eprelId
+      ? {
+          "@type": "Certification",
+          issuedBy: { "@type": "Organization", name: "European_Commission" },
+          name: "EPREL",
+          certificationIdentification: product.eprelId,
+        }
+      : undefined,
     hasEnergyConsumptionDetails:
       product.energyLabel?.efficiencyClass && /^[A-G]$/.test(product.energyLabel.efficiencyClass)
         ? {
@@ -190,19 +200,62 @@ export default async function ProductDetailPage({
             hasEnergyEfficiencyCategory: `https://schema.org/EUEnergyEfficiencyCategory${product.energyLabel.efficiencyClass}`,
           }
         : undefined,
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "EUR",
-      price: product.price,
-      validFrom: offerValidFrom(product.createdAt),
-      priceValidUntil: offerPriceValidUntil(),
-      availability: product.stock && product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      url: `${siteInfo.url}/${locale}/store/${product.slug}`,
-      itemCondition: schemaItemCondition(product.condition),
-      seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
-      hasMerchantReturnPolicy: merchantReturnPolicy(),
-      shippingDetails: offerShippingDetails(),
-    },
+    ...(product.variants.length > 0
+      ? {
+          variesBy: product.variants.some((variant) => Boolean(variant.color))
+            ? ["https://schema.org/color"]
+            : undefined,
+          hasVariant: product.variants.map((variant, index) => {
+            const variantToken = variant.sku || `${variant.color} ${variant.storage}`.trim();
+            const price = variant.price ?? product.price;
+            const stock = variant.stock ?? product.stock;
+            const image = variant.images?.[0] ||
+              (variant.imageIndex !== undefined ? product.images[variant.imageIndex] : undefined) ||
+              product.image;
+            return {
+              "@type": "Product",
+              "@id": `${siteInfo.url}/${locale}/store/${product.slug}#variant-${index + 1}`,
+              name: [product.title, variant.color, variant.storage].filter(Boolean).join(" "),
+              description: [product.description || product.subtitle, variant.color, variant.storage].filter(Boolean).join(" · "),
+              sku: variant.sku,
+              mpn: variant.mpn,
+              ...gtinProperties(variant.gtin),
+              color: variant.color,
+              additionalProperty: variant.storage
+                ? [{ "@type": "PropertyValue", name: "storage", value: variant.storage }]
+                : undefined,
+              image: image.startsWith("http") ? image : `${siteInfo.url}${image}`,
+              offers: {
+                "@type": "Offer",
+                priceCurrency: "EUR",
+                price,
+                validFrom: offerValidFrom(product.createdAt),
+                priceValidUntil: offerPriceValidUntil(),
+                availability: stock && stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                url: `${siteInfo.url}/${locale}/store/${product.slug}?variant=${encodeURIComponent(variantToken)}`,
+                itemCondition: schemaItemCondition(product.condition),
+                seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
+                hasMerchantReturnPolicy: merchantReturnPolicy(),
+                shippingDetails: offerShippingDetails(),
+              },
+            };
+          }),
+        }
+      : {
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "EUR",
+            price: product.price,
+            validFrom: offerValidFrom(product.createdAt),
+            priceValidUntil: offerPriceValidUntil(),
+            availability: product.stock && product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            url: `${siteInfo.url}/${locale}/store/${product.slug}`,
+            itemCondition: schemaItemCondition(product.condition),
+            seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
+            hasMerchantReturnPolicy: merchantReturnPolicy(),
+            shippingDetails: offerShippingDetails(),
+          },
+        }),
   };
   const faqJsonLd =
     product.faq.length > 0
@@ -265,7 +318,12 @@ export default async function ProductDetailPage({
             <span className="text-foreground">{product.title}</span>
           </div>
 
-          <ProductDetailExperience locale={locale} product={product} ratingSummary={ratingSummary} />
+          <ProductDetailExperience
+            locale={locale}
+            product={product}
+            ratingSummary={ratingSummary}
+            initialVariantToken={typeof invitation.variant === "string" ? invitation.variant : undefined}
+          />
 
       <section className="container-page pb-4">
         <ProductReviews

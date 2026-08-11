@@ -23,6 +23,7 @@ type Props = {
   locale: Locale;
   product: Product;
   ratingSummary?: ProductRatingSummary | null;
+  initialVariantToken?: string;
 };
 
 const formatMoney = formatPrice;
@@ -41,8 +42,13 @@ const getDiscount = (price: number, compareAtPrice?: number) => {
 const getDefaultVariant = (variants: ProductVariant[]) =>
   variants.find((variant) => variant.isDefault) ?? variants[0] ?? null;
 
-export default function ProductDetailExperience({ locale, product, ratingSummary }: Props) {
-  const defaultVariant = getDefaultVariant(product.variants);
+export default function ProductDetailExperience({ locale, product, ratingSummary, initialVariantToken }: Props) {
+  const requestedVariant = initialVariantToken
+    ? product.variants.find((variant) =>
+        variant.sku === initialVariantToken || `${variant.color} ${variant.storage}`.trim() === initialVariantToken,
+      )
+    : undefined;
+  const defaultVariant = requestedVariant ?? getDefaultVariant(product.variants);
   const [selectedColor, setSelectedColor] = useState(defaultVariant?.color ?? "");
   const [selectedStorage, setSelectedStorage] = useState(defaultVariant?.storage ?? "");
   const [added, setAdded] = useState(false);
@@ -269,13 +275,13 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           </div>
         ) : null}
 
-        {product.gpsr ? (
+        {product.gpsr || product.charging || product.batteryDetails ? (
           <details className="glass-panel rounded-[32px] p-8">
             <summary className="cursor-pointer text-xl font-semibold text-foreground">
               {locale === "de" ? "Produkt- und Sicherheitsinformationen" : "Product and safety information"}
             </summary>
             <div className="mt-5 grid gap-5 text-sm text-muted md:grid-cols-2">
-              {product.gpsr.manufacturer ? (
+              {product.gpsr?.manufacturer ? (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Hersteller" : "Manufacturer"}</p>
                   <p className="mt-2 text-foreground">{product.gpsr.manufacturer.name}</p>
@@ -283,7 +289,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                   {product.gpsr.manufacturer.email ? <p className="mt-1">{product.gpsr.manufacturer.email}</p> : null}
                 </div>
               ) : null}
-              {product.gpsr.euResponsible ? (
+              {product.gpsr?.euResponsible ? (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Verantwortliche Person in der EU" : "Responsible person in the EU"}</p>
                   <p className="mt-2 text-foreground">{product.gpsr.euResponsible.name}</p>
@@ -291,21 +297,41 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                   {product.gpsr.euResponsible.email ? <p className="mt-1">{product.gpsr.euResponsible.email}</p> : null}
                 </div>
               ) : null}
-              {product.gpsr.safetyWarnings.length > 0 ? (
+              {product.charging || product.batteryDetails ? (
+                <div className="md:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Laden und Batterie" : "Charging and battery"}</p>
+                  <dl className="mt-2 grid gap-x-6 gap-y-2 md:grid-cols-2">
+                    {([
+                      [locale === "de" ? "Ladegerät enthalten" : "Charger included", product.charging?.chargerIncluded == null ? undefined : product.charging.chargerIncluded ? (locale === "de" ? "Ja" : "Yes") : (locale === "de" ? "Nein" : "No")],
+                      [locale === "de" ? "Erforderliche Ladeleistung" : "Required charging power", product.charging?.minimumPowerW != null || product.charging?.maximumPowerW != null ? `${product.charging?.minimumPowerW ?? "–"}–${product.charging?.maximumPowerW ?? "–"} W` : undefined],
+                      ["USB Power Delivery", product.charging?.usbPdSupported == null ? undefined : product.charging.usbPdSupported ? (locale === "de" ? "Unterstützt" : "Supported") : (locale === "de" ? "Nicht unterstützt" : "Not supported")],
+                      [locale === "de" ? "Batterie enthalten/eingebaut" : "Battery included/installed", product.batteryDetails?.included == null ? undefined : product.batteryDetails.included ? (locale === "de" ? "Ja" : "Yes") : (locale === "de" ? "Nein" : "No")],
+                      [locale === "de" ? "Zellchemie" : "Cell composition", product.batteryDetails?.cellComposition?.replaceAll("_", " ")],
+                      [locale === "de" ? "Batteriekapazität" : "Battery capacity", product.batteryDetails?.wattHours ? `${product.batteryDetails.wattHours} Wh` : undefined],
+                      ["UN", product.batteryDetails?.unNumber],
+                    ] as Array<[string, string | undefined]>).filter(([, value]) => value).map(([label, value]) => (
+                      <div key={label} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-border/40 py-2">
+                        <dt>{label}</dt><dd className="text-foreground">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ) : null}
+              {(product.gpsr?.safetyWarnings.length ?? 0) > 0 ? (
                 <div className="md:col-span-2">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Sicherheitshinweise" : "Safety warnings"}</p>
                   <ul className="mt-2 list-disc space-y-1 pl-5">
-                    {product.gpsr.safetyWarnings.map((warning) => (
+                    {product.gpsr?.safetyWarnings.map((warning) => (
                       <li key={warning}>{warning}</li>
                     ))}
                   </ul>
                 </div>
               ) : null}
-              {product.gpsr.safetyDocuments.length > 0 ? (
+              {(product.gpsr?.safetyDocuments.length ?? 0) > 0 ? (
                 <div className="md:col-span-2">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Sicherheitsdokumente" : "Safety documents"}</p>
                   <ul className="mt-2 space-y-1">
-                    {product.gpsr.safetyDocuments.map((doc) => (
+                    {product.gpsr?.safetyDocuments.map((doc) => (
                       <li key={doc}>
                         <a href={doc} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2 break-all">{doc}</a>
                       </li>
