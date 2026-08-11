@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getOrderAmountCents, markOrderCancelled, markOrderPaid, recordWebhookEvent, verifyStripeSignature } from "@/lib/checkout";
+import {
+  attachProviderReference,
+  getOrderAmountCents,
+  markOrderCancelled,
+  markOrderPaid,
+  recordWebhookEvent,
+  verifyStripeSignature,
+} from "@/lib/checkout";
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
 
 type StripeEvent = {
@@ -130,14 +137,28 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // A failed intent must release the stock it reserved, otherwise an abandoned
-  // attempt keeps the item unsellable.
-  if (event.type === "payment_intent.payment_failed" || event.type === "payment_intent.canceled") {
+  // A failed confirmation is retryable on the same PaymentIntent, so keep the
+  // order and its stock reservation intact. Releasing here could oversell the
+  // product if the customer's next confirmation succeeds.
+  if (
+    orderId &&
+    (event.type === "payment_intent.payment_failed" || event.type === "payment_intent.processing")
+  ) {
+    await attachProviderReference({
+      orderId,
+      provider: "stripe",
+      providerOrderId: session.id,
+      providerStatus: event.type === "payment_intent.processing" ? "processing" : "payment_failed",
+    });
+  }
+
+  // Cancellation is terminal, so it is safe to release the reservation.
+  if (event.type === "payment_intent.canceled") {
     await markOrderCancelled({
       orderId,
       provider: "stripe",
       providerOrderId: session.id,
-      providerStatus: event.type === "payment_intent.canceled" ? "canceled" : "payment_failed",
+      providerStatus: "canceled",
     });
   }
 

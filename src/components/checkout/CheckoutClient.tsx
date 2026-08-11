@@ -16,6 +16,7 @@ import PaymentBrandIcons from "@/components/PaymentBrandIcons";
 import StripePaymentElement from "@/components/checkout/StripePaymentElement";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import { siteInfo } from "@/lib/site";
+import { buildStripePaymentReturnUrl } from "@/lib/stripe";
 
 type Props = {
   locale: "de" | "en";
@@ -112,6 +113,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
   const [termsConsent, setTermsConsent] = useState(false);
   const [idempotencyKey] = useState(createIdempotencyKey);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [embeddedOrderId, setEmbeddedOrderId] = useState<string | null>(null);
   const clock = useSyncExternalStore(subscribeClock, clockSnapshot, serverClockSnapshot);
   const embeddedPayments = Boolean(stripePublishableKey);
 
@@ -121,6 +123,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
     // An intent is created for one specific amount, so drop it whenever the
     // cart is re-priced; otherwise the customer could pay a stale total.
     setClientSecret(null);
+    setEmbeddedOrderId(null);
     if (nextItems.length === 0) {
       setCart(null);
       setLoading(false);
@@ -220,12 +223,14 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
         success: boolean;
         error?: string;
         clientSecret?: string;
+        orderId?: string;
       };
       setSubmitting(null);
-      if (!intentResponse.ok || !intentData.success || !intentData.clientSecret) {
+      if (!intentResponse.ok || !intentData.success || !intentData.clientSecret || !intentData.orderId) {
         setError(intentData.error || (locale === "de" ? "Zahlung konnte nicht gestartet werden." : "Payment could not be started."));
         return;
       }
+      setEmbeddedOrderId(intentData.orderId);
       setClientSecret(intentData.clientSecret);
       return;
     }
@@ -496,12 +501,12 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 </span>
               </label>
 
-              {embeddedPayments && clientSecret && stripePublishableKey ? (
+              {embeddedPayments && clientSecret && embeddedOrderId && stripePublishableKey ? (
                 <StripePaymentElement
                   locale={locale}
                   clientSecret={clientSecret}
                   publishableKey={stripePublishableKey}
-                  returnUrl={`${typeof window === "undefined" ? "" : window.location.origin}/${locale}/checkout/success?provider=stripe`}
+                  returnUrl={buildStripePaymentReturnUrl(window.location.origin, locale, embeddedOrderId)}
                   disabled={!canSubmit}
                   onError={setError}
                 />
