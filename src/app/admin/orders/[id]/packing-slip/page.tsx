@@ -61,7 +61,9 @@ export default async function PackingSlipPage({ params }: { params: Promise<{ id
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest">{t.sender}</p>
             <p className="mt-2 text-sm leading-relaxed">
-              {siteInfo.legalName}
+              {siteInfo.name}
+              <br />
+              {siteInfo.owner.roleDe}: {siteInfo.legalName}
               <br />
               {siteInfo.address.street}
               <br />

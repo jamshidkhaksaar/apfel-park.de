@@ -87,10 +87,17 @@ export default async function ImpressumPage({
 
           {/* Provider */}
           <Section title={isGerman ? "Angaben zum Unternehmen" : "Business Information"}>
-            <Row label={isGerman ? "Unternehmensname" : "Company name"} value={siteInfo.legalName} />
+            <Row
+              label={isGerman ? "Geschäftsbezeichnung" : "Trading name"}
+              value={siteInfo.name}
+            />
+            <Row
+              label={isGerman ? "Rechtsform" : "Legal form"}
+              value={isGerman ? siteInfo.legalFormDe : siteInfo.legalFormEn}
+            />
             <Row
               label={isGerman ? "Inhaber" : "Owner"}
-              value={siteInfo.owner.name}
+              value={siteInfo.legalName}
             />
             <Row
               label={isGerman ? "Anschrift" : "Address"}

@@ -7,7 +7,13 @@ export const defaultSocialLinks = {
 
 export const siteInfo = {
   name: "Apfel Park",
-  legalName: "Apfel Park",
+  // Apfel Park is the public trading name. The Gewerbeanmeldung identifies the
+  // Einzelunternehmen by the proprietor's personal legal name, so structured
+  // data and verification-facing fields must not present the brand as a
+  // separate legal entity.
+  legalName: "Bismaillah Safi",
+  legalFormDe: "Einzelunternehmen",
+  legalFormEn: "Sole proprietorship",
   vatId: "DE345074336",
   tagline: "Smart Phone. Smart Service. Smart Price.",
   url: "https://apfel-park.de",
