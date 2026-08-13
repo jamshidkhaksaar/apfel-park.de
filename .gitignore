@@ -55,6 +55,7 @@ temp/
 lighthouse*.json
 lighthouse*.html
 *.lcov
+.seo-cache/
 
 # local test/runtime artifacts
 .cookies/

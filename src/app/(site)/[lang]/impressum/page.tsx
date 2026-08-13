@@ -19,11 +19,20 @@ export const generateMetadata = async ({
     lang,
     lang === "de" ? "Impressum" : "Legal Notice",
     lang === "de"
-      ? "Pflichtangaben gemäß § 5 DDG – Apfel Park, Hamburg."
-      : "Legal notice pursuant to § 5 DDG – Apfel Park, Hamburg.",
+      ? "Anbieterkennzeichnung gemäß § 5 DDG: Bismaillah Safi, handelnd unter Apfel Park, Hamburg."
+      : "Legal notice pursuant to § 5 DDG: Bismaillah Safi, trading as Apfel Park, Hamburg.",
     "/impressum",
   );
 };
+
+function formatLegalDate(value: string, lang: "de" | "en") {
+  return new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
 
 function Section({
   title,
@@ -85,6 +94,19 @@ export default async function ImpressumPage({
       <section className="section-pad">
         <div className="container-page max-w-4xl space-y-6">
 
+          <div className="rounded-2xl border border-gold/25 bg-gold/5 p-6">
+            <p className="font-semibold text-foreground">
+              {isGerman
+                ? "Apfel Park ist die Geschäftsbezeichnung des Einzelunternehmens von Bismaillah Safi."
+                : "Apfel Park is the trading name of the sole proprietorship owned by Bismaillah Safi."}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              {isGerman
+                ? "Der Online-Shop und das Ladengeschäft in Hamburg werden von demselben Anbieter betrieben."
+                : "The online store and the retail shop in Hamburg are operated by the same provider."}
+            </p>
+          </div>
+
           {/* Provider */}
           <Section title={isGerman ? "Angaben zum Unternehmen" : "Business Information"}>
             <Row
@@ -96,19 +118,19 @@ export default async function ImpressumPage({
               value={isGerman ? siteInfo.legalFormDe : siteInfo.legalFormEn}
             />
             <Row
-              label={isGerman ? "Inhaber" : "Owner"}
+              label={isGerman ? "Diensteanbieter / Inhaber" : "Service provider / Owner"}
               value={siteInfo.legalName}
             />
             <Row
               label={isGerman ? "Anschrift" : "Address"}
               value={
-                <>
+                <address className="not-italic">
                   {siteInfo.address.street}
                   <br />
                   {siteInfo.address.postalCode} {siteInfo.address.city}
                   <br />
                   {isGerman ? "Deutschland" : "Germany"}
-                </>
+                </address>
               }
             />
           </Section>
@@ -116,10 +138,18 @@ export default async function ImpressumPage({
           {/* Contact */}
           <Section title={isGerman ? "Kontakt" : "Contact"}>
             <Row
-              label={isGerman ? "Telefon / WhatsApp" : "Phone / WhatsApp"}
+              label={isGerman ? "Kundenservice / WhatsApp" : "Customer service / WhatsApp"}
               value={
                 <a href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="transition hover:text-gold">
                   {siteInfo.phone}
+                </a>
+              }
+            />
+            <Row
+              label={isGerman ? "Geschäftlicher Kontakt des Inhabers" : "Owner's business contact"}
+              value={
+                <a href={`tel:${siteInfo.owner.phoneE164}`} className="transition hover:text-gold">
+                  {siteInfo.owner.phone}
                 </a>
               }
             />
@@ -147,6 +177,46 @@ export default async function ImpressumPage({
             />
           </Section>
 
+          {/* Business registration */}
+          <Section title={isGerman ? "Gewerbeanmeldung" : "Business Registration"}>
+            <Row
+              label={isGerman ? "Art der Anzeige" : "Registration basis"}
+              value={
+                isGerman
+                  ? siteInfo.businessRegistration.legalBasisDe
+                  : siteInfo.businessRegistration.legalBasisEn
+              }
+            />
+            <Row
+              label={isGerman ? "Anmeldestelle" : "Registration authority"}
+              value={siteInfo.businessRegistration.authority}
+            />
+            <Row
+              label={isGerman ? "Betriebsbeginn" : "Business commenced"}
+              value={
+                <time dateTime={siteInfo.businessRegistration.businessStartDate}>
+                  {formatLegalDate(siteInfo.businessRegistration.businessStartDate, lang)}
+                </time>
+              }
+            />
+            <Row
+              label={isGerman ? "Bescheinigt am" : "Certificate issued"}
+              value={
+                <time dateTime={siteInfo.businessRegistration.certificateDate}>
+                  {formatLegalDate(siteInfo.businessRegistration.certificateDate, lang)}
+                </time>
+              }
+            />
+            <Row
+              label={isGerman ? "Handelsregister" : "Commercial register"}
+              value={
+                isGerman
+                  ? siteInfo.businessRegistration.commercialRegisterDe
+                  : siteInfo.businessRegistration.commercialRegisterEn
+              }
+            />
+          </Section>
+
           {/* Tax / VAT */}
           <Section title={isGerman ? "Steuerliche Angaben" : "Tax Information"}>
             <Row
@@ -168,44 +238,42 @@ export default async function ImpressumPage({
           <Section
             title={
               isGerman
-                ? "Verantwortlich für den Inhalt (§ 18 Abs. 2 MStV)"
-                : "Responsible for Content (§ 18 para. 2 MStV)"
+                ? "Verantwortlich für journalistisch-redaktionelle Inhalte (§ 18 Abs. 2 MStV)"
+                : "Responsible for Journalistic-Editorial Content (§ 18 para. 2 MStV)"
             }
           >
-            <p>
-              Apfel Park
-              <br />
-              {siteInfo.owner.name}
+            <address className="not-italic">
+              {siteInfo.legalName}
               <br />
               {siteInfo.address.street}, {siteInfo.address.postalCode} {siteInfo.address.city}
-            </p>
+            </address>
           </Section>
 
           {/* Dispute resolution */}
           <Section
             title={
-              isGerman ? "Streitschlichtung" : "Dispute Resolution"
+              isGerman
+                ? "Verbraucherstreitbeilegung (§ 36 VSBG)"
+                : "Consumer Dispute Resolution (§ 36 VSBG)"
             }
           >
             <p>
               {isGerman
-                ? "Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:"
-                : "The European Commission provides a platform for online dispute resolution (ODR):"}
-            </p>
-            <a
-              href="https://ec.europa.eu/consumers/odr"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-block text-gold transition hover:text-gold-soft"
-            >
-              https://ec.europa.eu/consumers/odr
-            </a>
-            <p className="mt-3">
-              {isGerman
-                ? "Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen."
-                : "We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board."}
+                ? "Wir sind weder verpflichtet noch bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen."
+                : "We are neither obliged nor willing to participate in dispute resolution proceedings before a consumer arbitration board."}
             </p>
           </Section>
+
+          {!isGerman && (
+            <p className="text-xs leading-relaxed text-muted/70">
+              The German version of this legal notice is authoritative. This English translation is provided for convenience.
+            </p>
+          )}
+
+          <p className="text-xs text-muted/60">
+            {isGerman ? "Stand der Anbieterangaben:" : "Provider information last reviewed:"}{" "}
+            <time dateTime="2026-08-13">{formatLegalDate("2026-08-13", lang)}</time>
+          </p>
 
           {/* Links to legal pages */}
           <div className="flex flex-wrap gap-3 pt-2">
