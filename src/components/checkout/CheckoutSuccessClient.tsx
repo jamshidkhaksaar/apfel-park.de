@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { clearStoredCart } from "@/components/checkout/cart";
 import GoogleCustomerReviews from "@/components/checkout/GoogleCustomerReviews";
 import TrustpilotInvitation from "@/components/checkout/TrustpilotInvitation";
+import { analyticsItem, withGa4Items } from "@/lib/analytics";
+import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
 
 type Props = {
   locale: "de" | "en";
@@ -15,7 +17,17 @@ type Props = {
   initiallyPaid: boolean;
   totalAmount?: number | null;
   currency?: string | null;
-  items?: Array<{ title: string; quantity: number; lineAmount: number | null; sku?: string | null }>;
+  items?: Array<{
+    productId?: string | null;
+    title: string;
+    quantity: number;
+    lineAmount: number | null;
+    unitAmount?: number | null;
+    category?: string | null;
+    variantColor?: string | null;
+    variantStorage?: string | null;
+    sku?: string | null;
+  }>;
   shippingMethod?: string | null;
   customerEmail?: string | null;
   customerName?: string | null;
@@ -25,6 +37,8 @@ type Props = {
   estimatedDeliveryDate?: string;
   productGtins?: string[];
 };
+
+const EMPTY_ITEMS: NonNullable<Props["items"]> = [];
 
 const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
   new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-US", {
@@ -41,7 +55,7 @@ export default function CheckoutSuccessClient({
   initiallyPaid,
   totalAmount,
   currency,
-  items = [],
+  items = EMPTY_ITEMS,
   shippingMethod,
   customerEmail,
   customerName,
@@ -52,6 +66,7 @@ export default function CheckoutSuccessClient({
   productGtins,
 }: Props) {
   const [paid, setPaid] = useState(initiallyPaid);
+  const purchaseSentRef = useRef(false);
   const [message, setMessage] = useState(() =>
     provider === "paypal" && orderId && paypalToken && !initiallyPaid
       ? locale === "de" ? "PayPal-Zahlung wird bestätigt..." : "Confirming PayPal payment..."
@@ -59,17 +74,61 @@ export default function CheckoutSuccessClient({
   );
 
   useEffect(() => {
-    if (paid) {
-      clearStoredCart();
-      if (orderId && totalAmount) {
-        window.apfelTrack?.("purchase", {
-          transaction_id: orderId,
-          value: totalAmount,
-          currency: currency || "EUR",
-        }, `purchase-${orderId}`);
+    if (!paid) return;
+
+    clearStoredCart();
+    if (!orderId || typeof totalAmount !== "number" || purchaseSentRef.current) return;
+
+    let cancelled = false;
+    let retryTimer: number | undefined;
+    let attempts = 0;
+
+    const sendPurchase = () => {
+      if (cancelled || purchaseSentRef.current || readConsentMode() !== "external") return;
+
+      // The success component and the consent script mount independently. Give
+      // the local tracking bridge a short window to become available.
+      if (!window.apfelTrack) {
+        if (attempts < 20) {
+          attempts += 1;
+          retryTimer = window.setTimeout(sendPurchase, 100);
+        }
+        return;
       }
-    }
-  }, [currency, orderId, paid, totalAmount]);
+
+      purchaseSentRef.current = true;
+      window.apfelTrack("purchase", withGa4Items({
+        transaction_id: orderId,
+        value: totalAmount,
+        currency: currency || "EUR",
+      }, items.map((item) => analyticsItem({
+        item_id: item.productId || item.sku || item.title,
+        item_name: item.title,
+        item_category: item.category || undefined,
+        item_variant: [item.variantColor, item.variantStorage].filter(Boolean).join(" ") || undefined,
+        price: typeof item.unitAmount === "number"
+          ? item.unitAmount
+          : typeof item.lineAmount === "number" && item.quantity > 0
+            ? item.lineAmount / item.quantity
+            : undefined,
+        quantity: item.quantity,
+      }))), `purchase-${orderId}`);
+    };
+
+    const handleConsent = (event: Event) => {
+      const next = (event as CustomEvent<ConsentMode>).detail ?? readConsentMode();
+      if (next === "external") sendPurchase();
+    };
+
+    sendPurchase();
+    window.addEventListener(CONSENT_EVENT_NAME, handleConsent as EventListener);
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
+      window.removeEventListener(CONSENT_EVENT_NAME, handleConsent as EventListener);
+    };
+  }, [currency, items, orderId, paid, totalAmount]);
 
   useEffect(() => {
     if (provider !== "paypal" || !orderId || !paypalToken || paid) return;

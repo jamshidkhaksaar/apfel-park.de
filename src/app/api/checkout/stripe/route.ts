@@ -12,6 +12,8 @@ import {
 } from "@/lib/checkout";
 import { isValidEmail, sanitizeInput } from "@/lib/security";
 
+const stripeRequestId = (response: Response) => response.headers.get("request-id") || undefined;
+
 const STRIPE_API_URL = "https://api.stripe.com/v1/checkout/sessions";
 
 type StripeCheckoutPayload = {
@@ -146,6 +148,12 @@ export async function POST(request: NextRequest) {
 
     const data = (await response.json()) as { id?: string; url?: string; error?: { message?: string } };
     if (!response.ok || !data.id || !data.url) {
+      console.error("Stripe Checkout Session failed", {
+        orderId: order.id,
+        status: response.status,
+        requestId: stripeRequestId(response),
+        error: data.error?.message || "missing session id or URL",
+      });
       return NextResponse.json(
         { success: false, error: data.error?.message || "Stripe checkout could not be created" },
         { status: 502 },

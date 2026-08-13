@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
+import { pushGtagCommand } from "@/lib/analytics";
 
 type MarketingConsentScriptsProps = {
   metaPixelEnabled: boolean;
@@ -57,10 +58,32 @@ type TikTokQueue = Array<unknown[]> & {
 const setupGoogleAnalytics = (gaId: string) => {
   if (!gaId || window.gtag) return;
   window.dataLayer = window.dataLayer || [];
-  window.gtag = (...args: unknown[]) => { window.dataLayer!.push(args); };
+  window.gtag = (...args: unknown[]) => {
+    pushGtagCommand(window.dataLayer!, String(args[0] ?? ""), ...args.slice(1));
+  };
+  window.gtag("consent", "default", {
+    analytics_storage: "granted",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+  });
   window.gtag("js", new Date());
   window.gtag("config", gaId, { send_page_view: false });
   loadScript("ga-script", `https://www.googletagmanager.com/gtag/js?id=${gaId}`);
+};
+
+const updateGoogleAnalyticsConsent = (gaId: string, granted: boolean) => {
+  if (!gaId) return;
+
+  const googleWindow = window as unknown as Record<string, unknown>;
+  googleWindow[`ga-disable-${gaId}`] = !granted;
+
+  window.gtag?.("consent", "update", {
+    analytics_storage: granted ? "granted" : "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+  });
 };
 
 const loadScript = (id: string, src: string) => {
@@ -251,7 +274,12 @@ export default function MarketingConsentScripts({
 
     const applyConsent = (mode: ConsentMode) => {
       if (mode !== "external" || isExcludedPath(pathname)) {
+        if (googleAnalyticsEnabled && googleAnalyticsId) {
+          updateGoogleAnalyticsConsent(googleAnalyticsId, false);
+        }
         updateMarketingConsent(false);
+        initializedRef.current = false;
+        lastPageViewRef.current = "";
         return;
       }
 
@@ -266,6 +294,7 @@ export default function MarketingConsentScripts({
       updateMarketingConsent(true);
 
       if (googleAnalyticsEnabled && googleAnalyticsId) {
+        updateGoogleAnalyticsConsent(googleAnalyticsId, true);
         setupGoogleAnalytics(googleAnalyticsId);
       }
 

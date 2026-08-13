@@ -11,6 +11,8 @@ import {
 } from "@/lib/checkout";
 import { isValidEmail, sanitizeInput } from "@/lib/security";
 
+const stripeRequestId = (response: Response) => response.headers.get("request-id") || undefined;
+
 export const dynamic = "force-dynamic";
 
 const STRIPE_INTENT_URL = "https://api.stripe.com/v1/payment_intents";
@@ -136,7 +138,12 @@ export async function POST(request: NextRequest) {
     };
 
     if (!response.ok || !intent.client_secret || !intent.id) {
-      console.error("Stripe PaymentIntent failed:", intent.error?.message);
+      console.error("Stripe PaymentIntent failed", {
+        orderId: order.id,
+        status: response.status,
+        requestId: stripeRequestId(response),
+        error: intent.error?.message || "missing intent id or client secret",
+      });
       return NextResponse.json(
         { success: false, error: locale === "de" ? "Zahlung konnte nicht gestartet werden." : "Payment could not be started." },
         { status: 502 },
@@ -156,7 +163,9 @@ export async function POST(request: NextRequest) {
       orderId: order.id,
     });
   } catch (error) {
-    console.error("Create payment intent failed:", error);
+    console.error("Create payment intent failed", {
+      error: error instanceof Error ? error.message : "Payment intent failed",
+    });
     const message = error instanceof Error ? error.message : "Payment intent failed";
     return NextResponse.json({ success: false, error: message }, { status: 400 });
   }

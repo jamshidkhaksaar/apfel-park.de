@@ -70,7 +70,7 @@ const nextConfig: NextConfig = {
       { source: '/service/smartphone-reparatur/:path*', destination: '/de/repairs', permanent: true },
       { source: '/handy-reparatur-hamburg', destination: '/de/repairs', permanent: true },
       { source: '/smartphone-reparatur-hamburg', destination: '/de/repairs', permanent: true },
-      { source: '/iphone-reparatur-hamburg', destination: '/de/repairs', permanent: true },
+      { source: '/iphone-reparatur-hamburg', destination: '/de/repairs/apple', permanent: true },
       { source: '/category/:path*', destination: '/de/store', permanent: true },
       { source: '/team-member/:path*', destination: '/de/about', permanent: true },
       { source: '/home-onepage', destination: '/de', permanent: true },

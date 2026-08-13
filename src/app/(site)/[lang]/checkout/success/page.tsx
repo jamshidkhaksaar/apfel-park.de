@@ -27,11 +27,26 @@ export default async function CheckoutSuccessPage({
   // orders.items is the JSON snapshot taken when the order was created, so the
   // recap shows what was actually bought even if a price changes later.
   const orderItems = Array.isArray(order?.items)
-    ? (order.items as Array<{ title?: unknown; quantity?: unknown; lineAmount?: unknown; sku?: unknown }>)
+    ? (order.items as Array<{
+        productId?: unknown;
+        title?: unknown;
+        quantity?: unknown;
+        lineAmount?: unknown;
+        unitAmount?: unknown;
+        category?: unknown;
+        variantColor?: unknown;
+        variantStorage?: unknown;
+        sku?: unknown;
+      }>)
         .map((item) => ({
+          productId: typeof item?.productId === "string" ? item.productId : null,
           title: typeof item?.title === "string" ? item.title : "",
           quantity: typeof item?.quantity === "number" ? item.quantity : 1,
           lineAmount: typeof item?.lineAmount === "number" ? item.lineAmount : null,
+          unitAmount: typeof item?.unitAmount === "number" ? item.unitAmount : null,
+          category: typeof item?.category === "string" ? item.category : null,
+          variantColor: typeof item?.variantColor === "string" ? item.variantColor : null,
+          variantStorage: typeof item?.variantStorage === "string" ? item.variantStorage : null,
           sku: typeof item?.sku === "string" ? item.sku : null,
         }))
         .filter((item) => item.title)

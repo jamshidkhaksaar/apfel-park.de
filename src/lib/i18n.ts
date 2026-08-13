@@ -604,7 +604,7 @@ export const dictionary = {
             "Art. 6 Abs. 1 lit. b DSGVO: Bearbeitung von Kontaktanfragen, Reparaturaufträgen, Bestellungen und vorvertraglichen Anfragen.",
             "Art. 6 Abs. 1 lit. c DSGVO: Erfüllung gesetzlicher Pflichten, insbesondere steuer- und handelsrechtlicher Aufbewahrungspflichten.",
             "Art. 6 Abs. 1 lit. f DSGVO: IT-Sicherheit, Missbrauchsvermeidung, Systemüberwachung und stabile Bereitstellung der Website.",
-            "Art. 6 Abs. 1 lit. a DSGVO in Verbindung mit § 25 TDDDG: Laden externer Dienste und Marketing-Technologien wie Google Maps, Google reCAPTCHA, Trustpilot, Google Kundenrezensionen sowie gegebenenfalls Meta Pixel und TikTok Pixel erst nach Ihrer Einwilligung.",
+            "Art. 6 Abs. 1 lit. a DSGVO in Verbindung mit § 25 TDDDG: Laden externer Dienste und Marketing-Technologien wie Google Maps, Google reCAPTCHA, Google Analytics 4, Trustpilot, Google Kundenrezensionen sowie gegebenenfalls Meta Pixel und TikTok Pixel erst nach Ihrer Einwilligung.",
           ],
         },
         {
@@ -614,6 +614,7 @@ export const dictionary = {
             "E-Mail-Kommunikation und Reparaturstatus-E-Mails werden über unser selbst gehostetes Mail-System verarbeitet.",
             "Kartendarstellungen erfolgen nur nach Einwilligung über Google Maps. Wenn aktiviert, kann Google dabei technische Nutzungsdaten verarbeiten.",
             "Wenn Spam-Schutz per Google reCAPTCHA aktiviert ist, wird dieser externe Dienst ebenfalls nur nach Einwilligung geladen.",
+            "Wenn Sie externe Dienste erlauben, nutzen wir Google Analytics 4 von Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. Dabei werden Seitenaufrufe und Shop-Ereignisse wie Produktansicht, Warenkorb, Checkout und Kauf mit technischen Nutzungsdaten verarbeitet, um Reichweite und Verkaufstrichter auszuwerten. Wir übermitteln über diese Ereignisse keine Namen, E-Mail-Adressen oder Zahlungsdaten.",
             "Wenn Marketing-Tracking aktiviert und von Ihnen freigegeben wurde, können Meta Pixel und TikTok Pixel technische Nutzungs- und Ereignisdaten für Reichweitenmessung, Kampagnenauswertung und Werbeattribution verarbeiten.",
             "Für die Zahlungsabwicklung und Lieferung geben wir Bestell-, Kontakt- und Adressdaten nur an die jeweils ausgewählten oder erforderlichen Zahlungs- und Versanddienstleister weiter.",
             "Nach einer abgeschlossenen Bestellung übermitteln wir – nur mit Ihrer Einwilligung für externe Dienste – Ihren Namen, Ihre E-Mail-Adresse und die Bestellnummer an Trustpilot A/S, Pilestræde 58, 1112 Kopenhagen, Dänemark, damit Trustpilot Ihnen eine Einladung zur Bewertung senden kann. Ohne diese Einwilligung wird der Dienst nicht geladen und es werden keine Daten übermittelt.",
@@ -625,7 +626,7 @@ export const dictionary = {
           title: "5. Cookies, lokale Speicherung und Einwilligung",
           body: [
             "Wir verwenden notwendige Cookies bzw. lokale Speicherung für Sprachwahl, Theme-Darstellung, sichere Admin-Sitzungen und technische Bereitstellung der Website.",
-            "Externe Inhalte wie Google Maps, Google reCAPTCHA sowie gegebenenfalls Marketing-Technologien wie Meta Pixel und TikTok Pixel werden erst geladen, wenn Sie externen Diensten zustimmen.",
+            "Externe Inhalte wie Google Maps, Google reCAPTCHA sowie Marketing-Technologien wie Google Analytics 4, Meta Pixel und TikTok Pixel werden erst geladen, wenn Sie externen Diensten zustimmen.",
             "Ihre Auswahl zu externen Diensten speichern wir, damit Ihre Einwilligung oder Ablehnung nicht bei jedem Seitenaufruf erneut abgefragt werden muss.",
           ],
         },
@@ -640,7 +641,7 @@ export const dictionary = {
         {
           title: "7. Drittlandtransfers",
           body: [
-            "Beim Laden externer Dienste wie Google Maps, Google reCAPTCHA, Meta Pixel oder TikTok Pixel kann eine Übermittlung personenbezogener Daten in Drittländer, insbesondere in die USA, nicht ausgeschlossen werden.",
+            "Beim Laden externer Dienste wie Google Maps, Google reCAPTCHA, Google Analytics 4, Meta Pixel oder TikTok Pixel kann eine Übermittlung personenbezogener Daten in Drittländer, insbesondere in die USA, nicht ausgeschlossen werden.",
             "Diese Dienste werden daher standardmäßig nicht geladen, sondern erst nach Ihrer Einwilligung aktiviert.",
           ],
         },
@@ -1316,7 +1317,7 @@ export const dictionary = {
             "Article 6(1)(b) GDPR: handling contact requests, repair orders, purchases, and pre-contractual inquiries.",
             "Article 6(1)(c) GDPR: complying with legal obligations, especially accounting and retention obligations.",
             "Article 6(1)(f) GDPR: IT security, abuse prevention, system monitoring, and reliable website operation.",
-            "Article 6(1)(a) GDPR together with Section 25 TDDDG: loading external services and marketing technologies such as Google Maps, Google reCAPTCHA, and, if configured, Meta Pixel and TikTok Pixel only after consent.",
+            "Article 6(1)(a) GDPR together with Section 25 TDDDG: loading external services and marketing technologies such as Google Maps, Google reCAPTCHA, Google Analytics 4, and, if configured, Meta Pixel and TikTok Pixel only after consent.",
           ],
         },
         {
@@ -1326,6 +1327,7 @@ export const dictionary = {
             "Email communication and repair-status emails are processed through our self-hosted mail system.",
             "Maps are provided only after consent through Google Maps. When enabled, Google may process technical usage data.",
             "If spam protection through Google reCAPTCHA is enabled, this external service is also loaded only after consent.",
+            "If you allow external services, we use Google Analytics 4 from Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland. It processes page views and shop events such as product views, cart actions, checkout and purchases together with technical usage data so that we can measure reach and the sales funnel. These events do not send names, email addresses or payment data.",
             "If marketing tracking is configured and you allow external services, Meta Pixel and TikTok Pixel may process technical usage and event data for reach measurement, campaign reporting, and ad attribution.",
             "For payment and delivery, we share order, contact, and address data only with the selected or necessary payment and shipping providers.",
             "After a completed order, and only if you allowed external services, we pass your name, email address, and order reference to Trustpilot A/S, Pilestræde 58, 1112 Copenhagen, Denmark, so that Trustpilot can send you an invitation to leave a review. Without that consent the service is not loaded and no data is transferred.",
@@ -1337,7 +1339,7 @@ export const dictionary = {
           title: "5. Cookies, local storage, and consent",
           body: [
             "We use necessary cookies or local storage for language selection, theme preference, secure admin sessions, and technical delivery of the website.",
-            "External content such as Google Maps, Google reCAPTCHA, and, if configured, marketing technologies such as Meta Pixel and TikTok Pixel are loaded only after you allow external services.",
+            "External content such as Google Maps, Google reCAPTCHA, and marketing technologies such as Google Analytics 4, Meta Pixel and TikTok Pixel are loaded only after you allow external services.",
             "We store your consent choice so that your preference does not need to be requested again on every visit.",
           ],
         },
@@ -1352,7 +1354,7 @@ export const dictionary = {
         {
           title: "7. International transfers",
           body: [
-            "When external services such as Google Maps, Google reCAPTCHA, Meta Pixel, or TikTok Pixel are loaded, a transfer of personal data to third countries, especially the United States, cannot be ruled out.",
+            "When external services such as Google Maps, Google reCAPTCHA, Google Analytics 4, Meta Pixel, or TikTok Pixel are loaded, a transfer of personal data to third countries, especially the United States, cannot be ruled out.",
             "These services are therefore not loaded by default and are activated only after your consent.",
           ],
         },

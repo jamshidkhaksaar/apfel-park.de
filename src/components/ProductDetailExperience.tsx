@@ -18,6 +18,7 @@ import type { Locale } from "@/lib/i18n";
 import { groupSpecs } from "@/lib/product-spec-group";
 import type { Product, ProductVariant } from "@/lib/products";
 import { siteInfo } from "@/lib/site";
+import { analyticsItem, withGa4Items } from "@/lib/analytics";
 
 type Props = {
   locale: Locale;
@@ -124,7 +125,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
       ? crypto.randomUUID()
       : `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const trackCart = (eventName: "add_to_cart" | "begin_checkout", eventId = createMarketingEventId(eventName)) => {
-    window.apfelTrack?.(eventName, {
+    window.apfelTrack?.(eventName, withGa4Items({
       currency: "EUR",
       value: activePrice,
       item_id: product.id,
@@ -137,7 +138,16 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
       content_name: product.title,
       content_category: product.category,
       contents: [{ id: product.id, quantity: 1, item_price: activePrice }],
-    }, eventId);
+    }, [analyticsItem({
+      item_id: product.id,
+      item_name: product.title,
+      item_category: product.category,
+      item_variant: selectedVariant
+        ? [selectedVariant.color, selectedVariant.storage].filter(Boolean).join(" ")
+        : undefined,
+      price: activePrice,
+      quantity: 1,
+    })]), eventId);
   };
   const sendServerAddToCart = (eventId: string) => {
     void fetch("/api/marketing/add-to-cart", {

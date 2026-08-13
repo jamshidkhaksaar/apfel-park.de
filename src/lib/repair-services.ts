@@ -1,6 +1,7 @@
 import type { Locale } from '@/lib/i18n';
 
 export const repairServiceSlugs = [
+  'apple',
   'display-battery',
   'water-damage',
   'camera',
@@ -37,6 +38,72 @@ export type RepairService = {
 };
 
 export const repairServices: RepairService[] = [
+  {
+    slug: 'apple',
+    serviceType: 'Apple iPhone, iPad and Apple Watch repair',
+    copy: {
+      de: {
+        title: 'Apple Reparatur in Hamburg',
+        shortTitle: 'Apple',
+        description: 'iPhone, iPad oder Apple Watch defekt? Apfel Park prüft Apple Geräte in Hamburg-Wilhelmsburg und bestätigt Preis, Ersatzteil und Dauer vor der Reparatur.',
+        intro: 'Bei iPhone, iPad und Apple Watch können ähnliche Symptome unterschiedliche Ursachen haben. Ein schwacher Akku, ein beschädigtes Display, ein Ladeproblem oder eine ausgefallene Kamera wird deshalb zuerst am konkreten Gerät geprüft. In unserem Laden in Hamburg-Wilhelmsburg besprechen wir den Befund, die verfügbare Ersatzteilqualität und den Preis, bevor kostenpflichtige Arbeiten beginnen.',
+        symptomsTitle: 'Apple-Fehler, die wir prüfen',
+        symptoms: [
+          'Gesprungenes iPhone- oder iPad-Display, Touch-Aussetzer, Linien oder schwarze Bildbereiche',
+          'Kurze Akkulaufzeit, unerwartetes Abschalten oder auffällige Wärme beim Laden',
+          'Ladeanschluss erkennt Kabel nur zeitweise oder das Gerät lädt nicht zuverlässig',
+          'Kamera, Lautsprecher, Mikrofon, Tasten oder Sensoren funktionieren nicht richtig',
+          'Apple Watch mit Display-, Akku- oder Ladeproblemen',
+        ],
+        diagnosisTitle: 'Was vor der Freigabe geklärt wird',
+        diagnosis: [
+          'Exaktes Modell, sichtbarer Schaden und die betroffenen Funktionen',
+          'Abgrenzung zwischen Bauteil-, Anschluss-, Software- und Folgeschaden',
+          'Verfügbares Ersatzteil, Preis und realistische Bearbeitungsdauer',
+          'Wichtige Funktionen vor und nach der Arbeit, soweit das Gerät testbar ist',
+        ],
+        processTitle: 'So beauftragst du die Reparatur',
+        process: [
+          'Modell und Fehler online senden oder das Gerät in Wilhelmsburg vorbeibringen.',
+          'Wir prüfen den Schaden und erklären die sinnvollen Optionen.',
+          'Du bestätigst Preis und Reparatur, bevor ein Teil ersetzt wird.',
+          'Nach dem Funktionstest erhältst du das Gerät mit Reparaturbeleg zurück.',
+        ],
+        trustTitle: 'Unabhängige Werkstatt, klar bezeichnet',
+        trust: 'Apfel Park ist eine unabhängige Reparaturwerkstatt und kein Apple Store oder autorisierter Apple Service Provider. Wir verwenden Apple und die Produktnamen ausschließlich zur Beschreibung der Geräte, die wir bearbeiten. Ob eine Reparatur wirtschaftlich sinnvoll ist, entscheiden wir mit dir anhand des konkreten Befunds.',
+      },
+      en: {
+        title: 'Apple Repair in Hamburg',
+        shortTitle: 'Apple',
+        description: 'iPhone, iPad or Apple Watch broken? Apfel Park inspects Apple devices in Hamburg-Wilhelmsburg and confirms price, part and timing before repair.',
+        intro: 'Similar symptoms on an iPhone, iPad or Apple Watch can have different causes. A weak battery, damaged screen, charging fault or failed camera is therefore checked on the actual device first. At our Hamburg-Wilhelmsburg store, we explain the findings, available part quality and price before any paid work begins.',
+        symptomsTitle: 'Apple device faults we inspect',
+        symptoms: [
+          'Cracked iPhone or iPad display, unreliable touch, lines or black screen areas',
+          'Short battery life, unexpected shutdowns or unusual heat while charging',
+          'Charging port detects the cable intermittently or the device will not charge reliably',
+          'Camera, speakers, microphone, buttons or sensors do not work correctly',
+          'Apple Watch display, battery or charging problems',
+        ],
+        diagnosisTitle: 'What we confirm before approval',
+        diagnosis: [
+          'Exact model, visible damage and the functions affected',
+          'Whether the cause is a component, port, software issue or secondary damage',
+          'Available replacement part, price and realistic turnaround',
+          'Key functions before and after the work where the device can be tested',
+        ],
+        processTitle: 'How to request the repair',
+        process: [
+          'Send the model and fault online or bring the device to Wilhelmsburg.',
+          'We inspect the damage and explain the sensible options.',
+          'You approve the price and repair before a part is replaced.',
+          'After functional testing, you receive the device with a repair receipt.',
+        ],
+        trustTitle: 'Clearly identified as an independent workshop',
+        trust: 'Apfel Park is an independent repair workshop, not an Apple Store or Apple Authorised Service Provider. Apple and its product names are used only to identify the devices we work on. We discuss whether repair makes economic sense based on the actual findings.',
+      },
+    },
+  },
   {
     slug: 'display-battery',
     serviceType: 'Smartphone display and battery repair',

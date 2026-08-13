@@ -12,6 +12,16 @@ type ProviderStatus = {
   notes: string[];
 };
 
+type PaymentDiagnostics = {
+  paid: number;
+  unpaid: number;
+  expired: number;
+  paymentFailed: number;
+  processing: number;
+  lastSuccessfulPayment: string | null;
+  lastStripeWebhook: string | null;
+};
+
 const mask = (value?: string) => {
   if (!value) return "missing";
   if (value.length <= 8) return "configured";
@@ -32,11 +42,49 @@ async function getLastWebhookStatus() {
   }
 }
 
+async function getPaymentDiagnostics(): Promise<PaymentDiagnostics> {
+  try {
+    const result = await query(
+      `SELECT
+         count(*) FILTER (WHERE provider = 'stripe' AND payment_status = 'paid')::int AS paid,
+         count(*) FILTER (WHERE provider = 'stripe' AND payment_status = 'unpaid')::int AS unpaid,
+         count(*) FILTER (WHERE provider = 'stripe' AND provider_status = 'expired')::int AS expired,
+         count(*) FILTER (WHERE provider = 'stripe' AND provider_status = 'payment_failed')::int AS payment_failed,
+         count(*) FILTER (WHERE provider = 'stripe' AND provider_status = 'processing')::int AS processing,
+         max(paid_at) FILTER (WHERE provider = 'stripe' AND payment_status = 'paid') AS last_successful_payment,
+         (SELECT max(processed_at) FROM payment_webhook_events WHERE provider = 'stripe') AS last_stripe_webhook
+       FROM orders
+       WHERE created_at >= now() - interval '30 days'`,
+    );
+    const row = result.rows[0] ?? {};
+    return {
+      paid: Number(row.paid ?? 0),
+      unpaid: Number(row.unpaid ?? 0),
+      expired: Number(row.expired ?? 0),
+      paymentFailed: Number(row.payment_failed ?? 0),
+      processing: Number(row.processing ?? 0),
+      lastSuccessfulPayment: row.last_successful_payment ?? null,
+      lastStripeWebhook: row.last_stripe_webhook ?? null,
+    };
+  } catch {
+    return {
+      paid: 0,
+      unpaid: 0,
+      expired: 0,
+      paymentFailed: 0,
+      processing: 0,
+      lastSuccessfulPayment: null,
+      lastStripeWebhook: null,
+    };
+  }
+}
+
 export default async function PaymentsPage() {
-  const [dict, locale, webhookEvents] = await Promise.all([
+  const [dict, locale, webhookEvents, diagnostics] = await Promise.all([
     getAdminDictionary(),
     getAdminLocale(),
     getLastWebhookStatus(),
+    getPaymentDiagnostics(),
   ]);
   const isGerman = locale === "de";
   const providers: ProviderStatus[] = [
@@ -125,6 +173,49 @@ export default async function PaymentsPage() {
                 <span>{isGerman ? "Versand" : "Shipping"}</span>
                 <span className="font-semibold text-foreground">{isGerman ? "Abholung + DE" : "Pickup + DE"}</span>
               </div>
+            </div>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-6">
+            <h3 className="font-semibold text-foreground">
+              {isGerman ? "Stripe-Diagnose · 30 Tage" : "Stripe diagnostics · 30 days"}
+            </h3>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              {[
+                [isGerman ? "Bezahlt" : "Paid", diagnostics.paid],
+                [isGerman ? "Offen" : "Unpaid", diagnostics.unpaid],
+                [isGerman ? "Abgelaufen" : "Expired", diagnostics.expired],
+                [isGerman ? "Zahlung fehlgeschlagen" : "Payment failed", diagnostics.paymentFailed],
+                [isGerman ? "In Bearbeitung" : "Processing", diagnostics.processing],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-xl border border-border/60 bg-surface/40 p-3">
+                  <div className="text-xs text-muted">{label}</div>
+                  <div className="mt-1 text-xl font-semibold text-foreground">{value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 space-y-2 border-t border-border/60 pt-4 text-xs text-muted">
+              <p>
+                {isGerman ? "Letzte erfolgreiche Zahlung" : "Last successful payment"}: {" "}
+                <span className="text-foreground">
+                  {diagnostics.lastSuccessfulPayment
+                    ? new Date(diagnostics.lastSuccessfulPayment).toLocaleString(isGerman ? "de-DE" : "en-US")
+                    : isGerman ? "keine in diesem Zeitraum" : "none in this period"}
+                </span>
+              </p>
+              <p>
+                {isGerman ? "Letzter Stripe-Webhook" : "Last Stripe webhook"}: {" "}
+                <span className="text-foreground">
+                  {diagnostics.lastStripeWebhook
+                    ? new Date(diagnostics.lastStripeWebhook).toLocaleString(isGerman ? "de-DE" : "en-US")
+                    : isGerman ? "noch keiner" : "none yet"}
+                </span>
+              </p>
+              <p>
+                {isGerman
+                  ? "Abgelaufen bedeutet meist, dass eine geöffnete Stripe-Kasse nicht abgeschlossen wurde; es ist kein Kartenfehler."
+                  : "Expired usually means an opened Stripe checkout was not completed; it is not a card error."}
+              </p>
             </div>
           </div>
 

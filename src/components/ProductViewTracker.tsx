@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
+import { analyticsItem, withGa4Items } from "@/lib/analytics";
 
 type ProductViewTrackerProps = {
   productId: string;
@@ -41,7 +42,7 @@ export default function ProductViewTracker({
         : `view-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
       sentRef.current = true;
-      window.apfelTrack?.("view_item", {
+      window.apfelTrack?.("view_item", withGa4Items({
         currency: "EUR",
         value: price ?? 0,
         item_id: productId,
@@ -53,7 +54,13 @@ export default function ProductViewTracker({
         content_category: category,
         content_condition: condition ?? "new",
         contents: [{ id: productId, quantity: 1, item_price: price ?? 0 }],
-      }, eventId);
+      }, [analyticsItem({
+        item_id: productId,
+        item_name: title,
+        item_category: category,
+        price: price ?? 0,
+        quantity: 1,
+      })]), eventId);
 
       void fetch("/api/marketing/view-content", {
         method: "POST",
