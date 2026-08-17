@@ -31,6 +31,20 @@ const stableSuffix = (value: string): string => {
   return (hash >>> 0).toString(16).padStart(8, "0");
 };
 
+const variantTokenFor = (variant: Product["variants"][number] | undefined, index: number): string | undefined =>
+  variant?.sku || [variant?.color, variant?.storage].filter(Boolean).join(" ") || (variant ? `variant-${index + 1}` : undefined);
+
+export const googleMerchantItemId = (
+  productId: string,
+  variant: Product["variants"][number] | undefined,
+  index: number,
+): string => {
+  const variantToken = variantTokenFor(variant, index);
+  return variant
+    ? `${productId.slice(0, 36)}-${stableSuffix(variantToken ?? `variant-${index + 1}`)}`
+    : productId.slice(0, 50);
+};
+
 const absoluteUrl = (value: string): string => {
   if (/^https?:\/\//i.test(value)) return value;
   return new URL(value.startsWith('/') ? value : `/${value}`, siteInfo.url).toString();
@@ -63,10 +77,8 @@ const itemXml = (product: Product, variant: Product["variants"][number] | undefi
   const identifierStatus = variant?.identifierStatus ?? (mayUseProductIdentifier ? product.identifierStatus : "unknown");
   const color = variant?.color;
   const storage = variant?.storage;
-  const variantToken = variant?.sku || [variant?.color, variant?.storage].filter(Boolean).join(" ");
-  const itemId = variant
-    ? `${product.id.slice(0, 36)}-${stableSuffix(variantToken || `variant-${index + 1}`)}`
-    : product.id.slice(0, 50);
+  const variantToken = variantTokenFor(variant, index);
+  const itemId = googleMerchantItemId(product.id, variant, index);
   const link = `${siteInfo.url}/de/store/${product.slug}${variantToken ? `?variant=${encodeURIComponent(variantToken)}` : ""}`;
   const variantImages = variant?.images?.filter(Boolean) ?? [];
   const indexedImage = variant?.imageIndex !== undefined ? product.images[variant.imageIndex] : undefined;

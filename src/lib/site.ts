@@ -41,6 +41,12 @@ export const siteInfo = {
   // Google Merchant Center id. Public by design -- it ships in the Customer
   // Reviews opt-in on the confirmation page -- so it is config, not a secret.
   googleMerchantId: "5829541150",
+  // Merchant Center local listings use this exact, case-sensitive shop code
+  // to join every inventory row to the Hamburg Business Profile. Google does
+  // not treat it as a credential, but changing it would break that join.
+  googleBusinessProfile: {
+    storeCode: "12632968340985409161",
+  },
   // The badge shows the seller rating, but with no ratings yet Google renders
   // "no rating available" on every page it appears on. Set this to false to
   // remove it until the first ratings come in.
