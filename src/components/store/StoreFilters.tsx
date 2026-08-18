@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import type { Locale } from "../../lib/i18n";
 import type { StoreCatalogFacets, StoreCatalogFilters } from "../../lib/products";
@@ -108,6 +109,44 @@ export default function StoreFilters({ lang, facets, activeFilters }: StoreFilte
     />
   );
 
+  const mobileDrawer = drawerOpen
+    ? createPortal(
+      <div
+        className="fixed inset-0 z-[180] lg:hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label={isGerman ? "Filter" : "Filters"}
+      >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
+        <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-border bg-background p-5 shadow-2xl">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-base font-bold text-foreground">{isGerman ? "Filter" : "Filters"}</h3>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={() => setDrawerOpen(false)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-surface text-muted transition hover:border-gold/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
+              aria-label={isGerman ? "Schließen" : "Close"}
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {panels}
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(false)}
+            className="btn-primary mt-5 w-full"
+          >
+            {isGerman ? "Ergebnisse anzeigen" : "Show results"}
+          </button>
+        </div>
+      </div>,
+      document.body,
+    )
+    : null;
+
   return (
     <>
       <button
@@ -128,40 +167,7 @@ export default function StoreFilters({ lang, facets, activeFilters }: StoreFilte
         {panels}
       </div>
 
-      {drawerOpen ? (
-        <div
-          className="fixed inset-0 z-[180] lg:hidden"
-          role="dialog"
-          aria-modal="true"
-          aria-label={isGerman ? "Filter" : "Filters"}
-        >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-border bg-background p-5 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-bold text-foreground">{isGerman ? "Filter" : "Filters"}</h3>
-              <button
-                ref={closeButtonRef}
-                type="button"
-                onClick={() => setDrawerOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-surface text-muted transition hover:border-gold/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
-                aria-label={isGerman ? "Schließen" : "Close"}
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {panels}
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(false)}
-              className="btn-primary mt-5 w-full"
-            >
-              {isGerman ? "Ergebnisse anzeigen" : "Show results"}
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {mobileDrawer}
     </>
   );
 }
