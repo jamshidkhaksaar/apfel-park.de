@@ -139,11 +139,15 @@ const queuePeriodicWork = async (): Promise<void> => {
 const claimInventoryTargets = async (): Promise<InventoryTarget[]> => {
   const result = await query(
     `WITH ready AS (
-       SELECT marketplace, sku
-         FROM inventory_sync_targets
-        WHERE status = 'queued' AND run_after <= now()
-        ORDER BY updated_at, marketplace, sku
-        FOR UPDATE SKIP LOCKED
+       SELECT target.marketplace, target.sku
+         FROM inventory_sync_targets target
+         JOIN marketplace_channel_settings settings
+           ON settings.marketplace = target.marketplace
+        WHERE target.status = 'queued' AND target.run_after <= now()
+          AND settings.enabled = true
+          AND settings.stock_sync_enabled = true
+        ORDER BY target.updated_at, target.marketplace, target.sku
+        FOR UPDATE OF target SKIP LOCKED
         LIMIT 50
      )
      UPDATE inventory_sync_targets target
@@ -197,11 +201,23 @@ const processInventoryTarget = async (target: InventoryTarget): Promise<void> =>
 const claimJobs = async (): Promise<Job[]> => {
   const result = await query(
     `WITH ready AS (
-       SELECT id
-         FROM marketplace_jobs
-        WHERE status = 'queued' AND run_after <= now()
-        ORDER BY created_at
-        FOR UPDATE SKIP LOCKED
+       SELECT job.id
+         FROM marketplace_jobs job
+         JOIN marketplace_channel_settings settings
+           ON settings.marketplace = job.marketplace
+        WHERE job.status = 'queued' AND job.run_after <= now()
+          AND settings.enabled = true
+          AND CASE
+                WHEN job.operation IN ('update_availability', 'reconcile')
+                  THEN settings.stock_sync_enabled
+                WHEN job.operation = 'update_price'
+                  THEN settings.price_sync_enabled
+                WHEN job.operation = 'import_orders'
+                  THEN settings.order_sync_enabled
+                ELSE true
+              END
+        ORDER BY job.created_at
+        FOR UPDATE OF job SKIP LOCKED
         LIMIT 25
      )
      UPDATE marketplace_jobs job

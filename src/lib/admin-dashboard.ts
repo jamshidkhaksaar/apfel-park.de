@@ -47,21 +47,38 @@ export const loadDashboardStats = async (liveUsers = 0): Promise<DashboardStats>
       `WITH unresolved_jobs AS (
          SELECT job.marketplace, job.status, job.updated_at
            FROM marketplace_jobs job
-          WHERE job.status IN ('queued', 'processing')
-             OR (
-               job.status = 'failed'
-               AND NOT EXISTS (
-                 SELECT 1 FROM marketplace_jobs newer
-                  WHERE newer.marketplace = job.marketplace
-                    AND newer.operation = job.operation
-                    AND newer.sku IS NOT DISTINCT FROM job.sku
-                    AND newer.status = 'succeeded'
-                    AND newer.updated_at > job.updated_at
-               )
-             )
+           JOIN marketplace_channel_settings settings
+             ON settings.marketplace = job.marketplace
+          WHERE settings.enabled = true
+            AND CASE
+                  WHEN job.operation IN ('update_availability', 'reconcile')
+                    THEN settings.stock_sync_enabled
+                  WHEN job.operation = 'update_price'
+                    THEN settings.price_sync_enabled
+                  WHEN job.operation = 'import_orders'
+                    THEN settings.order_sync_enabled
+                  ELSE true
+                END
+            AND (
+              job.status IN ('queued', 'processing')
+              OR (
+                job.status = 'failed'
+                AND NOT EXISTS (
+                  SELECT 1 FROM marketplace_jobs newer
+                   WHERE newer.marketplace = job.marketplace
+                     AND newer.operation = job.operation
+                     AND newer.sku IS NOT DISTINCT FROM job.sku
+                     AND newer.status = 'succeeded'
+                     AND newer.updated_at > job.updated_at
+                )
+              )
+            )
        ), states AS (
-         SELECT marketplace, status, last_synced_at AS succeeded_at
-           FROM inventory_sync_targets
+         SELECT target.marketplace, target.status, target.last_synced_at AS succeeded_at
+           FROM inventory_sync_targets target
+           JOIN marketplace_channel_settings settings
+             ON settings.marketplace = target.marketplace
+          WHERE settings.enabled = true AND settings.stock_sync_enabled = true
          UNION ALL
          SELECT marketplace, status, updated_at
            FROM marketplace_jobs
