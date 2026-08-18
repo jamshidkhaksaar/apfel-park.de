@@ -112,7 +112,7 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
               {lang === "de" ? "Kategorien" : "Categories"}
             </h2>
             <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby="store-categories-heading">
-              {categories.map((cat) => (
+              {categories.filter((cat) => cat === "all" || localCounts[cat] > 0).map((cat) => (
                 <Link
                   key={cat}
                   href={buildHref({ category: cat, page: 1 })}

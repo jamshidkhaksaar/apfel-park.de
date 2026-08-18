@@ -168,7 +168,7 @@ export const buildGoogleMerchantFeedForProducts = (products: Product[]): string 
     '  <channel>',
     `    <title>${xmlEscape(siteInfo.name)} Produktfeed</title>`,
     `    <link>${xmlEscape(siteInfo.url)}</link>`,
-    `    <description>${xmlEscape('Smartphones, Tablets, Zubehör, Konsolen und Laptops von Apfel Park.')}</description>`,
+    `    <description>${xmlEscape('Smartphones, Tablets, Zubehör und Laptops von Apfel Park.')}</description>`,
     ...products.flatMap((product) =>
       product.variants.length > 0
         ? product.variants.map((variant, index) => itemXml(product, variant, index))

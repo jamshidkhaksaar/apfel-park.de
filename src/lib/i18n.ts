@@ -11,7 +11,7 @@ export const dictionary = {
       { label: "Tablets", path: "/tablets" },
       { label: "Zubehör", path: "/accessories" },
       { label: "Laptops", path: "/laptops" },
-      { label: "Gaming", path: "/gaming" },
+      { label: "Impressum", path: "/impressum" },
       { label: "Kontakt", path: "/contact" },
     ],
     header: {
@@ -36,7 +36,6 @@ export const dictionary = {
         { label: "Tablets", path: "/tablets" },
         { label: "Zubehör", path: "/accessories" },
         { label: "Laptops", path: "/laptops" },
-        { label: "Gaming", path: "/gaming" },
       ],
       companyLinks: [
         { label: "Über uns", path: "/about" },
@@ -149,10 +148,10 @@ export const dictionary = {
             image: "/images/hero-smartphones.svg",
           },
           {
-            title: "Gaming & Zubehör",
-            description: "Gaming-Zubehör und Beratung, Konsolen folgen.",
-            path: "/gaming",
-            image: "/images/hero-console.svg",
+            title: "Laptops & MacBooks",
+            description: "Neue und gebrauchte Laptops mit klar ausgewiesenem Zustand.",
+            path: "/laptops",
+            image: "/images/slider_images/laptop.png",
           },
         ],
       },
@@ -663,7 +662,7 @@ export const dictionary = {
         {
           title: "1. Leistungen",
           body: [
-            "Reparatur und Wartung von Smartphones, Tablets und Konsolen",
+            "Reparatur und Wartung von Smartphones und Tablets",
             "Verkauf von Geräten, Zubehör und Dienstleistungen",
           ],
         },
@@ -724,7 +723,7 @@ export const dictionary = {
       { label: "Tablets", path: "/tablets" },
       { label: "Accessories", path: "/accessories" },
       { label: "Laptops", path: "/laptops" },
-      { label: "Gaming", path: "/gaming" },
+      { label: "Impressum", path: "/impressum" },
       { label: "Contact", path: "/contact" },
     ],
     header: {
@@ -749,7 +748,6 @@ export const dictionary = {
         { label: "Tablets", path: "/tablets" },
         { label: "Accessories", path: "/accessories" },
         { label: "Laptops", path: "/laptops" },
-        { label: "Gaming", path: "/gaming" },
       ],
       companyLinks: [
         { label: "About", path: "/about" },
@@ -862,10 +860,10 @@ export const dictionary = {
             image: "/images/hero-smartphones.svg",
           },
           {
-            title: "Gaming & Accessories",
-            description: "Gaming accessories and advice, consoles to follow.",
-            path: "/gaming",
-            image: "/images/hero-console.svg",
+            title: "Laptops & MacBooks",
+            description: "New and used laptops with clearly stated condition.",
+            path: "/laptops",
+            image: "/images/slider_images/laptop.png",
           },
         ],
       },
@@ -1036,7 +1034,7 @@ export const dictionary = {
     services: {
       heroTitle: "Services for every device",
       heroSubtitle:
-        "From setup to instant repairs – premium service for smartphones, tablets and consoles.",
+        "From setup to instant repairs – premium service for smartphones, tablets and laptops.",
       categories: [
         {
           title: "Instant Repair",
@@ -1376,7 +1374,7 @@ export const dictionary = {
         {
           title: "1. Services",
           body: [
-            "Repair and maintenance of smartphones, tablets and consoles",
+            "Repair and maintenance of smartphones and tablets",
             "Sale of devices, accessories and services",
           ],
         },

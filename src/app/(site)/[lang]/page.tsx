@@ -6,7 +6,6 @@ import {
   siApple,
   siGoogle,
   siHuawei,
-  siPlaystation,
   siSamsung,
   siSony,
   siXiaomi,
@@ -53,6 +52,24 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const home = await getHomeContent(lang);
   const featuredProducts = await getFeaturedProducts(lang);
   const heroMedia = await getHeroMediaSettings();
+  const laptopCard = lang === "de"
+    ? {
+        title: "Laptops & MacBooks",
+        description: "Neue und gebrauchte Laptops mit klar ausgewiesenem Zustand.",
+        path: "/laptops",
+        image: "/images/slider_images/laptop.png",
+      }
+    : {
+        title: "Laptops & MacBooks",
+        description: "New and used laptops with clearly stated condition.",
+        path: "/laptops",
+        image: "/images/slider_images/laptop.png",
+      };
+  // Older admin-managed homepage content may still contain the former Gaming
+  // card. Replace it at render time so an obsolete category cannot reappear.
+  const deviceCategoryCards = home.hero.cards.map((card) =>
+    String(card.path) === "/gaming" ? laptopCard : card,
+  );
 
 
   const deviceBrands = [
@@ -86,17 +103,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       color: "#1a1a1a",
       path: siSony.path,
     },
-    {
-      name: "PlayStation",
-      color: `#${siPlaystation.hex}`,
-      path: siPlaystation.path,
-    },
-    {
-      name: "Nintendo",
-      color: "#E60012",
-      letter: "N",
-      path: null,
-    },
   ];
 
   return (
@@ -121,15 +127,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                       black would disappear against one while Sony's white
                       disappears against the other. */}
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/5">
-                    {brand.path ? (
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6" style={{ color: brand.color }} aria-hidden="true">
-                        <path d={brand.path} />
-                      </svg>
-                    ) : (
-                      <span className="text-base font-black leading-none" style={{ color: brand.color }}>
-                        {brand.letter}
-                      </span>
-                    )}
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6" style={{ color: brand.color }} aria-hidden="true">
+                      <path d={brand.path} />
+                    </svg>
                   </div>
                   <span className="text-sm font-bold tracking-tight text-muted transition-colors group-hover:text-gold">
                     {brand.name}
@@ -345,13 +345,13 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted">
               {lang === "de" 
-                ? "Smartphones, Tablets, Konsolen und Premium-Zubehör – alles an einem Ort."
-                : "Smartphones, tablets, consoles and premium accessories – all in one place."}
+                ? "Smartphones, Tablets, Laptops und Premium-Zubehör – alles an einem Ort."
+                : "Smartphones, tablets, laptops and premium accessories – all in one place."}
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {home.hero.cards.map((card: { title: string; description: string; path: string; image: string }, index: number) => {
+            {deviceCategoryCards.map((card: { title: string; description: string; path: string; image: string }, index: number) => {
               const cardIllustrations = [
                 // 1. Shop & Advice - Storefront/Interaction
                 <svg key="shop" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.8}>
@@ -375,13 +375,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
                 </svg>,
 
-                // 4. Gaming - Game Controller (Tabler Icons)
-                <svg key="gaming" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
-                   <path d="M12 5h3.5a5 5 0 0 1 0 10h-5.5l-4.015 4.227a2.3 2.3 0 0 1 -3.923 -2.035l1.634 -8.173a5 5 0 0 1 4.904 -4.019h3.4" />
-                   <path d="M14 15l4.07 4.284a2.3 2.3 0 0 0 3.925 -2.023l-1.6 -8.232" />
-                   <path d="M8 9v2" />
-                   <path d="M7 10h2" />
-                   <path d="M14 10h2" />
+                // 4. Laptops - Notebook computer
+                <svg key="laptops" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="4" width="16" height="12" rx="1.5" />
+                  <path d="M2 20h20" />
+                  <path d="M8 20l1-4h6l1 4" />
                 </svg>
               ];
 
