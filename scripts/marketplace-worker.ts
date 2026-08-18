@@ -25,8 +25,13 @@ const pollMilliseconds = Math.min(
   300_000,
   Math.max(5_000, Number(process.env.MARKETPLACE_WORKER_POLL_MS) || 15_000),
 );
+const deltaReconciliationMilliseconds = Math.min(
+  86_400_000,
+  Math.max(60_000, Number(process.env.MARKETPLACE_DELTA_RECONCILIATION_MS) || 900_000),
+);
 const once = process.env.MARKETPLACE_WORKER_ONCE === "1";
 let stopping = false;
+let lastDeltaReconciliationAt = 0;
 
 const errorMessage = (error: unknown): string =>
   (error instanceof Error ? error.message : "Unknown marketplace worker error").slice(0, 2_000);
@@ -49,6 +54,27 @@ const resetInterruptedWork = async (): Promise<void> => {
         WHERE status = 'processing' AND updated_at < now() - interval '10 minutes'`,
     ),
   ]);
+};
+
+const runDeltaReconciliation = async (): Promise<void> => {
+  const now = Date.now();
+  if (now - lastDeltaReconciliationAt < deltaReconciliationMilliseconds) return;
+
+  const mirrorResult = await query(
+    `SELECT reconcile_inventory_mirrors()::int AS repaired`,
+  );
+  const targetResult = await query(
+    `SELECT reconcile_inventory_sync_targets()::int AS queued`,
+  );
+  lastDeltaReconciliationAt = now;
+
+  const repaired = Number((mirrorResult.rows[0] as { repaired?: number } | undefined)?.repaired ?? 0);
+  const queued = Number((targetResult.rows[0] as { queued?: number } | undefined)?.queued ?? 0);
+  if (repaired > 0 || queued > 0) {
+    console.log(
+      `[marketplace-worker] delta reconciliation repaired ${repaired} mirror(s) and queued ${queued} SKU(s)`,
+    );
+  }
 };
 
 const queuePeriodicWork = async (): Promise<void> => {
@@ -305,6 +331,7 @@ const processJob = async (job: Job): Promise<void> => {
 };
 
 export const runMarketplaceWorkerPass = async (): Promise<void> => {
+  await runDeltaReconciliation();
   await queuePeriodicWork();
   for (const target of await claimInventoryTargets()) await processInventoryTarget(target);
   for (const job of await claimJobs()) await processJob(job);

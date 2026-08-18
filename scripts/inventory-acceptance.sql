@@ -141,6 +141,44 @@ begin
     raise exception 'Newer desired inventory state was not preserved';
   end if;
 
+  -- The 15-minute delta audit must repair an accidental compatibility-mirror
+  -- write and reconstruct a stale desired-state target from the ledger.
+  update products
+     set stock = stock + 99
+   where id = (
+     select product_id from inventory_skus
+      where sku = v_sku_a and location = 'local' and is_active = true
+   );
+  if reconcile_inventory_mirrors() < 1 then
+    raise exception 'Delta reconciliation did not detect product mirror drift';
+  end if;
+
+  update inventory_sync_targets
+     set desired_quantity = desired_quantity + 99,
+         inventory_version = greatest(0, inventory_version - 1),
+         status = 'succeeded'
+   where marketplace = 'google_merchant' and sku = v_sku_a;
+  if reconcile_inventory_sync_targets() < 1 then
+    raise exception 'Delta reconciliation did not detect desired-state drift';
+  end if;
+  if not exists (
+    select 1
+      from inventory_sync_targets target
+      join inventory_skus inventory
+        on inventory.sku = target.sku and inventory.location = 'local'
+     where target.marketplace = 'google_merchant'
+       and target.sku = v_sku_a
+       and target.inventory_version = inventory.version
+       and target.desired_quantity = available_inventory(
+         inventory.on_hand,
+         inventory.reserved,
+         inventory.safety_buffer
+       )
+       and target.status = 'queued'
+  ) then
+    raise exception 'Delta reconciliation did not restore the newest desired state';
+  end if;
+
   if exists (
     with ledger as (
       select product_id,
