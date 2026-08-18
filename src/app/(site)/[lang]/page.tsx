@@ -52,23 +52,23 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const home = await getHomeContent(lang);
   const featuredProducts = await getFeaturedProducts(lang);
   const heroMedia = await getHeroMediaSettings();
-  const laptopCard = lang === "de"
+  const tabletCard = lang === "de"
     ? {
-        title: "Laptops & MacBooks",
-        description: "Neue und gebrauchte Laptops mit klar ausgewiesenem Zustand.",
-        path: "/laptops",
-        image: "/images/slider_images/laptop.png",
+        title: "Tablets & iPads",
+        description: "Tablets und iPads mit klar ausgewiesenem Zustand und Garantie.",
+        path: "/tablets",
+        image: "/images/ipad.png",
       }
     : {
-        title: "Laptops & MacBooks",
-        description: "New and used laptops with clearly stated condition.",
-        path: "/laptops",
-        image: "/images/slider_images/laptop.png",
+        title: "Tablets & iPads",
+        description: "Tablets and iPads with clearly stated condition and warranty.",
+        path: "/tablets",
+        image: "/images/ipad.png",
       };
   // Older admin-managed homepage content may still contain the former Gaming
   // card. Replace it at render time so an obsolete category cannot reappear.
   const deviceCategoryCards = home.hero.cards.map((card) =>
-    String(card.path) === "/gaming" ? laptopCard : card,
+    String(card.path) === "/gaming" ? tabletCard : card,
   );
 
 
@@ -345,8 +345,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted">
               {lang === "de" 
-                ? "Smartphones, Tablets, Laptops und Premium-Zubehör – alles an einem Ort."
-                : "Smartphones, tablets, laptops and premium accessories – all in one place."}
+                ? "Smartphones, Tablets und Premium-Zubehör – alles an einem Ort."
+                : "Smartphones, tablets and premium accessories – all in one place."}
             </p>
           </div>
 
@@ -375,11 +375,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
                 </svg>,
 
-                // 4. Laptops - Notebook computer
-                <svg key="laptops" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="4" y="4" width="16" height="12" rx="1.5" />
-                  <path d="M2 20h20" />
-                  <path d="M8 20l1-4h6l1 4" />
+                // 4. Tablets - Tablet device
+                <svg key="tablets" className="h-full w-full p-8 text-gold ocean-icon transition duration-500 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="2" width="14" height="20" rx="2" />
+                  <path d="M11 18h2" />
                 </svg>
               ];
 

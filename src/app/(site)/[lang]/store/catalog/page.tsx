@@ -31,8 +31,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     locale,
     locale === "de" ? "Alle Produkte A–Z" : "All Products A–Z",
     locale === "de"
-      ? "Der vollständige Apfel Park Produktkatalog mit Smartphones, iPhones, Tablets, Zubehör und Laptops."
-      : "The complete Apfel Park catalog of smartphones, iPhones, tablets, accessories and laptops.",
+      ? "Der vollständige Apfel Park Produktkatalog mit Smartphones, iPhones, Tablets und Zubehör."
+      : "The complete Apfel Park catalog of smartphones, iPhones, tablets and accessories.",
     "/store/catalog",
   );
 }
