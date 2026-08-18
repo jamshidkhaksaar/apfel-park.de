@@ -619,10 +619,10 @@ export type StoreCatalogSort = "featured" | "price-asc" | "price-desc" | "newest
 
 export type StoreCatalogFilters = {
   brands: string[];
-  models: string[];
   storages: string[];
   conditions: ProductCondition[];
   accessoryTypes: string[];
+  inStockOnly: boolean;
   priceMin?: number;
   priceMax?: number;
 };
@@ -631,10 +631,10 @@ export type FacetOption = { value: string; count: number };
 
 export type StoreCatalogFacets = {
   brands: FacetOption[];
-  models: FacetOption[];
   storages: FacetOption[];
   conditions: FacetOption[];
   accessoryTypes: FacetOption[];
+  inStock: number;
   priceMin: number;
   priceMax: number;
 };
@@ -659,8 +659,27 @@ export const normalizeProductBrand = (brand?: string): string | null => {
   if (/^samsung/i.test(value)) return "Samsung";
   if (/^(xiaomi|redmi)/i.test(value)) return "Xiaomi";
   if (/^google/i.test(value)) return "Google";
+  if (/^bmw\s*m$/i.test(value)) return "BMW M";
+  if (/^bmw$/i.test(value)) return "BMW";
+  if (/^audi\s+sport$/i.test(value)) return "Audi Sport";
+  if (/^ccit$/i.test(value)) return "CCIT";
+  if (/^kxd$/i.test(value)) return "KXD";
+  if (/^trusmi$/i.test(value)) return "TRUSMI";
   const lower = value.toLowerCase();
   return lower.charAt(0).toUpperCase() + lower.slice(1);
+};
+
+const BRAND_PRIORITY = ["Apple", "Samsung", "Google", "Xiaomi", "Motorola", "Huawei", "Nokia"];
+
+const compareProductBrands = (left: string, right: string): number => {
+  const leftPriority = BRAND_PRIORITY.indexOf(left);
+  const rightPriority = BRAND_PRIORITY.indexOf(right);
+  if (leftPriority !== -1 || rightPriority !== -1) {
+    if (leftPriority === -1) return 1;
+    if (rightPriority === -1) return -1;
+    return leftPriority - rightPriority;
+  }
+  return left.localeCompare(right, "de");
 };
 
 const bestBrandDisplay = (current: string | undefined, next: string): string => {
@@ -690,11 +709,6 @@ const productStorages = (product: Product): string[] => {
   return Array.from(seen);
 };
 
-const modelSortKey = (model: string): number => {
-  const match = model.match(/(\d+)/);
-  return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
-};
-
 const CONDITION_VALUES: ProductCondition[] = ["new", "open_box", "used"];
 
 /** Parse URL query params into StoreCatalogFilters (shared by all store pages). */
@@ -707,15 +721,20 @@ export const parseStoreCatalogFilters = (
   };
   const list = (key: string): string[] =>
     get(key).split(",").map((v) => v.trim()).filter(Boolean);
-  const num = (key: string): number | undefined => {
+  const nonNegativeNumber = (key: string): number | undefined => {
     const raw = get(key);
     if (raw === "") return undefined;
     const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : undefined;
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : undefined;
   };
+  const rawPriceMin = nonNegativeNumber("pmin");
+  const rawPriceMax = nonNegativeNumber("pmax");
+  const pricesAreReversed = rawPriceMin !== undefined
+    && rawPriceMax !== undefined
+    && rawPriceMin > rawPriceMax;
+
   return {
     brands: list("brand"),
-    models: list("model"),
     storages: list("storage"),
     conditions: list("condition").filter((v): v is ProductCondition =>
       CONDITION_VALUES.includes(v as ProductCondition),
@@ -723,8 +742,9 @@ export const parseStoreCatalogFilters = (
     accessoryTypes: list("atype").filter((v): v is AccessoryType =>
       (ACCESSORY_TYPES as readonly string[]).includes(v),
     ),
-    priceMin: num("pmin"),
-    priceMax: num("pmax"),
+    inStockOnly: get("stock") === "available",
+    priceMin: pricesAreReversed ? rawPriceMax : rawPriceMin,
+    priceMax: pricesAreReversed ? rawPriceMin : rawPriceMax,
   };
 };
 
@@ -894,11 +914,10 @@ export async function getStoreCatalog({
   // always shows every available option for the current category.
   const brandCounts = new Map<string, number>();
   const brandDisplay = new Map<string, string>();
-  const modelCounts = new Map<string, number>();
-  const modelDisplay = new Map<string, string>();
   const storageCounts = new Map<string, { count: number; gb: number }>();
   const conditionCounts = new Map<ProductCondition, number>();
   const accessoryTypeCounts = new Map<AccessoryType, number>();
+  let inStock = 0;
   let priceMin = Number.POSITIVE_INFINITY;
   let priceMax = 0;
 
@@ -908,12 +927,6 @@ export async function getStoreCatalog({
       const key = brand.toLowerCase();
       brandCounts.set(key, (brandCounts.get(key) ?? 0) + 1);
       brandDisplay.set(key, bestBrandDisplay(brandDisplay.get(key), brand));
-    }
-    const model = product.model?.trim();
-    if (model) {
-      const key = model.toLowerCase();
-      modelCounts.set(key, (modelCounts.get(key) ?? 0) + 1);
-      if (!modelDisplay.has(key)) modelDisplay.set(key, model);
     }
     for (const storage of productStorages(product)) {
       const normalized = normalizeStorageValue(storage);
@@ -925,6 +938,7 @@ export async function getStoreCatalog({
     for (const type of productAccessoryTypes(product)) {
       accessoryTypeCounts.set(type, (accessoryTypeCounts.get(type) ?? 0) + 1);
     }
+    if ((product.stock ?? 0) > 0) inStock += 1;
     priceMin = Math.min(priceMin, product.price);
     priceMax = Math.max(priceMax, product.price);
   }
@@ -937,8 +951,7 @@ export async function getStoreCatalog({
       .sort((a, b) => sorter(a.value, b.value));
 
   const facets: StoreCatalogFacets = {
-    brands: toOptions(brandCounts, brandDisplay, (a, b) => a.localeCompare(b, "de")),
-    models: toOptions(modelCounts, modelDisplay, (a, b) => modelSortKey(a) - modelSortKey(b) || a.localeCompare(b, "de")),
+    brands: toOptions(brandCounts, brandDisplay, compareProductBrands),
     storages: Array.from(storageCounts.entries())
       .map(([label, meta]) => ({ value: label, count: meta.count, gb: meta.gb }))
       .sort((a, b) => a.gb - b.gb)
@@ -949,13 +962,13 @@ export async function getStoreCatalog({
     accessoryTypes: ACCESSORY_TYPES
       .filter((type) => (accessoryTypeCounts.get(type) ?? 0) > 0)
       .map((type) => ({ value: type, count: accessoryTypeCounts.get(type) ?? 0 })),
+    inStock,
     priceMin,
     priceMax,
   };
 
   // Apply user filters.
   const activeBrands = new Set((filters?.brands ?? []).map((b) => b.toLowerCase()));
-  const activeModels = new Set((filters?.models ?? []).map((m) => m.toLowerCase()));
   const activeStorages = new Set(filters?.storages ?? []);
   const activeConditions = new Set(filters?.conditions ?? []);
   const activeAccessoryTypes = new Set(filters?.accessoryTypes ?? []);
@@ -967,10 +980,7 @@ export async function getStoreCatalog({
       const brand = normalizeProductBrand(product.brand);
       if (!brand || !activeBrands.has(brand.toLowerCase())) return false;
     }
-    if (activeModels.size > 0) {
-      const model = product.model?.trim();
-      if (!model || !activeModels.has(model.toLowerCase())) return false;
-    }
+    if (filters?.inStockOnly && (product.stock ?? 0) <= 0) return false;
     if (activeStorages.size > 0) {
       const storages = productStorages(product);
       if (!storages.some((s) => activeStorages.has(s))) return false;

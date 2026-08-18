@@ -107,8 +107,8 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
 
         {/* Categories (only when not locked to a single category) */}
         {!lockedCategory ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 id="store-categories-heading" className="mb-4 text-sm font-bold uppercase tracking-wider text-white">
+          <div className="rounded-2xl border border-border/60 bg-surface/65 p-5 shadow-sm backdrop-blur-sm">
+            <h2 id="store-categories-heading" className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-foreground">
               {lang === "de" ? "Kategorien" : "Categories"}
             </h2>
             <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby="store-categories-heading">
@@ -121,7 +121,7 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
                   className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all
                     ${activeCategory === cat
                       ? "bg-gold text-contrast-adaptive font-bold"
-                      : "text-muted hover:bg-white/10 hover:text-white"
+                      : "text-muted hover:bg-surface-strong/70 hover:text-foreground"
                     }
                   `}
                 >
@@ -166,7 +166,7 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
       {/* Main Grid */}
       <div className="flex-1">
         {/* Toolbar */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-surface/55 p-4 shadow-sm">
           <p className="text-sm text-muted">
             <span className="font-bold text-white">{total}</span> {lang === "de" ? "Produkte" : "Products"}
           </p>
@@ -182,7 +182,7 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
               value={sortBy}
               onChange={(e) => navigate({ sort: e.target.value as StoreCatalogSort, page: 1 })}
               aria-label={lang === "de" ? "Sortieren nach" : "Sort by"}
-              className="rounded-lg border border-white/10 bg-black px-3 py-1.5 text-sm text-white focus:border-gold focus:outline-none"
+              className="rounded-lg border border-border/70 bg-surface px-3 py-1.5 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/15"
             >
               <option value="featured">{lang === "de" ? "Empfohlen" : "Featured"}</option>
               <option value="newest">{lang === "de" ? "Neueste" : "Newest"}</option>
