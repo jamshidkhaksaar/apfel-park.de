@@ -153,6 +153,20 @@ export default async function ProductDetailPage({
     getApprovedReviews(product.id),
     getRatingSummary(product.id),
   ]);
+  const isOutOfStock = (product.stock ?? 0) <= 0;
+  const fulfillmentFaqPattern = /abhol|versand|liefer|pickup|shipping|deliver/i;
+  const displayFaq = isOutOfStock
+    ? product.faq.map((entry) =>
+        fulfillmentFaqPattern.test(`${entry.question} ${entry.answer}`)
+          ? {
+              ...entry,
+              answer: locale === "de"
+                ? "Dieses Produkt ist derzeit ausverkauft. Abholung und Versand sind erst wieder möglich, wenn es im Shop als verfügbar angezeigt wird."
+                : "This product is currently out of stock. Pickup and shipping resume only after the store shows it as available.",
+            }
+          : entry,
+      )
+    : product.faq;
   const categoryPath = product.category === "consoles" ? "gaming" : product.category;
   const productJsonLd = {
     "@context": "https://schema.org",
@@ -240,7 +254,7 @@ export default async function ProductDetailPage({
                 itemCondition: schemaItemCondition(product.condition),
                 seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
                 hasMerchantReturnPolicy: merchantReturnPolicy(),
-                shippingDetails: offerShippingDetails(),
+                shippingDetails: stock && stock > 0 ? offerShippingDetails() : undefined,
               },
             };
           }),
@@ -257,16 +271,16 @@ export default async function ProductDetailPage({
             itemCondition: schemaItemCondition(product.condition),
             seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
             hasMerchantReturnPolicy: merchantReturnPolicy(),
-            shippingDetails: offerShippingDetails(),
+            shippingDetails: isOutOfStock ? undefined : offerShippingDetails(),
           },
         }),
   };
   const faqJsonLd =
-    product.faq.length > 0
+    displayFaq.length > 0
       ? {
           "@context": "https://schema.org",
           "@type": "FAQPage",
-          mainEntity: product.faq.map((entry) => ({
+          mainEntity: displayFaq.map((entry) => ({
             "@type": "Question",
             name: entry.question,
             acceptedAnswer: { "@type": "Answer", text: entry.answer },
@@ -324,7 +338,7 @@ export default async function ProductDetailPage({
 
           <ProductDetailExperience
             locale={locale}
-            product={product}
+            product={{ ...product, faq: displayFaq }}
             ratingSummary={ratingSummary}
             initialVariantToken={typeof invitation.variant === "string" ? invitation.variant : undefined}
           />
