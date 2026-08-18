@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getPaymentMode, markOrderPaid } from "@/lib/checkout";
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
+import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 
 const getPayPalBaseUrl = () =>
   getPaymentMode() === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
@@ -97,6 +98,13 @@ export async function POST(request: NextRequest) {
           url: "https://apfel-park.de/checkout/success",
         },
       );
+    }
+
+    const notification = await notifyPaidOrderAdmin(payload.orderId);
+    if (notification.status === "failed") {
+      console.error("PayPal capture completed but order notification failed", {
+        orderId: payload.orderId,
+      });
     }
 
     return NextResponse.json({ success: true, orderId: payload.orderId });

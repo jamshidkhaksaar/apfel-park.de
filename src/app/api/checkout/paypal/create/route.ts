@@ -6,12 +6,12 @@ import {
   createPendingOrder,
   getCheckoutBaseUrl,
   getPaymentMode,
+  normalizeCheckoutCustomer,
   normalizeShippingMethod,
   validateCartItems,
   type CartInputItem,
   type CustomerDetails,
 } from "@/lib/checkout";
-import { isValidEmail, sanitizeInput } from "@/lib/security";
 
 type PayPalCreatePayload = {
   items?: CartInputItem[];
@@ -25,27 +25,6 @@ type PayPalCreatePayload = {
 
 const getPayPalBaseUrl = () =>
   getPaymentMode() === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
-
-const normalizeCustomer = (customer?: CustomerDetails): CustomerDetails => {
-  const name = sanitizeInput(customer?.name ?? "");
-  const email = sanitizeInput(customer?.email ?? "").toLowerCase();
-  const phone = customer?.phone ? sanitizeInput(customer.phone) : null;
-  const address = customer?.address
-    ? {
-        line1: sanitizeInput(customer.address.line1 ?? ""),
-        line2: sanitizeInput(customer.address.line2 ?? ""),
-        postalCode: sanitizeInput(customer.address.postalCode ?? ""),
-        city: sanitizeInput(customer.address.city ?? ""),
-        country: sanitizeInput(customer.address.country ?? "DE") || "DE",
-      }
-    : null;
-
-  if (!name || !isValidEmail(email)) {
-    throw new Error("Valid customer name and email are required");
-  }
-
-  return { name, email, phone, address };
-};
 
 const getAccessToken = async () => {
   const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
@@ -74,7 +53,7 @@ export async function POST(request: NextRequest) {
     const payload = (await request.json()) as PayPalCreatePayload;
     const locale = payload.locale === "en" ? "en" : "de";
     const shippingMethod = normalizeShippingMethod(payload.shippingMethod);
-    const customer = normalizeCustomer(payload.customer);
+    const customer = normalizeCheckoutCustomer(payload.customer, shippingMethod, locale);
     const cart = await validateCartItems(payload.items ?? [], shippingMethod);
 
     const hasNonNewItems = cart.items.some((line) => line.condition !== "new");

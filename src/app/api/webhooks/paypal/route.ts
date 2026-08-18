@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getPaymentMode, markOrderCancelled, markOrderPaid, recordWebhookEvent } from "@/lib/checkout";
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
+import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 
 type PayPalWebhookEvent = {
   id: string;
@@ -83,6 +84,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid PayPal webhook signature" }, { status: 400 });
   }
 
+  const resource = event.resource;
+  const orderId =
+    resource?.custom_id ||
+    resource?.purchase_units?.[0]?.reference_id ||
+    resource?.purchase_units?.[0]?.custom_id ||
+    null;
+  const isPaidEvent = event.event_type === "PAYMENT.CAPTURE.COMPLETED";
+  const sendOrderNotification = async () => {
+    if (!orderId || !isPaidEvent) return false;
+    const result = await notifyPaidOrderAdmin(orderId);
+    return result.status === "failed";
+  };
+
   const isNew = await recordWebhookEvent({
     provider: "paypal",
     eventId: event.id,
@@ -90,17 +104,15 @@ export async function POST(request: NextRequest) {
     payload: event,
   });
   if (!isNew) {
+    if (await sendOrderNotification()) {
+      return NextResponse.json({ error: "Order notification delivery failed" }, { status: 503 });
+    }
     return NextResponse.json({ received: true, duplicate: true });
   }
 
-  const resource = event.resource;
-  const orderId =
-    resource?.custom_id ||
-    resource?.purchase_units?.[0]?.reference_id ||
-    resource?.purchase_units?.[0]?.custom_id ||
-    null;
   const paypalOrderId = resource?.supplementary_data?.related_ids?.order_id || resource?.id || null;
   const capture = resource?.purchase_units?.[0]?.payments?.captures?.[0];
+  let notificationFailed = false;
 
   if (event.event_type === "PAYMENT.CAPTURE.COMPLETED") {
     const order = await markOrderPaid({
@@ -128,6 +140,7 @@ export async function POST(request: NextRequest) {
         },
       );
     }
+    notificationFailed = await sendOrderNotification();
   }
 
   if (event.event_type === "CHECKOUT.ORDER.VOIDED" || event.event_type === "PAYMENT.CAPTURE.DENIED") {
@@ -137,6 +150,10 @@ export async function POST(request: NextRequest) {
       providerOrderId: paypalOrderId,
       providerStatus: resource?.status || event.event_type,
     });
+  }
+
+  if (notificationFailed) {
+    return NextResponse.json({ error: "Order notification delivery failed" }, { status: 503 });
   }
 
   return NextResponse.json({ received: true });

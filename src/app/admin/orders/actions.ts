@@ -7,6 +7,7 @@ import { canManageOrders } from "@/lib/admin-auth";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import { query } from "@/lib/db";
 import { enqueueMarketplaceJob } from "@/lib/marketplaces";
+import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 import { sanitizeInput } from "@/lib/security";
 
 const ALLOWED_STATUSES = new Set(["pending", "paid", "shipped", "delivered", "cancelled"]);
@@ -67,4 +68,30 @@ export async function updateOrderFulfillment(formData: FormData) {
 
   const target = returnTo === "detail" ? `/admin/orders/${id}?updated=1` : "/admin/orders?updated=1";
   redirect(target);
+}
+
+export async function resendOrderNotification(formData: FormData) {
+  const adminClient = await createAdminServerClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await adminClient.auth.getUser();
+
+  if (authError || !canManageOrders(user)) {
+    redirect("/admin/orders?error=auth");
+  }
+
+  const id = sanitizeInput(formData.get("id"));
+  if (!UUID_PATTERN.test(id)) {
+    redirect("/admin/orders?error=invalid");
+  }
+
+  const result = await notifyPaidOrderAdmin(id, { force: true });
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${id}`);
+  redirect(
+    result.status === "sent"
+      ? `/admin/orders/${id}?notified=1`
+      : `/admin/orders/${id}?notifyError=1`,
+  );
 }

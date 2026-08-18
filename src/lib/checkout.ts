@@ -3,6 +3,7 @@ import { randomUUID, timingSafeEqual, createHmac } from "node:crypto";
 import { query } from "@/lib/db";
 import { reserveInventory } from "@/lib/marketplaces/inventory";
 import { getProducts, type Product, type ProductVariant } from "@/lib/products";
+import { isValidEmail, sanitizeInput } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 
 export type CartInputItem = {
@@ -139,6 +140,62 @@ const getShippingCents = (method: ShippingMethod) => {
 
 export const normalizeShippingMethod = (value: unknown): ShippingMethod =>
   value === "germany" ? "germany" : "pickup";
+
+export const normalizeCheckoutCustomer = (
+  customer: CustomerDetails | undefined,
+  shippingMethod: ShippingMethod,
+  locale: "de" | "en",
+): CustomerDetails => {
+  const name = sanitizeInput(customer?.name);
+  const email = sanitizeInput(customer?.email).toLowerCase();
+  const phone = sanitizeInput(customer?.phone) || null;
+  const address = customer?.address
+    ? {
+        line1: sanitizeInput(customer.address.line1),
+        line2: sanitizeInput(customer.address.line2),
+        postalCode: sanitizeInput(customer.address.postalCode),
+        city: sanitizeInput(customer.address.city),
+        country: sanitizeInput(customer.address.country || "DE") || "DE",
+      }
+    : null;
+
+  if (!name || !isValidEmail(email)) {
+    throw new Error(
+      locale === "de"
+        ? "Bitte geben Sie einen Namen und eine gültige E-Mail-Adresse ein."
+        : "Please enter a name and a valid email address.",
+    );
+  }
+
+  if (shippingMethod === "germany") {
+    const phoneDigits = phone?.replace(/\D/g, "") ?? "";
+    if (!phone || phone.length > 40 || phoneDigits.length < 6 || phoneDigits.length > 15) {
+      throw new Error(
+        locale === "de"
+          ? "Bitte geben Sie für die Lieferung eine gültige Telefonnummer ein."
+          : "Please enter a valid phone number for delivery.",
+      );
+    }
+
+    if (
+      !address?.line1 ||
+      !address.postalCode ||
+      !address.city ||
+      address.line1.length > 200 ||
+      (address.line2?.length ?? 0) > 200 ||
+      address.postalCode.length > 20 ||
+      address.city.length > 100
+    ) {
+      throw new Error(
+        locale === "de"
+          ? "Bitte geben Sie eine vollständige Lieferadresse ein."
+          : "Please enter a complete delivery address.",
+      );
+    }
+  }
+
+  return { name, email, phone, address: shippingMethod === "germany" ? address : null };
+};
 
 export async function validateCartItems(
   inputItems: CartInputItem[],
@@ -426,6 +483,7 @@ export async function markOrderPaid(input: {
          paid_at = COALESCE(paid_at, now()),
          updated_at = now()
      WHERE ${clauses.join(" AND ")}
+       AND payment_status IS DISTINCT FROM 'paid'
      RETURNING id, order_number, customer_email, customer_name, total_amount, currency, items, consent_mode`,
     [...values, input.providerPaymentId ?? null, input.providerStatus ?? "paid"],
   );

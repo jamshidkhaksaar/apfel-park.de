@@ -9,6 +9,7 @@ import {
   verifyStripeSignature,
 } from "@/lib/checkout";
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
+import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 
 type StripeEvent = {
   id: string;
@@ -48,6 +49,18 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
   }
+
+  const session = event.data.object;
+  const orderId = session.metadata?.order_id || session.client_reference_id || null;
+  const isPaidEvent =
+    (event.type === "checkout.session.completed" && session.payment_status === "paid") ||
+    event.type === "payment_intent.succeeded";
+  const sendOrderNotification = async () => {
+    if (!orderId || !isPaidEvent) return false;
+    const result = await notifyPaidOrderAdmin(orderId);
+    return result.status === "failed";
+  };
+
   const isNew = await recordWebhookEvent({
     provider: "stripe",
     eventId: event.id,
@@ -55,11 +68,13 @@ export async function POST(request: NextRequest) {
     payload: event,
   });
   if (!isNew) {
+    if (await sendOrderNotification()) {
+      return NextResponse.json({ error: "Order notification delivery failed" }, { status: 503 });
+    }
     return NextResponse.json({ received: true, duplicate: true });
   }
 
-  const session = event.data.object;
-  const orderId = session.metadata?.order_id || session.client_reference_id || null;
+  let notificationFailed = false;
 
   /**
    * A paid event must carry the amount the order is actually for.
@@ -110,6 +125,7 @@ export async function POST(request: NextRequest) {
         },
       );
     }
+    notificationFailed = await sendOrderNotification();
   }
 
   // The embedded Payment Element pays a PaymentIntent directly; there is no
@@ -140,6 +156,7 @@ export async function POST(request: NextRequest) {
         },
       );
     }
+    notificationFailed = await sendOrderNotification();
   }
 
   // A failed confirmation is retryable on the same PaymentIntent, so keep the
@@ -174,6 +191,10 @@ export async function POST(request: NextRequest) {
       providerSessionId: session.id,
       providerStatus: session.status || "expired",
     });
+  }
+
+  if (notificationFailed) {
+    return NextResponse.json({ error: "Order notification delivery failed" }, { status: 503 });
   }
 
   return NextResponse.json({ received: true });

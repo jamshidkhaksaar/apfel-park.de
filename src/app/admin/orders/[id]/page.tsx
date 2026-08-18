@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getAdminDictionary, getAdminNumberLocale } from "@/lib/admin-i18n-server";
 import AdminShell from "../../../../components/admin/AdminShell";
-import { updateOrderFulfillment } from "../actions";
+import { resendOrderNotification, updateOrderFulfillment } from "../actions";
 import { formatVariant, getOrderDetail } from "../order-data";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +15,10 @@ export default async function OrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ updated?: string }>;
+  searchParams: Promise<{ updated?: string; notified?: string; notifyError?: string }>;
 }) {
   const { id } = await params;
-  const { updated } = await searchParams;
+  const { updated, notified, notifyError } = await searchParams;
   const [order, dict, numberLocale] = await Promise.all([
     getOrderDetail(id),
     getAdminDictionary(),
@@ -49,6 +49,12 @@ export default async function OrderDetailPage({
     [t.provider, order.provider ?? "-"],
     [t.paymentId, order.provider_payment_id ?? "-"],
     [t.sessionId, order.provider_session_id ?? "-"],
+    [
+      t.orderEmail,
+      order.admin_notification_sent_at
+        ? `${t.emailSent}: ${formatDate(order.admin_notification_sent_at)}`
+        : t.emailNotSent,
+    ],
     [t.trackingId, order.tracking_id ?? "-"],
     [
       "Condition consent",
@@ -66,6 +72,16 @@ export default async function OrderDetailPage({
       {updated ? (
         <div className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600">
           {dict.ordersPage.saved}
+        </div>
+      ) : null}
+      {notified ? (
+        <div className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600">
+          {t.notificationSent}
+        </div>
+      ) : null}
+      {notifyError ? (
+        <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-600">
+          {t.notificationError}
         </div>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -120,6 +136,17 @@ export default async function OrderDetailPage({
             {t.save}
           </button>
         </form>
+        {order.payment_status === "paid" ? (
+          <form action={resendOrderNotification} className="mt-4 border-t border-border/60 pt-4">
+            <input type="hidden" name="id" value={order.id} />
+            <button
+              type="submit"
+              className="rounded-full border border-border/60 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-foreground"
+            >
+              {t.resendEmail}
+            </button>
+          </form>
+        ) : null}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -148,7 +175,9 @@ export default async function OrderDetailPage({
             </div>
             <div className="flex items-start justify-between gap-4">
               <dt className="text-muted">{t.phone}</dt>
-              <dd className="text-right font-medium text-foreground">{order.customer_phone ?? "-"}</dd>
+              <dd className="text-right font-medium text-foreground">
+                {order.customer_phone || t.notProvided}
+              </dd>
             </div>
           </dl>
 

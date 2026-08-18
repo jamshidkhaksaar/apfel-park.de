@@ -248,6 +248,176 @@ const getRepairsRecipient = (): string | null =>
   process.env.CONTACT_NOTIFICATION_EMAIL?.trim() ||
   null;
 
+export type PaidOrderAdminEmailData = {
+  id: string;
+  orderNumber: number | null;
+  paidAt: string | null;
+  provider: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  shippingMethod: string | null;
+  customerAddress: {
+    line1?: string | null;
+    line2?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+    country?: string | null;
+  } | null;
+  items: unknown;
+  subtotalAmount: number | string | null;
+  shippingAmount: number | string | null;
+  totalAmount: number | string;
+  currency: string | null;
+  adminUrl?: string;
+};
+
+type PaidOrderEmailItem = {
+  title: string;
+  sku: string | null;
+  quantity: number;
+  lineAmount: number | null;
+};
+
+const toFiniteNumber = (value: unknown): number | null => {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const normalizePaidOrderEmailItems = (items: unknown): PaidOrderEmailItem[] => {
+  if (!Array.isArray(items)) return [];
+
+  return items.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const value = item as Record<string, unknown>;
+    const title = typeof value.title === "string" && value.title.trim() ? value.title.trim() : "Artikel";
+    const sku = typeof value.sku === "string" && value.sku.trim() ? value.sku.trim() : null;
+    const quantity = Math.max(1, Math.floor(toFiniteNumber(value.quantity) ?? 1));
+    const explicitLineAmount = toFiniteNumber(value.lineAmount);
+    const unitAmount = toFiniteNumber(value.unitAmount);
+
+    return [{
+      title,
+      sku,
+      quantity,
+      lineAmount: explicitLineAmount ?? (unitAmount === null ? null : unitAmount * quantity),
+    }];
+  });
+};
+
+export const buildPaidOrderAdminEmail = (data: PaidOrderAdminEmailData) => {
+  const orderLabel = data.orderNumber ? `#A-${data.orderNumber}` : `#${data.id.slice(0, 8)}`;
+  const currency = data.currency?.trim().toUpperCase() || "EUR";
+  const money = new Intl.NumberFormat("de-DE", { style: "currency", currency });
+  const formatMoney = (value: number | string | null) => {
+    const number = toFiniteNumber(value);
+    return number === null ? "-" : money.format(number);
+  };
+  const paidAt = data.paidAt
+    ? new Intl.DateTimeFormat("de-DE", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Europe/Berlin",
+      }).format(new Date(data.paidAt))
+    : "-";
+  const address = data.customerAddress;
+  const addressLines = data.shippingMethod === "germany" && address
+    ? [
+        address.line1,
+        address.line2,
+        [address.postalCode, address.city].filter(Boolean).join(" "),
+        address.country === "DE" ? "Deutschland" : address.country,
+      ].filter((value): value is string => Boolean(value))
+    : ["Abholung im Geschäft"];
+  const items = normalizePaidOrderEmailItems(data.items);
+  const adminUrl = data.adminUrl || `${(process.env.SITE_URL || "https://apfel-park.de").replace(/\/$/, "")}/admin/orders/${data.id}`;
+  const subject = `Neue bezahlte Bestellung ${orderLabel}`;
+  const itemLines = items.length > 0
+    ? items.map((item) => {
+        const sku = item.sku ? ` · SKU ${item.sku}` : "";
+        const amount = item.lineAmount === null ? "" : ` · ${money.format(item.lineAmount)}`;
+        return `${item.quantity} × ${item.title}${sku}${amount}`;
+      })
+    : ["Keine Artikeldaten verfügbar"];
+  const text = [
+    subject,
+    `Zahlung: ${paidAt} · ${data.provider || "-"}`,
+    "",
+    `Kunde: ${data.customerName || "-"}`,
+    `E-Mail: ${data.customerEmail || "-"}`,
+    `Telefon: ${data.customerPhone || "Nicht angegeben – bei Bedarf per E-Mail anfragen"}`,
+    "",
+    "Lieferadresse:",
+    ...addressLines,
+    "",
+    "Artikel:",
+    ...itemLines,
+    "",
+    `Zwischensumme: ${formatMoney(data.subtotalAmount)}`,
+    `Versand: ${formatMoney(data.shippingAmount)}`,
+    `Gesamt: ${formatMoney(data.totalAmount)}`,
+    "",
+    `Bestellung öffnen: ${adminUrl}`,
+  ].join("\n");
+  const itemRows = items.length > 0
+    ? items.map((item) => `
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(`${item.quantity} × ${item.title}`)}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(item.sku || "-")}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">${escapeHtml(item.lineAmount === null ? "-" : money.format(item.lineAmount))}</td>
+        </tr>`).join("")
+    : `<tr><td colspan="3" style="padding:8px;">Keine Artikeldaten verfügbar</td></tr>`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;color:#202020;line-height:1.5;max-width:680px;margin:0 auto;">
+      <h2 style="margin:0 0 16px;">${escapeHtml(subject)}</h2>
+      <p><strong>Zahlung:</strong> ${escapeHtml(paidAt)} · ${escapeHtml(data.provider || "-")}</p>
+      <h3 style="margin-top:24px;">Kunde</h3>
+      <p>
+        ${escapeHtml(data.customerName || "-")}<br />
+        ${escapeHtml(data.customerEmail || "-")}<br />
+        Telefon: ${escapeHtml(data.customerPhone || "Nicht angegeben – bei Bedarf per E-Mail anfragen")}
+      </p>
+      <h3 style="margin-top:24px;">Lieferadresse</h3>
+      <p>${addressLines.map((line) => escapeHtml(line)).join("<br />")}</p>
+      <h3 style="margin-top:24px;">Artikel</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead><tr><th style="padding:8px;text-align:left;">Artikel</th><th style="padding:8px;text-align:left;">SKU</th><th style="padding:8px;text-align:right;">Summe</th></tr></thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+      <p style="margin-top:20px;text-align:right;">
+        Zwischensumme: ${escapeHtml(formatMoney(data.subtotalAmount))}<br />
+        Versand: ${escapeHtml(formatMoney(data.shippingAmount))}<br />
+        <strong>Gesamt: ${escapeHtml(formatMoney(data.totalAmount))}</strong>
+      </p>
+      <p style="margin-top:24px;"><a href="${escapeHtml(adminUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;">Bestellung im Admin öffnen</a></p>
+    </div>
+  `;
+
+  return { subject, text, html };
+};
+
+export const sendPaidOrderAdminEmail = async (
+  data: PaidOrderAdminEmailData,
+): Promise<EmailSendResult> => {
+  const contactRecipient = await getContactRecipient();
+  const recipients = Array.from(
+    new Set([contactRecipient, "info@apfel-park.de"].filter((value): value is string => Boolean(value))),
+  );
+  if (recipients.length === 0) {
+    return { success: false, error: "No order notification recipient configured" };
+  }
+
+  const { subject, text, html } = buildPaidOrderAdminEmail(data);
+  return sendTransactionalEmail({
+    to: recipients,
+    replyTo: data.customerEmail || undefined,
+    subject,
+    text,
+    html,
+    identity: "sales",
+  });
+};
+
 export const buildEmailContent = (data: ContactNotificationData) => {
   const subject =
     data.locale === "de"

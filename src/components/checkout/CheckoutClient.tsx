@@ -161,7 +161,10 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
   const canSubmit = useMemo(() => {
     if (!cart || cart.items.length === 0) return false;
     if (!customer.name.trim() || !customer.email.trim()) return false;
-    if (shippingMethod === "germany" && (!customer.line1.trim() || !customer.postalCode.trim() || !customer.city.trim())) {
+    if (
+      shippingMethod === "germany" &&
+      (!customer.phone.trim() || !customer.line1.trim() || !customer.postalCode.trim() || !customer.city.trim())
+    ) {
       return false;
     }
     if (hasNonNewItems && !conditionConsent) return false;
@@ -283,8 +286,8 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
           </h1>
           <p className="mt-3 max-w-md text-[15px] leading-relaxed text-muted">
             {locale === "de"
-              ? "Wir melden uns nach der Zahlung persönlich – per E-Mail und, wenn du magst, telefonisch."
-              : "We get in touch personally after payment — by email, and by phone if you prefer."}
+              ? "Die Bestätigung kommt per E-Mail. Bei Versand nutzen wir deine Telefonnummer nur für Rückfragen zur Lieferung."
+              : "Your confirmation arrives by email. For delivery, we only use your phone number for delivery questions."}
           </p>
         </header>
 
@@ -309,8 +312,19 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
               <input required type="email" autoComplete="email" className={FIELD_CLASS} value={customer.email} onChange={(event) => setCustomer({ ...customer, email: event.target.value })} />
             </label>
             <label className="block md:col-span-2">
-              <span className={LABEL_CLASS}>{locale === "de" ? "Telefon (optional)" : "Phone (optional)"}</span>
-              <input autoComplete="tel" className={FIELD_CLASS} value={customer.phone} onChange={(event) => setCustomer({ ...customer, phone: event.target.value })} />
+              <span className={LABEL_CLASS}>
+                {shippingMethod === "germany"
+                  ? locale === "de" ? "Telefon *" : "Phone *"
+                  : locale === "de" ? "Telefon (optional)" : "Phone (optional)"}
+              </span>
+              <input
+                required={shippingMethod === "germany"}
+                type="tel"
+                autoComplete="tel"
+                className={FIELD_CLASS}
+                value={customer.phone}
+                onChange={(event) => setCustomer({ ...customer, phone: event.target.value })}
+              />
             </label>
           </div>
         </section>

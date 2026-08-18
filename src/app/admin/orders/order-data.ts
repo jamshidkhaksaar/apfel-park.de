@@ -34,6 +34,9 @@ export type OrderDetail = {
   provider: string | null;
   provider_payment_id: string | null;
   provider_session_id: string | null;
+  admin_notification_sent_at: string | null;
+  admin_notification_last_error: string | null;
+  admin_notification_attempts: number;
   checkout_locale: string | null;
   total_amount: string;
   subtotal_amount: string | null;
@@ -58,6 +61,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     `SELECT id, order_number, created_at, paid_at, customer_name, customer_email, customer_phone,
             customer_address, status, payment_status, shipping_method, provider,
             provider_payment_id, provider_session_id, checkout_locale,
+            admin_notification_sent_at, admin_notification_last_error, admin_notification_attempts,
             total_amount, subtotal_amount, shipping_amount, vat_amount, currency, items,
             metadata->>'trackingId' AS tracking_id,
             metadata->'conditionConsent' AS condition_consent

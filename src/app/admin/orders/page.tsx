@@ -13,6 +13,14 @@ type OrderRow = {
   order_number: number | null;
   customer_name: string | null;
   customer_email: string | null;
+  customer_phone: string | null;
+  customer_address: {
+    line1?: string | null;
+    line2?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+    country?: string | null;
+  } | null;
   status: string | null;
   payment_status: string | null;
   provider: string | null;
@@ -67,7 +75,8 @@ const countItems = (items: unknown): number => {
 
 async function fetchOrders(search: string): Promise<OrderRow[]> {
   const baseSelect = `
-    SELECT id, order_number, customer_name, customer_email, status, payment_status, provider,
+    SELECT id, order_number, customer_name, customer_email, customer_phone, customer_address,
+           status, payment_status, provider,
            shipping_method, created_at, total_amount, currency, items,
            metadata->>'trackingId' AS tracking_id
     FROM orders`;
@@ -85,6 +94,11 @@ async function fetchOrders(search: string): Promise<OrderRow[]> {
     `${baseSelect}
      WHERE customer_name ILIKE $1
         OR customer_email ILIKE $1
+        OR customer_phone ILIKE $1
+        OR customer_address->>'line1' ILIKE $1
+        OR customer_address->>'line2' ILIKE $1
+        OR customer_address->>'postalCode' ILIKE $1
+        OR customer_address->>'city' ILIKE $1
         OR metadata->>'trackingId' ILIKE $1
         OR ($2::int IS NOT NULL AND order_number = $2::int)
      ORDER BY created_at DESC
@@ -258,6 +272,7 @@ export default async function OrdersPage({
                 <th className="px-4 py-3">{dict.ordersPage.table.order}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.date}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.customer}</th>
+                <th className="px-4 py-3">{dict.ordersPage.table.delivery}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.items}</th>
                 <th className="px-4 py-3">Payment</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.tracking}</th>
@@ -281,6 +296,23 @@ export default async function OrdersPage({
                     <td className="px-4 py-3 text-muted">
                       <div>{order.customer_name ?? "-"}</div>
                       {order.customer_email ? <div className="text-xs">{order.customer_email}</div> : null}
+                      <div className="mt-1 text-xs">
+                        {dict.ordersPage.detail.phone}: {order.customer_phone || dict.ordersPage.detail.notProvided}
+                      </div>
+                    </td>
+                    <td className="min-w-[210px] px-4 py-3 text-muted">
+                      {order.shipping_method === "germany" && order.customer_address ? (
+                        <address className="text-xs not-italic leading-relaxed">
+                          {order.customer_address.line1 || "-"}
+                          {order.customer_address.line2 ? <><br />{order.customer_address.line2}</> : null}
+                          <br />
+                          {[order.customer_address.postalCode, order.customer_address.city].filter(Boolean).join(" ") || "-"}
+                          <br />
+                          {order.customer_address.country === "DE" ? "Deutschland" : order.customer_address.country || "-"}
+                        </address>
+                      ) : (
+                        <span className="text-xs">{dict.ordersPage.detail.pickupNote}</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted">{countItems(order.items) || "-"}</td>
                     <td className="px-4 py-3 text-muted">
@@ -330,7 +362,7 @@ export default async function OrdersPage({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-muted">
+                  <td colSpan={9} className="px-4 py-8 text-center text-muted">
                     {dict.ordersPage.empty}
                   </td>
                 </tr>
