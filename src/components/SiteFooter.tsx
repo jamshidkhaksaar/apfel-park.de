@@ -182,6 +182,13 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
               </svg>
               {lang === "de" ? "Route planen" : "Get Directions"}
             </Link>
+
+            <Link
+              href={`/${lang}/handy-shop-hamburg-wilhelmsburg`}
+              className="inline-flex items-center gap-2 text-sm font-medium text-foreground transition hover:text-gold"
+            >
+              {lang === "de" ? "Handy Shop Hamburg-Wilhelmsburg" : "Phone Store Hamburg-Wilhelmsburg"}
+            </Link>
           </div>
         </div>
 

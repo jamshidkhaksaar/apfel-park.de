@@ -5,6 +5,7 @@ export type SeoRouteId =
   | "about"
   | "repairs"
   | "smartphones"
+  | "hamburgStore"
   | "iphone17"
   | "iphone16ProMax"
   | "samsungPhones"
@@ -176,6 +177,25 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     defaultKeywords: {
       de: "Smartphones Hamburg, iPhone kaufen Hamburg, Samsung kaufen Hamburg, gebrauchte Smartphones Hamburg",
       en: "smartphones Hamburg, buy iPhone Hamburg, buy Samsung Hamburg, refurbished phones Hamburg",
+    },
+  },
+  {
+    id: "hamburgStore",
+    path: "/handy-shop-hamburg-wilhelmsburg",
+    labels: { de: "Handy Shop Wilhelmsburg", en: "Phone Store Wilhelmsburg" },
+    priority: 0.93,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "Handy Shop Hamburg-Wilhelmsburg | Apfel Park",
+      en: "Phone Store Hamburg-Wilhelmsburg | Apfel Park",
+    },
+    defaultDescription: {
+      de: "Smartphones, iPhones, Samsung Handys und Zubehör bei Apfel Park in Hamburg-Wilhelmsburg kaufen. Live-Bestand, Abholung im Store oder Versand.",
+      en: "Buy smartphones, iPhones, Samsung phones and accessories at Apfel Park in Hamburg-Wilhelmsburg. Live stock, store collection or delivery.",
+    },
+    defaultKeywords: {
+      de: "Handy Shop Hamburg, Handy Shop Wilhelmsburg, Smartphone kaufen Hamburg, iPhone kaufen Hamburg",
+      en: "phone store Hamburg, phone store Wilhelmsburg, buy smartphone Hamburg, buy iPhone Hamburg",
     },
   },
   {

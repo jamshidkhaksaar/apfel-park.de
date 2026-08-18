@@ -25,6 +25,7 @@ describe("splitKeywords", () => {
     expect(paths).toContain("/iphone-16-pro-max");
     expect(paths).toContain("/samsung-handys");
     expect(paths).toContain("/handys-ohne-vertrag");
+    expect(paths).toContain("/handy-shop-hamburg-wilhelmsburg");
     expect(paths.size).toBe(seoRouteDefinitions.length);
   });
 });
