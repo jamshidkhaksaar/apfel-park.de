@@ -1,5 +1,6 @@
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import DashboardClient from "./DashboardClient";
+import { loadDashboardStats } from "@/lib/admin-dashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -39,25 +40,13 @@ const toTimestamp = (value: string): number => {
 export default async function AdminPage() {
   const adminClient = await createAdminServerClient();
 
-  // Fetch stats in parallel
+  // Fetch independent dashboard data in parallel.
   const [
-    { count: repairsCount },
-    { count: ordersCount },
-    { count: productsCount },
-    { count: reviewsCount },
+    stats,
     { data: recentRepairs },
     { data: recentOrders },
   ] = await Promise.all([
-    adminClient
-      .from("repairs")
-      .select("*", { count: "exact", head: true })
-      .in("status", ["new", "neu", "Neu"]),
-    adminClient
-      .from("orders")
-      .select("*", { count: "exact", head: true })
-      .in("status", ["pending", "ausstehend", "neu", "Ausstehend", "Neu"]),
-    adminClient.from("products").select("*", { count: "exact", head: true }).eq("is_active", true),
-    adminClient.from("reviews").select("*", { count: "exact", head: true }),
+    loadDashboardStats(),
     adminClient
       .from("repairs")
       .select("id,ticket_number,device_model,status,created_at")
@@ -69,15 +58,6 @@ export default async function AdminPage() {
       .order("created_at", { ascending: false })
       .limit(4),
   ]);
-
-  const stats = {
-    repairs: repairsCount || 0,
-    orders: ordersCount || 0,
-    products: productsCount || 0,
-    reviews: reviewsCount || 0,
-    liveUsers: 0,
-    unreadChats: 0,
-  };
 
   const activity: DashboardActivity[] = [
     ...((recentRepairs ?? []) as Array<{

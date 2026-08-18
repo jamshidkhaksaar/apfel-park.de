@@ -100,9 +100,13 @@ export const generateMetadata = async ({
   const compactName = compactText(descriptiveTitle, Math.max(24, 46 - titlePrefix.length - titleSuffix.length));
   const seoTitle = `${titlePrefix}${compactName}${titleSuffix}`;
   const seoDescription = compactText(
-    locale === "de"
-      ? `${descriptiveName} für ${price}: ${conditionLabel}, geprüft, mit Garantie. Artikel ${reference}. Abholung in Hamburg oder Versand in Deutschland.`
-      : `${descriptiveName} for ${price}: ${conditionLabel}, tested, with warranty. Item ${reference}. Hamburg pickup or shipping in Germany.`,
+    (product.stock ?? 0) <= 0
+      ? locale === "de"
+        ? `${descriptiveName}: derzeit ausverkauft. ${conditionLabel}, geprüft, mit Garantie. Artikeldetails und Verfügbarkeit bei Apfel Park Hamburg.`
+        : `${descriptiveName}: currently out of stock. ${conditionLabel}, tested, with warranty. Product details and availability from Apfel Park Hamburg.`
+      : locale === "de"
+        ? `${descriptiveName} für ${price}: ${conditionLabel}, geprüft, mit Garantie. Artikel ${reference}. Abholung in Hamburg oder Versand in Deutschland.`
+        : `${descriptiveName} for ${price}: ${conditionLabel}, tested, with warranty. Item ${reference}. Hamburg pickup or shipping in Germany.`,
     155,
   );
 

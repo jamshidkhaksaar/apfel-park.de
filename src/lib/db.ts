@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 
 import { parseColumns, quoteIdentifier } from "./sql-identifier";
 
@@ -293,3 +293,24 @@ export const createDbClient = () => ({
 });
 
 export const query = (text: string, values?: unknown[]) => pool.query(text, values);
+
+export type TransactionClient = PoolClient;
+
+/**
+ * Runs related writes on one PostgreSQL connection. Callers must use the
+ * provided client for every query that belongs to the transaction.
+ */
+export const withTransaction = async <T>(work: (client: TransactionClient) => Promise<T>): Promise<T> => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await work(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};

@@ -6,6 +6,7 @@ import {
   createPendingOrder,
   getCheckoutBaseUrl,
   getPaymentMode,
+  markOrderCancelled,
   normalizeCheckoutCustomer,
   normalizeShippingMethod,
   validateCartItems,
@@ -153,6 +154,11 @@ export async function POST(request: NextRequest) {
       message?: string;
     };
     if (!response.ok || !data.id) {
+      await markOrderCancelled({
+        provider: "paypal",
+        orderId: order.id,
+        providerStatus: "order_creation_failed",
+      });
       return NextResponse.json(
         { success: false, error: data.message || "PayPal order could not be created" },
         { status: 502 },

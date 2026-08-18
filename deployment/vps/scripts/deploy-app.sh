@@ -92,6 +92,9 @@ log "activating"
 ln -sfn "$release" "$CURRENT.tmp"
 mv -Tf "$CURRENT.tmp" "$CURRENT"
 systemctl restart "$SERVICE"
+if systemctl cat apfel-park-marketplace-worker.service >/dev/null 2>&1; then
+  systemctl restart apfel-park-marketplace-worker.service
+fi
 
 log "health check"
 ok=0

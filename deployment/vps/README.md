@@ -13,6 +13,7 @@ This folder captures the production server layout needed to rebuild or migrate t
 - PostgreSQL backups: `/srv/apfel-park/backups/postgres`
 - Nginx site: `/etc/nginx/sites-available/apfel-park.conf`
 - App service: `/etc/systemd/system/apfel-park-nextjs.service`
+- Omnichannel worker: `/etc/systemd/system/apfel-park-marketplace-worker.service`
 
 ## What is included
 
@@ -48,8 +49,8 @@ Create replacement values from the `.example` files during migration, then resto
 2. Clone the repository to `/srv/apfel-park/app/source`.
 3. Create `/srv/apfel-park/app/shared/app.env` from `deployment/vps/app/app.env.example`.
 4. Copy `deployment/vps/nginx/apfel-park.conf` to `/etc/nginx/sites-available/apfel-park.conf` and enable it.
-5. Copy `deployment/vps/systemd/apfel-park-nextjs.service` to `/etc/systemd/system/` and run `systemctl daemon-reload`.
-6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then start `apfel-park-nextjs.service`.
+5. Copy `deployment/vps/systemd/apfel-park-nextjs.service` and `deployment/vps/systemd/apfel-park-marketplace-worker.service` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
+6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then enable and start `apfel-park-nextjs.service` and `apfel-park-marketplace-worker.service`.
 7. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
 8. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
 9. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.

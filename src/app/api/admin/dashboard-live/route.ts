@@ -4,6 +4,7 @@ import { promisify } from "node:util";
 import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "@/lib/db";
+import { loadDashboardStats } from "@/lib/admin-dashboard";
 import { readSessionUserFromRequest } from "@/lib/session";
 
 const execFileAsync = promisify(execFile);
@@ -55,14 +56,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [activeUsers, repairsCount, ordersCount, productsCount, reviewsCount, unreadChats, recentRepairs, recentOrders] =
+    const [activeUsers, recentRepairs, recentOrders] =
       await Promise.all([
         readActiveVisitors(),
-        query(`SELECT COUNT(*)::int AS count FROM repairs WHERE LOWER(COALESCE(status, 'new')) IN ('new', 'neu')`),
-        query(`SELECT COUNT(*)::int AS count FROM orders WHERE LOWER(COALESCE(status, 'pending')) IN ('pending', 'neu', 'ausstehend')`),
-        query(`SELECT COUNT(*)::int AS count FROM products WHERE is_active = true`),
-        query(`SELECT COUNT(*)::int AS count FROM reviews`),
-        query(`SELECT COALESCE(SUM(admin_unread_count), 0)::int AS count FROM chat_conversations`),
         query(
           `SELECT id, ticket_number, device_model, status, created_at
            FROM repairs
@@ -76,6 +72,8 @@ export async function GET(request: NextRequest) {
            LIMIT 4`,
         ),
       ]);
+
+    const stats = await loadDashboardStats(activeUsers);
 
     const recentActivity = [
       ...recentRepairs.rows.map((repair) => ({
@@ -99,14 +97,7 @@ export async function GET(request: NextRequest) {
       .slice(0, 6);
 
     return NextResponse.json({
-      stats: {
-        repairs: Number(repairsCount.rows[0]?.count ?? 0),
-        orders: Number(ordersCount.rows[0]?.count ?? 0),
-        products: Number(productsCount.rows[0]?.count ?? 0),
-        reviews: Number(reviewsCount.rows[0]?.count ?? 0),
-        liveUsers: activeUsers,
-        unreadChats: Number(unreadChats.rows[0]?.count ?? 0),
-      },
+      stats,
       recentActivity,
     });
   } catch (error) {

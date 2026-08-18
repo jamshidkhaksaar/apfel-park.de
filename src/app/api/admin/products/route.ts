@@ -620,11 +620,18 @@ const syncProductInventory = async (productId: string, product: ReturnType<typeo
 
   for (const unit of sellable) {
     const result = await query(
-      `INSERT INTO inventory_skus (product_id, sku, location, on_hand, reserved, safety_buffer)
-       VALUES ($1, $2, 'local', greatest($3, 0), 0, 0)
+      `INSERT INTO inventory_skus (product_id, sku, location, on_hand, reserved, safety_buffer, is_active)
+       VALUES ($1, $2, 'local', greatest($3, 0), 0, 0, true)
        ON CONFLICT (sku, location) DO UPDATE
-         SET on_hand = greatest(excluded.on_hand, inventory_skus.reserved),
+         -- The legacy product form edits the sellable mirror. Preserve any
+         -- units already reserved (and the configured buffer) when converting
+         -- that value back into physical on-hand stock.
+         SET on_hand = greatest(
+               excluded.on_hand + inventory_skus.reserved + inventory_skus.safety_buffer,
+               inventory_skus.reserved + inventory_skus.safety_buffer
+             ),
              product_id = excluded.product_id,
+             is_active = true,
              updated_at = now()
          WHERE inventory_skus.product_id = excluded.product_id
        RETURNING id`,
@@ -636,7 +643,7 @@ const syncProductInventory = async (productId: string, product: ReturnType<typeo
   const activeSkus = sellable.map((unit) => unit.sku);
   await query(
     `UPDATE inventory_skus
-        SET on_hand = reserved, updated_at = now()
+        SET on_hand = reserved, is_active = false, updated_at = now()
       WHERE product_id = $1
         AND location = 'local'
         AND NOT (sku = ANY($2::text[]))`,

@@ -4,15 +4,7 @@ import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
 import AdminShell from "@/components/admin/AdminShell";
-
-type DashboardStats = {
-  repairs: number;
-  orders: number;
-  products: number;
-  reviews: number;
-  liveUsers: number;
-  unreadChats: number;
-};
+import type { DashboardStats } from "@/lib/admin-dashboard";
 
 type DashboardActivity = {
   id: string;
@@ -154,9 +146,9 @@ export default function DashboardClient({
       Icon: BagIcon,
     },
     {
-      label: dict.dashboard.stats.products,
-      value: liveStats.products,
-      note: lang === "de" ? "Im Katalog gelistet" : "Listed in catalog",
+      label: lang === "de" ? "Aktive Katalogeinträge" : "Active catalog listings",
+      value: liveStats.catalogListings,
+      note: lang === "de" ? "Veröffentlichte Produktseiten" : "Published product pages",
       accent: 'indigo',
       Icon: CubeIcon,
     },
@@ -188,6 +180,41 @@ export default function DashboardClient({
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12c0-4.97 4.365-9 9.75-9s9.75 4.03 9.75 9-4.365 9-9.75 9a10.7 10.7 0 01-4.18-.84L3 20.25l1.3-3.9A8.88 8.88 0 012.25 12z" />
         </svg>
       ),
+    },
+    {
+      label: lang === "de" ? "Verfügbare SKUs" : "In-stock SKUs",
+      value: liveStats.inStockSkus,
+      note: lang === "de" ? "Mindestens ein Stück verkaufbar" : "At least one unit sellable",
+      accent: 'emerald',
+      Icon: CubeIcon,
+    },
+    {
+      label: lang === "de" ? "Ausverkaufte SKUs" : "Out-of-stock SKUs",
+      value: liveStats.outOfStockSkus,
+      note: lang === "de" ? "Aktuell nicht bestellbar" : "Currently unavailable",
+      accent: 'rose',
+      Icon: CubeIcon,
+    },
+    {
+      label: lang === "de" ? "Verkaufbare Einheiten" : "Sellable units",
+      value: liveStats.sellableUnits,
+      note: lang === "de" ? "Bestand abzüglich Reserven und Puffer" : "On hand minus reservations and buffer",
+      accent: 'emerald',
+      Icon: CubeIcon,
+    },
+    {
+      label: lang === "de" ? "Reservierte Einheiten" : "Reserved units",
+      value: liveStats.reservedUnits,
+      note: lang === "de" ? "Für offene Bestellungen reserviert" : "Held for open orders",
+      accent: 'gold',
+      Icon: BagIcon,
+    },
+    {
+      label: lang === "de" ? "Niedriger Bestand" : "Low-stock SKUs",
+      value: liveStats.lowStockSkus,
+      note: lang === "de" ? "Nur noch 1 bis 3 Stück" : "Only 1 to 3 units left",
+      accent: 'gold',
+      Icon: CubeIcon,
     },
   ];
 
@@ -290,6 +317,13 @@ export default function DashboardClient({
       accent: 'emerald',
       Icon: TicketIcon,
     },
+    {
+      title: lang === "de" ? "Lager verwalten" : "Manage inventory",
+      desc: lang === "de" ? "Vor-Ort-Verkauf, Retoure oder Korrektur" : "Shop sale, return or correction",
+      path: '/admin/inventory',
+      accent: 'rose',
+      Icon: CubeIcon,
+    },
   ];
 
   return (
@@ -298,6 +332,12 @@ export default function DashboardClient({
       {/* ── Section label ── */}
       <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
         Live Metrics
+      </p>
+      <p className="-mt-3 mb-4 text-xs text-muted/50">
+        {lang === "de" ? "Automatisch aktualisiert: " : "Automatically refreshed: "}
+        <time suppressHydrationWarning>
+          {new Date(liveStats.updatedAt).toLocaleString(lang === "de" ? "de-DE" : "en-GB")}
+        </time>
       </p>
 
       {/* ── Stat cards ── */}
@@ -344,7 +384,7 @@ export default function DashboardClient({
         <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
           {dict.dashboard.quickActions.title}
         </p>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {quickActions.map(({ title, desc, path, accent, Icon }) => {
             const s = accentStyles[accent];
             return (
@@ -461,6 +501,32 @@ export default function DashboardClient({
               </div>
               <span className="font-mono text-[10px] tabular-nums text-emerald-400/80">
                 {lang === "de" ? "Lokaler Uploadspeicher" : "Local upload storage"}
+              </span>
+            </li>
+
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+              <div className="flex items-center gap-3">
+                <span className={`h-1.5 w-1.5 rounded-full ${liveStats.failedSyncs > 0 ? 'bg-rose-400' : liveStats.pendingSyncs > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                <span className="text-xs text-muted/80">{lang === "de" ? "Kanalsynchronisierung" : "Channel synchronization"}</span>
+              </div>
+              <span className={`font-mono text-[10px] tabular-nums ${liveStats.failedSyncs > 0 ? 'text-rose-400' : liveStats.pendingSyncs > 0 ? 'text-amber-400' : 'text-emerald-400/80'}`}>
+                {liveStats.failedSyncs > 0
+                  ? `${liveStats.failedSyncs} ${lang === "de" ? "fehlgeschlagen" : "failed"}${liveStats.failedChannels.length ? ` · ${liveStats.failedChannels.join(", ")}` : ""}`
+                  : liveStats.pendingSyncs > 0
+                    ? `${liveStats.pendingSyncs} ${lang === "de" ? "ausstehend" : "pending"}`
+                    : lang === "de" ? "Aktuell" : "Current"}
+              </span>
+            </li>
+
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+              <div className="flex items-center gap-3">
+                <span className={`h-1.5 w-1.5 rounded-full ${liveStats.lastSyncedAt ? 'bg-emerald-400' : 'bg-muted/40'}`} />
+                <span className="text-xs text-muted/80">{lang === "de" ? "Letzte erfolgreiche Synchronisierung" : "Last successful synchronization"}</span>
+              </div>
+              <span className="font-mono text-[10px] tabular-nums text-muted/60" suppressHydrationWarning>
+                {liveStats.lastSyncedAt
+                  ? new Date(liveStats.lastSyncedAt).toLocaleString(lang === "de" ? "de-DE" : "en-GB")
+                  : lang === "de" ? "Noch keine" : "Not yet"}
               </span>
             </li>
           </ul>

@@ -5,6 +5,7 @@ import {
   buildConditionConsent,
   createPendingOrder,
   getCheckoutBaseUrl,
+  markOrderCancelled,
   normalizeCheckoutCustomer,
   normalizeShippingMethod,
   validateCartItems,
@@ -132,6 +133,11 @@ export async function POST(request: NextRequest) {
         status: response.status,
         requestId: stripeRequestId(response),
         error: data.error?.message || "missing session id or URL",
+      });
+      await markOrderCancelled({
+        provider: "stripe",
+        orderId: order.id,
+        providerStatus: "checkout_creation_failed",
       });
       return NextResponse.json(
         { success: false, error: data.error?.message || "Stripe checkout could not be created" },

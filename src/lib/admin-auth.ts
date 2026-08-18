@@ -98,6 +98,7 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
   if (role === "manager") {
     paths.push(
       "/admin/products",
+      "/admin/inventory",
       "/admin/orders",
       "/admin/repairs",
       "/admin/repair-estimates",
@@ -107,7 +108,7 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
       "/admin/marketplaces",
     );
   } else if (role === "product_editor") {
-    paths.push("/admin/products");
+    paths.push("/admin/products", "/admin/inventory");
   }
 
   return paths;

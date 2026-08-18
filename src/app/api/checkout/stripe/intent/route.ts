@@ -4,6 +4,7 @@ import {
   buildConditionConsent,
   createPendingOrder,
   attachProviderReference,
+  markOrderCancelled,
   normalizeCheckoutCustomer,
   normalizeShippingMethod,
   validateCartItems,
@@ -122,6 +123,11 @@ export async function POST(request: NextRequest) {
         status: response.status,
         requestId: stripeRequestId(response),
         error: intent.error?.message || "missing intent id or client secret",
+      });
+      await markOrderCancelled({
+        provider: "stripe",
+        orderId: order.id,
+        providerStatus: "intent_creation_failed",
       });
       return NextResponse.json(
         { success: false, error: locale === "de" ? "Zahlung konnte nicht gestartet werden." : "Payment could not be started." },

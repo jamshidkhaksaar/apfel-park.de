@@ -101,6 +101,8 @@ const getCredentials = (environment: EbayEnvironment): EbayCredentials => {
 const getApiBaseUrl = (environment: EbayEnvironment): string =>
   environment === "sandbox" ? "https://api.sandbox.ebay.com" : "https://api.ebay.com";
 
+export const getEbayApiBaseUrl = getApiBaseUrl;
+
 const getAuthorizationBaseUrl = (environment: EbayEnvironment): string =>
   environment === "sandbox" ? "https://auth.sandbox.ebay.com" : "https://auth.ebay.com";
 

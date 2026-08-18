@@ -528,6 +528,52 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
 const baseSelect =
   "id,title,title_i18n,subtitle,subtitle_i18n,description,description_i18n,price,compare_at_price,category,condition,battery_health,has_real_product_photos,condition_note,import_metadata,brand,model,sku,mpn,gtin,identifier_status,asin,ebay_epid,country_of_origin,package_weight_kg,package_length_cm,package_width_cm,package_height_cm,charger_included,charging_power_min_w,charging_power_max_w,usb_pd_supported,battery_details,marketplace_category_mappings,stock,slug,images,feature_bullets,feature_bullets_i18n,specs,specs_i18n,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,subcategory,faq,updated_at";
 
+type ProductInventoryRow = {
+  product_id: string;
+  sku: string;
+  available: number;
+};
+
+/** Overlay compatibility stock fields with the authoritative reservation ledger. */
+const hydrateProductsWithInventory = async (products: Product[]): Promise<Product[]> => {
+  if (products.length === 0) return products;
+  try {
+    const result = await query(
+      `SELECT product_id, sku,
+              available_inventory(on_hand, reserved, safety_buffer)::int AS available
+         FROM inventory_skus
+        WHERE location = 'local' AND is_active = true AND product_id = ANY($1::uuid[])`,
+      [products.map((product) => product.id)],
+    );
+    const rows = result.rows as ProductInventoryRow[];
+    const bySku = new Map(rows.map((row) => [row.sku, Number(row.available)] as const));
+    const byProduct = new Map<string, number>();
+    for (const row of rows) {
+      byProduct.set(row.product_id, (byProduct.get(row.product_id) ?? 0) + Number(row.available));
+    }
+
+    return products.map((product) => {
+      const variants = product.variants.map((variant) => ({
+        ...variant,
+        stock: variant.sku && bySku.has(variant.sku) ? bySku.get(variant.sku) : variant.stock,
+      }));
+      const variantStock = variants.length > 0
+        ? variants.reduce((sum, variant) => sum + Math.max(0, variant.stock ?? 0), 0)
+        : undefined;
+      const directStock = product.sku && bySku.has(product.sku) ? bySku.get(product.sku) : undefined;
+      return {
+        ...product,
+        variants,
+        stock: variantStock ?? directStock ?? byProduct.get(product.id) ?? product.stock,
+      };
+    });
+  } catch (error) {
+    // Rolling deployments briefly run before the new SQL function exists.
+    console.error("hydrateProductsWithInventory failed:", error);
+    return products;
+  }
+};
+
 /**
  * Fetches products from the database.
  */
@@ -556,8 +602,9 @@ export async function getProducts(category?: ProductCategory, limit?: number, lo
     .map((row) => mapProduct(row, locale))
     .filter((item): item is Product => item !== null);
 
-  if (!category) return products;
-  return products.filter((product) => product.category === category);
+  const hydrated = await hydrateProductsWithInventory(products);
+  if (!category) return hydrated;
+  return hydrated.filter((product) => product.category === category);
 }
 
 export type StoreCatalogCategory = "all" | ProductCategory | "open-box-smartphones-tablets";
@@ -922,15 +969,20 @@ export async function getStoreCatalog({
 
   // Sort.
   const sorted = [...filtered];
-  if (sort === "price-asc") sorted.sort((a, b) => a.price - b.price);
-  else if (sort === "price-desc") sorted.sort((a, b) => b.price - a.price);
-  else if (sort === "newest") sorted.sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
+  const stockRank = (product: Product) => (product.stock ?? 0) > 0 ? 0 : 1;
+  const stockFirst = (left: Product, right: Product, fallback: () => number) =>
+    stockRank(left) - stockRank(right) || fallback();
+  if (sort === "price-asc") sorted.sort((a, b) => stockFirst(a, b, () => a.price - b.price));
+  else if (sort === "price-desc") sorted.sort((a, b) => stockFirst(a, b, () => b.price - a.price));
+  else if (sort === "newest") sorted.sort((a, b) => stockFirst(a, b, () => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""))));
   else {
     // featured: discounted first, then newest.
     sorted.sort((a, b) => {
-      const discount = Number(b.hasDiscount) - Number(a.hasDiscount);
-      if (discount !== 0) return discount;
-      return String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""));
+      return stockFirst(a, b, () => {
+        const discount = Number(b.hasDiscount) - Number(a.hasDiscount);
+        if (discount !== 0) return discount;
+        return String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""));
+      });
     });
   }
 
@@ -1024,7 +1076,9 @@ export async function getProductBySlug(slug: string, locale: Locale = "de"): Pro
     .single();
 
   if (error || !data) return null;
-  return mapProduct(data as DbProduct, locale);
+  const mapped = mapProduct(data as DbProduct, locale);
+  if (!mapped) return null;
+  return (await hydrateProductsWithInventory([mapped]))[0] ?? null;
 }
 
 /**
@@ -1150,7 +1204,7 @@ export async function getRelatedProducts(product: Product, limit = 4, locale: Lo
     }
   }
 
-  return collected.slice(0, limit);
+  return hydrateProductsWithInventory(collected.slice(0, limit));
 }
 
 export async function getDiscountedProducts(limit = 6, locale: Locale = "de"): Promise<Product[]> {

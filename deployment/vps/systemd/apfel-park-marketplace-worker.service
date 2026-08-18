@@ -1,0 +1,21 @@
+[Unit]
+Description=Apfel Park omnichannel inventory and order worker
+After=network-online.target postgresql.service apfel-park-nextjs.service
+Wants=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/srv/apfel-park/app/current
+EnvironmentFile=/srv/apfel-park/app/shared/app.env
+Environment=PATH=/root/.nvm/versions/node/v24.14.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=MARKETPLACE_WORKER_POLL_MS=15000
+ExecStart=/srv/apfel-park/app/current/node_modules/.bin/tsx /srv/apfel-park/app/current/scripts/marketplace-worker.ts
+Restart=always
+RestartSec=5
+TimeoutStopSec=45
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -109,7 +109,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
     variantStorage: selectedVariant?.storage ?? null,
     quantity: Math.min(quantity, maxQuantity),
   };
-  const isOutOfStock = activeStock === 0;
+  const isOutOfStock = (activeStock ?? 0) <= 0;
   const handleAddToCart = () => {
     if (isOutOfStock) return;
     const eventId = createMarketingEventId("cart");
@@ -608,16 +608,26 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           </div>
 
           <div className="mt-4 grid gap-1.5 text-xs text-muted">
-            <p>
-              {locale === "de"
-                ? "✓ Abholung: heute abholbereit in Hamburg-Wilhelmsburg (Mo–Sa 09:30–20:00)"
-                : "✓ Pickup: ready today in Hamburg-Wilhelmsburg (Mon–Sat 9:30–20:00)"}
-            </p>
-            <p>
-              {locale === "de"
-                ? "✓ Versand: Zustellung in 1–3 Werktagen innerhalb Deutschlands"
-                : "✓ Shipping: delivered within 1–3 business days in Germany"}
-            </p>
+            {isOutOfStock ? (
+              <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-500">
+                {locale === "de"
+                  ? "Derzeit nicht verfügbar. Abholung und Versand sind erst nach neuem Wareneingang möglich."
+                  : "Currently unavailable. Pickup and shipping resume after stock arrives."}
+              </p>
+            ) : (
+              <>
+                <p>
+                  {locale === "de"
+                    ? "✓ Abholung: heute abholbereit in Hamburg-Wilhelmsburg (Mo–Sa 09:30–20:00)"
+                    : "✓ Pickup: ready today in Hamburg-Wilhelmsburg (Mon–Sat 9:30–20:00)"}
+                </p>
+                <p>
+                  {locale === "de"
+                    ? "✓ Versand: Zustellung in 1–3 Werktagen innerhalb Deutschlands"
+                    : "✓ Shipping: delivered within 1–3 business days in Germany"}
+                </p>
+              </>
+            )}
           </div>
 
           {product.featureBullets.length > 0 ? (
@@ -640,7 +650,11 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           ) : null}
 
           <div className="mt-6 grid gap-3 rounded-3xl border border-border/60 bg-surface/50 p-5 text-sm text-muted">
-            <p>{locale === "de" ? "Abholung im Store oder versicherter Versand innerhalb Deutschlands." : "Store pickup or tracked shipping within Germany."}</p>
+            <p>
+              {isOutOfStock
+                ? locale === "de" ? "Dieser Artikel ist aktuell nicht bestellbar." : "This item is not currently available to order."
+                : locale === "de" ? "Abholung im Store oder versicherter Versand innerhalb Deutschlands." : "Store pickup or tracked shipping within Germany."}
+            </p>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p>{locale === "de" ? "Sichere Zahlung mit Kreditkarte, Apple Pay oder Klarna. Preise inkl. gesetzlicher MwSt." : "Secure payment by credit card, Apple Pay, or Klarna. Prices include VAT."}</p>
               <PaymentBrandIcons iconClassName="h-5 w-auto" />

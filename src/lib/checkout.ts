@@ -1,7 +1,7 @@
 import { randomUUID, timingSafeEqual, createHmac } from "node:crypto";
 
-import { query } from "@/lib/db";
-import { reserveInventory } from "@/lib/marketplaces/inventory";
+import { query, withTransaction } from "@/lib/db";
+import { releaseInventoryReservation, reserveInventoryBatch } from "@/lib/marketplaces/inventory";
 import { getProducts, type Product, type ProductVariant } from "@/lib/products";
 import { isValidEmail, sanitizeInput } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
@@ -330,8 +330,9 @@ export async function createPendingOrder(input: {
   termsConsentAt?: string | null;
 }): Promise<CheckoutOrder> {
   const idempotencyKey = normalizeText(input.idempotencyKey) || randomUUID();
-  const result = await query(
-    `INSERT INTO orders (
+  return withTransaction(async (client) => {
+    const result = await client.query(
+      `INSERT INTO orders (
       customer_email,
       customer_name,
       customer_phone,
@@ -357,47 +358,54 @@ export async function createPendingOrder(input: {
       $1,$2,$3,$4,$5,$6,$7,$8,$9,'pending','unpaid',$10,$11,$12,$13,$14,$15,$16,$17,now(),now()
     )
     ON CONFLICT (idempotency_key) DO UPDATE SET updated_at = now()
-    RETURNING id, order_number, total_amount, currency`,
-    [
-      input.customer.email.toLowerCase(),
-      input.customer.name,
-      input.customer.phone || null,
-      input.cart.totalAmount,
-      input.cart.subtotalAmount,
-      input.cart.shippingAmount,
-      input.cart.vatRate,
-      input.cart.vatAmount,
-      input.cart.currency,
-      input.cart.shippingMethod,
-      input.customer.address ?? null,
-      JSON.stringify(input.cart.items),
-      input.provider,
-      idempotencyKey,
-      input.locale,
-      input.consentMode || null,
-      JSON.stringify({
-        paymentMode: getPaymentMode(),
-        createdBy: "checkout",
-        ...(input.conditionConsent ? { conditionConsent: input.conditionConsent } : {}),
-        ...(input.termsConsentAt ? { termsConsentAt: input.termsConsentAt } : {}),
-      }),
-    ],
-  );
+      RETURNING id, order_number, total_amount, currency, items, status, payment_status`,
+      [
+        input.customer.email.toLowerCase(),
+        input.customer.name,
+        input.customer.phone || null,
+        input.cart.totalAmount,
+        input.cart.subtotalAmount,
+        input.cart.shippingAmount,
+        input.cart.vatRate,
+        input.cart.vatAmount,
+        input.cart.currency,
+        input.cart.shippingMethod,
+        input.customer.address ?? null,
+        JSON.stringify(input.cart.items),
+        input.provider,
+        idempotencyKey,
+        input.locale,
+        input.consentMode || null,
+        JSON.stringify({
+          paymentMode: getPaymentMode(),
+          createdBy: "checkout",
+          ...(input.conditionConsent ? { conditionConsent: input.conditionConsent } : {}),
+          ...(input.termsConsentAt ? { termsConsentAt: input.termsConsentAt } : {}),
+        }),
+      ],
+    );
 
-  const row = result.rows[0];
-  if (!row) throw new Error("Order could not be created");
-  // The database reservation is the authoritative oversell guard. It happens
-  // before a payment session is handed to the customer; payment failures release it.
-  for (const item of input.cart.items) {
-    if (!item.sku) throw new Error(`${item.title} has no sellable SKU`);
-    await reserveInventory(item.sku, item.quantity, "checkout_order", row.id, "checkout");
-  }
-  return {
-    id: row.id,
-    orderNumber: row.order_number ?? null,
-    totalAmount: Number(row.total_amount),
-    currency: row.currency || input.cart.currency,
-  };
+    const row = result.rows[0];
+    if (!row) throw new Error("Order could not be created");
+    if (row.status !== "pending" || row.payment_status !== "unpaid") {
+      throw new Error("This checkout request has already been completed or cancelled");
+    }
+    const storedItems = Array.isArray(row.items) ? row.items as ValidatedCartLine[] : input.cart.items;
+    const reservationItems = storedItems.map((item) => {
+      if (!item.sku) throw new Error(`${item.title} has no sellable SKU`);
+      return { sku: item.sku, quantity: item.quantity };
+    });
+
+    // The order and every SKU reservation commit together. A failure on line
+    // two cannot leave line one reserved or an unusable pending order behind.
+    await reserveInventoryBatch(reservationItems, "checkout_order", row.id, "checkout", client);
+    return {
+      id: row.id,
+      orderNumber: row.order_number ?? null,
+      totalAmount: Number(row.total_amount),
+      currency: row.currency || input.cart.currency,
+    };
+  });
 }
 
 export async function attachProviderReference(input: {
@@ -474,8 +482,9 @@ export async function markOrderPaid(input: {
     throw new Error("Missing order reference");
   }
 
-  const result = await query(
-    `UPDATE orders
+  return withTransaction(async (client) => {
+    const result = await client.query(
+      `UPDATE orders
      SET status = 'paid',
          payment_status = 'paid',
          provider_payment_id = COALESCE($${values.length + 1}, provider_payment_id),
@@ -484,16 +493,15 @@ export async function markOrderPaid(input: {
          updated_at = now()
      WHERE ${clauses.join(" AND ")}
        AND payment_status IS DISTINCT FROM 'paid'
+       AND status IS DISTINCT FROM 'cancelled'
      RETURNING id, order_number, customer_email, customer_name, total_amount, currency, items, consent_mode`,
-    [...values, input.providerPaymentId ?? null, input.providerStatus ?? "paid"],
-  );
+      [...values, input.providerPaymentId ?? null, input.providerStatus ?? "paid"],
+    );
 
-  const order = result.rows[0] ?? null;
-  if (order) {
-    const { releaseInventoryReservation } = await import("@/lib/marketplaces/inventory");
-    await releaseInventoryReservation("checkout_order", order.id, true);
-  }
-  return order;
+    const order = result.rows[0] ?? null;
+    if (order) await releaseInventoryReservation("checkout_order", order.id, true, client);
+    return order;
+  });
 }
 
 export async function markOrderCancelled(input: {
@@ -503,8 +511,12 @@ export async function markOrderCancelled(input: {
   providerSessionId?: string | null;
   providerStatus?: string | null;
 }) {
-  await query(
-    `UPDATE orders
+  if (!input.orderId && !input.providerOrderId && !input.providerSessionId) {
+    throw new Error("Missing order reference");
+  }
+  await withTransaction(async (client) => {
+    const result = await client.query(
+      `UPDATE orders
      SET status = 'cancelled',
          payment_status = 'failed',
          provider_status = COALESCE($5, provider_status),
@@ -513,19 +525,21 @@ export async function markOrderCancelled(input: {
      WHERE provider = $1
        AND ($2::uuid IS NULL OR id = $2)
        AND ($3::text IS NULL OR provider_order_id = $3)
-       AND ($4::text IS NULL OR provider_session_id = $4)`,
-    [
-      input.provider,
-      input.orderId ?? null,
-      input.providerOrderId ?? null,
-      input.providerSessionId ?? null,
-      input.providerStatus ?? null,
-    ],
-  );
-  if (input.orderId) {
-    const { releaseInventoryReservation } = await import("@/lib/marketplaces/inventory");
-    await releaseInventoryReservation("checkout_order", input.orderId, false);
-  }
+       AND ($4::text IS NULL OR provider_session_id = $4)
+       AND payment_status IS DISTINCT FROM 'paid'
+       AND status IS DISTINCT FROM 'cancelled'
+     RETURNING id`,
+      [
+        input.provider,
+        input.orderId ?? null,
+        input.providerOrderId ?? null,
+        input.providerSessionId ?? null,
+        input.providerStatus ?? null,
+      ],
+    );
+    const orderId = result.rows[0]?.id ? String(result.rows[0].id) : null;
+    if (orderId) await releaseInventoryReservation("checkout_order", orderId, false, client);
+  });
 }
 
 export async function recordWebhookEvent(input: {

@@ -197,12 +197,13 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
           {products.map((product) => (
             (() => {
               const discount = discountPercentage(product.price, product.compareAtPrice);
+              const isOutOfStock = (product.stock ?? 0) <= 0;
 
               return (
             <Link
               key={product.id}
               href={`/${lang}/store/${product.slug}`}
-              className="group relative flex flex-col overflow-hidden rounded-3xl ocean-card shadow-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gold/20 hover:ring-1 hover:ring-gold/30"
+              className={`group relative flex flex-col overflow-hidden rounded-3xl ocean-card shadow-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gold/20 hover:ring-1 hover:ring-gold/30 ${isOutOfStock ? "opacity-75" : ""}`}
             >
               {/* Image */}
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#f5f5f5] p-5">
@@ -222,6 +223,11 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
                   <ProductStatusBadge condition={product.condition} lang={lang} />
                   {discount ? <span className="rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">-{discount}%</span> : null}
                 </div>
+                {isOutOfStock ? (
+                  <span className="absolute bottom-3 left-3 rounded-full bg-black/85 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                    {lang === "de" ? "Ausverkauft" : "Out of stock"}
+                  </span>
+                ) : null}
 
               </div>
 
@@ -246,7 +252,7 @@ export default function StoreGrid({ products, lang, activeCategory = "all", sort
                     ) : null}
                   </div>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-muted-strong transition-colors group-hover:text-gold">
-                    {lang === "de" ? "Details" : "Details"} →
+                    {isOutOfStock ? (lang === "de" ? "Nicht verfügbar" : "Unavailable") : (lang === "de" ? "Details" : "Details")} →
                   </span>
                 </div>
               </div>
