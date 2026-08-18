@@ -24,7 +24,7 @@ const path = "/handy-shop-hamburg-wilhelmsburg";
 
 const copy = {
   de: {
-    metaTitle: "Handy Shop Hamburg-Wilhelmsburg | Apfel Park",
+    metaTitle: "Handy Shop Hamburg-Wilhelmsburg",
     title: "Handy Shop in Hamburg-Wilhelmsburg",
     description:
       "Smartphones, iPhones, Samsung Handys und Zubehör bei Apfel Park in Hamburg-Wilhelmsburg kaufen. Live-Bestand, Abholung im Store oder Versand.",
@@ -56,7 +56,7 @@ const copy = {
     ],
   },
   en: {
-    metaTitle: "Phone Store Hamburg-Wilhelmsburg | Apfel Park",
+    metaTitle: "Phone Store Hamburg-Wilhelmsburg",
     title: "Phone Store in Hamburg-Wilhelmsburg",
     description:
       "Buy smartphones, iPhones, Samsung phones and accessories at Apfel Park in Hamburg-Wilhelmsburg. Live stock, store collection or delivery.",

@@ -186,8 +186,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.93,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Handy Shop Hamburg-Wilhelmsburg | Apfel Park",
-      en: "Phone Store Hamburg-Wilhelmsburg | Apfel Park",
+      de: "Handy Shop Hamburg-Wilhelmsburg",
+      en: "Phone Store Hamburg-Wilhelmsburg",
     },
     defaultDescription: {
       de: "Smartphones, iPhones, Samsung Handys und Zubehör bei Apfel Park in Hamburg-Wilhelmsburg kaufen. Live-Bestand, Abholung im Store oder Versand.",
