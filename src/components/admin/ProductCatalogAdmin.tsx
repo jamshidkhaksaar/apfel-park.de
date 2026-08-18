@@ -1170,7 +1170,26 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     </label>
                     {formState.condition !== "new" ? (
                       <div className="mt-4 grid gap-3 md:grid-cols-2">
-                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zustandshinweis *" : "Condition note *"}</span><input required data-condition-field="true" value={formState.conditionNote} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, conditionNote: event.target.value })); }} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+                        <label className="space-y-2 md:col-span-2">
+                          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zustandshinweis *" : "Condition note *"}</span>
+                          <textarea
+                            required
+                            data-condition-field="true"
+                            rows={3}
+                            maxLength={1000}
+                            value={formState.conditionNote}
+                            onChange={(event) => {
+                              setConditionError("");
+                              setFormState((previous) => ({ ...previous, conditionNote: event.target.value }));
+                            }}
+                            className="w-full resize-y rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm leading-6 text-foreground"
+                          />
+                          <span className="block text-xs leading-5 text-muted">
+                            {locale === "de"
+                              ? "Dieser Text wird nach dem Speichern auf der Produktseite angezeigt."
+                              : "This exact text appears on the product page after saving."}
+                          </span>
+                        </label>
                         {isUsedIphone ? <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Batteriekapazität (iPhone) *" : "Battery health (iPhone) *"}</span><input required data-condition-field="true" type="number" min="1" max="100" value={formState.batteryHealth} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, batteryHealth: event.target.value })); }} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label> : null}
                         <label className="flex items-center gap-2 text-sm text-foreground md:col-span-2"><input required data-condition-field="true" type="checkbox" checked={formState.hasRealProductPhotos} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, hasRealProductPhotos: event.target.checked })); }} />{locale === "de" ? "Echte Fotos dieses Geräts hochgeladen *" : "Real photos of this exact device uploaded *"}</label>
                       </div>

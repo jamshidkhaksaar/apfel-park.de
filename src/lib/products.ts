@@ -1,6 +1,7 @@
 import { createDbClient, query } from "@/lib/db";
 import { deviceModelNeedles } from "@/lib/device-model";
 import type { Locale } from "@/lib/i18n";
+import { resolveProductConditionNote } from "@/lib/product-condition";
 import type {
   BatteryDetails,
   MarketplaceCategoryMappings,
@@ -466,7 +467,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     isOpenBox: condition !== "new",
     batteryHealth: batteryHealth !== undefined ? Math.max(1, Math.min(100, Math.round(batteryHealth))) : undefined,
     hasRealProductPhotos: Boolean(row.has_real_product_photos),
-    conditionNote: localizedText(row.import_metadata?.conditionNoteI18n, locale, row.condition_note) || undefined,
+    conditionNote: resolveProductConditionNote(row.import_metadata?.conditionNoteI18n, locale, row.condition_note) || undefined,
     image,
     images: images.length > 0 ? images : [image],
     brand: row.brand ?? undefined,

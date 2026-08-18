@@ -606,14 +606,19 @@ export default function ProductCreateForm() {
           className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
         >
           <option value="new">{isGerman ? "Neu & versiegelt" : "New & sealed"}</option>
-          <option value="open_box">{isGerman ? "Open-Box / ungeöffnetes Gerät" : "Open-box / unboxed device"}</option>
+          <option value="open_box">{isGerman ? "Open-Box / ausgepackt" : "Open-box / unboxed"}</option>
           <option value="used">{isGerman ? "Gebraucht A+" : "Used A+"}</option>
         </select>
         {state.condition !== "new" ? (
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="space-y-2">
+            <label className="space-y-2 md:col-span-2">
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{isGerman ? "Zustandshinweis *" : "Condition note *"}</span>
-              <input required data-condition-field="true" onInvalid={() => { const validationError = getConditionValidationError(); if (validationError) setError(validationError); }} value={state.conditionNote} onChange={(event) => setState((prev) => ({ ...prev, conditionNote: event.target.value }))} placeholder={isGerman ? "z. B. Ausstellungsgerät, leichte Verpackungsspuren" : "e.g. display unit, light box wear"} className="w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" />
+              <textarea required data-condition-field="true" rows={3} maxLength={1000} onInvalid={() => { const validationError = getConditionValidationError(); if (validationError) setError(validationError); }} value={state.conditionNote} onChange={(event) => setState((prev) => ({ ...prev, conditionNote: event.target.value }))} placeholder={isGerman ? "z. B. Ausstellungsgerät, leichte Verpackungsspuren" : "e.g. display unit, light box wear"} className="w-full resize-y rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm leading-6 text-foreground" />
+              <span className="block text-xs leading-5 text-muted">
+                {isGerman
+                  ? "Dieser Text wird nach dem Speichern auf der Produktseite angezeigt."
+                  : "This exact text appears on the product page after saving."}
+              </span>
             </label>
             {isUsedIphone ? (
               <label className="space-y-2">

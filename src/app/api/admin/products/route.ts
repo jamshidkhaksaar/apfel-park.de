@@ -10,6 +10,7 @@ import { isValidInputLength, sanitizeInput } from "@/lib/security";
 import { classifySubcategory } from "@/lib/product-subcategory";
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 import { validatedGtin } from "@/lib/product-identifiers";
+import { conditionDetailsChanged } from "@/lib/product-condition";
 import {
   evaluateProductChannelReadiness,
   type BatteryDetails,
@@ -569,6 +570,7 @@ const validatePayload = (data: ReturnType<typeof buildPayload>, messages: Return
     !isValidInputLength(data.title, 255) ||
     !isValidInputLength(data.subtitle || "", 255) ||
     !isValidInputLength(data.description || "", 5000) ||
+    !isValidInputLength(data.conditionNote || "", 1000) ||
     !isValidInputLength(data.brand || "", 100) ||
     !isValidInputLength(data.model || "", 100) ||
     !isValidInputLength(data.sku || "", 120) ||
@@ -891,8 +893,13 @@ export async function PATCH(request: NextRequest) {
 
     const admin = createAdminDbClient();
     const { data: existing, error: existingError } = await admin
-      .from<{ slug: string | null; is_active: boolean | null }>("products")
-      .select("slug,is_active")
+      .from<{
+        slug: string | null;
+        is_active: boolean | null;
+        condition: string | null;
+        condition_note: string | null;
+      }>("products")
+      .select("slug,is_active,condition,condition_note")
       .eq("id", payload.id)
       .maybeSingle();
     if (existingError) throw new Error(`Could not load existing product: ${existingError.message}`);
@@ -902,6 +909,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: auth.messages.activeNotReady, readiness }, { status: 400 });
     }
     await assertInventorySkuAvailability(payload.id, product);
+    const invalidateConditionNoteTranslations = conditionDetailsChanged(
+      { condition: existing?.condition, conditionNote: existing?.condition_note },
+      { condition: product.condition, conditionNote: product.conditionNote },
+    );
 
     // An existing slug is never rewritten on edit: a live URL that changes
     // under an editor's feet costs the ranking it already earned. Re-slugging
@@ -971,6 +982,11 @@ export async function PATCH(request: NextRequest) {
         "marketplace_attributes" = $46::jsonb,
         "amazon_gtin_exemption" = $47,
         "amazon_renewed_approved" = $48,
+        "import_metadata" = CASE
+          WHEN $49::boolean AND ("import_metadata" ? 'conditionNoteI18n')
+            THEN "import_metadata" - 'conditionNoteI18n'
+          ELSE "import_metadata"
+        END,
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -1022,6 +1038,7 @@ export async function PATCH(request: NextRequest) {
         JSON.stringify(product.marketplaceAttributes),
         product.amazonGtinExemption,
         product.amazonRenewedApproved,
+        invalidateConditionNoteTranslations,
       ],
     );
 

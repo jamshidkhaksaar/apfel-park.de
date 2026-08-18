@@ -710,7 +710,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                     ? "Open-Box"
                     : locale === "de" ? "Neu & versiegelt" : "New & sealed"}
               </p>
-              <p className="mt-2">{product.conditionNote || (locale === "de" ? "Zustand und Lieferumfang sind in der Produktbeschreibung dokumentiert." : "Condition and included accessories are documented in the product description.")}</p>
+              <p className="mt-2 whitespace-pre-line">{product.conditionNote || (locale === "de" ? "Zustand und Lieferumfang sind in der Produktbeschreibung dokumentiert." : "Condition and included accessories are documented in the product description.")}</p>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-foreground">
                 {product.hasRealProductPhotos ? <span>{locale === "de" ? "✓ Echte Produktfotos" : "✓ Real product photos"}</span> : null}
                 {product.batteryHealth ? <span>{locale === "de" ? `✓ Batteriekapazität: ${product.batteryHealth}%` : `✓ Battery health: ${product.batteryHealth}%`}</span> : null}
