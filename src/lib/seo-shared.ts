@@ -6,6 +6,9 @@ export type SeoRouteId =
   | "repairs"
   | "smartphones"
   | "iphone17"
+  | "iphone16ProMax"
+  | "samsungPhones"
+  | "phonesWithoutContract"
   | "usedPhones"
   | "usedIphones"
   | "tablets"
@@ -192,6 +195,63 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     defaultKeywords: {
       de: "iPhone 17 kaufen, iPhone 17 Pro kaufen, iPhone 17 Pro Max kaufen, iPhone 17 Air kaufen",
       en: "buy iPhone 17, buy iPhone 17 Pro, buy iPhone 17 Pro Max, buy iPhone 17 Air",
+    },
+  },
+  {
+    id: "iphone16ProMax",
+    path: "/iphone-16-pro-max",
+    labels: { de: "iPhone 16 Pro Max", en: "iPhone 16 Pro Max" },
+    priority: 0.94,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "iPhone 16 Pro Max kaufen – Angebote",
+      en: "Buy iPhone 16 Pro Max – Compare Offers",
+    },
+    defaultDescription: {
+      de: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher und Preis vergleichen. Mit Garantie, Versand in Deutschland oder Abholung in Hamburg.",
+      en: "Compare iPhone 16 Pro Max offers by condition, storage and price. Warranty, delivery in Germany or collection from our Hamburg store.",
+    },
+    defaultKeywords: {
+      de: "iPhone 16 Pro Max, iPhone 16 Pro Max kaufen, iPhone 16 Pro Max gebraucht",
+      en: "buy iPhone 16 Pro Max, iPhone 16 Pro Max price Germany, used iPhone 16 Pro Max",
+    },
+  },
+  {
+    id: "samsungPhones",
+    path: "/samsung-handys",
+    labels: { de: "Samsung Handys", en: "Samsung Phones" },
+    priority: 0.92,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "Samsung Handys kaufen – Galaxy ohne Vertrag",
+      en: "Buy Samsung Galaxy Phones Without Contract",
+    },
+    defaultDescription: {
+      de: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu und Open Box mit transparentem Zustand, Garantie und Versand in ganz Deutschland.",
+      en: "Buy Samsung Galaxy phones without a mobile contract. New and open-box devices with clear condition, warranty and delivery across Germany.",
+    },
+    defaultKeywords: {
+      de: "Samsung Handys, Samsung Handy ohne Vertrag, Samsung Galaxy kaufen",
+      en: "buy Samsung phone Germany, Samsung Galaxy without contract, Samsung phones",
+    },
+  },
+  {
+    id: "phonesWithoutContract",
+    path: "/handys-ohne-vertrag",
+    labels: { de: "Handys ohne Vertrag", en: "Phones Without Contract" },
+    priority: 0.92,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "Handys ohne Vertrag günstig kaufen",
+      en: "Buy Phones Without a Contract in Germany",
+    },
+    defaultDescription: {
+      de: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr kaufen. Neu, Open Box oder gebraucht mit Garantie und Versand in Deutschland.",
+      en: "Buy phones without a mobile contract from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with warranty and delivery in Germany.",
+    },
+    defaultKeywords: {
+      de: "Handy ohne Vertrag, Handy günstig ohne Vertrag, Smartphone ohne Vertrag",
+      en: "buy phone without contract Germany, SIM-free phone Germany, device only phone",
     },
   },
   {

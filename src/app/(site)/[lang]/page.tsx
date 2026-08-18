@@ -240,7 +240,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                       fill
                       className="ipad-default object-contain p-4 drop-shadow-2xl"
                       sizes="(max-width: 1024px) 100vw, 50vw"
-                      priority
                     />
                   </div>
 
@@ -458,7 +457,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                       width={500}
                       height={400}
                       className="h-auto w-full drop-shadow-2xl"
-                      priority
                     />
                   </div>
                   

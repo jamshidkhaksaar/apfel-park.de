@@ -62,6 +62,144 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       ],
     },
   },
+  "iphone-16-pro-max": {
+    de: {
+      path: "/iphone-16-pro-max",
+      title: "iPhone 16 Pro Max kaufen – Angebote vergleichen",
+      metaTitle: "iPhone 16 Pro Max kaufen – Angebote",
+      description: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher und Preis vergleichen. Mit Garantie, Versand in Deutschland oder Abholung in Hamburg.",
+      eyebrow: "Apple iPhone 16 Pro Max",
+      introTitle: "Aktuelle iPhone-16-Pro-Max-Angebote",
+      intro: [
+        "Diese Modellseite bündelt die aktuell bei Apfel Park angebotenen iPhone-16-Pro-Max-Geräte. Vergleiche Speicher, Preis und Zustand an einem festen Ort, auch wenn einzelne Farben oder Angebote wechseln.",
+        "Neu, Open Box und Gebraucht werden nicht vermischt, sondern direkt am jeweiligen Produkt ausgewiesen. Verfügbare Geräte können innerhalb Deutschlands versendet oder in Hamburg-Wilhelmsburg abgeholt werden.",
+      ],
+      benefits: [
+        { title: "Ein Modell, alle Angebote", text: "Verfügbare iPhone-16-Pro-Max-Geräte übersichtlich vergleichen." },
+        { title: "Zustand sichtbar", text: "Neu, Open Box oder Gebraucht steht direkt am Produkt." },
+        { title: "Garantie inklusive", text: "Jedes angebotene Smartphone kommt mit Rechnung und 12 Monaten Garantie." },
+      ],
+      faq: [
+        { question: "Ist das iPhone 16 Pro Max ohne Vertrag erhältlich?", answer: "Ja. Die hier gelisteten Geräte werden ohne Mobilfunkvertrag verkauft." },
+        { question: "Sind alle iPhone 16 Pro Max gebraucht?", answer: "Nein. Der aktuelle Zustand steht an jedem Angebot. Die Auswahl kann Neu, Open Box oder Gebraucht enthalten." },
+        { question: "Versendet Apfel Park das iPhone 16 Pro Max in Deutschland?", answer: "Ja. Verfügbare Geräte können innerhalb Deutschlands versendet oder im Store in Hamburg abgeholt werden." },
+      ],
+    },
+    en: {
+      path: "/iphone-16-pro-max",
+      title: "Buy iPhone 16 Pro Max – Compare Offers",
+      metaTitle: "Buy iPhone 16 Pro Max – Compare Offers",
+      description: "Compare iPhone 16 Pro Max offers by condition, storage and price. Warranty, delivery in Germany or collection from our Hamburg store.",
+      eyebrow: "Apple iPhone 16 Pro Max",
+      introTitle: "Current iPhone 16 Pro Max offers",
+      intro: [
+        "This model page brings together the iPhone 16 Pro Max devices currently offered by Apfel Park. Compare storage, price and condition in one permanent place even when individual colours or offers change.",
+        "New, Open Box and Used are shown separately on every product. Available devices can be delivered within Germany or collected from Hamburg-Wilhelmsburg.",
+      ],
+      benefits: [
+        { title: "One model, every offer", text: "Compare available iPhone 16 Pro Max devices in one place." },
+        { title: "Condition made clear", text: "New, Open Box or Used appears directly on each product." },
+        { title: "Warranty included", text: "Every offered smartphone includes an invoice and 12-month warranty." },
+      ],
+      faq: [
+        { question: "Can I buy an iPhone 16 Pro Max without a contract?", answer: "Yes. Devices listed here are sold without a mobile contract." },
+        { question: "Are all iPhone 16 Pro Max devices used?", answer: "No. Each offer states its current condition and the selection may include New, Open Box or Used devices." },
+        { question: "Does Apfel Park deliver the iPhone 16 Pro Max in Germany?", answer: "Yes. Available devices can be delivered within Germany or collected from our Hamburg store." },
+      ],
+    },
+  },
+  "samsung-phones": {
+    de: {
+      path: "/samsung-handys",
+      title: "Samsung Handys kaufen – Galaxy ohne Vertrag",
+      metaTitle: "Samsung Handys kaufen – Galaxy ohne Vertrag",
+      description: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu und Open Box mit transparentem Zustand, Garantie und Versand in ganz Deutschland.",
+      eyebrow: "Samsung Galaxy",
+      introTitle: "Samsung Galaxy Modelle direkt vergleichen",
+      intro: [
+        "Hier findest du die aktuell verfügbaren Samsung Galaxy Smartphones von Apfel Park. Vergleiche Modelle der Galaxy-S-, A- und M-Serie nach Speicher, Preis und Gerätezustand.",
+        "Alle Geräte werden ohne Mobilfunkvertrag angeboten. Der tatsächliche Zustand steht direkt am Produkt, und verfügbare Smartphones können deutschlandweit versendet oder in Hamburg abgeholt werden.",
+      ],
+      benefits: [
+        { title: "Ohne Vertrag", text: "Samsung Smartphones als reinen Gerätekauf bestellen." },
+        { title: "Galaxy Auswahl", text: "S-, A- und M-Serie nach Preis und Speicher vergleichen." },
+        { title: "Neu & Open Box", text: "Der tatsächliche Zustand ist direkt am Angebot sichtbar." },
+      ],
+      faq: [
+        { question: "Verkauft Apfel Park Samsung Handys ohne Vertrag?", answer: "Ja. Alle auf dieser Seite gelisteten Samsung Smartphones werden ohne Mobilfunkvertrag verkauft." },
+        { question: "Welche Samsung Galaxy Modelle sind verfügbar?", answer: "Die Auswahl wird direkt aus dem aktuellen Lagerbestand erzeugt und kann Galaxy-S-, A- und M-Modelle umfassen." },
+        { question: "Haben Open-Box-Samsung-Handys Garantie?", answer: "Ja. Jedes angebotene Smartphone wird mit Rechnung und 12 Monaten Garantie verkauft." },
+      ],
+    },
+    en: {
+      path: "/samsung-handys",
+      title: "Buy Samsung Phones – Galaxy Without Contract",
+      metaTitle: "Buy Samsung Galaxy Phones Without Contract",
+      description: "Buy Samsung Galaxy phones without a mobile contract. New and open-box devices with clear condition, warranty and delivery across Germany.",
+      eyebrow: "Samsung Galaxy",
+      introTitle: "Compare Samsung Galaxy models",
+      intro: [
+        "Find the Samsung Galaxy smartphones currently available from Apfel Park. Compare Galaxy S, A and M models by storage, price and device condition.",
+        "Every device is sold without a mobile contract. The actual condition appears on each product, with Germany-wide delivery or collection in Hamburg.",
+      ],
+      benefits: [
+        { title: "No contract", text: "Buy Samsung smartphones as standalone devices." },
+        { title: "Galaxy selection", text: "Compare S, A and M models by price and storage." },
+        { title: "New & Open Box", text: "The actual condition appears directly on each offer." },
+      ],
+      faq: [
+        { question: "Does Apfel Park sell Samsung phones without a contract?", answer: "Yes. Every Samsung smartphone listed on this page is sold without a mobile contract." },
+        { question: "Which Samsung Galaxy models are available?", answer: "The selection comes directly from current inventory and may include Galaxy S, A and M models." },
+        { question: "Do open-box Samsung phones include a warranty?", answer: "Yes. Every offered smartphone includes an invoice and a 12-month warranty." },
+      ],
+    },
+  },
+  "phones-without-contract": {
+    de: {
+      path: "/handys-ohne-vertrag",
+      title: "Handys ohne Vertrag günstig kaufen",
+      metaTitle: "Handys ohne Vertrag günstig kaufen",
+      description: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr kaufen. Neu, Open Box oder gebraucht mit Garantie und Versand in Deutschland.",
+      eyebrow: "Smartphones ohne Vertrag",
+      introTitle: "Flexibel bleiben und nur das Gerät kaufen",
+      intro: [
+        "Alle Smartphones in dieser Auswahl werden ohne Mobilfunkvertrag verkauft. Du bezahlst nur das Gerät und kannst deine bestehende SIM-Karte oder einen Tarif deiner Wahl verwenden.",
+        "Vergleiche iPhones und Android-Smartphones nach Marke, Speicher, Preis und Zustand. Neu, Open Box und Gebraucht werden transparent am Produkt ausgewiesen.",
+      ],
+      benefits: [
+        { title: "Keine Vertragsbindung", text: "Nur das Smartphone kaufen und den eigenen Tarif behalten." },
+        { title: "Viele Marken", text: "Apple, Samsung, Google, Xiaomi und weitere Hersteller vergleichen." },
+        { title: "Zustand & Preis klar", text: "Neu, Open Box oder Gebraucht steht direkt am Angebot." },
+      ],
+      faq: [
+        { question: "Sind die Handys SIM-Lock-frei?", answer: "Sofern am einzelnen Produkt nichts anderes angegeben ist, werden die angebotenen Geräte ohne Mobilfunkvertrag verkauft. Bei Fragen zu einem Modell hilft unser Team vor der Bestellung." },
+        { question: "Kann ich meine vorhandene SIM-Karte verwenden?", answer: "In der Regel ja, sofern SIM-Format, eSIM-Unterstützung und Netzkompatibilität zum gewählten Gerät passen." },
+        { question: "Kann ich ein Handy ohne Vertrag in Hamburg abholen?", answer: "Ja. Verfügbare Geräte können online bestellt und im Apfel Park Store in Hamburg-Wilhelmsburg abgeholt werden." },
+      ],
+    },
+    en: {
+      path: "/handys-ohne-vertrag",
+      title: "Buy Phones Without a Contract in Germany",
+      metaTitle: "Buy Phones Without a Contract in Germany",
+      description: "Buy phones without a mobile contract from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with warranty and delivery in Germany.",
+      eyebrow: "Phones without a contract",
+      introTitle: "Stay flexible and buy the device only",
+      intro: [
+        "Every smartphone in this selection is sold without a mobile contract. Pay only for the device and keep your existing SIM or choose your own mobile plan.",
+        "Compare iPhones and Android phones by brand, storage, price and condition. New, Open Box and Used are shown clearly on each product.",
+      ],
+      benefits: [
+        { title: "No contract commitment", text: "Buy only the phone and keep your preferred mobile plan." },
+        { title: "Multiple brands", text: "Compare Apple, Samsung, Google, Xiaomi and more." },
+        { title: "Clear price and condition", text: "New, Open Box or Used appears directly on the offer." },
+      ],
+      faq: [
+        { question: "Are the phones SIM-lock free?", answer: "Unless an individual product says otherwise, devices are sold without a mobile contract. Our team can confirm compatibility before you order." },
+        { question: "Can I use my existing SIM card?", answer: "Usually yes, provided the SIM format, eSIM support and network compatibility match the selected device." },
+        { question: "Can I collect a contract-free phone in Hamburg?", answer: "Yes. Available devices can be ordered online and collected from the Apfel Park store in Hamburg-Wilhelmsburg." },
+      ],
+    },
+  },
   "used-phones": {
     de: {
       path: "/gebrauchte-handys",

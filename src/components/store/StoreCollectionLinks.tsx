@@ -5,12 +5,18 @@ import type { Locale } from "@/lib/i18n";
 const items = {
   de: [
     { href: "/iphone-17", title: "iPhone 17", text: "iPhone 17, Air, Pro und Pro Max vergleichen" },
+    { href: "/iphone-16-pro-max", title: "iPhone 16 Pro Max", text: "Aktuelle Angebote nach Zustand vergleichen" },
+    { href: "/samsung-handys", title: "Samsung Handys", text: "Galaxy Smartphones ohne Vertrag kaufen" },
+    { href: "/handys-ohne-vertrag", title: "Ohne Vertrag", text: "Smartphones kaufen und den eigenen Tarif behalten" },
     { href: "/gebrauchte-iphones", title: "Gebrauchte iPhones", text: "Gebrauchte & Open-Box Apple Geräte vergleichen" },
     { href: "/gebrauchte-handys", title: "Gebrauchte Handys", text: "Gebrauchte & Open-Box Smartphones günstig kaufen" },
     { href: "/open-box", title: "Open Box", text: "Ausgepackte und geprüfte Geräte mit Garantie" },
   ],
   en: [
     { href: "/iphone-17", title: "iPhone 17", text: "Compare iPhone 17, Air, Pro and Pro Max" },
+    { href: "/iphone-16-pro-max", title: "iPhone 16 Pro Max", text: "Compare current offers by condition" },
+    { href: "/samsung-handys", title: "Samsung Phones", text: "Buy Galaxy smartphones without a contract" },
+    { href: "/handys-ohne-vertrag", title: "No Contract", text: "Buy a phone and keep your preferred plan" },
     { href: "/gebrauchte-iphones", title: "Used iPhones", text: "Compare used and open-box Apple devices" },
     { href: "/gebrauchte-handys", title: "Used Phones", text: "Affordable used and open-box smartphones" },
     { href: "/open-box", title: "Open Box", text: "Unboxed and tested devices with warranty" },

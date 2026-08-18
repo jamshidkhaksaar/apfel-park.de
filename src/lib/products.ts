@@ -608,7 +608,13 @@ export async function getProducts(category?: ProductCategory, limit?: number, lo
 }
 
 export type StoreCatalogCategory = "all" | ProductCategory | "open-box-smartphones-tablets";
-export type StoreCatalogCollection = "iphone-17" | "used-phones" | "used-iphones";
+export type StoreCatalogCollection =
+  | "iphone-17"
+  | "iphone-16-pro-max"
+  | "used-phones"
+  | "used-iphones"
+  | "samsung-phones"
+  | "phones-without-contract";
 export type StoreCatalogSort = "featured" | "price-asc" | "price-desc" | "newest";
 
 export type StoreCatalogFilters = {
@@ -867,6 +873,18 @@ export async function getStoreCatalog({
     const identity = [product.brand, product.model, product.title]
       .filter(Boolean)
       .join(" ");
+    if (collection === "samsung-phones") {
+      return product.category === "smartphones"
+        && normalizeProductBrand(product.brand) === "Samsung";
+    }
+    if (collection === "phones-without-contract") {
+      return product.category === "smartphones";
+    }
+    if (collection === "iphone-16-pro-max") {
+      return product.category === "smartphones"
+        && normalizeProductBrand(product.brand) === "Apple"
+        && /\biphone\s*16\s*pro\s*max\b/i.test(identity);
+    }
     return product.category === "smartphones"
       && normalizeProductBrand(product.brand) === "Apple"
       && /\biphone\s*17\b/i.test(identity);

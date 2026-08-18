@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { splitKeywords } from "@/lib/seo-shared";
+import { seoRouteDefinitions, splitKeywords } from "@/lib/seo-shared";
 
 describe("splitKeywords", () => {
   it("splits, trims and drops empties", () => {
@@ -18,5 +18,13 @@ describe("splitKeywords", () => {
   it("tolerates undefined and null instead of throwing", () => {
     expect(splitKeywords(undefined)).toEqual([]);
     expect(splitKeywords(null)).toEqual([]);
+  });
+
+  it("registers the national ecommerce routes for sitemap and admin SEO settings", () => {
+    const paths = new Set(seoRouteDefinitions.map((route) => route.path));
+    expect(paths).toContain("/iphone-16-pro-max");
+    expect(paths).toContain("/samsung-handys");
+    expect(paths).toContain("/handys-ohne-vertrag");
+    expect(paths.size).toBe(seoRouteDefinitions.length);
   });
 });

@@ -51,7 +51,13 @@ const productVariantLabel = (title: string, subtitle: string): string => {
     .map((part) => part.trim())
     .filter(Boolean);
   const titleKey = title.toLocaleLowerCase();
-  return parts.find((part) => !titleKey.includes(part.toLocaleLowerCase())) || "";
+  return parts.find((part) => {
+    const normalized = part.replace(/\s+/g, " ").trim();
+    return normalized.length <= 36
+      && normalized.split(" ").length <= 6
+      && !/[.!?]/.test(normalized)
+      && !titleKey.includes(normalized.toLocaleLowerCase());
+  }) || "";
 };
 
 const productReference = (sku: string | undefined, slug: string): string => {
@@ -95,7 +101,12 @@ export const generateMetadata = async ({
   const titleSuffix = "";
   const seoProductName = product.title.replace(/^Apple (?=iPhone\b)/i, "");
   const descriptiveName = [product.title, variantLabel].filter(Boolean).join(" ");
-  const descriptiveTitle = [seoProductName, variantLabel].filter(Boolean).join(" ");
+  const titleCondition = product.condition === "used"
+    ? locale === "de" ? "Gebraucht" : "Used"
+    : product.condition === "open_box"
+      ? "Open Box"
+      : "";
+  const descriptiveTitle = [seoProductName, titleCondition].filter(Boolean).join(" ");
   // The root layout adds " | Apfel Park"; keep the rendered title near 60 characters.
   const compactName = compactText(descriptiveTitle, Math.max(24, 46 - titlePrefix.length - titleSuffix.length));
   const seoTitle = `${titlePrefix}${compactName}${titleSuffix}`;

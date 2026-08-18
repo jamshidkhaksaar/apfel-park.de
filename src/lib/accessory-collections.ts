@@ -218,7 +218,7 @@ const entries: Record<string, { slug: string; copy: Entry }> = {
     copy: {
       de: {
         title: "Ladegeräte, Kabel & Powerbanks",
-        metaTitle: "Ladegeräte & Ladekabel kaufen – USB-C, MagSafe, Powerbank",
+        metaTitle: "Ladegeräte, Kabel & Powerbanks kaufen",
         description:
           "Ladegeräte, USB-C-Kabel, Powerbanks und Ersatzakkus für iPhone, Samsung und mehr. Abholung in Hamburg oder Versand in Deutschland.",
         eyebrow: "Zubehör",
@@ -236,7 +236,7 @@ const entries: Record<string, { slug: string; copy: Entry }> = {
       },
       en: {
         title: "Chargers, cables and power banks",
-        metaTitle: "Buy chargers & charging cables – USB-C, MagSafe, power banks",
+        metaTitle: "Buy chargers, cables & power banks",
         description:
           "Chargers, USB-C cables, power banks and replacement batteries for iPhone, Samsung and more. Pickup in Hamburg or shipping in Germany.",
         eyebrow: "Accessories",
@@ -259,7 +259,7 @@ const entries: Record<string, { slug: string; copy: Entry }> = {
     copy: {
       de: {
         title: "Displayschutz & Panzerglas",
-        metaTitle: "Panzerglas & Displayschutz kaufen – für iPhone & Samsung",
+        metaTitle: "Panzerglas & Displayschutz kaufen",
         description:
           "Panzerglas und Schutzfolien für iPhone und Samsung Galaxy. Auf Wunsch bringen wir sie im Store in Hamburg direkt für dich an.",
         eyebrow: "Zubehör",
@@ -277,7 +277,7 @@ const entries: Record<string, { slug: string; copy: Entry }> = {
       },
       en: {
         title: "Screen protection and tempered glass",
-        metaTitle: "Buy tempered glass & screen protectors – iPhone & Samsung",
+        metaTitle: "Buy screen protectors & tempered glass",
         description:
           "Tempered glass and screen protectors for iPhone and Samsung Galaxy. We can fit them for you in our Hamburg store.",
         eyebrow: "Accessories",
@@ -300,7 +300,7 @@ const entries: Record<string, { slug: string; copy: Entry }> = {
     copy: {
       de: {
         title: "Kopfhörer & Audio",
-        metaTitle: "Kopfhörer kaufen – In-Ear, Bluetooth & Lautsprecher",
+        metaTitle: "Kopfhörer & Bluetooth-Audio kaufen",
         description:
           "Bluetooth-Kopfhörer, In-Ear-Modelle und Lautsprecher. Abholung in Hamburg-Wilhelmsburg oder Versand in Deutschland.",
         eyebrow: "Zubehör",
