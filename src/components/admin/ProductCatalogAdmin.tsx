@@ -102,6 +102,9 @@ export type AdminProductRecord = {
     reliabilityClass?: string;
     repairabilityClass?: string;
     ipRating?: string;
+    labelImage?: string;
+    ficheDe?: string;
+    ficheEn?: string;
   } | null;
   isHomepageFeatured?: boolean;
   createdAt: string;
@@ -160,6 +163,9 @@ type ProductFormState = {
   energyReliabilityClass: string;
   energyRepairabilityClass: string;
   energyIpRating: string;
+  energyLabelImage: string;
+  energyFicheDe: string;
+  energyFicheEn: string;
   faqDeText: string;
   faqEnText: string;
   sku: string;
@@ -282,6 +288,9 @@ const productToForm = (product: AdminProductRecord): ProductFormState => ({
   energyReliabilityClass: product.energyLabel?.reliabilityClass ?? "",
   energyRepairabilityClass: product.energyLabel?.repairabilityClass ?? "",
   energyIpRating: product.energyLabel?.ipRating ?? "",
+  energyLabelImage: product.energyLabel?.labelImage ?? "",
+  energyFicheDe: product.energyLabel?.ficheDe ?? "",
+  energyFicheEn: product.energyLabel?.ficheEn ?? "",
   price: String(product.price),
   compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : "",
   stock: String(product.stock),
@@ -471,6 +480,9 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     energyReliabilityClass: "",
     energyRepairabilityClass: "",
     energyIpRating: "",
+    energyLabelImage: "",
+    energyFicheDe: "",
+    energyFicheEn: "",
     faqDeText: "",
     faqEnText: "",
     price: "",
@@ -678,6 +690,9 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
               reliabilityClass: formState.energyReliabilityClass,
               repairabilityClass: formState.energyRepairabilityClass,
               ipRating: formState.energyIpRating,
+              labelImage: formState.energyLabelImage,
+              ficheDe: formState.energyFicheDe,
+              ficheEn: formState.energyFicheEn,
             },
             price: Number(formState.price),
             compareAtPrice: formState.compareAtPrice ? Number(formState.compareAtPrice) : null,
@@ -742,7 +757,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           faq: { de: parseFaqText(formState.faqDeText), en: parseFaqText(formState.faqEnText) },
           eprelId: formState.eprelId,
           energyLabel:
-            formState.energyEfficiencyClass || formState.energyBatteryEndurance || formState.energyIpRating
+            formState.energyEfficiencyClass || formState.energyBatteryEndurance || formState.energyIpRating || formState.energyLabelImage
               ? {
                   efficiencyClass: formState.energyEfficiencyClass || undefined,
                   batteryEndurance: formState.energyBatteryEndurance || undefined,
@@ -750,6 +765,9 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                   reliabilityClass: formState.energyReliabilityClass || undefined,
                   repairabilityClass: formState.energyRepairabilityClass || undefined,
                   ipRating: formState.energyIpRating || undefined,
+                  labelImage: formState.energyLabelImage || undefined,
+                  ficheDe: formState.energyFicheDe || undefined,
+                  ficheEn: formState.energyFicheEn || undefined,
                 }
               : null,
           price: Number(formState.price),
@@ -1089,6 +1107,9 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                             energyReliabilityClass: match.reliability_class ?? "",
                             energyRepairabilityClass: match.repairability_class ?? "",
                             energyIpRating: match.ingress_protection ?? "",
+                            energyLabelImage: match.label_image ?? "",
+                            energyFicheDe: match.fiche_de ?? "",
+                            energyFicheEn: match.fiche_en ?? "",
                           }));
                         }}
                       />
@@ -1101,6 +1122,13 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                         <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Reparierbarkeitsklasse" : "Repairability class"}</span><select value={formState.energyRepairabilityClass} onChange={(event) => setFormState((prev) => ({ ...prev, energyRepairabilityClass: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></label>
                         <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Schutzart (IP)" : "IP rating"}</span><input placeholder="IP68" value={formState.energyIpRating} onChange={(event) => setFormState((prev) => ({ ...prev, energyIpRating: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
                       </div>
+                      {formState.eprelId ? (
+                        <p className={`mt-3 text-xs ${formState.energyLabelImage ? "text-emerald-400" : "text-amber-400"}`}>
+                          {formState.energyLabelImage
+                            ? locale === "de" ? "✓ Offizielles EPREL-Label und Produktdatenblätter sind verknüpft." : "✓ Official EPREL label and product information sheets are linked."
+                            : locale === "de" ? "Offizielle Label-Datei ist noch nicht lokal verknüpft; der EPREL-Eintrag bleibt verfügbar." : "The official label file is not linked locally yet; the EPREL entry remains available."}
+                        </p>
+                      ) : null}
                     </div>
                   ) : null}
                   <div className="mt-4 rounded-2xl border border-border/60 p-4">

@@ -15,6 +15,19 @@ export const EPREL_PRODUCT_GROUP = "smartphonestablets20231669";
 export const eprelProductUrl = (registrationNumber: string): string =>
   `https://eprel.ec.europa.eu/screen/product/${EPREL_PRODUCT_GROUP}/${registrationNumber}`;
 
+export type EprelAssetRoutes = {
+  labelImage: string;
+  ficheDe: string;
+  ficheEn: string;
+};
+
+/** Deterministic routes used for official EPREL files mirrored in /public. */
+export const eprelAssetRoutes = (registrationNumber: string): EprelAssetRoutes => ({
+  labelImage: `/energy-labels/Label_${registrationNumber}.png`,
+  ficheDe: `/energy-labels/Fiche_${registrationNumber}_DE.pdf`,
+  ficheEn: `/energy-labels/Fiche_${registrationNumber}_EN.pdf`,
+});
+
 /** Register value (hundreds of cycles) to the number printed on the label. */
 export const eprelCycles = (registerValue: number | null | undefined): number | undefined =>
   typeof registerValue === "number" && Number.isFinite(registerValue) && registerValue > 0

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 
 import { eprelProductUrl } from "@/lib/eprel";
@@ -8,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import ProductGallery from "@/components/ProductGallery";
 import PaymentBrandIcons from "@/components/PaymentBrandIcons";
+import EuEnergyLabelSection, { EnergyClassArrow } from "@/components/EuEnergyLabelSection";
 import { addStoredCartItem } from "@/components/checkout/cart";
 import { MINI_CART_OPEN_EVENT } from "@/components/checkout/MiniCart";
 import { ProductRatingBadge } from "@/components/ProductReviews";
@@ -28,12 +28,6 @@ type Props = {
 };
 
 const formatMoney = formatPrice;
-
-// Official EU label class colours; D and E are light and need dark text.
-const ENERGY_CLASS_BG: Record<string, string> = {
-  A: "#00a651", B: "#4cb748", C: "#bfd730", D: "#fff200", E: "#fdb913", F: "#f37021", G: "#ed1c24",
-};
-const ENERGY_CLASS_FG: Record<string, string> = { C: "#111111", D: "#111111", E: "#111111" };
 
 const getDiscount = (price: number, compareAtPrice?: number) => {
   if (!compareAtPrice || compareAtPrice <= price) return null;
@@ -218,71 +212,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
         </div>
 
         {product.energyLabel ? (
-          <div className="glass-panel rounded-[32px] p-8">
-            <h2 className="text-xl font-semibold text-foreground">{locale === "de" ? "EU-Energielabel" : "EU energy label"}</h2>
-            <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,200px)_minmax(0,1fr)]">
-              {product.energyLabel.labelImage ? (
-                /* The artwork EPREL generates for this exact registration, mirrored
-                   locally so the page does not break if EPREL is unreachable. */
-                <a
-                  href={product.energyLabel.labelImage}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block self-start rounded-2xl border border-border/60 bg-white p-3"
-                >
-                  <Image
-                    src={product.energyLabel.labelImage}
-                    alt={locale === "de" ? "EU-Energielabel" : "EU energy label"}
-                    width={1134}
-                    height={2268}
-                    /* Served byte-for-byte: this is a regulated document, so it
-                       is shown exactly as EPREL generated it. */
-                    unoptimized
-                    className="h-auto w-full"
-                  />
-                </a>
-              ) : null}
-              <div className="overflow-hidden rounded-3xl border border-border/60">
-              {[
-                [locale === "de" ? "Energieeffizienzklasse" : "Energy efficiency class", product.energyLabel.efficiencyClass],
-                [locale === "de" ? "Akkulaufzeit je Ladezyklus" : "Battery endurance per cycle", product.energyLabel.batteryEndurance],
-                [locale === "de" ? "Akku-Ladezyklen" : "Battery endurance in cycles", product.energyLabel.batteryCycles != null ? String(product.energyLabel.batteryCycles) : undefined],
-                [locale === "de" ? "Zuverlässigkeitsklasse" : "Repeated free fall reliability class", product.energyLabel.reliabilityClass],
-                [locale === "de" ? "Reparierbarkeitsklasse" : "Repairability class", product.energyLabel.repairabilityClass],
-                [locale === "de" ? "Schutzart (IP)" : "Ingress protection rating", product.energyLabel.ipRating],
-              ]
-                .filter((row): row is [string, string] => Boolean(row[1]))
-                .map(([label, value]) => (
-                  <div key={label} className="grid gap-3 border-b border-border/50 bg-surface/40 px-5 py-4 last:border-b-0 md:grid-cols-[240px_minmax(0,1fr)]">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{label}</span>
-                    <span className="text-sm text-foreground">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <p className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted">
-              {(locale === "de" ? product.energyLabel.ficheDe : product.energyLabel.ficheEn) ? (
-                <a
-                  href={(locale === "de" ? product.energyLabel.ficheDe : product.energyLabel.ficheEn) as string}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-gold"
-                >
-                  {locale === "de" ? "Produktdatenblatt (PDF)" : "Product information sheet (PDF)"}
-                </a>
-              ) : null}
-              {product.eprelId ? (
-                <a
-                  href={eprelProductUrl(product.eprelId)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-gold"
-                >
-                  {locale === "de" ? "Eintrag in der EPREL-Datenbank" : "Entry in the EPREL database"}
-                </a>
-              ) : null}
-            </p>
-          </div>
+          <EuEnergyLabelSection locale={locale} energyLabel={product.energyLabel} eprelId={product.eprelId} />
         ) : null}
 
         {product.gpsr || product.charging || product.batteryDetails ? (
@@ -432,18 +362,10 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
 
           {product.energyLabel?.efficiencyClass ? (
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
-              <span
-                className="inline-flex h-7 min-w-9 items-center justify-center rounded-md px-2 text-sm font-black"
-                style={{
-                  backgroundColor: ENERGY_CLASS_BG[product.energyLabel.efficiencyClass] ?? "#4b5563",
-                  color: ENERGY_CLASS_FG[product.energyLabel.efficiencyClass] ?? "#ffffff",
-                }}
-              >
-                {product.energyLabel.efficiencyClass}
-              </span>
+              <EnergyClassArrow grade={product.energyLabel.efficiencyClass} locale={locale} />
               {product.eprelId ? (
                 <a
-                  href={eprelProductUrl(product.eprelId)}
+                  href={product.energyLabel.labelImage ?? eprelProductUrl(product.eprelId)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline underline-offset-2 hover:text-gold"

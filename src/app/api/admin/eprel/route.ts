@@ -1,9 +1,12 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
 import { NextResponse, type NextRequest } from "next/server";
 
 import { canManageProducts } from "@/lib/admin-auth";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import { query } from "@/lib/db";
-import { EPREL_PRODUCT_GROUP } from "@/lib/eprel";
+import { EPREL_PRODUCT_GROUP, eprelAssetRoutes } from "@/lib/eprel";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +23,17 @@ type EprelHit = {
   repeatedFreeFallReliabilityClass?: string;
   ingressProtectionRating?: string;
   onMarketStartDate?: number[];
+};
+
+const withMirroredAssets = <T extends { registration_number: string }>(row: T) => {
+  const routes = eprelAssetRoutes(row.registration_number);
+  const exists = (route: string) => existsSync(join(process.cwd(), "public", route.slice(1)));
+  return {
+    ...row,
+    label_image: exists(routes.labelImage) ? routes.labelImage : null,
+    fiche_de: exists(routes.ficheDe) ? routes.ficheDe : null,
+    fiche_en: exists(routes.ficheEn) ? routes.ficheEn : null,
+  };
 };
 
 /** Asks the register directly, shaped like a row of the local mirror. */
@@ -39,7 +53,7 @@ const lookupLive = async (term: string) => {
   });
   if (!response.ok) return [];
   const hits = ((await response.json()) as { hits?: EprelHit[] }).hits ?? [];
-  return hits.map((hit) => ({
+  return hits.map((hit) => withMirroredAssets({
     registration_number: String(hit.eprelRegistrationNumber ?? ""),
     supplier: hit.supplierOrTrademark ?? "",
     model_identifier: hit.modelIdentifier ?? "",
@@ -91,7 +105,13 @@ export async function GET(request: NextRequest) {
       [`%${term}%`],
     );
     if (result.rows.length > 0) {
-      return NextResponse.json({ success: true, results: result.rows });
+      return NextResponse.json({
+        success: true,
+        results: result.rows.map((row) => withMirroredAssets({
+          ...row,
+          registration_number: String(row.registration_number ?? ""),
+        })),
+      });
     }
     // The mirror is built by paging the register, and paging cannot reach every
     // registration: A3523 (iPhone 17 Pro) is absent from a converged crawl yet

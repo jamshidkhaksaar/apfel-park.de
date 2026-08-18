@@ -105,6 +105,9 @@ const toEnergyLabel = (value: unknown): AdminProductRecord["energyLabel"] => {
     reliabilityClass: str(candidate.reliabilityClass),
     repairabilityClass: str(candidate.repairabilityClass),
     ipRating: str(candidate.ipRating),
+    labelImage: str(candidate.labelImage),
+    ficheDe: str(candidate.ficheDe),
+    ficheEn: str(candidate.ficheEn),
   };
   return Object.values(label).some((entry) => entry !== undefined) ? label : null;
 };

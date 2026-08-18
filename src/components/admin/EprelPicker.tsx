@@ -15,6 +15,9 @@ export type EprelMatch = {
   reliability_class: string | null;
   ingress_protection: string | null;
   on_market_start: string | null;
+  label_image?: string | null;
+  fiche_de?: string | null;
+  fiche_en?: string | null;
 };
 
 /**

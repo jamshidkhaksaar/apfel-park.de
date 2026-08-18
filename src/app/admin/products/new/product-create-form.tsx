@@ -49,6 +49,9 @@ type FormState = {
   energyReliabilityClass: string;
   energyRepairabilityClass: string;
   energyIpRating: string;
+  energyLabelImage: string;
+  energyFicheDe: string;
+  energyFicheEn: string;
   channelFields: ProductChannelFieldState;
   variants: Array<{
     color: string;
@@ -108,6 +111,9 @@ const initialState: FormState = {
   energyReliabilityClass: "",
   energyRepairabilityClass: "",
   energyIpRating: "",
+  energyLabelImage: "",
+  energyFicheDe: "",
+  energyFicheEn: "",
   channelFields: createEmptyProductChannelFields(),
   variants: [],
   featureBulletsText: "",
@@ -334,6 +340,9 @@ export default function ProductCreateForm() {
             reliabilityClass: state.energyReliabilityClass,
             repairabilityClass: state.energyRepairabilityClass,
             ipRating: state.energyIpRating,
+            labelImage: state.energyLabelImage,
+            ficheDe: state.energyFicheDe,
+            ficheEn: state.energyFicheEn,
           },
           variants: variantsToSave,
           images: imageUrls,
@@ -535,6 +544,9 @@ export default function ProductCreateForm() {
                 energyReliabilityClass: match.reliability_class ?? "",
                 energyRepairabilityClass: match.repairability_class ?? "",
                 energyIpRating: match.ingress_protection ?? "",
+                energyLabelImage: match.label_image ?? "",
+                energyFicheDe: match.fiche_de ?? "",
+                energyFicheEn: match.fiche_en ?? "",
               }))}
             />
           </div>
@@ -547,6 +559,13 @@ export default function ProductCreateForm() {
             <label><span className="text-xs text-muted">{isGerman ? "Reparierbarkeitsklasse" : "Repairability class"}</span><input value={state.energyRepairabilityClass} onChange={(event) => setState((previous) => ({ ...previous, energyRepairabilityClass: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" /></label>
             <label><span className="text-xs text-muted">{isGerman ? "Schutzart (IP)" : "IP rating"}</span><input value={state.energyIpRating} onChange={(event) => setState((previous) => ({ ...previous, energyIpRating: event.target.value }))} className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground" /></label>
           </div>
+          {state.eprelId ? (
+            <p className={`mt-3 text-xs ${state.energyLabelImage ? "text-emerald-400" : "text-amber-400"}`}>
+              {state.energyLabelImage
+                ? isGerman ? "✓ Offizielles EPREL-Label und Produktdatenblätter sind verknüpft." : "✓ Official EPREL label and product information sheets are linked."
+                : isGerman ? "Offizielle Label-Datei ist noch nicht lokal verknüpft; der EPREL-Eintrag bleibt verfügbar." : "The official label file is not linked locally yet; the EPREL entry remains available."}
+            </p>
+          ) : null}
         </section>
       ) : null}
 

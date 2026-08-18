@@ -11,6 +11,7 @@ import { classifySubcategory } from "@/lib/product-subcategory";
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 import { validatedGtin } from "@/lib/product-identifiers";
 import { conditionDetailsChanged } from "@/lib/product-condition";
+import { eprelAssetRoutes } from "@/lib/eprel";
 import {
   evaluateProductChannelReadiness,
   type BatteryDetails,
@@ -68,6 +69,9 @@ type ProductPayload = {
     reliabilityClass?: string;
     repairabilityClass?: string;
     ipRating?: string;
+    labelImage?: string;
+    ficheDe?: string;
+    ficheEn?: string;
   } | null;
   images?: string[];
   variants?: Array<{
@@ -431,6 +435,16 @@ const buildPayload = (payload: ProductPayload, slug?: string) => {
   if (repairabilityClass) energyLabel.repairabilityClass = repairabilityClass;
   const ipRating = energyText(payload.energyLabel?.ipRating);
   if (ipRating) energyLabel.ipRating = ipRating;
+  const expectedEnergyAssets = eprelId ? eprelAssetRoutes(eprelId) : null;
+  if (expectedEnergyAssets && payload.energyLabel?.labelImage === expectedEnergyAssets.labelImage) {
+    energyLabel.labelImage = expectedEnergyAssets.labelImage;
+  }
+  if (expectedEnergyAssets && payload.energyLabel?.ficheDe === expectedEnergyAssets.ficheDe) {
+    energyLabel.ficheDe = expectedEnergyAssets.ficheDe;
+  }
+  if (expectedEnergyAssets && payload.energyLabel?.ficheEn === expectedEnergyAssets.ficheEn) {
+    energyLabel.ficheEn = expectedEnergyAssets.ficheEn;
+  }
   const category = payload.category ? normalizeCategory(payload.category) : null;
   const condition = normalizeCondition(payload.condition);
   const subcategory = classifySubcategory(category, `${title} ${subtitle ?? ""} ${model ?? ""}`);
@@ -898,11 +912,31 @@ export async function PATCH(request: NextRequest) {
         is_active: boolean | null;
         condition: string | null;
         condition_note: string | null;
+        eprel_id: string | null;
+        energy_label: unknown;
       }>("products")
-      .select("slug,is_active,condition,condition_note")
+      .select("slug,is_active,condition,condition_note,eprel_id,energy_label")
       .eq("id", payload.id)
       .maybeSingle();
     if (existingError) throw new Error(`Could not load existing product: ${existingError.message}`);
+
+    // Editing an unrelated field must not remove the mirrored official label
+    // or product-information sheets already attached to this EPREL model.
+    if (
+      existing?.eprel_id
+      && existing.eprel_id === product.eprelId
+      && existing.energy_label
+      && typeof existing.energy_label === "object"
+      && !Array.isArray(existing.energy_label)
+    ) {
+      const expected = eprelAssetRoutes(existing.eprel_id);
+      const previous = existing.energy_label as Record<string, unknown>;
+      for (const key of ["labelImage", "ficheDe", "ficheEn"] as const) {
+        if (!product.energyLabel[key] && previous[key] === expected[key]) {
+          product.energyLabel[key] = expected[key];
+        }
+      }
+    }
 
     const readiness = channelReadiness(product);
     if (product.isActive && !existing?.is_active && (!readiness.store.ready || !readiness.google.ready)) {

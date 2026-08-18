@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { EPREL_PRODUCT_GROUP, eprelCycles, eprelEndurance, eprelProductUrl } from "@/lib/eprel";
+import { EPREL_PRODUCT_GROUP, eprelAssetRoutes, eprelCycles, eprelEndurance, eprelProductUrl } from "@/lib/eprel";
 
 describe("eprelProductUrl", () => {
   it("uses the versioned product group", () => {
@@ -10,6 +10,16 @@ describe("eprelProductUrl", () => {
     expect(eprelProductUrl("2402623")).toBe(
       "https://eprel.ec.europa.eu/screen/product/smartphonestablets20231669/2402623",
     );
+  });
+});
+
+describe("eprelAssetRoutes", () => {
+  it("builds the mirrored official label and datasheet routes", () => {
+    expect(eprelAssetRoutes("2402623")).toEqual({
+      labelImage: "/energy-labels/Label_2402623.png",
+      ficheDe: "/energy-labels/Fiche_2402623_DE.pdf",
+      ficheEn: "/energy-labels/Fiche_2402623_EN.pdf",
+    });
   });
 });
 
