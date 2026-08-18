@@ -155,7 +155,7 @@ export default function EuEnergyLabelSection({
           ) : null}
 
           {metrics.length > 0 ? (
-            <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+            <dl className="mt-4 grid gap-3">
               {metrics.map((metric) => (
                 <div key={metric.label} className="min-w-0 rounded-2xl border border-border/60 bg-surface/35 p-4">
                   <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{metric.label}</dt>
