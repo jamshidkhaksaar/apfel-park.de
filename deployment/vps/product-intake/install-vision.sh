@@ -40,5 +40,13 @@ systemctl daemon-reload
 systemctl enable apfel-intake-vision.service apfel-intake-cleanup.timer >/dev/null
 systemctl restart apfel-intake-vision.service
 systemctl start apfel-intake-cleanup.timer
-curl --fail --silent http://127.0.0.1:8730/health >/dev/null
+healthy=false
+for _ in {1..30}; do
+  if curl --fail --silent http://127.0.0.1:8730/health >/dev/null; then
+    healthy=true
+    break
+  fi
+  sleep 1
+done
+[[ "$healthy" == true ]] || { echo "apfel-intake-vision did not become healthy" >&2; exit 1; }
 echo "apfel-intake-vision installed and healthy"

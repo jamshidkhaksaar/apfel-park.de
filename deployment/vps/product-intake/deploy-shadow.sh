@@ -96,8 +96,7 @@ cp -a "$HERMES_CONFIG" "$BACKUP_DIR/hermes-config.yaml"
 [[ -d /srv/bot-factory/bots/apfel-park-intake ]] && cp -a /srv/bot-factory/bots/apfel-park-intake "$BACKUP_DIR/safi-bot-v1"
 
 PREVIOUS_RELEASE="$(readlink -f /srv/apfel-intake/current 2>/dev/null || true)"
-cp -a "$SOURCE_DIR"/. "$RELEASE_DIR"/
-ln -sfn "$RELEASE_DIR" /srv/apfel-intake/current
+CURRENT_ACTIVATED=false
 
 rollback() {
   local code=$?
@@ -107,13 +106,24 @@ rollback() {
   cp -a "$BACKUP_DIR/n8n-compose.yml" "$N8N_COMPOSE" || true
   cp -a "$BACKUP_DIR/hermes.env" "$HERMES_ENV" || true
   cp -a "$BACKUP_DIR/hermes-config.yaml" "$HERMES_CONFIG" || true
-  if [[ -n "$PREVIOUS_RELEASE" && -d "$PREVIOUS_RELEASE" ]]; then ln -sfn "$PREVIOUS_RELEASE" /srv/apfel-intake/current; fi
+  if [[ -n "$PREVIOUS_RELEASE" && -d "$PREVIOUS_RELEASE" ]]; then
+    ln -sfn "$PREVIOUS_RELEASE" /srv/apfel-intake/current.tmp
+    mv -Tf /srv/apfel-intake/current.tmp /srv/apfel-intake/current
+  elif [[ ${CURRENT_ACTIVATED:-false} == true && -L /srv/apfel-intake/current \
+      && "$(readlink /srv/apfel-intake/current)" == "$RELEASE_DIR" ]]; then
+    rm -f /srv/apfel-intake/current
+  fi
   docker compose -f "$N8N_COMPOSE" --env-file "$N8N_ENV" up -d n8n >/dev/null 2>&1 || true
   systemctl restart apfel-park-nextjs hermes-gateway >/dev/null 2>&1 || true
   echo "shadow deployment failed; configuration restored. Backup: $BACKUP_DIR" >&2
   exit "$code"
 }
 trap rollback ERR
+
+cp -a "$SOURCE_DIR"/. "$RELEASE_DIR"/
+ln -sfn "$RELEASE_DIR" /srv/apfel-intake/current.tmp
+mv -Tf /srv/apfel-intake/current.tmp /srv/apfel-intake/current
+CURRENT_ACTIVATED=true
 
 APP_SUBMIT_SECRET="$(existing_or_random "$N8N_ENV" PRODUCT_INTAKE_SUBMIT_SECRET)"
 APP_OWNER_SECRET="$(existing_or_random "$N8N_ENV" PRODUCT_INTAKE_OWNER_SECRET)"
