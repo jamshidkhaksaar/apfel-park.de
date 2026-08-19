@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# systemd/root login shells do not load NVM automatically. Keep this aligned
+# with the application deploy runtime so node/npm-based preflight checks work
+# in non-interactive SSH sessions as well.
+export PATH=/root/.nvm/versions/node/v24.14.0/bin:$PATH
+
 if [[ ${EUID:-$(id -u)} -ne 0 ]]; then
   echo "run as root" >&2
   exit 1
