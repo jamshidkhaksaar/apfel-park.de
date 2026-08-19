@@ -70,6 +70,9 @@ npm run build
 # migration stops the release here; the currently running app remains active.
 # Migrations are transactional and recorded in schema_migrations.
 log "database migrations"
+if [ -x "$release/deployment/vps/product-intake/apply-owner-migration.sh" ]; then
+  bash "$release/deployment/vps/product-intake/apply-owner-migration.sh"
+fi
 npm run db:migrate
 
 # `next build` does NOT copy these into .next/standalone. Forgetting it yields

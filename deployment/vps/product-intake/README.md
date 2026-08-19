@@ -1,5 +1,13 @@
 # Apfel Park Product Intake v2
 
+The application deploy runs `apply-owner-migration.sh` before ordinary
+migrations. It is intentionally restricted to the local PostgreSQL server and
+to `20260819_product_intake_core.sql`, because that migration adds the hardware
+model column to the legacy, postgres-owned `products` table. The helper creates
+a private custom-format database backup, applies and records the migration in
+one transaction, and transfers only the new intake tables to the application
+role.
+
 Shadow-first product add/update pipeline for Hermes, Safi's restricted Telegram bot, n8n and the Apfel Park application.
 
 ## Safety state

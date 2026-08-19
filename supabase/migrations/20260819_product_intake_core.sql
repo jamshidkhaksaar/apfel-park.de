@@ -379,6 +379,35 @@ alter table public.product_intake_assets enable row level security;
 alter table public.product_intake_events enable row level security;
 alter table public.product_intake_asset_analyses enable row level security;
 
+-- Production's legacy catalog tables are deliberately owned by postgres while
+-- the web process connects as a narrower role. The VPS owner-migration runner
+-- supplies that role through a session setting scoped to the migration. Fresh/dev
+-- databases run this migration directly as their application role and do not
+-- need an ownership transfer.
+do $$
+declare
+  runtime_role text := nullif(current_setting('apfel.runtime_role', true), '');
+  table_name text;
+begin
+  if runtime_role is null or runtime_role = current_user then
+    return;
+  end if;
+
+  if not exists (select 1 from pg_roles where rolname = runtime_role) then
+    raise exception 'Configured product-intake runtime role does not exist';
+  end if;
+
+  foreach table_name in array array[
+    'product_intake_runs',
+    'product_intake_assets',
+    'product_intake_events',
+    'product_intake_asset_analyses'
+  ] loop
+    execute format('alter table public.%I owner to %I', table_name, runtime_role);
+  end loop;
+end;
+$$;
+
 comment on table public.product_intake_runs is
   'Application-owned product-intake workflow state. No browser-facing RLS policy is intentional.';
 comment on table public.product_intake_assets is
