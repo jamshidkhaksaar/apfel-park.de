@@ -1,0 +1,140 @@
+{
+  "id": "APF06PROPOSAL2",
+  "name": "APF-06 Proposal Builder v2",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "apfel-intake-v2-proposal",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "proposal-webhook",
+      "name": "Proposal Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\nconst body = $json.body || {};\nconst headers = $json.headers || {};\nconst raw = JSON.stringify(body);\nif (/\\\"(?:imei|eid|serial(?:[_-]?number)?|serien(?:[_ -]?(?:nummer|nr))?)\\\"\\s*:/i.test(raw) || /(?:imei|eid|serial|serien\\s*(?:nummer|nr))\\s*[:=#-]?\\s*[a-z0-9 -]{6,}/i.test(raw) || /(^|\\D)\\d{15}(\\D|$)/.test(raw) || /(^|\\D)\\d{32}(\\D|$)/.test(raw)) throw new Error('sensitive identifier rejected');\nconst keyId = String(headers['x-apfel-intake-key-id'] || '');\nconst timestamp = String(headers['x-apfel-intake-timestamp'] || '');\nconst signature = String(headers['x-apfel-intake-signature'] || '').replace(/^sha256=/, '');\nconst idem = String(headers['idempotency-key'] || '');\nconst ownerKey = $env.N8N_OWNER_KEY_ID || 'owner';\nconst safiKey = $env.N8N_SAFI_KEY_ID || 'safi-bot';\nif (keyId !== ownerKey && keyId !== safiKey) throw new Error('unknown intake key');\nif (keyId !== ($env.N8N_OWNER_KEY_ID || 'owner')) throw new Error('owner submission required');\nif (!/^(?:[0-9a-f-]{36}|APF-[A-Z0-9]{4,12})$/i.test(String(body.runId || ''))) throw new Error('invalid run reference');\nif (body.assetId !== undefined && !/^[0-9a-f-]{36}$/i.test(String(body.assetId))) throw new Error('invalid asset id');\nconst now = Math.floor(Date.now() / 1000);\nif (!/^\\d{10}$/.test(timestamp) || Math.abs(now - Number(timestamp)) > 300) throw new Error('stale signature');\nconst hash = value => crypto.createHash('sha256').update(value).digest('hex');\nconst incoming = ['APFEL-PRODUCT-INTAKE-V1', keyId, timestamp, 'POST', '/webhook/apfel-intake-v2-proposal', idem, hash(raw)].join('\\n');\nconst incomingSecret = keyId === ownerKey ? $env.N8N_OWNER_HMAC_SECRET : $env.N8N_INTAKE_HMAC_SECRET;\nconst expected = crypto.createHmac('sha256', incomingSecret).update(incoming).digest('hex');\nif (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) throw new Error('invalid signature');\nconst appBody = body.proposal;\nif (!appBody || typeof appBody !== 'object') throw new Error('missing proposal');\nconst appRaw = JSON.stringify(appBody);\nconst appTime = String(Math.floor(Date.now() / 1000));\nconst appKey = $env.PRODUCT_INTAKE_OWNER_KEY_ID || 'n8n-owner-v2';\nconst path = `/api/integrations/product-intake/runs/${body.runId}/proposal`;\nconst canonical = ['APFEL-PRODUCT-INTAKE-V1', appKey, appTime, 'POST', path, idem, hash(appRaw)].join('\\n');\nconst appSignature = crypto.createHmac('sha256', $env.PRODUCT_INTAKE_OWNER_SECRET).update(canonical).digest('hex');\nreturn [{ json: { appBody, appRaw, appTime, appKey, appSignature, idem, path } }];"
+      },
+      "id": "verify-&-sign",
+      "name": "Verify & Sign",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.APFEL_STORE_URL || 'https://apfel-park.de') + $json.path }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Apfel-Intake-Key-Id",
+              "value": "={{ $json.appKey }}"
+            },
+            {
+              "name": "X-Apfel-Intake-Timestamp",
+              "value": "={{ $json.appTime }}"
+            },
+            {
+              "name": "X-Apfel-Intake-Signature",
+              "value": "={{ $json.appSignature }}"
+            },
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $json.idem }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.appRaw }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "forward-to-app",
+      "name": "Forward to App",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "response",
+      "name": "Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        780,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Proposal Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify & Sign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify & Sign": {
+      "main": [
+        [
+          {
+            "node": "Forward to App",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward to App": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "errorWorkflow": "APF99ERRORV2"
+  }
+}

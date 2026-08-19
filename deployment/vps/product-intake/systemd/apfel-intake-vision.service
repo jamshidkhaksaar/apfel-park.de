@@ -1,0 +1,22 @@
+[Unit]
+Description=Apfel Park product-intake barcode/OCR redaction service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/usr/local/lib/apfel-intake-vision
+EnvironmentFile=/etc/apfel-intake-vision.env
+ExecStart=/usr/local/lib/apfel-intake-vision/venv/bin/uvicorn server:app --host 127.0.0.1 --port 8730 --workers 1
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/apfel-intake /srv/n8n/media/intake
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

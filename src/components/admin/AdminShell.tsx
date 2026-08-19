@@ -271,6 +271,7 @@ export default function AdminShell({
   ];
 
   const adminItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
+    { label: dict.sidebar.productIntake, path: '/admin/product-intake', icon: 'products' },
     { label: dict.sidebar.users,     path: '/admin/users',    icon: 'users' },
     { label: dict.sidebar.mail,      path: '/admin/mail',     icon: 'mail' },
     { label: dict.sidebar.seo,       path: '/admin/seo',      icon: 'seo' },

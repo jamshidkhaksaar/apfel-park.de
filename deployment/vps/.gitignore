@@ -10,6 +10,7 @@ postfix-accounts.cf
 *.tar
 *.tar.gz
 *.sql
+!product-intake/verify-migration.sql
 *.sql.gz
 mail-data/
 mail-state/

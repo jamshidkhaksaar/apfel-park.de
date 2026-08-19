@@ -1,0 +1,10 @@
+services:
+  bot:
+    build: .
+    container_name: bf-apfel-park-intake-v2
+    restart: unless-stopped
+    network_mode: host
+    env_file: .env
+    volumes:
+      - ./data:/data
+      - /srv/apfel-intake/submissions:/srv/apfel-intake/submissions

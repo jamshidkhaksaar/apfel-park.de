@@ -1,0 +1,13 @@
+[Unit]
+Description=Prune Apfel Park private intake media
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/apfel-intake-vision.env
+WorkingDirectory=/usr/local/lib/apfel-intake-vision
+ExecStart=/usr/local/lib/apfel-intake-vision/venv/bin/python cleanup.py
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/apfel-intake /srv/n8n/media/intake

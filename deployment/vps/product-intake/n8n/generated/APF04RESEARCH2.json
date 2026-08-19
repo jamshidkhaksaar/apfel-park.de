@@ -1,0 +1,83 @@
+{
+  "id": "APF04RESEARCH2",
+  "name": "APF-04 Official Research v2",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "apfel-intake-v2-research",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "research-webhook",
+      "name": "Research Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\nconst body = $json.body || {};\nconst headers = $json.headers || {};\nconst raw = JSON.stringify(body);\nconst keyId = String(headers['x-apfel-intake-key-id'] || '');\nconst timestamp = String(headers['x-apfel-intake-timestamp'] || '');\nconst signature = String(headers['x-apfel-intake-signature'] || '').replace(/^sha256=/, '');\nconst idem = String(headers['idempotency-key'] || '');\nif (keyId !== ($env.N8N_OWNER_KEY_ID || 'owner')) throw new Error('owner research required');\nif (!/^\\d{10}$/.test(timestamp) || Math.abs(Math.floor(Date.now()/1000)-Number(timestamp))>300) throw new Error('stale research signature');\nconst hash=value=>crypto.createHash('sha256').update(value).digest('hex');\nconst canonical=['APFEL-PRODUCT-INTAKE-V1',keyId,timestamp,'POST','/webhook/apfel-intake-v2-research',idem,hash(raw)].join('\\n');\nconst expected=crypto.createHmac('sha256',$env.N8N_OWNER_HMAC_SECRET).update(canonical).digest('hex');\nif(signature.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(signature),Buffer.from(expected))) throw new Error('invalid research signature');\nconst allowed=['apple.com','asus.com','google.com','honor.com','huawei.com','lenovo.com','mi.com','motorola.com','motorola.de','nokia.com','oneplus.com','oppo.com','realme.com','samsung.com','samsungmobilepress.com','sony.com','sony.de','eprel.ec.europa.eu','gs1.org','apfel-park.de',...String($env.PRODUCT_INTAKE_ALLOWED_SOURCE_DOMAINS||'').split(',').map(v=>v.trim().toLowerCase()).filter(Boolean)];\nif(!Array.isArray(body.sources)||body.sources.length===0) throw new Error('official sources required');\nfor(const source of body.sources){const host=new URL(source.url).hostname.toLowerCase();if(!allowed.some(domain=>host===domain||host.endsWith('.'+domain))) throw new Error('non-official source: '+host);}\nreturn [{json:{success:true,sources:body.sources,checkedAt:new Date().toISOString()}}];"
+      },
+      "id": "verify-official-sources",
+      "name": "Verify Official Sources",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "research-response",
+      "name": "Research Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        520,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Research Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Official Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Official Sources": {
+      "main": [
+        [
+          {
+            "node": "Research Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "errorWorkflow": "APF99ERRORV2"
+  }
+}

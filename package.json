@@ -14,6 +14,7 @@
     "db:baseline": "node scripts/migrate.mjs baseline",
     "test": "vitest run",
     "test:watch": "vitest",
+    "dev:product-intake-ui-fixture": "tsx scripts/product-intake-ui-fixture.tsx",
     "branding:favicons": "node scripts/generate-favicons.mjs",
     "seo:indexnow": "node scripts/indexnow.mjs"
   },

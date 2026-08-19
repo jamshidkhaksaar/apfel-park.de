@@ -1,0 +1,70 @@
+{
+  "id": "APF99ERRORV2",
+  "name": "APF-99 Error Handler v2",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "workflow-error",
+      "name": "Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_BRIDGE_URL }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Bridge-Token",
+              "value": "={{ $env.NOTIFY_BRIDGE_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ target: 'telegram', subject: '❌ Product intake v2 failed', text: `Workflow: ${$json.workflow?.name || '?'}\\nExecution: ${$json.execution?.id || '?'}\\nCheck the application audit before retrying; this notification does not infer mutation state.` }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "notify-failure",
+      "name": "Notify Failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Notify Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none"
+  }
+}
