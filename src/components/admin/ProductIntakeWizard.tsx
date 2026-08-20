@@ -11,6 +11,8 @@ import type { AdminProductRecord } from "@/components/admin/ProductCatalogAdmin"
 import type { ProductChannelFacts } from "@/lib/product-channel-readiness";
 import { extraGalleryImages, mergeCoverAndGallery, type WizardCondition, type WizardStep } from "@/lib/product-intake/safi-wizard";
 import { manufacturerPhotoFile } from "@/lib/product-intake/manufacturer-photos";
+import AiFillButton from "@/components/admin/AiFillButton";
+import type { ProductResearchResult } from "@/lib/product-research";
 
 type CatalogOption = {
   id: string;
@@ -70,6 +72,7 @@ export default function ProductIntakeWizard({
   const [message, setMessage] = useState("");
   const [savedId, setSavedId] = useState<string | null>(null);
   const [publishLive, setPublishLive] = useState(false);
+  const [aiError, setAiError] = useState("");
 
   const selected = products.find((item) => item.id === productId) ?? null;
   const isGerman = locale === "de";
@@ -105,7 +108,25 @@ export default function ProductIntakeWizard({
     safetyWarnings: listing.safetyWarnings,
   };
 
-  const applyProduct = (product: AdminProductRecord, nextCondition: WizardCondition) => {
+  const applyResearch = (research: ProductResearchResult) => {
+    setListing((current) => ({
+      ...current,
+      title: research.title ?? current.title,
+      subtitle: research.subtitle ?? current.subtitle,
+      description: research.description ?? current.description,
+      brand: research.brand ?? current.brand,
+      model: research.model ?? current.model,
+      category: (research.category as typeof current.category) ?? current.category,
+      featureBullets: research.features?.length ? research.features : current.featureBullets,
+      specs: research.specs?.length ? research.specs : current.specs,
+      variants: research.variants?.length ? research.variants.map((variant) => ({ color: variant.color, storage: variant.storage, sku: variant.sku ?? "", mpn: "", gtin: "", identifierStatus: "unknown" as const, asin: "", ebayEpid: "", isDefault: false })) : current.variants,
+      manufacturer: research.manufacturer ? { name: research.manufacturer.name ?? "", address: research.manufacturer.address ?? "", email: research.manufacturer.email ?? "" } : current.manufacturer,
+      euResponsiblePerson: research.euResponsiblePerson ? { name: research.euResponsiblePerson.name ?? "", address: research.euResponsiblePerson.address ?? "", email: research.euResponsiblePerson.email ?? "" } : current.euResponsiblePerson,
+    }));
+    setAiError("");
+  };
+
+    const applyProduct = (product: AdminProductRecord, nextCondition: WizardCondition) => {
     setLoaded(product);
     setListing({
       title: product.title,
@@ -297,6 +318,7 @@ export default function ProductIntakeWizard({
         </ol>
       </div>
       {message ? <p className="mt-4 rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm" role="status">{message}</p> : null}
+      {aiError ? <p className="mt-2 text-sm text-red-400">{aiError}</p> : null}
 
       {step === "device" ? (
         <div className="mt-5 space-y-4">
@@ -305,7 +327,10 @@ export default function ProductIntakeWizard({
             <button type="button" onClick={() => setMode("new")} className={`rounded-xl px-4 py-2 text-sm font-semibold ${mode === "new" ? "bg-gold text-black" : "border border-border/60 text-muted"}`}>{copy.newDevice}</button>
           </div>
           <label className="block text-sm text-muted">
-            {mode === "existing" ? copy.pinProduct : copy.templateProduct}
+            <div className="flex items-center justify-between gap-2">
+              <span>{mode === "existing" ? copy.pinProduct : copy.templateProduct}</span>
+              <AiFillButton locale={locale} query={listing.model || listing.title} onResult={applyResearch} onError={setAiError} />
+            </div>
             <select value={productId} onChange={(event) => setProductId(event.target.value)} className="mt-1 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">
               {mode === "new" ? <option value="">{copy.noTemplate}</option> : null}
               {products.map((product) => (

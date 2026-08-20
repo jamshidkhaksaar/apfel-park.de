@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
 import ProductCatalogAdmin from "@/components/admin/ProductCatalogAdmin";
 import ProductLinkedIntakeCard from "@/components/admin/ProductLinkedIntakeCard";
+import ProductTipsCard from "@/components/admin/ProductTipsCard";
+import { productMissingData } from "@/lib/product-missing-data";
 import { mapAdminProduct, type ProductRow } from "@/lib/admin-product-data";
 import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
@@ -29,12 +31,33 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
     ? featuredValue.filter((item): item is string => typeof item === "string")
     : [];
   const product = mapAdminProduct(row, featuredIds);
+  const tips = productMissingData({
+    title: product.title,
+    description: product.description,
+    category: product.category,
+    condition: product.condition,
+    conditionNote: product.conditionNote ?? "",
+    hasRealProductPhotos: Boolean(product.hasRealProductPhotos),
+    brand: product.brand,
+    model: product.model,
+    sku: product.sku,
+    mpn: product.mpn,
+    gtin: product.gtin,
+    price: product.price,
+    stock: product.stock,
+    images: product.images,
+    batteryHealth: product.batteryHealth ?? "",
+    manufacturer: product.manufacturer ?? undefined,
+    euResponsiblePerson: product.euResponsiblePerson ?? undefined,
+    isActive: product.isActive,
+  });
 
   return (
     <AdminShell title={product.title}>
       <div className="mx-auto mb-3 w-full max-w-[1500px]">
         <Link href="/admin/products" className="inline-flex items-center gap-2 text-sm font-medium text-muted transition hover:text-gold">← {locale === "de" ? "Zurück zum Produktkatalog" : "Back to product catalog"}</Link>
       </div>
+      <ProductTipsCard tips={tips} locale={locale} />
       <div id="ai-intake">
         <ProductLinkedIntakeCard locale={locale} productId={product.id} condition={product.condition} isOwner={isProductIntakeOwner(user)} />
       </div>

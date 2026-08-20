@@ -5,6 +5,8 @@ import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useAdmin } from "@/lib/admin-context";
+import AiFillButton from "@/components/admin/AiFillButton";
+import type { ProductResearchResult } from "@/lib/product-research";
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import EprelPicker, { type EprelMatch } from "@/components/admin/EprelPicker";
 import {
@@ -239,7 +241,42 @@ export default function ProductCreateForm() {
       locale: isGerman ? "de" : "en",
     });
 
-  const patchVariant = (index: number, patch: Partial<FormState["variants"][number]>) => {
+  const [aiError, setAiError] = useState("");
+  const applyResearch = (research: ProductResearchResult) => {
+    setState((prev) => ({
+      ...prev,
+      title: research.title ?? prev.title,
+      subtitle: research.subtitle ?? prev.subtitle,
+      description: research.description ?? prev.description,
+      brand: research.brand ?? prev.brand,
+      model: research.model ?? prev.model,
+      category: (research.category as FormState["category"]) ?? prev.category,
+      featureBulletsText: research.features?.length ? research.features.join("\n") : prev.featureBulletsText,
+      specsText: research.specs?.length ? research.specs.map((item) => `${item.label}: ${item.value}`).join("\n") : prev.specsText,
+      manufacturerName: research.manufacturer?.name ?? prev.manufacturerName,
+      manufacturerAddress: research.manufacturer?.address ?? prev.manufacturerAddress,
+      manufacturerEmail: research.manufacturer?.email ?? prev.manufacturerEmail,
+      euResponsibleName: research.euResponsiblePerson?.name ?? prev.euResponsibleName,
+      euResponsibleAddress: research.euResponsiblePerson?.address ?? prev.euResponsibleAddress,
+      euResponsibleEmail: research.euResponsiblePerson?.email ?? prev.euResponsibleEmail,
+      variants: research.variants?.length
+        ? research.variants.map((variant) => ({
+            color: variant.color,
+            storage: variant.storage,
+            sku: variant.sku ?? "",
+            mpn: "",
+            gtin: "",
+            identifierStatus: "unknown" as const,
+            asin: "",
+            ebayEpid: "",
+            isDefault: false,
+          }))
+        : prev.variants,
+    }));
+    setAiError("");
+  };
+
+    const patchVariant = (index: number, patch: Partial<FormState["variants"][number]>) => {
     setState((previous) => ({
       ...previous,
       variants: previous.variants.map((variant, variantIndex) =>
@@ -371,9 +408,17 @@ export default function ProductCreateForm() {
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-            {isGerman ? "Titel" : "Title"}
-          </label>
+          <div className="flex items-center justify-between gap-2">
+            <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+              {isGerman ? "Titel" : "Title"}
+            </label>
+            <AiFillButton
+              locale={isGerman ? "de" : "en"}
+              query={state.model || state.title}
+              onResult={applyResearch}
+              onError={(message) => setAiError(message)}
+            />
+          </div>
           <input
             required
             type="text"
@@ -381,6 +426,7 @@ export default function ProductCreateForm() {
             onChange={(event) => setState((prev) => ({ ...prev, title: event.target.value }))}
             className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
           />
+          {aiError ? <p className="mt-2 text-sm text-red-400">{aiError}</p> : null}
         </div>
 
         <div>

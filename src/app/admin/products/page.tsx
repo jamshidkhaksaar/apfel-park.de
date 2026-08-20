@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import AdminFilterForm from "@/components/admin/AdminFilterForm";
+import ProductTipsBadge from "@/components/admin/ProductTipsBadge";
+import { productMissingData } from "@/lib/product-missing-data";
 import AdminProductIntakeQueue from "@/components/admin/AdminProductIntakeQueue";
 import AdminShell from "@/components/admin/AdminShell";
 import ProductIntakeWizard from "@/components/admin/ProductIntakeWizard";
@@ -38,6 +40,14 @@ type CatalogRow = {
   subcategory: string | null;
   updated_at: string | null;
   edited_minutes_ago: number | null;
+  description: string | null;
+  mpn: string | null;
+  gtin: string | null;
+  condition_note: string | null;
+  battery_health: number | null;
+  has_real_product_photos: boolean | null;
+  manufacturer: { name?: string; address?: string; email?: string } | null;
+  eu_responsible_person: { name?: string; address?: string; email?: string } | null;
 };
 
 const EDIT_BADGE_WINDOW_MINUTES = 24 * 60;
@@ -139,11 +149,31 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const page = Math.min(requestedPage, pages);
   values.push(PAGE_SIZE, (page - 1) * PAGE_SIZE);
   const productsResult = await query(
-    `SELECT id,title,brand,model,sku,category,condition,price,stock,slug,is_active,images,subcategory,updated_at,(extract(epoch from (now() - updated_at)) / 60)::int AS edited_minutes_ago
+    `SELECT id,title,brand,model,sku,category,condition,price,stock,slug,is_active,images,subcategory,updated_at,(extract(epoch from (now() - updated_at)) / 60)::int AS edited_minutes_ago,description,mpn,gtin,condition_note,battery_health,has_real_product_photos,manufacturer,eu_responsible_person
      FROM products ${where} ORDER BY ${orderBy[sort] ?? orderBy.newest} LIMIT $${values.length - 1} OFFSET $${values.length}`,
     values,
   );
   const products = productsResult.rows as CatalogRow[];
+  const tipsByProduct = new Map(products.map((product) => [product.id, productMissingData({
+    title: product.title,
+    description: product.description ?? "",
+    category: product.category,
+    condition: product.condition ?? "new",
+    conditionNote: product.condition_note ?? "",
+    hasRealProductPhotos: Boolean(product.has_real_product_photos),
+    brand: product.brand ?? "",
+    model: product.model ?? "",
+    sku: product.sku ?? "",
+    mpn: product.mpn ?? "",
+    gtin: product.gtin ?? "",
+    price: Number(product.price),
+    stock: Number(product.stock ?? 0),
+    images: product.images ?? [],
+    batteryHealth: product.battery_health ?? "",
+    manufacturer: product.manufacturer ?? undefined,
+    euResponsiblePerson: product.eu_responsible_person ?? undefined,
+    isActive: Boolean(product.is_active),
+  })]));
   const [user, intakeRuns, revisions, summaries, wizardResult] = await Promise.all([
     readSessionUser(),
     view === "catalog" ? Promise.resolve([]) : listProductIntakeRuns(200),
@@ -259,7 +289,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] border-collapse text-left">
-                <thead className="border-b border-border/60 bg-surface/50 text-xs text-muted"><tr><th className="px-4 py-3 font-medium">{locale === "de" ? "Produkt" : "Product"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Kategorie" : "Category"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Zustand" : "Condition"}</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.aiStatus}</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.latestCode}</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Preis" : "Price"}</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Lager" : "Stock"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Geändert" : "Updated"}</th><th className="w-16" /></tr></thead>
+                <thead className="border-b border-border/60 bg-surface/50 text-xs text-muted"><tr><th className="px-4 py-3 font-medium">{locale === "de" ? "Produkt" : "Product"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Kategorie" : "Category"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Zustand" : "Condition"}</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Tipps" : "Tips"}</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.aiStatus}</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.latestCode}</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Preis" : "Price"}</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Lager" : "Stock"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Geändert" : "Updated"}</th><th className="w-16" /></tr></thead>
                 <tbody className="divide-y divide-border/50">
                   {products.map((product) => {
                     const justEdited = Boolean(product.is_active) && wasJustEdited(product.edited_minutes_ago);
@@ -268,6 +298,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                       <td className="px-4 py-3"><Link href={`/admin/products/${product.id}`} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex items-center gap-2"><span className="truncate text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block truncate text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span></span></Link></td>
                       <td className="px-4 py-3 text-sm text-muted">{product.category}{product.subcategory && product.subcategory !== product.category ? <span className="mt-0.5 block text-xs text-muted/70">{subcategoryLabel(product.subcategory, locale)}</span> : null}</td><td className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? (locale === "de" ? "Gebraucht" : "Used") : (locale === "de" ? "Neu" : "New")}</td>
                       <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ${product.is_active ? "bg-emerald-500/10 text-emerald-600" : "bg-surface text-muted"}`}>{product.is_active ? (locale === "de" ? "Aktiv" : "Active") : (locale === "de" ? "Entwurf" : "Draft")}</span></td>
+                      <td className="px-4 py-3"><ProductTipsBadge tips={tipsByProduct.get(product.id)!} locale={locale} /></td>
                       <td className="px-4 py-3 text-sm text-muted">{statusLabel(summaries.get(product.id)?.status ?? "none")}<span className="mt-0.5 block text-xs">{summaries.get(product.id)?.intakeCode ?? "—"}</span></td>
                       <td className="px-4 py-3"><Link href={`/admin/products/${product.id}#ai-intake`} prefetch={false} className="text-sm font-semibold text-gold">{dict.productsWorkspace.aiUpdate}</Link></td>
                       <td className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{money(locale, product.price)}</td><td className={`px-4 py-3 text-right text-sm tabular-nums ${(product.stock ?? 0) <= 0 ? "font-medium text-red-500" : "text-muted"}`}>{product.stock ?? 0}</td>
