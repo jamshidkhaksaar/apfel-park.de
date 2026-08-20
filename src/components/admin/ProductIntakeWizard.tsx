@@ -1,149 +1,426 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import { useMemo, useState } from "react";
 
+import { ProductChannelReadinessPanel } from "@/components/admin/ProductChannelFields";
 import { adminDictionary } from "@/lib/admin-i18n";
-import type { ProductIntakeRun } from "@/lib/product-intake/types";
-import { productIntakeScopes, type ProductIntakeScope } from "@/lib/product-intake/workspace-constants";
+import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
+import type { AdminProductRecord } from "@/components/admin/ProductCatalogAdmin";
+import type { ProductChannelFacts } from "@/lib/product-channel-readiness";
+import { extraGalleryImages, mergeCoverAndGallery, type WizardCondition, type WizardStep } from "@/lib/product-intake/safi-wizard";
+import { manufacturerPhotoFile } from "@/lib/product-intake/manufacturer-photos";
 
-type CatalogOption = { id: string; title: string; condition: string | null; sku: string | null; isActive: boolean };
+type CatalogOption = {
+  id: string;
+  title: string;
+  brand: string | null;
+  model: string | null;
+  sku: string | null;
+  condition: string | null;
+  category: string | null;
+  isActive: boolean;
+};
+
+const steps: WizardStep[] = ["device", "facts", "listing", "review"];
+
+const emptyListing = {
+  title: "",
+  subtitle: "",
+  description: "",
+  brand: "",
+  model: "",
+  category: "smartphones",
+  sku: "",
+  images: [] as string[],
+  featureBullets: [] as string[],
+  specs: [] as Array<{ label: string; value: string; group?: string }>,
+  variants: [] as AdminProductRecord["variants"],
+  manufacturer: null as AdminProductRecord["manufacturer"],
+  euResponsiblePerson: null as AdminProductRecord["euResponsiblePerson"],
+  safetyWarnings: [] as string[],
+  eprelId: "",
+};
 
 export default function ProductIntakeWizard({
   locale,
   products,
-  isOwner,
 }: {
   locale: "de" | "en";
   products: CatalogOption[];
-  isOwner: boolean;
 }) {
   const copy = adminDictionary[locale].productsWorkspace;
+  const [step, setStep] = useState<WizardStep>("device");
+  const [mode, setMode] = useState<"existing" | "new">("existing");
   const [productId, setProductId] = useState(products[0]?.id ?? "");
-  const selected = products.find((item) => item.id === productId) ?? null;
-  const [scopes, setScopes] = useState<ProductIntakeScope[]>(["commerce"]);
+  const [condition, setCondition] = useState<WizardCondition>("new");
+  const [conditionNote, setConditionNote] = useState("");
+  const [batteryHealth, setBatteryHealth] = useState("");
+  const [hasRealPhotos, setHasRealPhotos] = useState(false);
+  const [loaded, setLoaded] = useState<AdminProductRecord | null>(null);
+  const [listing, setListing] = useState(emptyListing);
+  const [gtin, setGtin] = useState("");
+  const [mpn, setMpn] = useState("");
   const [price, setPrice] = useState("");
-  const [inventoryMode, setInventoryMode] = useState<"add" | "set">("add");
-  const [quantity, setQuantity] = useState("");
-  const [notes, setNotes] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [cover, setCover] = useState<string | null>(null);
+  const [exactPhotos, setExactPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [run, setRun] = useState<ProductIntakeRun | null>(null);
-  const [evidenceKind, setEvidenceKind] = useState("barcode");
-  const [file, setFile] = useState<File | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [publishLive, setPublishLive] = useState(false);
 
-  const toggleScope = (scope: ProductIntakeScope) => {
-    setScopes((current) => current.includes(scope) ? current.filter((item) => item !== scope) : [...current, scope]);
+  const selected = products.find((item) => item.id === productId) ?? null;
+  const isGerman = locale === "de";
+  const isUsedIphone = condition === "used" && isIphoneProduct({
+    title: listing.title || selected?.title || "",
+    brand: listing.brand || selected?.brand || "",
+    model: listing.model || selected?.model || "",
+    conditionNote,
+    hasRealProductPhotos: hasRealPhotos,
+    imageCount: (cover ? 1 : 0) + exactPhotos.length,
+    batteryHealth,
+    locale,
+  });
+
+  const extraImages = useMemo(() => extraGalleryImages(listing.images, cover), [listing.images, cover]);
+  const previewImages = useMemo(
+    () => mergeCoverAndGallery(cover ?? listing.images[0] ?? "", [...exactPhotos, ...listing.images]),
+    [cover, exactPhotos, listing.images],
+  );
+
+  const readinessFacts: ProductChannelFacts = {
+    title: listing.title,
+    description: listing.description,
+    category: listing.category,
+    condition,
+    conditionNote,
+    hasRealProductPhotos: condition === "new" ? true : hasRealPhotos,
+    brand: listing.brand,
+    price: Number(price) || undefined,
+    stock: Number(quantity) || 0,
+    sku: listing.sku,
+    mpn,
+    gtin,
+    identifierStatus: gtin ? "assigned" : "unknown",
+    images: previewImages,
+    variants: listing.variants,
+    manufacturer: listing.manufacturer,
+    euResponsiblePerson: listing.euResponsiblePerson,
+    safetyWarnings: listing.safetyWarnings,
   };
 
-  const startRun = async () => {
-    if (!productId) return;
+  const applyProduct = (product: AdminProductRecord, nextCondition: WizardCondition) => {
+    setLoaded(product);
+    setListing({
+      title: product.title,
+      subtitle: product.subtitle,
+      description: product.description,
+      brand: product.brand,
+      model: product.model,
+      category: product.category,
+      sku: product.sku,
+      images: product.images,
+      featureBullets: product.featureBullets,
+      specs: product.specs,
+      variants: product.variants,
+      manufacturer: product.manufacturer ?? null,
+      euResponsiblePerson: product.euResponsiblePerson ?? null,
+      safetyWarnings: product.safetyWarnings ?? [],
+      eprelId: product.eprelId ?? "",
+    });
+    setGtin(product.gtin || "");
+    setMpn(product.mpn || "");
+    setPrice(nextCondition === product.condition ? String(product.price) : "");
+    setQuantity(nextCondition === product.condition ? String(Math.max(1, product.stock || 1)) : "1");
+    setCover(product.images[0] ?? null);
+    setExactPhotos([]);
+    if (nextCondition === "new") {
+      setConditionNote("");
+      setHasRealPhotos(false);
+      setBatteryHealth("");
+    }
+  };
+
+  const loadSelected = async () => {
+    if (mode === "new") {
+      setLoaded(null);
+      setListing({ ...emptyListing, brand: selected?.brand ?? "", model: selected?.model ?? "" });
+      setGtin("");
+      setMpn("");
+      setPrice("");
+      setQuantity("1");
+      setCover(null);
+      setExactPhotos([]);
+      return true;
+    }
+    if (!productId) return false;
     setBusy(true);
     setMessage("");
     try {
-      const response = await fetch("/api/admin/products/intake/runs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          condition: selected?.condition,
-          scopes: scopes.length ? scopes : ["commerce"],
-          price: price ? Number(price) : null,
-          inventoryMode: quantity ? inventoryMode : null,
-          quantity: quantity ? Number(quantity) : null,
-          notes: notes.trim() || null,
-        }),
-      });
+      const response = await fetch(`/api/admin/products/${productId}/intake`, { cache: "no-store" });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || copy.startFailed);
-      setRun(payload.run);
-      setMessage(`${copy.started} ${payload.run.intakeCode}`);
+      applyProduct(payload.product as AdminProductRecord, condition);
+      return true;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : copy.startFailed);
+      return false;
     } finally {
       setBusy(false);
     }
   };
 
-  const uploadEvidence = async () => {
-    if (!run || !file) return;
+  const ensureGallery = async () => {
+    if (listing.images.length >= 4 || !listing.brand || !listing.model) return;
+    try {
+      const file = await manufacturerPhotoFile(listing.model, "black");
+      if (!file) return;
+      const url = await uploadImage(file);
+      setListing((current) => ({
+        ...current,
+        images: current.images.includes(url) ? current.images : [...current.images, url],
+      }));
+    } catch {
+      // non-blocking: gallery stays as-is
+    }
+  };
+
+    const uploadImage = async (file: File): Promise<string> => {
+    const body = new FormData();
+    body.set("file", file);
+    const response = await fetch("/api/admin/products/upload", { method: "POST", body });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || copy.uploadFailed);
+    return payload.url as string;
+  };
+
+  const goNext = async () => {
+    setMessage("");
+    if (step === "device") {
+      const ok = await loadSelected();
+      if (ok) setStep("facts");
+      return;
+    }
+    if (step === "facts") {
+      const conditionError = validateAdminProductCondition({
+        condition,
+        conditionNote,
+        hasRealProductPhotos: condition === "new" ? true : hasRealPhotos,
+        imageCount: (cover ? 1 : 0) + exactPhotos.length,
+        batteryHealth,
+        title: listing.title,
+        brand: listing.brand,
+        model: listing.model,
+        locale,
+      });
+      if (!gtin.trim() || !mpn.trim() || !price || !quantity || !cover) {
+        setMessage(copy.factsRequired);
+        return;
+      }
+      if (conditionError) {
+        setMessage(conditionError);
+        return;
+      }
+      setStep("listing");
+      void ensureGallery();
+      return;
+    }
+    if (step === "listing") {
+      if (!listing.title.trim() || !listing.description.trim()) {
+        setMessage(copy.listingRequired);
+        return;
+      }
+      setStep("review");
+    }
+  };
+
+  const save = async () => {
     setBusy(true);
     setMessage("");
     try {
-      const body = new FormData();
-      body.set("file", file);
-      body.set("evidence", evidenceKind);
-      const response = await fetch(`/api/admin/products/intake/runs/${run.id}/assets`, { method: "POST", body });
+      const images = mergeCoverAndGallery(cover!, [...exactPhotos, ...listing.images]);
+      const body = {
+        id: mode === "existing" ? productId : undefined,
+        title: listing.title,
+        subtitle: listing.subtitle,
+        description: listing.description,
+        category: listing.category,
+        condition,
+        batteryHealth: batteryHealth ? Number(batteryHealth) : null,
+        hasRealProductPhotos: condition === "new" ? true : hasRealPhotos,
+        conditionNote,
+        brand: listing.brand,
+        model: listing.model,
+        sku: listing.sku,
+        mpn,
+        gtin,
+        identifierStatus: "assigned",
+        price: Number(price),
+        stock: Number(quantity),
+        images,
+        variants: listing.variants,
+        featureBullets: listing.featureBullets,
+        specs: listing.specs,
+        manufacturer: listing.manufacturer,
+        euResponsiblePerson: listing.euResponsiblePerson,
+        safetyWarnings: listing.safetyWarnings,
+        eprelId: listing.eprelId,
+        isActive: publishLive && readiness.store.ready && readiness.google.ready,
+      };
+      const response = await fetch("/api/admin/products", {
+        method: mode === "existing" ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || copy.uploadFailed);
-      setMessage(copy.uploaded);
-      setFile(null);
+      if (!response.ok) throw new Error(payload.error || copy.saveFailed);
+      setSavedId(payload.id ?? productId);
+      setMessage(mode === "existing" ? copy.updatedDraft : copy.createdDraft);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : copy.uploadFailed);
+      setMessage(error instanceof Error ? error.message : copy.saveFailed);
     } finally {
       setBusy(false);
     }
   };
+
+  const stepIndex = steps.indexOf(step);
 
   return (
     <section className="rounded-2xl border border-border/60 bg-surface/55 p-5">
-      <h2 className="text-lg font-semibold text-foreground">{copy.wizardTitle}</h2>
-      <p className="mt-1 text-sm text-muted">{isOwner ? copy.wizardOwnerHint : copy.wizardStaffHint}</p>
-      {message ? <p className="mt-3 rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm" role="status">{message}</p> : null}
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <label className="text-sm text-muted">
-          {copy.pinProduct}
-          <select value={productId} onChange={(event) => setProductId(event.target.value)} className="mt-1 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.title} {product.isActive ? "" : locale === "de" ? "(Entwurf)" : "(draft)"}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="rounded-xl border border-border/60 bg-background/40 p-3 text-sm text-muted">
-          <p>{copy.confirmedCondition}: <span className="font-semibold text-foreground">{selected?.condition ?? "new"}</span></p>
-          <p className="mt-1">SKU: {selected?.sku || "—"}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">{copy.wizardTitle}</h2>
+          <p className="mt-1 text-sm text-muted">{copy.wizardSafiHint}</p>
         </div>
-      </div>
-      <fieldset className="mt-4">
-        <legend className="text-sm font-semibold text-foreground">{copy.scopes}</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {productIntakeScopes.map((scope) => (
-            <label key={scope} className="inline-flex items-center gap-2 rounded-xl border border-border/60 px-3 py-1.5 text-sm">
-              <input type="checkbox" checked={scopes.includes(scope)} onChange={() => toggleScope(scope)} />
-              {scope}
-            </label>
+        <ol className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
+          {steps.map((item, index) => (
+            <li key={item} className={`rounded-full px-3 py-1 ${item === step ? "bg-gold text-black" : "border border-border/60 text-muted"}`}>
+              {index + 1}. {copy[`step${item[0].toUpperCase()}${item.slice(1)}` as keyof typeof copy] ?? item}
+            </li>
           ))}
-        </div>
-      </fieldset>
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <input value={price} onChange={(event) => setPrice(event.target.value)} placeholder={copy.pricePlaceholder} className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
-        <select value={inventoryMode} onChange={(event) => setInventoryMode(event.target.value as "add" | "set")} className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm">
-          <option value="add">{copy.addStock}</option>
-          <option value="set">{copy.setStock}</option>
-        </select>
-        <input value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder={copy.quantityPlaceholder} className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
+        </ol>
       </div>
-      <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder={copy.notesPlaceholder} className="mt-3 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" disabled={busy || !productId} onClick={() => void startRun()} className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-40">{copy.startRun}</button>
-      </div>
-      {run ? (
-        <div className="mt-5 rounded-2xl border border-gold/30 bg-gold/5 p-4">
-          <p className="text-sm font-semibold text-foreground">{run.intakeCode} · {run.status}</p>
-          <p className="mt-1 text-xs text-muted">{copy.continueHint}</p>
-          <div className="mt-3 grid gap-3 md:grid-cols-[160px_minmax(0,1fr)_auto]">
-            <select value={evidenceKind} onChange={(event) => setEvidenceKind(event.target.value)} className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm">
-              <option value="barcode">{copy.barcodePhoto}</option>
-              <option value="about">{copy.aboutScreenshot}</option>
-              <option value="battery">{copy.batteryScreenshot}</option>
-              <option value="shop">{copy.shopPhoto}</option>
-            </select>
-            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] ?? null)} className="text-sm" />
-            <button type="button" disabled={busy || !file} onClick={() => void uploadEvidence()} className="rounded-xl border border-gold/40 px-4 py-2 text-sm font-semibold text-gold disabled:opacity-40">{copy.uploadEvidence}</button>
+      {message ? <p className="mt-4 rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm" role="status">{message}</p> : null}
+
+      {step === "device" ? (
+        <div className="mt-5 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setMode("existing")} className={`rounded-xl px-4 py-2 text-sm font-semibold ${mode === "existing" ? "bg-gold text-black" : "border border-border/60 text-muted"}`}>{copy.existingDevice}</button>
+            <button type="button" onClick={() => setMode("new")} className={`rounded-xl px-4 py-2 text-sm font-semibold ${mode === "new" ? "bg-gold text-black" : "border border-border/60 text-muted"}`}>{copy.newDevice}</button>
           </div>
+          <label className="block text-sm text-muted">
+            {mode === "existing" ? copy.pinProduct : copy.templateProduct}
+            <select value={productId} onChange={(event) => setProductId(event.target.value)} className="mt-1 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">
+              {mode === "new" ? <option value="">{copy.noTemplate}</option> : null}
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.title} {product.condition ? `· ${product.condition}` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm text-muted">
+            {copy.confirmedCondition}
+            <select value={condition} onChange={(event) => setCondition(event.target.value as WizardCondition)} className="mt-1 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">
+              <option value="new">{isGerman ? "Neu & versiegelt" : "Sealed"}</option>
+              <option value="open_box">{isGerman ? "Open-Box" : "Open-box"}</option>
+              <option value="used">{isGerman ? "Gebraucht" : "Used"}</option>
+            </select>
+          </label>
+          {condition !== "new" ? (
+            <div className="grid gap-3">
+              <textarea value={conditionNote} onChange={(event) => setConditionNote(event.target.value)} rows={3} placeholder={copy.conditionNotePlaceholder} className="w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
+              {isUsedIphone ? (
+                <input value={batteryHealth} onChange={(event) => setBatteryHealth(event.target.value)} placeholder={copy.batteryPlaceholder} className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
+              ) : null}
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={hasRealPhotos} onChange={(event) => setHasRealPhotos(event.target.checked)} />
+                {copy.exactPhotosConfirm}
+              </label>
+            </div>
+          ) : null}
         </div>
       ) : null}
+
+      {step === "facts" ? (
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <input value={gtin} onChange={(event) => setGtin(event.target.value)} placeholder="GTIN / EAN" className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
+          <input value={mpn} onChange={(event) => setMpn(event.target.value)} placeholder="MPN" className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
+          <input value={price} onChange={(event) => setPrice(event.target.value)} placeholder={copy.pricePlaceholder} className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
+          <input value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder={copy.quantityPlaceholder} className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
+          <label className="md:col-span-2 text-sm text-muted">
+            {copy.coverPhoto}
+            <input type="file" accept="image/jpeg,image/png,image/webp" className="mt-2 block w-full text-sm" onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              setBusy(true);
+              void uploadImage(file).then((url) => { setCover(url); setHasRealPhotos(true); }).catch((error) => setMessage(error instanceof Error ? error.message : copy.uploadFailed)).finally(() => setBusy(false));
+            }} />
+            {cover ? <span className="relative mt-3 block h-40 w-32 overflow-hidden rounded-xl border border-border/60 bg-white"><Image src={cover} alt="" fill className="object-contain" unoptimized={cover.startsWith("/uploads/")} /></span> : null}
+          </label>
+          {condition !== "new" ? (
+            <label className="md:col-span-2 text-sm text-muted">
+              {copy.exactPhotos}
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="mt-2 block w-full text-sm" onChange={(event) => {
+                const files = Array.from(event.target.files ?? []).slice(0, 3);
+                setBusy(true);
+                void Promise.all(files.map(uploadImage)).then((urls) => setExactPhotos(urls)).catch((error) => setMessage(error instanceof Error ? error.message : copy.uploadFailed)).finally(() => setBusy(false));
+              }} />
+            </label>
+          ) : null}
+        </div>
+      ) : null}
+
+      {step === "listing" ? (
+        <div className="mt-5 space-y-4">
+          <p className="text-sm text-muted">{copy.autoFillHint}</p>
+          <input value={listing.title} onChange={(event) => setListing((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
+          <textarea value={listing.description} onChange={(event) => setListing((current) => ({ ...current, description: event.target.value }))} rows={5} className="w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {previewImages.map((url) => (
+              <span key={url} className="relative aspect-square overflow-hidden rounded-xl border border-border/60 bg-white">
+                <Image src={url} alt="" fill className="object-contain" unoptimized={url.startsWith("/uploads/")} />
+              </span>
+            ))}
+          </div>
+          {listing.variants.length > 0 ? (
+            <div className="rounded-xl border border-border/60 bg-background/40 p-3 text-sm text-muted">
+              {copy.variants}: {listing.variants.map((variant) => `${variant.color} ${variant.storage}`).join(", ")}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {step === "review" ? (
+        <div className="mt-5 space-y-4">
+          <ProductChannelReadinessPanel locale={locale} facts={readinessFacts} />
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input type="checkbox" checked={publishLive} onChange={(event) => setPublishLive(event.target.checked)} />
+            {copy.publishLiveLabel}
+          </label>
+          <div className="rounded-xl border border-border/60 bg-background/40 p-4 text-sm">
+            <p><span className="text-muted">{copy.confirmedCondition}:</span> {condition}</p>
+            <p><span className="text-muted">GTIN:</span> {gtin}</p>
+            <p><span className="text-muted">MPN:</span> {mpn}</p>
+            <p><span className="text-muted">{copy.pricePlaceholder}:</span> {price}</p>
+            <p><span className="text-muted">{copy.quantityPlaceholder}:</span> {quantity}</p>
+            <p className="mt-2 text-muted">{copy.reviewHint}</p>
+          </div>
+          {savedId ? <a href={`/admin/products/${savedId}`} className="inline-flex text-sm font-semibold text-gold">{copy.openProduct}</a> : null}
+        </div>
+      ) : null}
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        {stepIndex > 0 ? (
+          <button type="button" disabled={busy} onClick={() => setStep(steps[stepIndex - 1])} className="rounded-xl border border-border/60 px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-40">{copy.back}</button>
+        ) : null}
+        {step !== "review" ? (
+          <button type="button" disabled={busy} onClick={() => void goNext()} className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-40">{copy.next}</button>
+        ) : (
+          <button type="button" disabled={busy || Boolean(savedId)} onClick={() => void save()} className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-40">{mode === "existing" ? copy.saveUpdate : copy.saveDraft}</button>
+        )}
+      </div>
     </section>
   );
 }

@@ -243,7 +243,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
               <p className="font-semibold text-foreground">{liveEnabled ? dict.productIntakePage.pipelineLive : dict.productIntakePage.pipelineShadow}</p>
               <p className="mt-1 text-sm leading-6 text-muted">{liveEnabled ? dict.productIntakePage.liveDescription : dict.productIntakePage.shadowDescription}</p>
             </div>
-            <ProductIntakeWizard locale={locale} isOwner={isOwner} products={wizardProducts.map((product) => ({ id: product.id, title: product.title, condition: product.condition, sku: product.sku, isActive: Boolean(product.is_active) }))} />
+            <ProductIntakeWizard locale={locale} products={wizardProducts.map((product) => ({ id: product.id, title: product.title, condition: product.condition, sku: product.sku, isActive: Boolean(product.is_active) }))} />
             {isOwner ? (
               <AdminProductIntakeQueue locale={locale} initialRuns={intakeRuns} initialDetail={detail} initialPreviewUrl={preview ? `/store/preview/${preview.token}` : null} />
             ) : (
