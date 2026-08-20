@@ -99,8 +99,8 @@ export default function ProductIntakeWizard({
     identifierStatus: gtin ? "assigned" : "unknown",
     images: previewImages,
     variants: listing.variants,
-    manufacturer: listing.manufacturer,
-    euResponsiblePerson: listing.euResponsiblePerson,
+    manufacturer: listing.manufacturer ?? undefined,
+    euResponsiblePerson: listing.euResponsiblePerson ?? undefined,
     safetyWarnings: listing.safetyWarnings,
   };
 
@@ -256,8 +256,8 @@ export default function ProductIntakeWizard({
         variants: listing.variants,
         featureBullets: listing.featureBullets,
         specs: listing.specs,
-        manufacturer: listing.manufacturer,
-        euResponsiblePerson: listing.euResponsiblePerson,
+        manufacturer: listing.manufacturer ?? undefined,
+        euResponsiblePerson: listing.euResponsiblePerson ?? undefined,
         safetyWarnings: listing.safetyWarnings,
         eprelId: listing.eprelId,
         isActive: publishLive && readiness.store.ready && readiness.google.ready,
