@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 
 import { ProductChannelReadinessPanel } from "@/components/admin/ProductChannelFields";
+import { evaluateProductChannelReadiness } from "@/lib/product-channel-readiness";
 import { adminDictionary } from "@/lib/admin-i18n";
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import type { AdminProductRecord } from "@/components/admin/ProductCatalogAdmin";
@@ -260,7 +261,7 @@ export default function ProductIntakeWizard({
         euResponsiblePerson: listing.euResponsiblePerson ?? undefined,
         safetyWarnings: listing.safetyWarnings,
         eprelId: listing.eprelId,
-        isActive: publishLive && readiness.store.ready && readiness.google.ready,
+        isActive: publishLive && evaluateProductChannelReadiness(readinessFacts).store.ready && evaluateProductChannelReadiness(readinessFacts).google.ready,
       };
       const response = await fetch("/api/admin/products", {
         method: mode === "existing" ? "PATCH" : "POST",
