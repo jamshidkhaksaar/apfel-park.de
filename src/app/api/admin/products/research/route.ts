@@ -4,11 +4,12 @@ import { canManageProducts } from "@/lib/admin-auth";
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { readSessionUserFromRequest } from "@/lib/session";
 import { findSensitiveDataIssues } from "@/lib/product-intake/redaction";
+import { uploadProductImage } from "@/lib/blob";
 import { sanitizeResearchResult, type ProductResearchResult } from "@/lib/product-research";
 
 export const dynamic = "force-dynamic";
 
-const GEMINI_MODEL = "gemini-2.5-flash"; // Matches the proven n8n workflow on this server (same key)
+const GEMINI_MODEL = "gemini-2.5-flash"; // Proven on this server with the configured key
 
 function geminiKey(): string {
   const key = process.env.GEMINI_API_KEY?.trim();
@@ -16,16 +17,36 @@ function geminiKey(): string {
   return key;
 }
 
-const SYSTEM_PROMPT = `You are a product-research assistant for a German phone store.
-Given a product model name (or a barcode/About image), return STRICT JSON with ONLY these keys:
-title, subtitle, description, brand, model, category, specs (array of {label,value}),
-features (array of strings), variants (array of {color,storage}), gallery (array of https URLs),
-batteryDetails ({included, wattHours}), manufacturer ({name,address,email}),
-euResponsiblePerson ({name,address,email}), energyLabel ({efficiencyClass,batteryEndurance}),
-gtin (string, optional suggestion), mpn (string, optional suggestion).
-Never invent GTIN/MPN; if unknown, omit them. Never include IMEI, serial, EID or MEID.`;
+const SYSTEM_PROMPT = `You are a product-research assistant for Apfel Park, a phone store in Hamburg. The store language is German; all product text must be in German (except where English is explicitly requested).
 
-async function callGemini(payload: { prompt: string; image?: { mime: string; data: string } }): Promise<ProductResearchResult> {
+Given a product model name (or a barcode/About photo), research the REAL device and return STRICT JSON with ONLY these keys:
+- title: string (German, marketing name + storage + color, e.g. "Apple iPhone 17 Pro Max 256 GB Titan Schwarz")
+- subtitle: string (German, short selling line)
+- description: string (German, 2-3 professional paragraphs: design, display, camera, chip, battery, features)
+- brand: string
+- model: string (marketing model name)
+- category: one of "smartphones", "tablets", "accessories", "consoles", "laptops"
+- specs: array of {label, value} (German labels: Display, Speicher, Kamera, Chip, Akku, Konnektivität, Gewicht, etc.)
+- features: array of strings (German, 4-6 selling points)
+- variants: array of {color, storage} (German color names, real storage options)
+- gallery: array of https URLs (official manufacturer product images, same model+color, 2-6 images)
+- batteryDetails: {included: boolean, wattHours: number}
+- manufacturer: {name, address, email} (real manufacturer legal entity, e.g. Apple Distribution International Ltd, Hollyhill Industrial Estate, Cork, Ireland; contactus.de@euro.apple.com)
+- euResponsiblePerson: {name, address, email} (real EU importer/responsible entity)
+- energyLabel: {efficiencyClass, batteryEndurance} (only if the EU energy label applies; else null)
+- countryOfOrigin: two-letter ISO code
+- safetyWarnings: array of strings (German, e.g. "Nur mit zertifiziertem USB-C-Netzteil laden.")
+- gtin: string (real EAN/GTIN only if you are certain; else omit)
+- mpn: string (real manufacturer part number only if certain; else omit)
+
+Rules:
+- Use ONLY factual, verifiable data about the real product. Never invent specs.
+- Never include IMEI, serial, EID or MEID values.
+- If the product is unknown or not yet announced, still return the best real manufacturer data (Apple may not have announced it; use the official Apple product family facts) and set description to factual German copy.
+- Never add placeholder text like "test", "demo", "sample".
+- Return ONLY valid JSON, no markdown.`;
+
+async function callGemini(payload: { prompt: string; image?: { mime: string; data: string } }): Promise<unknown> {
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: payload.prompt }];
   if (payload.image) parts.push({ inlineData: { mimeType: payload.image.mime, data: payload.image.data } });
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`, {
@@ -35,7 +56,7 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
       contents: [{ parts }],
       generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
     }),
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(45000),
   });
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
@@ -45,7 +66,27 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
   const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("");
   if (!text) throw new Error("Gemini returned no content");
   const jsonText = text.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
-  return sanitizeResearchResult(JSON.parse(jsonText));
+  return JSON.parse(jsonText);
+}
+
+// Download an official image, convert to small WebP via the existing uploader, return the local URL.
+async function downloadAndUploadImage(url: string): Promise<string | null> {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return null;
+    const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!response.ok) return null;
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.startsWith("image/")) return null;
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > 12 * 1024 * 1024) return null;
+    const extension = contentType.includes("png") ? ".png" : contentType.includes("webp") ? ".webp" : ".jpg";
+    const file = new File([bytes], `research-${Date.now()}${extension}`, { type: contentType.split(";")[0] });
+    const uploaded = await uploadProductImage(file);
+    return uploaded.url;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -79,7 +120,19 @@ export async function POST(request: NextRequest) {
     }
 
     const prompt = `Research this product and return the JSON. Model/query: ${query || "from photo"}`;
-    const research = await callGemini({ prompt, image });
+    const raw = await callGemini({ prompt, image });
+    const research = sanitizeResearchResult(raw);
+
+    // Download and upload gallery images server-side; failures are non-blocking.
+    if (research.gallery && research.gallery.length > 0) {
+      const local: string[] = [];
+      for (const url of research.gallery.slice(0, 6)) {
+        const uploaded = await downloadAndUploadImage(url);
+        if (uploaded) local.push(uploaded);
+      }
+      if (local.length > 0) research.gallery = local;
+    }
+
     return NextResponse.json({ success: true, research });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Research failed";

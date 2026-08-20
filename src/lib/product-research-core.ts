@@ -18,6 +18,8 @@ export type ProductResearchResult = {
   euResponsiblePerson?: { name?: string; address?: string; email?: string };
   energyLabel?: { efficiencyClass?: string; batteryEndurance?: string };
   gtinSuggestion?: string | null;
+  countryOfOrigin?: string;
+  safetyWarnings?: string[];
   mpnSuggestion?: string | null;
 };
 
@@ -108,6 +110,8 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
       : undefined,
     gtinSuggestion,
     mpnSuggestion,
+    countryOfOrigin: text("countryOfOrigin", 2)?.toUpperCase(),
+    safetyWarnings: strings("safetyWarnings", 500),
   };
 }
 

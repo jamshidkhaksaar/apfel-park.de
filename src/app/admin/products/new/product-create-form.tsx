@@ -242,6 +242,7 @@ export default function ProductCreateForm() {
     });
 
   const [aiError, setAiError] = useState("");
+  const [aiGallery, setAiGallery] = useState<string[]>([]);
   const applyResearch = (research: ProductResearchResult) => {
     setState((prev) => ({
       ...prev,
@@ -272,6 +273,12 @@ export default function ProductCreateForm() {
             isDefault: false,
           }))
         : prev.variants,
+    }));
+    setAiGallery(research.gallery ?? []);
+    setState((prev) => ({
+      ...prev,
+      safetyWarningsText: research.safetyWarnings?.length ? research.safetyWarnings.join("\n") : prev.safetyWarningsText,
+      channelFields: research.countryOfOrigin ? { ...prev.channelFields, countryOfOrigin: research.countryOfOrigin } : prev.channelFields,
     }));
     setAiError("");
   };
@@ -382,7 +389,7 @@ export default function ProductCreateForm() {
             ficheEn: state.energyFicheEn,
           },
           variants: variantsToSave,
-          images: imageUrls,
+          images: [...aiGallery, ...imageUrls],
           featureBullets: parseFeatureBullets(state.featureBulletsText),
           specs: parseSpecs(state.specsText),
           isHomepageFeatured: state.isHomepageFeatured,

@@ -122,6 +122,8 @@ export default function ProductIntakeWizard({
       variants: research.variants?.length ? research.variants.map((variant) => ({ color: variant.color, storage: variant.storage, sku: variant.sku ?? "", mpn: "", gtin: "", identifierStatus: "unknown" as const, asin: "", ebayEpid: "", isDefault: false })) : current.variants,
       manufacturer: research.manufacturer ? { name: research.manufacturer.name ?? "", address: research.manufacturer.address ?? "", email: research.manufacturer.email ?? "" } : current.manufacturer,
       euResponsiblePerson: research.euResponsiblePerson ? { name: research.euResponsiblePerson.name ?? "", address: research.euResponsiblePerson.address ?? "", email: research.euResponsiblePerson.email ?? "" } : current.euResponsiblePerson,
+      safetyWarnings: research.safetyWarnings?.length ? research.safetyWarnings : current.safetyWarnings,
+      images: research.gallery?.length ? [...current.images, ...research.gallery] : current.images,
     }));
     setAiError("");
   };
