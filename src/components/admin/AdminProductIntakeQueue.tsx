@@ -40,7 +40,7 @@ export default function AdminProductIntakeQueue({
     setMessage("");
     setPreviewUrl(null);
     try {
-      const response = await fetch(`/api/integrations/product-intake/runs/${id}`, { cache: "no-store" });
+      const response = await fetch(`/api/admin/products/intake/runs/${id}`, { cache: "no-store" });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || copy.loadFailed);
       setDetail({ run: payload.run, assets: payload.assets ?? [], events: payload.events ?? [] });
@@ -52,7 +52,7 @@ export default function AdminProductIntakeQueue({
   };
 
   const refreshRuns = async () => {
-    const response = await fetch("/api/integrations/product-intake/runs?limit=200", { cache: "no-store" });
+    const response = await fetch("/api/admin/products/intake/runs?limit=200", { cache: "no-store" });
     const payload = await response.json();
     if (response.ok) setRuns(payload.runs ?? []);
   };
@@ -71,13 +71,13 @@ export default function AdminProductIntakeQueue({
               ? "draft"
               : "publish"
         : null;
-      const response = await fetch(`/api/integrations/product-intake/runs/${detail.run.id}/decision`, {
+      const response = await fetch(`/api/admin/products/intake/runs/${detail.run.id}/decision`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Idempotency-Key": `admin:${decision}:${stage ?? "none"}:${detail.run.id}:${detail.run.proposalHash.slice(0, 16)}`,
         },
-        body: JSON.stringify({ decision, stage, proposalHash: detail.run.proposalHash, reason: feedback.trim() || null }),
+        body: JSON.stringify({ decision, stage, proposalHash: detail.run.proposalHash, reason: feedback.trim() || null, acceptedPaths: decision === "approve" ? ["changes.price", "changes.inventory"] : undefined }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || copy.decisionFailed);

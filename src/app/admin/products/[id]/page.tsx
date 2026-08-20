@@ -3,15 +3,18 @@ import { notFound } from "next/navigation";
 
 import AdminShell from "@/components/admin/AdminShell";
 import ProductCatalogAdmin from "@/components/admin/ProductCatalogAdmin";
+import ProductLinkedIntakeCard from "@/components/admin/ProductLinkedIntakeCard";
 import { mapAdminProduct, type ProductRow } from "@/lib/admin-product-data";
 import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
+import { isProductIntakeOwner } from "@/lib/product-intake/owner";
 import { getPromoPopupSettings } from "@/lib/products";
+import { readSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductEditorPage({ params }: { params: Promise<{ id: string }> }) {
-  const [{ id }, locale, promo] = await Promise.all([params, getAdminLocale(), getPromoPopupSettings()]);
+  const [{ id }, locale, promo, user] = await Promise.all([params, getAdminLocale(), getPromoPopupSettings(), readSessionUser()]);
   const [productResult, featuredResult] = await Promise.all([
     query(
       `SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,gtin,identifier_status,asin,ebay_epid,country_of_origin,package_weight_kg,package_length_cm,package_width_cm,package_height_cm,battery_details,charger_included,charging_power_min_w,charging_power_max_w,usb_pd_supported,marketplace_category_mappings,marketplace_attributes,amazon_gtin_exemption,amazon_renewed_approved,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,faq,created_at AS updated_at FROM products WHERE id = $1 LIMIT 1`,
@@ -31,6 +34,9 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
     <AdminShell title={product.title}>
       <div className="mx-auto mb-3 w-full max-w-[1500px]">
         <Link href="/admin/products" className="inline-flex items-center gap-2 text-sm font-medium text-muted transition hover:text-gold">← {locale === "de" ? "Zurück zum Produktkatalog" : "Back to product catalog"}</Link>
+      </div>
+      <div id="ai-intake">
+        <ProductLinkedIntakeCard locale={locale} productId={product.id} condition={product.condition} isOwner={isProductIntakeOwner(user)} />
       </div>
       <ProductCatalogAdmin locale={locale} products={[product]} promo={promo} editorOnly />
     </AdminShell>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { canManageProducts } from "@/lib/admin-auth";
+import { markOpenIntakeRunsStale } from "@/lib/product-intake/workspace-repository";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import { createAdminDbClient } from "@/lib/admin-db";
 import { query } from "@/lib/db";
@@ -1081,6 +1082,7 @@ export async function PATCH(request: NextRequest) {
     await syncProductInventory(payload.id, product);
 
     await syncHomepageFeatured(payload.id, product.isHomepageFeatured);
+    await markOpenIntakeRunsStale(payload.id, "Manual catalog edit", { type: "admin", id: "catalog-editor" });
 
     const socialPublishing = product.isActive
       ? await autoPublishProductPromotion(

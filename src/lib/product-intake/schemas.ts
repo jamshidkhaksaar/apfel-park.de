@@ -143,8 +143,15 @@ export const parseRunReference = (value: unknown): string => {
 export const parseCreateRunInput = (input: unknown): CreateRunInput => {
   assertRedacted(input);
   const value = record(input, '$');
-  strictKeys(value, ['source', 'sourceReference', 'condition', 'submittedBy', 'submittedByRole', 'locale', 'payload'], '$');
+  strictKeys(value, ['source', 'sourceReference', 'condition', 'submittedBy', 'submittedByRole', 'locale', 'payload', 'originProductId', 'requestedScopes'], '$');
 
+  const requestedScopes = value.requestedScopes === undefined
+    ? undefined
+    : (Array.isArray(value.requestedScopes)
+      ? value.requestedScopes.map((entry, index) => text(entry, `$.requestedScopes[${index}]`, { required: true, max: 40 })!)
+      : (() => { throw new SchemaValidationError(['$.requestedScopes must be an array']); })());
+
+  const originProductId = text(value.originProductId, '$.originProductId', { max: 36, pattern: uuidPattern });
   return {
     source: enumValue(value.source, productIntakeSources, '$.source'),
     sourceReference: text(value.sourceReference, '$.sourceReference', { max: 200 }),
@@ -157,6 +164,8 @@ export const parseCreateRunInput = (input: unknown): CreateRunInput => {
     ),
     locale: nullableEnum(value.locale, ['de', 'en'] as const, '$.locale'),
     payload: jsonObject(value.payload, '$.payload'),
+    ...(originProductId ? { originProductId } : {}),
+    ...(requestedScopes ? { requestedScopes } : {}),
   };
 };
 
@@ -251,7 +260,7 @@ export const parseProductProposal = (input: unknown): ProductProposal => {
     'schemaVersion', 'operation', 'condition', 'target', 'product', 'changes',
     'sources', 'facts', 'listingPreview', 'manualConfirmations', 'identifierException', 'notes',
   ], '$');
-  if (value.schemaVersion !== 2) throw new SchemaValidationError(['$.schemaVersion must equal 2']);
+  if (value.schemaVersion !== 2 && value.schemaVersion !== 3) throw new SchemaValidationError(['$.schemaVersion must equal 2 or 3']);
 
   const operation = enumValue(value.operation, ['create', 'update'] as const, '$.operation');
   const condition = enumValue(value.condition, productIntakeConditions, '$.condition');
@@ -385,7 +394,7 @@ export const parseProductProposal = (input: unknown): ProductProposal => {
   }
 
   return {
-    schemaVersion: 2,
+    schemaVersion: value.schemaVersion === 3 ? 3 : 2,
     operation,
     condition,
     target,
@@ -403,19 +412,26 @@ export const parseProductProposal = (input: unknown): ProductProposal => {
 export const parseDecisionInput = (input: unknown): DecisionInput => {
   assertRedacted(input);
   const value = record(input, '$');
-  strictKeys(value, ['decision', 'stage', 'actorId', 'proposalHash', 'reason'], '$');
+  strictKeys(value, ['decision', 'stage', 'actorId', 'proposalHash', 'reason', 'acceptedPaths'], '$');
   const decision = enumValue(value.decision, ['approve', 'reject', 'request_changes'] as const, '$.decision');
   const stage = nullableEnum(value.stage, ['draft', 'publish', 'update'] as const, '$.stage');
   const reason = text(value.reason, '$.reason', { max: 1000 });
   if (decision !== 'approve' && !reason) throw new SchemaValidationError([`$.reason is required for ${decision}`]);
   if (decision === 'approve' && !stage) throw new SchemaValidationError(['$.stage is required for approve']);
   if (decision !== 'approve' && stage) throw new SchemaValidationError(['$.stage is only valid for approve']);
+  const acceptedPaths = value.acceptedPaths === undefined
+    ? undefined
+    : (Array.isArray(value.acceptedPaths)
+      ? value.acceptedPaths.map((entry, index) => text(entry, `$.acceptedPaths[${index}]`, { required: true, max: 80 })!)
+      : (() => { throw new SchemaValidationError(['$.acceptedPaths must be an array']); })());
+  if (acceptedPaths && decision !== 'approve') throw new SchemaValidationError(['$.acceptedPaths is only valid for approve']);
   return {
     decision,
     stage,
     actorId: text(value.actorId, '$.actorId', { max: 200 }),
     proposalHash: text(value.proposalHash, '$.proposalHash', { required: true, max: 64, pattern: hashPattern })!,
     reason,
+    acceptedPaths,
   };
 };
 

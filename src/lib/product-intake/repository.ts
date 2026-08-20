@@ -28,6 +28,11 @@ import type {
 } from "./types";
 import { validateProposalMatch } from "./validation";
 import { findSensitiveDataIssues } from "./redaction";
+import {
+  dispatchStatusForRun,
+  parseAcceptedPaths,
+  parseProductIntakeScopes,
+} from "./workspace";
 
 type RunRow = Record<string, unknown> & {
   id: string;
@@ -59,6 +64,16 @@ type RunRow = Record<string, unknown> & {
   applied_at: Date | string | null;
   applied_by: string | null;
   last_error: string | null;
+  origin_product_id: string | null;
+  base_snapshot: JsonObject | Record<string, unknown> | null;
+  base_snapshot_hash: string | null;
+  inventory_version: number | string | null;
+  requested_scopes: unknown;
+  dispatch_status: string | null;
+  accepted_paths: unknown;
+  accepted_hash: string | null;
+  stale_at: Date | string | null;
+  stale_reason: string | null;
   version: number | string;
   created_at: Date | string;
   updated_at: Date | string;
@@ -119,6 +134,16 @@ const mapRun = (row: RunRow): ProductIntakeRun => ({
   appliedAt: iso(row.applied_at),
   appliedBy: row.applied_by,
   lastError: row.last_error,
+  originProductId: row.origin_product_id ? String(row.origin_product_id) : null,
+  baseSnapshot: nonEmptyObject(row.base_snapshot) ? row.base_snapshot as JsonObject : {},
+  baseSnapshotHash: row.base_snapshot_hash ? String(row.base_snapshot_hash) : null,
+  inventoryVersion: row.inventory_version == null ? null : Number(row.inventory_version),
+  requestedScopes: parseProductIntakeScopes(row.requested_scopes),
+  dispatchStatus: String(row.dispatch_status ?? "queued"),
+  acceptedPaths: parseAcceptedPaths(row.accepted_paths),
+  acceptedHash: row.accepted_hash ? String(row.accepted_hash) : null,
+  staleAt: iso(row.stale_at),
+  staleReason: row.stale_reason ? String(row.stale_reason) : null,
   version: Number(row.version),
   createdAt: iso(row.created_at)!,
   updatedAt: iso(row.updated_at)!,
@@ -311,8 +336,9 @@ export const createProductIntakeRun = async (
     const result = await executor.query<RunRow>(
       `INSERT INTO product_intake_runs (
          source, source_reference, idempotency_key, request_hash, status, condition,
-         mode, submitted_by, submitted_by_role, locale, intake_payload
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb)
+         mode, submitted_by, submitted_by_role, locale, intake_payload,
+         origin_product_id, requested_scopes, dispatch_status, target_product_id
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::uuid,$13::jsonb,$14,$15::uuid)
        RETURNING *`,
       [
         input.source,
@@ -326,6 +352,10 @@ export const createProductIntakeRun = async (
         input.submittedByRole,
         input.locale,
         JSON.stringify(input.payload),
+        input.originProductId ?? null,
+        JSON.stringify(parseProductIntakeScopes(input.requestedScopes)),
+        input.condition ? "collecting" : "queued",
+        input.originProductId ?? null,
       ],
     );
     const run = mapRun(result.rows[0]);
@@ -675,6 +705,12 @@ export const recordProductIntakeDecision = async (
     }
     const transition = transitionDecision(reviewed, decision, actor.id);
     const clearProposal = decision.decision === "request_changes";
+    const acceptedPaths = decision.decision === "approve"
+      ? parseAcceptedPaths(decision.acceptedPaths)
+      : [];
+    const acceptedHash = acceptedPaths.length > 0
+      ? canonicalJsonHash(acceptedPaths.slice().sort() as unknown as JsonValue)
+      : null;
     const result = await executor.query<RunRow>(
       `UPDATE product_intake_runs SET
          status=$2, approval_count=$3,
@@ -686,7 +722,12 @@ export const recordProductIntakeDecision = async (
          evidence_hash=case when $10 then null else evidence_hash end,
          validation=case when $10 then '{"valid":false,"blockers":[],"warnings":[]}'::jsonb else validation end,
          match_result=case when $10 then '{"state":"none","strategy":null,"candidates":[],"productId":null}'::jsonb else match_result end,
-         target_product_id=case when $10 then null else target_product_id end
+         target_product_id=case when $10 then null else target_product_id end,
+         accepted_paths=$11::jsonb,
+         accepted_hash=$12,
+         dispatch_status=$13,
+         stale_at=case when $10 then null else stale_at end,
+         stale_reason=case when $10 then null else stale_reason end
        WHERE id=$1::uuid RETURNING *`,
       [
         runId,
@@ -699,6 +740,13 @@ export const recordProductIntakeDecision = async (
         transition.rejectedAt,
         transition.rejectedBy,
         clearProposal,
+        JSON.stringify(acceptedPaths),
+        acceptedHash,
+        dispatchStatusForRun({
+          status: transition.status,
+          mode: current.mode,
+          staleAt: clearProposal ? null : current.staleAt,
+        } as ProductIntakeRun),
       ],
     );
     await appendEvent(executor, {

@@ -42,6 +42,8 @@ export type CreateRunInput = {
   submittedByRole: 'safi' | 'owner' | 'admin' | 'integration' | 'system';
   locale: 'de' | 'en' | null;
   payload: JsonObject;
+  originProductId?: string | null;
+  requestedScopes?: string[];
 };
 
 export type UpdateRunInput = {
@@ -91,7 +93,7 @@ export type ProductMatchInput = {
 };
 
 export type ProductProposal = {
-  schemaVersion: 2;
+  schemaVersion: 2 | 3;
   operation: ProductIntakeOperation;
   condition: ProductIntakeCondition;
   target: ProductMatchInput;
@@ -140,6 +142,7 @@ export type DecisionInput = {
   actorId: string | null;
   proposalHash: string;
   reason: string | null;
+  acceptedPaths?: string[];
 };
 
 export type RecordVisionAnalysisInput = {
@@ -236,6 +239,16 @@ export type ProductIntakeRun = {
   appliedAt: string | null;
   appliedBy: string | null;
   lastError: string | null;
+  originProductId: string | null;
+  baseSnapshot: JsonObject;
+  baseSnapshotHash: string | null;
+  inventoryVersion: number | null;
+  requestedScopes: string[];
+  dispatchStatus: string;
+  acceptedPaths: string[];
+  acceptedHash: string | null;
+  staleAt: string | null;
+  staleReason: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;

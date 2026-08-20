@@ -205,7 +205,10 @@ describe("product-intake approvals and preview", () => {
     },
     matchResult: { state: "none", strategy: null, candidates: [], productId: null }, targetProductId: null,
     approvalCount: 0, firstApprovedAt: null, firstApprovedBy: null, secondApprovedAt: null, secondApprovedBy: null,
-    rejectedAt: null, rejectedBy: null, appliedAt: null, appliedBy: null, lastError: null, version: 1,
+    rejectedAt: null, rejectedBy: null, appliedAt: null, appliedBy: null, lastError: null,
+    originProductId: null, baseSnapshot: {}, baseSnapshotHash: null, inventoryVersion: null,
+    requestedScopes: ["commerce"], dispatchStatus: "queued", acceptedPaths: [], acceptedHash: null,
+    staleAt: null, staleReason: null, version: 1,
     createdAt: "2026-08-19T00:00:00.000Z", updatedAt: "2026-08-19T00:00:00.000Z",
   };
 
