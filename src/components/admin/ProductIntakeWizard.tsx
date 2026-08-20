@@ -76,13 +76,7 @@ export default function ProductIntakeWizard({
     title: listing.title || selected?.title || "",
     brand: listing.brand || selected?.brand || "",
     model: listing.model || selected?.model || "",
-    conditionNote,
-    hasRealProductPhotos: hasRealPhotos,
-    imageCount: (cover ? 1 : 0) + exactPhotos.length,
-    batteryHealth,
-    locale,
   });
-
   const extraImages = useMemo(() => extraGalleryImages(listing.images, cover), [listing.images, cover]);
   const previewImages = useMemo(
     () => mergeCoverAndGallery(cover ?? listing.images[0] ?? "", [...exactPhotos, ...listing.images]),
