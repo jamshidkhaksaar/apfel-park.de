@@ -150,10 +150,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     view === "history" ? listRecentProductRevisions(80) : Promise.resolve([]),
     catalogSummariesForProducts(products.map((product) => product.id), new Map()),
     view === "intake"
-      ? query(`SELECT id, title, condition, sku, is_active FROM products WHERE is_active = true ORDER BY title ASC LIMIT 500`)
+      ? query(`SELECT id, title, brand, model, category, condition, sku, is_active FROM products WHERE is_active = true ORDER BY title ASC LIMIT 500`)
       : Promise.resolve({ rows: [] as Array<Record<string, unknown>> }),
   ]);
-  const wizardProducts = (wizardResult.rows as Array<{ id: string; title: string; condition: string | null; sku: string | null; is_active: boolean | null }>);
+  const wizardProducts = (wizardResult.rows as Array<{ id: string; title: string; brand: string | null; model: string | null; category: string | null; condition: string | null; sku: string | null; is_active: boolean | null }>);
   const isOwner = isProductIntakeOwner(user);
   const liveEnabled = process.env.PRODUCT_INTAKE_LIVE_ENABLED === "true" && process.env.PRODUCT_INTAKE_DEFAULT_MODE === "live";
   const loadedDetail = view === "intake" && intakeRuns[0] ? await getProductIntakeRunDetail(intakeRuns[0].id) : null;
@@ -243,7 +243,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
               <p className="font-semibold text-foreground">{liveEnabled ? dict.productIntakePage.pipelineLive : dict.productIntakePage.pipelineShadow}</p>
               <p className="mt-1 text-sm leading-6 text-muted">{liveEnabled ? dict.productIntakePage.liveDescription : dict.productIntakePage.shadowDescription}</p>
             </div>
-            <ProductIntakeWizard locale={locale} products={wizardProducts.map((product) => ({ id: product.id, title: product.title, condition: product.condition, sku: product.sku, isActive: Boolean(product.is_active) }))} />
+            <ProductIntakeWizard locale={locale} products={wizardProducts.map((product) => ({ id: product.id, title: product.title, brand: product.brand, model: product.model, category: product.category, condition: product.condition, sku: product.sku, isActive: Boolean(product.is_active) }))} />
             {isOwner ? (
               <AdminProductIntakeQueue locale={locale} initialRuns={intakeRuns} initialDetail={detail} initialPreviewUrl={preview ? `/store/preview/${preview.token}` : null} />
             ) : (
