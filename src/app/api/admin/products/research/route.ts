@@ -8,7 +8,7 @@ import { sanitizeResearchResult, type ProductResearchResult } from "@/lib/produc
 
 export const dynamic = "force-dynamic";
 
-const GEMINI_MODEL = "gemini-3-flash"; // Gemini Flash 3.x (current stable; user asked for flash 3.7)
+const GEMINI_MODEL = "gemini-2.5-flash"; // Matches the proven n8n workflow on this server (same key)
 
 function geminiKey(): string {
   const key = process.env.GEMINI_API_KEY?.trim();
