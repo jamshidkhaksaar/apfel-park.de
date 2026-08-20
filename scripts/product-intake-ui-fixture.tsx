@@ -62,7 +62,10 @@ const run = {
   matchResult: { state: "none" as const, strategy: null, candidates: [], productId: null }, targetProductId: null,
   approvalCount: 0 as const, firstApprovedAt: null, firstApprovedBy: null, secondApprovedAt: null,
   secondApprovedBy: null, rejectedAt: null, rejectedBy: null, appliedAt: null, appliedBy: null,
-  lastError: null, version: 4, createdAt: now, updatedAt: now,
+  lastError: null,
+  originProductId: null, baseSnapshot: {}, baseSnapshotHash: null, inventoryVersion: null,
+  requestedScopes: ["full_review"], dispatchStatus: "ready_for_review", acceptedPaths: [],
+  acceptedHash: null, staleAt: null, staleReason: null, version: 4, createdAt: now, updatedAt: now,
 };
 
 const detail: ProductIntakeRunDetail = {
