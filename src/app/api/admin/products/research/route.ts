@@ -169,7 +169,7 @@ async function downloadAndUploadImage(url: string): Promise<string | null> {
     
     // Standardize packshot with Sharp for luxury 1:1 presentation
     const standardized = await standardizePackshotBuffer(rawBytes, 1400);
-    const file = new File([standardized], `research-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`, { type: "image/webp" });
+    const file = new File([standardized as unknown as BlobPart], `research-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`, { type: "image/webp" });
     const uploaded = await uploadProductImage(file);
     return uploaded.url;
   } catch {
