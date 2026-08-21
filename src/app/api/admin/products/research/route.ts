@@ -87,10 +87,10 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
   return JSON.parse(jsonText);
 }
 
-// Search for real official product images from search indexes
+// Search for candidate official product images from search indexes
 async function searchProductOriginalImages(query: string): Promise<string[]> {
   try {
-    const searchTerms = `${query} official packshot white background`;
+    const searchTerms = `${query} official packshot white background -case -cover -skin -hülle -hulle`;
     const vqdRes = await fetch(`https://duckduckgo.com/?q=${encodeURIComponent(searchTerms)}`, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -110,10 +110,108 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
     const data = (await imgRes.json().catch(() => ({}))) as { results?: Array<{ image?: string }> };
     return (data.results || [])
       .map((r) => r.image)
-      .filter((url): url is string => typeof url === "string" && url.startsWith("https://"))
-      .slice(0, 4);
+      .filter((url): url is string => typeof url === "string" && url.startsWith("https://") && !url.includes("case") && !url.includes("cover") && !url.includes("hulle") && !url.includes("hülle"))
+      .slice(0, 6);
   } catch {
     return [];
+  }
+}
+
+// Uses Gemini 2.5 Flash Vision to inspect multiple candidate packshots and pick the cleanest, genuine device photo
+async function pickBestPackshotWithVision(
+  candidates: string[],
+  brand: string,
+  model: string,
+  color: string,
+  angle: string,
+): Promise<Buffer | null> {
+  const validCandidates: Array<{ url: string; buf: Buffer; base64: string }> = [];
+
+  for (const url of candidates.slice(0, 4)) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        },
+        signal: AbortSignal.timeout(3500),
+      });
+      if (!res.ok) continue;
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length < 4000 || buf.length > 15 * 1024 * 1024) continue;
+
+      const meta = await sharp(buf).metadata().catch(() => null);
+      if (!meta?.width || meta.width < 300 || !meta?.height || meta.height < 300) continue;
+
+      const thumbBuf = await sharp(buf).resize(400, 400, { fit: "inside" }).jpeg({ quality: 80 }).toBuffer();
+      validCandidates.push({ url, buf, base64: thumbBuf.toString("base64") });
+    } catch {
+      // ignore network errors for individual image candidates
+    }
+  }
+
+  if (validCandidates.length === 0) return null;
+
+  try {
+    const prompt = `You are an expert art director and hardware validator for a luxury smartphone store in Germany.
+Target Smartphone: ${brand} ${model}
+Target Color: ${color}
+Target Angle: ${angle} (front, back, side, or angle)
+
+Compare the ${validCandidates.length} attached candidate images (labeled Image 0 to Image ${validCandidates.length - 1} in order).
+Select the SINGLE BEST image that:
+1. Is genuinely the REAL ${brand} ${model} (NOT a protective case, NOT an accessory, NOT a different model generation, NOT a concept render).
+2. Is a clean studio packshot (white, neutral, or transparent background, NO human hands holding it, NO retail box packaging, NO big review logos/watermarks).
+3. Matches the color "${color}" and angle "${angle}" as closely as possible.
+
+Return ONLY a JSON object:
+{
+  "best_index": number (0 to ${validCandidates.length - 1}, or -1 if NONE are acceptable),
+  "is_exact_device": boolean,
+  "is_clean_packshot": boolean,
+  "confidence_score": number (0-100),
+  "reason": string
+}`;
+
+    const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: prompt }];
+    validCandidates.forEach((c, idx) => {
+      parts.push({ text: `Image ${idx}:` });
+      parts.push({ inlineData: { mimeType: "image/jpeg", data: c.base64 } });
+    });
+
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts }],
+        generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      // Fallback: return the first valid buffer if Gemini call fails
+      return validCandidates[0]?.buf ?? null;
+    }
+
+    const data = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return validCandidates[0]?.buf ?? null;
+
+    const decision = JSON.parse(text) as {
+      best_index: number;
+      is_exact_device?: boolean;
+      is_clean_packshot?: boolean;
+      confidence_score?: number;
+    };
+
+    if (decision.best_index >= 0 && decision.best_index < validCandidates.length && (decision.confidence_score ?? 100) >= 60) {
+      return validCandidates[decision.best_index].buf;
+    }
+
+    return null;
+  } catch {
+    return validCandidates[0]?.buf ?? null;
   }
 }
 
@@ -150,26 +248,10 @@ async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1400)
   }
 }
 
-// Download an official image, convert to luxury studio standard WebP via Sharp + blob uploader
-async function downloadAndUploadImage(url: string): Promise<string | null> {
+// Convert standardized buffer to WebP and upload to blob storage
+async function uploadPackshotBuffer(buffer: Buffer): Promise<string | null> {
   try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "https:") return null;
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-      },
-      signal: AbortSignal.timeout(4000),
-    });
-    if (!response.ok) return null;
-    const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.startsWith("image/")) return null;
-    const rawBytes = Buffer.from(await response.arrayBuffer());
-    if (rawBytes.length < 3000 || rawBytes.length > 15 * 1024 * 1024) return null;
-    
-    // Standardize packshot with Sharp for luxury 1:1 presentation
-    const standardized = await standardizePackshotBuffer(rawBytes, 1400);
+    const standardized = await standardizePackshotBuffer(buffer, 1400);
     const file = new File([standardized as unknown as BlobPart], `research-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`, { type: "image/webp" });
     const uploaded = await uploadProductImage(file);
     return uploaded.url;
@@ -212,7 +294,7 @@ export async function POST(request: NextRequest) {
     const raw = await callGemini({ prompt, image });
     const research = sanitizeResearchResult(raw);
 
-    // Multi-angle photo discovery for all color variants
+    // Multi-angle photo discovery with Gemini Vision validation
     const brand = research.brand || "";
     const model = research.model || query;
     const gallerySet = new Set<string>();
@@ -220,36 +302,36 @@ export async function POST(request: NextRequest) {
     if (research.variants && research.variants.length > 0) {
       const uniqueColors = Array.from(
         new Set(research.variants.map((v) => v.color.trim()).filter(Boolean)),
-      ).slice(0, 5);
+      ).slice(0, 4);
 
       const colorImagesMap = new Map<string, string[]>();
 
       await Promise.all(
         uniqueColors.map(async (color) => {
-          const angles = [
-            `${brand} ${model} ${color} front packshot white background`,
-            `${brand} ${model} ${color} back rear packshot white background`,
-            `${brand} ${model} ${color} side profile packshot white background`,
-            `${brand} ${model} ${color} angled 3d packshot white background`,
+          const angleQueries = [
+            { angle: "front", query: `${brand} ${model} ${color} front packshot white background` },
+            { angle: "back", query: `${brand} ${model} ${color} back rear packshot white background` },
+            { angle: "side", query: `${brand} ${model} ${color} side profile packshot white background` },
+            { angle: "angle", query: `${brand} ${model} ${color} angled 3d packshot white background` },
           ];
 
           const downloadedForColor: string[] = [];
-          const candidateUrls = await Promise.all(
-            angles.map(async (angleQuery) => {
-              const urls = await searchProductOriginalImages(angleQuery);
-              return urls[0] || null;
+
+          await Promise.all(
+            angleQueries.map(async ({ angle, query: angleQuery }) => {
+              const candidates = await searchProductOriginalImages(angleQuery);
+              if (candidates.length === 0) return;
+
+              const winnerBuf = await pickBestPackshotWithVision(candidates, brand, model, color, angle);
+              if (!winnerBuf) return;
+
+              const uploadedUrl = await uploadPackshotBuffer(winnerBuf);
+              if (uploadedUrl && !downloadedForColor.includes(uploadedUrl)) {
+                downloadedForColor.push(uploadedUrl);
+                gallerySet.add(uploadedUrl);
+              }
             }),
           );
-
-          const uniqueUrls = Array.from(new Set(candidateUrls.filter((u): u is string => Boolean(u)))).slice(0, 4);
-
-          for (const url of uniqueUrls) {
-            const uploaded = await downloadAndUploadImage(url);
-            if (uploaded && !downloadedForColor.includes(uploaded)) {
-              downloadedForColor.push(uploaded);
-              gallerySet.add(uploaded);
-            }
-          }
 
           if (downloadedForColor.length > 0) {
             colorImagesMap.set(color, downloadedForColor);
@@ -266,18 +348,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // If gallery is still empty or has few images, fetch general model renders
-    if (gallerySet.size < 4) {
-      const generalSearch = [brand, model].filter(Boolean).join(" ");
-      const candidates = (
-        generalSearch ? await searchProductOriginalImages(generalSearch) : []
-      ).slice(0, 4);
-
-      for (const url of candidates) {
-        const uploaded = await downloadAndUploadImage(url);
-        if (uploaded) {
-          gallerySet.add(uploaded);
-          if (gallerySet.size >= 6) break;
+    // If gallery is still empty or has few images, fetch general model renders with vision validation
+    if (gallerySet.size < 3) {
+      const generalCandidates = await searchProductOriginalImages(`${brand} ${model} official press packshot white background`);
+      if (generalCandidates.length > 0) {
+        const winnerBuf = await pickBestPackshotWithVision(generalCandidates, brand, model, "", "front");
+        if (winnerBuf) {
+          const uploaded = await uploadPackshotBuffer(winnerBuf);
+          if (uploaded) gallerySet.add(uploaded);
         }
       }
     }
