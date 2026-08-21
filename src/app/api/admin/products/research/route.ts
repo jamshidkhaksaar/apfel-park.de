@@ -10,7 +10,7 @@ import { sanitizeResearchResult } from "@/lib/product-research";
 
 export const dynamic = "force-dynamic";
 
-const GEMINI_MODEL = "gemini-2.5-flash"; // Proven on this server with the configured key
+const GEMINI_MODEL = "gemini-3.7-flash";
 
 function geminiKey(): string {
   const key = process.env.GEMINI_API_KEY?.trim();
