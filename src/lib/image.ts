@@ -12,4 +12,4 @@
  * single store page.
  */
 export const shouldBypassImageOptimization = (src: string): boolean =>
-  src.startsWith("data:");
+  src.startsWith("data:") || src.startsWith("/uploads/") || src.includes("/uploads/");
