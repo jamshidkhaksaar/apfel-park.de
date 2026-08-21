@@ -242,6 +242,7 @@ export default function ProductCreateForm() {
     });
 
   const [aiError, setAiError] = useState("");
+  const [aiSuccess, setAiSuccess] = useState(false);
   const [aiGallery, setAiGallery] = useState<string[]>([]);
   const applyResearch = (research: ProductResearchResult) => {
     setState((prev) => ({
@@ -281,6 +282,7 @@ export default function ProductCreateForm() {
       channelFields: research.countryOfOrigin ? { ...prev.channelFields, countryOfOrigin: research.countryOfOrigin } : prev.channelFields,
     }));
     setAiError("");
+    setAiSuccess(true);
   };
 
     const patchVariant = (index: number, patch: Partial<FormState["variants"][number]>) => {
@@ -434,6 +436,14 @@ export default function ProductCreateForm() {
             className="mt-2 w-full rounded-xl border border-border/60 bg-black/30 px-4 py-3 text-sm text-foreground"
           />
           {aiError ? <p className="mt-2 text-sm text-red-400">{aiError}</p> : null}
+          {aiSuccess ? (
+            <div className="mt-2 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-3 py-2">
+              <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm text-emerald-600">{isGerman ? "KI-Daten übernommen – bitte prüfen und ergänzen." : "AI data applied – please review and complete."}</span>
+            </div>
+          ) : null}
         </div>
 
         <div>
@@ -1091,6 +1101,18 @@ export default function ProductCreateForm() {
         </p>
         {pendingImageNames ? (
           <p className="mt-2 text-xs text-muted">{pendingImageNames}</p>
+        ) : null}
+        {aiGallery.length > 0 ? (
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">{isGerman ? "KI-Fotos (automatisch geladen)" : "AI photos (auto-loaded)"}</p>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {aiGallery.map((url) => (
+                <span key={url} className="relative aspect-square overflow-hidden rounded-xl border border-gold/30 bg-white">
+                  <Image src={url} alt="" fill className="object-contain" unoptimized />
+                </span>
+              ))}
+            </div>
+          </div>
         ) : null}
       </div>
 
