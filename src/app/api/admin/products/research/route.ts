@@ -77,6 +77,36 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
   return JSON.parse(jsonText);
 }
 
+// Search for real official product images from search indexes
+async function searchProductOriginalImages(query: string): Promise<string[]> {
+  try {
+    const searchTerms = `${query} official product photo`;
+    const vqdRes = await fetch(`https://duckduckgo.com/?q=${encodeURIComponent(searchTerms)}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+    const vqdHtml = await vqdRes.text();
+    const vqdMatch = vqdHtml.match(/vqd=([0-9-]+)/) || vqdHtml.match(/vqd="([^"]+)"/) || vqdHtml.match(/vqd=([^&]+)/);
+    if (!vqdMatch) return [];
+    const vqd = vqdMatch[1];
+    const imgRes = await fetch(`https://duckduckgo.com/i.js?l=de-de&o=json&q=${encodeURIComponent(searchTerms)}&vqd=${vqd}&f=,,,type:photo,`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+    const data = (await imgRes.json().catch(() => ({}))) as { results?: Array<{ image?: string }> };
+    return (data.results || [])
+      .map((r) => r.image)
+      .filter((url): url is string => typeof url === "string" && url.startsWith("https://"))
+      .slice(0, 8);
+  } catch {
+    return [];
+  }
+}
+
 // Download an official image, convert to small WebP via the existing uploader, return the local URL.
 async function downloadAndUploadImage(url: string): Promise<string | null> {
   try {
@@ -84,7 +114,7 @@ async function downloadAndUploadImage(url: string): Promise<string | null> {
     if (parsed.protocol !== "https:") return null;
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
       },
       signal: AbortSignal.timeout(8000),
@@ -93,10 +123,10 @@ async function downloadAndUploadImage(url: string): Promise<string | null> {
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.startsWith("image/")) return null;
     const bytes = Buffer.from(await response.arrayBuffer());
-    if (bytes.length === 0 || bytes.length > 12 * 1024 * 1024) return null;
+    if (bytes.length < 4000 || bytes.length > 12 * 1024 * 1024) return null;
     const cleanMime = contentType.split(";")[0].trim().toLowerCase();
     const extension = cleanMime.includes("png") ? ".png" : cleanMime.includes("webp") ? ".webp" : ".jpg";
-    const file = new File([bytes], `research-${Date.now()}${extension}`, { type: cleanMime });
+    const file = new File([bytes], `research-${Date.now()}-${Math.random().toString(36).slice(2, 7)}${extension}`, { type: cleanMime });
     const uploaded = await uploadProductImage(file);
     return uploaded.url;
   } catch {
@@ -138,14 +168,38 @@ export async function POST(request: NextRequest) {
     const raw = await callGemini({ prompt, image });
     const research = sanitizeResearchResult(raw);
 
+    // Gather candidate image URLs from Gemini output and high-resolution official search
+    const candidates: string[] = [];
+    if (research.gallery && research.gallery.length > 0) {
+      candidates.push(...research.gallery);
+    }
+
+    const searchQuery = [research.brand, research.model || query].filter(Boolean).join(" ");
+    if (searchQuery) {
+      const found = await searchProductOriginalImages(searchQuery);
+      candidates.push(...found);
+    }
+
+    const uniqueCandidates = Array.from(new Set(candidates)).slice(0, 8);
+
     // Download and upload gallery images in parallel with a hard cap so the
     // form fills quickly; failures are non-blocking and never delay the result.
-    if (research.gallery && research.gallery.length > 0) {
-      const local = (await Promise.all(
-        research.gallery.slice(0, 3).map((url) => downloadAndUploadImage(url)),
-      )).filter((url): url is string => Boolean(url));
-      research.gallery = local;
+    const local = (
+      await Promise.all(
+        uniqueCandidates.slice(0, 4).map((url) => downloadAndUploadImage(url)),
+      )
+    ).filter((url): url is string => Boolean(url));
+
+    if (local.length < 2 && uniqueCandidates.length > 4) {
+      const extra = (
+        await Promise.all(
+          uniqueCandidates.slice(4, 8).map((url) => downloadAndUploadImage(url)),
+        )
+      ).filter((url): url is string => Boolean(url));
+      local.push(...extra);
     }
+
+    research.gallery = local.slice(0, 4);
 
     return NextResponse.json({ success: true, research });
   } catch (error) {

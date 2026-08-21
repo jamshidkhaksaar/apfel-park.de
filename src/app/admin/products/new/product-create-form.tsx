@@ -1111,8 +1111,16 @@ export default function ProductCreateForm() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">{isGerman ? "KI-Fotos (automatisch geladen)" : "AI photos (auto-loaded)"}</p>
             <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {aiGallery.map((url) => (
-                <span key={url} className="relative aspect-square overflow-hidden rounded-xl border border-gold/30 bg-white">
+                <span key={url} className="group relative aspect-square overflow-hidden rounded-xl border border-gold/30 bg-white">
                   <Image src={url} alt="" fill className="object-contain" unoptimized />
+                  <button
+                    type="button"
+                    onClick={() => setAiGallery((prev) => prev.filter((item) => item !== url))}
+                    className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-xs text-white opacity-0 transition group-hover:opacity-100 hover:bg-black"
+                    title={isGerman ? "Entfernen" : "Remove"}
+                  >
+                    ✕
+                  </button>
                 </span>
               ))}
             </div>

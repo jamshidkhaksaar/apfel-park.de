@@ -5,12 +5,19 @@
 
 export async function fetchManufacturerPhoto(model: string, color: string): Promise<Blob | null> {
   try {
-    const url = `https://www.apple.com/de/shop/iphone-17-${encodeURIComponent(color)}?model=${encodeURIComponent(model)}`;
-    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const response = await fetch("/api/admin/products/research", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: `${model} ${color}` }),
+      signal: AbortSignal.timeout(15000),
+    });
     if (!response.ok) return null;
-    const blob = await response.blob();
-    if (!blob.type.startsWith("image/")) return null;
-    return blob;
+    const payload = (await response.json()) as { research?: { gallery?: string[] } };
+    const firstUrl = payload.research?.gallery?.[0];
+    if (!firstUrl) return null;
+    const imgRes = await fetch(firstUrl, { signal: AbortSignal.timeout(8000) });
+    if (!imgRes.ok) return null;
+    return await imgRes.blob();
   } catch {
     return null;
   }
