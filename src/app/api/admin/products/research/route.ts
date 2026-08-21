@@ -125,7 +125,7 @@ async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1400)
     } catch {
       // trim is non-fatal
     }
-    const productSize = Math.round(targetSize * 0.90);
+    const productSize = Math.round(targetSize * 0.88);
     const trimmedBuf = await pipeline.toBuffer();
 
     return await sharp(trimmedBuf)
@@ -142,7 +142,8 @@ async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1400)
         right: Math.round((targetSize - productSize) / 2),
         background: { r: 255, g: 255, b: 255, alpha: 0 },
       })
-      .webp({ quality: 88, effort: 4 })
+      .sharpen({ sigma: 1.0, m1: 0.8, m2: 2.0 })
+      .webp({ quality: 90, effort: 4 })
       .toBuffer();
   } catch {
     return inputBuffer;
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
     const raw = await callGemini({ prompt, image });
     const research = sanitizeResearchResult(raw);
 
-    // Download and attach color-specific photos for all variants
+    // Multi-angle photo discovery for all color variants
     const brand = research.brand || "";
     const model = research.model || query;
     const gallerySet = new Set<string>();
@@ -219,50 +220,69 @@ export async function POST(request: NextRequest) {
     if (research.variants && research.variants.length > 0) {
       const uniqueColors = Array.from(
         new Set(research.variants.map((v) => v.color.trim()).filter(Boolean)),
-      ).slice(0, 4);
+      ).slice(0, 5);
 
-      const colorImageMap = new Map<string, string>();
+      const colorImagesMap = new Map<string, string[]>();
+
       await Promise.all(
         uniqueColors.map(async (color) => {
-          const colorSearchQuery = [brand, model, color].filter(Boolean).join(" ");
-          const urls = await searchProductOriginalImages(colorSearchQuery);
-          for (const url of urls.slice(0, 2)) {
+          const angles = [
+            `${brand} ${model} ${color} front packshot white background`,
+            `${brand} ${model} ${color} back rear packshot white background`,
+            `${brand} ${model} ${color} side profile packshot white background`,
+            `${brand} ${model} ${color} angled 3d packshot white background`,
+          ];
+
+          const downloadedForColor: string[] = [];
+          const candidateUrls = await Promise.all(
+            angles.map(async (angleQuery) => {
+              const urls = await searchProductOriginalImages(angleQuery);
+              return urls[0] || null;
+            }),
+          );
+
+          const uniqueUrls = Array.from(new Set(candidateUrls.filter((u): u is string => Boolean(u)))).slice(0, 4);
+
+          for (const url of uniqueUrls) {
             const uploaded = await downloadAndUploadImage(url);
-            if (uploaded) {
-              colorImageMap.set(color, uploaded);
+            if (uploaded && !downloadedForColor.includes(uploaded)) {
+              downloadedForColor.push(uploaded);
               gallerySet.add(uploaded);
-              break;
             }
+          }
+
+          if (downloadedForColor.length > 0) {
+            colorImagesMap.set(color, downloadedForColor);
           }
         }),
       );
 
       research.variants = research.variants.map((variant) => {
-        const colorImg = colorImageMap.get(variant.color.trim());
+        const colorImages = colorImagesMap.get(variant.color.trim());
         return {
           ...variant,
-          images: colorImg ? [colorImg] : variant.images ?? [],
+          images: colorImages && colorImages.length > 0 ? colorImages : variant.images ?? [],
         };
       });
     }
 
-    // Only if gallery is still completely empty, fetch model photos
-    if (gallerySet.size === 0) {
+    // If gallery is still empty or has few images, fetch general model renders
+    if (gallerySet.size < 4) {
       const generalSearch = [brand, model].filter(Boolean).join(" ");
       const candidates = (
         generalSearch ? await searchProductOriginalImages(generalSearch) : []
-      ).slice(0, 3);
+      ).slice(0, 4);
 
       for (const url of candidates) {
         const uploaded = await downloadAndUploadImage(url);
         if (uploaded) {
           gallerySet.add(uploaded);
-          if (gallerySet.size >= 2) break;
+          if (gallerySet.size >= 6) break;
         }
       }
     }
 
-    research.gallery = Array.from(gallerySet).slice(0, 6);
+    research.gallery = Array.from(gallerySet).slice(0, 8);
 
     return NextResponse.json({ success: true, research });
   } catch (error) {

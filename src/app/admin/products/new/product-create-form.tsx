@@ -177,7 +177,7 @@ export default function ProductCreateForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [variantImagePreviews, setVariantImagePreviews] = useState<string[]>([]);
+  const [aiJustFilled, setAiJustFilled] = useState(false);
 
   const pendingImageNames = useMemo(
     () => imageFiles.filter((file): file is File => Boolean(file)).map((file) => file.name).join(", "),
@@ -219,15 +219,6 @@ export default function ProductCreateForm() {
       previews.forEach((preview) => URL.revokeObjectURL(preview));
     };
   }, [imageFiles]);
-
-  useEffect(() => {
-    const previews = variantImageFiles.map((file) => (file ? URL.createObjectURL(file) : ""));
-    setVariantImagePreviews(previews);
-
-    return () => {
-      previews.filter(Boolean).forEach((preview) => URL.revokeObjectURL(preview));
-    };
-  }, [variantImageFiles]);
 
   const getConditionValidationError = () =>
     validateAdminProductCondition({
@@ -289,6 +280,8 @@ export default function ProductCreateForm() {
     }));
     setAiError("");
     setAiSuccess(true);
+    setAiJustFilled(true);
+    setTimeout(() => setAiJustFilled(false), 2800);
   };
 
     const patchVariant = (index: number, patch: Partial<FormState["variants"][number]>) => {
@@ -421,7 +414,7 @@ export default function ProductCreateForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className={`grid gap-4 md:grid-cols-2 transition-all duration-700 ${aiJustFilled ? "animate-ai-fill-glow rounded-2xl p-2" : ""}`}>
         <div>
           <div className="flex items-center justify-between gap-2">
             <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
@@ -443,11 +436,9 @@ export default function ProductCreateForm() {
           />
           {aiError ? <p className="mt-2 text-sm text-red-400">{aiError}</p> : null}
           {aiSuccess ? (
-            <div className="mt-2 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-3 py-2">
-              <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-sm text-emerald-600">{isGerman ? "KI-Daten übernommen – bitte prüfen und ergänzen." : "AI data applied – please review and complete."}</span>
+            <div className="mt-2 animate-ai-sparkle flex items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-3.5 py-2.5 shadow-lg shadow-gold/10">
+              <span className="text-base">✨</span>
+              <span className="text-xs font-semibold text-gold">{isGerman ? "KI-Recherche abgeschlossen · Produktdaten & 4-Winkel-Fotos eingefügt!" : "AI research complete · Product data & 4-angle photos applied!"}</span>
             </div>
           ) : null}
         </div>
@@ -809,61 +800,74 @@ export default function ProductCreateForm() {
                         className="w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground"
                       />
                     </label>
-                    <div className="space-y-2 rounded-2xl border border-border/50 bg-black/10 p-3 md:col-span-2 2xl:col-span-1">
+                    <div className="space-y-2 rounded-2xl border border-border/50 bg-black/10 p-3 md:col-span-2 2xl:col-span-4">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                        {isGerman ? "Variantenbild" : "Variant image"}
+                        {isGerman ? "Variantenbilder (bis zu 4 Winkel)" : "Variant images (up to 4 angles)"}
                       </span>
-                      <label className="group block cursor-pointer">
-                        <div className="relative mt-1 aspect-square overflow-hidden rounded-xl border border-border/50 bg-black/20">
-                          {variantImagePreviews[index] || variant.images?.[0] ? (
-                            <Image src={variantImagePreviews[index] || variant.images![0]} alt="" fill className="object-contain" unoptimized />
-                          ) : (
-                            <div className="flex h-full items-center justify-center px-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                              {isGerman ? "Eigenes Bild hochladen" : "Upload custom image"}
+                      <div className="grid grid-cols-4 gap-2 mt-1">
+                        {slotLabels.map((slotLabel, slotIndex) => {
+                          const existingUrl = variant.images?.[slotIndex] ?? "";
+                          return (
+                            <div key={slotLabel} className="space-y-1">
+                              <div className="relative aspect-square overflow-hidden rounded-xl border border-border/50 bg-black/20">
+                                {existingUrl ? (
+                                  <Image src={existingUrl} alt="" fill className="object-contain" unoptimized />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">
+                                    {slotLabel}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="truncate text-center text-[10px] text-muted">
+                                {existingUrl ? (isGerman ? "KI-Winkel" : "AI Angle") : slotLabel}
+                              </p>
                             </div>
-                          )}
-                        </div>
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <span className="text-xs text-muted truncate max-w-[120px]">
-                            {variantImageFiles[index]?.name || (variant.images?.[0] ? (isGerman ? "KI-Bild" : "AI Image") : (isGerman ? "Optional" : "Optional"))}
-                          </span>
-                          <span className="rounded-full border border-border/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground transition group-hover:border-gold/30 group-hover:text-gold">
-                            {variantImageFiles[index] || variant.images?.[0] ? (isGerman ? "Ersetzen" : "Replace") : (isGerman ? "Wahlen" : "Select")}
-                          </span>
-                        </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block space-y-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+                          {isGerman ? "Speicher" : "Storage"}
+                        </span>
                         <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                          onChange={(event) => {
-                            const nextFile = event.target.files?.[0] ?? null;
-                            setVariantImageFiles((current) =>
-                              state.variants.map((_, fileIndex) =>
-                                fileIndex === index ? nextFile : current[fileIndex] ?? null,
+                          value={variant.storage}
+                          onChange={(event) =>
+                            setState((prev) => ({
+                              ...prev,
+                              variants: prev.variants.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, storage: event.target.value } : item,
                               ),
-                            );
-                            event.currentTarget.value = "";
-                          }}
-                          className="sr-only"
+                            }))
+                          }
+                          className="w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground"
                         />
                       </label>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {["64 GB", "128 GB", "256 GB", "512 GB", "1 TB", "2 TB"].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() =>
+                              setState((prev) => ({
+                                ...prev,
+                                variants: prev.variants.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, storage: preset } : item,
+                                ),
+                              }))
+                            }
+                            className={`rounded-lg border px-2 py-0.5 text-[10px] font-medium transition ${
+                              variant.storage === preset
+                                ? "border-gold bg-gold/15 text-gold font-semibold"
+                                : "border-border/60 text-muted hover:border-gold/40 hover:text-foreground"
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <label className="space-y-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                        {isGerman ? "Speicher" : "Storage"}
-                      </span>
-                      <input
-                        value={variant.storage}
-                        onChange={(event) =>
-                          setState((prev) => ({
-                            ...prev,
-                            variants: prev.variants.map((item, itemIndex) =>
-                              itemIndex === index ? { ...item, storage: event.target.value } : item,
-                            ),
-                          }))
-                        }
-                        className="w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground"
-                      />
-                    </label>
                     <label className="space-y-2">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
                         {isGerman ? "Identifikatoren" : "Identifiers"}

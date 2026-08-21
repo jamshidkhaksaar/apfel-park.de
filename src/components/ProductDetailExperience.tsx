@@ -378,54 +378,83 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             </div>
           ) : null}
 
-          {colors.length > 0 ? (
+          {colors.length > 0 || storageOptions.length > 0 ? (
             <div className="mt-8 rounded-3xl border border-border/60 bg-surface/50 p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
-                {locale === "de" ? "Farbe" : "Color"}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {colors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => {
-                      setSelectedColor(color);
-                      const fallbackStorage = product.variants.find((variant) => variant.color === color)?.storage ?? "";
-                      setSelectedStorage(fallbackStorage);
-                    }}
-                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                      (selectedColor || defaultVariant?.color) === color
-                        ? "border-gold/60 bg-gold/10 text-foreground"
-                        : "border-border/60 bg-background/40 text-muted hover:border-gold/30 hover:text-foreground"
-                    }`}
-                  >
-                    {color}
-                  </button>
-                ))}
-              </div>
-
-              {storageOptions.length > 0 ? (
-                <>
-                  <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
-                    {locale === "de" ? "Speicher" : "Storage"}
+              {colors.length > 0 ? (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
+                    {locale === "de" ? "Farbe" : "Color"}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {storageOptions.map((storage) => (
+                    {colors.map((color) => (
                       <button
-                        key={storage}
+                        key={color}
                         type="button"
-                        onClick={() => setSelectedStorage(storage)}
+                        onClick={() => {
+                          setSelectedColor(color);
+                          const fallbackStorage = product.variants.find((variant) => variant.color === color)?.storage ?? "";
+                          setSelectedStorage(fallbackStorage);
+                        }}
                         className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                          (selectedStorage || defaultVariant?.storage) === storage
+                          (selectedColor || defaultVariant?.color) === color
                             ? "border-gold/60 bg-gold/10 text-foreground"
                             : "border-border/60 bg-background/40 text-muted hover:border-gold/30 hover:text-foreground"
                         }`}
                       >
-                        {storage}
+                        {color}
                       </button>
                     ))}
                   </div>
-                </>
+                </div>
+              ) : null}
+
+              {storageOptions.length > 0 ? (
+                <div className={colors.length > 0 ? "mt-6" : ""}>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
+                    {locale === "de" ? "Speichergröße" : "Storage Capacity"}
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    {storageOptions.map((storage) => {
+                      const matchedVariant = product.variants.find(
+                        (v) =>
+                          (!selectedColor || v.color === selectedColor) &&
+                          v.storage === storage,
+                      );
+                      const isVariantOos = matchedVariant?.stock !== undefined && matchedVariant.stock <= 0;
+                      const isSelected = (selectedStorage || defaultVariant?.storage) === storage;
+                      const variantPrice = matchedVariant?.price;
+
+                      return (
+                        <button
+                          key={storage}
+                          type="button"
+                          onClick={() => setSelectedStorage(storage)}
+                          className={`flex flex-col items-center justify-center rounded-2xl border p-3 text-center transition ${
+                            isSelected
+                              ? "border-gold bg-gold/15 text-foreground shadow-sm"
+                              : isVariantOos
+                                ? "border-border/40 bg-background/20 text-muted/60 opacity-60 hover:opacity-100"
+                                : "border-border/60 bg-background/40 text-muted hover:border-gold/30 hover:text-foreground"
+                          }`}
+                        >
+                          <span className={`text-sm font-semibold ${isSelected ? "text-gold" : "text-foreground"}`}>
+                            {storage}
+                          </span>
+                          {variantPrice ? (
+                            <span className="mt-1 text-xs text-muted">
+                              {formatMoney(locale, variantPrice)}
+                            </span>
+                          ) : null}
+                          {isVariantOos ? (
+                            <span className="mt-1 text-[10px] uppercase tracking-wider text-red-400">
+                              {locale === "de" ? "Ausverkauft" : "Sold out"}
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               ) : null}
             </div>
           ) : null}

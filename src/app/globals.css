@@ -2294,3 +2294,48 @@
 #google-merchantwidget-iframe-wrapper {
   z-index: 110 !important;
 }
+
+/* ========================================
+   AI FILL GLOW & SPARKLE ANIMATIONS
+   ======================================== */
+@keyframes ai-fill-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 158, 66, 0.7);
+    border-color: rgba(212, 158, 66, 0.9);
+  }
+  50% {
+    box-shadow: 0 0 28px 4px rgba(212, 158, 66, 0.35);
+    border-color: rgba(212, 158, 66, 0.75);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 158, 66, 0);
+  }
+}
+
+.animate-ai-fill-glow {
+  animation: ai-fill-glow 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes ai-sparkle-float {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+.animate-ai-sparkle {
+  animation: ai-sparkle-float 3.5s ease-out forwards;
+}
+

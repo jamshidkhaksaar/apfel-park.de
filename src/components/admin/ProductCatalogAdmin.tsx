@@ -424,6 +424,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const [promoState, setPromoState] = useState(promo);
   const [promoMessage, setPromoMessage] = useState("");
   const [aiMessage, setAiMessage] = useState("");
+  const [aiJustFilled, setAiJustFilled] = useState(false);
   const [activeTab, setActiveTab] = useState<"catalog" | "promo">(promotionsOnly ? "promo" : "catalog");
   const [isSaving, startSaving] = useTransition();
   const [isSavingPromo, startSavingPromo] = useTransition();
@@ -656,10 +657,12 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           : prev.channelFields,
       };
     });
+    setAiJustFilled(true);
+    setTimeout(() => setAiJustFilled(false), 2800);
     setAiMessage(
       locale === "de"
-        ? "✓ KI-Daten erfolgreich eingefügt (Titel, Beschreibung, Specs, GPSR, Varianten & Fotos). Bitte überprüfen und auf 'Speichern' klicken."
-        : "✓ AI data successfully applied (Title, Description, Specs, GPSR, Variants & Photos). Please review and click 'Save'.",
+        ? "✨ KI-Recherche erfolgreich angewendet (Titel, Beschreibung, Specs, GPSR, Varianten & 4-Winkel-Fotos). Bitte Änderungen prüfen und speichern."
+        : "✨ AI research successfully applied (Title, Description, Specs, GPSR, Variants & 4-Angle Photos). Please review and save.",
     );
     setSaveError("");
   };
@@ -1091,7 +1094,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                   </button>
                 </div>
                 {aiMessage ? (
-                  <div className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-medium text-emerald-300">
+                  <div className="w-full animate-ai-sparkle rounded-xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-xs font-semibold text-gold shadow-lg shadow-gold/10">
                     {aiMessage}
                   </div>
                 ) : null}
@@ -1112,7 +1115,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
               </div>
 
               <div className="mt-5 grid gap-5 2xl:grid-cols-[minmax(0,1fr)_280px]">
-                <div id="basics" className="scroll-mt-40 space-y-4">
+                <div id="basics" className={`scroll-mt-40 space-y-4 transition-all duration-700 ${aiJustFilled ? "animate-ai-fill-glow rounded-2xl p-2" : ""}`}>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="space-y-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Titel" : "Title"}</span>
@@ -1452,23 +1455,48 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                     </button>
                                   )}
                                 </div>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                                    {locale === "de" ? "Speicher" : "Storage"}
-                                  </span>
-                                  <input
-                                    value={variant.storage}
-                                    onChange={(event) =>
-                                      setFormState((prev) => ({
-                                        ...prev,
-                                        variants: prev.variants.map((item, itemIndex) =>
-                                          itemIndex === index ? { ...item, storage: event.target.value } : item,
-                                        ),
-                                      }))
-                                    }
-                                    className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
-                                  />
-                                </label>
+                                <div className="space-y-2">
+                                  <label className="block space-y-2">
+                                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+                                      {locale === "de" ? "Speicher" : "Storage"}
+                                    </span>
+                                    <input
+                                      value={variant.storage}
+                                      onChange={(event) =>
+                                        setFormState((prev) => ({
+                                          ...prev,
+                                          variants: prev.variants.map((item, itemIndex) =>
+                                            itemIndex === index ? { ...item, storage: event.target.value } : item,
+                                          ),
+                                        }))
+                                      }
+                                      className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
+                                    />
+                                  </label>
+                                  <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {["64 GB", "128 GB", "256 GB", "512 GB", "1 TB", "2 TB"].map((preset) => (
+                                      <button
+                                        key={preset}
+                                        type="button"
+                                        onClick={() =>
+                                          setFormState((prev) => ({
+                                            ...prev,
+                                            variants: prev.variants.map((item, itemIndex) =>
+                                              itemIndex === index ? { ...item, storage: preset } : item,
+                                            ),
+                                          }))
+                                        }
+                                        className={`rounded-lg border px-2 py-0.5 text-[10px] font-medium transition ${
+                                          variant.storage === preset
+                                            ? "border-gold bg-gold/15 text-gold font-semibold"
+                                            : "border-border/60 text-muted hover:border-gold/40 hover:text-foreground"
+                                        }`}
+                                      >
+                                        {preset}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
                                 <label className="space-y-2">
                                   <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
                                     {locale === "de" ? "Preis" : "Price"}
