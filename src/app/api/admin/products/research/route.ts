@@ -40,6 +40,7 @@ Given a product model name (or a barcode/About photo), research the REAL device 
 - mpn: string (real manufacturer part number only if certain; else omit)
 
 Rules:
+- You have access to Google Search. Use it to find the LATEST real product data, official manufacturer specs, and current pricing. Do NOT rely on training data alone.
 - Use ONLY factual, verifiable data about the real product. Never invent specs.
 - Never include IMEI, serial, EID or MEID values.
 - If the product is unknown or not yet announced, still return the best real manufacturer data (Apple may not have announced it; use the official Apple product family facts) and set description to factual German copy.
@@ -54,7 +55,8 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts }],
-      generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
+      generationConfig: { temperature: 0.2 },
+      tools: [{ google_search: {} }],
     }),
     signal: AbortSignal.timeout(45000),
   });
