@@ -279,6 +279,10 @@ export default function ProductCreateForm() {
     setState((prev) => ({
       ...prev,
       safetyWarningsText: research.safetyWarnings?.length ? research.safetyWarnings.join("\n") : prev.safetyWarningsText,
+      gtin: research.gtinSuggestion && !prev.gtin ? research.gtinSuggestion : prev.gtin,
+      mpn: research.mpnSuggestion && !prev.mpn ? research.mpnSuggestion : prev.mpn,
+      energyEfficiencyClass: research.energyLabel?.efficiencyClass ?? prev.energyEfficiencyClass,
+      energyBatteryEndurance: research.energyLabel?.batteryEndurance ?? prev.energyBatteryEndurance,
       channelFields: research.countryOfOrigin ? { ...prev.channelFields, countryOfOrigin: research.countryOfOrigin } : prev.channelFields,
     }));
     setAiError("");

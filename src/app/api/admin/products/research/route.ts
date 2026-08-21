@@ -5,7 +5,7 @@ import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { readSessionUserFromRequest } from "@/lib/session";
 import { findSensitiveDataIssues } from "@/lib/product-intake/redaction";
 import { uploadProductImage } from "@/lib/blob";
-import { sanitizeResearchResult, type ProductResearchResult } from "@/lib/product-research";
+import { sanitizeResearchResult } from "@/lib/product-research";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +54,7 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents: [{ parts }],
       generationConfig: { temperature: 0.2 },
       tools: [{ google_search: {} }],
@@ -67,7 +68,12 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
   const data = (await response.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
   const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("");
   if (!text) throw new Error("Gemini returned no content");
-  const jsonText = text.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    throw new Error("Gemini returned no valid JSON object");
+  }
+  const jsonText = text.slice(firstBrace, lastBrace + 1);
   return JSON.parse(jsonText);
 }
 
@@ -76,14 +82,21 @@ async function downloadAndUploadImage(url: string): Promise<string | null> {
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "https:") return null;
-    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      },
+      signal: AbortSignal.timeout(8000),
+    });
     if (!response.ok) return null;
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.startsWith("image/")) return null;
     const bytes = Buffer.from(await response.arrayBuffer());
     if (bytes.length === 0 || bytes.length > 12 * 1024 * 1024) return null;
-    const extension = contentType.includes("png") ? ".png" : contentType.includes("webp") ? ".webp" : ".jpg";
-    const file = new File([bytes], `research-${Date.now()}${extension}`, { type: contentType.split(";")[0] });
+    const cleanMime = contentType.split(";")[0].trim().toLowerCase();
+    const extension = cleanMime.includes("png") ? ".png" : cleanMime.includes("webp") ? ".webp" : ".jpg";
+    const file = new File([bytes], `research-${Date.now()}${extension}`, { type: cleanMime });
     const uploaded = await uploadProductImage(file);
     return uploaded.url;
   } catch {
@@ -131,7 +144,7 @@ export async function POST(request: NextRequest) {
       const local = (await Promise.all(
         research.gallery.slice(0, 3).map((url) => downloadAndUploadImage(url)),
       )).filter((url): url is string => Boolean(url));
-      if (local.length > 0) research.gallery = local;
+      research.gallery = local;
     }
 
     return NextResponse.json({ success: true, research });

@@ -9,7 +9,7 @@ import { adminDictionary } from "@/lib/admin-i18n";
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import type { AdminProductRecord } from "@/components/admin/ProductCatalogAdmin";
 import type { ProductChannelFacts } from "@/lib/product-channel-readiness";
-import { extraGalleryImages, mergeCoverAndGallery, type WizardCondition, type WizardStep } from "@/lib/product-intake/safi-wizard";
+import { mergeCoverAndGallery, type WizardCondition, type WizardStep } from "@/lib/product-intake/safi-wizard";
 import { manufacturerPhotoFile } from "@/lib/product-intake/manufacturer-photos";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
@@ -60,7 +60,6 @@ export default function ProductIntakeWizard({
   const [conditionNote, setConditionNote] = useState("");
   const [batteryHealth, setBatteryHealth] = useState("");
   const [hasRealPhotos, setHasRealPhotos] = useState(false);
-  const [loaded, setLoaded] = useState<AdminProductRecord | null>(null);
   const [listing, setListing] = useState(emptyListing);
   const [gtin, setGtin] = useState("");
   const [mpn, setMpn] = useState("");
@@ -81,7 +80,6 @@ export default function ProductIntakeWizard({
     brand: listing.brand || selected?.brand || "",
     model: listing.model || selected?.model || "",
   });
-  const extraImages = useMemo(() => extraGalleryImages(listing.images, cover), [listing.images, cover]);
   const previewImages = useMemo(
     () => mergeCoverAndGallery(cover ?? listing.images[0] ?? "", [...exactPhotos, ...listing.images]),
     [cover, exactPhotos, listing.images],
@@ -119,17 +117,43 @@ export default function ProductIntakeWizard({
       category: (research.category as typeof current.category) ?? current.category,
       featureBullets: research.features?.length ? research.features : current.featureBullets,
       specs: research.specs?.length ? research.specs : current.specs,
-      variants: research.variants?.length ? research.variants.map((variant) => ({ color: variant.color, storage: variant.storage, sku: variant.sku ?? "", mpn: "", gtin: "", identifierStatus: "unknown" as const, asin: "", ebayEpid: "", isDefault: false })) : current.variants,
-      manufacturer: research.manufacturer ? { name: research.manufacturer.name ?? "", address: research.manufacturer.address ?? "", email: research.manufacturer.email ?? "" } : current.manufacturer,
-      euResponsiblePerson: research.euResponsiblePerson ? { name: research.euResponsiblePerson.name ?? "", address: research.euResponsiblePerson.address ?? "", email: research.euResponsiblePerson.email ?? "" } : current.euResponsiblePerson,
+      variants: research.variants?.length
+        ? research.variants.map((variant) => ({
+            color: variant.color,
+            storage: variant.storage,
+            sku: variant.sku ?? "",
+            mpn: "",
+            gtin: "",
+            identifierStatus: "unknown" as const,
+            asin: "",
+            ebayEpid: "",
+            isDefault: false,
+          }))
+        : current.variants,
+      manufacturer: research.manufacturer
+        ? {
+            name: research.manufacturer.name ?? "",
+            address: research.manufacturer.address ?? "",
+            email: research.manufacturer.email ?? "",
+          }
+        : current.manufacturer,
+      euResponsiblePerson: research.euResponsiblePerson
+        ? {
+            name: research.euResponsiblePerson.name ?? "",
+            address: research.euResponsiblePerson.address ?? "",
+            email: research.euResponsiblePerson.email ?? "",
+          }
+        : current.euResponsiblePerson,
       safetyWarnings: research.safetyWarnings?.length ? research.safetyWarnings : current.safetyWarnings,
       images: research.gallery?.length ? [...current.images, ...research.gallery] : current.images,
     }));
+    if (research.gtinSuggestion && !gtin) setGtin(research.gtinSuggestion);
+    if (research.mpnSuggestion && !mpn) setMpn(research.mpnSuggestion);
+    if (research.gallery?.[0] && !cover) setCover(research.gallery[0]);
     setAiError("");
   };
 
-    const applyProduct = (product: AdminProductRecord, nextCondition: WizardCondition) => {
-    setLoaded(product);
+  const applyProduct = (product: AdminProductRecord, nextCondition: WizardCondition) => {
     setListing({
       title: product.title,
       subtitle: product.subtitle,
@@ -162,7 +186,6 @@ export default function ProductIntakeWizard({
 
   const loadSelected = async () => {
     if (mode === "new") {
-      setLoaded(null);
       setListing({ ...emptyListing, brand: selected?.brand ?? "", model: selected?.model ?? "" });
       setGtin("");
       setMpn("");
@@ -204,7 +227,7 @@ export default function ProductIntakeWizard({
     }
   };
 
-    const uploadImage = async (file: File): Promise<string> => {
+  const uploadImage = async (file: File): Promise<string> => {
     const body = new FormData();
     body.set("file", file);
     const response = await fetch("/api/admin/products/upload", { method: "POST", body });
@@ -331,9 +354,15 @@ export default function ProductIntakeWizard({
           <label className="block text-sm text-muted">
             <div className="flex items-center justify-between gap-2">
               <span>{mode === "existing" ? copy.pinProduct : copy.templateProduct}</span>
-              <AiFillButton locale={locale} query={listing.model || listing.title} onResult={applyResearch} onError={setAiError} />
+              <AiFillButton locale={locale} query={listing.model || listing.title || selected?.model || selected?.title || ""} onResult={applyResearch} onError={setAiError} />
             </div>
-            <select value={productId} onChange={(event) => setProductId(event.target.value)} className="mt-1 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">
+            <select value={productId} onChange={(event) => {
+              setProductId(event.target.value);
+              const found = products.find((item) => item.id === event.target.value);
+              if (found) {
+                setListing((current) => ({ ...current, title: found.title, brand: found.brand ?? "", model: found.model ?? "" }));
+              }
+            }} className="mt-1 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">
               {mode === "new" ? <option value="">{copy.noTemplate}</option> : null}
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
@@ -342,6 +371,21 @@ export default function ProductIntakeWizard({
               ))}
             </select>
           </label>
+          {mode === "new" && !productId ? (
+            <label className="block text-sm text-muted">
+              <div className="flex items-center justify-between gap-2">
+                <span>{isGerman ? "Neues Modell / Produktname" : "New model / product name"}</span>
+                <AiFillButton locale={locale} query={listing.title || listing.model} onResult={applyResearch} onError={setAiError} />
+              </div>
+              <input
+                type="text"
+                value={listing.title}
+                onChange={(event) => setListing((current) => ({ ...current, title: event.target.value, model: event.target.value }))}
+                placeholder={isGerman ? "z.B. iPhone 16 Pro Max 256GB" : "e.g. iPhone 16 Pro Max 256GB"}
+                className="mt-1 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground"
+              />
+            </label>
+          ) : null}
           <label className="block text-sm text-muted">
             {copy.confirmedCondition}
             <select value={condition} onChange={(event) => setCondition(event.target.value as WizardCondition)} className="mt-1 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">
@@ -396,7 +440,10 @@ export default function ProductIntakeWizard({
 
       {step === "listing" ? (
         <div className="mt-5 space-y-4">
-          <p className="text-sm text-muted">{copy.autoFillHint}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-muted">{copy.autoFillHint}</p>
+            <AiFillButton locale={locale} query={listing.model || listing.title} onResult={applyResearch} onError={setAiError} />
+          </div>
           <input value={listing.title} onChange={(event) => setListing((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
           <textarea value={listing.description} onChange={(event) => setListing((current) => ({ ...current, description: event.target.value }))} rows={5} className="w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

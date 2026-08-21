@@ -20,12 +20,16 @@ export default function AiFillButton({
   const isGerman = locale === "de";
   const run = async () => {
     if (busy) return;
+    if (!query?.trim()) {
+      onError(isGerman ? "Bitte zuerst einen Titel oder Modellnamen eingeben." : "Please enter a title or model name first.");
+      return;
+    }
     setBusy(true);
     try {
       const response = await fetch("/api/admin/products/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query ?? "" }),
+        body: JSON.stringify({ query: query.trim() }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || (isGerman ? "KI-Forschung fehlgeschlagen" : "AI research failed"));
