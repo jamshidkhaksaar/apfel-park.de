@@ -619,12 +619,16 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
               existing = prev.variants[0];
             }
 
+            const fallbackPrice = prev.price && !Number.isNaN(Number(prev.price)) ? Number(prev.price) : undefined;
+            const fallbackCompareAt = prev.compareAtPrice && !Number.isNaN(Number(prev.compareAtPrice)) ? Number(prev.compareAtPrice) : undefined;
+            const fallbackStock = prev.stock && !Number.isNaN(Number(prev.stock)) ? Number(prev.stock) : undefined;
+
             return {
               color: researchVar.color,
               storage: researchVar.storage,
-              price: existing?.price ?? prev.price ?? undefined,
-              compareAtPrice: existing?.compareAtPrice ?? prev.compareAtPrice ?? undefined,
-              stock: existing?.stock ?? prev.stock ?? undefined,
+              price: existing?.price ?? fallbackPrice,
+              compareAtPrice: existing?.compareAtPrice ?? fallbackCompareAt,
+              stock: existing?.stock ?? fallbackStock,
               sku: researchVar.sku || existing?.sku || prev.sku || "",
               mpn: existing?.mpn || prev.mpn || "",
               gtin: existing?.gtin || prev.gtin || "",
