@@ -68,6 +68,7 @@ type FormState = {
     asin?: string;
     ebayEpid?: string;
     imageIndex?: number;
+    images?: string[];
     isDefault?: boolean;
   }>;
   featureBulletsText: string;
