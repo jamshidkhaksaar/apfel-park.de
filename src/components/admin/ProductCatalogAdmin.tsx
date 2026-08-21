@@ -21,6 +21,8 @@ import type {
   ProductChannelFacts,
   ProductIdentifierStatus,
 } from "@/lib/product-channel-readiness";
+import AiFillButton from "@/components/admin/AiFillButton";
+import type { ProductResearchResult } from "@/lib/product-research";
 
 type AdminLocale = "de" | "en";
 
@@ -421,6 +423,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const [variantImagePreviews, setVariantImagePreviews] = useState<string[][]>([]);
   const [promoState, setPromoState] = useState(promo);
   const [promoMessage, setPromoMessage] = useState("");
+  const [aiMessage, setAiMessage] = useState("");
   const [activeTab, setActiveTab] = useState<"catalog" | "promo">(promotionsOnly ? "promo" : "catalog");
   const [isSaving, startSaving] = useTransition();
   const [isSavingPromo, startSavingPromo] = useTransition();
@@ -593,6 +596,72 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
         variantIndex === index ? { ...variant, ...patch } : variant,
       ),
     }));
+  };
+
+  const applyResearch = (research: ProductResearchResult) => {
+    setFormState((prev) => {
+      const mergedVariants = research.variants?.length
+        ? research.variants.map((researchVar) => {
+            const existing = prev.variants.find(
+              (v) =>
+                v.color.trim().toLowerCase() === researchVar.color.trim().toLowerCase() &&
+                v.storage.trim().toLowerCase() === researchVar.storage.trim().toLowerCase(),
+            );
+            return {
+              color: researchVar.color,
+              storage: researchVar.storage,
+              price: existing?.price,
+              compareAtPrice: existing?.compareAtPrice,
+              stock: existing?.stock,
+              sku: researchVar.sku || existing?.sku || "",
+              mpn: existing?.mpn || "",
+              gtin: existing?.gtin || "",
+              identifierStatus: existing?.identifierStatus || "unknown",
+              asin: existing?.asin || "",
+              ebayEpid: existing?.ebayEpid || "",
+              imageIndex: existing?.imageIndex,
+              images: researchVar.images?.length ? researchVar.images : existing?.images ?? [],
+              isDefault: existing?.isDefault ?? false,
+            };
+          })
+        : prev.variants;
+
+      return {
+        ...prev,
+        title: research.title || prev.title,
+        subtitle: research.subtitle || prev.subtitle,
+        description: research.description || prev.description,
+        brand: research.brand || prev.brand,
+        model: research.model || prev.model,
+        category: (research.category as ProductFormState["category"]) || prev.category,
+        featureBulletsText: research.features?.length ? research.features.join("\n") : prev.featureBulletsText,
+        specsText: research.specs?.length ? research.specs.map((item) => `${item.label}: ${item.value}`).join("\n") : prev.specsText,
+        manufacturerName: research.manufacturer?.name || prev.manufacturerName,
+        manufacturerAddress: research.manufacturer?.address || prev.manufacturerAddress,
+        manufacturerEmail: research.manufacturer?.email || prev.manufacturerEmail,
+        euResponsibleName: research.euResponsiblePerson?.name || prev.euResponsibleName,
+        euResponsibleAddress: research.euResponsiblePerson?.address || prev.euResponsibleAddress,
+        euResponsibleEmail: research.euResponsiblePerson?.email || prev.euResponsibleEmail,
+        safetyWarningsText: research.safetyWarnings?.length ? research.safetyWarnings.join("\n") : prev.safetyWarningsText,
+        gtin: research.gtinSuggestion && !prev.gtin ? research.gtinSuggestion : prev.gtin,
+        mpn: research.mpnSuggestion && !prev.mpn ? research.mpnSuggestion : prev.mpn,
+        energyEfficiencyClass: research.energyLabel?.efficiencyClass || prev.energyEfficiencyClass,
+        energyBatteryEndurance: research.energyLabel?.batteryEndurance || prev.energyBatteryEndurance,
+        images: research.gallery?.length
+          ? Array.from(new Set([...prev.images, ...research.gallery]))
+          : prev.images,
+        variants: mergedVariants,
+        channelFields: research.countryOfOrigin
+          ? { ...prev.channelFields, countryOfOrigin: research.countryOfOrigin }
+          : prev.channelFields,
+      };
+    });
+    setAiMessage(
+      locale === "de"
+        ? "✓ KI-Daten erfolgreich eingefügt (Titel, Beschreibung, Specs, GPSR, Varianten & Fotos). Bitte überprüfen und auf 'Speichern' klicken."
+        : "✓ AI data successfully applied (Title, Description, Specs, GPSR, Variants & Photos). Please review and click 'Save'.",
+    );
+    setSaveError("");
   };
 
   const submitProduct = () => {
@@ -996,8 +1065,14 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     /store/{selectedProduct.slug}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {isDirty ? <span className="inline-flex items-center rounded-lg bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-600">{locale === "de" ? "Ungespeichert" : "Unsaved"}</span> : null}
+                  <AiFillButton
+                    locale={locale}
+                    query={formState.model || formState.title || selectedProduct.model || selectedProduct.title || ""}
+                    onResult={applyResearch}
+                    onError={setSaveError}
+                  />
                   <a
                     href={`/${locale}/store/${selectedProduct.slug}`}
                     target="_blank"
@@ -1015,6 +1090,11 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     {locale === "de" ? "Löschen" : "Delete"}
                   </button>
                 </div>
+                {aiMessage ? (
+                  <div className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-medium text-emerald-300">
+                    {aiMessage}
+                  </div>
+                ) : null}
                 {editorOnly ? (
                   <nav aria-label={locale === "de" ? "Editorbereiche" : "Editor sections"} className="flex w-full gap-1 overflow-x-auto border-t border-border/50 pt-3 text-xs">
                     {[
