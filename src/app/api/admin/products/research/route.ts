@@ -74,7 +74,7 @@ async function downloadAndUploadImage(url: string): Promise<string | null> {
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "https:") return null;
-    const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!response.ok) return null;
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.startsWith("image/")) return null;
@@ -123,13 +123,12 @@ export async function POST(request: NextRequest) {
     const raw = await callGemini({ prompt, image });
     const research = sanitizeResearchResult(raw);
 
-    // Download and upload gallery images server-side; failures are non-blocking.
+    // Download and upload gallery images in parallel with a hard cap so the
+    // form fills quickly; failures are non-blocking and never delay the result.
     if (research.gallery && research.gallery.length > 0) {
-      const local: string[] = [];
-      for (const url of research.gallery.slice(0, 6)) {
-        const uploaded = await downloadAndUploadImage(url);
-        if (uploaded) local.push(uploaded);
-      }
+      const local = (await Promise.all(
+        research.gallery.slice(0, 3).map((url) => downloadAndUploadImage(url)),
+      )).filter((url): url is string => Boolean(url));
       if (local.length > 0) research.gallery = local;
     }
 
