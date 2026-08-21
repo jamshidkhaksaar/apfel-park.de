@@ -168,38 +168,61 @@ export async function POST(request: NextRequest) {
     const raw = await callGemini({ prompt, image });
     const research = sanitizeResearchResult(raw);
 
-    // Gather candidate image URLs from Gemini output and high-resolution official search
-    const candidates: string[] = [];
-    if (research.gallery && research.gallery.length > 0) {
-      candidates.push(...research.gallery);
-    }
+    // Download and attach color-specific photos for all variants
+    const brand = research.brand || "";
+    const model = research.model || query;
+    const gallerySet = new Set<string>();
 
-    const searchQuery = [research.brand, research.model || query].filter(Boolean).join(" ");
-    if (searchQuery) {
-      const found = await searchProductOriginalImages(searchQuery);
-      candidates.push(...found);
-    }
+    if (research.variants && research.variants.length > 0) {
+      const uniqueColors = Array.from(
+        new Set(research.variants.map((v) => v.color.trim()).filter(Boolean)),
+      ).slice(0, 6);
 
-    const uniqueCandidates = Array.from(new Set(candidates)).slice(0, 8);
-
-    // Download and upload gallery images in parallel with a hard cap so the
-    // form fills quickly; failures are non-blocking and never delay the result.
-    const local = (
+      const colorImageMap = new Map<string, string>();
       await Promise.all(
-        uniqueCandidates.slice(0, 4).map((url) => downloadAndUploadImage(url)),
-      )
-    ).filter((url): url is string => Boolean(url));
+        uniqueColors.map(async (color) => {
+          const colorSearchQuery = [brand, model, color].filter(Boolean).join(" ");
+          const urls = await searchProductOriginalImages(colorSearchQuery);
+          for (const url of urls.slice(0, 3)) {
+            const uploaded = await downloadAndUploadImage(url);
+            if (uploaded) {
+              colorImageMap.set(color, uploaded);
+              gallerySet.add(uploaded);
+              break;
+            }
+          }
+        }),
+      );
 
-    if (local.length < 2 && uniqueCandidates.length > 4) {
-      const extra = (
+      research.variants = research.variants.map((variant) => {
+        const colorImg = colorImageMap.get(variant.color.trim());
+        return {
+          ...variant,
+          images: colorImg ? [colorImg] : variant.images ?? [],
+        };
+      });
+    }
+
+    // Also download general model gallery images if gallery has fewer than 4 images
+    if (gallerySet.size < 4) {
+      const generalSearch = [brand, model].filter(Boolean).join(" ");
+      const candidates = Array.from(
+        new Set([
+          ...(research.gallery ?? []),
+          ...(generalSearch ? await searchProductOriginalImages(generalSearch) : []),
+        ]),
+      ).slice(0, 8);
+
+      const generalImages = (
         await Promise.all(
-          uniqueCandidates.slice(4, 8).map((url) => downloadAndUploadImage(url)),
+          candidates.slice(0, 6).map((url) => downloadAndUploadImage(url)),
         )
       ).filter((url): url is string => Boolean(url));
-      local.push(...extra);
+
+      generalImages.forEach((img) => gallerySet.add(img));
     }
 
-    research.gallery = local.slice(0, 4);
+    research.gallery = Array.from(gallerySet).slice(0, 8);
 
     return NextResponse.json({ success: true, research });
   } catch (error) {

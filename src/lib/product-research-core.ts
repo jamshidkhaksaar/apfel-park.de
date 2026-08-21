@@ -11,7 +11,7 @@ export type ProductResearchResult = {
   category?: string;
   specs?: Array<{ label: string; value: string }>;
   features?: string[];
-  variants?: Array<{ color: string; storage: string; sku?: string }>;
+  variants?: Array<{ color: string; storage: string; sku?: string; images?: string[] }>;
   gallery?: string[];
   batteryDetails?: { included?: boolean; wattHours?: number };
   manufacturer?: { name?: string; address?: string; email?: string };
@@ -55,6 +55,9 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
           color: String(entry.color ?? "").trim().slice(0, 80),
           storage: String(entry.storage ?? "").trim().slice(0, 80),
           sku: String(entry.sku ?? "").trim().slice(0, 80) || undefined,
+          images: Array.isArray(entry.images)
+            ? (entry.images as unknown[]).filter((url): url is string => typeof url === "string" && Boolean(url.trim()))
+            : undefined,
         }))
         .filter((entry) => entry.color && entry.storage)
         .slice(0, 20)

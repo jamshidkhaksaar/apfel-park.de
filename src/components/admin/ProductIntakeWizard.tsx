@@ -127,6 +127,7 @@ export default function ProductIntakeWizard({
             identifierStatus: "unknown" as const,
             asin: "",
             ebayEpid: "",
+            images: variant.images ?? [],
             isDefault: false,
           }))
         : current.variants,

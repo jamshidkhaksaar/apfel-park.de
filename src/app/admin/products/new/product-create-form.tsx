@@ -271,6 +271,7 @@ export default function ProductCreateForm() {
             identifierStatus: "unknown" as const,
             asin: "",
             ebayEpid: "",
+            images: variant.images ?? [],
             isDefault: false,
           }))
         : prev.variants,
@@ -813,8 +814,8 @@ export default function ProductCreateForm() {
                       </span>
                       <label className="group block cursor-pointer">
                         <div className="relative mt-1 aspect-square overflow-hidden rounded-xl border border-border/50 bg-black/20">
-                          {variantImagePreviews[index] ? (
-                            <Image src={variantImagePreviews[index]} alt="" fill className="object-cover" unoptimized />
+                          {variantImagePreviews[index] || variant.images?.[0] ? (
+                            <Image src={variantImagePreviews[index] || variant.images![0]} alt="" fill className="object-contain" unoptimized />
                           ) : (
                             <div className="flex h-full items-center justify-center px-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
                               {isGerman ? "Eigenes Bild hochladen" : "Upload custom image"}
@@ -822,11 +823,11 @@ export default function ProductCreateForm() {
                           )}
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3">
-                          <span className="text-xs text-muted">
-                            {variantImageFiles[index]?.name || (isGerman ? "Optional" : "Optional")}
+                          <span className="text-xs text-muted truncate max-w-[120px]">
+                            {variantImageFiles[index]?.name || (variant.images?.[0] ? (isGerman ? "KI-Bild" : "AI Image") : (isGerman ? "Optional" : "Optional"))}
                           </span>
                           <span className="rounded-full border border-border/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground transition group-hover:border-gold/30 group-hover:text-gold">
-                            {variantImageFiles[index] ? (isGerman ? "Ersetzen" : "Replace") : (isGerman ? "Wahlen" : "Select")}
+                            {variantImageFiles[index] || variant.images?.[0] ? (isGerman ? "Ersetzen" : "Replace") : (isGerman ? "Wahlen" : "Select")}
                           </span>
                         </div>
                         <input
