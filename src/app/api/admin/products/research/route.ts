@@ -95,7 +95,7 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(3500),
     });
     const vqdHtml = await vqdRes.text();
     const vqdMatch = vqdHtml.match(/vqd=([0-9-]+)/) || vqdHtml.match(/vqd="([^"]+)"/) || vqdHtml.match(/vqd=([^&]+)/);
@@ -105,13 +105,13 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(3500),
     });
     const data = (await imgRes.json().catch(() => ({}))) as { results?: Array<{ image?: string }> };
     return (data.results || [])
       .map((r) => r.image)
       .filter((url): url is string => typeof url === "string" && url.startsWith("https://"))
-      .slice(0, 8);
+      .slice(0, 4);
   } catch {
     return [];
   }
@@ -142,7 +142,7 @@ async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1400)
         right: Math.round((targetSize - productSize) / 2),
         background: { r: 255, g: 255, b: 255, alpha: 0 },
       })
-      .webp({ quality: 88, effort: 5 })
+      .webp({ quality: 88, effort: 4 })
       .toBuffer();
   } catch {
     return inputBuffer;
@@ -159,7 +159,7 @@ async function downloadAndUploadImage(url: string): Promise<string | null> {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(4000),
     });
     if (!response.ok) return null;
     const contentType = response.headers.get("content-type") ?? "";
@@ -219,14 +219,14 @@ export async function POST(request: NextRequest) {
     if (research.variants && research.variants.length > 0) {
       const uniqueColors = Array.from(
         new Set(research.variants.map((v) => v.color.trim()).filter(Boolean)),
-      ).slice(0, 6);
+      ).slice(0, 4);
 
       const colorImageMap = new Map<string, string>();
       await Promise.all(
         uniqueColors.map(async (color) => {
           const colorSearchQuery = [brand, model, color].filter(Boolean).join(" ");
           const urls = await searchProductOriginalImages(colorSearchQuery);
-          for (const url of urls.slice(0, 3)) {
+          for (const url of urls.slice(0, 2)) {
             const uploaded = await downloadAndUploadImage(url);
             if (uploaded) {
               colorImageMap.set(color, uploaded);
@@ -246,26 +246,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Also download general model gallery images if gallery has fewer than 4 images
-    if (gallerySet.size < 4) {
+    // Only if gallery is still completely empty, fetch model photos
+    if (gallerySet.size === 0) {
       const generalSearch = [brand, model].filter(Boolean).join(" ");
-      const candidates = Array.from(
-        new Set([
-          ...(research.gallery ?? []),
-          ...(generalSearch ? await searchProductOriginalImages(generalSearch) : []),
-        ]),
-      ).slice(0, 8);
+      const candidates = (
+        generalSearch ? await searchProductOriginalImages(generalSearch) : []
+      ).slice(0, 3);
 
-      const generalImages = (
-        await Promise.all(
-          candidates.slice(0, 6).map((url) => downloadAndUploadImage(url)),
-        )
-      ).filter((url): url is string => Boolean(url));
-
-      generalImages.forEach((img) => gallerySet.add(img));
+      for (const url of candidates) {
+        const uploaded = await downloadAndUploadImage(url);
+        if (uploaded) {
+          gallerySet.add(uploaded);
+          if (gallerySet.size >= 2) break;
+        }
+      }
     }
 
-    research.gallery = Array.from(gallerySet).slice(0, 8);
+    research.gallery = Array.from(gallerySet).slice(0, 6);
 
     return NextResponse.json({ success: true, research });
   } catch (error) {

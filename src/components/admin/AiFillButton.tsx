@@ -31,6 +31,13 @@ export default function AiFillButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: query.trim() }),
       });
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        if (response.status === 504 || response.status === 502) {
+          throw new Error(isGerman ? "Zeitüberschreitung der KI-Anfrage (Gateway Timeout). Bitte versuchen Sie es erneut." : "AI request timed out. Please try again.");
+        }
+        throw new Error(isGerman ? `Serverfehler (${response.status}). Bitte erneut versuchen.` : `Server error (${response.status}). Please try again.`);
+      }
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || (isGerman ? "KI-Forschung fehlgeschlagen" : "AI research failed"));
       onResult(payload.research as ProductResearchResult);
