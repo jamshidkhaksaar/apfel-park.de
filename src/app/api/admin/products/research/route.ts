@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import sharp from "sharp";
 import { canManageProducts } from "@/lib/admin-auth";
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { readSessionUserFromRequest } from "@/lib/session";
@@ -17,34 +18,43 @@ function geminiKey(): string {
   return key;
 }
 
-const SYSTEM_PROMPT = `You are a product-research assistant for Apfel Park, a phone store in Hamburg. The store language is German; all product text must be in German (except where English is explicitly requested).
+const SYSTEM_PROMPT = `You are an expert product intelligence assistant for Apfel Park, a premium smartphone and electronics store in Hamburg. The store language is German; all customer-facing text must be in professional German.
 
-Given a product model name (or a barcode/About photo), research the REAL device and return STRICT JSON with ONLY these keys:
-- title: string (German, marketing name + storage + color, e.g. "Apple iPhone 17 Pro Max 256 GB Titan Schwarz")
-- subtitle: string (German, short selling line)
-- description: string (German, 2-3 professional paragraphs: design, display, camera, chip, battery, features)
-- brand: string
-- model: string (marketing model name)
+You support ALL smartphone, tablet, and accessory brands worldwide, including Apple, Samsung, Google Pixel, Xiaomi, POCO, Redmi, Nothing, Fairphone, OnePlus, Honor, Sony, Motorola, Asus, and more.
+
+Given a query or device photo, research the REAL device using Google Search grounding and return STRICT JSON with ONLY these keys:
+- title: string (German: Brand + Marketing Model + Storage + German Color name, e.g. "Nothing Phone (2) 256 GB Dunkelgrau", "Xiaomi 14 Ultra 512 GB Schwarz", "Fairphone 5 256 GB Moosgrün", "Google Pixel 9 Pro 256 GB Hazel")
+- subtitle: string (German: short selling tagline)
+- description: string (German: 2-3 professional luxury paragraphs: Design & Materialien, Display & Performance, Kamera-System, Akkulaufzeit & Ladeleistung, Besondere Features)
+- brand: string (e.g. "Nothing", "Xiaomi", "POCO", "Fairphone", "Google", "OnePlus", "Sony", "Apple", "Samsung", "Honor")
+- model: string (e.g. "Phone (2)", "14 Ultra", "Pixel 9 Pro", "Fairphone 5", "iPhone 16 Pro Max", "Galaxy S24 Ultra")
 - category: one of "smartphones", "tablets", "accessories", "consoles", "laptops"
-- specs: array of {label, value} (German labels: Display, Speicher, Kamera, Chip, Akku, Konnektivität, Gewicht, etc.)
-- features: array of strings (German, 4-6 selling points)
-- variants: array of {color, storage} (German color names, real storage options)
-- gallery: array of https URLs (official manufacturer product images, same model+color, 2-6 images)
+- specs: array of {label, value} (German labels: Display, Prozessor / Chip, Arbeitsspeicher, Interner Speicher, Hauptkamera, Frontkamera, Akku & Laden, Betriebssystem, Konnektivität, Schutzklasse / IP-Zertifizierung, Abmessungen & Gewicht)
+- features: array of 4-6 strings (German key selling highlights)
+- variants: array of {color, storage} (German color names matching official releases, e.g. "Dunkelgrau", "Weiß", "Obsidian", "Porcelain", "Titan Schwarz", "Moosgrün")
+- manufacturer: {name, address, email} (Official legal manufacturer entity for EU GPSR compliance)
+  Reference Entities:
+  * Nothing: { name: "Nothing Technology Limited", address: "80 Cheapside, London EC2V 6EE, UK", email: "support@nothing.tech" }
+  * Fairphone: { name: "Fairphone B.V.", address: "Van Diemenstraat 200, 1013 CP Amsterdam, Netherlands", email: "support@fairphone.com" }
+  * Xiaomi / POCO / Redmi: { name: "Xiaomi Technology Netherlands B.V.", address: "Prinses Beatrixlaan 582, 2595BM The Hague, Netherlands", email: "service.de@xiaomi.com" }
+  * Google: { name: "Google Ireland Limited", address: "Gordon House, Barrow Street, Dublin 4, Ireland", email: "support-deutschland@google.com" }
+  * OnePlus: { name: "Reflection Investment B.V.", address: "Keizersgracht 482, 1017EG Amsterdam, Netherlands", email: "support.de@oneplus.com" }
+  * Sony: { name: "Sony Europe B.V.", address: "Da Vincilaan 7-D1, 1930 Zaventem, Belgium", email: "customersupport.de@sony.com" }
+  * Samsung: { name: "Samsung Electronics GmbH", address: "Am Kronberger Hang 6, 65824 Schwalbach am Taunus, Germany", email: "hotline@samsung.de" }
+  * Apple: { name: "Apple Distribution International Ltd", address: "Hollyhill Industrial Estate, Cork, Ireland", email: "contactus.de@euro.apple.com" }
+  * Honor: { name: "Honor Technologies Germany GmbH", address: "Toulouser Allee 27, 40211 Düsseldorf, Germany", email: "de.support@honor.com" }
+  * Motorola: { name: "Motorola Mobility Germany GmbH", address: "Meisenstraße 96, 33607 Bielefeld, Germany", email: "de-support@motorola.com" }
+- euResponsiblePerson: {name, address, email} (EU Importer or EU Representative)
+- energyLabel: {efficiencyClass, batteryEndurance} (EU Energy label rating, e.g. "A", "B", "C", "D")
+- countryOfOrigin: two-letter ISO code (e.g. "CN", "VN", "IN", "TW")
 - batteryDetails: {included: boolean, wattHours: number}
-- manufacturer: {name, address, email} (real manufacturer legal entity, e.g. Apple Distribution International Ltd, Hollyhill Industrial Estate, Cork, Ireland; contactus.de@euro.apple.com)
-- euResponsiblePerson: {name, address, email} (real EU importer/responsible entity)
-- energyLabel: {efficiencyClass, batteryEndurance} (only if the EU energy label applies; else null)
-- countryOfOrigin: two-letter ISO code
-- safetyWarnings: array of strings (German, e.g. "Nur mit zertifiziertem USB-C-Netzteil laden.")
-- gtin: string (real EAN/GTIN only if you are certain; else omit)
-- mpn: string (real manufacturer part number only if certain; else omit)
+- safetyWarnings: array of strings (German safety instructions, e.g. "Vor Feuchtigkeit und extremen Temperaturen schützen. Nur mit zertifizierten Ladegeräten laden.")
+- gtin: string (GTIN/EAN only if factual; else omit)
+- mpn: string (Manufacturer Part Number only if factual; else omit)
 
 Rules:
-- You have access to Google Search. Use it to find the LATEST real product data, official manufacturer specs, and current pricing. Do NOT rely on training data alone.
-- Use ONLY factual, verifiable data about the real product. Never invent specs.
-- Never include IMEI, serial, EID or MEID values.
-- If the product is unknown or not yet announced, still return the best real manufacturer data (Apple may not have announced it; use the official Apple product family facts) and set description to factual German copy.
-- Never add placeholder text like "test", "demo", "sample".
+- Search and return real facts for ANY brand worldwide.
+- Never invent specs.
 - Return ONLY valid JSON, no markdown.`;
 
 async function callGemini(payload: { prompt: string; image?: { mime: string; data: string } }): Promise<unknown> {
@@ -56,7 +66,7 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents: [{ parts }],
-      generationConfig: { temperature: 0.2 },
+      generationConfig: { temperature: 0.1 },
       tools: [{ google_search: {} }],
     }),
     signal: AbortSignal.timeout(45000),
@@ -80,7 +90,7 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
 // Search for real official product images from search indexes
 async function searchProductOriginalImages(query: string): Promise<string[]> {
   try {
-    const searchTerms = `${query} official product photo`;
+    const searchTerms = `${query} official packshot white background`;
     const vqdRes = await fetch(`https://duckduckgo.com/?q=${encodeURIComponent(searchTerms)}`, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -107,7 +117,39 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
   }
 }
 
-// Download an official image, convert to small WebP via the existing uploader, return the local URL.
+async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1400): Promise<Buffer> {
+  try {
+    let pipeline = sharp(inputBuffer, { failOn: "warning" }).rotate();
+    try {
+      pipeline = pipeline.trim({ threshold: 12 });
+    } catch {
+      // trim is non-fatal
+    }
+    const productSize = Math.round(targetSize * 0.90);
+    const trimmedBuf = await pipeline.toBuffer();
+
+    return await sharp(trimmedBuf)
+      .resize({
+        width: productSize,
+        height: productSize,
+        fit: "contain",
+        background: { r: 255, g: 255, b: 255, alpha: 0 },
+      })
+      .extend({
+        top: Math.round((targetSize - productSize) / 2),
+        bottom: Math.round((targetSize - productSize) / 2),
+        left: Math.round((targetSize - productSize) / 2),
+        right: Math.round((targetSize - productSize) / 2),
+        background: { r: 255, g: 255, b: 255, alpha: 0 },
+      })
+      .webp({ quality: 88, effort: 5 })
+      .toBuffer();
+  } catch {
+    return inputBuffer;
+  }
+}
+
+// Download an official image, convert to luxury studio standard WebP via Sharp + blob uploader
 async function downloadAndUploadImage(url: string): Promise<string | null> {
   try {
     const parsed = new URL(url);
@@ -122,11 +164,12 @@ async function downloadAndUploadImage(url: string): Promise<string | null> {
     if (!response.ok) return null;
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.startsWith("image/")) return null;
-    const bytes = Buffer.from(await response.arrayBuffer());
-    if (bytes.length < 4000 || bytes.length > 12 * 1024 * 1024) return null;
-    const cleanMime = contentType.split(";")[0].trim().toLowerCase();
-    const extension = cleanMime.includes("png") ? ".png" : cleanMime.includes("webp") ? ".webp" : ".jpg";
-    const file = new File([bytes], `research-${Date.now()}-${Math.random().toString(36).slice(2, 7)}${extension}`, { type: cleanMime });
+    const rawBytes = Buffer.from(await response.arrayBuffer());
+    if (rawBytes.length < 3000 || rawBytes.length > 15 * 1024 * 1024) return null;
+    
+    // Standardize packshot with Sharp for luxury 1:1 presentation
+    const standardized = await standardizePackshotBuffer(rawBytes, 1400);
+    const file = new File([standardized], `research-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`, { type: "image/webp" });
     const uploaded = await uploadProductImage(file);
     return uploaded.url;
   } catch {
