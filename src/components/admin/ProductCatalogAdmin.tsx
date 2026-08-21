@@ -602,27 +602,38 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const applyResearch = (research: ProductResearchResult) => {
     setFormState((prev) => {
       const mergedVariants = research.variants?.length
-        ? research.variants.map((researchVar) => {
-            const existing = prev.variants.find(
+        ? research.variants.map((researchVar, vIdx) => {
+            let existing = prev.variants.find(
               (v) =>
                 v.color.trim().toLowerCase() === researchVar.color.trim().toLowerCase() &&
                 v.storage.trim().toLowerCase() === researchVar.storage.trim().toLowerCase(),
             );
+            if (!existing) {
+              existing = prev.variants.find(
+                (v) =>
+                  (!v.color.trim() || v.color.trim().toLowerCase() === researchVar.color.trim().toLowerCase()) &&
+                  v.storage.trim().toLowerCase() === researchVar.storage.trim().toLowerCase(),
+              );
+            }
+            if (!existing && prev.variants.length === 1 && vIdx === 0) {
+              existing = prev.variants[0];
+            }
+
             return {
               color: researchVar.color,
               storage: researchVar.storage,
-              price: existing?.price,
-              compareAtPrice: existing?.compareAtPrice,
-              stock: existing?.stock,
-              sku: researchVar.sku || existing?.sku || "",
-              mpn: existing?.mpn || "",
-              gtin: existing?.gtin || "",
+              price: existing?.price ?? prev.price ?? undefined,
+              compareAtPrice: existing?.compareAtPrice ?? prev.compareAtPrice ?? undefined,
+              stock: existing?.stock ?? prev.stock ?? undefined,
+              sku: researchVar.sku || existing?.sku || prev.sku || "",
+              mpn: existing?.mpn || prev.mpn || "",
+              gtin: existing?.gtin || prev.gtin || "",
               identifierStatus: existing?.identifierStatus || "unknown",
               asin: existing?.asin || "",
               ebayEpid: existing?.ebayEpid || "",
               imageIndex: existing?.imageIndex,
               images: researchVar.images?.length ? researchVar.images : existing?.images ?? [],
-              isDefault: existing?.isDefault ?? false,
+              isDefault: existing?.isDefault ?? (vIdx === 0),
             };
           })
         : prev.variants;

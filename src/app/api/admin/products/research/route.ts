@@ -66,10 +66,13 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents: [{ parts }],
-      generationConfig: { temperature: 0.1 },
+      generationConfig: {
+        temperature: 0.1,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
       tools: [{ google_search: {} }],
     }),
-    signal: AbortSignal.timeout(45000),
+    signal: AbortSignal.timeout(25000),
   });
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
@@ -93,9 +96,9 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
     const searchTerms = `${query} official packshot white background -case -cover -skin -hülle -hulle`;
     const vqdRes = await fetch(`https://duckduckgo.com/?q=${encodeURIComponent(searchTerms)}`, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(2000),
     });
     const vqdHtml = await vqdRes.text();
     const vqdMatch = vqdHtml.match(/vqd=([0-9-]+)/) || vqdHtml.match(/vqd="([^"]+)"/) || vqdHtml.match(/vqd=([^&]+)/);
@@ -103,9 +106,9 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
     const vqd = vqdMatch[1];
     const imgRes = await fetch(`https://duckduckgo.com/i.js?l=de-de&o=json&q=${encodeURIComponent(searchTerms)}&vqd=${vqd}&f=,,,type:photo,`, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(2000),
     });
     const data = (await imgRes.json().catch(() => ({}))) as { results?: Array<{ image?: string }> };
     return (data.results || [])
@@ -117,7 +120,7 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
   }
 }
 
-// Uses Gemini 2.5 Flash Vision to inspect multiple candidate packshots and pick the cleanest, genuine device photo
+// Uses Gemini 3.7 Flash Vision to inspect multiple candidate packshots and pick the cleanest, genuine device photo
 async function pickBestPackshotWithVision(
   candidates: string[],
   brand: string,
@@ -134,7 +137,7 @@ async function pickBestPackshotWithVision(
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
           },
-          signal: AbortSignal.timeout(2500),
+          signal: AbortSignal.timeout(2000),
         });
         if (!res.ok) return;
         const buf = Buffer.from(await res.arrayBuffer());
@@ -170,9 +173,13 @@ Return JSON: { "best_index": number (0 to ${validCandidates.length - 1}) }`;
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts }],
-        generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       }),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(3500),
     });
 
     if (!res.ok) return validCandidates[0].buf;
