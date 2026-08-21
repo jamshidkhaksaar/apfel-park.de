@@ -95,7 +95,7 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       },
-      signal: AbortSignal.timeout(3500),
+      signal: AbortSignal.timeout(2500),
     });
     const vqdHtml = await vqdRes.text();
     const vqdMatch = vqdHtml.match(/vqd=([0-9-]+)/) || vqdHtml.match(/vqd="([^"]+)"/) || vqdHtml.match(/vqd=([^&]+)/);
@@ -105,13 +105,13 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       },
-      signal: AbortSignal.timeout(3500),
+      signal: AbortSignal.timeout(2500),
     });
     const data = (await imgRes.json().catch(() => ({}))) as { results?: Array<{ image?: string }> };
     return (data.results || [])
       .map((r) => r.image)
       .filter((url): url is string => typeof url === "string" && url.startsWith("https://") && !url.includes("case") && !url.includes("cover") && !url.includes("hulle") && !url.includes("hülle"))
-      .slice(0, 6);
+      .slice(0, 4);
   } catch {
     return [];
   }
@@ -123,55 +123,41 @@ async function pickBestPackshotWithVision(
   brand: string,
   model: string,
   color: string,
-  angle: string,
 ): Promise<Buffer | null> {
   const validCandidates: Array<{ url: string; buf: Buffer; base64: string }> = [];
 
-  for (const url of candidates.slice(0, 4)) {
-    try {
-      const res = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        },
-        signal: AbortSignal.timeout(3500),
-      });
-      if (!res.ok) continue;
-      const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.length < 4000 || buf.length > 15 * 1024 * 1024) continue;
+  await Promise.all(
+    candidates.slice(0, 3).map(async (url) => {
+      try {
+        const res = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+          },
+          signal: AbortSignal.timeout(2500),
+        });
+        if (!res.ok) return;
+        const buf = Buffer.from(await res.arrayBuffer());
+        if (buf.length < 4000 || buf.length > 15 * 1024 * 1024) return;
 
-      const meta = await sharp(buf).metadata().catch(() => null);
-      if (!meta?.width || meta.width < 300 || !meta?.height || meta.height < 300) continue;
+        const meta = await sharp(buf).metadata().catch(() => null);
+        if (!meta?.width || meta.width < 250 || !meta?.height || meta.height < 250) return;
 
-      const thumbBuf = await sharp(buf).resize(400, 400, { fit: "inside" }).jpeg({ quality: 80 }).toBuffer();
-      validCandidates.push({ url, buf, base64: thumbBuf.toString("base64") });
-    } catch {
-      // ignore network errors for individual image candidates
-    }
-  }
+        const thumbBuf = await sharp(buf).resize(300, 300, { fit: "inside" }).jpeg({ quality: 70 }).toBuffer();
+        validCandidates.push({ url, buf, base64: thumbBuf.toString("base64") });
+      } catch {
+        // network error
+      }
+    }),
+  );
 
   if (validCandidates.length === 0) return null;
+  if (validCandidates.length === 1) return validCandidates[0].buf;
 
   try {
-    const prompt = `You are an expert art director and hardware validator for a luxury smartphone store in Germany.
-Target Smartphone: ${brand} ${model}
-Target Color: ${color}
-Target Angle: ${angle} (front, back, side, or angle)
-
-Compare the ${validCandidates.length} attached candidate images (labeled Image 0 to Image ${validCandidates.length - 1} in order).
-Select the SINGLE BEST image that:
-1. Is genuinely the REAL ${brand} ${model} (NOT a protective case, NOT an accessory, NOT a different model generation, NOT a concept render).
-2. Is a clean studio packshot (white, neutral, or transparent background, NO human hands holding it, NO retail box packaging, NO big review logos/watermarks).
-3. Matches the color "${color}" and angle "${angle}" as closely as possible.
-
-Return ONLY a JSON object:
-{
-  "best_index": number (0 to ${validCandidates.length - 1}, or -1 if NONE are acceptable),
-  "is_exact_device": boolean,
-  "is_clean_packshot": boolean,
-  "confidence_score": number (0-100),
-  "reason": string
-}`;
+    const prompt = `Target Smartphone: ${brand} ${model} (Color: ${color})
+Select the SINGLE BEST candidate image that is genuinely the real device on a clean white/transparent studio background.
+Return JSON: { "best_index": number (0 to ${validCandidates.length - 1}) }`;
 
     const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: prompt }];
     validCandidates.forEach((c, idx) => {
@@ -186,36 +172,28 @@ Return ONLY a JSON object:
         contents: [{ parts }],
         generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
       }),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(4000),
     });
 
-    if (!res.ok) {
-      // Fallback: return the first valid buffer if Gemini call fails
-      return validCandidates[0]?.buf ?? null;
-    }
+    if (!res.ok) return validCandidates[0].buf;
 
     const data = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return validCandidates[0]?.buf ?? null;
+    if (!text) return validCandidates[0].buf;
 
-    const decision = JSON.parse(text) as {
-      best_index: number;
-      is_exact_device?: boolean;
-      is_clean_packshot?: boolean;
-      confidence_score?: number;
-    };
-
-    if (decision.best_index >= 0 && decision.best_index < validCandidates.length && (decision.confidence_score ?? 100) >= 60) {
+    const decision = JSON.parse(text) as { best_index?: number };
+    if (typeof decision.best_index === "number" && validCandidates[decision.best_index]) {
       return validCandidates[decision.best_index].buf;
     }
 
-    return null;
+    return validCandidates[0].buf;
   } catch {
-    return validCandidates[0]?.buf ?? null;
+    return validCandidates[0].buf;
   }
 }
 
-async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1400): Promise<Buffer> {
+// Google Merchant Center standard: 1500x1500px, 1:1 square, 88% scale, micro-sharpened Retina WebP
+async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1500): Promise<Buffer> {
   try {
     let pipeline = sharp(inputBuffer, { failOn: "warning" }).rotate();
     try {
@@ -251,7 +229,7 @@ async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1400)
 // Convert standardized buffer to WebP and upload to blob storage
 async function uploadPackshotBuffer(buffer: Buffer): Promise<string | null> {
   try {
-    const standardized = await standardizePackshotBuffer(buffer, 1400);
+    const standardized = await standardizePackshotBuffer(buffer, 1500);
     const file = new File([standardized as unknown as BlobPart], `research-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`, { type: "image/webp" });
     const uploaded = await uploadProductImage(file);
     return uploaded.url;
@@ -294,7 +272,7 @@ export async function POST(request: NextRequest) {
     const raw = await callGemini({ prompt, image });
     const research = sanitizeResearchResult(raw);
 
-    // Multi-angle photo discovery with Gemini Vision validation
+    // Fast multi-variant photo discovery with Gemini Vision validation
     const brand = research.brand || "";
     const model = research.model || query;
     const gallerySet = new Set<string>();
@@ -308,33 +286,20 @@ export async function POST(request: NextRequest) {
 
       await Promise.all(
         uniqueColors.map(async (color) => {
-          const angleQueries = [
-            { angle: "front", query: `${brand} ${model} ${color} front packshot white background` },
-            { angle: "back", query: `${brand} ${model} ${color} back rear packshot white background` },
-            { angle: "side", query: `${brand} ${model} ${color} side profile packshot white background` },
-            { angle: "angle", query: `${brand} ${model} ${color} angled 3d packshot white background` },
-          ];
+          try {
+            const candidates = await searchProductOriginalImages(`${brand} ${model} ${color}`);
+            if (candidates.length === 0) return;
 
-          const downloadedForColor: string[] = [];
+            const winnerBuf = await pickBestPackshotWithVision(candidates, brand, model, color);
+            if (!winnerBuf) return;
 
-          await Promise.all(
-            angleQueries.map(async ({ angle, query: angleQuery }) => {
-              const candidates = await searchProductOriginalImages(angleQuery);
-              if (candidates.length === 0) return;
-
-              const winnerBuf = await pickBestPackshotWithVision(candidates, brand, model, color, angle);
-              if (!winnerBuf) return;
-
-              const uploadedUrl = await uploadPackshotBuffer(winnerBuf);
-              if (uploadedUrl && !downloadedForColor.includes(uploadedUrl)) {
-                downloadedForColor.push(uploadedUrl);
-                gallerySet.add(uploadedUrl);
-              }
-            }),
-          );
-
-          if (downloadedForColor.length > 0) {
-            colorImagesMap.set(color, downloadedForColor);
+            const uploadedUrl = await uploadPackshotBuffer(winnerBuf);
+            if (uploadedUrl) {
+              colorImagesMap.set(color, [uploadedUrl]);
+              gallerySet.add(uploadedUrl);
+            }
+          } catch {
+            // non-fatal
           }
         }),
       );
@@ -348,15 +313,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // If gallery is still empty or has few images, fetch general model renders with vision validation
-    if (gallerySet.size < 3) {
-      const generalCandidates = await searchProductOriginalImages(`${brand} ${model} official press packshot white background`);
-      if (generalCandidates.length > 0) {
-        const winnerBuf = await pickBestPackshotWithVision(generalCandidates, brand, model, "", "front");
-        if (winnerBuf) {
-          const uploaded = await uploadPackshotBuffer(winnerBuf);
-          if (uploaded) gallerySet.add(uploaded);
+    // Ensure gallery has general high-res model packshots
+    if (gallerySet.size < 2) {
+      try {
+        const generalCandidates = await searchProductOriginalImages(`${brand} ${model} official press packshot`);
+        if (generalCandidates.length > 0) {
+          const winnerBuf = await pickBestPackshotWithVision(generalCandidates, brand, model, "");
+          if (winnerBuf) {
+            const uploaded = await uploadPackshotBuffer(winnerBuf);
+            if (uploaded) gallerySet.add(uploaded);
+          }
         }
+      } catch {
+        // non-fatal
       }
     }
 
