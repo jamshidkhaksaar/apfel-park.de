@@ -33,6 +33,16 @@ export type ProductResearchResult = {
   countryOfOrigin?: string;
   safetyWarnings?: string[];
   mpnSuggestion?: string | null;
+  dimensions?: {
+    heightMm?: number;
+    widthMm?: number;
+    depthMm?: number;
+    weightG?: number;
+    screenInches?: number;
+  };
+  packageContents?: Array<{ label: { de: string; en: string }; included: boolean }>;
+  refurbishmentSteps?: Array<{ title: { de: string; en: string }; description: { de: string; en: string } }>;
+  campaignSuggestion?: { badge: { de: string; en: string }; message: { de: string; en: string } };
 };
 
 const SENSITIVE = /(imei|serial|serien|eid|meid)/i;
@@ -144,8 +154,67 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
     mpnSuggestion,
     countryOfOrigin: text("countryOfOrigin", 2)?.toUpperCase(),
     safetyWarnings: strings("safetyWarnings", 500),
+    dimensions: value.dimensions && typeof value.dimensions === "object"
+      ? {
+          heightMm: positiveNum((value.dimensions as Record<string, unknown>).heightMm),
+          widthMm: positiveNum((value.dimensions as Record<string, unknown>).widthMm),
+          depthMm: positiveNum((value.dimensions as Record<string, unknown>).depthMm),
+          weightG: positiveNum((value.dimensions as Record<string, unknown>).weightG),
+          screenInches: positiveNum((value.dimensions as Record<string, unknown>).screenInches),
+        }
+      : undefined,
+    packageContents: Array.isArray(value.packageContents)
+      ? value.packageContents
+          .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+          .map((item) => {
+            const rawLabel = item.label;
+            const de = typeof rawLabel === "string" ? rawLabel.trim() : (rawLabel && typeof rawLabel === "object" ? String((rawLabel as Record<string, unknown>).de ?? "").trim() : "");
+            const en = typeof rawLabel === "string" ? rawLabel.trim() : (rawLabel && typeof rawLabel === "object" ? String((rawLabel as Record<string, unknown>).en ?? "").trim() : "");
+            return {
+              label: { de: de.slice(0, 120), en: (en || de).slice(0, 120) },
+              included: item.included !== false,
+            };
+          })
+          .filter((item) => item.label.de || item.label.en)
+          .slice(0, 15)
+      : undefined,
+    refurbishmentSteps: Array.isArray(value.refurbishmentSteps)
+      ? value.refurbishmentSteps
+          .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+          .map((item) => {
+            const rawTitle = item.title;
+            const rawDesc = item.description;
+            const titleDe = typeof rawTitle === "string" ? rawTitle.trim() : (rawTitle && typeof rawTitle === "object" ? String((rawTitle as Record<string, unknown>).de ?? "").trim() : "");
+            const titleEn = typeof rawTitle === "string" ? rawTitle.trim() : (rawTitle && typeof rawTitle === "object" ? String((rawTitle as Record<string, unknown>).en ?? "").trim() : "");
+            const descDe = typeof rawDesc === "string" ? rawDesc.trim() : (rawDesc && typeof rawDesc === "object" ? String((rawDesc as Record<string, unknown>).de ?? "").trim() : "");
+            const descEn = typeof rawDesc === "string" ? rawDesc.trim() : (rawDesc && typeof rawDesc === "object" ? String((rawDesc as Record<string, unknown>).en ?? "").trim() : "");
+            return {
+              title: { de: titleDe.slice(0, 100), en: (titleEn || titleDe).slice(0, 100) },
+              description: { de: descDe.slice(0, 700), en: (descEn || descDe).slice(0, 700) },
+            };
+          })
+          .filter((item) => item.title.de && item.description.de)
+          .slice(0, 8)
+      : undefined,
+    campaignSuggestion: value.campaignSuggestion && typeof value.campaignSuggestion === "object"
+      ? {
+          badge: {
+            de: String((value.campaignSuggestion as Record<string, unknown>).badge && typeof (value.campaignSuggestion as Record<string, unknown>).badge === "object" ? ((value.campaignSuggestion as Record<string, unknown>).badge as Record<string, string>).de ?? "" : (value.campaignSuggestion as Record<string, unknown>).badge ?? "").trim().slice(0, 60),
+            en: String((value.campaignSuggestion as Record<string, unknown>).badge && typeof (value.campaignSuggestion as Record<string, unknown>).badge === "object" ? ((value.campaignSuggestion as Record<string, unknown>).badge as Record<string, string>).en ?? "" : "").trim().slice(0, 60),
+          },
+          message: {
+            de: String((value.campaignSuggestion as Record<string, unknown>).message && typeof (value.campaignSuggestion as Record<string, unknown>).message === "object" ? ((value.campaignSuggestion as Record<string, unknown>).message as Record<string, string>).de ?? "" : (value.campaignSuggestion as Record<string, unknown>).message ?? "").trim().slice(0, 300),
+            en: String((value.campaignSuggestion as Record<string, unknown>).message && typeof (value.campaignSuggestion as Record<string, unknown>).message === "object" ? ((value.campaignSuggestion as Record<string, unknown>).message as Record<string, string>).en ?? "" : "").trim().slice(0, 300),
+          },
+        }
+      : undefined,
   };
 }
+
+const positiveNum = (value: unknown): number | undefined => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+};
 
 const textFrom = (obj: Record<string, unknown>, key: string, max: number): string | undefined => {
   const entry = obj[key];

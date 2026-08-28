@@ -53,6 +53,10 @@ Given a query or device photo, research the REAL device using Google Search grou
 - safetyWarnings: array of strings (German safety instructions, e.g. "Vor Feuchtigkeit und extremen Temperaturen schützen. Nur mit zertifizierten Ladegeräten laden.")
 - gtin: string (GTIN/EAN only if factual; else omit)
 - mpn: string (Manufacturer Part Number / Model Identifier only if factual; else omit)
+- dimensions: {heightMm: number, widthMm: number, depthMm: number, weightG: number, screenInches: number} (Exact device physical dimensions in mm, weight in g, screen in inches)
+- packageContents: array of {label: {de: string, en: string}, included: boolean} (Official retail box contents and accessories e.g. Ladekabel included=true, Netzteil included=false)
+- refurbishmentSteps: array of 4-6 {title: {de: string, en: string}, description: {de: string, en: string}} (Certified inspection and refurbishment steps in German/English)
+- campaignSuggestion: {badge: {de: string, en: string}, message: {de: string, en: string}} (Short promotional badge and compelling 1-2 sentence tagline in German and English)
 
 Rules:
 - Search and return real facts for ANY brand worldwide.

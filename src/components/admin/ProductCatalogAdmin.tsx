@@ -23,8 +23,18 @@ import type {
 } from "@/lib/product-channel-readiness";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
+import {
+  PRODUCT_EXPERIENCE_SECTIONS,
+  sanitizeProductExperienceProfile,
+  type ProductExperienceProfile,
+  type ProductExperienceSection,
+} from "@/lib/product-experience";
 
 type AdminLocale = "de" | "en";
+
+type ExperienceCandidate = { id: string; title: string; brand?: string; model?: string; condition?: string; price: number; stock: number; images?: string[] };
+type ExperienceFamilyMember = { productId: string; optionValues: Record<string, string>; position: number; isActive: boolean };
+type ExperienceFamilyState = { id?: string; name: string; slug: string; optionAxes: string[]; isActive: boolean; members: ExperienceFamilyMember[] };
 
 type ProductSpec = {
   label: string;
@@ -426,10 +436,21 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const [aiMessage, setAiMessage] = useState("");
   const [aiJustFilled, setAiJustFilled] = useState(false);
   const [activeTab, setActiveTab] = useState<"catalog" | "promo">(promotionsOnly ? "promo" : "catalog");
-  const [wizardStep, setWizardStep] = useState<"basics" | "pricing" | "condition" | "content" | "variants" | "channels" | "images" | "publishing">("basics");
+  const [wizardStep, setWizardStep] = useState<"basics" | "pricing" | "condition" | "content" | "variants" | "channels" | "images" | "experience" | "publishing">("basics");
   const [isSaving, startSaving] = useTransition();
   const [isSavingPromo, startSavingPromo] = useTransition();
   const slotLabels = imageSlotLabels[locale];
+
+  // Professional Product Experience (reBuy-tools) state:
+  const [experienceProfile, setExperienceProfile] = useState<ProductExperienceProfile>(() => sanitizeProductExperienceProfile({}));
+  const [familyState, setFamilyState] = useState<ExperienceFamilyState>({ name: "", slug: "", optionAxes: ["Speicher", "Farbe", "Zustand", "Akku"], isActive: false, members: [] });
+  const [candidateProducts, setCandidateProducts] = useState<ExperienceCandidate[]>([]);
+  const [experienceContentsText, setExperienceContentsText] = useState("");
+  const [experienceConditionText, setExperienceConditionText] = useState("");
+  const [experienceRefurbishmentText, setExperienceRefurbishmentText] = useState("");
+  const [experienceTrustText, setExperienceTrustText] = useState("");
+  const [experienceTab, setExperienceTab] = useState<"features" | "family" | "contents" | "condition" | "trust" | "compare" | "campaign">("features");
+  const [familyQuery, setFamilyQuery] = useState("");
 
   const filteredProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -502,6 +523,10 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     channelFields: createEmptyProductChannelFields(),
   }));
 
+  const parseExperienceRows = (value: string, columns: number) =>
+    value.split("\n").map((line) => line.split("|").map((part) => part.trim())).filter((parts) => parts.length >= columns && parts.some(Boolean));
+  const experienceLines = (rows: string[][]) => rows.map((row) => row.join(" | ")).join("\n");
+
   useEffect(() => {
     if (selectedProduct && selectedProduct.id !== formState.id) {
       setFormState(productToForm(selectedProduct));
@@ -514,6 +539,42 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
       setSaveMessage("");
     }
   }, [selectedProduct, formState.id]);
+
+  useEffect(() => {
+    if (!selectedProduct?.id) return;
+    let active = true;
+    fetch(`/api/admin/products/${selectedProduct.id}/experience`)
+      .then((res) => res.json())
+      .then((payload) => {
+        if (!active || !payload.success) return;
+        const nextProfile = sanitizeProductExperienceProfile(payload.profile);
+        setExperienceProfile(nextProfile);
+        setCandidateProducts(payload.products ?? []);
+        setExperienceContentsText(experienceLines(nextProfile.packageContents.map((item) => [item.label.de, item.label.en, item.included ? "yes" : "no"])));
+        setExperienceConditionText(experienceLines(nextProfile.conditionGuide.map((item) => [item.condition, item.label.de, item.label.en, item.description.de, item.description.en, item.imageUrls.join(",")])));
+        setExperienceRefurbishmentText(experienceLines(nextProfile.refurbishmentSteps.map((item) => [item.title.de, item.title.en, item.description.de, item.description.en])));
+        setExperienceTrustText(experienceLines(nextProfile.trustPoints.map((item) => [item.title.de, item.title.en, item.description.de, item.description.en])));
+        if (payload.family) {
+          setFamilyState({
+            id: payload.family.id,
+            name: payload.family.name ?? "",
+            slug: payload.family.slug ?? "",
+            optionAxes: Array.isArray(payload.family.option_axes) ? payload.family.option_axes : ["Speicher", "Farbe", "Zustand", "Akku"],
+            isActive: Boolean(payload.family.is_active),
+            members: (payload.family.members ?? []).map((m: Record<string, unknown>, index: number) => ({
+              productId: String(m.product_id),
+              optionValues: (m.option_values as Record<string, string>) ?? {},
+              position: Number(m.position ?? index),
+              isActive: m.is_active !== false,
+            })),
+          });
+        } else {
+          setFamilyState({ name: "", slug: "", optionAxes: ["Speicher", "Farbe", "Zustand", "Akku"], isActive: false, members: [] });
+        }
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [selectedProduct?.id]);
 
   useEffect(() => {
     const previews = imageFiles
@@ -672,6 +733,44 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           : prev.channelFields,
       };
     });
+
+    if (research.dimensions) {
+      setExperienceProfile((prev) => ({
+        ...prev,
+        dimensions: {
+          ...prev.dimensions,
+          heightMm: research.dimensions?.heightMm ?? prev.dimensions.heightMm,
+          widthMm: research.dimensions?.widthMm ?? prev.dimensions.widthMm,
+          depthMm: research.dimensions?.depthMm ?? prev.dimensions.depthMm,
+          weightG: research.dimensions?.weightG ?? prev.dimensions.weightG,
+          screenInches: research.dimensions?.screenInches ?? prev.dimensions.screenInches,
+        },
+      }));
+    }
+    if (research.packageContents && research.packageContents.length > 0) {
+      setExperienceProfile((prev) => ({
+        ...prev,
+        packageContents: research.packageContents!,
+      }));
+      setExperienceContentsText(experienceLines(research.packageContents.map((item) => [item.label.de, item.label.en, item.included ? "yes" : "no"])));
+    }
+    if (research.refurbishmentSteps && research.refurbishmentSteps.length > 0) {
+      setExperienceProfile((prev) => ({
+        ...prev,
+        refurbishmentSteps: research.refurbishmentSteps!,
+      }));
+      setExperienceRefurbishmentText(experienceLines(research.refurbishmentSteps.map((item) => [item.title.de, item.title.en, item.description.de, item.description.en])));
+    }
+    if (research.campaignSuggestion) {
+      setExperienceProfile((prev) => ({
+        ...prev,
+        campaign: {
+          badge: research.campaignSuggestion!.badge,
+          message: research.campaignSuggestion!.message,
+        },
+      }));
+    }
+
     setAiJustFilled(true);
     setTimeout(() => setAiJustFilled(false), 2800);
     setAiMessage(
@@ -886,6 +985,38 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           specs: parseSpecs(formState.specsText),
           createdAt: selectedProduct?.createdAt || new Date().toISOString(),
         };
+
+        const preparedProfile = sanitizeProductExperienceProfile({
+          ...experienceProfile,
+          packageContents: parseExperienceRows(experienceContentsText, 2).map(([labelDe, labelEn, included]) => ({
+            label: { de: labelDe, en: labelEn },
+            included: (included ?? "").toLowerCase() !== "no",
+          })),
+          conditionGuide: parseExperienceRows(experienceConditionText, 5).map(([condition, labelDe, labelEn, descriptionDe, descriptionEn, urls]) => ({
+            condition: condition === "used" || condition === "open_box" ? condition : "new",
+            label: { de: labelDe, en: labelEn },
+            description: { de: descriptionDe, en: descriptionEn },
+            imageUrls: (urls ?? "").split(",").map((u) => u.trim()).filter(Boolean),
+          })),
+          refurbishmentSteps: parseExperienceRows(experienceRefurbishmentText, 4).map(([titleDe, titleEn, descriptionDe, descriptionEn]) => ({
+            title: { de: titleDe, en: titleEn },
+            description: { de: descriptionDe, en: descriptionEn },
+          })),
+          trustPoints: parseExperienceRows(experienceTrustText, 4).map(([titleDe, titleEn, descriptionDe, descriptionEn]) => ({
+            title: { de: titleDe, en: titleEn },
+            description: { de: descriptionDe, en: descriptionEn },
+          })),
+        });
+
+        try {
+          await fetch(`/api/admin/products/${formState.id}/experience`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profile: preparedProfile, family: familyState }),
+          });
+        } catch (expErr) {
+          console.warn("Experience profile save warning:", expErr);
+        }
 
         setRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)));
         setFormState(productToForm(updated));
@@ -1132,7 +1263,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                 ) : null}
                 {/* WIZARD STEP TABS */}
                 <div className="w-full border-t border-border/50 pt-3">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
                     {[
                       { id: "basics", number: 1, labelDe: "Grunddaten", labelEn: "Basics", icon: "🏷️" },
                       { id: "pricing", number: 2, labelDe: "Preise & Lager", labelEn: "Pricing", icon: "💶" },
@@ -1141,7 +1272,8 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                       { id: "variants", number: 5, labelDe: "Varianten", labelEn: "Variants", icon: "🎨" },
                       { id: "channels", number: 6, labelDe: "Marktplätze", labelEn: "Channels", icon: "🌐" },
                       { id: "images", number: 7, labelDe: "Bilder", labelEn: "Images", icon: "🖼️" },
-                      { id: "publishing", number: 8, labelDe: "Übersicht & Veröffentlichung", labelEn: "Publishing", icon: "🚀" },
+                      { id: "experience", number: 8, labelDe: "Profi-Erlebnis", labelEn: "Experience", icon: "✨" },
+                      { id: "publishing", number: 9, labelDe: "Übersicht & Speichern", labelEn: "Publishing", icon: "🚀" },
                     ].map((step) => {
                       const isCurrent = wizardStep === step.id;
                       return (
@@ -1743,18 +1875,514 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                   </div>
                 )}
 
-                {/* STEP 8: PUBLISHING & OVERVIEW */}
+                {/* STEP 8: PROFESSIONAL EXPERIENCE (reBuy TOOLS) */}
+                {wizardStep === "experience" && (
+                  <div id="experience" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+                      <div>
+                        <h4 className="text-base font-bold text-heading flex items-center gap-2">
+                          <span>✨</span> {locale === "de" ? "8. Professionelles Produkt-Erlebnis (reBuy-Tools)" : "8. Professional Product Experience (reBuy-Tools)"}
+                        </h4>
+                        <p className="text-xs text-muted mt-0.5">
+                          {locale === "de"
+                            ? "Lieferumfang, Aufbereitung, 2D-Größenvergleich, Varianten-Konfigurator & Kampagnen"
+                            : "Package contents, refurbishment, 2D size comparison, family configurator & campaigns"}
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-md border border-gold/40 bg-gold/15 px-2.5 py-1 text-[11px] font-semibold text-gold shadow-sm">
+                        ✨ {Object.values(experienceProfile.enabledSections).filter(Boolean).length} / 10 {locale === "de" ? "Bereiche aktiv" : "sections active"}
+                      </span>
+                    </div>
+
+                    {/* SUB-TABS */}
+                    <div className="flex gap-2 overflow-x-auto pb-1" role="tablist">
+                      {[
+                        { id: "features", labelDe: "Freigaben", labelEn: "Features", icon: "⚙️" },
+                        { id: "contents", labelDe: "Lieferumfang", labelEn: "Package contents", icon: "📦", ai: true },
+                        { id: "condition", labelDe: "Zustand & Fotos", labelEn: "Condition & photos", icon: "🔍" },
+                        { id: "trust", labelDe: "Aufbereitung & Vertrauen", labelEn: "Refurbishment & trust", icon: "🛠️", ai: true },
+                        { id: "compare", labelDe: "Vergleich & Maße", labelEn: "Comparison & dimensions", icon: "📏", ai: true },
+                        { id: "family", labelDe: "Produktfamilie", labelEn: "Product family", icon: "👨‍👩‍👧" },
+                        { id: "campaign", labelDe: "Kampagne", labelEn: "Campaign", icon: "🏷️", ai: true },
+                      ].map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={experienceTab === t.id}
+                          onClick={() => setExperienceTab(t.id as typeof experienceTab)}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
+                            experienceTab === t.id
+                              ? "border-gold/60 bg-gold/15 text-gold shadow-sm"
+                              : "border-border/60 bg-surface/50 text-muted hover:border-gold/30 hover:text-foreground"
+                          }`}
+                        >
+                          <span>{t.icon}</span>
+                          <span>{locale === "de" ? t.labelDe : t.labelEn}</span>
+                          {t.ai && <span className="text-[10px] text-gold font-bold">✨</span>}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* SUB-TAB 1: FEATURES / TOGGLES */}
+                    {experienceTab === "features" && (
+                      <div className="space-y-4">
+                        <p className="text-xs text-muted">
+                          {locale === "de"
+                            ? "Alle Bereiche sind standardmäßig verborgen. Aktivieren Sie hier gezielt die Module für dieses Produkt:"
+                            : "All sections are hidden by default. Enable specific modules for this product below:"}
+                        </p>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {PRODUCT_EXPERIENCE_SECTIONS.map((sec) => {
+                            const active = experienceProfile.enabledSections[sec];
+                            const labelsMap: Record<string, { de: string; en: string; descDe: string; descEn: string }> = {
+                              familyConfigurator: { de: "Varianten-Konfigurator", en: "Variant configurator", descDe: "Verbindet Speichervarianten zu einer Produktfamilie", descEn: "Links sibling storage listings into a unified family" },
+                              packageContents: { de: "Lieferumfang (Was ist enthalten?)", en: "Package contents", descDe: "Zeigt Checkliste von Kabel, OVP, Netzteil", descEn: "Shows checklist of cable, packaging, adapter" },
+                              conditionGuide: { de: "Zustandsvergleich & Fotos", en: "Condition guide", descDe: "Visuelle Erklärung von Neu, Open-Box, Gebraucht", descEn: "Visual guide explaining New, Open Box, Used" },
+                              refurbishment: { de: "Aufbereitung & Prüfung", en: "Refurbishment & testing", descDe: "50+ Prüfpunkte & Qualitätsversprechen", descEn: "50+ inspection checkpoints & store guarantee" },
+                              sizeComparison: { de: "Größenvergleich (2D-Silhouetten)", en: "Size comparison (2D)", descDe: "Maßstabsgetreuer 2D-Gerätevergleich", descEn: "Scaled 2D device silhouette comparison" },
+                              modelComparison: { de: "Modellvergleich-Tabelle", en: "Model comparison table", descDe: "Vergleichstabelle mit ausgewählten Produkten", descEn: "Spec comparison table with selected products" },
+                              bundles: { de: "Kompatible Bundles & Zubehör", en: "Compatible bundles", descDe: "1-Klick-Zubehörbundles (Hüllen, Netzteile)", descEn: "1-click accessory bundles (cases, adapters)" },
+                              campaign: { de: "Produktkampagne (Gold-Banner)", en: "Product campaign banner", descDe: "Prominentes Promo-Banner über dem Preis", descEn: "Prominent promotional banner above price" },
+                              tradeIn: { de: "Trade-in Anfrage-Box", en: "Trade-in request box", descDe: "Ankauf-Banner mit Link zu /trade-in", descEn: "Sell old device banner linking to /trade-in" },
+                              wishlist: { de: "Wunschliste (Herz-Button)", en: "Wishlist heart button", descDe: "Herz-Button speichert Gerät in Kunden-Session", descEn: "Heart button saving product to customer session" },
+                            };
+                            const info = labelsMap[sec] ?? { de: sec, en: sec, descDe: "", descEn: "" };
+                            return (
+                              <label
+                                key={sec}
+                                className={`flex items-start justify-between gap-3 rounded-xl border p-3.5 cursor-pointer transition ${
+                                  active
+                                    ? "border-gold/50 bg-gold/10 shadow-sm"
+                                    : "border-border/60 bg-surface/40 hover:border-gold/30 hover:bg-surface/70"
+                                }`}
+                              >
+                                <div className="space-y-1 pr-2">
+                                  <p className="text-xs font-bold text-foreground">{locale === "de" ? info.de : info.en}</p>
+                                  <p className="text-[11px] text-muted leading-tight">{locale === "de" ? info.descDe : info.descEn}</p>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={active}
+                                  onChange={(e) =>
+                                    setExperienceProfile((prev) => ({
+                                      ...prev,
+                                      enabledSections: { ...prev.enabledSections, [sec]: e.target.checked },
+                                    }))
+                                  }
+                                  className="h-5 w-5 rounded border-border text-gold focus:ring-gold accent-gold shrink-0 mt-0.5"
+                                />
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-TAB 2: PACKAGE CONTENTS */}
+                    {experienceTab === "contents" && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold uppercase tracking-wider text-heading">
+                            📦 {locale === "de" ? "Lieferumfang (Was ist im Karton?)" : "Package Contents (In the Box)"}
+                          </span>
+                          <span className="text-[10px] font-semibold text-gold">✨ KI-ausfüllbar</span>
+                        </div>
+                        <p className="text-xs text-muted">
+                          {locale === "de"
+                            ? "Format: Deutsch | Englisch | yes/no (z. B. USB-C Ladekabel | USB-C cable | yes)"
+                            : "Format: German | English | yes/no (e.g. USB-C Ladekabel | USB-C cable | yes)"}
+                        </p>
+                        <textarea
+                          rows={8}
+                          value={experienceContentsText}
+                          onChange={(e) => setExperienceContentsText(e.target.value)}
+                          placeholder="USB-C Ladekabel | USB-C charge cable | yes&#10;Dokumentation | Documentation | yes&#10;Netzteil | Power adapter | no"
+                          className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
+                        />
+                      </div>
+                    )}
+
+                    {/* SUB-TAB 3: CONDITION GUIDE */}
+                    {experienceTab === "condition" && (
+                      <div className="space-y-3">
+                        <span className="text-xs font-bold uppercase tracking-wider text-heading">
+                          🔍 {locale === "de" ? "Zustandsvergleich & Beispielfotos" : "Condition Guide & Sample Photos"}
+                        </span>
+                        <p className="text-xs text-muted">
+                          Format: Zustand | Titel DE | Titel EN | Beschreibung DE | Beschreibung EN | Bild-URLs (kommagetrennt)
+                        </p>
+                        <textarea
+                          rows={8}
+                          value={experienceConditionText}
+                          onChange={(e) => setExperienceConditionText(e.target.value)}
+                          placeholder="new | Neu & OVP | New & Sealed | Originalverpackt und versiegelt | Factory sealed | /uploads/products/example.webp&#10;open_box | Open-Box | Open Box | Wie neu, Verpackung geöffnet | Like new, unsealed box | /uploads/products/example.webp"
+                          className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
+                        />
+                      </div>
+                    )}
+
+                    {/* SUB-TAB 4: REFURBISHMENT & TRUST */}
+                    {experienceTab === "trust" && (
+                      <div className="grid gap-5 lg:grid-cols-2">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wider text-heading">
+                              🛠️ {locale === "de" ? "Aufbereitungsschritte (01, 02...)" : "Refurbishment Steps"}
+                            </span>
+                            <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                          </div>
+                          <p className="text-xs text-muted">Format: Titel DE | Titel EN | Text DE | Text EN</p>
+                          <textarea
+                            rows={8}
+                            value={experienceRefurbishmentText}
+                            onChange={(e) => setExperienceRefurbishmentText(e.target.value)}
+                            placeholder="50+ Prüfpunkte | 50+ Point Check | Akku, Display, Kameras und Sensoren vollständig getestet | Battery, display, cameras fully tested"
+                            className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-heading">
+                            ✓ {locale === "de" ? "Vertrauenspunkte (Garantie & Store)" : "Trust Points"}
+                          </span>
+                          <p className="text-xs text-muted">Format: Titel DE | Titel EN | Text DE | Text EN</p>
+                          <textarea
+                            rows={8}
+                            value={experienceTrustText}
+                            onChange={(e) => setExperienceTrustText(e.target.value)}
+                            placeholder="12 Monate Garantie | 12-Month Warranty | Volle Garantie direkt über unseren Hamburger Store | Full store warranty from our Hamburg shop"
+                            className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-TAB 5: COMPARISON & DIMENSIONS */}
+                    {experienceTab === "compare" && (
+                      <div className="space-y-5">
+                        <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wider text-heading">
+                              📏 {locale === "de" ? "Geräte-Abmessungen (für 2D-Silhouetten & Vergleich)" : "Dimensions (for 2D silhouettes & comparison)"}
+                            </span>
+                            <span className="text-[10px] font-semibold text-gold">✨ KI-ausfüllbar</span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                            {[
+                              { key: "heightMm", label: "Höhe (mm)", placeholder: "146.6" },
+                              { key: "widthMm", label: "Breite (mm)", placeholder: "70.6" },
+                              { key: "depthMm", label: "Tiefe (mm)", placeholder: "8.25" },
+                              { key: "weightG", label: "Gewicht (g)", placeholder: "187" },
+                              { key: "screenInches", label: "Display (Zoll)", placeholder: "6.1" },
+                            ].map((dim) => (
+                              <label key={dim.key} className="space-y-1">
+                                <span className="text-xs font-semibold text-muted">{dim.label}</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.1"
+                                  value={experienceProfile.dimensions[dim.key as keyof ProductExperienceProfile["dimensions"]] ?? ""}
+                                  onChange={(e) =>
+                                    setExperienceProfile((prev) => ({
+                                      ...prev,
+                                      dimensions: {
+                                        ...prev.dimensions,
+                                        [dim.key]: e.target.value ? Number(e.target.value) : undefined,
+                                      },
+                                    }))
+                                  }
+                                  placeholder={dim.placeholder}
+                                  className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                                />
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="grid gap-5 lg:grid-cols-2">
+                          <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-3">
+                            <span className="text-xs font-bold uppercase tracking-wider text-heading">
+                              ⚖️ {locale === "de" ? "Vergleichsprodukte (Nebeneinander)" : "Comparison Products"}
+                            </span>
+                            <input
+                              value={familyQuery}
+                              onChange={(e) => setFamilyQuery(e.target.value)}
+                              placeholder={locale === "de" ? "Produkte suchen..." : "Search products..."}
+                              className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground placeholder:text-muted"
+                            />
+                            <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                              {candidateProducts
+                                .filter((p) => !familyQuery || p.title.toLowerCase().includes(familyQuery.toLowerCase()))
+                                .slice(0, 30)
+                                .map((cand) => {
+                                  const selected = experienceProfile.comparisonProductIds.includes(cand.id);
+                                  return (
+                                    <label
+                                      key={cand.id}
+                                      className={`flex items-center gap-2.5 rounded-lg border p-2 text-xs cursor-pointer transition ${
+                                        selected ? "border-gold/50 bg-gold/10 text-foreground" : "border-border/40 bg-surface text-muted hover:border-gold/30"
+                                      }`}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={selected}
+                                        onChange={() =>
+                                          setExperienceProfile((prev) => ({
+                                            ...prev,
+                                            comparisonProductIds: selected
+                                              ? prev.comparisonProductIds.filter((id) => id !== cand.id)
+                                              : [...prev.comparisonProductIds, cand.id],
+                                          }))
+                                        }
+                                        className="h-4 w-4 rounded border-border text-gold focus:ring-gold accent-gold"
+                                      />
+                                      <span className="truncate flex-1 font-medium">{cand.title}</span>
+                                      <span className="text-[10px] text-muted">{cand.price} €</span>
+                                    </label>
+                                  );
+                                })}
+                            </div>
+                          </div>
+
+                          <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-3">
+                            <span className="text-xs font-bold uppercase tracking-wider text-heading">
+                              🛒 {locale === "de" ? "Kompatible Bundles (Zubehör-Kauf)" : "Compatible Bundles"}
+                            </span>
+                            <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
+                              {candidateProducts
+                                .filter((p) => !familyQuery || p.title.toLowerCase().includes(familyQuery.toLowerCase()))
+                                .slice(0, 30)
+                                .map((cand) => {
+                                  const selected = experienceProfile.bundleProductIds.includes(cand.id);
+                                  return (
+                                    <label
+                                      key={cand.id}
+                                      className={`flex items-center gap-2.5 rounded-lg border p-2 text-xs cursor-pointer transition ${
+                                        selected ? "border-gold/50 bg-gold/10 text-foreground" : "border-border/40 bg-surface text-muted hover:border-gold/30"
+                                      }`}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={selected}
+                                        onChange={() =>
+                                          setExperienceProfile((prev) => ({
+                                            ...prev,
+                                            bundleProductIds: selected
+                                              ? prev.bundleProductIds.filter((id) => id !== cand.id)
+                                              : [...prev.bundleProductIds, cand.id],
+                                          }))
+                                        }
+                                        className="h-4 w-4 rounded border-border text-gold focus:ring-gold accent-gold"
+                                      />
+                                      <span className="truncate flex-1 font-medium">{cand.title}</span>
+                                      <span className="text-[10px] text-muted">{cand.price} €</span>
+                                    </label>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-TAB 6: PRODUCT FAMILY */}
+                    {experienceTab === "family" && (
+                      <div className="space-y-4">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="space-y-1">
+                            <span className="text-xs font-semibold text-muted">{locale === "de" ? "Familienname" : "Family Name"}</span>
+                            <input
+                              value={familyState.name}
+                              onChange={(e) => setFamilyState((prev) => ({ ...prev, name: e.target.value }))}
+                              placeholder="z. B. iPhone 15 Pro Familie"
+                              className="w-full rounded-xl border border-border/80 bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                            />
+                          </label>
+                          <label className="space-y-1">
+                            <span className="text-xs font-semibold text-muted">Slug</span>
+                            <input
+                              value={familyState.slug}
+                              onChange={(e) => setFamilyState((prev) => ({ ...prev, slug: e.target.value }))}
+                              placeholder="z. B. iphone-15-pro-family"
+                              className="w-full rounded-xl border border-border/80 bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                            />
+                          </label>
+                        </div>
+                        <label className="space-y-1">
+                          <span className="text-xs font-semibold text-muted">{locale === "de" ? "Optionen / Achsen (kommagetrennt)" : "Option Axes (comma separated)"}</span>
+                          <input
+                            value={familyState.optionAxes.join(", ")}
+                            onChange={(e) =>
+                              setFamilyState((prev) => ({
+                                ...prev,
+                                optionAxes: e.target.value.split(",").map((v) => v.trim()).filter(Boolean),
+                              }))
+                            }
+                            placeholder="Speicher, Farbe, Zustand"
+                            className="w-full rounded-xl border border-border/80 bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                          />
+                        </label>
+                        <label className="flex items-center gap-2 text-xs font-bold text-heading cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={familyState.isActive}
+                            onChange={(e) => setFamilyState((prev) => ({ ...prev, isActive: e.target.checked }))}
+                            className="h-4 w-4 rounded border-border text-gold focus:ring-gold accent-gold"
+                          />
+                          <span>{locale === "de" ? "Produktfamilie im Shop aktivieren" : "Activate product family in store"}</span>
+                        </label>
+                        <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-3">
+                          <span className="text-xs font-bold uppercase tracking-wider text-heading">
+                            👨‍👩‍👧 {locale === "de" ? "Mitglieder-Produkte zuweisen" : "Assign Member Products"}
+                          </span>
+                          <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                            {candidateProducts
+                              .filter((p) => !familyQuery || p.title.toLowerCase().includes(familyQuery.toLowerCase()))
+                              .slice(0, 30)
+                              .map((cand) => {
+                                const member = familyState.members.find((m) => m.productId === cand.id);
+                                return (
+                                  <div key={cand.id} className="rounded-lg border border-border/40 bg-surface p-2.5 space-y-2">
+                                    <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={Boolean(member)}
+                                        onChange={() =>
+                                          setFamilyState((prev) => {
+                                            const exists = prev.members.some((m) => m.productId === cand.id);
+                                            return {
+                                              ...prev,
+                                              members: exists
+                                                ? prev.members.filter((m) => m.productId !== cand.id)
+                                                : [...prev.members, { productId: cand.id, optionValues: {}, position: prev.members.length, isActive: true }],
+                                            };
+                                          })
+                                        }
+                                        className="h-4 w-4 rounded border-border text-gold focus:ring-gold accent-gold"
+                                      />
+                                      <span className="truncate flex-1 text-foreground">{cand.title}</span>
+                                      <span className="text-[10px] text-muted">{cand.price} €</span>
+                                    </label>
+                                    {member && (
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-border/30">
+                                        {familyState.optionAxes.map((axis) => (
+                                          <label key={axis} className="space-y-0.5">
+                                            <span className="text-[10px] font-semibold text-muted">{axis}</span>
+                                            <input
+                                              value={member.optionValues[axis] ?? ""}
+                                              onChange={(e) =>
+                                                setFamilyState((prev) => ({
+                                                  ...prev,
+                                                  members: prev.members.map((m) =>
+                                                    m.productId === cand.id
+                                                      ? { ...m, optionValues: { ...m.optionValues, [axis]: e.target.value } }
+                                                      : m
+                                                  ),
+                                                }))
+                                              }
+                                              placeholder={axis}
+                                              className="w-full rounded-lg border border-border/80 bg-surface-strong px-2 py-1 text-xs text-foreground focus:border-gold focus:outline-none"
+                                            />
+                                          </label>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-TAB 7: CAMPAIGN */}
+                    {experienceTab === "campaign" && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold uppercase tracking-wider text-heading">
+                            🏷️ {locale === "de" ? "Produktkampagne & Highlight-Banner" : "Product Campaign Banner"}
+                          </span>
+                          <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="space-y-1">
+                            <span className="text-xs font-semibold text-muted">Badge DE</span>
+                            <input
+                              value={experienceProfile.campaign.badge.de}
+                              onChange={(e) =>
+                                setExperienceProfile((prev) => ({
+                                  ...prev,
+                                  campaign: { ...prev.campaign, badge: { ...prev.campaign.badge, de: e.target.value } },
+                                }))
+                              }
+                              placeholder="z. B. Sommer-Deal"
+                              className="w-full rounded-xl border border-border/80 bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                            />
+                          </label>
+                          <label className="space-y-1">
+                            <span className="text-xs font-semibold text-muted">Badge EN</span>
+                            <input
+                              value={experienceProfile.campaign.badge.en}
+                              onChange={(e) =>
+                                setExperienceProfile((prev) => ({
+                                  ...prev,
+                                  campaign: { ...prev.campaign, badge: { ...prev.campaign.badge, en: e.target.value } },
+                                }))
+                              }
+                              placeholder="e.g. Summer Deal"
+                              className="w-full rounded-xl border border-border/80 bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                            />
+                          </label>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="space-y-1">
+                            <span className="text-xs font-semibold text-muted">Message DE</span>
+                            <textarea
+                              rows={3}
+                              value={experienceProfile.campaign.message.de}
+                              onChange={(e) =>
+                                setExperienceProfile((prev) => ({
+                                  ...prev,
+                                  campaign: { ...prev.campaign, message: { ...prev.campaign.message, de: e.target.value } },
+                                }))
+                              }
+                              placeholder="z. B. Inklusive Gratis Panzerglas bei Abholung im Store."
+                              className="w-full rounded-xl border border-border/80 bg-surface px-3.5 py-2.5 text-xs text-foreground focus:border-gold focus:outline-none transition-colors"
+                            />
+                          </label>
+                          <label className="space-y-1">
+                            <span className="text-xs font-semibold text-muted">Message EN</span>
+                            <textarea
+                              rows={3}
+                              value={experienceProfile.campaign.message.en}
+                              onChange={(e) =>
+                                setExperienceProfile((prev) => ({
+                                  ...prev,
+                                  campaign: { ...prev.campaign, message: { ...prev.campaign.message, en: e.target.value } },
+                                }))
+                              }
+                              placeholder="e.g. Free tempered glass screen protector included on store pickup."
+                              className="w-full rounded-xl border border-border/80 bg-surface px-3.5 py-2.5 text-xs text-foreground focus:border-gold focus:outline-none transition-colors"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* STEP 9: PUBLISHING & OVERVIEW */}
                 {wizardStep === "publishing" && (
                   <div id="publishing" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-6">
                     <div className="border-b border-border/60 pb-3">
                       <h4 className="text-base font-bold text-heading flex items-center gap-2">
-                        <span>🚀</span> {locale === "de" ? "8. Gesamtübersicht & Speichern" : "8. Overview & Publishing"}
+                        <span>🚀</span> {locale === "de" ? "9. Gesamtübersicht & Speichern" : "9. Overview & Publishing"}
                       </h4>
                       <p className="text-xs text-muted mt-0.5">{locale === "de" ? "Vollständige Zusammenfassung aller Produktdaten prüfen" : "Review all entered information before saving"}</p>
                     </div>
 
                     {/* OVERVIEW CARDS */}
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                       {/* Basics Card */}
                       <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-2 shadow-sm">
                         <div className="flex items-center justify-between">
@@ -1806,13 +2434,29 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                       {/* Content & Media Card */}
                       <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-2 shadow-sm">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-gold uppercase tracking-wider">🖼️ Medien & Varianten</span>
+                          <span className="text-xs font-bold text-gold uppercase tracking-wider">🖼️ 7. Bilder & Varianten</span>
                           <button type="button" onClick={() => setWizardStep("images")} className="text-[11px] font-semibold text-muted hover:text-gold">✎</button>
                         </div>
                         <div className="text-xs text-muted space-y-0.5">
                           <p>Bilder: <span className="font-bold text-foreground">{formState.images.length + imageFiles.filter(Boolean).length}</span></p>
                           <p>Varianten: <span className="font-bold text-foreground">{formState.variants.length}</span></p>
                           <p>Highlights: <span className="font-bold text-foreground">{formState.featureBulletsText ? formState.featureBulletsText.split("\n").filter(Boolean).length : 0}</span></p>
+                        </div>
+                      </div>
+
+                      {/* Experience Card */}
+                      <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-2 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gold uppercase tracking-wider">✨ 8. Profi-Erlebnis</span>
+                          <button type="button" onClick={() => setWizardStep("experience")} className="text-[11px] font-semibold text-muted hover:text-gold">✎</button>
+                        </div>
+                        <p className="text-sm font-bold text-heading">
+                          {Object.values(experienceProfile.enabledSections).filter(Boolean).length} / 10 aktiv
+                        </p>
+                        <div className="text-xs text-muted space-y-0.5">
+                          <p>Lieferumfang: <span className="font-semibold text-foreground">{experienceProfile.enabledSections.packageContents ? "✓ Aktiv" : "–"}</span></p>
+                          <p>Aufbereitung: <span className="font-semibold text-foreground">{experienceProfile.enabledSections.refurbishment ? "✓ Aktiv" : "–"}</span></p>
+                          <p>2D-Maße: <span className="font-semibold text-foreground">{experienceProfile.dimensions.heightMm ? `${experienceProfile.dimensions.heightMm}mm` : "–"}</span></p>
                         </div>
                       </div>
                     </div>
@@ -1869,7 +2513,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                 {/* WIZARD NAVIGATION FOOTER */}
                 <div className="flex items-center justify-between rounded-2xl border border-border/80 bg-surface/80 p-4 shadow-xl backdrop-blur-md">
                   {(() => {
-                    const stepOrder: Array<typeof wizardStep> = ["basics", "pricing", "condition", "content", "variants", "channels", "images", "publishing"];
+                    const stepOrder: Array<typeof wizardStep> = ["basics", "pricing", "condition", "content", "variants", "channels", "images", "experience", "publishing"];
                     const currentIdx = stepOrder.indexOf(wizardStep);
                     return (
                       <>
@@ -1885,7 +2529,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                         </button>
 
                         <div className="text-xs font-semibold text-muted">
-                          {locale === "de" ? `Schritt ${currentIdx + 1} von 8` : `Step ${currentIdx + 1} of 8`}
+                          {locale === "de" ? `Schritt ${currentIdx + 1} von 9` : `Step ${currentIdx + 1} of 9`}
                         </div>
 
                         {currentIdx < stepOrder.length - 1 ? (
