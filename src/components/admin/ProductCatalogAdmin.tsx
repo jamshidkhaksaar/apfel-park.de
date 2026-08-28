@@ -23,6 +23,7 @@ import type {
 } from "@/lib/product-channel-readiness";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
+import type { ProductCondition } from "@/lib/products";
 import {
   PRODUCT_EXPERIENCE_SECTIONS,
   sanitizeProductExperienceProfile,
@@ -35,6 +36,125 @@ type AdminLocale = "de" | "en";
 type ExperienceCandidate = { id: string; title: string; brand?: string; model?: string; condition?: string; price: number; stock: number; images?: string[] };
 type ExperienceFamilyMember = { productId: string; optionValues: Record<string, string>; position: number; isActive: boolean };
 type ExperienceFamilyState = { id?: string; name: string; slug: string; optionAxes: string[]; isActive: boolean; members: ExperienceFamilyMember[] };
+
+const EXPERIENCE_PRESETS = {
+  packageContents: {
+    iphone: [
+      { label: { de: "USB-C auf USB-C Webkabel (1 m)", en: "USB-C to USB-C Woven Cable (1 m)" }, included: true },
+      { label: { de: "Originalverpackung / Sichere Box", en: "Original Packaging / Secure Box" }, included: true },
+      { label: { de: "SIM-Auswurfwerkzeug & Dokumentation", en: "SIM Eject Tool & Documentation" }, included: true },
+      { label: { de: "20W USB-C Power Adapter (Netzteil)", en: "20W USB-C Power Adapter" }, included: false },
+      { label: { de: "Kabelgebundene Kopfhörer (EarPods)", en: "Wired EarPods Headphones" }, included: false },
+    ],
+    samsung: [
+      { label: { de: "USB-C auf USB-C Ladekabel", en: "USB-C to USB-C Cable" }, included: true },
+      { label: { de: "SIM-Karten-Auswerfer & Kurzanleitung", en: "SIM Card Eject Pin & Quick Guide" }, included: true },
+      { label: { de: "Originalverpackung", en: "Original Box" }, included: true },
+      { label: { de: "Schnelllade-Netzteil", en: "Fast Charging Power Adapter" }, included: false },
+    ],
+    macbook: [
+      { label: { de: "USB-C auf MagSafe 3 Ladekabel (2 m)", en: "USB-C to MagSafe 3 Cable (2 m)" }, included: true },
+      { label: { de: "USB-C Power Adapter (Netzteil)", en: "USB-C Power Adapter" }, included: true },
+      { label: { de: "Originalverpackung & Dokumentation", en: "Original Box & Documentation" }, included: true },
+    ],
+    watch: [
+      { label: { de: "Magnetisches Schnellladegerät auf USB-C Kabel (1 m)", en: "Magnetic Fast Charger to USB-C Cable (1 m)" }, included: true },
+      { label: { de: "Sportarmband (S/M & M/L)", en: "Sport Band (S/M & M/L)" }, included: true },
+      { label: { de: "USB-C Netzteil", en: "USB-C Power Adapter" }, included: false },
+    ],
+    ipad: [
+      { label: { de: "USB-C Ladekabel (1 m)", en: "USB-C Charge Cable (1 m)" }, included: true },
+      { label: { de: "20W USB-C Power Adapter (Netzteil)", en: "20W USB-C Power Adapter" }, included: true },
+      { label: { de: "Dokumentation", en: "Documentation" }, included: true },
+      { label: { de: "Apple Pencil", en: "Apple Pencil" }, included: false },
+    ],
+  },
+  conditionGuide: [
+    {
+      condition: "new" as const,
+      label: { de: "Neu & Versiegelt", en: "Brand New & Sealed" },
+      description: { de: "Originalverpackt und ungeöffnet mit voller Hersteller-Garantie.", en: "Original packaging and factory sealed with full manufacturer warranty." },
+      imageUrls: [],
+    },
+    {
+      condition: "open_box" as const,
+      label: { de: "Open-Box (Wie neu)", en: "Open Box (Like New)" },
+      description: { de: "Neuwertiges Gerät, nur zu Prüf- oder Vorführzwecken geöffnet. Keinerlei Gebrauchsspuren.", en: "Like-new condition, unsealed only for inspection or demo. Zero signs of wear." },
+      imageUrls: [],
+    },
+    {
+      condition: "used" as const,
+      label: { de: "Gebraucht (Zustand A+ Exzellent)", en: "Refurbished (Grade A+ Excellent)" },
+      description: { de: "Technisch einwandfrei, professionell 50+ Punkte geprüft. Minimale bis keine Mikrokratzer.", en: "Technically flawless, 50+ points certified. Minimal to no micro-scratches." },
+      imageUrls: [],
+    },
+  ],
+  refurbishmentSteps: [
+    {
+      title: { de: "01. Eingangsprüfung & Akkudiagnose", en: "01. Intake & Battery Diagnosis" },
+      description: { de: "Prüfung von Ladezyklen, Originalbauteilen, Kapazität und thermischer Stabilität.", en: "Verification of cycle count, genuine parts, capacity, and thermal stability." },
+    },
+    {
+      title: { de: "02. Ultraschall-Reinigung & Hygiene", en: "02. Ultrasonic Cleaning & Hygiene" },
+      description: { de: "Mikrofon- und Lautsprechergitter sowie Ladebuchsen werden porentief hygienisch gereinigt.", en: "Microphones, speaker grills, and charging ports are deep-cleaned hygienically." },
+    },
+    {
+      title: { de: "03. 50+ Hardware- & Sensortest", en: "03. 50+ Hardware & Sensor Test" },
+      description: { de: "OLED-Display, Kameras, Face-ID / Touch-ID, Mikrofone, Lautsprecher und Mobilfunkantennen.", en: "OLED display, cameras, Face ID / Touch ID, mics, speakers, and cellular antennas." },
+    },
+    {
+      title: { de: "04. Sichere Datenlöschung & Zertifizierung", en: "04. Secure Wipe & Certification" },
+      description: { de: "Vollständige DSGVO-konforme Rücksetzung, neueste Betriebssystem-Installation & Siegel.", en: "Full GDPR-compliant data erasure, latest OS installation & store seal." },
+    },
+  ],
+  trustPoints: [
+    {
+      title: { de: "12 Monate Store-Garantie", en: "12 Months Store Warranty" },
+      description: { de: "Volle Absicherung für alle Hardwarekomponenten direkt über unseren Hamburger Fachbetrieb.", en: "Full coverage for all hardware components directly from our Hamburg repair shop." },
+    },
+    {
+      title: { de: "14 Tage Rückgaberecht", en: "14-Day Money Back Guarantee" },
+      description: { de: "Testen Sie Ihr Gerät in aller Ruhe zu Hause oder direkt vor Ort im Wilhelmsburger Store.", en: "Test your device at home or in our Wilhelmsburg store with zero risk." },
+    },
+    {
+      title: { de: "Kostenloser Expressversand", en: "Free Express Shipping" },
+      description: { de: "Sicher verpackt mit DHL GoGreen inkl. Sendungsverfolgung und Transportversicherung.", en: "Securely packed via DHL GoGreen with tracking and full insurance." },
+    },
+  ],
+  dimensions: {
+    "iPhone 16 Pro Max": { heightMm: 163.0, widthMm: 77.6, depthMm: 8.25, weightG: 227, screenInches: 6.9 },
+    "iPhone 16 Pro": { heightMm: 149.6, widthMm: 71.5, depthMm: 8.25, weightG: 199, screenInches: 6.3 },
+    "iPhone 16": { heightMm: 147.6, widthMm: 71.6, depthMm: 7.80, weightG: 170, screenInches: 6.1 },
+    "iPhone 15 Pro Max": { heightMm: 159.9, widthMm: 76.7, depthMm: 8.25, weightG: 221, screenInches: 6.7 },
+    "iPhone 15 Pro": { heightMm: 146.6, widthMm: 70.6, depthMm: 8.25, weightG: 187, screenInches: 6.1 },
+    "iPhone 15": { heightMm: 147.6, widthMm: 71.6, depthMm: 7.80, weightG: 171, screenInches: 6.1 },
+    "Galaxy S24 Ultra": { heightMm: 162.3, widthMm: 79.0, depthMm: 8.60, weightG: 232, screenInches: 6.8 },
+    "Galaxy S24+": { heightMm: 158.5, widthMm: 75.9, depthMm: 7.70, weightG: 196, screenInches: 6.7 },
+    "Galaxy S24": { heightMm: 147.0, widthMm: 70.6, depthMm: 7.60, weightG: 167, screenInches: 6.2 },
+  },
+  campaigns: [
+    {
+      label: "Sommer-Deal",
+      badge: { de: "Sommer-Deal", en: "Summer Deal" },
+      message: { de: "Inklusive Gratis Panzerglas bei Abholung im Store in Hamburg-Wilhelmsburg.", en: "Free tempered glass screen protector included on store pickup." },
+    },
+    {
+      label: "Bestseller",
+      badge: { de: "Bestseller", en: "Best Seller" },
+      message: { de: "Top-Zustand & blitzschneller kostenloser DHL Versand.", en: "Top condition & lightning fast free DHL shipping." },
+    },
+    {
+      label: "Express-Versand",
+      badge: { de: "Express-Versand", en: "Express Shipping" },
+      message: { de: "Bestellungen bis 14 Uhr werden heute noch versendet.", en: "Orders before 2 PM ship today." },
+    },
+    {
+      label: "Trade-In Bonus",
+      badge: { de: "Trade-In Bonus", en: "Trade-In Bonus" },
+      message: { de: "Zusätzlich 20 € Direktrabatt bei Inzahlungnahme Ihres alten Smartphones.", en: "Extra €20 trade-in bonus when turning in your old device." },
+    },
+  ],
+};
 
 type ProductSpec = {
   label: string;
@@ -450,6 +570,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const [experienceRefurbishmentText, setExperienceRefurbishmentText] = useState("");
   const [experienceTrustText, setExperienceTrustText] = useState("");
   const [experienceTab, setExperienceTab] = useState<"features" | "family" | "contents" | "condition" | "trust" | "compare" | "campaign">("features");
+  const [experienceRawMode, setExperienceRawMode] = useState<Record<string, boolean>>({});
   const [familyQuery, setFamilyQuery] = useState("");
 
   const filteredProducts = useMemo(() => {
@@ -526,6 +647,44 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const parseExperienceRows = (value: string, columns: number) =>
     value.split("\n").map((line) => line.split("|").map((part) => part.trim())).filter((parts) => parts.length >= columns && parts.some(Boolean));
   const experienceLines = (rows: string[][]) => rows.map((row) => row.join(" | ")).join("\n");
+
+  const syncContentsFromRaw = (text: string) => {
+    setExperienceContentsText(text);
+    const parsed = parseExperienceRows(text, 2).map(([labelDe, labelEn, included]) => ({
+      label: { de: labelDe || "", en: labelEn || labelDe || "" },
+      included: (included ?? "").toLowerCase() !== "no",
+    }));
+    setExperienceProfile((prev) => ({ ...prev, packageContents: parsed }));
+  };
+
+  const syncConditionFromRaw = (text: string) => {
+    setExperienceConditionText(text);
+    const parsed = parseExperienceRows(text, 4).map(([condition, labelDe, labelEn, descriptionDe, descriptionEn, urls]) => ({
+      condition: (condition === "used" || condition === "open_box" ? condition : "new") as ProductCondition,
+      label: { de: labelDe || "", en: labelEn || labelDe || "" },
+      description: { de: descriptionDe || "", en: descriptionEn || descriptionDe || "" },
+      imageUrls: (urls ?? "").split(",").map((u) => u.trim()).filter(Boolean),
+    }));
+    setExperienceProfile((prev) => ({ ...prev, conditionGuide: parsed }));
+  };
+
+  const syncRefurbishmentFromRaw = (text: string) => {
+    setExperienceRefurbishmentText(text);
+    const parsed = parseExperienceRows(text, 2).map(([titleDe, titleEn, descriptionDe, descriptionEn]) => ({
+      title: { de: titleDe || "", en: titleEn || titleDe || "" },
+      description: { de: descriptionDe || "", en: descriptionEn || descriptionDe || "" },
+    }));
+    setExperienceProfile((prev) => ({ ...prev, refurbishmentSteps: parsed }));
+  };
+
+  const syncTrustFromRaw = (text: string) => {
+    setExperienceTrustText(text);
+    const parsed = parseExperienceRows(text, 2).map(([titleDe, titleEn, descriptionDe, descriptionEn]) => ({
+      title: { de: titleDe || "", en: titleEn || titleDe || "" },
+      description: { de: descriptionDe || "", en: descriptionEn || descriptionDe || "" },
+    }));
+    setExperienceProfile((prev) => ({ ...prev, trustPoints: parsed }));
+  };
 
   useEffect(() => {
     if (selectedProduct && selectedProduct.id !== formState.id) {
@@ -986,27 +1145,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           createdAt: selectedProduct?.createdAt || new Date().toISOString(),
         };
 
-        const preparedProfile = sanitizeProductExperienceProfile({
-          ...experienceProfile,
-          packageContents: parseExperienceRows(experienceContentsText, 2).map(([labelDe, labelEn, included]) => ({
-            label: { de: labelDe, en: labelEn },
-            included: (included ?? "").toLowerCase() !== "no",
-          })),
-          conditionGuide: parseExperienceRows(experienceConditionText, 5).map(([condition, labelDe, labelEn, descriptionDe, descriptionEn, urls]) => ({
-            condition: condition === "used" || condition === "open_box" ? condition : "new",
-            label: { de: labelDe, en: labelEn },
-            description: { de: descriptionDe, en: descriptionEn },
-            imageUrls: (urls ?? "").split(",").map((u) => u.trim()).filter(Boolean),
-          })),
-          refurbishmentSteps: parseExperienceRows(experienceRefurbishmentText, 4).map(([titleDe, titleEn, descriptionDe, descriptionEn]) => ({
-            title: { de: titleDe, en: titleEn },
-            description: { de: descriptionDe, en: descriptionEn },
-          })),
-          trustPoints: parseExperienceRows(experienceTrustText, 4).map(([titleDe, titleEn, descriptionDe, descriptionEn]) => ({
-            title: { de: titleDe, en: titleEn },
-            description: { de: descriptionDe, en: descriptionEn },
-          })),
-        });
+        const preparedProfile = sanitizeProductExperienceProfile(experienceProfile);
 
         try {
           await fetch(`/api/admin/products/${formState.id}/experience`, {
@@ -1927,38 +2066,99 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     {/* SUB-TAB 1: FEATURES / TOGGLES */}
                     {experienceTab === "features" && (
                       <div className="space-y-4">
-                        <p className="text-xs text-muted">
-                          {locale === "de"
-                            ? "Alle Bereiche sind standardmäßig verborgen. Aktivieren Sie hier gezielt die Module für dieses Produkt:"
-                            : "All sections are hidden by default. Enable specific modules for this product below:"}
-                        </p>
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                          <p className="text-xs text-muted">
+                            {locale === "de"
+                              ? "Aktivieren Sie gezielt die Module für dieses Produkt:"
+                              : "Enable specific experience modules for this product:"}
+                          </p>
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExperienceProfile((prev) => ({
+                                  ...prev,
+                                  enabledSections: Object.keys(prev.enabledSections).reduce(
+                                    (acc, k) => ({ ...acc, [k]: true }),
+                                    {} as ProductExperienceProfile["enabledSections"],
+                                  ),
+                                }))
+                              }
+                              className="rounded-md border border-gold/40 bg-gold/10 px-2 py-0.5 text-[11px] font-semibold text-gold hover:bg-gold/20"
+                            >
+                              ⚡ {locale === "de" ? "Alle aktivieren" : "Enable all"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExperienceProfile((prev) => ({
+                                  ...prev,
+                                  enabledSections: {
+                                    familyConfigurator: true,
+                                    packageContents: true,
+                                    conditionGuide: true,
+                                    refurbishment: true,
+                                    sizeComparison: true,
+                                    modelComparison: false,
+                                    bundles: true,
+                                    campaign: false,
+                                    tradeIn: true,
+                                    wishlist: true,
+                                  },
+                                }))
+                              }
+                              className="rounded-md border border-border/80 bg-surface-strong px-2 py-0.5 text-[11px] font-semibold text-foreground hover:bg-surface"
+                            >
+                              ⚡ {locale === "de" ? "Standard aktivieren" : "Enable standard"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExperienceProfile((prev) => ({
+                                  ...prev,
+                                  enabledSections: Object.keys(prev.enabledSections).reduce(
+                                    (acc, k) => ({ ...acc, [k]: false }),
+                                    {} as ProductExperienceProfile["enabledSections"],
+                                  ),
+                                }))
+                              }
+                              className="rounded-md border border-border/80 bg-surface px-2 py-0.5 text-[11px] font-semibold text-muted hover:text-foreground"
+                            >
+                              ✕ {locale === "de" ? "Alle aus" : "Disable all"}
+                            </button>
+                          </div>
+                        </div>
+
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                           {PRODUCT_EXPERIENCE_SECTIONS.map((sec) => {
                             const active = experienceProfile.enabledSections[sec];
-                            const labelsMap: Record<string, { de: string; en: string; descDe: string; descEn: string }> = {
-                              familyConfigurator: { de: "Varianten-Konfigurator", en: "Variant configurator", descDe: "Verbindet Speichervarianten zu einer Produktfamilie", descEn: "Links sibling storage listings into a unified family" },
-                              packageContents: { de: "Lieferumfang (Was ist enthalten?)", en: "Package contents", descDe: "Zeigt Checkliste von Kabel, OVP, Netzteil", descEn: "Shows checklist of cable, packaging, adapter" },
-                              conditionGuide: { de: "Zustandsvergleich & Fotos", en: "Condition guide", descDe: "Visuelle Erklärung von Neu, Open-Box, Gebraucht", descEn: "Visual guide explaining New, Open Box, Used" },
-                              refurbishment: { de: "Aufbereitung & Prüfung", en: "Refurbishment & testing", descDe: "50+ Prüfpunkte & Qualitätsversprechen", descEn: "50+ inspection checkpoints & store guarantee" },
-                              sizeComparison: { de: "Größenvergleich (2D-Silhouetten)", en: "Size comparison (2D)", descDe: "Maßstabsgetreuer 2D-Gerätevergleich", descEn: "Scaled 2D device silhouette comparison" },
-                              modelComparison: { de: "Modellvergleich-Tabelle", en: "Model comparison table", descDe: "Vergleichstabelle mit ausgewählten Produkten", descEn: "Spec comparison table with selected products" },
-                              bundles: { de: "Kompatible Bundles & Zubehör", en: "Compatible bundles", descDe: "1-Klick-Zubehörbundles (Hüllen, Netzteile)", descEn: "1-click accessory bundles (cases, adapters)" },
-                              campaign: { de: "Produktkampagne (Gold-Banner)", en: "Product campaign banner", descDe: "Prominentes Promo-Banner über dem Preis", descEn: "Prominent promotional banner above price" },
-                              tradeIn: { de: "Trade-in Anfrage-Box", en: "Trade-in request box", descDe: "Ankauf-Banner mit Link zu /trade-in", descEn: "Sell old device banner linking to /trade-in" },
-                              wishlist: { de: "Wunschliste (Herz-Button)", en: "Wishlist heart button", descDe: "Herz-Button speichert Gerät in Kunden-Session", descEn: "Heart button saving product to customer session" },
+                            const labelsMap: Record<string, { de: string; en: string; descDe: string; descEn: string; icon: string }> = {
+                              familyConfigurator: { icon: "👨‍👩‍👧", de: "Varianten-Konfigurator", en: "Variant configurator", descDe: "Verbindet Speichervarianten zu einer Produktfamilie", descEn: "Links sibling storage listings into a unified family" },
+                              packageContents: { icon: "📦", de: "Lieferumfang (Was ist enthalten?)", en: "Package contents", descDe: "Zeigt Checkliste von Kabel, OVP, Netzteil", descEn: "Shows checklist of cable, packaging, adapter" },
+                              conditionGuide: { icon: "🔍", de: "Zustandsvergleich & Fotos", en: "Condition guide", descDe: "Visuelle Erklärung von Neu, Open-Box, Gebraucht", descEn: "Visual guide explaining New, Open Box, Used" },
+                              refurbishment: { icon: "🛠️", de: "Aufbereitung & Prüfung", en: "Refurbishment & testing", descDe: "50+ Prüfpunkte & Qualitätsversprechen", descEn: "50+ inspection checkpoints & store guarantee" },
+                              sizeComparison: { icon: "📏", de: "Größenvergleich (2D-Silhouetten)", en: "Size comparison (2D)", descDe: "Maßstabsgetreuer 2D-Gerätevergleich", descEn: "Scaled 2D device silhouette comparison" },
+                              modelComparison: { icon: "⚖️", de: "Modellvergleich-Tabelle", en: "Model comparison table", descDe: "Vergleichstabelle mit ausgewählten Produkten", descEn: "Spec comparison table with selected products" },
+                              bundles: { icon: "🛒", de: "Kompatible Bundles & Zubehör", en: "Compatible bundles", descDe: "1-Klick-Zubehörbundles (Hüllen, Netzteile)", descEn: "1-click accessory bundles (cases, adapters)" },
+                              campaign: { icon: "🏷️", de: "Produktkampagne (Gold-Banner)", en: "Product campaign banner", descDe: "Prominentes Promo-Banner über dem Preis", descEn: "Prominent promotional banner above price" },
+                              tradeIn: { icon: "🔄", de: "Trade-in Ankauf-Box", en: "Trade-in request box", descDe: "Ankauf-Banner mit Link zu /trade-in", descEn: "Sell old device banner linking to /trade-in" },
+                              wishlist: { icon: "❤️", de: "Wunschliste (Herz-Button)", en: "Wishlist heart button", descDe: "Herz-Button speichert Gerät in Kunden-Session", descEn: "Heart button saving product to customer session" },
                             };
-                            const info = labelsMap[sec] ?? { de: sec, en: sec, descDe: "", descEn: "" };
+                            const info = labelsMap[sec] ?? { icon: "⚙️", de: sec, en: sec, descDe: "", descEn: "" };
                             return (
                               <label
                                 key={sec}
                                 className={`flex items-start justify-between gap-3 rounded-xl border p-3.5 cursor-pointer transition ${
                                   active
-                                    ? "border-gold/50 bg-gold/10 shadow-sm"
+                                    ? "border-gold/60 bg-gold/10 shadow-sm"
                                     : "border-border/60 bg-surface/40 hover:border-gold/30 hover:bg-surface/70"
                                 }`}
                               >
                                 <div className="space-y-1 pr-2">
-                                  <p className="text-xs font-bold text-foreground">{locale === "de" ? info.de : info.en}</p>
+                                  <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                    <span>{info.icon}</span>
+                                    <span>{locale === "de" ? info.de : info.en}</span>
+                                  </p>
                                   <p className="text-[11px] text-muted leading-tight">{locale === "de" ? info.descDe : info.descEn}</p>
                                 </div>
                                 <input
@@ -1981,78 +2181,475 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
 
                     {/* SUB-TAB 2: PACKAGE CONTENTS */}
                     {experienceTab === "contents" && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wider text-heading">
-                            📦 {locale === "de" ? "Lieferumfang (Was ist im Karton?)" : "Package Contents (In the Box)"}
-                          </span>
-                          <span className="text-[10px] font-semibold text-gold">✨ KI-ausfüllbar</span>
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                          <div>
+                            <span className="text-xs font-bold uppercase tracking-wider text-heading flex items-center gap-1.5">
+                              <span>📦</span> {locale === "de" ? "Lieferumfang (Was ist im Karton?)" : "Package Contents (In the Box)"}
+                            </span>
+                            <p className="text-[11px] text-muted mt-0.5">
+                              {locale === "de" ? "Definieren Sie, welche Zubehörteile beiliegen oder separat erworben werden müssen." : "Define items included in the box or required separately."}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setExperienceRawMode((prev) => ({ ...prev, contents: !prev.contents }))}
+                              className="rounded-md border border-border/80 bg-surface px-2.5 py-1 text-[11px] font-semibold text-muted hover:text-foreground"
+                            >
+                              {experienceRawMode.contents ? "🎨 " + (locale === "de" ? "Visueller Editor" : "Visual builder") : "📝 " + (locale === "de" ? "Text-Import" : "Raw text")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExperienceProfile((prev) => ({
+                                  ...prev,
+                                  packageContents: [...prev.packageContents, { label: { de: "", en: "" }, included: true }],
+                                }))
+                              }
+                              className="rounded-lg border border-gold bg-gold/15 px-3 py-1 text-xs font-bold text-gold hover:bg-gold/25 transition"
+                            >
+                              + {locale === "de" ? "Gegenstand hinzufügen" : "Add item"}
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted">
-                          {locale === "de"
-                            ? "Format: Deutsch | Englisch | yes/no (z. B. USB-C Ladekabel | USB-C cable | yes)"
-                            : "Format: German | English | yes/no (e.g. USB-C Ladekabel | USB-C cable | yes)"}
-                        </p>
-                        <textarea
-                          rows={8}
-                          value={experienceContentsText}
-                          onChange={(e) => setExperienceContentsText(e.target.value)}
-                          placeholder="USB-C Ladekabel | USB-C charge cable | yes&#10;Dokumentation | Documentation | yes&#10;Netzteil | Power adapter | no"
-                          className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
-                        />
+
+                        {/* PRESETS BAR */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                          <span className="text-[11px] font-semibold text-muted">⚡ Presets:</span>
+                          {(["iphone", "samsung", "macbook", "ipad", "watch"] as const).map((key) => (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => {
+                                const preset = EXPERIENCE_PRESETS.packageContents[key];
+                                setExperienceProfile((prev) => ({ ...prev, packageContents: preset }));
+                                setExperienceContentsText(experienceLines(preset.map((i) => [i.label.de, i.label.en, i.included ? "yes" : "no"])));
+                              }}
+                              className="rounded-md border border-border/80 bg-surface-strong px-2 py-0.5 text-[11px] font-semibold text-foreground hover:border-gold/40 hover:bg-gold/10 hover:text-gold transition"
+                            >
+                              {key === "iphone" ? "iPhone" : key === "samsung" ? "Samsung" : key === "macbook" ? "MacBook" : key === "ipad" ? "iPad" : "Apple Watch"}
+                            </button>
+                          ))}
+                        </div>
+
+                        {experienceRawMode.contents ? (
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted">Format: Deutsch | Englisch | yes/no</p>
+                            <textarea
+                              rows={8}
+                              value={experienceContentsText}
+                              onChange={(e) => syncContentsFromRaw(e.target.value)}
+                              placeholder="USB-C Ladekabel | USB-C charge cable | yes&#10;Dokumentation | Documentation | yes&#10;Netzteil | Power adapter | no"
+                              className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
+                            />
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {experienceProfile.packageContents.length === 0 ? (
+                              <div className="rounded-xl border border-dashed border-border/80 bg-surface/40 p-6 text-center text-xs text-muted">
+                                {locale === "de" ? "Keine Lieferumfang-Einträge. Nutzen Sie die Presets oben oder '+ Gegenstand hinzufügen'." : "No box contents. Use presets above or click '+ Add item'."}
+                              </div>
+                            ) : (
+                              experienceProfile.packageContents.map((item, idx) => (
+                                <div key={idx} className="flex flex-wrap items-center gap-2.5 rounded-xl border border-border/70 bg-surface-strong/70 p-3 shadow-sm">
+                                  {/* Included Toggle Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setExperienceProfile((prev) => ({
+                                        ...prev,
+                                        packageContents: prev.packageContents.map((it, i) => (i === idx ? { ...it, included: !it.included } : it)),
+                                      }))
+                                    }
+                                    className={`shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                                      item.included
+                                        ? "border border-emerald-500/50 bg-emerald-500/15 text-emerald-400"
+                                        : "border border-border/80 bg-surface text-muted line-through"
+                                    }`}
+                                  >
+                                    <span>{item.included ? "✓" : "✗"}</span>
+                                    <span>{item.included ? (locale === "de" ? "Im Karton" : "In box") : (locale === "de" ? "Separat" : "Separate")}</span>
+                                  </button>
+
+                                  {/* Title DE */}
+                                  <input
+                                    value={item.label.de}
+                                    onChange={(e) =>
+                                      setExperienceProfile((prev) => ({
+                                        ...prev,
+                                        packageContents: prev.packageContents.map((it, i) => (i === idx ? { ...it, label: { ...it.label, de: e.target.value } } : it)),
+                                      }))
+                                    }
+                                    placeholder="Bezeichnung DE (z. B. USB-C Ladekabel)"
+                                    className="flex-1 min-w-[160px] rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                  />
+
+                                  {/* Title EN */}
+                                  <input
+                                    value={item.label.en}
+                                    onChange={(e) =>
+                                      setExperienceProfile((prev) => ({
+                                        ...prev,
+                                        packageContents: prev.packageContents.map((it, i) => (i === idx ? { ...it, label: { ...it.label, en: e.target.value } } : it)),
+                                      }))
+                                    }
+                                    placeholder="Label EN (e.g. USB-C charge cable)"
+                                    className="flex-1 min-w-[160px] rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                  />
+
+                                  {/* Delete Item */}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setExperienceProfile((prev) => ({
+                                        ...prev,
+                                        packageContents: prev.packageContents.filter((_, i) => i !== idx),
+                                      }))
+                                    }
+                                    className="rounded-lg p-1.5 text-muted hover:bg-red-500/10 hover:text-red-400 transition"
+                                    title="Eintrag löschen"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
                     {/* SUB-TAB 3: CONDITION GUIDE */}
                     {experienceTab === "condition" && (
-                      <div className="space-y-3">
-                        <span className="text-xs font-bold uppercase tracking-wider text-heading">
-                          🔍 {locale === "de" ? "Zustandsvergleich & Beispielfotos" : "Condition Guide & Sample Photos"}
-                        </span>
-                        <p className="text-xs text-muted">
-                          Format: Zustand | Titel DE | Titel EN | Beschreibung DE | Beschreibung EN | Bild-URLs (kommagetrennt)
-                        </p>
-                        <textarea
-                          rows={8}
-                          value={experienceConditionText}
-                          onChange={(e) => setExperienceConditionText(e.target.value)}
-                          placeholder="new | Neu & OVP | New & Sealed | Originalverpackt und versiegelt | Factory sealed | /uploads/products/example.webp&#10;open_box | Open-Box | Open Box | Wie neu, Verpackung geöffnet | Like new, unsealed box | /uploads/products/example.webp"
-                          className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
-                        />
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                          <div>
+                            <span className="text-xs font-bold uppercase tracking-wider text-heading flex items-center gap-1.5">
+                              <span>🔍</span> {locale === "de" ? "Zustandsvergleich & Beispielfotos" : "Condition Guide & Sample Photos"}
+                            </span>
+                            <p className="text-[11px] text-muted mt-0.5">
+                              {locale === "de" ? "Erläuterung der 3 Gerätezustände für Kunden im Shop." : "Visual guide for customer transparency across 3 condition grades."}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setExperienceProfile((prev) => ({ ...prev, conditionGuide: EXPERIENCE_PRESETS.conditionGuide }));
+                              }}
+                              className="rounded-md border border-gold/40 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold hover:bg-gold/20"
+                            >
+                              ⚡ {locale === "de" ? "Standard-Texte laden" : "Load defaults"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setExperienceRawMode((prev) => ({ ...prev, condition: !prev.condition }))}
+                              className="rounded-md border border-border/80 bg-surface px-2.5 py-1 text-[11px] font-semibold text-muted hover:text-foreground"
+                            >
+                              {experienceRawMode.condition ? "🎨 " + (locale === "de" ? "Visueller Editor" : "Visual builder") : "📝 " + (locale === "de" ? "Text-Import" : "Raw text")}
+                            </button>
+                          </div>
+                        </div>
+
+                        {experienceRawMode.condition ? (
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted">Format: Zustand | Titel DE | Titel EN | Beschreibung DE | Beschreibung EN | Bild-URLs</p>
+                            <textarea
+                              rows={8}
+                              value={experienceConditionText}
+                              onChange={(e) => syncConditionFromRaw(e.target.value)}
+                              placeholder="new | Neu & OVP | New & Sealed | Originalverpackt und versiegelt | Factory sealed | /uploads/products/example.webp"
+                              className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
+                            />
+                          </div>
+                        ) : (
+                          <div className="grid gap-4 md:grid-cols-3">
+                            {[
+                              { key: "new", badge: "✨ Neu & OVP", descFallbackDe: "Originalverpackt und ungeöffnet mit voller Garantie.", descFallbackEn: "Brand new factory sealed in box." },
+                              { key: "open_box", badge: "📦 Open-Box", descFallbackDe: "Neuwertig, nur zur Prüfung geöffnet. Keine Gebrauchsspuren.", descFallbackEn: "Like new, unsealed box. Zero wear." },
+                              { key: "used", badge: "🔄 Gebraucht A+", descFallbackDe: "Technisch einwandfrei, 50+ Punkte geprüft. Minimale Mikrokratzer.", descFallbackEn: "Technically flawless, 50+ points certified." },
+                            ].map((cond) => {
+                              const item = experienceProfile.conditionGuide.find((g) => g.condition === cond.key) ?? {
+                                condition: cond.key as "new" | "open_box" | "used",
+                                label: { de: cond.badge, en: cond.key === "new" ? "Brand New" : cond.key === "open_box" ? "Open Box" : "Refurbished A+" },
+                                description: { de: cond.descFallbackDe, en: cond.descFallbackEn },
+                                imageUrls: [],
+                              };
+
+                              const updateItem = (patch: Partial<typeof item>) => {
+                                setExperienceProfile((prev) => {
+                                  const exists = prev.conditionGuide.some((g) => g.condition === cond.key);
+                                  const updatedGuide = exists
+                                    ? prev.conditionGuide.map((g) => (g.condition === cond.key ? { ...g, ...patch } : g))
+                                    : [...prev.conditionGuide, { ...item, ...patch }];
+                                  return { ...prev, conditionGuide: updatedGuide };
+                                });
+                              };
+
+                              return (
+                                <div key={cond.key} className="rounded-2xl border border-border/80 bg-surface-strong/70 p-4 space-y-3 shadow-sm">
+                                  <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                                    <span className="text-xs font-bold text-gold">{cond.badge}</span>
+                                    <span className="text-[10px] font-mono text-muted uppercase">{cond.key}</span>
+                                  </div>
+                                  <label className="space-y-1 block">
+                                    <span className="text-[11px] font-semibold text-muted">Titel DE</span>
+                                    <input
+                                      value={item.label.de}
+                                      onChange={(e) => updateItem({ label: { ...item.label, de: e.target.value } })}
+                                      className="w-full rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                    />
+                                  </label>
+                                  <label className="space-y-1 block">
+                                    <span className="text-[11px] font-semibold text-muted">Title EN</span>
+                                    <input
+                                      value={item.label.en}
+                                      onChange={(e) => updateItem({ label: { ...item.label, en: e.target.value } })}
+                                      className="w-full rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                    />
+                                  </label>
+                                  <label className="space-y-1 block">
+                                    <span className="text-[11px] font-semibold text-muted">Beschreibung DE</span>
+                                    <textarea
+                                      rows={2}
+                                      value={item.description.de}
+                                      onChange={(e) => updateItem({ description: { ...item.description, de: e.target.value } })}
+                                      className="w-full rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                    />
+                                  </label>
+                                  <label className="space-y-1 block">
+                                    <span className="text-[11px] font-semibold text-muted">Description EN</span>
+                                    <textarea
+                                      rows={2}
+                                      value={item.description.en}
+                                      onChange={(e) => updateItem({ description: { ...item.description, en: e.target.value } })}
+                                      className="w-full rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                    />
+                                  </label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
 
                     {/* SUB-TAB 4: REFURBISHMENT & TRUST */}
                     {experienceTab === "trust" && (
-                      <div className="grid gap-5 lg:grid-cols-2">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase tracking-wider text-heading">
-                              🛠️ {locale === "de" ? "Aufbereitungsschritte (01, 02...)" : "Refurbishment Steps"}
-                            </span>
-                            <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                      <div className="space-y-6">
+                        {/* Section 1: Refurbishment Steps */}
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                            <div>
+                              <span className="text-xs font-bold uppercase tracking-wider text-heading flex items-center gap-1.5">
+                                <span>🛠️</span> {locale === "de" ? "Aufbereitungsschritte (Prüfprozess 01, 02...)" : "Refurbishment Steps (01, 02...)"}
+                              </span>
+                              <p className="text-[11px] text-muted mt-0.5">
+                                {locale === "de" ? "Schritte unseres Qualitäts- und Aufbereitungsverfahrens." : "Steps of our certified refurbishment and testing process."}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExperienceProfile((prev) => ({ ...prev, refurbishmentSteps: EXPERIENCE_PRESETS.refurbishmentSteps }));
+                                }}
+                                className="rounded-md border border-gold/40 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold hover:bg-gold/20"
+                              >
+                                ⚡ {locale === "de" ? "4-Stufen Prozess laden" : "Load 4-step process"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExperienceProfile((prev) => ({
+                                    ...prev,
+                                    refurbishmentSteps: [...prev.refurbishmentSteps, { title: { de: "", en: "" }, description: { de: "", en: "" } }],
+                                  }))
+                                }
+                                className="rounded-lg border border-gold bg-gold/15 px-3 py-1 text-xs font-bold text-gold hover:bg-gold/25 transition"
+                              >
+                                + {locale === "de" ? "Schritt hinzufügen" : "Add step"}
+                              </button>
+                            </div>
                           </div>
-                          <p className="text-xs text-muted">Format: Titel DE | Titel EN | Text DE | Text EN</p>
-                          <textarea
-                            rows={8}
-                            value={experienceRefurbishmentText}
-                            onChange={(e) => setExperienceRefurbishmentText(e.target.value)}
-                            placeholder="50+ Prüfpunkte | 50+ Point Check | Akku, Display, Kameras und Sensoren vollständig getestet | Battery, display, cameras fully tested"
-                            className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
-                          />
+
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {experienceProfile.refurbishmentSteps.length === 0 ? (
+                              <div className="col-span-2 rounded-xl border border-dashed border-border/80 bg-surface/40 p-4 text-center text-xs text-muted">
+                                {locale === "de" ? "Keine Schritte angelegt. Klicken Sie auf '4-Stufen Prozess laden' oder '+ Schritt hinzufügen'." : "No steps configured."}
+                              </div>
+                            ) : (
+                              experienceProfile.refurbishmentSteps.map((step, idx) => (
+                                <div key={idx} className="rounded-xl border border-border/80 bg-surface-strong/70 p-3.5 space-y-2 relative shadow-sm">
+                                  <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
+                                    <span className="text-xs font-bold text-gold">Schritt 0{idx + 1}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setExperienceProfile((prev) => ({
+                                          ...prev,
+                                          refurbishmentSteps: prev.refurbishmentSteps.filter((_, i) => i !== idx),
+                                        }))
+                                      }
+                                      className="text-muted hover:text-red-400 text-xs"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    <input
+                                      value={step.title.de}
+                                      onChange={(e) =>
+                                        setExperienceProfile((prev) => ({
+                                          ...prev,
+                                          refurbishmentSteps: prev.refurbishmentSteps.map((s, i) => (i === idx ? { ...s, title: { ...s.title, de: e.target.value } } : s)),
+                                        }))
+                                      }
+                                      placeholder="Titel DE (z. B. 50+ Prüfpunkte)"
+                                      className="rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                    />
+                                    <input
+                                      value={step.title.en}
+                                      onChange={(e) =>
+                                        setExperienceProfile((prev) => ({
+                                          ...prev,
+                                          refurbishmentSteps: prev.refurbishmentSteps.map((s, i) => (i === idx ? { ...s, title: { ...s.title, en: e.target.value } } : s)),
+                                        }))
+                                      }
+                                      placeholder="Title EN (e.g. 50+ Point Check)"
+                                      className="rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                    />
+                                  </div>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    <textarea
+                                      rows={2}
+                                      value={step.description.de}
+                                      onChange={(e) =>
+                                        setExperienceProfile((prev) => ({
+                                          ...prev,
+                                          refurbishmentSteps: prev.refurbishmentSteps.map((s, i) => (i === idx ? { ...s, description: { ...s.description, de: e.target.value } } : s)),
+                                        }))
+                                      }
+                                      placeholder="Beschreibung DE..."
+                                      className="rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                    />
+                                    <textarea
+                                      rows={2}
+                                      value={step.description.en}
+                                      onChange={(e) =>
+                                        setExperienceProfile((prev) => ({
+                                          ...prev,
+                                          refurbishmentSteps: prev.refurbishmentSteps.map((s, i) => (i === idx ? { ...s, description: { ...s.description, en: e.target.value } } : s)),
+                                        }))
+                                      }
+                                      placeholder="Description EN..."
+                                      className="rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                    />
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-heading">
-                            ✓ {locale === "de" ? "Vertrauenspunkte (Garantie & Store)" : "Trust Points"}
-                          </span>
-                          <p className="text-xs text-muted">Format: Titel DE | Titel EN | Text DE | Text EN</p>
-                          <textarea
-                            rows={8}
-                            value={experienceTrustText}
-                            onChange={(e) => setExperienceTrustText(e.target.value)}
-                            placeholder="12 Monate Garantie | 12-Month Warranty | Volle Garantie direkt über unseren Hamburger Store | Full store warranty from our Hamburg shop"
-                            className="w-full font-mono text-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
-                          />
+
+                        {/* Section 2: Trust Points */}
+                        <div className="space-y-3 pt-2 border-t border-border/40">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                            <div>
+                              <span className="text-xs font-bold uppercase tracking-wider text-heading flex items-center gap-1.5">
+                                <span>✓</span> {locale === "de" ? "Vertrauenspunkte (Garantie & Store-Vorteile)" : "Trust Points & Store Guarantees"}
+                              </span>
+                              <p className="text-[11px] text-muted mt-0.5">
+                                {locale === "de" ? "Garantieversprechen, Vor-Ort-Service in Hamburg und Rückgaberecht." : "Store warranty, local pickup service and buyer protection."}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExperienceProfile((prev) => ({ ...prev, trustPoints: EXPERIENCE_PRESETS.trustPoints }));
+                                }}
+                                className="rounded-md border border-gold/40 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold hover:bg-gold/20"
+                              >
+                                ⚡ {locale === "de" ? "3-Punkte Paket laden" : "Load 3-point bundle"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExperienceProfile((prev) => ({
+                                    ...prev,
+                                    trustPoints: [...prev.trustPoints, { title: { de: "", en: "" }, description: { de: "", en: "" } }],
+                                  }))
+                                }
+                                className="rounded-lg border border-gold bg-gold/15 px-3 py-1 text-xs font-bold text-gold hover:bg-gold/25 transition"
+                              >
+                                + {locale === "de" ? "Vertrauenspunkt hinzufügen" : "Add trust point"}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            {experienceProfile.trustPoints.length === 0 ? (
+                              <div className="col-span-3 rounded-xl border border-dashed border-border/80 bg-surface/40 p-4 text-center text-xs text-muted">
+                                {locale === "de" ? "Keine Vertrauenspunkte angelegt." : "No trust points configured."}
+                              </div>
+                            ) : (
+                              experienceProfile.trustPoints.map((tp, idx) => (
+                                <div key={idx} className="rounded-xl border border-border/80 bg-surface-strong/70 p-3.5 space-y-2 shadow-sm">
+                                  <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
+                                    <span className="text-xs font-bold text-gold">🛡️ Vorteil 0{idx + 1}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setExperienceProfile((prev) => ({
+                                          ...prev,
+                                          trustPoints: prev.trustPoints.filter((_, i) => i !== idx),
+                                        }))
+                                      }
+                                      className="text-muted hover:text-red-400 text-xs"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                  <input
+                                    value={tp.title.de}
+                                    onChange={(e) =>
+                                      setExperienceProfile((prev) => ({
+                                        ...prev,
+                                        trustPoints: prev.trustPoints.map((t, i) => (i === idx ? { ...t, title: { ...t.title, de: e.target.value } } : t)),
+                                      }))
+                                    }
+                                    placeholder="Titel DE (z. B. 12 Monate Garantie)"
+                                    className="w-full rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                  />
+                                  <input
+                                    value={tp.title.en}
+                                    onChange={(e) =>
+                                      setExperienceProfile((prev) => ({
+                                        ...prev,
+                                        trustPoints: prev.trustPoints.map((t, i) => (i === idx ? { ...t, title: { ...t.title, en: e.target.value } } : t)),
+                                      }))
+                                    }
+                                    placeholder="Title EN (e.g. 12 Months Warranty)"
+                                    className="w-full rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                  />
+                                  <textarea
+                                    rows={2}
+                                    value={tp.description.de}
+                                    onChange={(e) =>
+                                      setExperienceProfile((prev) => ({
+                                        ...prev,
+                                        trustPoints: prev.trustPoints.map((t, i) => (i === idx ? { ...t, description: { ...t.description, de: e.target.value } } : t)),
+                                      }))
+                                    }
+                                    placeholder="Beschreibung DE..."
+                                    className="w-full rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
+                                  />
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -2060,57 +2657,112 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     {/* SUB-TAB 5: COMPARISON & DIMENSIONS */}
                     {experienceTab === "compare" && (
                       <div className="space-y-5">
-                        <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase tracking-wider text-heading">
-                              📏 {locale === "de" ? "Geräte-Abmessungen (für 2D-Silhouetten & Vergleich)" : "Dimensions (for 2D silhouettes & comparison)"}
-                            </span>
+                        {/* 2D Dimensions with Live Silhouette & Model Presets */}
+                        <div className="rounded-2xl border border-border/80 bg-surface-strong/70 p-4 space-y-4 shadow-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                            <div>
+                              <span className="text-xs font-bold uppercase tracking-wider text-heading flex items-center gap-1.5">
+                                <span>📏</span> {locale === "de" ? "Geräte-Abmessungen & 2D-Silhouette" : "Device Dimensions & 2D Silhouette"}
+                              </span>
+                              <p className="text-[11px] text-muted mt-0.5">
+                                {locale === "de" ? "Ermöglicht den maßstabsgetreuen Größenvergleich auf der Produktseite." : "Powers the scaled 2D silhouette comparison tool on the storefront."}
+                              </p>
+                            </div>
                             <span className="text-[10px] font-semibold text-gold">✨ KI-ausfüllbar</span>
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                            {[
-                              { key: "heightMm", label: "Höhe (mm)", placeholder: "146.6" },
-                              { key: "widthMm", label: "Breite (mm)", placeholder: "70.6" },
-                              { key: "depthMm", label: "Tiefe (mm)", placeholder: "8.25" },
-                              { key: "weightG", label: "Gewicht (g)", placeholder: "187" },
-                              { key: "screenInches", label: "Display (Zoll)", placeholder: "6.1" },
-                            ].map((dim) => (
-                              <label key={dim.key} className="space-y-1">
-                                <span className="text-xs font-semibold text-muted">{dim.label}</span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.1"
-                                  value={experienceProfile.dimensions[dim.key as keyof ProductExperienceProfile["dimensions"]] ?? ""}
-                                  onChange={(e) =>
-                                    setExperienceProfile((prev) => ({
-                                      ...prev,
-                                      dimensions: {
-                                        ...prev.dimensions,
-                                        [dim.key]: e.target.value ? Number(e.target.value) : undefined,
-                                      },
-                                    }))
-                                  }
-                                  placeholder={dim.placeholder}
-                                  className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
-                                />
-                              </label>
+
+                          {/* Quick Model Presets */}
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                            <span className="text-[11px] font-semibold text-muted">⚡ Presets:</span>
+                            {Object.entries(EXPERIENCE_PRESETS.dimensions).map(([modelName, dims]) => (
+                              <button
+                                key={modelName}
+                                type="button"
+                                onClick={() =>
+                                  setExperienceProfile((prev) => ({
+                                    ...prev,
+                                    dimensions: { ...prev.dimensions, ...dims },
+                                  }))
+                                }
+                                className="rounded-md border border-border/80 bg-surface px-2 py-0.5 text-[11px] font-semibold text-foreground hover:border-gold/40 hover:bg-gold/10 hover:text-gold transition"
+                              >
+                                {modelName}
+                              </button>
                             ))}
+                          </div>
+
+                          <div className="grid gap-4 md:grid-cols-3">
+                            {/* Inputs Column */}
+                            <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {[
+                                { key: "heightMm", label: "Höhe (mm)", placeholder: "146.6", icon: "📐" },
+                                { key: "widthMm", label: "Breite (mm)", placeholder: "70.6", icon: "↔️" },
+                                { key: "depthMm", label: "Tiefe (mm)", placeholder: "8.25", icon: "↕️" },
+                                { key: "weightG", label: "Gewicht (g)", placeholder: "187", icon: "⚖️" },
+                                { key: "screenInches", label: "Display (Zoll)", placeholder: "6.1", icon: "📱" },
+                              ].map((dim) => (
+                                <label key={dim.key} className="space-y-1 block rounded-xl border border-border/70 bg-surface p-3">
+                                  <span className="text-xs font-semibold text-muted flex items-center gap-1">
+                                    <span>{dim.icon}</span>
+                                    <span>{dim.label}</span>
+                                  </span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    value={experienceProfile.dimensions[dim.key as keyof ProductExperienceProfile["dimensions"]] ?? ""}
+                                    onChange={(e) =>
+                                      setExperienceProfile((prev) => ({
+                                        ...prev,
+                                        dimensions: {
+                                          ...prev.dimensions,
+                                          [dim.key]: e.target.value ? Number(e.target.value) : undefined,
+                                        },
+                                      }))
+                                    }
+                                    placeholder={dim.placeholder}
+                                    className="w-full rounded-lg border border-border/80 bg-surface-strong px-2.5 py-1.5 text-sm font-semibold text-foreground focus:border-gold focus:outline-none"
+                                  />
+                                </label>
+                              ))}
+                            </div>
+
+                            {/* Live 2D Silhouette Preview */}
+                            <div className="flex flex-col items-center justify-center rounded-xl border border-gold/30 bg-gold/5 p-4 text-center space-y-2">
+                              <span className="text-[11px] font-bold text-gold uppercase tracking-wider">📐 2D Live-Silhouette</span>
+                              <div
+                                className="border-2 border-gold/70 bg-neutral-900 rounded-[14px] flex flex-col items-center justify-center text-[10px] text-gold font-mono shadow-md transition-all"
+                                style={{
+                                  width: `${Math.max(45, Math.min(100, (experienceProfile.dimensions.widthMm ?? 70) * 0.9))}px`,
+                                  height: `${Math.max(80, Math.min(150, (experienceProfile.dimensions.heightMm ?? 146) * 0.9))}px`,
+                                }}
+                              >
+                                <span className="font-bold">{experienceProfile.dimensions.screenInches ? `${experienceProfile.dimensions.screenInches}"` : "–"}</span>
+                              </div>
+                              <p className="text-[10px] text-muted">
+                                {experienceProfile.dimensions.heightMm || "–"} × {experienceProfile.dimensions.widthMm || "–"} × {experienceProfile.dimensions.depthMm || "–"} mm
+                                {experienceProfile.dimensions.weightG ? ` · ${experienceProfile.dimensions.weightG}g` : ""}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
+                        {/* Comparison Products & Bundles selection */}
                         <div className="grid gap-5 lg:grid-cols-2">
-                          <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-3">
-                            <span className="text-xs font-bold uppercase tracking-wider text-heading">
-                              ⚖️ {locale === "de" ? "Vergleichsprodukte (Nebeneinander)" : "Comparison Products"}
-                            </span>
+                          <div className="rounded-2xl border border-border/80 bg-surface-strong/70 p-4 space-y-3 shadow-sm">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold uppercase tracking-wider text-heading flex items-center gap-1.5">
+                                <span>⚖️</span> {locale === "de" ? "Vergleichsprodukte (Nebeneinander)" : "Comparison Products"}
+                              </span>
+                              <span className="text-[11px] text-gold font-semibold">{experienceProfile.comparisonProductIds.length} gewählt</span>
+                            </div>
                             <input
                               value={familyQuery}
                               onChange={(e) => setFamilyQuery(e.target.value)}
-                              placeholder={locale === "de" ? "Produkte suchen..." : "Search products..."}
+                              placeholder={locale === "de" ? "Produkte filtern..." : "Filter products..."}
                               className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground placeholder:text-muted"
                             />
-                            <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                            <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
                               {candidateProducts
                                 .filter((p) => !familyQuery || p.title.toLowerCase().includes(familyQuery.toLowerCase()))
                                 .slice(0, 30)
@@ -2120,7 +2772,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                     <label
                                       key={cand.id}
                                       className={`flex items-center gap-2.5 rounded-lg border p-2 text-xs cursor-pointer transition ${
-                                        selected ? "border-gold/50 bg-gold/10 text-foreground" : "border-border/40 bg-surface text-muted hover:border-gold/30"
+                                        selected ? "border-gold/60 bg-gold/15 text-foreground" : "border-border/40 bg-surface text-muted hover:border-gold/30"
                                       }`}
                                     >
                                       <input
@@ -2137,18 +2789,21 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                         className="h-4 w-4 rounded border-border text-gold focus:ring-gold accent-gold"
                                       />
                                       <span className="truncate flex-1 font-medium">{cand.title}</span>
-                                      <span className="text-[10px] text-muted">{cand.price} €</span>
+                                      <span className="text-[10px] text-gold font-bold">{Number(cand.price).toFixed(2)} €</span>
                                     </label>
                                   );
                                 })}
                             </div>
                           </div>
 
-                          <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-3">
-                            <span className="text-xs font-bold uppercase tracking-wider text-heading">
-                              🛒 {locale === "de" ? "Kompatible Bundles (Zubehör-Kauf)" : "Compatible Bundles"}
-                            </span>
-                            <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
+                          <div className="rounded-2xl border border-border/80 bg-surface-strong/70 p-4 space-y-3 shadow-sm">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold uppercase tracking-wider text-heading flex items-center gap-1.5">
+                                <span>🛒</span> {locale === "de" ? "Kompatible Bundles & Zubehör" : "Compatible Bundles"}
+                              </span>
+                              <span className="text-[11px] text-gold font-semibold">{experienceProfile.bundleProductIds.length} gewählt</span>
+                            </div>
+                            <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
                               {candidateProducts
                                 .filter((p) => !familyQuery || p.title.toLowerCase().includes(familyQuery.toLowerCase()))
                                 .slice(0, 30)
@@ -2158,7 +2813,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                     <label
                                       key={cand.id}
                                       className={`flex items-center gap-2.5 rounded-lg border p-2 text-xs cursor-pointer transition ${
-                                        selected ? "border-gold/50 bg-gold/10 text-foreground" : "border-border/40 bg-surface text-muted hover:border-gold/30"
+                                        selected ? "border-gold/60 bg-gold/15 text-foreground" : "border-border/40 bg-surface text-muted hover:border-gold/30"
                                       }`}
                                     >
                                       <input
@@ -2175,7 +2830,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                         className="h-4 w-4 rounded border-border text-gold focus:ring-gold accent-gold"
                                       />
                                       <span className="truncate flex-1 font-medium">{cand.title}</span>
-                                      <span className="text-[10px] text-muted">{cand.price} €</span>
+                                      <span className="text-[10px] text-gold font-bold">{Number(cand.price).toFixed(2)} €</span>
                                     </label>
                                   );
                                 })}
@@ -2297,13 +2952,54 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
 
                     {/* SUB-TAB 7: CAMPAIGN */}
                     {experienceTab === "campaign" && (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wider text-heading">
-                            🏷️ {locale === "de" ? "Produktkampagne & Highlight-Banner" : "Product Campaign Banner"}
-                          </span>
+                      <div className="space-y-5">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                          <div>
+                            <span className="text-xs font-bold uppercase tracking-wider text-heading flex items-center gap-1.5">
+                              <span>🏷️</span> {locale === "de" ? "Produktkampagne & Gold-Banner" : "Product Campaign & Gold Banner"}
+                            </span>
+                            <p className="text-[11px] text-muted mt-0.5">
+                              {locale === "de" ? "Hebt exklusive Deals und Promotionen direkt über dem Preis hervor." : "Highlights deals directly above the price on the product page."}
+                            </p>
+                          </div>
                           <span className="text-[10px] font-semibold text-gold">✨ KI</span>
                         </div>
+
+                        {/* Campaign Presets */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                          <span className="text-[11px] font-semibold text-muted">⚡ Presets:</span>
+                          {EXPERIENCE_PRESETS.campaigns.map((preset) => (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() =>
+                                setExperienceProfile((prev) => ({
+                                  ...prev,
+                                  campaign: { ...prev.campaign, badge: preset.badge, message: preset.message },
+                                }))
+                              }
+                              className="rounded-md border border-border/80 bg-surface-strong px-2.5 py-1 text-[11px] font-semibold text-foreground hover:border-gold/40 hover:bg-gold/10 hover:text-gold transition"
+                            >
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Live Banner Preview Box */}
+                        <div className="rounded-2xl border border-gold/40 bg-gradient-to-r from-gold/15 via-gold/5 to-surface p-4 shadow-sm space-y-2">
+                          <span className="text-[10px] font-bold text-gold uppercase tracking-wider flex items-center gap-1">
+                            <span>✨</span> {locale === "de" ? "Live-Vorschau auf Produktseite" : "Live Storefront Preview"}
+                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="rounded-full bg-gold px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-black shadow-sm shrink-0">
+                              {experienceProfile.campaign.badge[locale] || experienceProfile.campaign.badge.de || (locale === "de" ? "Highlight" : "Highlight")}
+                            </span>
+                            <p className="text-xs font-medium text-foreground">
+                              {experienceProfile.campaign.message[locale] || experienceProfile.campaign.message.de || (locale === "de" ? "Kampagnen-Nachricht hier..." : "Campaign message here...")}
+                            </p>
+                          </div>
+                        </div>
+
                         <div className="grid gap-3 sm:grid-cols-2">
                           <label className="space-y-1">
                             <span className="text-xs font-semibold text-muted">Badge DE</span>
