@@ -95,10 +95,10 @@ async function callGemini(payload: { prompt: string; image?: { mime: string; dat
   };
 
   try {
-    return await tryModel("gemini-3.7-flash", 16000);
+    return await tryModel("gemini-3.7-flash", 60000);
   } catch (err) {
     console.warn("[product research] Primary model failed, attempting fallback:", err instanceof Error ? err.message : err);
-    return await tryModel("gemini-2.5-flash", 16000);
+    return await tryModel("gemini-2.5-flash", 45000);
   }
 }
 
