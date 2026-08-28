@@ -17,20 +17,20 @@ export default function ProductIntakeEvidencePanel({
         <h3 className="font-semibold text-foreground">{copy.channelReadiness}</h3>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {Object.entries(validation.readiness).map(([channel, result]) => (
-            <div key={channel} className="rounded-xl border border-border/60 bg-surface/60 p-3 shadow-sm">
+            <div key={channel} className="rounded-xl border border-border/60 bg-surface/60 p-3 shadow-sm text-black dark:text-foreground">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-heading">{channel}</p>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-black dark:text-heading">{channel}</p>
                 <span
                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                     result.ready
-                      ? "border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
-                      : "border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-300"
+                      ? "border border-emerald-500/40 bg-emerald-500/15 text-black dark:text-emerald-300"
+                      : "border border-amber-500/40 bg-amber-500/15 text-black dark:text-amber-300"
                   }`}
                 >
                   {result.ready ? copy.ready : copy.blocked}
                 </span>
               </div>
-              {result.blockers.length ? <p className="mt-2 text-xs leading-5 text-amber-950 dark:text-amber-200 font-medium">{result.blockers.join(" · ")}</p> : null}
+              {result.blockers.length ? <p className="mt-2 text-xs leading-5 text-black dark:text-amber-200 font-medium">{result.blockers.join(" · ")}</p> : null}
             </div>
           ))}
         </div>

@@ -25,12 +25,12 @@ export default function ProductTipsCard({ tips, locale, onAiFill }: { tips: Miss
               key={item.code}
               className={`rounded-xl border px-3 py-2 text-sm ${
                 item.severity === "error"
-                  ? "border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-200"
-                  : "border-border/60 bg-surface/50 text-foreground/80 dark:text-muted"
+                  ? "border-amber-500/40 bg-amber-500/10 text-black dark:text-amber-200"
+                  : "border-border/60 bg-surface/50 text-black dark:text-muted"
               }`}
             >
-              <span className="font-bold text-foreground">{item.label}: </span>
-              <span className="leading-snug">{item.message}</span>
+              <span className="font-bold text-black dark:text-foreground">{item.label}: </span>
+              <span className="leading-snug text-black dark:text-amber-200">{item.message}</span>
             </div>
           ))}
         </div>
