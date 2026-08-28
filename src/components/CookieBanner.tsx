@@ -47,6 +47,7 @@ export default function CookieBanner({ lang }: Props) {
   const [forceOpen, setForceOpen] = useState(false);
   const visible = forceOpen || mode === "unset";
   const bannerRef = useRef<HTMLDivElement | null>(null);
+  const necessaryButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const applyConsent = (mode: "necessary" | "external") => {
     setForceOpen(false);
@@ -94,37 +95,77 @@ export default function CookieBanner({ lang }: Props) {
     };
   }, [visible]);
 
+  useEffect(() => {
+    if (!visible) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.documentElement.dataset.consentDialog = "open";
+    document.body.style.overflow = "hidden";
+    necessaryButtonRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || !bannerRef.current) return;
+      const focusable = [...bannerRef.current.querySelectorAll<HTMLElement>(
+        'a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])',
+      )];
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      delete document.documentElement.dataset.consentDialog;
+      previousFocus?.focus();
+    };
+  }, [visible]);
+
   if (!visible) {
     return null;
   }
 
   return (
-    <div ref={bannerRef} className="fixed inset-x-0 bottom-0 z-[160] border-t border-border/70 bg-surface/95 backdrop-blur">
-      <div className="container-page flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="max-w-3xl">
-          <p className="text-sm font-semibold text-foreground">{text.title}</p>
-          <p className="mt-1 text-sm text-muted">
-            {text.body}{" "}
-            <a href={`/${lang}/privacy`} className="inline-flex min-h-11 items-center font-medium text-gold hover:text-gold-soft">
-              {text.privacy}
-            </a>
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => applyConsent("necessary")}
-            className="min-h-12 rounded-full border border-border/70 bg-background/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground"
-          >
-            {text.necessary}
-          </button>
-          <button
-            type="button"
-            onClick={() => applyConsent("external")}
-            className="min-h-12 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold"
-          >
-            {text.external}
-          </button>
+    <div
+      className="fixed inset-0 z-[160] flex items-end bg-black/45"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cookie-consent-title"
+    >
+      <div ref={bannerRef} className="w-full border-t border-border/70 bg-surface/95 backdrop-blur">
+        <div className="container-page flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-3xl">
+            <p id="cookie-consent-title" className="text-sm font-semibold text-foreground">{text.title}</p>
+            <p className="mt-1 text-sm text-muted">
+              {text.body}{" "}
+              <a href={`/${lang}/privacy`} className="inline-flex min-h-11 items-center font-medium text-gold hover:text-gold-soft">
+                {text.privacy}
+              </a>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              ref={necessaryButtonRef}
+              type="button"
+              onClick={() => applyConsent("necessary")}
+              className="min-h-12 rounded-full border border-border/70 bg-background/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground"
+            >
+              {text.necessary}
+            </button>
+            <button
+              type="button"
+              onClick={() => applyConsent("external")}
+              className="min-h-12 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold"
+            >
+              {text.external}
+            </button>
+          </div>
         </div>
       </div>
     </div>

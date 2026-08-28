@@ -90,16 +90,26 @@ export default function HeroSlider({
 
   useEffect(() => {
     if (mobileSlides.length <= 1) return undefined;
-
-    const interval = window.setInterval(() => {
-      setMobileIndex((current) => (current + 1) % mobileSlides.length);
-    }, 3600);
-
-    return () => window.clearInterval(interval);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let interval: number | undefined;
+    const updateRotation = () => {
+      if (interval !== undefined) window.clearInterval(interval);
+      interval = undefined;
+      if (reducedMotion.matches) return;
+      interval = window.setInterval(() => {
+        setMobileIndex((current) => (current + 1) % mobileSlides.length);
+      }, 3600);
+    };
+    updateRotation();
+    reducedMotion.addEventListener("change", updateRotation);
+    return () => {
+      if (interval !== undefined) window.clearInterval(interval);
+      reducedMotion.removeEventListener("change", updateRotation);
+    };
   }, [mobileSlides.length]);
 
   return (
-    <section className="relative min-h-[56vh] overflow-hidden md:min-h-[85vh]">
+    <section className="relative min-h-[28rem] overflow-hidden md:min-h-[85vh]">
       <div className="absolute inset-0">
         <div className="absolute inset-0 md:hidden">
           <Image
@@ -150,23 +160,25 @@ export default function HeroSlider({
         <>
           <div className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-t from-black/75 via-black/35 to-black/10 md:bg-gradient-to-r md:from-black/70 md:via-black/35 md:to-transparent" />
           <div className="absolute inset-0 z-10 flex items-end md:items-center">
-            <div className="container-page w-full pb-16 pt-24 md:py-24">
+            <div className="container-page w-full pb-16 pt-20 md:py-24">
               <div className="max-w-2xl">
-                <span className="inline-flex items-center rounded-full border border-white/25 bg-black/30 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/90 backdrop-blur-sm">
+                <span className="inline-flex items-center rounded-full border border-white/25 bg-black/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/90 backdrop-blur-sm md:px-4 md:text-[11px]">
                   {hero.eyebrow}
                 </span>
-                <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
+                <h1 className="mt-3 text-balance text-[2rem] font-bold leading-[1.08] tracking-tight text-white md:mt-4 md:text-5xl md:leading-tight lg:text-6xl">
                   {hero.title}
                 </h1>
-                <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/85 md:text-base">
+                <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-white/85 md:mt-4 md:text-base">
                   {hero.subtitle}
                 </p>
-                <div className="mt-7 flex flex-wrap gap-3">
-                  <Link href={`/${lang}/store`} className="btn-primary">
-                    {hero.primaryCta}
+                <div className="mt-5 grid grid-cols-2 gap-2.5 md:mt-7 md:flex md:flex-wrap md:gap-3">
+                  <Link href={`/${lang}/store`} className="btn-primary min-h-11 w-full px-3 md:min-h-0 md:w-auto md:px-7">
+                    <span className="md:hidden">{lang === "de" ? "Zum Shop" : "Shop now"}</span>
+                    <span className="hidden md:inline">{hero.primaryCta}</span>
                   </Link>
-                  <Link href={`/${lang}/repairs`} className="btn-secondary">
-                    {hero.secondaryCta}
+                  <Link href={`/${lang}/repairs`} className="btn-secondary min-h-11 w-full px-3 md:min-h-0 md:w-auto md:px-6">
+                    <span className="md:hidden">{lang === "de" ? "Reparatur" : "Repairs"}</span>
+                    <span className="hidden md:inline">{hero.secondaryCta}</span>
                   </Link>
                 </div>
               </div>

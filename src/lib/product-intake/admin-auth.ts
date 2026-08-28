@@ -18,8 +18,8 @@ export const actorFromUser = (user: User): ProductIntakeActor => ({
   id: user.email ?? user.id,
 });
 
-export const authorizeProductStaff = (request: NextRequest, options: { mutate?: boolean } = {}) => {
-  const user = readSessionUserFromRequest(request);
+export const authorizeProductStaff = async (request: NextRequest, options: { mutate?: boolean } = {}) => {
+  const user = await readSessionUserFromRequest(request);
   if (!canManageProducts(user) || !user) {
     throw new ProductIntakeError("forbidden", "Product access is required", 401);
   }
@@ -30,8 +30,8 @@ export const authorizeProductStaff = (request: NextRequest, options: { mutate?: 
   return { user, actor: actorFromUser(user), owner: isProductIntakeOwner(user) };
 };
 
-export const authorizeProductOwner = (request: NextRequest) => {
-  const auth = authorizeProductStaff(request, { mutate: true });
+export const authorizeProductOwner = async (request: NextRequest) => {
+  const auth = await authorizeProductStaff(request, { mutate: true });
   if (!auth.owner) throw new ProductIntakeError("forbidden", "Owner approval is required", 403);
   return auth;
 };

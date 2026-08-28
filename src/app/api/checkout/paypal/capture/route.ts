@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getPaymentMode, markOrderPaid } from "@/lib/checkout";
+import { getPayPalCaptureExpectation, getPaymentMode, isOrderInProviderState, markOrderPaid } from "@/lib/checkout";
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
 import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
+import { paypalCaptureIdentityMatches } from "@/lib/payment-coupon";
 
 const getPayPalBaseUrl = () =>
   getPaymentMode() === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
@@ -36,6 +37,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing order reference" }, { status: 400 });
     }
 
+    const expected = await getPayPalCaptureExpectation(payload.orderId, payload.paypalOrderId);
+    if (!expected) {
+      return NextResponse.json({ success: false, error: "PayPal payment does not match an eligible order" }, { status: 400 });
+    }
     const token = await getAccessToken();
     const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${payload.paypalOrderId}/capture`, {
       method: "POST",
@@ -53,7 +58,7 @@ export async function POST(request: NextRequest) {
       purchase_units?: Array<{
         reference_id?: string;
         custom_id?: string;
-        payments?: { captures?: Array<{ id?: string; status?: string }> };
+        payments?: { captures?: Array<{ id?: string; status?: string; amount?: { value?: string; currency_code?: string } }> };
       }>;
       message?: string;
     };
@@ -66,14 +71,18 @@ export async function POST(request: NextRequest) {
     }
 
     const purchaseUnit = data.purchase_units?.[0];
-    if (purchaseUnit?.reference_id !== payload.orderId && purchaseUnit?.custom_id !== payload.orderId) {
+    if (!paypalCaptureIdentityMatches({ paypalOrderId: payload.paypalOrderId, responseOrderId: data.id, referenceId: purchaseUnit?.reference_id, customId: purchaseUnit?.custom_id, localOrderId: payload.orderId })) {
       return NextResponse.json(
         { success: false, error: "PayPal payment does not match this order" },
         { status: 400 },
       );
     }
 
-    const capture = purchaseUnit.payments?.captures?.[0];
+    const capture = purchaseUnit?.payments?.captures?.[0];
+    const capturedCents = capture?.amount?.value ? Math.round(Number(capture.amount.value) * 100) : null;
+    if (!expected || capturedCents !== expected.cents || capture?.amount?.currency_code?.toUpperCase() !== expected.currency) {
+      return NextResponse.json({ success: false, error: "PayPal captured amount does not match this order" }, { status: 400 });
+    }
     const order = await markOrderPaid({
       orderId: payload.orderId,
       provider: "paypal",
@@ -81,6 +90,9 @@ export async function POST(request: NextRequest) {
       providerPaymentId: capture?.id ?? data.id ?? payload.paypalOrderId,
       providerStatus: capture?.status ?? data.status,
     });
+    if (!order && !(await isOrderInProviderState({ provider: "paypal", orderId: payload.orderId, providerOrderId: payload.paypalOrderId, statuses: ["paid"], paymentStatuses: ["paid"] }))) {
+      return NextResponse.json({ success: false, error: "PayPal capture requires reconciliation" }, { status: 503 });
+    }
 
     if (order) {
       await sendPurchaseTrackingEvents(

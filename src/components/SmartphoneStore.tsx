@@ -71,7 +71,7 @@ export default function SmartphoneStore({ lang, phones }: SmartphoneStoreProps) 
               {lang === "de" ? "Smartphone Shop" : "Smartphone Store"}
             </h2>
             <p className="mt-1 text-muted">
-              {filteredPhones.length} {lang === "de" ? "Gerate verfugbar" : "devices available"}
+              {filteredPhones.length} {lang === "de" ? "Geräte verfügbar" : "devices available"}
             </p>
           </div>
         </div>

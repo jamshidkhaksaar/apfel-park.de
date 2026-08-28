@@ -1,6 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 
+import FooterLinkGroup from "@/components/FooterLinkGroup";
+
 import { getDictionary, type Locale } from "../lib/i18n";
+import { getGooglePreferredSourceBadge } from "../lib/google-preferred-source";
 import { siteInfo } from "../lib/site";
 import { getSiteSocialLinks } from "../lib/site-settings-server";
 import BackToTopButton from "./BackToTopButton";
@@ -15,12 +19,13 @@ import TrackedLink from "./TrackedLink";
 export default async function SiteFooter({ lang }: { lang: Locale }) {
   const dict = getDictionary(lang);
   const socialLinks = await getSiteSocialLinks();
+  const preferredSourceBadge = getGooglePreferredSourceBadge(lang);
 
   return (
     <footer className="footer-top relative border-t-2 border-border bg-surface">
       <div className="container-page">
         {/* Main Footer Content */}
-        <div className="grid gap-12 py-16 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
+        <div className="grid gap-6 py-10 lg:gap-12 lg:py-16 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
           {/* Brand Column */}
           <div className="space-y-6">
             <Link href={`/${lang}`} className="group inline-flex max-w-full flex-wrap items-center gap-5 sm:flex-nowrap">
@@ -34,6 +39,13 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             </Link>
             
             <p className="max-w-sm text-sm text-muted">{dict.footer.description}</p>
+
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+              <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-green" />
+              {lang === "de" ? "Vor Ort & online" : "In-store & online"}
+              <span aria-hidden="true" className="text-muted/40">·</span>
+              <span>{siteInfo.tagline}</span>
+            </p>
             
             {/* Contact Info */}
             <div className="space-y-3">
@@ -99,51 +111,9 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             </div>
           </div>
 
-          {/* Navigation Column */}
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gold">
-              <span className="h-px w-4 bg-gold" />
-              Navigation
-            </h3>
-            <ul className="mt-6 space-y-3">
-              {dict.footer.quickLinks.map((item: { label: string; path: string }) => (
-                <li key={item.path}>
-                  <Link 
-                    href={`/${lang}${item.path}`} 
-                    className="group flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
-                  >
-                    <svg className="h-3 w-3 text-gold opacity-0 transition group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterLinkGroup title="Navigation" links={dict.footer.quickLinks} lang={lang} />
 
-          {/* Info Column */}
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gold">
-              <span className="h-px w-4 bg-gold" />
-              Info
-            </h3>
-            <ul className="mt-6 space-y-3">
-              {dict.footer.companyLinks.map((item: { label: string; path: string }) => (
-                <li key={item.path}>
-                  <Link 
-                    href={`/${lang}${item.path}`} 
-                    className="group flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
-                  >
-                    <svg className="h-3 w-3 text-amber opacity-0 transition group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterLinkGroup title="Info" links={dict.footer.companyLinks} lang={lang} />
 
           {/* Location Column */}
           <div className="space-y-4">
@@ -154,15 +124,34 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             
             {/* Map */}
             {siteInfo.map.embedUrl && (
-              <div className="overflow-hidden rounded-2xl border border-white/10">
-                <ExternalMapEmbed
-                  lang={lang}
-                  title="Apfel Park Map"
-                  src={siteInfo.map.embedUrl}
-                  directionsUrl={siteInfo.map.linkUrl}
-                  className="h-44 w-full grayscale transition hover:grayscale-0"
-                />
-              </div>
+              <>
+                <details className="group lg:hidden">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-muted [&::-webkit-details-marker]:hidden">
+                    {lang === "de" ? "Karte anzeigen" : "Show map"}
+                    <svg className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+                    </svg>
+                  </summary>
+                  <div className="mt-3 overflow-hidden rounded-2xl border border-border">
+                    <ExternalMapEmbed
+                      lang={lang}
+                      title="Apfel Park Map"
+                      src={siteInfo.map.embedUrl}
+                      directionsUrl={siteInfo.map.linkUrl}
+                      className="h-44 w-full grayscale transition hover:grayscale-0"
+                    />
+                  </div>
+                </details>
+                <div className="hidden overflow-hidden rounded-2xl border border-border lg:block">
+                  <ExternalMapEmbed
+                    lang={lang}
+                    title="Apfel Park Map"
+                    src={siteInfo.map.embedUrl}
+                    directionsUrl={siteInfo.map.linkUrl}
+                    className="h-44 w-full grayscale transition hover:grayscale-0"
+                  />
+                </div>
+              </>
             )}
             
             {/* Address */}
@@ -268,40 +257,60 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
 
           <div className="mb-8 flex flex-col items-center gap-3 text-center">
             <p className="text-sm font-medium text-muted">
+              {lang === "de" ? "Mehr von Apfel Park bei Google sehen" : "See more from Apfel Park on Google"}
+            </p>
+            <div className="flex w-full justify-center px-14 sm:px-0">
+              <TrackedLink
+                href={preferredSourceBadge.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full max-w-[15rem] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:max-w-[19rem]"
+                ariaLabel={preferredSourceBadge.alt}
+                title={preferredSourceBadge.alt}
+                eventName="preferred_source_click"
+                eventPayload={{ platform: "google", source: "footer", locale: lang }}
+              >
+                <Image
+                  src={preferredSourceBadge.imageSrc}
+                  alt={preferredSourceBadge.alt}
+                  width={676}
+                  height={lang === "de" ? 212 : 213}
+                  className="h-auto w-full"
+                  unoptimized
+                />
+              </TrackedLink>
+            </div>
+          </div>
+
+          <div className="mb-8 flex flex-col items-center gap-3 text-center">
+            <p className="text-sm font-medium text-muted">
               {lang === "de" ? "Sicher bezahlen mit" : "Pay securely with"}
             </p>
-            <PaymentBrandIcons iconClassName="h-6 w-auto" />
+            <PaymentBrandIcons iconClassName="h-8 w-auto" />
           </div>
 
           {/* Copyright Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6 text-xs text-muted">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <p>© 2026 Apfel Park. {lang === "de" ? "Alle Rechte vorbehalten." : "All rights reserved."}</p>
-              <span className="text-muted/40 hidden sm:inline">|</span>
-              <span className="text-muted/70">
+          <div className="flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+            <p>
+              © 2026 Apfel Park. {lang === "de" ? "Alle Rechte vorbehalten." : "All rights reserved."}
+              <span className="ml-2 text-muted">
                 {lang === "de" ? "USt-IdNr." : "VAT ID"}&thinsp;
-                <span className="font-mono font-medium text-foreground/60">{siteInfo.vatId}</span>
+                <span className="font-mono font-medium text-foreground/80">{siteInfo.vatId}</span>
               </span>
-            </div>
-            
-            <div className="flex items-center gap-4">
+            </p>
+
+            <nav
+              aria-label={lang === "de" ? "Rechtliches" : "Legal"}
+              className="flex flex-wrap items-center gap-x-4 gap-y-2 [&>a+a]:before:mr-4 [&>a+a]:before:text-muted/40 [&>a+a]:before:content-['·']"
+            >
               <Link href={`/${lang}/delivery-returns`} className="transition hover:text-gold">
                 {lang === "de" ? "Lieferung & Rückgabe" : "Delivery & Returns"}
               </Link>
-              <span className="hidden text-muted/40 sm:inline">|</span>
               <Link href={`/${lang}/withdrawal`} className="font-semibold text-gold transition hover:underline">
                 {lang === "de" ? "Vertrag widerrufen" : "Withdraw contract"}
               </Link>
-              <span className="hidden text-muted/40 sm:inline">|</span>
-              <span className="flex items-center gap-2">
-                <span className="flex h-2 w-2 rounded-full bg-green" />
-                {lang === "de" ? "Vor Ort & online" : "In-store & online"}
-              </span>
-              <span className="hidden text-muted/40 sm:inline">|</span>
-              <span>{siteInfo.tagline}</span>
-              <span className="hidden text-muted/40 sm:inline">|</span>
               <CookieSettingsButton lang={lang} />
-            </div>
+            </nav>
           </div>
         </div>
       </div>

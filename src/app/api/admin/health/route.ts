@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "@/lib/db";
 import { readSessionUserFromRequest } from "@/lib/session";
+import { isAdminUser } from "@/lib/admin-auth";
 
 const execFileAsync = promisify(execFile);
 
@@ -159,9 +160,8 @@ const readSingleLine = async (command: string, args: string[]) => {
 };
 
 export async function GET(request: NextRequest) {
-  if (!readSessionUserFromRequest(request)) {
-    return unauthorized();
-  }
+  const user = await readSessionUserFromRequest(request);
+  if (!isAdminUser(user)) return unauthorized();
 
   try {
     const [

@@ -13,7 +13,7 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 
 export async function GET(request: NextRequest) {
   try {
-    authorizeProductStaff(request);
+    await authorizeProductStaff(request);
     const rawLimit = request.nextUrl.searchParams.get("limit") ?? "100";
     const limit = Number(rawLimit);
     if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = authorizeProductStaff(request, { mutate: true });
+    const auth = await authorizeProductStaff(request, { mutate: true });
     const { value } = await readJsonRequest(request);
     const body = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
     const productId = typeof body.productId === "string" ? body.productId : "";

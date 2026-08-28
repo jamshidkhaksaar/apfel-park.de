@@ -11,10 +11,18 @@ const CLASS_COLORS: Record<string, string> = {
   D: "#fff200",
   E: "#fdb913",
   F: "#f37021",
-  G: "#ed1c24",
+  G: "#e3131b",
 };
 
-const CLASS_TEXT: Record<string, string> = { C: "#111111", D: "#111111", E: "#111111" };
+const CLASS_TEXT: Record<string, string> = {
+  A: "#111111",
+  B: "#111111",
+  C: "#111111",
+  D: "#111111",
+  E: "#111111",
+  F: "#111111",
+  G: "#ffffff",
+};
 const GRADES = ["A", "B", "C", "D", "E", "F", "G"];
 
 export function EnergyClassArrow({ grade, locale, className = "" }: { grade: string; locale: Locale; className?: string }) {
@@ -87,7 +95,7 @@ export default function EuEnergyLabelSection({
     : energyLabel.ficheEn ?? energyLabel.ficheDe;
 
   return (
-    <section className="glass-panel overflow-hidden rounded-3xl border border-border/60" aria-labelledby="eu-energy-label-heading">
+    <section className="overflow-hidden rounded-2xl border border-border bg-store-card" aria-labelledby="eu-energy-label-heading">
       <header className="border-b border-border/60 px-5 py-5 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -144,7 +152,7 @@ export default function EuEnergyLabelSection({
                 {GRADES.map((grade) => (
                   <span
                     key={grade}
-                    className={`flex h-6 items-center justify-center text-[10px] font-black ${grade === energyLabel.efficiencyClass ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : "opacity-70"}`}
+                    className={`flex h-6 items-center justify-center text-[10px] font-black ${grade === energyLabel.efficiencyClass ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : ""}`}
                     style={{ backgroundColor: CLASS_COLORS[grade], color: CLASS_TEXT[grade] ?? "#ffffff" }}
                   >
                     {grade}
@@ -159,8 +167,10 @@ export default function EuEnergyLabelSection({
               {metrics.map((metric) => (
                 <div key={metric.label} className="min-w-0 rounded-2xl border border-border/60 bg-surface/35 p-4">
                   <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{metric.label}</dt>
-                  <dd className="mt-2 text-xl font-semibold text-foreground">{metric.value}</dd>
-                  <p className="mt-1 text-xs leading-5 text-muted">{metric.detail}</p>
+                  <dd className="mt-2">
+                    <span className="block text-xl font-semibold text-foreground">{metric.value}</span>
+                    <span className="mt-1 block text-xs leading-5 text-muted">{metric.detail}</span>
+                  </dd>
                 </div>
               ))}
             </dl>

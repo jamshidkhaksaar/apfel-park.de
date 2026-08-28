@@ -21,8 +21,7 @@ export default function GlobalError({
       error.message.includes("Failed to fetch dynamically imported module")
     ) {
       // Clear any cached data and reload
-      console.log("[GlobalError] Chunk load error detected, reloading page...");
-      
+
       // Clear cache if available
       if ("caches" in window) {
         caches.keys().then((names) => {
@@ -38,7 +37,10 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html>
+    <html lang="de">
+      <head>
+        <title>Fehler | Apfel Park</title>
+      </head>
       <body>
         <div className="min-h-screen flex items-center justify-center bg-background px-4">
           <div className="text-center max-w-md">
@@ -58,23 +60,23 @@ export default function GlobalError({
               </svg>
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
-              Something went wrong
+              Etwas ist schiefgelaufen
             </h2>
             <p className="text-muted mb-6">
-              We encountered an error loading this page. This might be due to a recent update.
+              Die Seite konnte nicht geladen werden. Bitte lade sie neu oder versuche es erneut.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={() => window.location.reload()}
                 className="btn-primary"
               >
-                Refresh Page
+                Seite neu laden
               </button>
               <button
                 onClick={() => reset()}
                 className="btn-secondary"
               >
-                Try Again
+                Erneut versuchen
               </button>
             </div>
           </div>

@@ -23,6 +23,7 @@ import { shouldBypassImageOptimization } from "@/lib/image";
  * Opened by dispatching `apfel-cart-open` (see ProductDetailExperience).
  */
 export const MINI_CART_OPEN_EVENT = "apfel-cart-open";
+export const MINI_CART_STATE_EVENT = "apfel-cart-state";
 
 const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
   new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-US", { style: "currency", currency }).format(value);
@@ -38,6 +39,10 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
     window.addEventListener(MINI_CART_OPEN_EVENT, onOpen);
     return () => window.removeEventListener(MINI_CART_OPEN_EVENT, onOpen);
   }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(MINI_CART_STATE_EVENT, { detail: { open } }));
+  }, [open]);
 
   const validate = useCallback(async () => {
     if (items.length === 0) {

@@ -5,7 +5,7 @@ import PageIntro from "../../../../components/PageIntro";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
+import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getGamingContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
@@ -14,10 +14,12 @@ export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> => {
-  const { lang: rawLang } = await params;
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
   const catalog = await getStoreCatalog({ category: "consoles", page: 1, pageSize: 1, locale: lang });
@@ -27,7 +29,7 @@ export const generateMetadata = async ({
     dict.meta.gaming.description,
     "/gaming",
     undefined,
-    { noindex: catalog.total === 0 },
+    { noindex: catalog.total === 0 || hasCatalogSearchQuery(query) },
   );
 };
 
@@ -102,7 +104,7 @@ export default async function GamingPage({
       </section>
 
       {/* Gaming Store */}
-      <section className="section-pad" id="store">
+      <section className="bg-store-ground py-6 md:py-8" id="store">
         <div className="container-page">
           <StoreGrid
             products={catalog.products}

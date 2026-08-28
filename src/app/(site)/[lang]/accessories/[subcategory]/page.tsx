@@ -9,6 +9,7 @@ import { createMetadata } from "@/lib/metadata";
 import {
   countActiveSubcategoryProducts,
   getStoreCatalog,
+  hasCatalogSearchQuery,
   parseStoreCatalogFilters,
   parseStorePage,
   parseStoreSort,
@@ -21,10 +22,12 @@ export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string; subcategory: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> => {
-  const { lang: rawLang, subcategory } = await params;
+  const [{ lang: rawLang, subcategory }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const copy = getAccessoryCollection(subcategory, lang);
   if (!copy) {
@@ -39,7 +42,7 @@ export const generateMetadata = async ({
   // has stock rather than publishing a page with no products on it.
   const available = await countActiveSubcategoryProducts(copy.subcategory);
   return createMetadata(lang, copy.metaTitle, copy.description, `/accessories/${copy.slug}`, undefined, {
-    noindex: available === 0,
+    noindex: available === 0 || hasCatalogSearchQuery(query),
   });
 };
 
@@ -96,21 +99,13 @@ export default async function AccessorySubcategoryPage({
       { "@type": "ListItem", position: 3, name: copy.title, item: pageUrl },
     ],
   };
-  const faq = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: copy.faq.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: { "@type": "Answer", text: item.answer },
-    })),
-  };
+
 
   return (
     <div className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(faq) }} />
+
 
       <PageIntro title={copy.title} subtitle={copy.description} eyebrow={copy.eyebrow} />
 
@@ -133,7 +128,7 @@ export default async function AccessorySubcategoryPage({
         </div>
       </section>
 
-      <section className="section-pad" id="store">
+      <section className="bg-store-ground py-6 md:py-8" id="store">
         <div className="container-page">
           {catalog.total === 0 ? (
             <div className="rounded-2xl border border-border/60 bg-surface/40 p-8 text-center">

@@ -4,16 +4,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import ProductStatusBadge from "@/components/ProductStatusBadge";
+import type { CatalogCardModel } from "@/lib/catalog-card";
 import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
-import type { Product } from "@/lib/products";
 import { shouldBypassImageOptimization } from "@/lib/image";
 
 type TrendingProductsCarouselProps = {
-  products: Product[];
+  products: CatalogCardModel[];
   lang: Locale;
+  compact?: boolean;
 };
+
+const conditionLabels = {
+  de: { new: "Versiegelt", open_box: "Open Box", used: "Gebraucht" },
+  en: { new: "Sealed", open_box: "Open Box", used: "Used" },
+} as const;
 
 const ArrowIcon = ({ direction }: { direction: "left" | "right" }) => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -21,7 +26,7 @@ const ArrowIcon = ({ direction }: { direction: "left" | "right" }) => (
   </svg>
 );
 
-export default function TrendingProductsCarousel({ products, lang }: TrendingProductsCarouselProps) {
+export default function TrendingProductsCarousel({ products, lang, compact = false }: TrendingProductsCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   const isGerman = lang === "de";
@@ -44,18 +49,39 @@ export default function TrendingProductsCarousel({ products, lang }: TrendingPro
     track.scrollBy({ left: distance * direction, behavior: "smooth" });
   }, []);
 
+  // Autoplay is a pointer-device affordance. On touch there is no hover to pause
+  // it, so a self-advancing track fights the user mid-swipe — don't run it there.
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (paused || reduceMotion.matches || products.length < 5) return;
-    const timer = window.setInterval(() => scroll(1), 6_500);
+    const coarsePointer = window.matchMedia("(pointer: coarse)");
+    if (paused || reduceMotion.matches || coarsePointer.matches || products.length < 5) return;
+    const timer = window.setInterval(() => {
+      if (document.hidden) return;
+      scroll(1);
+    }, 6_500);
     return () => window.clearInterval(timer);
   }, [paused, products.length, scroll]);
+
+  // Any direct interaction with the track stops autoplay for the rest of the visit.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const stop = () => setPaused(true);
+    track.addEventListener("touchstart", stop, { passive: true });
+    track.addEventListener("pointerdown", stop);
+    track.addEventListener("wheel", stop, { passive: true });
+    return () => {
+      track.removeEventListener("touchstart", stop);
+      track.removeEventListener("pointerdown", stop);
+      track.removeEventListener("wheel", stop);
+    };
+  }, []);
 
   if (products.length === 0) return null;
 
   return (
     <section
-      className="mb-10 overflow-hidden rounded-3xl border border-border/60 bg-surface/45 p-4 shadow-lg shadow-black/5 sm:p-6"
+      className={`${compact ? "my-5" : "mb-10"} overflow-hidden rounded-2xl border border-border p-4 sm:p-5`}
       aria-labelledby="trending-products-heading"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -64,12 +90,12 @@ export default function TrendingProductsCarousel({ products, lang }: TrendingPro
         if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
       }}
     >
-      <div className="mb-5 flex items-end justify-between gap-4">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
             {isGerman ? "Aktuell gefragt" : "Trending now"}
           </p>
-          <h2 id="trending-products-heading" className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">
+          <h2 id="trending-products-heading" className={`${compact ? "text-xl" : "text-2xl sm:text-3xl"} mt-1 font-bold text-foreground`}>
             {isGerman ? "Trend-Produkte im Shop" : "Trending products in store"}
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-muted">
@@ -78,7 +104,7 @@ export default function TrendingProductsCarousel({ products, lang }: TrendingPro
               : "Selected from current search demand – only items available now."}
           </p>
         </div>
-        <div className="hidden shrink-0 gap-2 sm:flex">
+        <div className="flex shrink-0 gap-2 self-end sm:self-auto">
           <button
             type="button"
             onClick={() => scroll(-1)}
@@ -100,7 +126,7 @@ export default function TrendingProductsCarousel({ products, lang }: TrendingPro
 
       <div
         ref={trackRef}
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [scrollbar-width:thin] [scrollbar-color:rgba(212,175,55,.55)_transparent]"
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label={isGerman ? "Karussell mit Trend-Produkten" : "Trending products carousel"}
       >
         {products.map((product) => (
@@ -108,9 +134,9 @@ export default function TrendingProductsCarousel({ products, lang }: TrendingPro
             data-trending-card
             key={product.id}
             href={`/${lang}/store/${product.slug}`}
-            className="group relative flex min-w-[82%] snap-start flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/70 shadow-md transition duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold sm:min-w-[46%] lg:min-w-[calc((100%-3rem)/4)]"
+            className="group relative flex w-[78%] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-border bg-store-card transition-colors duration-200 hover:border-gold/60 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold sm:w-[46%] lg:w-[calc((100%-2rem)/3)] xl:w-[calc((100%-3rem)/4)]"
           >
-            <div className="relative aspect-[4/3] overflow-hidden bg-[#f5f5f5] p-4">
+            <div className="relative aspect-square overflow-hidden bg-white p-3">
               <Image
                 src={product.image}
                 alt={product.title}
@@ -119,10 +145,10 @@ export default function TrendingProductsCarousel({ products, lang }: TrendingPro
                 className="object-contain p-4 transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none"
                 unoptimized={shouldBypassImageOptimization(product.image)}
               />
-              <ProductStatusBadge condition={product.condition} lang={lang} className="absolute right-3 top-3" />
+              <span className="absolute right-2 top-2 rounded-full border border-gold/30 bg-gold/15 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-gold">{conditionLabels[lang][product.condition]}</span>
             </div>
-            <div className="flex flex-1 flex-col p-4">
-              <h3 className="line-clamp-2 min-h-10 text-base font-bold leading-tight text-foreground group-hover:text-gold">
+            <div className="flex flex-1 flex-col p-3.5">
+              <h3 className="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-foreground group-hover:text-gold">
                 {product.title}
               </h3>
               <div className="mt-4 flex items-end justify-between gap-3 border-t border-border/50 pt-3">

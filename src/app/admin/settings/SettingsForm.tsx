@@ -24,7 +24,7 @@ const statusPillClass = (active: boolean) =>
   `rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
     active
       ? "border-green-500/30 bg-green-950/20 text-green-300"
-      : "border-white/10 bg-white/[0.03] text-muted"
+      : "border-border bg-surface-strong text-muted"
   }`;
 
 export default function SettingsForm({
@@ -152,7 +152,7 @@ export default function SettingsForm({
                     type="text"
                     value={settings.general.shopName}
                     onChange={(e) => handleChange("general", "shopName", e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
+                    className="w-full rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
                   />
                 </div>
                 <div className="space-y-2">
@@ -161,7 +161,7 @@ export default function SettingsForm({
                     type="text"
                     value={settings.general.owner}
                     onChange={(e) => handleChange("general", "owner", e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
+                    className="w-full rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
@@ -170,7 +170,7 @@ export default function SettingsForm({
                     type="text"
                     value={settings.general.address}
                     onChange={(e) => handleChange("general", "address", e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
+                    className="w-full rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
                   />
                 </div>
                 <div className="space-y-2">
@@ -179,7 +179,7 @@ export default function SettingsForm({
                     type="email"
                     value={settings.general.email}
                     onChange={(e) => handleChange("general", "email", e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
+                    className="w-full rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
                   />
                 </div>
                 <div className="space-y-2">
@@ -188,7 +188,7 @@ export default function SettingsForm({
                     type="text"
                     value={settings.general.phone}
                     onChange={(e) => handleChange("general", "phone", e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
+                    className="w-full rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition"
                   />
                 </div>
               </div>
@@ -205,7 +205,7 @@ export default function SettingsForm({
                       type="text"
                       value={settings.hours[day as keyof typeof settings.hours]}
                       onChange={(e) => handleChange("hours", day, e.target.value)}
-                      className={`rounded-lg border border-white/10 bg-black/20 px-3 py-1.5 text-xs text-foreground text-center focus:border-gold focus:outline-none transition ${day === "sunday" ? "text-red-400" : ""}`}
+                      className={`rounded-lg border border-border bg-black/20 px-3 py-1.5 text-xs text-foreground text-center focus:border-gold focus:outline-none transition ${day === "sunday" ? "text-red-400" : ""}`}
                     />
                   </div>
                 ))}
@@ -228,7 +228,7 @@ export default function SettingsForm({
                     : dict.settingsForm.maintenanceOff}
               </p>
               <div className="mt-5 space-y-4">
-                <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+                <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-black/20 px-4 py-3">
                   <div>
                     <p className="text-sm font-semibold text-foreground">{dict.settingsForm.maintenanceSiteTitle}</p>
                     <p className="mt-1 text-xs text-muted">{dict.settingsForm.maintenanceSiteDesc}</p>
@@ -241,7 +241,7 @@ export default function SettingsForm({
                     <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${settings.maintenance.siteEnabled ? "translate-x-5" : "translate-x-0"}`} />
                   </button>
                 </div>
-                <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+                <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-black/20 px-4 py-3">
                   <div>
                     <p className="text-sm font-semibold text-foreground">{dict.settingsForm.maintenanceStoreTitle}</p>
                     <p className="mt-1 text-xs text-muted">{dict.settingsForm.maintenanceStoreDesc}</p>
@@ -257,7 +257,7 @@ export default function SettingsForm({
               </div>
             </div>
 
-            <div className={`glass-panel rounded-3xl border p-6 transition-colors ${settings.recaptcha?.enabled ? "border-green-500/30 bg-green-950/10" : "border-white/10"}`}>
+            <div className={`glass-panel rounded-3xl border p-6 transition-colors ${settings.recaptcha?.enabled ? "border-green-500/30 bg-green-950/10" : "border-border"}`}>
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-foreground">{dict.settingsForm.recaptchaTitle}</h2>
                 <button
@@ -277,7 +277,7 @@ export default function SettingsForm({
                     value={settings.recaptcha?.siteKey || ""}
                     onChange={(e) => handleChange("recaptcha", "siteKey", e.target.value)}
                     placeholder="6Le..."
-                    className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -287,7 +287,7 @@ export default function SettingsForm({
                     value={settings.recaptcha?.secretKey || ""}
                     onChange={(e) => handleChange("recaptcha", "secretKey", e.target.value)}
                     placeholder="6Le..."
-                    className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
                   />
                   <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                 </div>
@@ -303,7 +303,7 @@ export default function SettingsForm({
                       const nextValue = Number.parseFloat(e.target.value);
                       handleChange("recaptcha", "minScore", Number.isNaN(nextValue) ? 0.5 : nextValue);
                     }}
-                    className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
                   />
                   <p className="text-xs text-muted/60">{dict.settingsForm.minScoreHint}</p>
                 </div>
@@ -332,15 +332,15 @@ export default function SettingsForm({
               <div className="mt-5 space-y-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.whatsappNumber}</label>
-                  <input type="text" value={settings.integrations.whatsappNumber} onChange={(e) => handleChange("integrations", "whatsappNumber", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                  <input type="text" value={settings.integrations.whatsappNumber} onChange={(e) => handleChange("integrations", "whatsappNumber", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.whatsappDefaultMessageDe}</label>
-                  <textarea value={settings.integrations.whatsappDefaultMessageDe} onChange={(e) => handleChange("integrations", "whatsappDefaultMessageDe", e.target.value)} rows={3} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                  <textarea value={settings.integrations.whatsappDefaultMessageDe} onChange={(e) => handleChange("integrations", "whatsappDefaultMessageDe", e.target.value)} rows={3} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.whatsappDefaultMessageEn}</label>
-                  <textarea value={settings.integrations.whatsappDefaultMessageEn} onChange={(e) => handleChange("integrations", "whatsappDefaultMessageEn", e.target.value)} rows={3} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                  <textarea value={settings.integrations.whatsappDefaultMessageEn} onChange={(e) => handleChange("integrations", "whatsappDefaultMessageEn", e.target.value)} rows={3} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                 </div>
               </div>
             </div>
@@ -360,20 +360,20 @@ export default function SettingsForm({
               <div className="mt-5 space-y-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.whatsappPhoneNumberId}</label>
-                  <input type="text" value={settings.integrations.whatsappPhoneNumberId} onChange={(e) => handleChange("integrations", "whatsappPhoneNumberId", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                  <input type="text" value={settings.integrations.whatsappPhoneNumberId} onChange={(e) => handleChange("integrations", "whatsappPhoneNumberId", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.whatsappBusinessAccountId}</label>
-                  <input type="text" value={settings.integrations.whatsappBusinessAccountId} onChange={(e) => handleChange("integrations", "whatsappBusinessAccountId", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                  <input type="text" value={settings.integrations.whatsappBusinessAccountId} onChange={(e) => handleChange("integrations", "whatsappBusinessAccountId", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.whatsappAccessToken}</label>
-                  <input type="password" value={settings.integrations.whatsappAccessToken} onChange={(e) => handleChange("integrations", "whatsappAccessToken", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                  <input type="password" value={settings.integrations.whatsappAccessToken} onChange={(e) => handleChange("integrations", "whatsappAccessToken", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.whatsappWebhookVerifyToken}</label>
-                  <input type="password" value={settings.integrations.whatsappWebhookVerifyToken} onChange={(e) => handleChange("integrations", "whatsappWebhookVerifyToken", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                  <input type="password" value={settings.integrations.whatsappWebhookVerifyToken} onChange={(e) => handleChange("integrations", "whatsappWebhookVerifyToken", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                 </div>
               </div>
@@ -417,21 +417,21 @@ export default function SettingsForm({
                 <div className="mt-5 space-y-3">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.metaPixelId}</label>
-                    <input type="text" value={settings.integrations.metaPixelId} onChange={(e) => handleChange("integrations", "metaPixelId", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="text" value={settings.integrations.metaPixelId} onChange={(e) => handleChange("integrations", "metaPixelId", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.metaConversionsToken}</label>
-                    <input type="password" value={settings.integrations.metaConversionsApiToken} onChange={(e) => handleChange("integrations", "metaConversionsApiToken", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="password" value={settings.integrations.metaConversionsApiToken} onChange={(e) => handleChange("integrations", "metaConversionsApiToken", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                     <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.metaDatasetQualityToken}</label>
-                    <input type="password" value={settings.integrations.metaDatasetQualityApiToken} onChange={(e) => handleChange("integrations", "metaDatasetQualityApiToken", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="password" value={settings.integrations.metaDatasetQualityApiToken} onChange={(e) => handleChange("integrations", "metaDatasetQualityApiToken", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                     <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.metaTestEventCode}</label>
-                    <input type="text" value={settings.integrations.metaConversionsTestEventCode} onChange={(e) => handleChange("integrations", "metaConversionsTestEventCode", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="text" value={settings.integrations.metaConversionsTestEventCode} onChange={(e) => handleChange("integrations", "metaConversionsTestEventCode", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   </div>
                 </div>
               </div>
@@ -451,16 +451,16 @@ export default function SettingsForm({
                 <div className="mt-5 space-y-3">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.tiktokPixelId}</label>
-                    <input type="text" value={settings.integrations.tiktokPixelId} onChange={(e) => handleChange("integrations", "tiktokPixelId", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="text" value={settings.integrations.tiktokPixelId} onChange={(e) => handleChange("integrations", "tiktokPixelId", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.tiktokEventsToken}</label>
-                    <input type="password" value={settings.integrations.tiktokEventsApiToken} onChange={(e) => handleChange("integrations", "tiktokEventsApiToken", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="password" value={settings.integrations.tiktokEventsApiToken} onChange={(e) => handleChange("integrations", "tiktokEventsApiToken", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                     <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.tiktokTestEventCode}</label>
-                    <input type="text" value={settings.integrations.tiktokTestEventCode} onChange={(e) => handleChange("integrations", "tiktokTestEventCode", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="text" value={settings.integrations.tiktokTestEventCode} onChange={(e) => handleChange("integrations", "tiktokTestEventCode", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   </div>
                 </div>
               </div>
@@ -485,7 +485,7 @@ export default function SettingsForm({
                   type="text"
                   value={settings.integrations.googleAnalyticsId}
                   onChange={(e) => handleChange("integrations", "googleAnalyticsId", e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none"
                   placeholder="G-XXXXXXXXXX"
                 />
               </div>
@@ -498,20 +498,20 @@ export default function SettingsForm({
                 <div className="mt-5 space-y-3">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.facebookPageId}</label>
-                    <input type="text" value={settings.integrations.facebookPageId} onChange={(e) => handleChange("integrations", "facebookPageId", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="text" value={settings.integrations.facebookPageId} onChange={(e) => handleChange("integrations", "facebookPageId", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.facebookPageToken}</label>
-                    <input type="password" value={settings.integrations.facebookPageAccessToken} onChange={(e) => handleChange("integrations", "facebookPageAccessToken", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="password" value={settings.integrations.facebookPageAccessToken} onChange={(e) => handleChange("integrations", "facebookPageAccessToken", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                     <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.instagramBusinessId}</label>
-                    <input type="text" value={settings.integrations.instagramBusinessAccountId} onChange={(e) => handleChange("integrations", "instagramBusinessAccountId", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="text" value={settings.integrations.instagramBusinessAccountId} onChange={(e) => handleChange("integrations", "instagramBusinessAccountId", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.instagramAccessToken}</label>
-                    <input type="password" value={settings.integrations.instagramAccessToken} onChange={(e) => handleChange("integrations", "instagramAccessToken", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="password" value={settings.integrations.instagramAccessToken} onChange={(e) => handleChange("integrations", "instagramAccessToken", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                     <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                   </div>
                 </div>
@@ -532,16 +532,16 @@ export default function SettingsForm({
                 <div className="mt-5 space-y-3">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.tiktokShopAppKey}</label>
-                    <input type="text" value={settings.integrations.tiktokShopAppKey} onChange={(e) => handleChange("integrations", "tiktokShopAppKey", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="text" value={settings.integrations.tiktokShopAppKey} onChange={(e) => handleChange("integrations", "tiktokShopAppKey", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.tiktokShopAppSecret}</label>
-                    <input type="password" value={settings.integrations.tiktokShopAppSecret} onChange={(e) => handleChange("integrations", "tiktokShopAppSecret", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="password" value={settings.integrations.tiktokShopAppSecret} onChange={(e) => handleChange("integrations", "tiktokShopAppSecret", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                     <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted">{dict.settingsForm.tiktokShopWebhookSecret}</label>
-                    <input type="password" value={settings.integrations.tiktokShopWebhookSecret} onChange={(e) => handleChange("integrations", "tiktokShopWebhookSecret", e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
+                    <input type="password" value={settings.integrations.tiktokShopWebhookSecret} onChange={(e) => handleChange("integrations", "tiktokShopWebhookSecret", e.target.value)} className="w-full rounded-lg border border-border bg-black/20 px-3 py-2 text-xs text-foreground focus:border-gold focus:outline-none" />
                     <p className="text-xs text-muted/60">{dict.settingsForm.leaveSecretBlank}</p>
                   </div>
                 </div>
@@ -619,13 +619,13 @@ export default function SettingsForm({
           </div>
         )}
 
-        <div className="sticky bottom-6 z-20 flex items-center justify-between rounded-2xl border border-white/10 bg-surface/90 p-4 backdrop-blur-md shadow-2xl">
+        <div className="sticky bottom-6 z-20 flex items-center justify-between rounded-2xl border border-border bg-surface/90 p-4 backdrop-blur-md shadow-2xl">
           <div className="text-sm">
             {message && <span className={message.type === "success" ? "text-green-400" : "text-red-400"}>{message.text}</span>}
           </div>
           <button onClick={handleSave} disabled={loading} className="btn-primary flex items-center gap-2 px-6 py-2.5 disabled:opacity-50">
             {loading ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-white" />
             ) : (
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

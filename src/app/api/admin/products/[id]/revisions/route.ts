@@ -12,7 +12,7 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { authorizeProductStaff } = await import("@/lib/product-intake/admin-auth");
-    authorizeProductStaff(request);
+    await authorizeProductStaff(request);
     const { id } = await context.params;
     if (!uuidPattern.test(id)) throw new SchemaValidationError(["product id must be a UUID"]);
     return NextResponse.json({ success: true, revisions: await listProductRevisions(id, 100) });
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = authorizeProductOwner(request);
+    const auth = await authorizeProductOwner(request);
     const { id } = await context.params;
     if (!uuidPattern.test(id)) throw new SchemaValidationError(["product id must be a UUID"]);
     const { value } = await readJsonRequest(request);

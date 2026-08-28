@@ -4,15 +4,15 @@ import { Readable } from "node:stream";
 import { NextRequest, NextResponse } from "next/server";
 
 import { readSessionUserFromRequest } from "@/lib/session";
+import { isAdminUser } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
 export async function GET(request: NextRequest) {
-  if (!readSessionUserFromRequest(request)) {
-    return unauthorized();
-  }
+  const user = await readSessionUserFromRequest(request);
+  if (!isAdminUser(user)) return unauthorized();
 
   const type = request.nextUrl.searchParams.get("type");
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");

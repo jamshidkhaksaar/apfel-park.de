@@ -45,6 +45,10 @@ const { rows: orders } = await client.query(
   `SELECT id, order_number, customer_email, customer_name, checkout_locale, items
    FROM orders
    WHERE payment_status = 'paid'
+     -- An order can be paid and later cancelled or refunded; without this an
+     -- refunded customer gets asked to review the product they returned.
+     AND status <> 'cancelled'
+     AND cancelled_at IS NULL
      AND paid_at IS NOT NULL
      AND paid_at < now() - ($1 || ' days')::interval
      AND coalesce(metadata->>'reviewInviteSentAt', '') = ''

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { query } from '@/lib/db';
 import { requireRepairEstimateUser } from '@/lib/repair-estimate-auth';
+import { rejectCrossSiteAdminMutation } from '@/lib/admin-csrf';
 import { renderRepairEstimatePdf } from '@/lib/repair-estimate-pdf';
 import { getEstimateTemplateSettings } from '@/lib/repair-estimate-settings';
 import { removeEstimatePdf, writeEstimatePdf } from '@/lib/repair-estimate-storage';
@@ -23,6 +24,8 @@ export async function POST(
   const auth = await requireRepairEstimateUser();
   if (auth.response) return auth.response;
   if (!auth.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const csrf = rejectCrossSiteAdminMutation(request);
+  if (csrf) return csrf;
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: 'Invalid estimate' }, { status: 400 });
 

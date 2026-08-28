@@ -13,6 +13,9 @@ import {
   type CartInputItem,
   type CustomerDetails,
 } from "@/lib/checkout";
+import { applyCouponToValidatedCart } from "@/lib/coupon-repository";
+import { buildPayPalDiscountedAmount } from "@/lib/payment-coupon";
+import { consumePublicRateLimit } from "@/lib/public-rate-limit";
 
 type PayPalCreatePayload = {
   items?: CartInputItem[];
@@ -22,6 +25,7 @@ type PayPalCreatePayload = {
   idempotencyKey?: string;
   conditionConsent?: boolean;
   termsConsent?: boolean;
+  couponCode?: string;
 };
 
 const getPayPalBaseUrl = () =>
@@ -50,12 +54,18 @@ const getAccessToken = async () => {
 };
 
 export async function POST(request: NextRequest) {
+  const limit = await consumePublicRateLimit(request.headers, "checkout_create", 8, 15 * 60);
+  if (!limit.allowed) return NextResponse.json({ success: false, error: "Too many checkout attempts" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
+  let pendingOrderId: string | null = null;
+  let providerRequestStarted = false;
+  let remoteOrderId: string | null = null;
   try {
     const payload = (await request.json()) as PayPalCreatePayload;
     const locale = payload.locale === "en" ? "en" : "de";
     const shippingMethod = normalizeShippingMethod(payload.shippingMethod);
     const customer = normalizeCheckoutCustomer(payload.customer, shippingMethod, locale);
-    const cart = await validateCartItems(payload.items ?? [], shippingMethod);
+    let cart = await validateCartItems(payload.items ?? [], shippingMethod);
+    if(payload.couponCode?.trim()){const applied=await applyCouponToValidatedCart(payload.couponCode,cart);if(!applied.ok)return NextResponse.json({success:false,error:applied.error},{status:400});cart=applied.cart;}
 
     const hasNonNewItems = cart.items.some((line) => line.condition !== "new");
     if (hasNonNewItems && payload.conditionConsent !== true) {
@@ -86,7 +96,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const token = await getAccessToken();
     const order = await createPendingOrder({
       cart,
       customer,
@@ -97,8 +106,12 @@ export async function POST(request: NextRequest) {
       conditionConsent: buildConditionConsent(cart, true),
       termsConsentAt: new Date().toISOString(),
     });
+    pendingOrderId = order.id;
+    const token = await getAccessToken();
 
     const origin = getCheckoutBaseUrl();
+    if (!(await attachProviderReference({ orderId: order.id, provider: "paypal", providerStatus: "paypal_order_requesting" }))) throw new Error("PayPal request state could not be recorded");
+    providerRequestStarted = true;
     const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
       method: "POST",
       headers: {
@@ -113,15 +126,7 @@ export async function POST(request: NextRequest) {
             reference_id: order.id,
             invoice_id: order.orderNumber ? `A-${order.orderNumber}` : order.id,
             custom_id: order.id,
-            amount: {
-              currency_code: cart.currency,
-              value: cart.totalAmount.toFixed(2),
-              breakdown: {
-                item_total: { currency_code: cart.currency, value: cart.subtotalAmount.toFixed(2) },
-                shipping: { currency_code: cart.currency, value: cart.shippingAmount.toFixed(2) },
-                tax_total: { currency_code: cart.currency, value: "0.00" },
-              },
-            },
+            amount: buildPayPalDiscountedAmount(cart),
             items: cart.items.map((item) => ({
               name: item.title.slice(0, 127),
               sku: item.sku || item.productId,
@@ -153,24 +158,28 @@ export async function POST(request: NextRequest) {
       links?: Array<{ href: string; rel: string }>;
       message?: string;
     };
+    remoteOrderId = data.id ?? null;
     if (!response.ok || !data.id) {
-      await markOrderCancelled({
-        provider: "paypal",
-        orderId: order.id,
-        providerStatus: "order_creation_failed",
-      });
+      const indeterminate = response.status >= 500 || response.ok || Boolean(data.id);
+      if (indeterminate) {
+        const attached = await attachProviderReference({ orderId: order.id, provider: "paypal", providerOrderId: data.id ?? null, providerStatus: "paypal_order_outcome_unknown" });
+        if (!attached) throw new Error("Indeterminate PayPal order could not be recorded");
+      } else {
+        await markOrderCancelled({ provider: "paypal", orderId: order.id, providerStatus: "order_creation_failed" });
+      }
       return NextResponse.json(
         { success: false, error: data.message || "PayPal order could not be created" },
-        { status: 502 },
+        { status: indeterminate ? 503 : 502 },
       );
     }
 
-    await attachProviderReference({
+    const attached = await attachProviderReference({
       orderId: order.id,
       provider: "paypal",
       providerOrderId: data.id,
       providerStatus: data.status || "CREATED",
     });
+    if (!attached) throw new Error("PayPal order could not be bound to the local order");
 
     return NextResponse.json({
       success: true,
@@ -179,6 +188,19 @@ export async function POST(request: NextRequest) {
       approveUrl: data.links?.find((link) => link.rel === "payer-action" || link.rel === "approve")?.href ?? null,
     });
   } catch (error) {
+    if (pendingOrderId) {
+      try {
+        if (remoteOrderId) {
+          if (!(await attachProviderReference({ orderId: pendingOrderId, provider: "paypal", providerOrderId: remoteOrderId, providerStatus: "provider_response_recovered" }))) throw new Error("PayPal response binding conflict");
+        } else if (!providerRequestStarted) {
+          await markOrderCancelled({ provider: "paypal", orderId: pendingOrderId, providerStatus: "provider_request_failed" });
+        } else {
+          if (!(await attachProviderReference({ orderId: pendingOrderId, provider: "paypal", providerStatus: "paypal_order_outcome_unknown" }))) throw new Error("PayPal unknown outcome could not be recorded");
+        }
+      } catch (cleanupError) {
+        console.error("PayPal checkout recovery failed", { orderId: pendingOrderId, error: cleanupError instanceof Error ? cleanupError.message : "recovery failed" });
+      }
+    }
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "PayPal checkout could not be started" },
       { status: 400 },

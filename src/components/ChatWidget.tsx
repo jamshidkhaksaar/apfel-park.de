@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { useReCaptcha } from "@/components/ReCaptcha";
+import { shouldHideChatWidget, shouldHideChatWidgetOnMobile } from "@/lib/chat-ui";
 
 type ChatLocale = "de" | "en";
 type ChatStatus = "open" | "waiting" | "resolved";
@@ -175,10 +176,8 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
     ReCaptchaComponent,
   } = useReCaptcha("chat_request");
 
-  const hidden =
-    pathname === "/login" ||
-    pathname?.startsWith("/admin") ||
-    pathname === "/maintenance";
+  const hidden = shouldHideChatWidget(pathname);
+  const hiddenOnMobile = shouldHideChatWidgetOnMobile(pathname);
 
   const normalizeNumber = (value: string) => value.replace(/[^\d]/g, "");
   const whatsappMessage = lang === "de" ? whatsapp.defaultMessageDe : whatsapp.defaultMessageEn;
@@ -399,7 +398,8 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
 
   return (
     <div
-      className="fixed left-4 z-[130] md:left-6"
+      data-apfel-chat
+      className={`fixed left-4 z-[130] md:left-6 ${hiddenOnMobile ? "hidden md:block" : ""}`}
       style={{ bottom: "calc(1rem + var(--apfel-cookie-banner-height, 0px))" }}
     >
       {open ? (

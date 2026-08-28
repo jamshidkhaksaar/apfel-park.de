@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    authorizeProductStaff(request);
+    await authorizeProductStaff(request);
     const { id } = await context.params;
     const runId = await resolveProductIntakeRunId(parseRunReference(id));
     const detail = await getProductIntakeRunDetail(runId);

@@ -21,7 +21,7 @@ const redirectToAdmin = (request: NextRequest, params: Record<string, string>): 
 };
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const user = readSessionUserFromRequest(request);
+  const user = await readSessionUserFromRequest(request);
   if (!isAdminUser(user) || !user?.email) return redirectToAdmin(request, { error: "auth" });
 
   const stateValue = request.nextUrl.searchParams.get("state") ?? "";

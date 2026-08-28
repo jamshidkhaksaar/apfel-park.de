@@ -29,20 +29,20 @@ export default function FeaturedStore({
 
   return (
     <section
-      className="section-pad relative overflow-hidden bg-surface-strong"
+      className="relative overflow-hidden bg-surface-strong py-10 md:py-28"
       suppressHydrationWarning
     >
       {/* Background Decor */}
       <div className="absolute inset-0 featured-store-scrim pointer-events-none" />
-      <div className="absolute top-0 right-0 h-96 w-96 translate-x-1/3 -translate-y-1/3 rounded-full bg-gold/5 blur-[100px]" />
+      <div className="absolute right-0 top-0 hidden h-96 w-96 -translate-y-1/3 translate-x-1/3 rounded-full bg-gold/5 blur-[100px] md:block" />
 
       <div className="container-page relative z-10">
-        <div className="mb-12 flex flex-col items-center justify-between gap-6 md:flex-row md:items-end">
-          <div>
+        <div className="mb-7 flex flex-col items-center justify-between gap-4 md:mb-12 md:flex-row md:items-end md:gap-6">
+          <div className="w-full text-center md:w-auto md:text-left">
             <span className="text-xs font-bold uppercase tracking-widest text-gold mb-2 block">
               {featured.eyebrow}
             </span>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+            <h2 className="text-balance text-[1.75rem] font-bold leading-tight tracking-tight text-foreground md:text-4xl">
               {featured.title}
             </h2>
           </div>
@@ -99,7 +99,7 @@ export default function FeaturedStore({
                   {product.category}
                 </span>
                 {discount ? (
-                  <span className="absolute right-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                  <span className="absolute right-3 top-3 rounded-full bg-sale px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
                     -{discount}%
                   </span>
                 ) : null}
@@ -116,16 +116,16 @@ export default function FeaturedStore({
                 
                 <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-3">
                   <div className="flex flex-col">
-                    <span className="text-base font-semibold text-foreground">
+                    <span className="text-lg font-bold text-foreground">
                       {formatPrice(lang, product.price)}
                     </span>
                     {product.compareAtPrice ? (
-                      <span className="text-xs text-muted line-through">
+                      <span className="text-xs font-semibold text-muted-strong line-through">
                         {formatPrice(lang, product.compareAtPrice)}
                       </span>
                     ) : null}
                   </div>
-                  <span className="text-[9px] font-medium uppercase tracking-wider text-green">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-green-text">
                     {featured.inStock}
                   </span>
                 </div>

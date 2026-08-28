@@ -103,7 +103,7 @@ export default function StoreFilterPanels({
           <button
             type="button"
             onClick={onClearAll}
-            className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-gold transition hover:bg-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
+            className="inline-flex min-h-11 shrink-0 items-center rounded-lg px-3 text-xs font-semibold text-gold transition hover:bg-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
           >
             {isGerman ? "Zurücksetzen" : "Clear all"}
           </button>

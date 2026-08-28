@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
@@ -22,9 +21,12 @@ import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import ProductDetailExperience from "@/components/ProductDetailExperience";
+import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
+import ProductProfessionalExperience from "@/components/ProductProfessionalExperience";
 import { requireLocale } from "@/lib/route-locale";
-import { shouldBypassImageOptimization } from "@/lib/image";
 import { validatedGtin } from "@/lib/product-identifiers";
+import { PRODUCT_PAGE_CONTAINER_CLASS } from "@/lib/product-page-layout";
+import { getProductExperienceView } from "@/lib/product-experience-repository";
 
 export const dynamic = "force-dynamic";
 
@@ -159,10 +161,11 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  const [relatedProducts, reviews, ratingSummary] = await Promise.all([
+  const [relatedProducts, reviews, ratingSummary, experience] = await Promise.all([
     getRelatedProducts(product, 4, locale),
     getApprovedReviews(product.id),
     getRatingSummary(product.id),
+    getProductExperienceView(product.id, locale),
   ]);
   const isOutOfStock = (product.stock ?? 0) <= 0;
   const fulfillmentFaqPattern = /abhol|versand|liefer|pickup|shipping|deliver/i;
@@ -286,18 +289,6 @@ export default async function ProductDetailPage({
           },
         }),
   };
-  const faqJsonLd =
-    displayFaq.length > 0
-      ? {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: displayFaq.map((entry) => ({
-            "@type": "Question",
-            name: entry.question,
-            acceptedAnswer: { "@type": "Answer", text: entry.answer },
-          })),
-        }
-      : null;
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -309,7 +300,7 @@ export default async function ProductDetailPage({
     ],
   };
   return (
-    <div className="bg-background">
+    <div className="bg-store-ground pb-[calc(9rem+env(safe-area-inset-bottom))] md:pb-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonStringify(productJsonLd) }}
@@ -318,12 +309,7 @@ export default async function ProductDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumbJsonLd) }}
       />
-      {faqJsonLd ? (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonStringify(faqJsonLd) }}
-        />
-      ) : null}
+
       <ProductViewTracker
         productId={product.id}
         title={product.title}
@@ -333,9 +319,9 @@ export default async function ProductDetailPage({
         locale={locale}
         slug={product.slug}
       />
-      <section className="section-pad">
-        <div className="container-page">
-          <div className="mb-6 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-muted">
+      <section className="py-5 md:py-10">
+        <div className={PRODUCT_PAGE_CONTAINER_CLASS}>
+          <div className="mb-4 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-muted md:mb-6">
             <Link href={`/${locale}/store`} className="transition hover:text-gold">
               {locale === "de" ? "Shop" : "Store"}
             </Link>
@@ -343,8 +329,8 @@ export default async function ProductDetailPage({
             <Link href={`/${locale}/${categoryPath}`} className="transition hover:text-gold">
               {productCategoryLabel(locale, product.category)}
             </Link>
-            <span>/</span>
-            <span className="text-foreground">{product.title}</span>
+            <span className="hidden md:inline">/</span>
+            <span className="hidden text-foreground md:inline">{product.title}</span>
           </div>
 
           <ProductDetailExperience
@@ -352,9 +338,10 @@ export default async function ProductDetailPage({
             product={{ ...product, faq: displayFaq }}
             ratingSummary={ratingSummary}
             initialVariantToken={typeof invitation.variant === "string" ? invitation.variant : undefined}
+            experience={experience}
           />
 
-      <section className="container-page pb-4">
+      <section className="pb-4">
         <ProductReviews
           locale={locale}
           productId={product.id}
@@ -364,56 +351,48 @@ export default async function ProductDetailPage({
           token={typeof invitation.rt === "string" ? invitation.rt : null}
         />
       </section>
+      <ProductProfessionalExperience
+        locale={locale}
+        profile={experience.profile}
+        comparisons={experience.comparisons}
+        bundles={experience.bundles}
+        current={{
+          id: product.id,
+          slug: product.slug,
+          title: product.title,
+          image: product.image,
+          price: product.price,
+          stock: product.stock ?? 0,
+          condition: product.condition,
+          dimensions: experience.profile.dimensions,
+        }}
+      />
         </div>
       </section>
 
       {relatedProducts.length > 0 ? (
-        <section className="section-pad border-t border-border/60 bg-surface/30">
+        <section className="border-t border-border py-10 md:py-14">
           <div className="container-page">
-            <div className="mb-8 flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
-                  {locale === "de" ? "Empfehlungen" : "Recommended"}
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-foreground">
-                  {locale === "de" ? "Ähnliche Produkte" : "Related products"}
-                </h2>
-              </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-              {relatedProducts.map((related) => (
-                <Link key={related.id} href={`/${locale}/store/${related.slug}`} className="group overflow-hidden rounded-3xl border border-border/60 bg-surface/60 transition hover:-translate-y-1 hover:border-gold/30">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-[#f5f5f5]">
-                    <Image
-                      src={related.image}
-                      alt={related.title}
-                      fill
-                      sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
-                      className="object-contain p-5 transition duration-500 group-hover:scale-105"
-                      unoptimized={shouldBypassImageOptimization(related.image)}
-                    />
-                  </div>
-                  <div className="p-5">
-                    <p className="text-sm font-semibold text-foreground">{related.title}</p>
-                    {(() => {
-                      const tags = [
-                        related.subcategory && related.subcategory !== related.category
-                          ? subcategoryLabel(related.subcategory, locale)
-                          : null,
-                        related.condition !== "new"
-                          ? related.condition === "used"
-                            ? locale === "de" ? "Gebraucht A+" : "Used A+"
-                            : "Open-Box"
-                          : null,
-                      ].filter(Boolean);
-                      return tags.length > 0 ? <p className="mt-1 text-xs text-muted">{tags.join(" · ")}</p> : null;
-                    })()}
-                    <p className="mt-2 text-sm text-muted">{formatMoney(locale, related.price)}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <RelatedProductsCarousel
+              locale={locale}
+              products={relatedProducts.map((related) => ({
+                id: related.id,
+                slug: related.slug,
+                title: related.title,
+                image: related.image,
+                price: related.price,
+                metaLabel: [
+                  related.subcategory && related.subcategory !== related.category
+                    ? subcategoryLabel(related.subcategory, locale)
+                    : null,
+                  related.condition !== "new"
+                    ? related.condition === "used"
+                      ? locale === "de" ? "Gebraucht A+" : "Used A+"
+                      : "Open-Box"
+                    : null,
+                ].filter(Boolean).join(" · "),
+              }))}
+            />
           </div>
         </section>
       ) : null}

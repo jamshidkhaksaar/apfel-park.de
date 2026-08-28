@@ -1,10 +1,13 @@
 import { randomUUID, timingSafeEqual, createHmac } from "node:crypto";
 
-import { query, withTransaction } from "@/lib/db";
+import { query, withTransaction, type TransactionClient } from "@/lib/db";
 import { releaseInventoryReservation, reserveInventoryBatch } from "@/lib/marketplaces/inventory";
 import { getProducts, type Product, type ProductVariant } from "@/lib/products";
 import { isValidEmail, sanitizeInput } from "@/lib/security";
+import { createCheckoutFingerprint } from "@/lib/checkout-idempotency";
+import { canReserveCampaignRedemption } from "@/lib/coupon";
 import { siteInfo } from "@/lib/site";
+import { paypalCaptureRequestMatchesLocalOrder } from "@/lib/payment-coupon";
 
 export type CartInputItem = {
   productId: string;
@@ -67,6 +70,12 @@ export type ValidatedCart = {
   vatAmount: number;
   vatAmountCents: number;
   shippingMethod: ShippingMethod;
+  couponCode?: string;
+  campaignId?: string;
+  discountAmount?: number;
+  discountAmountCents?: number;
+  discountedSubtotalAmount?: number;
+  discountedSubtotalAmountCents?: number;
 };
 
 export type CheckoutOrder = {
@@ -168,13 +177,15 @@ export const normalizeCheckoutCustomer = (
   }
 
   if (shippingMethod === "germany") {
-    const phoneDigits = phone?.replace(/\D/g, "") ?? "";
-    if (!phone || phone.length > 40 || phoneDigits.length < 6 || phoneDigits.length > 15) {
-      throw new Error(
-        locale === "de"
-          ? "Bitte geben Sie für die Lieferung eine gültige Telefonnummer ein."
-          : "Please enter a valid phone number for delivery.",
-      );
+    if (phone) {
+      const phoneDigits = phone.replace(/\D/g, "");
+      if (phone.length > 40 || phoneDigits.length < 6 || phoneDigits.length > 15) {
+        throw new Error(
+          locale === "de"
+            ? "Bitte geben Sie eine gültige Telefonnummer ein oder lassen Sie das Feld leer."
+            : "Please enter a valid phone number or leave the field blank.",
+        );
+      }
     }
 
     if (
@@ -319,6 +330,20 @@ export const buildConditionConsent = (
   };
 };
 
+const reserveCampaignRedemption = async (client: TransactionClient, orderId: string, cart: ValidatedCart) => {
+  if (!cart.campaignId || (cart.discountAmountCents ?? 0) <= 0) return;
+  const campaign = await client.query(`SELECT id,is_active,maximum_redemptions,redemption_count FROM store_campaigns WHERE id=$1 FOR UPDATE`, [cart.campaignId]);
+  const row = campaign.rows[0];
+  if (!row || !row.is_active) throw new Error("Order campaign is unavailable");
+  const existing = await client.query(`SELECT id,released_at FROM campaign_redemptions WHERE campaign_id=$1 AND order_id=$2`, [row.id, orderId]);
+  const alreadyReserved = Boolean(existing.rows[0] && !existing.rows[0].released_at);
+  if (!canReserveCampaignRedemption(row.maximum_redemptions === null ? null : Number(row.maximum_redemptions), Number(row.redemption_count), alreadyReserved)) throw new Error("Campaign redemption limit reached");
+  if (!alreadyReserved) {
+    const reserved = await client.query(`INSERT INTO campaign_redemptions(campaign_id,order_id,discount_amount) VALUES($1,$2,$3) ON CONFLICT(campaign_id,order_id) DO NOTHING RETURNING id`, [row.id, orderId, (cart.discountAmountCents ?? 0) / 100]);
+    if (reserved.rowCount) await client.query(`UPDATE store_campaigns SET redemption_count=redemption_count+1,updated_at=now() WHERE id=$1`, [row.id]);
+  }
+};
+
 export async function createPendingOrder(input: {
   cart: ValidatedCart;
   customer: CustomerDetails;
@@ -330,6 +355,7 @@ export async function createPendingOrder(input: {
   termsConsentAt?: string | null;
 }): Promise<CheckoutOrder> {
   const idempotencyKey = normalizeText(input.idempotencyKey) || randomUUID();
+  const checkoutFingerprint = createCheckoutFingerprint(input);
   return withTransaction(async (client) => {
     const result = await client.query(
       `INSERT INTO orders (
@@ -342,6 +368,8 @@ export async function createPendingOrder(input: {
       vat_rate,
       vat_amount,
       currency,
+      coupon_code,
+      discount_amount,
       status,
       payment_status,
       shipping_method,
@@ -355,10 +383,10 @@ export async function createPendingOrder(input: {
       created_at,
       updated_at
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,'pending','unpaid',$10,$11,$12,$13,$14,$15,$16,$17,now(),now()
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending','unpaid',$12,$13,$14,$15,$16,$17,$18,$19,now(),now()
     )
     ON CONFLICT (idempotency_key) DO UPDATE SET updated_at = now()
-      RETURNING id, order_number, total_amount, currency, items, status, payment_status`,
+      RETURNING id, order_number, total_amount, currency, items, status, payment_status, metadata`,
       [
         input.customer.email.toLowerCase(),
         input.customer.name,
@@ -369,6 +397,8 @@ export async function createPendingOrder(input: {
         input.cart.vatRate,
         input.cart.vatAmount,
         input.cart.currency,
+        input.cart.couponCode || null,
+        (input.cart.discountAmountCents ?? 0) / 100,
         input.cart.shippingMethod,
         input.customer.address ?? null,
         JSON.stringify(input.cart.items),
@@ -379,6 +409,8 @@ export async function createPendingOrder(input: {
         JSON.stringify({
           paymentMode: getPaymentMode(),
           createdBy: "checkout",
+          checkoutFingerprint,
+          ...(input.cart.campaignId ? { campaignId: input.cart.campaignId } : {}),
           ...(input.conditionConsent ? { conditionConsent: input.conditionConsent } : {}),
           ...(input.termsConsentAt ? { termsConsentAt: input.termsConsentAt } : {}),
         }),
@@ -390,6 +422,13 @@ export async function createPendingOrder(input: {
     if (row.status !== "pending" || row.payment_status !== "unpaid") {
       throw new Error("This checkout request has already been completed or cancelled");
     }
+    if (Math.round(Number(row.total_amount) * 100) !== input.cart.totalAmountCents) {
+      throw new Error("This checkout key belongs to a different cart total");
+    }
+    if (row.metadata?.checkoutFingerprint !== checkoutFingerprint) {
+      throw new Error("This checkout key belongs to a different checkout request");
+    }
+    await reserveCampaignRedemption(client, row.id, input.cart);
     const storedItems = Array.isArray(row.items) ? row.items as ValidatedCartLine[] : input.cart.items;
     const reservationItems = storedItems.map((item) => {
       if (!item.sku) throw new Error(`${item.title} has no sellable SKU`);
@@ -414,23 +453,21 @@ export async function attachProviderReference(input: {
   providerOrderId?: string | null;
   providerSessionId?: string | null;
   providerStatus?: string | null;
-}) {
-  await query(
+}): Promise<{ updatedAt: string } | null> {
+  const result = await query(
     `UPDATE orders
-     SET provider = $2,
-         provider_order_id = COALESCE($3, provider_order_id),
-         provider_session_id = COALESCE($4, provider_session_id),
+     SET provider_order_id = COALESCE(provider_order_id, $3),
+         provider_session_id = COALESCE(provider_session_id, $4),
          provider_status = COALESCE($5, provider_status),
          updated_at = now()
-     WHERE id = $1`,
-    [
-      input.orderId,
-      input.provider,
-      input.providerOrderId ?? null,
-      input.providerSessionId ?? null,
-      input.providerStatus ?? null,
-    ],
+     WHERE id = $1 AND provider = $2
+       AND status = 'pending' AND payment_status = 'unpaid'
+       AND ($3::text IS NULL OR provider_order_id IS NULL OR provider_order_id = $3)
+       AND ($4::text IS NULL OR provider_session_id IS NULL OR provider_session_id = $4)
+     RETURNING updated_at`,
+    [input.orderId, input.provider, input.providerOrderId ?? null, input.providerSessionId ?? null, input.providerStatus ?? null],
   );
+  return result.rows[0]?.updated_at ? { updatedAt: String(result.rows[0].updated_at) } : null;
 }
 
 /**
@@ -455,6 +492,35 @@ export async function getOrderAmountCents(orderId: string): Promise<number | nul
   }
 }
 
+export async function getOrderPaymentExpectation(orderId: string): Promise<{ cents: number; currency: string } | null> {
+  try { const result=await query(`SELECT round(total_amount*100)::int AS cents,upper(currency) AS currency FROM orders WHERE id=$1 LIMIT 1`,[orderId]);const row=result.rows[0];return typeof row?.cents==="number"&&typeof row?.currency==="string"?{cents:row.cents,currency:row.currency}:null; } catch(error){console.error("getOrderPaymentExpectation failed:",error);return null;}
+}
+
+export async function getPayPalCaptureExpectation(orderId: string, paypalOrderId: string): Promise<{ cents: number; currency: string } | null> {
+  try {
+    const result = await query(
+      `SELECT provider, status, payment_status, provider_order_id,
+              round(total_amount * 100)::int AS cents, upper(currency) AS currency
+       FROM orders WHERE id = $1 LIMIT 1`,
+      [orderId],
+    );
+    const row = result.rows[0] as Record<string, unknown> | undefined;
+    if (!row || !paypalCaptureRequestMatchesLocalOrder({
+      localProvider: typeof row.provider === "string" ? row.provider : null,
+      status: typeof row.status === "string" ? row.status : null,
+      paymentStatus: typeof row.payment_status === "string" ? row.payment_status : null,
+      storedProviderOrderId: typeof row.provider_order_id === "string" ? row.provider_order_id : null,
+      paypalOrderId,
+    })) return null;
+    return typeof row.cents === "number" && typeof row.currency === "string"
+      ? { cents: row.cents, currency: row.currency }
+      : null;
+  } catch (error) {
+    console.error("getPayPalCaptureExpectation failed:", error);
+    return null;
+  }
+}
+
 export async function markOrderPaid(input: {
   orderId?: string | null;
   provider: PaymentProvider;
@@ -463,46 +529,49 @@ export async function markOrderPaid(input: {
   providerPaymentId?: string | null;
   providerStatus?: string | null;
 }) {
-  const clauses = ["provider = $1"];
-  const values: unknown[] = [input.provider];
-  if (input.orderId) {
-    values.push(input.orderId);
-    clauses.push(`id = $${values.length}`);
-  }
-  if (input.providerOrderId) {
-    values.push(input.providerOrderId);
-    clauses.push(`provider_order_id = $${values.length}`);
-  }
-  if (input.providerSessionId) {
-    values.push(input.providerSessionId);
-    clauses.push(`provider_session_id = $${values.length}`);
-  }
-
-  if (clauses.length === 1) {
-    throw new Error("Missing order reference");
-  }
-
+  if (!input.orderId && !input.providerOrderId && !input.providerSessionId) throw new Error("Missing order reference");
   return withTransaction(async (client) => {
     const result = await client.query(
       `UPDATE orders
-     SET status = 'paid',
-         payment_status = 'paid',
-         provider_payment_id = COALESCE($${values.length + 1}, provider_payment_id),
-         provider_status = COALESCE($${values.length + 2}, provider_status),
-         paid_at = COALESCE(paid_at, now()),
-         updated_at = now()
-     WHERE ${clauses.join(" AND ")}
-       AND payment_status IS DISTINCT FROM 'paid'
-       AND status IS DISTINCT FROM 'cancelled'
-     RETURNING id, order_number, customer_email, customer_name, total_amount, currency, items, consent_mode`,
-      [...values, input.providerPaymentId ?? null, input.providerStatus ?? "paid"],
+       SET status = 'paid', payment_status = 'paid',
+           provider_order_id = COALESCE(provider_order_id, $3),
+           provider_session_id = COALESCE(provider_session_id, $4),
+           provider_payment_id = COALESCE($5, provider_payment_id),
+           provider_status = COALESCE($6, provider_status),
+           paid_at = COALESCE(paid_at, now()), updated_at = now()
+       WHERE provider = $1
+         AND (
+           ($2::uuid IS NOT NULL AND id = $2
+             AND ($3::text IS NULL OR provider_order_id IS NULL OR provider_order_id = $3)
+             AND ($4::text IS NULL OR provider_session_id IS NULL OR provider_session_id = $4))
+           OR
+           ($2::uuid IS NULL AND ($3::text IS NOT NULL OR $4::text IS NOT NULL)
+             AND ($3::text IS NULL OR provider_order_id = $3)
+             AND ($4::text IS NULL OR provider_session_id = $4))
+         )
+         AND payment_status IS DISTINCT FROM 'paid'
+         AND status IS DISTINCT FROM 'cancelled'
+       RETURNING id, order_number, customer_email, customer_name, total_amount, currency, items, consent_mode, metadata, coupon_code, discount_amount`,
+      [input.provider, input.orderId ?? null, input.providerOrderId ?? null, input.providerSessionId ?? null, input.providerPaymentId ?? null, input.providerStatus ?? "paid"],
     );
-
     const order = result.rows[0] ?? null;
+    if (order?.metadata?.campaignId && Number(order.discount_amount ?? 0) > 0) {
+      const campaign = await client.query(`SELECT id FROM store_campaigns WHERE id=$1 FOR UPDATE`, [order.metadata.campaignId]);
+      const row = campaign.rows[0];
+      if (row) {
+        const redemption = await client.query(`INSERT INTO campaign_redemptions(campaign_id,order_id,discount_amount) VALUES($1,$2,$3) ON CONFLICT(campaign_id,order_id) DO NOTHING RETURNING id`, [row.id, order.id, order.discount_amount]);
+        if (redemption.rowCount) await client.query(`UPDATE store_campaigns SET redemption_count=redemption_count+1,updated_at=now() WHERE id=$1`, [row.id]);
+      }
+    }
     if (order) await releaseInventoryReservation("checkout_order", order.id, true, client);
     return order;
   });
 }
+
+const releaseCampaignRedemption = async (client: TransactionClient, orderId: string) => {
+  const redemptions = await client.query(`UPDATE campaign_redemptions SET released_at=COALESCE(released_at,now()) WHERE order_id=$1 AND released_at IS NULL RETURNING campaign_id`, [orderId]);
+  for (const row of redemptions.rows) await client.query(`UPDATE store_campaigns SET redemption_count=GREATEST(0,redemption_count-1),updated_at=now() WHERE id=$1`, [row.campaign_id]);
+};
 
 export async function markOrderCancelled(input: {
   orderId?: string | null;
@@ -510,53 +579,188 @@ export async function markOrderCancelled(input: {
   providerOrderId?: string | null;
   providerSessionId?: string | null;
   providerStatus?: string | null;
+  expectedStatus?: string | null;
+  expectedPaymentStatus?: string | null;
+  expectedProviderStatus?: string | null;
+  expectedProviderOrderId?: string | null;
+  expectedProviderSessionId?: string | null;
+  expectedUpdatedAt?: string | null;
 }) {
-  if (!input.orderId && !input.providerOrderId && !input.providerSessionId) {
-    throw new Error("Missing order reference");
-  }
-  await withTransaction(async (client) => {
+  if (!input.orderId && !input.providerOrderId && !input.providerSessionId) throw new Error("Missing order reference");
+  return withTransaction(async (client) => {
     const result = await client.query(
       `UPDATE orders
-     SET status = 'cancelled',
-         payment_status = 'failed',
-         provider_status = COALESCE($5, provider_status),
-         cancelled_at = COALESCE(cancelled_at, now()),
-         updated_at = now()
-     WHERE provider = $1
-       AND ($2::uuid IS NULL OR id = $2)
-       AND ($3::text IS NULL OR provider_order_id = $3)
-       AND ($4::text IS NULL OR provider_session_id = $4)
-       AND payment_status IS DISTINCT FROM 'paid'
-       AND status IS DISTINCT FROM 'cancelled'
-     RETURNING id`,
-      [
-        input.provider,
-        input.orderId ?? null,
-        input.providerOrderId ?? null,
-        input.providerSessionId ?? null,
-        input.providerStatus ?? null,
-      ],
+       SET status = 'cancelled', payment_status = 'failed',
+           provider_order_id = COALESCE(provider_order_id, $3),
+           provider_session_id = COALESCE(provider_session_id, $4),
+           provider_status = COALESCE($5, provider_status),
+           cancelled_at = COALESCE(cancelled_at, now()), updated_at = now()
+       WHERE provider = $1 AND (
+         ($2::uuid IS NOT NULL AND id = $2
+           AND ($3::text IS NULL OR provider_order_id IS NULL OR provider_order_id = $3)
+           AND ($4::text IS NULL OR provider_session_id IS NULL OR provider_session_id = $4))
+         OR
+         ($2::uuid IS NULL AND ($3::text IS NOT NULL OR $4::text IS NOT NULL)
+           AND ($3::text IS NULL OR provider_order_id = $3)
+           AND ($4::text IS NULL OR provider_session_id = $4))
+       )
+         AND payment_status IS DISTINCT FROM 'paid'
+         AND status IS DISTINCT FROM 'cancelled'
+         AND ($6::text IS NULL OR status = $6)
+         AND ($7::text IS NULL OR payment_status = $7)
+         AND ($6::text IS NULL OR provider_status IS NOT DISTINCT FROM $8)
+         AND ($6::text IS NULL OR provider_order_id IS NOT DISTINCT FROM $9)
+         AND ($6::text IS NULL OR provider_session_id IS NOT DISTINCT FROM $10)
+         AND ($6::text IS NULL OR updated_at = $11::timestamptz)
+       RETURNING id`,
+      [input.provider, input.orderId ?? null, input.providerOrderId ?? null, input.providerSessionId ?? null, input.providerStatus ?? null, input.expectedStatus ?? null, input.expectedPaymentStatus ?? null, input.expectedProviderStatus ?? null, input.expectedProviderOrderId ?? null, input.expectedProviderSessionId ?? null, input.expectedUpdatedAt ?? null],
     );
     const orderId = result.rows[0]?.id ? String(result.rows[0].id) : null;
-    if (orderId) await releaseInventoryReservation("checkout_order", orderId, false, client);
+    if (orderId) {
+      await releaseCampaignRedemption(client, orderId);
+      await releaseInventoryReservation("checkout_order", orderId, false, client);
+    }
+    return orderId;
   });
 }
 
-export async function recordWebhookEvent(input: {
+/**
+ * A refund is the one transition `markOrderCancelled` deliberately refuses to
+ * make, since it guards on `payment_status IS DISTINCT FROM 'paid'`. Without
+ * this, refunding in Stripe left the order reading `paid` forever -- which is
+ * how a refunded customer ended up on the review-invite list.
+ */
+export async function markOrderRefunded(input: {
+  orderId?: string | null;
+  provider: PaymentProvider;
+  providerOrderId?: string | null;
+  providerSessionId?: string | null;
+  providerStatus?: string | null;
+  fullyRefunded: boolean;
+}) {
+  if (!input.orderId && !input.providerOrderId && !input.providerSessionId) throw new Error("Missing order reference");
+  return withTransaction(async (client) => {
+    const result = await client.query(
+      `UPDATE orders
+       SET payment_status = $6,
+           provider_order_id = COALESCE(provider_order_id, $3),
+           provider_session_id = COALESCE(provider_session_id, $4),
+           status = CASE WHEN $7::boolean THEN 'cancelled' ELSE status END,
+           cancelled_at = CASE WHEN $7::boolean THEN COALESCE(cancelled_at, now()) ELSE cancelled_at END,
+           provider_status = COALESCE($5, provider_status), updated_at = now()
+       WHERE provider = $1 AND (
+         ($2::uuid IS NOT NULL AND id = $2
+           AND ($3::text IS NULL OR provider_order_id IS NULL OR provider_order_id = $3)
+           AND ($4::text IS NULL OR provider_session_id IS NULL OR provider_session_id = $4))
+         OR
+         ($2::uuid IS NULL AND ($3::text IS NOT NULL OR $4::text IS NOT NULL)
+           AND ($3::text IS NULL OR provider_order_id = $3)
+           AND ($4::text IS NULL OR provider_session_id = $4))
+       )
+         AND payment_status IN ('paid', 'partially_refunded')
+       RETURNING id`,
+      [input.provider, input.orderId ?? null, input.providerOrderId ?? null, input.providerSessionId ?? null, input.providerStatus ?? null, input.fullyRefunded ? "refunded" : "partially_refunded", input.fullyRefunded],
+    );
+    if (input.fullyRefunded) {
+      for (const order of result.rows) await releaseCampaignRedemption(client, String(order.id));
+    }
+    return result.rows.length;
+  });
+}
+
+export async function isOrderInProviderState(input: {
+  provider: PaymentProvider;
+  orderId?: string | null;
+  providerOrderId?: string | null;
+  providerSessionId?: string | null;
+  statuses?: string[];
+  paymentStatuses?: string[];
+}): Promise<boolean> {
+  if (!input.orderId && !input.providerOrderId && !input.providerSessionId) return false;
+  const result = await query(
+    `SELECT 1 FROM orders
+     WHERE provider = $1 AND (
+       ($2::uuid IS NOT NULL AND id = $2
+         AND ($3::text IS NULL OR provider_order_id = $3)
+         AND ($4::text IS NULL OR provider_session_id = $4))
+       OR
+       ($2::uuid IS NULL AND ($3::text IS NOT NULL OR $4::text IS NOT NULL)
+         AND ($3::text IS NULL OR provider_order_id = $3)
+         AND ($4::text IS NULL OR provider_session_id = $4))
+     )
+       AND ($5::text[] IS NULL OR status = ANY($5::text[]))
+       AND ($6::text[] IS NULL OR payment_status = ANY($6::text[]))
+     LIMIT 1`,
+    [input.provider, input.orderId ?? null, input.providerOrderId ?? null, input.providerSessionId ?? null, input.statuses?.length ? input.statuses : null, input.paymentStatuses?.length ? input.paymentStatuses : null],
+  );
+  return Boolean(result.rows[0]);
+}
+
+export type WebhookEventClaim =
+  | { status: "claimed"; token: string }
+  | { status: "processed" }
+  | { status: "busy" };
+
+export async function claimWebhookEvent(input: {
   provider: PaymentProvider;
   eventId: string;
   eventType: string;
   payload: unknown;
-}) {
+}): Promise<WebhookEventClaim> {
+  const token = randomUUID();
   const result = await query(
-    `INSERT INTO payment_webhook_events (provider, provider_event_id, event_type, payload, processed_at)
-     VALUES ($1, $2, $3, $4, now())
-     ON CONFLICT (provider, provider_event_id) DO NOTHING
-     RETURNING id`,
-    [input.provider, input.eventId, input.eventType, JSON.stringify(input.payload)],
+    `INSERT INTO payment_webhook_events (
+       provider, provider_event_id, event_type, payload, processed_at,
+       processing_started_at, processing_token, attempt_count, last_error
+     ) VALUES ($1, $2, $3, $4, NULL, now(), $5, 1, NULL)
+     ON CONFLICT (provider, provider_event_id) DO UPDATE SET
+       event_type = EXCLUDED.event_type,
+       payload = EXCLUDED.payload,
+       processing_started_at = now(),
+       processing_token = EXCLUDED.processing_token,
+       attempt_count = payment_webhook_events.attempt_count + 1,
+       last_error = NULL
+     WHERE payment_webhook_events.processed_at IS NULL
+       AND (
+         payment_webhook_events.processing_token IS NULL
+         OR payment_webhook_events.processing_started_at < now() - interval '5 minutes'
+       )
+     RETURNING processing_token`,
+    [input.provider, input.eventId, input.eventType, JSON.stringify(input.payload), token],
   );
+  if (result.rows[0]?.processing_token === token) return { status: "claimed", token };
+  const existing = await query(
+    `SELECT processed_at, processing_token FROM payment_webhook_events
+     WHERE provider = $1 AND provider_event_id = $2 LIMIT 1`,
+    [input.provider, input.eventId],
+  );
+  return existing.rows[0]?.processed_at ? { status: "processed" } : { status: "busy" };
+}
 
-  return result.rowCount === 1;
+export async function completeWebhookEvent(provider: PaymentProvider, eventId: string, token: string): Promise<void> {
+  const result = await query(
+    `UPDATE payment_webhook_events
+     SET processed_at = now(), processing_started_at = NULL, processing_token = NULL, last_error = NULL
+     WHERE provider = $1 AND provider_event_id = $2 AND processing_token = $3 AND processed_at IS NULL
+     RETURNING id`,
+    [provider, eventId, token],
+  );
+  if (!result.rows[0]) throw new Error("Webhook event claim was lost before completion");
+}
+
+export async function releaseWebhookEventClaim(
+  provider: PaymentProvider,
+  eventId: string,
+  token: string,
+  error: unknown,
+): Promise<void> {
+  const message = (error instanceof Error ? error.message : "Webhook processing failed").slice(0, 2000);
+  await query(
+    `UPDATE payment_webhook_events
+     SET processing_started_at = NULL, processing_token = NULL, last_error = $4
+     WHERE provider = $1 AND provider_event_id = $2 AND processing_token = $3 AND processed_at IS NULL`,
+    [provider, eventId, token, message],
+  );
 }
 
 export async function getOrderForConfirmation(orderId: string) {
@@ -587,19 +791,25 @@ export async function getOrderProductGtins(productIds: string[]): Promise<string
   return result.rows.map((row) => String(row.gtin)).filter(Boolean);
 }
 
-export const verifyStripeSignature = (payload: string, signatureHeader: string, secret: string) => {
-  const parts = Object.fromEntries(
-    signatureHeader.split(",").map((part) => {
-      const [key, ...value] = part.split("=");
-      return [key, value.join("=")];
-    }),
-  );
-  const timestamp = parts.t;
-  const signature = parts.v1;
-  if (!timestamp || !signature) return false;
-
-  const expected = createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex");
-  const expectedBuffer = Buffer.from(expected);
-  const receivedBuffer = Buffer.from(signature);
-  return expectedBuffer.length === receivedBuffer.length && timingSafeEqual(expectedBuffer, receivedBuffer);
+export const verifyStripeSignature = (
+  payload: string,
+  signatureHeader: string,
+  secret: string,
+  nowSeconds = Math.floor(Date.now() / 1000),
+) => {
+  let timestampRaw = "";
+  const signatures: string[] = [];
+  for (const part of signatureHeader.split(",")) {
+    const [key, ...valueParts] = part.split("=");
+    const value = valueParts.join("=");
+    if (key === "t") timestampRaw = value;
+    if (key === "v1" && value) signatures.push(value);
+  }
+  const timestamp = Number(timestampRaw);
+  if (!Number.isSafeInteger(timestamp) || signatures.length === 0 || Math.abs(nowSeconds - timestamp) > 300) return false;
+  const expected = Buffer.from(createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex"));
+  return signatures.some((signature) => {
+    const received = Buffer.from(signature);
+    return expected.length === received.length && timingSafeEqual(expected, received);
+  });
 };

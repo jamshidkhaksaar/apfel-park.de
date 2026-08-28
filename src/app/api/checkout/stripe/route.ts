@@ -12,6 +12,9 @@ import {
   type CartInputItem,
   type CustomerDetails,
 } from "@/lib/checkout";
+import { applyCouponToValidatedCart } from "@/lib/coupon-repository";
+import { buildStripeCouponForm } from "@/lib/payment-coupon";
+import { consumePublicRateLimit } from "@/lib/public-rate-limit";
 
 const stripeRequestId = (response: Response) => response.headers.get("request-id") || undefined;
 
@@ -25,9 +28,15 @@ type StripeCheckoutPayload = {
   idempotencyKey?: string;
   conditionConsent?: boolean;
   termsConsent?: boolean;
+  couponCode?: string;
 };
 
 export async function POST(request: NextRequest) {
+  const limit = await consumePublicRateLimit(request.headers, "checkout_create", 8, 15 * 60);
+  if (!limit.allowed) return NextResponse.json({ success: false, error: "Too many checkout attempts" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
+  let pendingOrderId: string | null = null;
+  let providerRequestStarted = false;
+  let remoteSessionId: string | null = null;
   try {
     const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
     if (!secretKey) {
@@ -38,7 +47,8 @@ export async function POST(request: NextRequest) {
     const locale = payload.locale === "en" ? "en" : "de";
     const shippingMethod = normalizeShippingMethod(payload.shippingMethod);
     const customer = normalizeCheckoutCustomer(payload.customer, shippingMethod, locale);
-    const cart = await validateCartItems(payload.items ?? [], shippingMethod);
+    let cart = await validateCartItems(payload.items ?? [], shippingMethod);
+    if(payload.couponCode?.trim()){const applied=await applyCouponToValidatedCart(payload.couponCode,cart);if(!applied.ok)return NextResponse.json({success:false,error:applied.error},{status:400});cart=applied.cart;}
 
     const hasNonNewItems = cart.items.some((line) => line.condition !== "new");
     if (hasNonNewItems && payload.conditionConsent !== true) {
@@ -79,6 +89,7 @@ export async function POST(request: NextRequest) {
       conditionConsent: buildConditionConsent(cart, true),
       termsConsentAt: new Date().toISOString(),
     });
+    pendingOrderId = order.id;
 
     const origin = getCheckoutBaseUrl();
     const form = new URLSearchParams({
@@ -92,6 +103,14 @@ export async function POST(request: NextRequest) {
       "automatic_tax[enabled]": "false",
       "payment_intent_data[metadata][order_id]": order.id,
     });
+
+    if ((cart.discountAmountCents ?? 0) > 0) {
+      const couponForm = buildStripeCouponForm(cart, order.id);
+      const couponResponse = await fetch("https://api.stripe.com/v1/coupons", { method: "POST", headers: { Authorization: "Bearer " + secretKey, "Content-Type": "application/x-www-form-urlencoded", "Idempotency-Key": `coupon_${order.id}` }, body: couponForm, signal: AbortSignal.timeout(10_000) });
+      const coupon = await couponResponse.json() as { id?: string; error?: { message?: string } };
+      if (!couponResponse.ok || !coupon.id) { await markOrderCancelled({ provider: "stripe", orderId: order.id, providerStatus: "coupon_creation_failed" }); return NextResponse.json({ success: false, error: coupon.error?.message || "Discount could not be applied" }, { status: 502 }); }
+      form.set("discounts[0][coupon]", coupon.id);
+    }
 
     cart.items.forEach((item, index) => {
       form.set(`line_items[${index}][quantity]`, String(item.quantity));
@@ -115,6 +134,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!(await attachProviderReference({ orderId: order.id, provider: "stripe", providerStatus: "stripe_checkout_requesting" }))) throw new Error("Stripe Checkout request state could not be recorded");
+    providerRequestStarted = true;
     const response = await fetch(STRIPE_API_URL, {
       method: "POST",
       headers: {
@@ -127,6 +148,7 @@ export async function POST(request: NextRequest) {
     });
 
     const data = (await response.json()) as { id?: string; url?: string; error?: { message?: string } };
+    remoteSessionId = data.id ?? null;
     if (!response.ok || !data.id || !data.url) {
       console.error("Stripe Checkout Session failed", {
         orderId: order.id,
@@ -134,26 +156,42 @@ export async function POST(request: NextRequest) {
         requestId: stripeRequestId(response),
         error: data.error?.message || "missing session id or URL",
       });
-      await markOrderCancelled({
-        provider: "stripe",
-        orderId: order.id,
-        providerStatus: "checkout_creation_failed",
-      });
+      const indeterminate = response.status >= 500 || response.ok || Boolean(data.id);
+      if (indeterminate) {
+        const attached = await attachProviderReference({ orderId: order.id, provider: "stripe", providerSessionId: data.id ?? null, providerStatus: "stripe_checkout_outcome_unknown" });
+        if (!attached) throw new Error("Indeterminate Stripe Checkout Session could not be recorded");
+      } else {
+        await markOrderCancelled({ provider: "stripe", orderId: order.id, providerStatus: "checkout_creation_failed" });
+      }
       return NextResponse.json(
         { success: false, error: data.error?.message || "Stripe checkout could not be created" },
-        { status: 502 },
+        { status: indeterminate ? 503 : 502 },
       );
     }
 
-    await attachProviderReference({
+    const attached = await attachProviderReference({
       orderId: order.id,
       provider: "stripe",
       providerSessionId: data.id,
       providerStatus: "checkout_created",
     });
+    if (!attached) throw new Error("Stripe Checkout Session could not be bound to the local order");
 
     return NextResponse.json({ success: true, checkoutUrl: data.url, orderId: order.id });
   } catch (error) {
+    if (pendingOrderId) {
+      try {
+        if (remoteSessionId) {
+          if (!(await attachProviderReference({ orderId: pendingOrderId, provider: "stripe", providerSessionId: remoteSessionId, providerStatus: "provider_response_recovered" }))) throw new Error("Stripe Checkout response binding conflict");
+        } else if (!providerRequestStarted) {
+          await markOrderCancelled({ provider: "stripe", orderId: pendingOrderId, providerStatus: "provider_request_failed" });
+        } else {
+          if (!(await attachProviderReference({ orderId: pendingOrderId, provider: "stripe", providerStatus: "stripe_checkout_outcome_unknown" }))) throw new Error("Stripe Checkout unknown outcome could not be recorded");
+        }
+      } catch (cleanupError) {
+        console.error("Stripe Checkout recovery failed", { orderId: pendingOrderId, error: cleanupError instanceof Error ? cleanupError.message : "recovery failed" });
+      }
+    }
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Checkout could not be started" },
       { status: 400 },

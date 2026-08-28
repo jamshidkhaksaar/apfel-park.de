@@ -1,4 +1,5 @@
 import { query } from "../src/lib/db";
+import { attachProviderReference, markOrderCancelled } from "../src/lib/checkout";
 import { getMarketplaceAdapter } from "../src/lib/marketplaces";
 import { updateGoogleMerchantAvailability } from "../src/lib/marketplaces/google-merchant-api";
 import { loadMarketplaceListingInput } from "../src/lib/marketplaces/listing-input";
@@ -32,6 +33,19 @@ const deltaReconciliationMilliseconds = Math.min(
 const once = process.env.MARKETPLACE_WORKER_ONCE === "1";
 let stopping = false;
 let lastDeltaReconciliationAt = 0;
+let lastProviderOutcomeReconciliationAt = 0;
+
+type UncertainProviderOrder = {
+  id: string;
+  provider: "stripe" | "paypal";
+  provider_order_id: string | null;
+  provider_session_id: string | null;
+  updated_at: string | Date;
+  provider_status:
+    | "stripe_checkout_requesting" | "stripe_checkout_outcome_unknown"
+    | "stripe_intent_requesting" | "stripe_intent_outcome_unknown"
+    | "paypal_order_requesting" | "paypal_order_outcome_unknown";
+};
 
 const errorMessage = (error: unknown): string =>
   (error instanceof Error ? error.message : "Unknown marketplace worker error").slice(0, 2_000);
@@ -74,6 +88,69 @@ const runDeltaReconciliation = async (): Promise<void> => {
     console.log(
       `[marketplace-worker] delta reconciliation repaired ${repaired} mirror(s) and queued ${queued} SKU(s)`,
     );
+  }
+};
+
+const reconcileUncertainProviderOutcomes = async (): Promise<void> => {
+  const now = Date.now();
+  if (now - lastProviderOutcomeReconciliationAt < 300_000) return;
+  lastProviderOutcomeReconciliationAt = now;
+  const result = await query(
+    `SELECT id, provider, provider_status, provider_order_id, provider_session_id, updated_at FROM orders
+     WHERE status = 'pending' AND payment_status = 'unpaid' AND (
+       (provider_status IN ('stripe_intent_requesting','stripe_intent_outcome_unknown') AND created_at < now() - interval '15 minutes')
+       OR (provider_status IN ('stripe_checkout_requesting','stripe_checkout_outcome_unknown') AND created_at < now() - interval '25 hours')
+       OR (provider_status IN ('paypal_order_requesting','paypal_order_outcome_unknown') AND created_at < now() - interval '73 hours')
+     )
+     ORDER BY created_at LIMIT 25`,
+  );
+  for (const order of result.rows as UncertainProviderOrder[]) {
+    try {
+      if (order.provider_status !== "stripe_intent_outcome_unknown" && order.provider_status !== "stripe_intent_requesting") {
+        const cancelledOrderId = await markOrderCancelled({ orderId: order.id, provider: order.provider, providerStatus: "stale_provider_outcome_expired", expectedStatus: "pending", expectedPaymentStatus: "unpaid", expectedProviderStatus: order.provider_status, expectedProviderOrderId: order.provider_order_id, expectedProviderSessionId: order.provider_session_id, expectedUpdatedAt: new Date(order.updated_at).toISOString() });
+        if (!cancelledOrderId) throw new Error("Stale provider outcome changed before cancellation");
+        continue;
+      }
+      const secret = process.env.STRIPE_SECRET_KEY?.trim();
+      if (!secret) throw new Error("Stripe is not configured for PaymentIntent reconciliation");
+      const params = new URLSearchParams({ query: `metadata['order_id']:'${order.id}'`, limit: "2" });
+      const search = await fetch(`https://api.stripe.com/v1/payment_intents/search?${params}`, {
+        headers: { Authorization: `Bearer ${secret}` },
+        signal: AbortSignal.timeout(15_000),
+      });
+      const searchData = await search.json() as { data?: Array<{ id?: string; status?: string }>; error?: { message?: string } };
+      if (!search.ok) throw new Error(searchData.error?.message || "Stripe PaymentIntent search failed");
+      const intents = (searchData.data ?? []).filter((intent): intent is { id: string; status?: string } => Boolean(intent.id));
+      if (intents.length > 1) throw new Error("Multiple PaymentIntents matched one local order");
+      if (intents.length === 0) {
+        const cancelledOrderId = await markOrderCancelled({ orderId: order.id, provider: "stripe", providerStatus: "no_remote_payment_intent", expectedStatus: "pending", expectedPaymentStatus: "unpaid", expectedProviderStatus: order.provider_status, expectedProviderOrderId: order.provider_order_id, expectedProviderSessionId: order.provider_session_id, expectedUpdatedAt: new Date(order.updated_at).toISOString() });
+        if (!cancelledOrderId) throw new Error("Unknown PaymentIntent order changed before cancellation");
+        continue;
+      }
+      const intent = intents[0];
+      const boundProviderStatus = intent.status || "reconciled";
+      const boundSnapshot = await attachProviderReference({ orderId: order.id, provider: "stripe", providerOrderId: intent.id, providerStatus: boundProviderStatus });
+      if (!boundSnapshot) {
+        throw new Error("Reconciled PaymentIntent conflicts with the local order");
+      }
+      if (intent.status === "succeeded" || intent.status === "processing") continue;
+      let finalStatus = intent.status;
+      if (intent.status !== "canceled") {
+        const cancelled = await fetch(`https://api.stripe.com/v1/payment_intents/${intent.id}/cancel`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${secret}`, "Idempotency-Key": `reconcile_cancel_${order.id}` },
+          signal: AbortSignal.timeout(15_000),
+        });
+        const cancelledData = await cancelled.json() as { status?: string; error?: { message?: string } };
+        if (!cancelled.ok) throw new Error(cancelledData.error?.message || "Stripe PaymentIntent cancellation failed");
+        finalStatus = cancelledData.status;
+      }
+      if (finalStatus !== "canceled") throw new Error(`Stripe PaymentIntent remained ${finalStatus || "unknown"}`);
+      const cancelledOrderId = await markOrderCancelled({ orderId: order.id, provider: "stripe", providerOrderId: intent.id, providerStatus: "canceled_by_reconciliation", expectedStatus: "pending", expectedPaymentStatus: "unpaid", expectedProviderStatus: boundProviderStatus, expectedProviderOrderId: intent.id, expectedProviderSessionId: order.provider_session_id, expectedUpdatedAt: boundSnapshot.updatedAt });
+      if (!cancelledOrderId) throw new Error("PaymentIntent order changed before reconciled cancellation");
+    } catch (error) {
+      console.error(`[marketplace-worker] provider reconciliation ${order.id}: ${errorMessage(error)}`);
+    }
   }
 };
 
@@ -331,6 +408,7 @@ const processJob = async (job: Job): Promise<void> => {
 };
 
 export const runMarketplaceWorkerPass = async (): Promise<void> => {
+  await reconcileUncertainProviderOutcomes();
   await runDeltaReconciliation();
   await queuePeriodicWork();
   for (const target of await claimInventoryTargets()) await processInventoryTarget(target);

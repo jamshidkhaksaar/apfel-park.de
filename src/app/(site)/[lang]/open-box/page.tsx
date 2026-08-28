@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
-import PageIntro from "../../../../components/PageIntro";
+import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
+import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
@@ -40,13 +40,15 @@ const copy = {
 
 export const generateMetadata = async ({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> => {
-  const { lang: rawLang } = await params;
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const locale = (lang === "en" ? "en" : "de") as Locale;
-  return createMetadata(locale, copy[locale].title, copy[locale].description, "/open-box");
+  return createMetadata(locale, copy[locale].title, copy[locale].description, "/open-box", undefined, { noindex: hasCatalogSearchQuery(query) });
 };
 
 export default async function OpenBoxPage({
@@ -95,7 +97,7 @@ export default async function OpenBoxPage({
     <div className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <PageIntro title={t.title} subtitle={t.description} eyebrow={t.title} />
+      <StoreCommerceHeader lang={locale} title={t.title} subtitle={t.description} eyebrow={t.title} query={activeFilters.query} resultCount={catalog.total} breadcrumbs={[{ label: t.title }]} />
 
       <section className="border-b border-border/60 pb-8">
         <div className="container-page">
@@ -103,9 +105,9 @@ export default async function OpenBoxPage({
         </div>
       </section>
 
-      <StoreCollectionLinks lang={locale} />
+      <StoreCollectionLinks lang={locale} products={catalog.products} />
 
-      <section className="section-pad">
+      <section className="bg-store-ground py-6 md:py-8">
         <div className="container-page">
           <StoreGrid
             products={catalog.products}
@@ -118,6 +120,7 @@ export default async function OpenBoxPage({
             counts={catalog.counts}
             facets={catalog.facets}
             activeFilters={activeFilters}
+            showSearch={false}
           />
         </div>
       </section>

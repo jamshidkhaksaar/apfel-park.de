@@ -302,7 +302,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
         <div className="container-page">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold text-foreground md:text-4xl">
-              {lang === "de" ? "Geräte die wir reparieren" : "Devices We Repair"}
+              {lang === "de" ? "Geräte, die wir reparieren" : "Devices We Repair"}
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-muted">
               {lang === "de" 

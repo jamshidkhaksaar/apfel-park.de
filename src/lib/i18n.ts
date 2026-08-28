@@ -40,6 +40,7 @@ export const dictionary = {
       companyLinks: [
         { label: "Über uns", path: "/about" },
         { label: "FAQ", path: "/faq" },
+        { label: "Ratgeber: Smartphone länger nutzen", path: "/ratgeber/smartphone-laenger-nutzen" },
         { label: "Gerätezustände & Rechte", path: "/device-conditions" },
         { label: "Vertrag widerrufen", path: "/withdrawal" },
         { label: "Datenschutz", path: "/privacy" },
@@ -752,6 +753,7 @@ export const dictionary = {
       companyLinks: [
         { label: "About", path: "/about" },
         { label: "FAQ", path: "/faq" },
+        { label: "Guide: Make your smartphone last longer", path: "/ratgeber/smartphone-laenger-nutzen" },
         { label: "Device conditions & rights", path: "/device-conditions" },
         { label: "Withdraw contract", path: "/withdrawal" },
         { label: "Privacy", path: "/privacy" },

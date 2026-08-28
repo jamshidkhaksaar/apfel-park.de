@@ -211,7 +211,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
         )}
 
         {showForm && (
-          <div className="mb-6 rounded-2xl border border-white/8 bg-surface p-6">
+          <div className="mb-6 rounded-2xl border border-border bg-surface p-6">
             <p className="mb-4 text-xs font-semibold text-muted/80">
               {editingUser ? dict.usersPage.form.edit : dict.usersPage.create}
             </p>
@@ -228,7 +228,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
                   required
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-surface-strong px-3 py-2 text-sm text-foreground placeholder:text-muted/40 focus:border-gold/40 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface-strong px-3 py-2 text-sm text-foreground placeholder:text-muted/40 focus:border-gold/40 focus:outline-none"
                   placeholder="user@example.com"
                 />
               </div>
@@ -241,7 +241,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
                   required={!editingUser}
                   value={formPassword}
                   onChange={(e) => setFormPassword(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-surface-strong px-3 py-2 text-sm text-foreground placeholder:text-muted/40 focus:border-gold/40 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface-strong px-3 py-2 text-sm text-foreground placeholder:text-muted/40 focus:border-gold/40 focus:outline-none"
                   placeholder={editingUser ? "Leave empty to keep" : "Password"}
                 />
               </div>
@@ -252,7 +252,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
                 <select
                   value={formRole}
                   onChange={(e) => setFormRole(e.target.value as UserRole)}
-                  className="w-full rounded-lg border border-white/10 bg-surface-strong px-3 py-2 text-sm text-foreground focus:border-gold/40 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface-strong px-3 py-2 text-sm text-foreground focus:border-gold/40 focus:outline-none"
                 >
                   {roles.map((r) => (
                     <option key={r.value} value={r.value}>
@@ -278,7 +278,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
                 <button
                   type="button"
                   onClick={clearForm}
-                  className="rounded-lg border border-white/10 px-4 py-2 text-xs text-muted/60 transition-all duration-150 hover:border-white/20 hover:text-muted"
+                  className="rounded-lg border border-border px-4 py-2 text-xs text-muted/60 transition-all duration-150 hover:border-border hover:text-muted"
                 >
                   Cancel
                 </button>
@@ -292,10 +292,10 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
           </div>
         )}
 
-        <div className="overflow-hidden rounded-2xl border border-white/8">
+        <div className="overflow-hidden rounded-2xl border border-border">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-white/5 bg-surface/40">
+              <tr className="border-b border-border bg-surface/40">
                 <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-muted/50">
                   {dict.usersPage.table.email}
                 </th>
@@ -324,7 +324,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
                 users.map((user) => (
                   <tr
                     key={user.id}
-                    className="transition-colors duration-150 hover:bg-white/3"
+                    className="transition-colors duration-150 hover:bg-surface-strong"
                   >
                     <td className="px-4 py-3 font-medium text-foreground">
                       <span className="truncate">{user.email}</span>
@@ -357,7 +357,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => openEdit(user)}
-                          className="rounded-md px-2.5 py-1.5 text-[10px] text-muted/50 transition-all duration-150 hover:bg-white/8 hover:text-gold"
+                          className="rounded-md px-2.5 py-1.5 text-[10px] text-muted/50 transition-all duration-150 hover:bg-surface-strong hover:text-gold"
                         >
                           Edit
                         </button>

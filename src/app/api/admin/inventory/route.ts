@@ -7,7 +7,7 @@ import { readSessionUserFromRequest } from "@/lib/session";
 const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
 export async function GET(request: NextRequest) {
-  const user = readSessionUserFromRequest(request);
+  const user = await readSessionUserFromRequest(request);
   if (!canManageProducts(user)) return unauthorized();
 
   const search = request.nextUrl.searchParams.get("q")?.trim().slice(0, 100) ?? "";

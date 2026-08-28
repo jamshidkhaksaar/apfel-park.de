@@ -7,10 +7,11 @@ import { readSessionUserFromRequest } from "@/lib/session";
 import { findSensitiveDataIssues } from "@/lib/product-intake/redaction";
 import { uploadProductImage } from "@/lib/blob";
 import { sanitizeResearchResult } from "@/lib/product-research";
+import { query as dbQuery } from "@/lib/db";
+import { eprelAssetRoutes, eprelCycles, eprelEndurance } from "@/lib/eprel";
 
 export const dynamic = "force-dynamic";
 
-const GEMINI_MODEL = "gemini-3.7-flash";
 
 function geminiKey(): string {
   const key = process.env.GEMINI_API_KEY?.trim();
@@ -45,12 +46,13 @@ Given a query or device photo, research the REAL device using Google Search grou
   * Honor: { name: "Honor Technologies Germany GmbH", address: "Toulouser Allee 27, 40211 Düsseldorf, Germany", email: "de.support@honor.com" }
   * Motorola: { name: "Motorola Mobility Germany GmbH", address: "Meisenstraße 96, 33607 Bielefeld, Germany", email: "de-support@motorola.com" }
 - euResponsiblePerson: {name, address, email} (EU Importer or EU Representative)
-- energyLabel: {efficiencyClass, batteryEndurance} (EU Energy label rating, e.g. "A", "B", "C", "D")
+- eprelRegistrationNumber: string (EPREL EU registration number e.g. "2402623", "2247679" or model identifier like A3090, SM-S931B if known; else omit)
+- energyLabel: {efficiencyClass, batteryEndurance, batteryCycles, repairabilityClass, reliabilityClass, ipRating} (EU Energy label rating, e.g. efficiencyClass "A" or "B", batteryEndurance e.g. "41 h 0 min", batteryCycles e.g. 1000)
 - countryOfOrigin: two-letter ISO code (e.g. "CN", "VN", "IN", "TW")
 - batteryDetails: {included: boolean, wattHours: number}
 - safetyWarnings: array of strings (German safety instructions, e.g. "Vor Feuchtigkeit und extremen Temperaturen schützen. Nur mit zertifizierten Ladegeräten laden.")
 - gtin: string (GTIN/EAN only if factual; else omit)
-- mpn: string (Manufacturer Part Number only if factual; else omit)
+- mpn: string (Manufacturer Part Number / Model Identifier only if factual; else omit)
 
 Rules:
 - Search and return real facts for ANY brand worldwide.
@@ -60,34 +62,44 @@ Rules:
 async function callGemini(payload: { prompt: string; image?: { mime: string; data: string } }): Promise<unknown> {
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: payload.prompt }];
   if (payload.image) parts.push({ inlineData: { mimeType: payload.image.mime, data: payload.image.data } });
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{ parts }],
-      generationConfig: {
-        temperature: 0.1,
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-      tools: [{ google_search: {} }],
-    }),
-    signal: AbortSignal.timeout(25000),
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(`Gemini request failed (${response.status}) ${detail.slice(0, 300)}`);
+
+  const tryModel = async (model: string, timeoutMs: number) => {
+    const isGemini37 = model.includes("3.7");
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ parts }],
+        generationConfig: {
+          temperature: 0.1,
+          ...(isGemini37 ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+        },
+        tools: [{ google_search: {} }],
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      throw new Error(`Gemini ${model} request failed (${response.status}) ${detail.slice(0, 200)}`);
+    }
+    const data = (await response.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("");
+    if (!text) throw new Error(`Gemini ${model} returned no content`);
+    const firstBrace = text.indexOf("{");
+    const lastBrace = text.lastIndexOf("}");
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+      throw new Error(`Gemini ${model} returned no valid JSON object`);
+    }
+    return JSON.parse(text.slice(firstBrace, lastBrace + 1));
+  };
+
+  try {
+    return await tryModel("gemini-3.7-flash", 16000);
+  } catch (err) {
+    console.warn("[product research] Primary model failed, attempting fallback:", err instanceof Error ? err.message : err);
+    return await tryModel("gemini-2.5-flash", 16000);
   }
-  const data = (await response.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-  const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("");
-  if (!text) throw new Error("Gemini returned no content");
-  const firstBrace = text.indexOf("{");
-  const lastBrace = text.lastIndexOf("}");
-  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-    throw new Error("Gemini returned no valid JSON object");
-  }
-  const jsonText = text.slice(firstBrace, lastBrace + 1);
-  return JSON.parse(jsonText);
 }
 
 // Search for candidate official product images from search indexes
@@ -98,7 +110,7 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(1800),
     });
     const vqdHtml = await vqdRes.text();
     const vqdMatch = vqdHtml.match(/vqd=([0-9-]+)/) || vqdHtml.match(/vqd="([^"]+)"/) || vqdHtml.match(/vqd=([^&]+)/);
@@ -108,98 +120,47 @@ async function searchProductOriginalImages(query: string): Promise<string[]> {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(1800),
     });
     const data = (await imgRes.json().catch(() => ({}))) as { results?: Array<{ image?: string }> };
     return (data.results || [])
       .map((r) => r.image)
       .filter((url): url is string => typeof url === "string" && url.startsWith("https://") && !url.includes("case") && !url.includes("cover") && !url.includes("hulle") && !url.includes("hülle"))
-      .slice(0, 4);
+      .slice(0, 3);
   } catch {
     return [];
   }
 }
 
-// Uses Gemini 3.7 Flash Vision to inspect multiple candidate packshots and pick the cleanest, genuine device photo
-async function pickBestPackshotWithVision(
+// Inspect candidate packshots and pick the best image buffer
+async function pickBestPackshot(
   candidates: string[],
-  brand: string,
-  model: string,
-  color: string,
 ): Promise<Buffer | null> {
-  const validCandidates: Array<{ url: string; buf: Buffer; base64: string }> = [];
-
-  await Promise.all(
-    candidates.slice(0, 3).map(async (url) => {
-      try {
-        const res = await fetch(url, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-          },
-          signal: AbortSignal.timeout(2000),
-        });
-        if (!res.ok) return;
-        const buf = Buffer.from(await res.arrayBuffer());
-        if (buf.length < 4000 || buf.length > 15 * 1024 * 1024) return;
-
-        const meta = await sharp(buf).metadata().catch(() => null);
-        if (!meta?.width || meta.width < 250 || !meta?.height || meta.height < 250) return;
-
-        const thumbBuf = await sharp(buf).resize(300, 300, { fit: "inside" }).jpeg({ quality: 70 }).toBuffer();
-        validCandidates.push({ url, buf, base64: thumbBuf.toString("base64") });
-      } catch {
-        // network error
-      }
-    }),
-  );
-
-  if (validCandidates.length === 0) return null;
-  if (validCandidates.length === 1) return validCandidates[0].buf;
-
-  try {
-    const prompt = `Target Smartphone: ${brand} ${model} (Color: ${color})
-Select the SINGLE BEST candidate image that is genuinely the real device on a clean white/transparent studio background.
-Return JSON: { "best_index": number (0 to ${validCandidates.length - 1}) }`;
-
-    const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: prompt }];
-    validCandidates.forEach((c, idx) => {
-      parts.push({ text: `Image ${idx}:` });
-      parts.push({ inlineData: { mimeType: "image/jpeg", data: c.base64 } });
-    });
-
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: "application/json",
-          thinkingConfig: { thinkingBudget: 0 },
+  for (const url of candidates.slice(0, 2)) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         },
-      }),
-      signal: AbortSignal.timeout(3500),
-    });
+        signal: AbortSignal.timeout(1500),
+      });
+      if (!res.ok) continue;
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length < 4000 || buf.length > 10 * 1024 * 1024) continue;
 
-    if (!res.ok) return validCandidates[0].buf;
+      const meta = await sharp(buf).metadata().catch(() => null);
+      if (!meta?.width || meta.width < 250 || !meta?.height || meta.height < 250) continue;
 
-    const data = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return validCandidates[0].buf;
-
-    const decision = JSON.parse(text) as { best_index?: number };
-    if (typeof decision.best_index === "number" && validCandidates[decision.best_index]) {
-      return validCandidates[decision.best_index].buf;
+      return buf;
+    } catch {
+      // try next
     }
-
-    return validCandidates[0].buf;
-  } catch {
-    return validCandidates[0].buf;
   }
+  return null;
 }
 
-// Google Merchant Center standard: 1500x1500px, 1:1 square, 88% scale, micro-sharpened Retina WebP
+// Google Merchant Center standard: 1500x1500px, 1:1 square, 88% scale, WebP
 async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1500): Promise<Buffer> {
   try {
     let pipeline = sharp(inputBuffer, { failOn: "warning" }).rotate();
@@ -225,8 +186,7 @@ async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1500)
         right: Math.round((targetSize - productSize) / 2),
         background: { r: 255, g: 255, b: 255, alpha: 0 },
       })
-      .sharpen({ sigma: 1.0, m1: 0.8, m2: 2.0 })
-      .webp({ quality: 90, effort: 4 })
+      .webp({ quality: 85, effort: 2 })
       .toBuffer();
   } catch {
     return inputBuffer;
@@ -245,8 +205,56 @@ async function uploadPackshotBuffer(buffer: Buffer): Promise<string | null> {
   }
 }
 
+function generateProductSku(brand: string, model: string, storage?: string): string {
+  const brandCode = brand.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) || "DEV";
+  const modelCode = model.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10) || "MODEL";
+  const storageCode = storage ? storage.trim().toUpperCase().replace(/[^A-Z0-9]/g, "") : "";
+  const randomExt = Math.floor(100 + Math.random() * 900);
+  return `AP-${brandCode}-${modelCode}${storageCode ? `-${storageCode}` : ""}-${randomExt}`;
+}
+
+function generateVariantSku(brand: string, model: string, color?: string, storage?: string): string {
+  const brandCode = brand.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) || "DEV";
+  const modelCode = model.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10) || "MODEL";
+  const storageCode = storage ? storage.trim().toUpperCase().replace(/[^A-Z0-9]/g, "") : "";
+  const colorCode = color ? color.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6) : "";
+  return `AP-${brandCode}-${modelCode}${storageCode ? `-${storageCode}` : ""}${colorCode ? `-${colorCode}` : ""}`;
+}
+
+async function matchEprelData(brand: string, model: string, mpn?: string | null, eprelInput?: string | null) {
+  try {
+    const cleanInput = (eprelInput || "").trim();
+    if (cleanInput) {
+      const res = await dbQuery(
+        `SELECT * FROM eprel_models WHERE registration_number = $1 OR model_identifier ILIKE $2 LIMIT 1`,
+        [cleanInput, `%${cleanInput}%`],
+      );
+      if (res.rows[0]) return res.rows[0];
+    }
+    const cleanMpn = (mpn || "").trim();
+    if (cleanMpn.length >= 3) {
+      const res = await dbQuery(
+        `SELECT * FROM eprel_models WHERE model_identifier ILIKE $1 LIMIT 1`,
+        [`%${cleanMpn}%`],
+      );
+      if (res.rows[0]) return res.rows[0];
+    }
+    if (brand && model) {
+      const cleanModel = model.replace(/^(iPhone|Galaxy|Phone|Xiaomi|Redmi|POCO|Google|Pixel|Nothing)\s*/i, "").trim();
+      const res = await dbQuery(
+        `SELECT * FROM eprel_models WHERE supplier ILIKE $1 AND (model_identifier ILIKE $2 OR model_identifier ILIKE $3) ORDER BY on_market_start DESC NULLS LAST LIMIT 1`,
+        [`%${brand.trim()}%`, `%${model.trim()}%`, `%${cleanModel}%`],
+      );
+      if (res.rows[0]) return res.rows[0];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
-  const user = readSessionUserFromRequest(request);
+  const user = await readSessionUserFromRequest(request);
   if (!canManageProducts(user)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const csrf = rejectCrossSiteAdminMutation(request);
   if (csrf) return csrf;
@@ -279,64 +287,100 @@ export async function POST(request: NextRequest) {
     const raw = await callGemini({ prompt, image });
     const research = sanitizeResearchResult(raw);
 
-    // Fast multi-variant photo discovery with Gemini Vision validation
     const brand = research.brand || "";
     const model = research.model || query;
-    const gallerySet = new Set<string>();
+
+    // 1. Auto-generate SKU based on phone model + extension
+    const firstStorage = research.variants?.[0]?.storage || "";
+    const productSku = generateProductSku(brand, model, firstStorage);
+    research.skuSuggestion = productSku;
 
     if (research.variants && research.variants.length > 0) {
-      const uniqueColors = Array.from(
-        new Set(research.variants.map((v) => v.color.trim()).filter(Boolean)),
-      ).slice(0, 4);
+      research.variants = research.variants.map((v) => ({
+        ...v,
+        sku: v.sku || generateVariantSku(brand, model, v.color, v.storage),
+      }));
+    }
 
-      const colorImagesMap = new Map<string, string[]>();
+    // 2. Auto-match EPREL EU Energy Label (from local register or AI findings)
+    const eprelMatch = await matchEprelData(brand, model, research.mpnSuggestion, research.eprelId);
+    if (eprelMatch) {
+      const routes = eprelAssetRoutes(String(eprelMatch.registration_number));
+      research.eprelId = String(eprelMatch.registration_number);
+      research.energyLabel = {
+        efficiencyClass: eprelMatch.energy_class || research.energyLabel?.efficiencyClass || "A",
+        batteryEndurance: eprelEndurance(eprelMatch.battery_endurance_minutes) || research.energyLabel?.batteryEndurance || undefined,
+        batteryCycles: eprelCycles(eprelMatch.battery_endurance_cycles) || 1000,
+        repairabilityClass: eprelMatch.repairability_class || undefined,
+        reliabilityClass: eprelMatch.reliability_class || undefined,
+        ipRating: eprelMatch.ingress_protection || undefined,
+        labelImage: routes.labelImage,
+        ficheDe: routes.ficheDe,
+        ficheEn: routes.ficheEn,
+      };
+    }
 
-      await Promise.all(
-        uniqueColors.map(async (color) => {
-          try {
-            const candidates = await searchProductOriginalImages(`${brand} ${model} ${color}`);
-            if (candidates.length === 0) return;
+    // Fast bounded packshot discovery (capped at 4 seconds total to prevent timeouts)
+    const gallerySet = new Set<string>();
 
-            const winnerBuf = await pickBestPackshotWithVision(candidates, brand, model, color);
-            if (!winnerBuf) return;
+    const enrichImages = async () => {
+      if (research.variants && research.variants.length > 0) {
+        const uniqueColors = Array.from(
+          new Set(research.variants.map((v) => v.color.trim()).filter(Boolean)),
+        ).slice(0, 2);
 
-            const uploadedUrl = await uploadPackshotBuffer(winnerBuf);
-            if (uploadedUrl) {
-              colorImagesMap.set(color, [uploadedUrl]);
-              gallerySet.add(uploadedUrl);
+        const colorImagesMap = new Map<string, string[]>();
+
+        await Promise.allSettled(
+          uniqueColors.map(async (color) => {
+            try {
+              const candidates = await searchProductOriginalImages(`${brand} ${model} ${color}`);
+              if (candidates.length === 0) return;
+
+              const winnerBuf = await pickBestPackshot(candidates);
+              if (!winnerBuf) return;
+
+              const uploadedUrl = await uploadPackshotBuffer(winnerBuf);
+              if (uploadedUrl) {
+                colorImagesMap.set(color, [uploadedUrl]);
+                gallerySet.add(uploadedUrl);
+              }
+            } catch {
+              // non-fatal
             }
-          } catch {
-            // non-fatal
-          }
-        }),
-      );
+          }),
+        );
 
-      research.variants = research.variants.map((variant) => {
-        const colorImages = colorImagesMap.get(variant.color.trim());
-        return {
-          ...variant,
-          images: colorImages && colorImages.length > 0 ? colorImages : variant.images ?? [],
-        };
-      });
-    }
-
-    // Ensure gallery has general high-res model packshots
-    if (gallerySet.size < 2) {
-      try {
-        const generalCandidates = await searchProductOriginalImages(`${brand} ${model} official press packshot`);
-        if (generalCandidates.length > 0) {
-          const winnerBuf = await pickBestPackshotWithVision(generalCandidates, brand, model, "");
-          if (winnerBuf) {
-            const uploaded = await uploadPackshotBuffer(winnerBuf);
-            if (uploaded) gallerySet.add(uploaded);
-          }
-        }
-      } catch {
-        // non-fatal
+        research.variants = research.variants.map((variant) => {
+          const colorImages = colorImagesMap.get(variant.color.trim());
+          return {
+            ...variant,
+            images: colorImages && colorImages.length > 0 ? colorImages : variant.images ?? [],
+          };
+        });
       }
-    }
 
-    research.gallery = Array.from(gallerySet).slice(0, 8);
+      if (gallerySet.size === 0) {
+        try {
+          const generalCandidates = await searchProductOriginalImages(`${brand} ${model} official packshot`);
+          if (generalCandidates.length > 0) {
+            const winnerBuf = await pickBestPackshot(generalCandidates);
+            if (winnerBuf) {
+              const uploaded = await uploadPackshotBuffer(winnerBuf);
+              if (uploaded) gallerySet.add(uploaded);
+            }
+          }
+        } catch {
+          // non-fatal
+        }
+      }
+    };
+
+    // Race image enrichment with a 4-second timeout so API response is never delayed
+    const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 4000));
+    await Promise.race([enrichImages(), timeoutPromise]);
+
+    research.gallery = Array.from(gallerySet).slice(0, 6);
 
     return NextResponse.json({ success: true, research });
   } catch (error) {

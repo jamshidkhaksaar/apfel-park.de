@@ -173,7 +173,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
             {recommendationPills.map((pill) => (
               <span
                 key={pill}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-foreground/80"
+                className="rounded-full border border-border bg-surface-strong px-3 py-1 text-[11px] font-medium text-foreground/80"
               >
                 {pill}
               </span>
@@ -207,7 +207,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
           <div className="glass-panel rounded-3xl p-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/10 p-4">
+                <div className="flex items-center justify-between rounded-2xl border border-border bg-black/10 p-4">
                   <div>
                     <p className="text-sm font-semibold text-foreground">{mediaDict.labels.enabled}</p>
                     <p className="mt-1 text-xs text-muted">{mediaDict.hints.playback}</p>
@@ -244,7 +244,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                         className={`rounded-2xl border px-4 py-4 text-left transition ${
                           form.sourceType === option.value
                             ? "border-gold/50 bg-gold/10 text-foreground"
-                            : "border-white/10 bg-black/10 text-muted hover:border-gold/25 hover:text-foreground"
+                            : "border-border bg-black/10 text-muted hover:border-gold/25 hover:text-foreground"
                         }`}
                       >
                         <div className="text-sm font-semibold">{option.label}</div>
@@ -262,7 +262,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                     value={form.videoUrl}
                     onChange={(e) => updateField("videoUrl", e.target.value)}
                     placeholder={form.sourceType === "external" ? "https://cdn.example.com/hero.mp4" : "/uploads/hero/hero-video.mp4"}
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
                   />
                 </div>
 
@@ -275,7 +275,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                     value={form.posterUrl}
                     onChange={(e) => updateField("posterUrl", e.target.value)}
                     placeholder="/uploads/hero/hero-poster.jpg"
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
                   />
                 </div>
 
@@ -286,7 +286,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                   <p className="text-xs text-muted">
                     {mediaDict.hints.mobileImages ?? "Upload up to 8 mobile-only hero images. Mobile visitors see an animated slider instead of the desktop video."}
                   </p>
-                  <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+                  <div className="rounded-2xl border border-border bg-black/15 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-medium text-foreground/85">
                         {form.mobileImages.length} / {MAX_MOBILE_IMAGES}
@@ -315,7 +315,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                     />
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       {form.mobileImages.map((imageUrl, index) => (
-                        <div key={imageUrl} className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+                        <div key={imageUrl} className="overflow-hidden rounded-2xl border border-border bg-black/20">
                           <div className="relative aspect-[9/16]">
                             <Image
                               src={imageUrl}
@@ -326,7 +326,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                               unoptimized
                             />
                           </div>
-                          <div className="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2">
+                          <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
                             <span className="text-xs font-medium text-foreground/80">Slide {index + 1}</span>
                             <button
                               type="button"
@@ -350,18 +350,18 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                     type="text"
                     value={form.fallbackImageUrl}
                     onChange={(e) => updateField("fallbackImageUrl", e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-black/15 p-4">
+              <div className="rounded-3xl border border-border bg-black/15 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
                   Preview
                 </p>
-                <div className="mt-4 aspect-[16/10] overflow-hidden rounded-2xl border border-white/10 bg-black">
+                <div className="mt-4 aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-black">
                   <div className="grid h-full grid-cols-[1.2fr_0.8fr]">
-                    <div className="relative border-r border-white/10">
+                    <div className="relative border-r border-border">
                       {previewVideo && form.sourceType !== "image" ? (
                         <video
                           className="h-full w-full object-cover"
@@ -385,7 +385,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                     </div>
                     <div className="grid grid-cols-2 gap-2 p-2">
                       {mobilePreviewImages.slice(0, 4).map((imageUrl, index) => (
-                        <div key={`${imageUrl}-${index}`} className="relative overflow-hidden rounded-xl border border-white/10">
+                        <div key={`${imageUrl}-${index}`} className="relative overflow-hidden rounded-xl border border-border">
                           <Image
                             src={imageUrl}
                             alt={`Mobile preview ${index + 1}`}
@@ -432,7 +432,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                   e.currentTarget.value = "";
                 }}
               />
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="mt-4 rounded-2xl border border-border bg-black/15 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted">{mediaDict.labels.currentVideo}</p>
                 <p className="mt-2 break-all text-sm text-foreground/85">{form.videoUrl || "—"}</p>
               </div>
@@ -464,7 +464,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                   e.currentTarget.value = "";
                 }}
               />
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="mt-4 rounded-2xl border border-border bg-black/15 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted">{mediaDict.labels.currentPoster}</p>
                 <p className="mt-2 break-all text-sm text-foreground/85">{form.posterUrl || "—"}</p>
               </div>
@@ -495,7 +495,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                 {Array.from({ length: MAX_MOBILE_IMAGES }).map((_, index) => {
                   const imageUrl = form.mobileImages[index];
                   return (
-                    <div key={index} className="overflow-hidden rounded-2xl border border-white/10 bg-black/15">
+                    <div key={index} className="overflow-hidden rounded-2xl border border-border bg-black/15">
                       <div className="relative aspect-[9/16]">
                         {imageUrl ? (
                           <Image
@@ -512,7 +512,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
                         <span className="text-xs font-medium text-foreground/80">Slide {index + 1}</span>
                         {imageUrl ? (
                           <button
@@ -544,7 +544,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                     type="text"
                     value={form.title}
                     onChange={(e) => updateField("title", e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -555,7 +555,7 @@ export default function HeroMediaForm({ initialState }: { initialState: HeroMedi
                     value={form.subtitle}
                     onChange={(e) => updateField("subtitle", e.target.value)}
                     rows={4}
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
                   />
                 </div>
               </div>

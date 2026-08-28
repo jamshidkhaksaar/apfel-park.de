@@ -55,7 +55,7 @@ function ModelImageCell({
           <img
             src={imageUrl}
             alt=""
-            className="h-full w-full rounded-xl border border-white/10 bg-white/5 object-contain p-1"
+            className="h-full w-full rounded-xl border border-border bg-surface-strong object-contain p-1"
           />
           <button
             type="button"
@@ -108,7 +108,7 @@ function ModelImageCell({
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
         title={isGerman ? "Gerätebild hochladen" : "Upload device image"}
-        className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/15 bg-white/3 text-muted/40 transition hover:border-gold/40 hover:text-gold/60 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-surface-strong text-muted/40 transition hover:border-gold/40 hover:text-gold/60 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {uploading ? (
           <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -185,7 +185,7 @@ function BrandLogoCell({
           <img
             src={logoUrl}
             alt={brandName}
-            className="h-16 w-16 rounded-2xl border border-white/10 bg-white/5 object-contain p-2"
+            className="h-16 w-16 rounded-2xl border border-border bg-surface-strong object-contain p-2"
           />
           <button
             type="button"
@@ -203,7 +203,7 @@ function BrandLogoCell({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-white/15 bg-white/3 text-muted/40 transition hover:border-gold/40 hover:text-gold/60 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-border bg-surface-strong text-muted/40 transition hover:border-gold/40 hover:text-gold/60 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {uploading ? (
             <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -409,7 +409,7 @@ function BrandCard({
       className={`group relative cursor-pointer rounded-xl border px-3 py-3 transition-all duration-150 ${
         isActive
           ? "border-gold/50 bg-gold/8 ring-1 ring-gold/20"
-          : "border-border/40 bg-white/3 hover:border-gold/25 hover:bg-white/5"
+          : "border-border/40 bg-surface-strong hover:border-gold/25 hover:bg-surface-strong"
       }`}
     >
       {/* Top row */}
@@ -440,7 +440,7 @@ function BrandCard({
 
       {/* Logo upload — only when active */}
       {isActive && (
-        <div className="mt-3 flex items-center gap-3 border-t border-white/8 pt-3" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-3 flex items-center gap-3 border-t border-border pt-3" onClick={(e) => e.stopPropagation()}>
           <BrandLogoCell
             logoUrl={hasLogoUrl ? brand.icon : undefined}
             brandName={brand.name}
@@ -539,7 +539,7 @@ function DeviceCard({
       className={`group relative flex cursor-pointer flex-col items-center gap-2 rounded-xl border p-3 transition-all duration-150 ${
         isActive
           ? "border-gold/50 bg-gold/8 ring-1 ring-gold/25"
-          : "border-border/40 bg-white/3 hover:border-gold/25 hover:bg-white/5"
+          : "border-border/40 bg-surface-strong hover:border-gold/25 hover:bg-surface-strong"
       }`}
     >
       {/* Image or placeholder */}
@@ -777,7 +777,7 @@ function DevicesColumn({
 const qualityBadgeClass: Record<string, string> = {
   genuine: "border-amber-500/50 bg-amber-500/10 text-amber-300",
   premium: "border-slate-400/40 bg-slate-400/10 text-slate-300",
-  standard: "border-border/50 bg-white/5 text-muted",
+  standard: "border-border/50 bg-surface-strong text-muted",
 };
 
 function VariantRow({
@@ -846,7 +846,7 @@ function PartRow({
   onUpdateVariant: (variantId: string, updated: RepairPartVariant) => void;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/3 p-3">
+    <div className="rounded-xl border border-border bg-surface-strong p-3">
       {/* Part header */}
       <div className="flex items-center gap-2">
         <input

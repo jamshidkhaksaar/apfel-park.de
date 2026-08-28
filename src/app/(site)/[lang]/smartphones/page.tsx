@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import PageIntro from "../../../../components/PageIntro";
+import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
+import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getSmartphonesContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
@@ -17,10 +17,12 @@ export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> => {
-  const { lang: rawLang } = await params;
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
   return createMetadata(
@@ -28,6 +30,8 @@ export const generateMetadata = async ({
     dict.meta.smartphones.title,
     dict.meta.smartphones.description,
     "/smartphones",
+    undefined,
+    { noindex: hasCatalogSearchQuery(query) },
   );
 };
 
@@ -77,16 +81,20 @@ export default async function SmartphonesPage({
     <div className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <PageIntro
+      <StoreCommerceHeader
+        lang={lang}
         title={smartphonesContent.heroTitle}
         subtitle={smartphonesContent.heroSubtitle}
         eyebrow={dict.meta.smartphones.title}
+        query={activeFilters.query}
+        resultCount={catalog.total}
+        breadcrumbs={[{ label: "Smartphones" }]}
       />
 
-      <StoreCollectionLinks lang={lang} />
+      <StoreCollectionLinks lang={lang} products={catalog.products} />
 
       {/* Trust Badges */}
-      <section className="border-b border-white/5 bg-surface/30 py-8">
+      <section className="hidden border-b border-white/5 bg-surface/30 py-8">
         <div className="container-page">
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
             {/* Warranty */}
@@ -145,7 +153,7 @@ export default async function SmartphonesPage({
       </section>
 
       {/* Smartphone Store Grid with Filters */}
-      <section className="section-pad" id="store">
+      <section className="bg-store-ground py-6 md:py-8" id="store">
         <div className="container-page">
           <StoreGrid
             products={catalog.products}
@@ -158,6 +166,7 @@ export default async function SmartphonesPage({
             counts={catalog.counts}
             facets={catalog.facets}
             activeFilters={activeFilters}
+            showSearch={false}
           />
         </div>
       </section>
@@ -344,7 +353,7 @@ export default async function SmartphonesPage({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-foreground">{lang === "de" ? "Kostenloser Setup" : "Free Setup"}</h3>
+              <h3 className="text-xl font-bold text-foreground">{lang === "de" ? "Kostenloses Setup" : "Free Setup"}</h3>
               <p className="mt-3 text-muted">
                 {lang === "de"
                   ? "Wir richten dein neues Smartphone ein, übertragen Daten und installieren Schutzfolie."

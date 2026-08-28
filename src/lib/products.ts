@@ -619,6 +619,7 @@ export type StoreCatalogCollection =
 export type StoreCatalogSort = "featured" | "price-asc" | "price-desc" | "newest";
 
 export type StoreCatalogFilters = {
+  query: string;
   brands: string[];
   storages: string[];
   conditions: ProductCondition[];
@@ -710,6 +711,60 @@ const productStorages = (product: Product): string[] => {
   return Array.from(seen);
 };
 
+export const normalizeCatalogSearchText = (value: string): string =>
+  value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ß/g, "ss")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+
+const catalogSearchText = (product: Product): string => normalizeCatalogSearchText([
+  product.title,
+  product.subtitle,
+  product.brand,
+  product.model,
+  ...product.featureBullets,
+  ...product.specs.flatMap((spec) => [spec.label, spec.value]),
+  ...product.variants.flatMap((variant) => [variant.color, variant.storage]),
+].filter(Boolean).join(" "));
+
+export const catalogSearchScore = (product: Product, rawQuery: string): number => {
+  const query = normalizeCatalogSearchText(rawQuery).slice(0, 80);
+  if (!query) return 1;
+  const haystack = catalogSearchText(product);
+  const tokens = query.split(" ").filter(Boolean);
+  if (!tokens.every((token) => haystack.includes(token))) return 0;
+
+  const title = normalizeCatalogSearchText(product.title);
+  const model = normalizeCatalogSearchText(product.model ?? "");
+  const brand = normalizeCatalogSearchText(product.brand ?? "");
+  let score = 100 + tokens.length * 10;
+  if (title === query) score += 1_000;
+  else if (title.startsWith(query)) score += 600;
+  else if (title.includes(query)) score += 350;
+  if (model === query) score += 500;
+  else if (model.includes(query)) score += 180;
+  if (brand === query) score += 120;
+  const hasAccessoryIntent = /\b(hulle|case|cover|kabel|cable|ladegerat|charger|powerbank|kopfhorer|headphone|panzerglas|displayschutz)\b/.test(query);
+  const hasDeviceIntent = /\b(iphone|galaxy|pixel|xiaomi|redmi|smartphone|handy)\b/.test(query) && !hasAccessoryIntent;
+  if (hasDeviceIntent) score += product.category === "smartphones" ? 450 : -120;
+  if (hasAccessoryIntent) score += product.category === "accessories" ? 450 : -80;
+  return score;
+};
+
+export const searchCatalogProducts = (products: Product[], rawQuery: string): Product[] =>
+  products
+    .map((product) => ({ product, score: catalogSearchScore(product, rawQuery) }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => {
+      const stock = Number((right.product.stock ?? 0) > 0) - Number((left.product.stock ?? 0) > 0);
+      return stock || right.score - left.score || left.product.title.localeCompare(right.product.title, "de");
+    })
+    .map((entry) => entry.product);
+
 const CONDITION_VALUES: ProductCondition[] = ["new", "open_box", "used"];
 
 /** Parse URL query params into StoreCatalogFilters (shared by all store pages). */
@@ -735,6 +790,7 @@ export const parseStoreCatalogFilters = (
     && rawPriceMin > rawPriceMax;
 
   return {
+    query: get("q").trim().slice(0, 80),
     brands: list("brand"),
     storages: list("storage"),
     conditions: list("condition").filter((v): v is ProductCondition =>
@@ -752,6 +808,9 @@ export const parseStoreCatalogFilters = (
 const STORE_SORT_SET = new Set<StoreCatalogSort>(["featured", "newest", "price-asc", "price-desc"]);
 const valueOfParam = (value: string | string[] | undefined): string =>
   Array.isArray(value) ? value[0] ?? "" : value ?? "";
+
+export const hasCatalogSearchQuery = (query: Record<string, string | string[] | undefined>): boolean =>
+  valueOfParam(query.q).trim().length > 0;
 
 export const parseStoreSort = (value: string | string[] | undefined): StoreCatalogSort => {
   const str = valueOfParam(value) as StoreCatalogSort;
@@ -822,6 +881,23 @@ export async function countActiveSubcategoryProducts(subcategory: string): Promi
   }
 }
 
+const getStorefrontMerchandisingIds = async (): Promise<string[]> => {
+  try {
+    const db = createDbClient();
+    const { data } = await db
+      .from<{ value: unknown }>("store_settings")
+      .select("value")
+      .eq("key", "trending_products")
+      .maybeSingle();
+    if (!data?.value || typeof data.value !== "object") return [];
+    const ids = (data.value as { productIds?: unknown }).productIds;
+    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
+  } catch (error) {
+    console.error("getStorefrontMerchandisingIds failed:", error);
+    return [];
+  }
+};
+
 export async function getStoreCatalog({
   category = "all",
   subcategory,
@@ -831,6 +907,7 @@ export async function getStoreCatalog({
   pageSize = 24,
   locale = "de",
   filters,
+  merchandising = "default",
 }: {
   category?: StoreCatalogCategory;
   /** Narrows an accessory category to one subcategory landing page. */
@@ -841,13 +918,17 @@ export async function getStoreCatalog({
   pageSize?: number;
   locale?: Locale;
   filters?: StoreCatalogFilters;
+  merchandising?: "default" | "storefront";
 } = {}): Promise<StoreCatalogResult> {
   const normalizedPageSize = Math.min(48, Math.max(1, Math.floor(pageSize)));
 
   // The catalog is small (~100 products), so fetch all active products once
   // and do faceting, filtering, sorting and pagination in JS. This gives
   // accurate facet counts and keeps the logic in one place.
-  const all = await getProducts(undefined, undefined, locale);
+  const [all, merchandisingIds] = await Promise.all([
+    getProducts(undefined, undefined, locale),
+    merchandising === "storefront" ? getStorefrontMerchandisingIds() : Promise.resolve([]),
+  ]);
 
   // Category tab counts (across the whole catalog).
   const counts: Record<StoreCatalogCategory, number> = {
@@ -881,7 +962,7 @@ export async function getStoreCatalog({
   // SEO collection pages are inventory-backed views rather than duplicated
   // product records. Applying the collection scope before building facets
   // keeps counts and filters accurate as products are added or sold.
-  const scoped = subcategoryScoped.filter((product) => {
+  const collectionScoped = subcategoryScoped.filter((product) => {
     if (!collection) return true;
     if (collection === "used-phones") {
       return product.category === "smartphones" && product.condition !== "new";
@@ -910,6 +991,10 @@ export async function getStoreCatalog({
       && normalizeProductBrand(product.brand) === "Apple"
       && /\biphone\s*17\b/i.test(identity);
   });
+  const searchQuery = filters?.query ?? "";
+  const scoped = searchQuery
+    ? collectionScoped.filter((product) => catalogSearchScore(product, searchQuery) > 0)
+    : collectionScoped;
 
   // Build facets from the scoped set (before user filters) so the sidebar
   // always shows every available option for the current category.
@@ -1004,6 +1089,31 @@ export async function getStoreCatalog({
   if (sort === "price-asc") sorted.sort((a, b) => stockFirst(a, b, () => a.price - b.price));
   else if (sort === "price-desc") sorted.sort((a, b) => stockFirst(a, b, () => b.price - a.price));
   else if (sort === "newest") sorted.sort((a, b) => stockFirst(a, b, () => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""))));
+  else if (searchQuery) {
+    sorted.sort((a, b) => stockFirst(a, b, () => catalogSearchScore(b, searchQuery) - catalogSearchScore(a, searchQuery)));
+  }
+  else if (merchandising === "storefront") {
+    const configuredRank = new Map(merchandisingIds.map((id, index) => [id, index] as const));
+    const categoryRank: Record<ProductCategory, number> = {
+      smartphones: 0,
+      tablets: 1,
+      accessories: 2,
+      laptops: 3,
+      consoles: 4,
+    };
+    sorted.sort((a, b) => stockFirst(a, b, () => {
+      const aConfigured = configuredRank.get(a.id);
+      const bConfigured = configuredRank.get(b.id);
+      if (aConfigured !== undefined || bConfigured !== undefined) {
+        if (aConfigured === undefined) return 1;
+        if (bConfigured === undefined) return -1;
+        return aConfigured - bConfigured;
+      }
+      return categoryRank[a.category] - categoryRank[b.category]
+        || Number(b.hasDiscount) - Number(a.hasDiscount)
+        || String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""));
+    }));
+  }
   else {
     // featured: discounted first, then newest.
     sorted.sort((a, b) => {

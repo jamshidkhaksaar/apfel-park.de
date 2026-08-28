@@ -1,6 +1,16 @@
 import { query } from "@/lib/db";
 
+export type DashboardTrend = {
+  /** Sum/count over the trailing 30 days. */
+  current: number;
+  /** Same window immediately before it, for a like-for-like comparison. */
+  previous: number;
+};
+
 export type DashboardStats = {
+  revenue30d: DashboardTrend;
+  orders30d: DashboardTrend;
+  averageOrderValue: number;
   repairs: number;
   orders: number;
   reviews: number;
@@ -20,7 +30,7 @@ export type DashboardStats = {
 };
 
 export const loadDashboardStats = async (liveUsers = 0): Promise<DashboardStats> => {
-  const [repairs, orders, reviews, chats, inventory, sync] = await Promise.all([
+  const [repairs, orders, reviews, chats, inventory, sync, commerce] = await Promise.all([
     query(`SELECT COUNT(*)::int AS count FROM repairs WHERE LOWER(COALESCE(status, 'new')) IN ('new', 'neu')`),
     query(`SELECT COUNT(*)::int AS count FROM orders WHERE LOWER(COALESCE(status, 'pending')) IN ('pending', 'neu', 'ausstehend')`),
     query(`SELECT COUNT(*)::int AS count FROM reviews`),
@@ -94,11 +104,35 @@ export const loadDashboardStats = async (liveUsers = 0): Promise<DashboardStats>
          max(succeeded_at) AS last_synced_at
        FROM states`,
     ),
+    // Revenue is counted from money actually captured, so refunded and cancelled
+    // orders never inflate it. Two equal windows make the trend like-for-like.
+    query(
+      `SELECT
+         COALESCE(SUM(total_amount) FILTER (WHERE paid_at >= now() - interval '30 days'), 0)::float AS revenue_current,
+         COALESCE(SUM(total_amount) FILTER (WHERE paid_at >= now() - interval '60 days' AND paid_at < now() - interval '30 days'), 0)::float AS revenue_previous,
+         COUNT(*) FILTER (WHERE paid_at >= now() - interval '30 days')::int AS orders_current,
+         COUNT(*) FILTER (WHERE paid_at >= now() - interval '60 days' AND paid_at < now() - interval '30 days')::int AS orders_previous
+       FROM orders
+       WHERE payment_status = 'paid' AND status <> 'cancelled'`,
+    ),
   ]);
 
   const inventoryRow = inventory.rows[0] ?? {};
   const syncRow = sync.rows[0] ?? {};
+  const commerceRow = (commerce.rows[0] ?? {}) as Record<string, unknown>;
+  const revenueCurrent = Number(commerceRow.revenue_current ?? 0);
+  const ordersCurrent = Number(commerceRow.orders_current ?? 0);
+
   return {
+    revenue30d: {
+      current: revenueCurrent,
+      previous: Number(commerceRow.revenue_previous ?? 0),
+    },
+    orders30d: {
+      current: ordersCurrent,
+      previous: Number(commerceRow.orders_previous ?? 0),
+    },
+    averageOrderValue: ordersCurrent > 0 ? revenueCurrent / ordersCurrent : 0,
     repairs: Number(repairs.rows[0]?.count ?? 0),
     orders: Number(orders.rows[0]?.count ?? 0),
     reviews: Number(reviews.rows[0]?.count ?? 0),

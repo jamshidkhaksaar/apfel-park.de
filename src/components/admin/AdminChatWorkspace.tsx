@@ -364,7 +364,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={text.search}
-            className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+            className="w-full rounded-xl border border-border bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
           />
           <div className="mt-3 flex flex-wrap gap-2">
             {(["all", "open", "waiting", "resolved"] as const).map((item) => (
@@ -384,7 +384,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
         </div>
         <div className="mt-4 flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 p-6 text-sm text-muted">{text.empty}</div>
+            <div className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted">{text.empty}</div>
           ) : (
             <div className="space-y-2">
               {filtered.map((conversation) => (
@@ -396,7 +396,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
                   className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
                     selectedId === conversation.id
                       ? "border-gold/40 bg-gold/10"
-                      : "border-white/10 bg-black/10 hover:border-gold/20"
+                      : "border-border bg-black/10 hover:border-gold/20"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -431,12 +431,12 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
 
       <section className="glass-panel flex min-h-[42rem] flex-col rounded-2xl p-4 sm:p-6 xl:min-h-0">
         {!selectedConversation ? (
-          <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-white/10 text-sm text-muted">
+          <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-border text-sm text-muted">
             {text.emptyDetail}
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-muted">{text.customer}</p>
                 <h3 className="mt-2 text-2xl font-bold text-foreground">{selectedConversation.customerName}</h3>
@@ -451,7 +451,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
                 <select
                   value={selectedConversation.status}
                   onChange={(event) => void handleStatusChange(event.target.value as ChatStatus)}
-                  className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground focus:border-gold focus:outline-none"
+                  className="rounded-full border border-border bg-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground focus:border-gold focus:outline-none"
                 >
                   <option value="open">{text.status.open}</option>
                   <option value="waiting">{text.status.waiting}</option>
@@ -470,7 +470,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
                     <div key={message.id} className={`flex ${own ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-[78%] rounded-3xl px-4 py-3 ${
-                          own ? "bg-gold text-black" : "border border-white/10 bg-white/5 text-foreground"
+                          own ? "bg-gold text-black" : "border border-border bg-surface-strong text-foreground"
                         }`}
                       >
                         <p className="whitespace-pre-wrap text-sm">{message.message}</p>
@@ -504,7 +504,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
               <div ref={messagesEndRef} />
             </div>
 
-            <form ref={replyFormRef} onSubmit={handleReply} className="mt-5 border-t border-white/10 bg-surface/40 pt-4">
+            <form ref={replyFormRef} onSubmit={handleReply} className="mt-5 border-t border-border bg-surface/40 pt-4">
               <label htmlFor="admin-chat-reply" className="mb-2 block text-sm font-semibold text-foreground">
                 {text.reply}
               </label>
@@ -521,7 +521,7 @@ export default function AdminChatWorkspace({ locale, initialConversations }: Pro
                     }
                   }}
                   placeholder={text.messagePlaceholder}
-                  className="min-h-[88px] flex-1 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
+                  className="min-h-[88px] flex-1 rounded-2xl border border-border bg-black/20 px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
                 />
                 <button
                   type="submit"

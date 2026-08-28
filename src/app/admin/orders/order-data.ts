@@ -42,6 +42,8 @@ export type OrderDetail = {
   subtotal_amount: string | null;
   shipping_amount: string | null;
   vat_amount: string | null;
+  coupon_code: string | null;
+  discount_amount: string | null;
   currency: string | null;
   items: OrderItem[] | null;
   tracking_id: string | null;
@@ -62,7 +64,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
             customer_address, status, payment_status, shipping_method, provider,
             provider_payment_id, provider_session_id, checkout_locale,
             admin_notification_sent_at, admin_notification_last_error, admin_notification_attempts,
-            total_amount, subtotal_amount, shipping_amount, vat_amount, currency, items,
+            total_amount, subtotal_amount, shipping_amount, vat_amount, coupon_code, discount_amount, currency, items,
             metadata->>'trackingId' AS tracking_id,
             metadata->'conditionConsent' AS condition_consent
      FROM orders WHERE id = $1`,

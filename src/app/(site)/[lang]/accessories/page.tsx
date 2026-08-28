@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import PageIntro from "../../../../components/PageIntro";
+import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
+import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getAccessoriesContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
@@ -16,10 +16,12 @@ export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> => {
-  const { lang: rawLang } = await params;
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
   return createMetadata(
@@ -27,6 +29,8 @@ export const generateMetadata = async ({
     dict.meta.accessories.title,
     dict.meta.accessories.description,
     "/accessories",
+    undefined,
+    { noindex: hasCatalogSearchQuery(query) },
   );
 };
 
@@ -77,14 +81,18 @@ export default async function AccessoriesPage({
     <div className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <PageIntro
+      <StoreCommerceHeader
+        lang={lang}
         title={accessoriesContent.heroTitle}
         subtitle={accessoriesContent.heroSubtitle}
         eyebrow={dict.meta.accessories.title}
+        query={activeFilters.query}
+        resultCount={catalog.total}
+        breadcrumbs={[{ label: lang === "de" ? "Zubehör" : "Accessories" }]}
       />
 
       {/* Accessories Store with Filters & Sorting */}
-      <section className="section-pad" id="store">
+      <section className="bg-store-ground py-6 md:py-8" id="store">
         <div className="container-page">
           <StoreGrid
             products={catalog.products}
@@ -97,6 +105,7 @@ export default async function AccessoriesPage({
             counts={catalog.counts}
             facets={catalog.facets}
             activeFilters={activeFilters}
+            showSearch={false}
           />
         </div>
       </section>

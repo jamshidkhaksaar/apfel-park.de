@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { ShippingMethod, ValidatedCart } from "@/lib/checkout";
 import { shouldBypassImageOptimization } from "@/lib/image";
@@ -14,6 +14,7 @@ import {
   writeStoredCart,
   type StoredCartItem,
 } from "@/components/checkout/cart";
+import { fulfillmentCopy } from "@/lib/fulfillment-copy";
 
 type Props = {
   locale: "de" | "en";
@@ -41,6 +42,7 @@ export default function CartClient({ locale }: Props) {
   const [suggestions, setSuggestions] = useState<CartSuggestion[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const validationRequestRef = useRef(0);
 
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + Math.max(1, Number(item.quantity) || 1), 0),
@@ -48,6 +50,7 @@ export default function CartClient({ locale }: Props) {
   );
 
   const validate = useCallback(async (nextItems: StoredCartItem[], nextShipping: ShippingMethod) => {
+    const requestId = ++validationRequestRef.current;
     setLoading(true);
     setError("");
     if (nextItems.length === 0) {
@@ -57,21 +60,29 @@ export default function CartClient({ locale }: Props) {
       return;
     }
 
-    const response = await fetch("/api/cart/validate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: nextItems, shippingMethod: nextShipping, locale }),
-    });
-    const data = (await response.json()) as {
+    let response: Response;
+    let data: {
       success: boolean;
       cart?: ValidatedCart;
       suggestions?: CartSuggestion[];
       error?: string;
     };
+    try {
+      response = await fetch("/api/cart/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: nextItems, shippingMethod: nextShipping, locale }),
+      });
+      data = (await response.json()) as typeof data;
+    } catch {
+      if (requestId !== validationRequestRef.current) return;
+      setError(locale === "de" ? "Warenkorb konnte nicht geprüft werden. Bitte erneut versuchen." : "Cart could not be validated. Please try again.");
+      setLoading(false);
+      return;
+    }
+    if (requestId !== validationRequestRef.current) return;
     if (!response.ok || !data.success || !data.cart) {
       setError(data.error || (locale === "de" ? "Warenkorb konnte nicht geprüft werden." : "Cart could not be validated."));
-      setCart(null);
-      setSuggestions([]);
       setLoading(false);
       return;
     }
@@ -97,7 +108,6 @@ export default function CartClient({ locale }: Props) {
           : item,
       );
     writeStoredCart(next);
-    void validate(next, shippingMethod);
   };
 
   const removeLine = (line: ValidatedCart["items"][number]) => {
@@ -110,17 +120,15 @@ export default function CartClient({ locale }: Props) {
         ),
     );
     writeStoredCart(next);
-    void validate(next, shippingMethod);
   };
 
   const addSuggestion = (suggestion: CartSuggestion) => {
-    const next = addStoredCartItem({ productId: suggestion.id, quantity: 1 });
-    void validate(next, shippingMethod);
+    addStoredCartItem({ productId: suggestion.id, quantity: 1 });
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="glass-panel rounded-2xl p-6">
+    <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="glass-panel min-w-0 rounded-2xl p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
@@ -130,7 +138,7 @@ export default function CartClient({ locale }: Props) {
               {locale === "de" ? "Deine Auswahl" : "Your items"}
             </h1>
           </div>
-          <Link href={`/${locale}/store`} className="btn-secondary">
+          <Link href={`/${locale}/store`} className="btn-secondary max-w-full whitespace-normal text-center">
             {locale === "de" ? "Weiter einkaufen" : "Continue shopping"}
           </Link>
         </div>
@@ -287,11 +295,18 @@ export default function CartClient({ locale }: Props) {
         )}
       </div>
 
-      <aside className="glass-panel h-fit rounded-2xl p-6 lg:sticky lg:top-28">
+      <aside className="glass-panel h-fit min-w-0 rounded-2xl p-4 sm:p-6 lg:sticky lg:top-28">
         <h2 className="text-lg font-semibold text-foreground">{locale === "de" ? "Zusammenfassung" : "Summary"}</h2>
 
-        <div className="mt-5 grid gap-3">
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-surface/40 p-4">
+        <section className="mt-5" aria-labelledby="cart-fulfillment-heading">
+          <h3 id="cart-fulfillment-heading" className="text-sm font-semibold text-foreground">
+            {fulfillmentCopy[locale].heading}
+          </h3>
+          <p className="mt-2 rounded-lg border border-gold/20 bg-gold/5 px-3 py-2.5 text-xs leading-5 text-muted">
+            {fulfillmentCopy[locale].notice}
+          </p>
+          <div className="mt-4 grid gap-3">
+          <label className={`group flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/40 focus-within:ring-offset-2 focus-within:ring-offset-background ${shippingMethod === fulfillmentCopy.pickupValue ? "border-gold/70 bg-gold/10 shadow-[0_0_0_1px_rgba(200,168,98,0.18)]" : "border-border/60 bg-surface/40 hover:border-gold/40"}`}>
             <input
               type="radio"
               name="shipping"
@@ -299,12 +314,15 @@ export default function CartClient({ locale }: Props) {
               onChange={() => setShippingMethod("pickup")}
               className="mt-1"
             />
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gold/15 text-gold" aria-hidden="true"><svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V8.5L12 3l7 5.5V21M8 21v-5h8v5M8 11h.01M12 11h.01M16 11h.01" /></svg></span>
             <span>
-              <span className="block text-sm font-semibold text-foreground">{locale === "de" ? "Abholung im Store" : "Store pickup"}</span>
-              <span className="mt-1 block text-xs text-muted">{locale === "de" ? "Kostenlos in Hamburg abholen." : "Free pickup in Hamburg."}</span>
+              <span className="block text-sm font-semibold text-foreground">{fulfillmentCopy[locale].pickup.title}</span>
+              <span className="mt-1 block text-xs leading-5 text-muted">{fulfillmentCopy[locale].pickup.description}</span>
+              <span className="mt-2 block text-[11px] font-medium text-gold">{fulfillmentCopy[locale].pickup.location}</span>
             </span>
+            <span className="ml-auto shrink-0 text-right text-xs font-semibold text-gold">{locale === "de" ? "Kostenlos" : "Free"}{shippingMethod === "pickup" ? <span className="mt-1 block text-[10px] uppercase tracking-wide">{fulfillmentCopy[locale].selected}</span> : null}</span>
           </label>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-surface/40 p-4">
+          <label className={`group flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/40 focus-within:ring-offset-2 focus-within:ring-offset-background ${shippingMethod === fulfillmentCopy.deliveryValue ? "border-gold/70 bg-gold/10 shadow-[0_0_0_1px_rgba(200,168,98,0.18)]" : "border-border/60 bg-surface/40 hover:border-gold/40"}`}>
             <input
               type="radio"
               name="shipping"
@@ -312,12 +330,16 @@ export default function CartClient({ locale }: Props) {
               onChange={() => setShippingMethod("germany")}
               className="mt-1"
             />
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-strong text-foreground" aria-hidden="true"><svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5h10.5v9.75H3.75V7.5zM14.25 10.5h3.1l2.9 3v3.75h-6M6.75 19.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm10.5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" /></svg></span>
             <span>
-              <span className="block text-sm font-semibold text-foreground">{locale === "de" ? "Versand Deutschland" : "Germany shipping"}</span>
-              <span className="mt-1 block text-xs text-muted">{locale === "de" ? "Versicherter Versand." : "Tracked shipping."}</span>
+              <span className="block text-sm font-semibold text-foreground">{fulfillmentCopy[locale].delivery.title}</span>
+              <span className="mt-1 block text-xs leading-5 text-muted">{fulfillmentCopy[locale].delivery.description}</span>
+              <span className="mt-2 block text-[11px] font-medium text-muted">{fulfillmentCopy[locale].delivery.location} · {fulfillmentCopy[locale].delivery.timing}</span>
             </span>
+            <span className="ml-auto shrink-0 text-right text-xs font-semibold text-foreground">{cart ? formatMoney(locale, cart.shippingAmount, cart.currency) : "-"}{shippingMethod === "germany" ? <span className="mt-1 block text-[10px] uppercase tracking-wide text-gold">{fulfillmentCopy[locale].selected}</span> : null}</span>
           </label>
-        </div>
+          </div>
+        </section>
 
         <div className="mt-6 space-y-3 border-t border-border/60 pt-5 text-sm">
           <div className="flex justify-between text-muted">

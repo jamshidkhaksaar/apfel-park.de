@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    authorizeRunRead(request);
+    await authorizeRunRead(request);
     const rawLimit = request.nextUrl.searchParams.get("limit") ?? "100";
     if (!/^\d{1,3}$/.test(rawLimit)) throw new ProductIntakeError("bad_request", "limit must be an integer from 1 to 200", 400);
     const limit = Number(rawLimit);

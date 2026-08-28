@@ -3,17 +3,18 @@ import type { Metadata } from "next";
 import StoreCollectionLanding from "@/components/store/StoreCollectionLanding";
 import type { Locale } from "@/lib/i18n";
 import { createMetadata } from "@/lib/metadata";
+import { hasCatalogSearchQuery } from "@/lib/products";
 import { getStoreCollectionCopy } from "@/lib/store-collections";
 import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
-  const { lang: rawLang } = await params;
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const locale = (lang === "en" ? "en" : "de") as Locale;
   const copy = getStoreCollectionCopy("iphone-17", locale);
-  return createMetadata(locale, copy.metaTitle, copy.description, copy.path);
+  return createMetadata(locale, copy.metaTitle, copy.description, copy.path, undefined, { noindex: hasCatalogSearchQuery(query) });
 }
 
 export default async function Iphone17Page({

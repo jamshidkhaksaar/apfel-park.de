@@ -246,7 +246,7 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad, requireCo
 
   if (displayError) {
     return (
-      <div className="text-xs text-red-400">
+      <div className="text-xs text-red-text">
         {displayError}
       </div>
     );

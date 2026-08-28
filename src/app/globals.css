@@ -4,6 +4,9 @@
   /* Dark Theme - Brand Gold */
   --background: #0b0b0c;
   --background-alt: #121214;
+  /* Store surfaces: results ground vs. card plate (existing palette values) */
+  --store-ground: var(--background);
+  --store-card: var(--surface);
   --foreground: #f5f5f6;
   --heading: #ffffff;
   --surface: #1a1a1d;
@@ -13,6 +16,7 @@
 
   /* Gold Primary */
   --gold: #d49e42;
+  --gold-text: #d49e42;
   --gold-soft: #e4b15a;
   --gold-deep: #b5842f;
   --gold-glow: rgba(212, 158, 66, 0.35);
@@ -25,8 +29,12 @@
 
   /* Status Colors (desaturated) */
   --green: #4fa36a;
+  --green-text: #52a86e;
   --red: #c35b5b;
+  --red-text: #e27f7f;
+  --sale: #a94444;
   --blue: #5a7fb7;
+  --blue-text: #7fa2d6;
 
   --border: rgba(255, 255, 255, 0.08);
   --shadow: rgba(0, 0, 0, 0.6);
@@ -50,6 +58,9 @@
   /* Core Colors - Light Theme */
   --background: #ffffff;
   --background-alt: #f9f6f0;
+  /* Store surfaces: cards need a tinted ground to read as cards on white */
+  --store-ground: var(--background-alt);
+  --store-card: var(--surface);
   --foreground: #3a3a3c;
   --heading: #000000;
   --surface: #ffffff;
@@ -61,6 +72,7 @@
 
   /* Gold Accent for light mode - Darker for readability on white */
   --gold: #b5842f;
+  --gold-text: #8a6322;
   --gold-soft: #d49e42;
   --gold-deep: #8a6322;
   --gold-glow: rgba(181, 132, 47, 0.2);
@@ -73,8 +85,12 @@
 
   /* Status Colors */
   --green: #3f8f5b;
+  --green-text: #2f7046;
   --red: #b45757;
+  --red-text: #943f3f;
+  --sale: #a94444;
   --blue: #4f6fa6;
+  --blue-text: #3f5e91;
 
   --border: rgba(0, 0, 0, 0.08);
   --shadow: rgba(0, 0, 0, 0.08);
@@ -95,6 +111,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-background-alt: var(--background-alt);
+  --color-store-ground: var(--store-ground);
+  --color-store-card: var(--store-card);
   --color-bg-light: var(--background);
   --color-bg-dark: var(--background);
   --color-foreground: var(--foreground);
@@ -104,6 +122,7 @@
   --color-muted: var(--muted);
   --color-muted-strong: var(--muted-strong);
   --color-gold: var(--gold);
+  --color-gold-text: var(--gold-text);
   --color-primary: var(--gold);
   --color-primary-dark: var(--gold-deep);
   --color-gold-soft: var(--gold-soft);
@@ -112,8 +131,12 @@
   --color-orange: var(--orange);
   --color-bronze: var(--bronze);
   --color-green: var(--green);
+  --color-green-text: var(--green-text);
   --color-red: var(--red);
+  --color-red-text: var(--red-text);
+  --color-sale: var(--sale);
   --color-blue: var(--blue);
+  --color-blue-text: var(--blue-text);
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
@@ -162,6 +185,10 @@
 }
 
 @layer utilities {
+  html[data-consent-dialog="open"] [data-apfel-chat] {
+    display: none;
+  }
+
   .container-page {
     margin-left: auto;
     margin-right: auto;
@@ -427,7 +454,7 @@
     padding: 0.85rem 1.6rem;
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--gold);
+    color: var(--gold-text);
     backdrop-filter: blur(8px);
     transition: all 0.2s ease;
   }
@@ -441,6 +468,41 @@
   .btn-secondary:focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 2px;
+  }
+
+  /* Gold fills stay bright, while textual accents use an AA-safe tone in the
+     light theme. Exact utility overrides leave backgrounds and borders intact. */
+  [data-theme="mono"] .text-gold,
+  [data-theme="mono"] .text-gold\/60,
+  [data-theme="mono"] .text-gold\/70,
+  [data-theme="mono"] .text-gold\/80,
+  html:not([data-theme="mono"]) .text-gold\/60,
+  html:not([data-theme="mono"]) .text-gold\/70,
+  html:not([data-theme="mono"]) .text-gold\/80 {
+    color: var(--gold-text);
+  }
+
+  [data-theme="mono"] .hover\:text-gold:hover,
+  [data-theme="mono"] .hover\:text-gold-soft:hover,
+  [data-theme="mono"] .group:hover .group-hover\:text-gold,
+  [data-theme="mono"] .group:hover .group-hover\:text-gold\/60,
+  [data-theme="mono"] .group:hover .group-hover\:text-gold\/70 {
+    color: var(--gold-text);
+  }
+
+  [data-theme="mono"] .text-green,
+  html:not([data-theme="mono"]) .text-green {
+    color: var(--green-text);
+  }
+
+  [data-theme="mono"] .text-red,
+  html:not([data-theme="mono"]) .text-red {
+    color: var(--red-text);
+  }
+
+  [data-theme="mono"] .text-blue,
+  html:not([data-theme="mono"]) .text-blue {
+    color: var(--blue-text);
   }
 
   .chip {
@@ -757,14 +819,14 @@
   [data-theme="mono"] .btn-secondary {
     border: 1px solid rgba(0, 0, 0, 0.2);
     background: #ffffff;
-    color: #c7923a;
+    color: var(--gold-text);
     text-shadow: none;
   }
 
   [data-theme="mono"] .btn-secondary:hover {
     border-color: rgba(0, 0, 0, 0.4);
     background: rgba(228, 177, 90, 0.08);
-    color: #c7923a;
+    color: var(--gold-text);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
   }
 
@@ -1115,7 +1177,7 @@
   
   [data-theme="mono"] .badge-gold {
     background: rgba(228, 177, 90, 0.12);
-    color: #c7923a;
+    color: var(--gold-text);
     border: 1px solid rgba(228, 177, 90, 0.3);
   }
 
@@ -1283,9 +1345,36 @@
 }
 
 .site-header {
-  --nav-bar-height: 88px;
-  --nav-bar-height-scrolled: 64px;
-  --nav-bar-radius: 16px; /* Rounded corners like the logo */
+  /* Phones first: an 88px bar plus the ~33px top strip ate 121px of a 640px
+     screen before any content, and the logo -- sized to the full bar height --
+     had no room to breathe and clipped its wordmark against the rounded shell.
+     Desktop keeps the original proportions. */
+  --nav-bar-height: 60px;
+  --nav-bar-height-scrolled: 52px;
+  --nav-bar-radius: 14px;
+  --nav-logo-inset: 8px;
+}
+
+@media (min-width: 1024px) {
+  .site-header {
+    --nav-bar-height: 88px;
+    --nav-bar-height-scrolled: 64px;
+    --nav-bar-radius: 16px; /* Rounded corners like the logo */
+    --nav-logo-inset: 0px;
+  }
+}
+
+/* Keep the logo inside the bar instead of filling it edge to edge. */
+.site-header .navbar-logo,
+.site-header .navbar-logo-slot {
+  width: calc(var(--nav-bar-height) - var(--nav-logo-inset)) !important;
+  height: calc(var(--nav-bar-height) - var(--nav-logo-inset)) !important;
+}
+
+.site-header.is-scrolled .navbar-logo,
+.site-header.is-scrolled .navbar-logo-slot {
+  width: calc(var(--nav-bar-height-scrolled) - var(--nav-logo-inset)) !important;
+  height: calc(var(--nav-bar-height-scrolled) - var(--nav-logo-inset)) !important;
 }
 
 .site-header .logo-stack {

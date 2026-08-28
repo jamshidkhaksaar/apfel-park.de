@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import PageIntro from "@/components/PageIntro";
+import StoreCommerceHeader from "@/components/store/StoreCommerceHeader";
 import StoreGrid from "@/components/store/StoreGrid";
 import { getDictionary } from "@/lib/i18n";
 import { createMetadata } from "@/lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "@/lib/products";
+import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "@/lib/products";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
@@ -13,11 +13,11 @@ import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/s
 
 export const dynamic = "force-dynamic";
 
-export const generateMetadata = async ({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> => {
-  const { lang: rawLang } = await params;
+export const generateMetadata = async ({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> => {
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
-  return createMetadata(lang, dict.meta.tablets.title, dict.meta.tablets.description, "/tablets");
+  return createMetadata(lang, dict.meta.tablets.title, dict.meta.tablets.description, "/tablets", undefined, { noindex: hasCatalogSearchQuery(query) });
 };
 
 export default async function TabletsPage({
@@ -70,12 +70,16 @@ export default async function TabletsPage({
     <div className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <PageIntro
+      <StoreCommerceHeader
+        lang={locale}
         eyebrow={locale === "de" ? "Tablets" : "Tablets"}
         title={locale === "de" ? "Tablets und iPads" : "Tablets and iPads"}
         subtitle={locale === "de" ? "Geräte mit klar ausgewiesenem Zustand, Garantie und persönlicher Beratung in Hamburg." : "Devices with clearly stated condition, warranty, and personal advice in Hamburg."}
+        query={activeFilters.query}
+        resultCount={catalog.total}
+        breadcrumbs={[{ label: "Tablets" }]}
       />
-      <section className="section-pad">
+      <section className="bg-store-ground py-6 md:py-8">
         <div className="container-page">
           <StoreGrid
             products={catalog.products}
@@ -88,6 +92,7 @@ export default async function TabletsPage({
             counts={catalog.counts}
             facets={catalog.facets}
             activeFilters={activeFilters}
+            showSearch={false}
           />
 
           <div className="mt-14 border-t border-border/60 pt-10">

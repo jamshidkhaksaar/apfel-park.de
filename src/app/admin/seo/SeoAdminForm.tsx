@@ -14,9 +14,9 @@ import {
 import { saveSeoSettings } from "./actions";
 
 const inputCls =
-  "w-full rounded-lg border border-white/10 bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-gold/50";
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-gold/50";
 const textareaCls =
-  "min-h-[88px] w-full rounded-lg border border-white/10 bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-gold/50";
+  "min-h-[88px] w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-gold/50";
 const labelCls = "mb-1 block text-xs font-medium text-muted";
 const langButtonCls =
   "rounded-lg px-4 py-1.5 text-xs font-semibold uppercase transition";
@@ -195,7 +195,7 @@ export default function SeoAdminForm({ initialSettings, adminLang }: Props) {
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <label className="flex items-center justify-between rounded-xl border border-white/10 px-4 py-3 text-sm text-muted">
+            <label className="flex items-center justify-between rounded-xl border border-border px-4 py-3 text-sm text-muted">
               <span>{t.enableSitemap}</span>
               <input
                 type="checkbox"
@@ -203,7 +203,7 @@ export default function SeoAdminForm({ initialSettings, adminLang }: Props) {
                 onChange={(event) => updateGlobal("enableSitemap", event.target.checked)}
               />
             </label>
-            <label className="flex items-center justify-between rounded-xl border border-white/10 px-4 py-3 text-sm text-muted">
+            <label className="flex items-center justify-between rounded-xl border border-border px-4 py-3 text-sm text-muted">
               <span>{t.enableRobots}</span>
               <input
                 type="checkbox"
@@ -239,7 +239,7 @@ export default function SeoAdminForm({ initialSettings, adminLang }: Props) {
             />
           </div>
         </div>
-        <label className="mt-4 flex items-center justify-between rounded-xl border border-white/10 px-4 py-3 text-sm text-muted">
+        <label className="mt-4 flex items-center justify-between rounded-xl border border-border px-4 py-3 text-sm text-muted">
           <span>{t.canonical}</span>
           <input
             type="checkbox"
@@ -281,7 +281,7 @@ export default function SeoAdminForm({ initialSettings, adminLang }: Props) {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <label className="flex items-center justify-between gap-4 rounded-xl border border-white/10 px-4 py-3 text-sm text-muted">
+                  <label className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3 text-sm text-muted">
                     <span>{t.index}</span>
                     <input
                       type="checkbox"
@@ -294,7 +294,7 @@ export default function SeoAdminForm({ initialSettings, adminLang }: Props) {
                       }
                     />
                   </label>
-                  <label className="rounded-xl border border-white/10 px-4 py-3 text-sm text-muted">
+                  <label className="rounded-xl border border-border px-4 py-3 text-sm text-muted">
                     <span className="mb-2 block">{t.priority}</span>
                     <input
                       type="number"
@@ -311,7 +311,7 @@ export default function SeoAdminForm({ initialSettings, adminLang }: Props) {
                       }
                     />
                   </label>
-                  <label className="rounded-xl border border-white/10 px-4 py-3 text-sm text-muted">
+                  <label className="rounded-xl border border-border px-4 py-3 text-sm text-muted">
                     <span className="mb-2 block">{t.changeFrequency}</span>
                     <select
                       className={inputCls}
@@ -397,7 +397,7 @@ export default function SeoAdminForm({ initialSettings, adminLang }: Props) {
         })}
       </div>
 
-      <div className="sticky bottom-6 z-20 flex items-center justify-between rounded-2xl border border-white/10 bg-surface/90 p-4 shadow-2xl backdrop-blur-md">
+      <div className="sticky bottom-6 z-20 flex items-center justify-between rounded-2xl border border-border bg-surface/90 p-4 shadow-2xl backdrop-blur-md">
         <div className="text-sm">
           {message && (
             <span className={message.type === "success" ? "text-green-400" : "text-red-400"}>
@@ -412,7 +412,7 @@ export default function SeoAdminForm({ initialSettings, adminLang }: Props) {
           className="btn-primary flex items-center gap-2 px-6 py-2.5 disabled:opacity-50"
         >
           {isPending ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-white" />
           ) : null}
           {isPending ? t.saving : t.save}
         </button>

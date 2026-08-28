@@ -22,6 +22,8 @@ type NotificationOrderRow = {
   items: unknown;
   subtotal_amount: number | string | null;
   shipping_amount: number | string | null;
+  coupon_code: string | null;
+  discount_amount: number | string | null;
   total_amount: number | string;
   currency: string | null;
   admin_notification_attempts: number;
@@ -42,6 +44,8 @@ const toEmailData = (order: NotificationOrderRow): PaidOrderAdminEmailData => ({
   items: order.items,
   subtotalAmount: order.subtotal_amount,
   shippingAmount: order.shipping_amount,
+  couponCode: order.coupon_code,
+  discountAmount: order.discount_amount,
   totalAmount: order.total_amount,
   currency: order.currency,
 });
@@ -64,7 +68,7 @@ export async function notifyPaidOrderAdmin(
          OR admin_notification_claimed_at < now() - interval '10 minutes'
        )
      RETURNING id, order_number, paid_at, provider, customer_name, customer_email, customer_phone,
-               shipping_method, customer_address, items, subtotal_amount, shipping_amount,
+               shipping_method, customer_address, items, subtotal_amount, shipping_amount, coupon_code, discount_amount,
                total_amount, currency, admin_notification_attempts`,
     [orderId, options.force === true],
   );

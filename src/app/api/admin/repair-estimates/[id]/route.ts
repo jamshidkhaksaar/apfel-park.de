@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { query } from '@/lib/db';
 import { requireRepairEstimateUser } from '@/lib/repair-estimate-auth';
+import { rejectCrossSiteAdminMutation } from '@/lib/admin-csrf';
 import { getEstimateTemplateSettings } from '@/lib/repair-estimate-settings';
 import {
   normalizeEstimatePayload,
@@ -37,6 +38,8 @@ export async function PATCH(
   const auth = await requireRepairEstimateUser();
   if (auth.response) return auth.response;
   if (!auth.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const csrf = rejectCrossSiteAdminMutation(request);
+  if (csrf) return csrf;
   const { id } = await params;
   if (!idPattern.test(id)) return NextResponse.json({ error: 'Invalid estimate' }, { status: 400 });
 

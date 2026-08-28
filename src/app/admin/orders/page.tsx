@@ -343,8 +343,12 @@ export default async function OrdersPage({
                           defaultValue={order.status ?? "pending"}
                           className="rounded-lg border border-border/60 bg-surface-strong/40 px-2 py-1.5 text-xs text-foreground focus:outline-none"
                         >
-                          {STATUS_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
+                          {STATUS_OPTIONS.filter((option) =>
+                            order.payment_status === "paid"
+                              ? option === "paid" || option === "shipped" || option === "delivered"
+                              : option === "pending" || option === "cancelled",
+                          ).map((option) => (
+                            <option key={option} value={option} disabled={option === "paid"}>
                               {formatStatus(option, dict)}
                             </option>
                           ))}

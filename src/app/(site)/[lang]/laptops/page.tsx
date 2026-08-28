@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import PageIntro from "../../../../components/PageIntro";
+import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
+import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getLaptopsContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
@@ -16,10 +16,12 @@ export const dynamic = "force-dynamic";
 
 export const generateMetadata = async ({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> => {
-  const { lang: rawLang } = await params;
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
   const catalog = await getStoreCatalog({ category: "laptops", page: 1, pageSize: 1, locale: lang });
@@ -29,7 +31,7 @@ export const generateMetadata = async ({
     dict.meta.laptops.description,
     "/laptops",
     undefined,
-    { noindex: catalog.total === 0 },
+    { noindex: catalog.total === 0 || hasCatalogSearchQuery(query) },
   );
 };
 
@@ -80,22 +82,18 @@ export default async function LaptopsPage({
     <div className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <PageIntro
+      <StoreCommerceHeader
+        lang={lang}
         title={laptops.heroTitle}
         subtitle={laptops.heroSubtitle}
         eyebrow={dict.meta.laptops.title}
+        query={activeFilters.query}
+        resultCount={catalog.total}
+        breadcrumbs={[{ label: "Laptops" }]}
       />
 
-      <section className="section-pad">
+      <section className="bg-store-ground py-6 md:py-8">
         <div className="container-page">
-          <div className="mb-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {laptops.highlights.map((item: string) => (
-              <div key={item} className="tech-card-hover rounded-2xl p-6 text-center">
-                <p className="font-medium text-foreground">{item}</p>
-              </div>
-            ))}
-          </div>
-
           <StoreGrid
             products={catalog.products}
             lang={lang}
@@ -107,6 +105,7 @@ export default async function LaptopsPage({
             counts={catalog.counts}
             facets={catalog.facets}
             activeFilters={activeFilters}
+            showSearch={false}
           />
         </div>
       </section>
@@ -123,7 +122,7 @@ export default async function LaptopsPage({
                 </h3>
                 <p className="mt-2 text-muted">
                   {lang === "de"
-                    ? "Besuche uns im Shop fur eine personliche Beratung oder ruf uns an."
+                    ? "Besuche uns im Shop für eine persönliche Beratung oder ruf uns an."
                     : "Visit our shop for personal advice or give us a call."}
                 </p>
               </div>

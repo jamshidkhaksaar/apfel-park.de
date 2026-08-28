@@ -420,12 +420,13 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const [imageFiles, setImageFiles] = useState<Array<File | null>>([null, null, null, null]);
   const [variantImageFiles, setVariantImageFiles] = useState<Array<Array<File | null>>>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [variantImagePreviews, setVariantImagePreviews] = useState<string[][]>([]);
+
   const [promoState, setPromoState] = useState(promo);
   const [promoMessage, setPromoMessage] = useState("");
   const [aiMessage, setAiMessage] = useState("");
   const [aiJustFilled, setAiJustFilled] = useState(false);
   const [activeTab, setActiveTab] = useState<"catalog" | "promo">(promotionsOnly ? "promo" : "catalog");
+  const [wizardStep, setWizardStep] = useState<"basics" | "pricing" | "condition" | "content" | "variants" | "channels" | "images" | "publishing">("basics");
   const [isSaving, startSaving] = useTransition();
   const [isSavingPromo, startSavingPromo] = useTransition();
   const slotLabels = imageSlotLabels[locale];
@@ -507,7 +508,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
       setImageFiles([null, null, null, null]);
       setVariantImageFiles(selectedProduct.variants.map(() => [null, null, null, null]));
       setImagePreviews([]);
-      setVariantImagePreviews([]);
+
       setConditionError("");
       setSaveError("");
       setSaveMessage("");
@@ -526,16 +527,6 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     };
   }, [imageFiles]);
 
-  useEffect(() => {
-    const previews = variantImageFiles.map((slots) =>
-      slots.map((file) => (file ? URL.createObjectURL(file) : "")),
-    );
-    setVariantImagePreviews(previews);
-
-    return () => {
-      previews.flat().filter(Boolean).forEach((preview) => URL.revokeObjectURL(preview));
-    };
-  }, [variantImageFiles]);
 
   const queueCount = filteredProducts.length;
   const isUsedIphone = formState.condition === "used" && isIphoneProduct(formState);
@@ -650,6 +641,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
         brand: research.brand || prev.brand,
         model: research.model || prev.model,
         category: (research.category as ProductFormState["category"]) || prev.category,
+        sku: research.skuSuggestion && (!prev.sku || aiJustFilled) ? research.skuSuggestion : (prev.sku || research.skuSuggestion || ""),
         featureBulletsText: research.features?.length ? research.features.join("\n") : prev.featureBulletsText,
         specsText: research.specs?.length ? research.specs.map((item) => `${item.label}: ${item.value}`).join("\n") : prev.specsText,
         manufacturerName: research.manufacturer?.name || prev.manufacturerName,
@@ -661,8 +653,16 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
         safetyWarningsText: research.safetyWarnings?.length ? research.safetyWarnings.join("\n") : prev.safetyWarningsText,
         gtin: research.gtinSuggestion && !prev.gtin ? research.gtinSuggestion : prev.gtin,
         mpn: research.mpnSuggestion && !prev.mpn ? research.mpnSuggestion : prev.mpn,
+        eprelId: research.eprelId || prev.eprelId,
         energyEfficiencyClass: research.energyLabel?.efficiencyClass || prev.energyEfficiencyClass,
         energyBatteryEndurance: research.energyLabel?.batteryEndurance || prev.energyBatteryEndurance,
+        energyBatteryCycles: research.energyLabel?.batteryCycles !== undefined ? String(research.energyLabel.batteryCycles) : prev.energyBatteryCycles,
+        energyReliabilityClass: research.energyLabel?.reliabilityClass || prev.energyReliabilityClass,
+        energyRepairabilityClass: research.energyLabel?.repairabilityClass || prev.energyRepairabilityClass,
+        energyIpRating: research.energyLabel?.ipRating || prev.energyIpRating,
+        energyLabelImage: research.energyLabel?.labelImage || prev.energyLabelImage,
+        energyFicheDe: research.energyLabel?.ficheDe || prev.energyFicheDe,
+        energyFicheEn: research.energyLabel?.ficheEn || prev.energyFicheEn,
         images: research.gallery?.length
           ? Array.from(new Set([...prev.images, ...research.gallery]))
           : prev.images,
@@ -685,6 +685,22 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const submitProduct = () => {
     if (!formState.id) return;
 
+    if (!formState.title.trim()) {
+      setSaveError(locale === "de" ? "Titel ist erforderlich." : "Title is required.");
+      setWizardStep("basics");
+      return;
+    }
+    if (!formState.price || Number(formState.price) <= 0) {
+      setSaveError(locale === "de" ? "Gültiger Preis ist erforderlich." : "Valid price is required.");
+      setWizardStep("pricing");
+      return;
+    }
+    if (formState.stock === "" || Number(formState.stock) < 0) {
+      setSaveError(locale === "de" ? "Lagerbestand ist erforderlich." : "Stock is required.");
+      setWizardStep("pricing");
+      return;
+    }
+
     const conditionValidationError = validateAdminProductCondition({
       condition: formState.condition,
       conditionNote: formState.conditionNote,
@@ -698,6 +714,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     });
     if (conditionValidationError) {
       setConditionError(conditionValidationError);
+      setWizardStep("condition");
       setSaveError("");
       setSaveMessage("");
       return;
@@ -1033,7 +1050,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                       </p>
                     </div>
                     <span className="flex shrink-0 flex-col items-end gap-1">
-                      <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${product.isActive ? "bg-green-400/10 text-green-300" : "bg-white/10 text-muted"}`}>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${product.isActive ? "bg-green-400/10 text-green-300" : "bg-surface-strong text-muted"}`}>
                         {product.isActive ? (locale === "de" ? "Aktiv" : "Active") : (locale === "de" ? "Entwurf" : "Draft")}
                       </span>
                       {product.condition && product.condition !== "new" ? (
@@ -1113,163 +1130,239 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     {aiMessage}
                   </div>
                 ) : null}
-                {editorOnly ? (
-                  <nav aria-label={locale === "de" ? "Editorbereiche" : "Editor sections"} className="flex w-full gap-1 overflow-x-auto border-t border-border/50 pt-3 text-xs">
+                {/* WIZARD STEP TABS */}
+                <div className="w-full border-t border-border/50 pt-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
                     {[
-                      ["basics", locale === "de" ? "Grunddaten" : "Basics"],
-                      ["pricing", locale === "de" ? "Preis & Lager" : "Pricing"],
-                      ["condition", locale === "de" ? "Zustand" : "Condition"],
-                      ["content", locale === "de" ? "Inhalt" : "Content"],
-                      ["variants", locale === "de" ? "Varianten" : "Variants"],
-                      ["channels", locale === "de" ? "Kanäle" : "Channels"],
-                      ["images", locale === "de" ? "Bilder" : "Images"],
-                      ["publishing", locale === "de" ? "Veröffentlichung" : "Publishing"],
-                    ].map(([id, label]) => <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-lg px-3 py-1.5 text-muted transition hover:bg-gold/10 hover:text-gold">{label}</a>)}
-                  </nav>
-                ) : null}
+                      { id: "basics", number: 1, labelDe: "Grunddaten", labelEn: "Basics", icon: "🏷️" },
+                      { id: "pricing", number: 2, labelDe: "Preise & Lager", labelEn: "Pricing", icon: "💶" },
+                      { id: "condition", number: 3, labelDe: "Zustand", labelEn: "Condition", icon: "🔍" },
+                      { id: "content", number: 4, labelDe: "Inhalt & Specs", labelEn: "Content", icon: "📝" },
+                      { id: "variants", number: 5, labelDe: "Varianten", labelEn: "Variants", icon: "🎨" },
+                      { id: "channels", number: 6, labelDe: "Marktplätze", labelEn: "Channels", icon: "🌐" },
+                      { id: "images", number: 7, labelDe: "Bilder", labelEn: "Images", icon: "🖼️" },
+                      { id: "publishing", number: 8, labelDe: "Übersicht & Veröffentlichung", labelEn: "Publishing", icon: "🚀" },
+                    ].map((step) => {
+                      const isCurrent = wizardStep === step.id;
+                      return (
+                        <button
+                          key={step.id}
+                          type="button"
+                          onClick={() => setWizardStep(step.id as typeof wizardStep)}
+                          className={`flex flex-col items-center justify-center rounded-xl p-2 text-center transition-all duration-200 ${
+                            isCurrent
+                              ? "border-2 border-gold bg-gold/15 text-foreground font-bold shadow-sm shadow-gold/10"
+                              : "border border-border/60 bg-surface/40 text-muted hover:border-gold/40 hover:text-foreground hover:bg-surface/70"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <span className="text-xs">{step.icon}</span>
+                            <span className={`flex h-3.5 w-3.5 items-center justify-center rounded-full text-[9px] font-bold ${
+                              isCurrent ? "bg-gold text-black" : "bg-surface text-muted"
+                            }`}>
+                              {step.number}
+                            </span>
+                          </div>
+                          <span className="text-[11px] truncate w-full font-medium leading-tight">
+                            {locale === "de" ? step.labelDe : step.labelEn}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-5 grid gap-5 2xl:grid-cols-[minmax(0,1fr)_280px]">
-                <div id="basics" className={`scroll-mt-40 space-y-4 transition-all duration-700 ${aiJustFilled ? "animate-ai-fill-glow rounded-2xl p-2" : ""}`}>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Titel" : "Title"}</span>
-                      <input value={formState.title} onChange={(event) => setFormState((prev) => ({ ...prev, title: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Untertitel" : "Subtitle"}</span>
-                      <input value={formState.subtitle} onChange={(event) => setFormState((prev) => ({ ...prev, subtitle: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                    </label>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Marke" : "Brand"}</span>
-                      <input value={formState.brand} onChange={(event) => setFormState((prev) => ({ ...prev, brand: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Modell" : "Model"}</span>
-                      <input value={formState.model} onChange={(event) => setFormState((prev) => ({ ...prev, model: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">SKU</span>
-                      <input value={formState.sku} onChange={(event) => setFormState((prev) => ({ ...prev, sku: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">MPN</span>
-                      <input value={formState.mpn} onChange={(event) => setFormState((prev) => ({ ...prev, mpn: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">GTIN / EAN</span>
-                      <input
-                        inputMode="numeric"
-                        value={formState.gtin}
-                        onChange={(event) => setFormState((prev) => ({ ...prev, gtin: event.target.value }))}
-                        className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"
-                      />
-                      <span className="block text-xs normal-case tracking-normal text-muted">
-                        {locale === "de"
-                          ? "Nur den vom Hersteller vergebenen Barcode eintragen; keine interne SKU."
-                          : "Enter only the manufacturer-assigned barcode, never an internal SKU."}
-                      </span>
-                    </label>
-                  </div>
-                  <div className="mt-4 rounded-2xl border border-border/60 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Produktsicherheit (GPSR)" : "Product safety (GPSR)"}</p>
-                    <div className="mt-3 grid gap-3 md:grid-cols-3">
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Hersteller" : "Manufacturer"}</span><input value={formState.manufacturerName} onChange={(event) => setFormState((prev) => ({ ...prev, manufacturerName: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Hersteller-Adresse" : "Manufacturer address"}</span><input value={formState.manufacturerAddress} onChange={(event) => setFormState((prev) => ({ ...prev, manufacturerAddress: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Hersteller-E-Mail" : "Manufacturer email"}</span><input value={formState.manufacturerEmail} onChange={(event) => setFormState((prev) => ({ ...prev, manufacturerEmail: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EU-Verantwortlicher" : "EU responsible person"}</span><input value={formState.euResponsibleName} onChange={(event) => setFormState((prev) => ({ ...prev, euResponsibleName: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EU-Verantwortlicher Adresse" : "EU responsible address"}</span><input value={formState.euResponsibleAddress} onChange={(event) => setFormState((prev) => ({ ...prev, euResponsibleAddress: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EU-Verantwortlicher E-Mail" : "EU responsible email"}</span><input value={formState.euResponsibleEmail} onChange={(event) => setFormState((prev) => ({ ...prev, euResponsibleEmail: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                    </div>
-                    <div className="mt-3 grid gap-3 md:grid-cols-2">
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Sicherheitshinweise (einer pro Zeile)" : "Safety warnings (one per line)"}</span><textarea rows={3} value={formState.safetyWarningsText} onChange={(event) => setFormState((prev) => ({ ...prev, safetyWarningsText: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Sicherheitsdokumente URLs (eine pro Zeile)" : "Safety document URLs (one per line)"}</span><textarea rows={3} value={formState.safetyDocumentsText} onChange={(event) => setFormState((prev) => ({ ...prev, safetyDocumentsText: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                    </div>
-                  </div>
-                  {formState.category === "smartphones" || formState.category === "tablets" ? (
-                    <div className="mt-4 rounded-2xl border border-border/60 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EU-Energielabel (EPREL)" : "EU energy label (EPREL)"}</p>
-                      <EprelPicker
-                        locale={locale}
-                        onSelect={(match: EprelMatch) => {
-                          // Straight from the register: never edited on the way in.
-                          setFormState((prev) => ({
-                            ...prev,
-                            eprelId: match.registration_number,
-                            energyEfficiencyClass: match.energy_class ?? "",
-                            energyBatteryEndurance: eprelEndurance(match.battery_endurance_minutes) ?? "",
-                            energyBatteryCycles: String(eprelCycles(match.battery_endurance_cycles) ?? ""),
-                            energyReliabilityClass: match.reliability_class ?? "",
-                            energyRepairabilityClass: match.repairability_class ?? "",
-                            energyIpRating: match.ingress_protection ?? "",
-                            energyLabelImage: match.label_image ?? "",
-                            energyFicheDe: match.fiche_de ?? "",
-                            energyFicheEn: match.fiche_en ?? "",
-                          }));
-                        }}
-                      />
-                      <div className="mt-3 grid gap-3 md:grid-cols-3">
-                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "EPREL-ID" : "EPREL ID"}</span><input value={formState.eprelId} onChange={(event) => setFormState((prev) => ({ ...prev, eprelId: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Energieeffizienzklasse" : "Energy class"}</span><select value={formState.energyEfficiencyClass} onChange={(event) => setFormState((prev) => ({ ...prev, energyEfficiencyClass: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></label>
-                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Akkulaufzeit je Ladung" : "Battery endurance per cycle"}</span><input placeholder="38 h 42 min" value={formState.energyBatteryEndurance} onChange={(event) => setFormState((prev) => ({ ...prev, energyBatteryEndurance: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Akku-Ladezyklen" : "Battery cycles"}</span><input type="number" min="1" value={formState.energyBatteryCycles} onChange={(event) => setFormState((prev) => ({ ...prev, energyBatteryCycles: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zuverlässigkeitsklasse" : "Reliability class"}</span><select value={formState.energyReliabilityClass} onChange={(event) => setFormState((prev) => ({ ...prev, energyReliabilityClass: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></label>
-                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Reparierbarkeitsklasse" : "Repairability class"}</span><select value={formState.energyRepairabilityClass} onChange={(event) => setFormState((prev) => ({ ...prev, energyRepairabilityClass: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></label>
-                        <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Schutzart (IP)" : "IP rating"}</span><input placeholder="IP68" value={formState.energyIpRating} onChange={(event) => setFormState((prev) => ({ ...prev, energyIpRating: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+              <div className="mt-5 space-y-6">
+                {/* STEP 1: BASICS */}
+                {wizardStep === "basics" && (
+                  <div id="basics" className={`rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-5 transition-all duration-700 ${aiJustFilled ? "animate-ai-fill-glow rounded-2xl p-2" : ""}`}>
+                    <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                      <div>
+                        <h4 className="text-base font-bold text-heading flex items-center gap-2">
+                          <span>🏷️</span> {locale === "de" ? "1. Grunddaten & Identifikatoren" : "1. Basics & Identifiers"}
+                        </h4>
+                        <p className="text-xs text-muted mt-0.5">{locale === "de" ? "Titel, Marke, Modell, Barcodes und EU-Konformität (GPSR & EPREL)" : "Title, brand, model, barcodes and EU compliance (GPSR & EPREL)"}</p>
                       </div>
-                      {formState.eprelId ? (
-                        <p className={`mt-3 text-xs ${formState.energyLabelImage ? "text-emerald-400" : "text-amber-400"}`}>
-                          {formState.energyLabelImage
-                            ? locale === "de" ? "✓ Offizielles EPREL-Label und Produktdatenblätter sind verknüpft." : "✓ Official EPREL label and product information sheets are linked."
-                            : locale === "de" ? "Offizielle Label-Datei ist noch nicht lokal verknüpft; der EPREL-Eintrag bleibt verfügbar." : "The official label file is not linked locally yet; the EPREL entry remains available."}
-                        </p>
-                      ) : null}
+                      <span className="inline-flex items-center gap-1 rounded-md border border-gold/40 bg-gold/15 px-2 py-0.5 text-[10px] font-semibold text-gold shadow-sm">✨ {locale === "de" ? "KI-ausfüllbar" : "AI Auto-Fill"}</span>
                     </div>
-                  ) : null}
-                  <div className="mt-4 rounded-2xl border border-border/60 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Produkt-FAQ (Frage in einer Zeile, Antwort darunter, Paare durch Leerzeile trennen)" : "Product FAQ (question on one line, answer below, blank line between pairs)"}</p>
-                    <div className="mt-3 grid gap-3 md:grid-cols-2">
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">FAQ (DE)</span><textarea rows={6} value={formState.faqDeText} onChange={(event) => setFormState((prev) => ({ ...prev, faqDeText: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
-                      <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">FAQ (EN)</span><textarea rows={6} value={formState.faqEnText} onChange={(event) => setFormState((prev) => ({ ...prev, faqEnText: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center gap-2">
+                          {locale === "de" ? "Titel" : "Title"}
+                          <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 border border-amber-500/40">{locale === "de" ? "Pflichtfeld" : "Required"}</span>
+                        </span>
+                        <input value={formState.title} onChange={(event) => setFormState((prev) => ({ ...prev, title: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors" />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center justify-between">
+                          <span>{locale === "de" ? "Untertitel" : "Subtitle"}</span>
+                          <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                        </span>
+                        <input value={formState.subtitle} onChange={(event) => setFormState((prev) => ({ ...prev, subtitle: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors" />
+                      </label>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center justify-between">
+                          <span>{locale === "de" ? "Marke" : "Brand"}</span>
+                          <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                        </span>
+                        <input value={formState.brand} onChange={(event) => setFormState((prev) => ({ ...prev, brand: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors" />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center justify-between">
+                          <span>{locale === "de" ? "Modell" : "Model"}</span>
+                          <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                        </span>
+                        <input value={formState.model} onChange={(event) => setFormState((prev) => ({ ...prev, model: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors" />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong">SKU</span>
+                        <input value={formState.sku} onChange={(event) => setFormState((prev) => ({ ...prev, sku: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors" />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center justify-between">
+                          <span>MPN</span>
+                          <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                        </span>
+                        <input value={formState.mpn} onChange={(event) => setFormState((prev) => ({ ...prev, mpn: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors" />
+                      </label>
+                      <label className="space-y-1.5 md:col-span-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center justify-between">
+                          <span>GTIN / EAN</span>
+                          <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                        </span>
+                        <input
+                          inputMode="numeric"
+                          value={formState.gtin}
+                          onChange={(event) => setFormState((prev) => ({ ...prev, gtin: event.target.value }))}
+                          className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none transition-colors"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="rounded-xl border border-border/70 bg-surface-strong/60 p-4 space-y-3">
+                      <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                        <p className="text-xs font-bold uppercase tracking-wider text-heading">🛡️ {locale === "de" ? "Produktsicherheit (GPSR)" : "Product safety (GPSR)"}</p>
+                        <span className="text-[10px] font-semibold text-gold">✨ KI-Datenbank</span>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <label className="space-y-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{locale === "de" ? "Hersteller" : "Manufacturer"}</span><input value={formState.manufacturerName} onChange={(event) => setFormState((prev) => ({ ...prev, manufacturerName: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                        <label className="space-y-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{locale === "de" ? "Hersteller-Adresse" : "Manufacturer address"}</span><input value={formState.manufacturerAddress} onChange={(event) => setFormState((prev) => ({ ...prev, manufacturerAddress: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                        <label className="space-y-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{locale === "de" ? "Hersteller-E-Mail" : "Manufacturer email"}</span><input value={formState.manufacturerEmail} onChange={(event) => setFormState((prev) => ({ ...prev, manufacturerEmail: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                        <label className="space-y-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{locale === "de" ? "EU-Verantwortlicher" : "EU responsible person"}</span><input value={formState.euResponsibleName} onChange={(event) => setFormState((prev) => ({ ...prev, euResponsibleName: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                        <label className="space-y-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{locale === "de" ? "EU-Verantwortlicher Adresse" : "EU responsible address"}</span><input value={formState.euResponsibleAddress} onChange={(event) => setFormState((prev) => ({ ...prev, euResponsibleAddress: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                        <label className="space-y-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{locale === "de" ? "EU-Verantwortlicher E-Mail" : "EU responsible email"}</span><input value={formState.euResponsibleEmail} onChange={(event) => setFormState((prev) => ({ ...prev, euResponsibleEmail: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <label className="space-y-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{locale === "de" ? "Sicherheitshinweise (eine pro Zeile)" : "Safety warnings (one per line)"}</span><textarea rows={2} value={formState.safetyWarningsText} onChange={(event) => setFormState((prev) => ({ ...prev, safetyWarningsText: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                        <label className="space-y-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{locale === "de" ? "Sicherheitsdokumente URLs (eine pro Zeile)" : "Safety document URLs (one per line)"}</span><textarea rows={2} value={formState.safetyDocumentsText} onChange={(event) => setFormState((prev) => ({ ...prev, safetyDocumentsText: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                      </div>
+                    </div>
+
+                    {(formState.category === "smartphones" || formState.category === "tablets") && (
+                      <div className="rounded-xl border border-border/70 bg-surface-strong/60 p-4 space-y-3">
+                        <p className="text-xs font-bold uppercase tracking-wider text-heading">⚡ {locale === "de" ? "EU-Energielabel (EPREL)" : "EU energy label (EPREL)"}</p>
+                        <EprelPicker
+                          locale={locale}
+                          onSelect={(match: EprelMatch) => {
+                            setFormState((prev) => ({
+                              ...prev,
+                              eprelId: match.registration_number,
+                              energyEfficiencyClass: match.energy_class ?? "",
+                              energyBatteryEndurance: eprelEndurance(match.battery_endurance_minutes) ?? "",
+                              energyBatteryCycles: String(eprelCycles(match.battery_endurance_cycles) ?? ""),
+                              energyReliabilityClass: match.reliability_class ?? "",
+                              energyRepairabilityClass: match.repairability_class ?? "",
+                              energyIpRating: match.ingress_protection ?? "",
+                              energyLabelImage: match.label_image ?? "",
+                              energyFicheDe: match.fiche_de ?? "",
+                              energyFicheEn: match.fiche_en ?? "",
+                            }));
+                          }}
+                        />
+                        <div className="grid gap-3 md:grid-cols-3">
+                          <label className="space-y-1"><span className="text-[11px] text-muted">EPREL-ID</span><input value={formState.eprelId} onChange={(event) => setFormState((prev) => ({ ...prev, eprelId: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                          <label className="space-y-1"><span className="text-[11px] text-muted">{locale === "de" ? "Energieklasse" : "Energy class"}</span><select value={formState.energyEfficiencyClass} onChange={(event) => setFormState((prev) => ({ ...prev, energyEfficiencyClass: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold"><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></label>
+                          <label className="space-y-1"><span className="text-[11px] text-muted">{locale === "de" ? "Akkulaufzeit" : "Battery endurance"}</span><input placeholder="38 h 42 min" value={formState.energyBatteryEndurance} onChange={(event) => setFormState((prev) => ({ ...prev, energyBatteryEndurance: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="rounded-xl border border-border/70 bg-surface-strong/60 p-4 space-y-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-heading">❓ {locale === "de" ? "Produkt-FAQ" : "Product FAQ"}</p>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <label className="space-y-1"><span className="text-[11px] text-muted">FAQ (DE)</span><textarea rows={4} value={formState.faqDeText} onChange={(event) => setFormState((prev) => ({ ...prev, faqDeText: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                        <label className="space-y-1"><span className="text-[11px] text-muted">FAQ (EN)</span><textarea rows={4} value={formState.faqEnText} onChange={(event) => setFormState((prev) => ({ ...prev, faqEnText: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" /></label>
+                      </div>
                     </div>
                   </div>
+                )}
 
-                  <label className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Beschreibung" : "Description"}</span>
-                    <textarea rows={5} value={formState.description} onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                  </label>
+                {/* STEP 2: PRICING & STOCK */}
+                {wizardStep === "pricing" && (
+                  <div id="pricing" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-5">
+                    <div className="border-b border-border/60 pb-3">
+                      <h4 className="text-base font-bold text-heading flex items-center gap-2">
+                        <span>💶</span> {locale === "de" ? "2. Preise, Kategorie & Lagerbestand" : "2. Pricing, Category & Stock"}
+                      </h4>
+                      <p className="text-xs text-muted mt-0.5">{locale === "de" ? "Kategorie wählen, Verkaufspreis und physischen Lagerbestand pflegen" : "Select category, set sales price and available stock"}</p>
+                    </div>
 
-                  <div id="pricing" className="scroll-mt-40 grid gap-4 md:grid-cols-4">
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Kategorie" : "Category"}</span>
-                      <select value={formState.category} onChange={(event) => setFormState((prev) => ({ ...prev, category: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground">
-                        <option value="smartphones">{categoryLabel(locale, "smartphones")}</option>
-                        <option value="tablets">{categoryLabel(locale, "tablets")}</option>
-                        <option value="accessories">{categoryLabel(locale, "accessories")}</option>
-                        <option value="consoles">{categoryLabel(locale, "consoles")}</option>
-                        <option value="laptops">{categoryLabel(locale, "laptops")}</option>
-                      </select>
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Preis" : "Price"}</span>
-                      <input type="number" step="0.01" value={formState.price} onChange={(event) => setFormState((prev) => ({ ...prev, price: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Streichpreis" : "Compare price"}</span>
-                      <input type="number" step="0.01" value={formState.compareAtPrice} onChange={(event) => setFormState((prev) => ({ ...prev, compareAtPrice: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Lager" : "Stock"}</span>
-                      <input type="number" step="1" value={formState.stock} onChange={(event) => setFormState((prev) => ({ ...prev, stock: event.target.value }))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" />
-                    </label>
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center gap-2">
+                          {locale === "de" ? "Kategorie" : "Category"}
+                          <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 border border-amber-500/40">{locale === "de" ? "Pflichtfeld" : "Required"}</span>
+                        </span>
+                        <select value={formState.category} onChange={(event) => setFormState((prev) => ({ ...prev, category: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none">
+                          <option value="smartphones">{categoryLabel(locale, "smartphones")}</option>
+                          <option value="tablets">{categoryLabel(locale, "tablets")}</option>
+                          <option value="accessories">{categoryLabel(locale, "accessories")}</option>
+                          <option value="consoles">{categoryLabel(locale, "consoles")}</option>
+                          <option value="laptops">{categoryLabel(locale, "laptops")}</option>
+                        </select>
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gold flex items-center gap-2">
+                          {locale === "de" ? "Verkaufspreis (€)" : "Price (€)"}
+                          <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 border border-amber-500/40">{locale === "de" ? "Pflichtfeld" : "Required"}</span>
+                        </span>
+                        <input type="number" step="0.01" value={formState.price} onChange={(event) => setFormState((prev) => ({ ...prev, price: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm font-bold text-foreground focus:border-gold focus:outline-none" />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong">{locale === "de" ? "Streichpreis / UVP (€)" : "Compare price (€)"}</span>
+                        <input type="number" step="0.01" value={formState.compareAtPrice} onChange={(event) => setFormState((prev) => ({ ...prev, compareAtPrice: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none" />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center gap-2">
+                          {locale === "de" ? "Lagerbestand" : "Stock"}
+                          <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 border border-amber-500/40">{locale === "de" ? "Pflichtfeld" : "Required"}</span>
+                        </span>
+                        <input type="number" step="1" value={formState.stock} onChange={(event) => setFormState((prev) => ({ ...prev, stock: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none" />
+                      </label>
+                    </div>
                   </div>
+                )}
 
-                  <div id="condition" className="scroll-mt-40 rounded-2xl border border-border/60 bg-surface/60 p-4">
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Gerätezustand" : "Device condition"}</span>
+                {/* STEP 3: CONDITION */}
+                {wizardStep === "condition" && (
+                  <div id="condition" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-5">
+                    <div className="border-b border-border/60 pb-3">
+                      <h4 className="text-base font-bold text-heading flex items-center gap-2">
+                        <span>🔍</span> {locale === "de" ? "3. Gerätezustand & Nachweise" : "3. Condition & Proofs"}
+                      </h4>
+                      <p className="text-xs text-muted mt-0.5">{locale === "de" ? "Zustand wählen. Für Open-Box und Gebrauchtgeräte sind Nachweise gesetzlich vorgeschrieben." : "Select condition. Proofs and condition notes are legally required for non-new units."}</p>
+                    </div>
+
+                    <label className="space-y-1.5 block">
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center gap-2">
+                        {locale === "de" ? "Gerätezustand" : "Device condition"}
+                        <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 border border-amber-500/40">{locale === "de" ? "Pflichtfeld" : "Required"}</span>
+                      </span>
                       <select
                         value={formState.condition}
                         onChange={(event) => {
@@ -1278,8 +1371,6 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                           setFormState((prev) => ({
                             ...prev,
                             condition: nextCondition,
-                            // keep note/photos when switching between open_box and used;
-                            // only wipe them when the product becomes "new"
                             ...(nextCondition === "new"
                               ? { batteryHealth: "", hasRealProductPhotos: false, conditionNote: "" }
                               : nextCondition !== "used"
@@ -1287,17 +1378,24 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                 : {}),
                           }));
                         }}
-                        className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"
+                        className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none"
                       >
                         <option value="new">{locale === "de" ? "Neu & versiegelt" : "New & sealed"}</option>
                         <option value="open_box">{locale === "de" ? "Open-Box / ausgepackt" : "Open-box / unboxed"}</option>
                         <option value="used">{locale === "de" ? "Gebraucht A+" : "Used A+"}</option>
                       </select>
                     </label>
-                    {formState.condition !== "new" ? (
-                      <div className="mt-4 grid gap-3 md:grid-cols-2">
-                        <label className="space-y-2 md:col-span-2">
-                          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Zustandshinweis *" : "Condition note *"}</span>
+
+                    {formState.condition !== "new" && (
+                      <div className="rounded-xl border border-amber-500/40 bg-surface-strong/70 p-4 space-y-4 shadow-lg">
+                        <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300 flex items-center gap-2">
+                          ⚠️ {locale === "de" ? "Erforderliche Angaben für Open-Box / Gebraucht" : "Required Details for Non-New Units"}
+                        </p>
+                        <label className="space-y-1.5 block">
+                          <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center gap-2">
+                            {locale === "de" ? "Zustandshinweis *" : "Condition note *"}
+                            <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 border border-amber-500/40">{locale === "de" ? "Pflichtfeld" : "Required"}</span>
+                          </span>
                           <textarea
                             required
                             data-condition-field="true"
@@ -1308,369 +1406,231 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                               setConditionError("");
                               setFormState((previous) => ({ ...previous, conditionNote: event.target.value }));
                             }}
-                            className="w-full resize-y rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm leading-6 text-foreground"
+                            className="w-full resize-y rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm leading-6 text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none"
                           />
-                          <span className="block text-xs leading-5 text-muted">
-                            {locale === "de"
-                              ? "Dieser Text wird nach dem Speichern auf der Produktseite angezeigt."
-                              : "This exact text appears on the product page after saving."}
-                          </span>
                         </label>
-                        {isUsedIphone ? <label className="space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Batteriekapazität (iPhone) *" : "Battery health (iPhone) *"}</span><input required data-condition-field="true" type="number" min="1" max="100" value={formState.batteryHealth} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, batteryHealth: event.target.value })); }} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground" /></label> : null}
-                        <label className="flex items-center gap-2 text-sm text-foreground md:col-span-2"><input required data-condition-field="true" type="checkbox" checked={formState.hasRealProductPhotos} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, hasRealProductPhotos: event.target.checked })); }} />{locale === "de" ? "Echte Fotos dieses Geräts hochgeladen *" : "Real photos of this exact device uploaded *"}</label>
+                        {isUsedIphone ? (
+                          <label className="space-y-1.5 block">
+                            <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center gap-2">
+                              {locale === "de" ? "Batteriekapazität (iPhone) % *" : "Battery health (iPhone) % *"}
+                              <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 border border-amber-500/40">{locale === "de" ? "Pflichtfeld" : "Required"}</span>
+                            </span>
+                            <input required data-condition-field="true" type="number" min="1" max="100" value={formState.batteryHealth} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, batteryHealth: event.target.value })); }} className="w-full max-w-xs rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none" />
+                          </label>
+                        ) : null}
+                        <label className="flex items-center gap-2.5 text-xs font-semibold text-foreground rounded-xl border border-border/80 bg-surface/60 p-3">
+                          <input required data-condition-field="true" type="checkbox" checked={formState.hasRealProductPhotos} onChange={(event) => { setConditionError(""); setFormState((prev) => ({ ...prev, hasRealProductPhotos: event.target.checked })); }} className="h-4 w-4 rounded border-border text-gold focus:ring-gold" />
+                          {locale === "de" ? "Echte Fotos dieses Geräts hochgeladen *" : "Real photos of this exact device uploaded *"}
+                        </label>
                       </div>
-                    ) : null}
-                    {conditionError ? <p className="mt-3 text-sm text-red-300" role="alert">{conditionError}</p> : null}
+                    )}
+                    {conditionError ? <p className="text-sm text-red-500" role="alert">{conditionError}</p> : null}
                   </div>
+                )}
 
-                  <div id="content" className="scroll-mt-40 grid gap-4 xl:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Highlights" : "Highlights"}</span>
-                      <textarea
-                        rows={6}
-                        value={formState.featureBulletsText}
-                        onChange={(event) => setFormState((prev) => ({ ...prev, featureBulletsText: event.target.value }))}
-                        placeholder={locale === "de" ? "Ein Vorteil pro Zeile" : "One benefit per line"}
-                        className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"
-                      />
+                {/* STEP 4: CONTENT */}
+                {wizardStep === "content" && (
+                  <div id="content" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-5">
+                    <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                      <div>
+                        <h4 className="text-base font-bold text-heading flex items-center gap-2">
+                          <span>📝</span> {locale === "de" ? "4. Beschreibung, Highlights & Spezifikationen" : "4. Content & Specifications"}
+                        </h4>
+                        <p className="text-xs text-muted mt-0.5">{locale === "de" ? "Fließtext, Highlights und technische Merkmale (von KI befüllt)" : "Description, selling points and technical specifications (AI-populated)"}</p>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-md border border-gold/40 bg-gold/15 px-2 py-0.5 text-[10px] font-semibold text-gold shadow-sm">✨ {locale === "de" ? "KI-ausfüllbar" : "AI Auto-Fill"}</span>
+                    </div>
+
+                    <label className="space-y-1.5 block">
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center justify-between">
+                        <span>{locale === "de" ? "Beschreibung" : "Description"}</span>
+                        <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                      </span>
+                      <textarea rows={5} value={formState.description} onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none" />
                     </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Spezifikationen" : "Specifications"}</span>
-                      <textarea
-                        rows={6}
-                        value={formState.specsText}
-                        onChange={(event) => setFormState((prev) => ({ ...prev, specsText: event.target.value }))}
-                        placeholder={locale === "de" ? "## Display\nDisplay: 6,1 Zoll\nSpeicher: 128 GB" : "## Display\nDisplay: 6.1-inch\nStorage: 128 GB"}
-                        className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"
-                      />
-                      <p className="text-xs text-muted">
-                        {locale === "de"
-                          ? "Eine Spezifikation pro Zeile. Erlaubte Formate: Label: Wert, Label = Wert oder Label - Wert. Eine Zeile \"## Gruppe\" gruppiert die folgenden Zeilen (z. B. ## Display)."
-                          : "One specification per line. Accepted formats: Label: Value, Label = Value, or Label - Value. A \"## Group\" line groups the rows that follow (e.g. ## Display)."}
-                      </p>
-                    </label>
+
+                    <div className="grid gap-4 xl:grid-cols-2">
+                      <label className="space-y-1.5 block">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center justify-between">
+                          <span>{locale === "de" ? "Highlights / Vorteile" : "Highlights"}</span>
+                          <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                        </span>
+                        <textarea
+                          rows={6}
+                          value={formState.featureBulletsText}
+                          onChange={(event) => setFormState((prev) => ({ ...prev, featureBulletsText: event.target.value }))}
+                          placeholder={locale === "de" ? "Ein Vorteil pro Zeile" : "One benefit per line"}
+                          className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none"
+                        />
+                      </label>
+                      <label className="space-y-1.5 block">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center justify-between">
+                          <span>{locale === "de" ? "Spezifikationen / Technische Daten" : "Specifications"}</span>
+                          <span className="text-[10px] font-semibold text-gold">✨ KI</span>
+                        </span>
+                        <textarea
+                          rows={6}
+                          value={formState.specsText}
+                          onChange={(event) => setFormState((prev) => ({ ...prev, specsText: event.target.value }))}
+                          placeholder={locale === "de" ? "## Display\nDisplay: 6,1 Zoll\nSpeicher: 128 GB" : "## Display\nDisplay: 6.1-inch\nStorage: 128 GB"}
+                          className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none"
+                        />
+                      </label>
+                    </div>
                   </div>
+                )}
 
-                  {formState.category === "smartphones" || formState.category === "tablets" ? (
-                    <div id="variants" className="scroll-mt-40 rounded-2xl border border-border/60 bg-surface/35 p-5">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-                            {locale === "de" ? "Varianten" : "Variants"}
-                          </p>
-                          <p className="mt-2 text-sm text-muted">
-                            {locale === "de"
-                              ? "Farben und Speicheroptionen fur dasselbe Modell. Preis, Lager und SKU konnen pro Variante abweichen."
-                              : "Colors and storage options for the same model. Price, stock, and SKU can vary per variant."}
-                          </p>
+                {/* STEP 5: VARIANTS */}
+                {wizardStep === "variants" && (
+                  <div id="variants" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+                      <div>
+                        <h4 className="text-base font-bold text-heading flex items-center gap-2">
+                          <span>🎨</span> {locale === "de" ? "5. Produktvarianten" : "5. Variants"}
+                        </h4>
+                        <p className="text-xs text-muted mt-0.5">{locale === "de" ? "Farben, Speichergrößen, abweichende Preise und Barcodes pro Variante" : "Colors, storage, custom prices and barcodes per variant"}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormState((prev) => ({
+                            ...prev,
+                            variants: [...prev.variants, createEmptyVariant()],
+                          }));
+                          setVariantImageFiles((current) => [...current, [null, null, null, null]]);
+                        }}
+                        className="rounded-full border border-gold bg-gold/15 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-gold hover:bg-gold/25"
+                      >
+                        + {locale === "de" ? "Variante hinzufügen" : "Add variant"}
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {formState.variants.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-border/80 bg-surface/40 p-6 text-center text-sm text-muted">
+                          {locale === "de" ? "Keine Varianten angelegt. (Für Einzelgeräte mit einheitlicher Konfiguration optional)." : "No variants created. (Optional for single items)." }
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormState((prev) => ({
-                              ...prev,
-                              variants: [...prev.variants, createEmptyVariant()],
-                            }));
-                            setVariantImageFiles((current) => [...current, [null, null, null, null]]);
-                          }}
-                          className="rounded-full border border-gold/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold transition hover:bg-gold/10"
-                        >
-                          {locale === "de" ? "Variante hinzufugen" : "Add variant"}
-                        </button>
-                      </div>
+                      ) : (
+                        formState.variants.map((variant, index) => (
+                          <div key={`${variant.color}-${variant.storage}-${index}`} className="rounded-2xl border border-border/80 bg-surface-strong/70 p-4 space-y-3">
+                            <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                              <span className="text-xs font-bold uppercase tracking-wider text-gold">
+                                {locale === "de" ? `Variante #${index + 1}` : `Variant #${index + 1}`} {variant.color ? `· ${variant.color}` : ""} {variant.storage ? `· ${variant.storage}` : ""}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormState((prev) => ({
+                                    ...prev,
+                                    variants: prev.variants.filter((_, itemIndex) => itemIndex !== index),
+                                  }));
+                                  setVariantImageFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
+                                }}
+                                className="text-xs font-bold text-red-400 hover:text-red-300"
+                              >
+                                ✕ {locale === "de" ? "Löschen" : "Delete"}
+                              </button>
+                            </div>
 
-                      <div className="mt-4 space-y-3">
-                        {formState.variants.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-border/60 bg-surface/30 px-4 py-5 text-sm text-muted">
-                            {locale === "de"
-                              ? "Noch keine Varianten angelegt. Beispiele: Schwarz 128 GB, Blau 256 GB."
-                              : "No variants yet. Examples: Black 128 GB, Blue 256 GB."}
-                          </div>
-                        ) : (
-                          formState.variants.map((variant, index) => (
-                            <div key={`${variant.color}-${variant.storage}-${index}`} className="rounded-2xl border border-border/60 bg-surface/55 p-4">
-                              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                                    {locale === "de" ? "Farbe" : "Color"}
-                                  </span>
-                                  <input
-                                    value={variant.color}
-                                    onChange={(event) =>
-                                      setFormState((prev) => ({
-                                        ...prev,
-                                        variants: prev.variants.map((item, itemIndex) =>
-                                          itemIndex === index ? { ...item, color: event.target.value } : item,
-                                        ),
-                                      }))
-                                    }
-                                    className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
-                                  />
-                                </label>
-                                <div className="space-y-2 rounded-2xl border border-border/50 bg-background/30 p-3 md:col-span-2 2xl:col-span-4">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                                    {locale === "de" ? "Variantenbilder (bis zu 4)" : "Variant images (up to 4)"}
-                                  </span>
-                                  <div className="grid grid-cols-4 gap-2 mt-1">
-                                    {slotLabels.map((slotLabel, slotIndex) => {
-                                      const slotFile = variantImageFiles[index]?.[slotIndex] ?? null;
-                                      const slotPreview = variantImagePreviews[index]?.[slotIndex] ?? "";
-                                      const existingUrl = variant.images?.[slotIndex] ?? "";
-                                      return (
-                                        <label key={slotLabel} className="group block cursor-pointer">
-                                          <div className="relative aspect-square overflow-hidden rounded-xl border border-border/50 bg-black/20">
-                                            {slotPreview ? (
-                                              <Image src={slotPreview} alt="" fill className="object-cover" unoptimized />
-                                            ) : existingUrl ? (
-                                              <Image src={existingUrl} alt="" fill className="object-cover" unoptimized={existingUrl.startsWith("/uploads/")} />
-                                            ) : (
-                                              <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">
-                                                {slotLabel}
-                                              </div>
-                                            )}
-                                          </div>
-                                          <p className="mt-1 truncate text-center text-[10px] text-muted">
-                                            {slotFile ? slotFile.name : (existingUrl ? (locale === "de" ? "Ersetzen" : "Replace") : slotLabel)}
-                                          </p>
-                                          <input
-                                            type="file"
-                                            accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                                            onChange={(event) => {
-                                              const nextFile = event.target.files?.[0] ?? null;
-                                              setVariantImageFiles((current) =>
-                                                formState.variants.map((_, fileIndex) => {
-                                                  if (fileIndex !== index) return current[fileIndex] ?? [null, null, null, null];
-                                                  const slots = [...(current[fileIndex] ?? [null, null, null, null])];
-                                                  slots[slotIndex] = nextFile;
-                                                  return slots as [File | null, File | null, File | null, File | null];
-                                                }),
-                                              );
-                                              event.currentTarget.value = "";
-                                            }}
-                                            className="sr-only"
-                                          />
-                                        </label>
-                                      );
-                                    })}
-                                  </div>
-                                  {(variant.images?.length ?? 0) > 0 && (
+                            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                              <label className="space-y-1 block">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-muted">{locale === "de" ? "Farbe" : "Color"}</span>
+                                <input
+                                  value={variant.color}
+                                  onChange={(e) => setFormState((prev) => ({ ...prev, variants: prev.variants.map((v, i) => (i === index ? { ...v, color: e.target.value } : v)) }))}
+                                  className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold"
+                                />
+                              </label>
+
+                              <div className="space-y-1 block">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-muted">{locale === "de" ? "Speicher" : "Storage"}</span>
+                                <input
+                                  value={variant.storage}
+                                  onChange={(e) => setFormState((prev) => ({ ...prev, variants: prev.variants.map((v, i) => (i === index ? { ...v, storage: e.target.value } : v)) }))}
+                                  className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold"
+                                />
+                                <div className="flex flex-wrap gap-1 pt-1">
+                                  {["64 GB", "128 GB", "256 GB", "512 GB", "1 TB"].map((preset) => (
                                     <button
+                                      key={preset}
                                       type="button"
-                                      onClick={() =>
-                                        setFormState((prev) => ({
-                                          ...prev,
-                                          variants: prev.variants.map((item, itemIndex) =>
-                                            itemIndex === index ? { ...item, images: [] } : item,
-                                          ),
-                                        }))
-                                      }
-                                      className="mt-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-red-300"
+                                      onClick={() => setFormState((prev) => ({ ...prev, variants: prev.variants.map((v, i) => (i === index ? { ...v, storage: preset } : v)) }))}
+                                      className={`rounded px-1.5 py-0.5 text-[9px] font-semibold transition ${
+                                        variant.storage === preset ? "bg-gold text-black" : "bg-surface border border-border/60 text-muted hover:text-foreground hover:border-border"
+                                      }`}
                                     >
-                                      {locale === "de" ? "Alle Bilder entfernen" : "Remove all images"}
+                                      {preset}
                                     </button>
-                                  )}
-                                </div>
-                                <div className="space-y-2">
-                                  <label className="block space-y-2">
-                                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                                      {locale === "de" ? "Speicher" : "Storage"}
-                                    </span>
-                                    <input
-                                      value={variant.storage}
-                                      onChange={(event) =>
-                                        setFormState((prev) => ({
-                                          ...prev,
-                                          variants: prev.variants.map((item, itemIndex) =>
-                                            itemIndex === index ? { ...item, storage: event.target.value } : item,
-                                          ),
-                                        }))
-                                      }
-                                      className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
-                                    />
-                                  </label>
-                                  <div className="flex flex-wrap gap-1.5 pt-1">
-                                    {["64 GB", "128 GB", "256 GB", "512 GB", "1 TB", "2 TB"].map((preset) => (
-                                      <button
-                                        key={preset}
-                                        type="button"
-                                        onClick={() =>
-                                          setFormState((prev) => ({
-                                            ...prev,
-                                            variants: prev.variants.map((item, itemIndex) =>
-                                              itemIndex === index ? { ...item, storage: preset } : item,
-                                            ),
-                                          }))
-                                        }
-                                        className={`rounded-lg border px-2 py-0.5 text-[10px] font-medium transition ${
-                                          variant.storage === preset
-                                            ? "border-gold bg-gold/15 text-gold font-semibold"
-                                            : "border-border/60 text-muted hover:border-gold/40 hover:text-foreground"
-                                        }`}
-                                      >
-                                        {preset}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                                    {locale === "de" ? "Preis" : "Price"}
-                                  </span>
-                                  <input
-                                    type="number"
-                                    step="0.01"
-                                    value={variant.price ?? ""}
-                                    onChange={(event) =>
-                                      setFormState((prev) => ({
-                                        ...prev,
-                                        variants: prev.variants.map((item, itemIndex) =>
-                                          itemIndex === index
-                                            ? {
-                                                ...item,
-                                                price: event.target.value === "" ? undefined : Number(event.target.value),
-                                              }
-                                            : item,
-                                        ),
-                                      }))
-                                    }
-                                    className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
-                                  />
-                                </label>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                                    {locale === "de" ? "Altpreis" : "Compare"}
-                                  </span>
-                                  <input
-                                    type="number"
-                                    step="0.01"
-                                    value={variant.compareAtPrice ?? ""}
-                                    onChange={(event) =>
-                                      setFormState((prev) => ({
-                                        ...prev,
-                                        variants: prev.variants.map((item, itemIndex) =>
-                                          itemIndex === index
-                                            ? {
-                                                ...item,
-                                                compareAtPrice:
-                                                  event.target.value === "" ? undefined : Number(event.target.value),
-                                              }
-                                            : item,
-                                        ),
-                                      }))
-                                    }
-                                    className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
-                                  />
-                                </label>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                                    {locale === "de" ? "Lager" : "Stock"}
-                                  </span>
-                                  <input
-                                    type="number"
-                                    step="1"
-                                    value={variant.stock ?? ""}
-                                    onChange={(event) =>
-                                      setFormState((prev) => ({
-                                        ...prev,
-                                        variants: prev.variants.map((item, itemIndex) =>
-                                          itemIndex === index
-                                            ? {
-                                                ...item,
-                                                stock: event.target.value === "" ? undefined : Number(event.target.value),
-                                              }
-                                            : item,
-                                        ),
-                                      }))
-                                    }
-                                    className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
-                                  />
-                                </label>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">SKU</span>
-                                  <input
-                                    value={variant.sku ?? ""}
-                                    onChange={(event) =>
-                                      setFormState((prev) => ({
-                                        ...prev,
-                                        variants: prev.variants.map((item, itemIndex) =>
-                                          itemIndex === index ? { ...item, sku: event.target.value } : item,
-                                        ),
-                                      }))
-                                    }
-                                    className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
-                                  />
-                                </label>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                                    {locale === "de" ? "Identifikatoren" : "Identifiers"}
-                                  </span>
-                                  <select
-                                    value={variant.identifierStatus ?? "unknown"}
-                                    onChange={(event) => patchVariant(index, { identifierStatus: event.target.value as ProductIdentifierStatus })}
-                                    className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground"
-                                  >
-                                    <option value="unknown">{locale === "de" ? "Noch nicht geprüft" : "Not checked"}</option>
-                                    <option value="assigned">{locale === "de" ? "Vorhanden" : "Assigned"}</option>
-                                    <option value="not_applicable">{locale === "de" ? "Keine vorhanden" : "None exist"}</option>
-                                  </select>
-                                </label>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">GTIN / EAN</span>
-                                  <input inputMode="numeric" value={variant.gtin ?? ""} onChange={(event) => patchVariant(index, { gtin: event.target.value })} className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground" />
-                                </label>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">MPN</span>
-                                  <input value={variant.mpn ?? ""} onChange={(event) => patchVariant(index, { mpn: event.target.value })} className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground" />
-                                </label>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Amazon ASIN</span>
-                                  <input maxLength={10} value={variant.asin ?? ""} onChange={(event) => patchVariant(index, { asin: event.target.value.toUpperCase() })} className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground" />
-                                </label>
-                                <label className="space-y-2">
-                                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">eBay ePID</span>
-                                  <input value={variant.ebayEpid ?? ""} onChange={(event) => patchVariant(index, { ebayEpid: event.target.value })} className="w-full rounded-2xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground" />
-                                </label>
-
-                                <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border/50 bg-background/30 px-4 py-3 md:col-span-2 2xl:col-span-1">
-                                  <label className="flex items-center gap-2 text-xs text-foreground">
-                                    <input
-                                      type="checkbox"
-                                      checked={Boolean(variant.isDefault)}
-                                      onChange={(event) =>
-                                        setFormState((prev) => ({
-                                          ...prev,
-                                          variants: prev.variants.map((item, itemIndex) => ({
-                                            ...item,
-                                            isDefault: itemIndex === index ? event.target.checked : false,
-                                          })),
-                                        }))
-                                      }
-                                    />
-                                    {locale === "de" ? "Standard" : "Default"}
-                                  </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setFormState((prev) => ({
-                                        ...prev,
-                                        variants: prev.variants.filter((_, itemIndex) => itemIndex !== index),
-                                      }));
-                                      setVariantImageFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
-                                    }}
-                                    className="rounded-full border border-red-500/30 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-red-300 transition hover:bg-red-500/10"
-                                  >
-                                    {locale === "de" ? "Entfernen" : "Remove"}
-                                  </button>
+                                  ))}
                                 </div>
                               </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
 
-                  <div id="channels" className="scroll-mt-40 space-y-4">
+                              <label className="space-y-1 block">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-muted">{locale === "de" ? "Preis (€)" : "Price (€)"}</span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.price ?? ""}
+                                  onChange={(e) => setFormState((prev) => ({ ...prev, variants: prev.variants.map((v, i) => (i === index ? { ...v, price: e.target.value === "" ? undefined : Number(e.target.value) } : v)) }))}
+                                  placeholder={formState.price || "Standard"}
+                                  className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold"
+                                />
+                              </label>
+
+                              <label className="space-y-1 block">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-muted">{locale === "de" ? "Bestand" : "Stock"}</span>
+                                <input
+                                  type="number"
+                                  step="1"
+                                  value={variant.stock ?? ""}
+                                  onChange={(e) => setFormState((prev) => ({ ...prev, variants: prev.variants.map((v, i) => (i === index ? { ...v, stock: e.target.value === "" ? undefined : Number(e.target.value) } : v)) }))}
+                                  placeholder={formState.stock || "0"}
+                                  className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold"
+                                />
+                              </label>
+
+                              <label className="space-y-1 block">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-muted">GTIN / EAN</span>
+                                <input value={variant.gtin ?? ""} onChange={(e) => patchVariant(index, { gtin: e.target.value })} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" />
+                              </label>
+
+                              <label className="space-y-1 block">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-muted">SKU</span>
+                                <input value={variant.sku ?? ""} onChange={(e) => patchVariant(index, { sku: e.target.value })} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" />
+                              </label>
+
+                              <label className="space-y-1 block">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Amazon ASIN</span>
+                                <input maxLength={10} value={variant.asin ?? ""} onChange={(e) => patchVariant(index, { asin: e.target.value.toUpperCase() })} className="w-full rounded-xl border border-border/80 bg-surface px-3 py-2 text-xs text-foreground focus:border-gold" />
+                              </label>
+
+                              <label className="flex items-center gap-2 pt-4">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(variant.isDefault)}
+                                  onChange={(e) => setFormState((prev) => ({ ...prev, variants: prev.variants.map((v, i) => ({ ...v, isDefault: i === index ? e.target.checked : false })) }))}
+                                  className="h-4 w-4 rounded border-border text-gold focus:ring-gold"
+                                />
+                                <span className="text-xs font-semibold text-foreground">{locale === "de" ? "Standard-Variante" : "Default"}</span>
+                              </label>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 6: CHANNELS */}
+                {wizardStep === "channels" && (
+                  <div id="channels" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-5">
+                    <div className="border-b border-border/60 pb-3">
+                      <h4 className="text-base font-bold text-heading flex items-center gap-2">
+                        <span>🌐</span> {locale === "de" ? "6. Marktplätze & Multi-Channel Export" : "6. Marketplace Channels"}
+                      </h4>
+                      <p className="text-xs text-muted mt-0.5">{locale === "de" ? "Export-Attribute für Amazon, eBay, Google & Versandmaße" : "Export attributes for Amazon, eBay, Google & dimensions"}</p>
+                    </div>
+
                     <ProductChannelFields
                       locale={locale}
                       category={formState.category}
@@ -1680,37 +1640,24 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     />
                     <ProductChannelReadinessPanel locale={locale} facts={readinessFacts} />
                   </div>
+                )}
 
-                  <div id="publishing" className="scroll-mt-40 space-y-3">
-                  <label className="flex items-center gap-3 rounded-2xl border border-border/60 bg-surface/60 px-4 py-3 text-sm text-foreground">
-                    <input
-                      type="checkbox"
-                      checked={formState.isHomepageFeatured}
-                      onChange={(event) =>
-                        setFormState((prev) => ({ ...prev, isHomepageFeatured: event.target.checked }))
-                      }
-                    />
-                    {locale === "de"
-                      ? "Im Home-Bereich unter dem Hero anzeigen"
-                      : "Show in the homepage featured section"}
-                  </label>
-
-                  <label className="flex items-center gap-3 rounded-2xl border border-border/60 bg-surface/60 px-4 py-3 text-sm text-foreground">
-                    <input type="checkbox" checked={formState.isActive} onChange={(event) => setFormState((prev) => ({ ...prev, isActive: event.target.checked }))} />
-                    {locale === "de" ? "Produkt aktiv veröffentlichen" : "Publish product as active"}
-                  </label>
-                  </div>
-
-                  <div id="images" className="scroll-mt-40 space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? `Bildergalerie${formState.condition !== "new" ? " *" : ""}` : `Image gallery${formState.condition !== "new" ? " *" : ""}`}</span>
+                {/* STEP 7: IMAGES */}
+                {wizardStep === "images" && (
+                  <div id="images" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-5">
+                    <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                      <div>
+                        <h4 className="text-base font-bold text-heading flex items-center gap-2">
+                          <span>🖼️</span> {locale === "de" ? `7. Bildergalerie${formState.condition !== "new" ? " *" : ""}` : `7. Images${formState.condition !== "new" ? " *" : ""}`}
+                        </h4>
+                        <p className="text-xs text-muted mt-0.5">{locale === "de" ? "Beste Reihenfolge: Front, Rückseite, Seite, Extra" : "Recommended order: Front, Back, Side, Extra"}</p>
+                      </div>
+                      {formState.condition !== "new" && (
+                        <span className="inline-flex items-center rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-300 border border-amber-500/40">{locale === "de" ? "Pflichtfeld" : "Required"}</span>
+                      )}
                     </div>
-                    <p className="text-xs text-muted">
-                      {locale === "de"
-                        ? formState.condition !== "new" ? "Mindestens ein Bild ist für Open-Box- und Gebrauchtprodukte erforderlich. Beste Reihenfolge: Front, Ruckseite, Seite, Extra." : "Bis zu 4 optionale Bilder. Beste Reihenfolge: Front, Ruckseite, Seite, Extra."
-                        : formState.condition !== "new" ? "At least one image is required for open-box and used products. Recommended order: Front, Back, Side, Extra." : "Up to 4 optional images. Recommended order: Front, Back, Side, Extra."}
-                    </p>
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       {slotLabels.map((slotLabel, index) => {
                         const selectedFile = imageFiles[index];
                         const preview = imagePreviews[index];
@@ -1718,20 +1665,21 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                         return (
                           <label
                             key={slotLabel}
-                            className="group cursor-pointer rounded-2xl border border-border/60 bg-surface/40 p-3 transition hover:border-gold/40 hover:bg-surface/70"
+                            className="group cursor-pointer rounded-2xl border border-border/80 bg-surface/60 p-4 transition hover:border-gold hover:bg-surface shadow-md"
                           >
                             <div className="flex items-center justify-between gap-3">
-                              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{slotLabel}</span>
-                              <span className="rounded-full border border-border/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground transition group-hover:border-gold/30 group-hover:text-gold">
-                                {selectedFile ? (locale === "de" ? "Ersetzen" : "Replace") : (locale === "de" ? "Wahlen" : "Select")}
+                              <span className="text-xs font-bold uppercase tracking-wider text-muted-strong">{slotLabel}</span>
+                              <span className="rounded-full border border-border/80 px-2.5 py-1 text-[10px] font-bold uppercase text-muted-strong group-hover:border-gold group-hover:text-gold">
+                                {selectedFile ? (locale === "de" ? "Ersetzen" : "Replace") : (locale === "de" ? "Hochladen" : "Upload")}
                               </span>
                             </div>
-                            <div className="relative mt-3 aspect-square overflow-hidden rounded-xl border border-border/50 bg-black/20">
+                            <div className="relative mt-3 aspect-square overflow-hidden rounded-xl border border-border/60 bg-surface-strong/80 flex items-center justify-center">
                               {preview ? (
                                 <Image src={preview} alt="" fill className="object-cover" unoptimized />
                               ) : (
-                                <div className="flex h-full items-center justify-center px-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                                  {locale === "de" ? `${slotLabel}-Bild` : `${slotLabel} image`}
+                                <div className="flex flex-col items-center justify-center p-3 text-center">
+                                  <span className="text-2xl mb-1 opacity-50">📷</span>
+                                  <span className="text-[11px] font-bold text-muted">{locale === "de" ? `${slotLabel}-Bild` : `${slotLabel} Image`}</span>
                                 </div>
                               )}
                             </div>
@@ -1750,89 +1698,223 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                         );
                       })}
                     </div>
-                    <div className="grid gap-3 md:grid-cols-3">
-                      {formState.images.map((image, index) => (
-                        <div key={`${image}-${index}`} className="rounded-2xl border border-border/60 bg-surface/70 p-3">
-                          <div className="relative aspect-square overflow-hidden rounded-xl bg-black/20">
-                            <Image src={image} alt="" fill className="object-cover" unoptimized={image.startsWith("/uploads/")} />
-                            {index === 0 ? (
-                              <span className="absolute left-2 top-2 rounded-full bg-gold px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-black">
-                                {locale === "de" ? "Cover" : "Cover"}
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className="mt-3 flex items-center justify-between gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFormState((prev) => {
-                                  const next = prev.images.filter((item) => item !== image);
-                                  next.unshift(image);
-                                  return { ...prev, images: next };
-                                });
-                              }}
-                              className="text-xs font-semibold uppercase tracking-[0.18em] text-gold"
-                            >
-                              {locale === "de" ? "Als Cover" : "Set cover"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setFormState((prev) => ({ ...prev, images: prev.images.filter((item) => item !== image) }))}
-                              className="text-xs font-semibold uppercase tracking-[0.18em] text-red-300"
-                            >
-                              {locale === "de" ? "Entfernen" : "Remove"}
-                            </button>
-                          </div>
+
+                    {formState.images.length > 0 && (
+                      <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-3">
+                        <span className="text-xs font-bold uppercase tracking-wider text-heading">{locale === "de" ? "Gespeicherte Bilder" : "Existing Images"}</span>
+                        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+                          {formState.images.map((image, index) => (
+                            <div key={`${image}-${index}`} className="rounded-xl border border-border/80 bg-surface p-2.5 space-y-2">
+                              <div className="relative aspect-square overflow-hidden rounded-lg bg-surface-strong/40">
+                                <Image src={image} alt="" fill className="object-contain" unoptimized={image.startsWith("/uploads/")} />
+                                {index === 0 ? (
+                                  <span className="absolute left-1.5 top-1.5 rounded-full bg-gold px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-black">
+                                    Cover
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="flex items-center justify-between gap-1 text-[11px]">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormState((prev) => {
+                                      const next = prev.images.filter((item) => item !== image);
+                                      next.unshift(image);
+                                      return { ...prev, images: next };
+                                    });
+                                  }}
+                                  className="font-semibold text-gold hover:underline"
+                                >
+                                  {locale === "de" ? "Als Cover" : "Cover"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFormState((prev) => ({ ...prev, images: prev.images.filter((item) => item !== image) }))}
+                                  className="font-semibold text-red-400 hover:underline"
+                                >
+                                  {locale === "de" ? "Löschen" : "Remove"}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    {imageFiles.some(Boolean) ? (
-                      <p className="text-xs text-muted">
-                        {imageFiles.filter(Boolean).length} {locale === "de" ? "neue Bilder werden beim Speichern hochgeladen." : "new images will be uploaded on save."}
-                      </p>
-                    ) : null}
+                      </div>
+                    )}
                   </div>
+                )}
+
+                {/* STEP 8: PUBLISHING & OVERVIEW */}
+                {wizardStep === "publishing" && (
+                  <div id="publishing" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-6">
+                    <div className="border-b border-border/60 pb-3">
+                      <h4 className="text-base font-bold text-heading flex items-center gap-2">
+                        <span>🚀</span> {locale === "de" ? "8. Gesamtübersicht & Speichern" : "8. Overview & Publishing"}
+                      </h4>
+                      <p className="text-xs text-muted mt-0.5">{locale === "de" ? "Vollständige Zusammenfassung aller Produktdaten prüfen" : "Review all entered information before saving"}</p>
+                    </div>
+
+                    {/* OVERVIEW CARDS */}
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      {/* Basics Card */}
+                      <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-2 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gold uppercase tracking-wider">🏷️ 1. Grunddaten</span>
+                          <button type="button" onClick={() => setWizardStep("basics")} className="text-[11px] font-semibold text-muted hover:text-gold">✎</button>
+                        </div>
+                        <p className="text-sm font-bold text-heading truncate">{formState.title || "–"}</p>
+                        <div className="text-xs text-muted space-y-0.5">
+                          <p>Kategorie: <span className="font-semibold text-foreground">{formState.category}</span></p>
+                          <p>Marke/Modell: <span className="font-semibold text-foreground">{formState.brand || "–"} / {formState.model || "–"}</span></p>
+                          <p>EAN: <span className="font-mono text-foreground">{formState.gtin || "–"}</span></p>
+                        </div>
+                      </div>
+
+                      {/* Pricing Card */}
+                      <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-2 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gold uppercase tracking-wider">💶 2. Preise & Lager</span>
+                          <button type="button" onClick={() => setWizardStep("pricing")} className="text-[11px] font-semibold text-muted hover:text-gold">✎</button>
+                        </div>
+                        <p className="text-lg font-bold text-heading">{formState.price ? `${Number(formState.price).toFixed(2)} €` : "–"}</p>
+                        <div className="text-xs text-muted space-y-0.5">
+                          <p>Streichpreis: <span className="font-semibold text-foreground">{formState.compareAtPrice ? `${Number(formState.compareAtPrice).toFixed(2)} €` : "–"}</span></p>
+                          <p>Lagerbestand: <span className="font-semibold text-foreground">{formState.stock} Einheiten</span></p>
+                        </div>
+                      </div>
+
+                      {/* Condition Card */}
+                      <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-2 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gold uppercase tracking-wider">🔍 3. Zustand</span>
+                          <button type="button" onClick={() => setWizardStep("condition")} className="text-[11px] font-semibold text-muted hover:text-gold">✎</button>
+                        </div>
+                        <p className="text-sm font-bold text-heading">
+                          {formState.condition === "new" ? "✨ Neu" : formState.condition === "open_box" ? "📦 Open-Box" : "🔄 Gebraucht A+"}
+                        </p>
+                        <div className="text-xs text-muted space-y-0.5">
+                          {formState.condition !== "new" ? (
+                            <>
+                              <p className="truncate">Hinweis: {formState.conditionNote || "–"}</p>
+                              {formState.batteryHealth && <p>Akku: {formState.batteryHealth} %</p>}
+                            </>
+                          ) : (
+                            <p className="text-emerald-500">✓ Fabrikneu</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Content & Media Card */}
+                      <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-2 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gold uppercase tracking-wider">🖼️ Medien & Varianten</span>
+                          <button type="button" onClick={() => setWizardStep("images")} className="text-[11px] font-semibold text-muted hover:text-gold">✎</button>
+                        </div>
+                        <div className="text-xs text-muted space-y-0.5">
+                          <p>Bilder: <span className="font-bold text-foreground">{formState.images.length + imageFiles.filter(Boolean).length}</span></p>
+                          <p>Varianten: <span className="font-bold text-foreground">{formState.variants.length}</span></p>
+                          <p>Highlights: <span className="font-bold text-foreground">{formState.featureBulletsText ? formState.featureBulletsText.split("\n").filter(Boolean).length : 0}</span></p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* PUBLISHING CONTROLS */}
+                    <div className="rounded-xl border border-border/80 bg-surface-strong/60 p-4 space-y-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-heading">⚙️ {locale === "de" ? "Veröffentlichungseinstellungen" : "Publishing Settings"}</p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="flex items-center gap-3 rounded-xl border border-border/80 bg-surface/60 p-3.5 cursor-pointer hover:border-gold/40">
+                          <input
+                            type="checkbox"
+                            checked={formState.isHomepageFeatured}
+                            onChange={(event) => setFormState((prev) => ({ ...prev, isHomepageFeatured: event.target.checked }))}
+                            className="h-4 w-4 rounded border-border text-gold focus:ring-gold"
+                          />
+                          <span className="text-xs font-bold text-heading">{locale === "de" ? "Auf Startseite hervorheben" : "Featured on Homepage"}</span>
+                        </label>
+                        <label className="flex items-center gap-3 rounded-xl border border-border/80 bg-surface/60 p-3.5 cursor-pointer hover:border-gold/40">
+                          <input
+                            type="checkbox"
+                            checked={formState.isActive}
+                            onChange={(event) => setFormState((prev) => ({ ...prev, isActive: event.target.checked }))}
+                            className="h-4 w-4 rounded border-border text-gold focus:ring-gold"
+                          />
+                          <span className="text-xs font-bold text-heading">{locale === "de" ? "Produkt aktiv veröffentlichen" : "Publish as active"}</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* SAVE BUTTON INSIDE PUBLISHING STEP */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={submitProduct}
+                        disabled={isSaving || !isDirty || !formState.title.trim() || !formState.price || Number(formState.price) <= 0}
+                        className="w-full rounded-xl bg-gold px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-black transition hover:bg-gold-deep disabled:cursor-not-allowed disabled:opacity-50 shadow-lg shadow-gold/20 flex items-center justify-center gap-2"
+                      >
+                        {isSaving ? (
+                          <>
+                            <span className="animate-spin">⏳</span>
+                            <span>{locale === "de" ? "Speichern ..." : "Saving ..."}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>💾</span>
+                            <span>{locale === "de" ? "Produkt jetzt speichern & veröffentlichen" : "Save & Publish Product Now"}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* WIZARD NAVIGATION FOOTER */}
+                <div className="flex items-center justify-between rounded-2xl border border-border/80 bg-surface/80 p-4 shadow-xl backdrop-blur-md">
+                  {(() => {
+                    const stepOrder: Array<typeof wizardStep> = ["basics", "pricing", "condition", "content", "variants", "channels", "images", "publishing"];
+                    const currentIdx = stepOrder.indexOf(wizardStep);
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (currentIdx > 0) setWizardStep(stepOrder[currentIdx - 1]);
+                          }}
+                          disabled={currentIdx === 0}
+                          className="rounded-xl border border-border/80 bg-surface-strong px-5 py-2 text-xs font-bold uppercase tracking-wider text-foreground hover:border-gold/40 hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        >
+                          ← {locale === "de" ? "Zurück" : "Back"}
+                        </button>
+
+                        <div className="text-xs font-semibold text-muted">
+                          {locale === "de" ? `Schritt ${currentIdx + 1} von 8` : `Step ${currentIdx + 1} of 8`}
+                        </div>
+
+                        {currentIdx < stepOrder.length - 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (currentIdx < stepOrder.length - 1) setWizardStep(stepOrder[currentIdx + 1]);
+                            }}
+                            className="rounded-xl bg-gold px-6 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-gold-deep shadow-md shadow-gold/20 transition"
+                          >
+                            {locale === "de" ? "Weiter →" : "Next →"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={submitProduct}
+                            disabled={isSaving || !isDirty || !formState.title.trim() || !formState.price || Number(formState.price) <= 0}
+                            className="rounded-xl bg-emerald-500 px-6 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-emerald-400 shadow-md shadow-emerald-500/20 disabled:opacity-50 transition"
+                          >
+                            {isSaving ? (locale === "de" ? "Speichern ..." : "Saving ...") : (locale === "de" ? "Speichern" : "Save")}
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
-                <aside className="space-y-4 self-start rounded-2xl border border-border/60 bg-surface/60 p-4 2xl:sticky 2xl:top-20">
-                  <div className="rounded-2xl border border-border/60 bg-background/50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale === "de" ? "Vorschau" : "Preview"}</p>
-                    <div className="relative mt-4 aspect-[3/4] overflow-hidden rounded-xl bg-white">
-                      {formState.images[0] ? (
-                        <Image
-                          src={formState.images[0]}
-                          alt=""
-                          fill
-                          className="object-contain"
-                          unoptimized={formState.images[0].startsWith("/uploads/")}
-                        />
-                      ) : null}
-                    </div>
-                    <p className="mt-4 text-lg font-semibold text-foreground">{formState.title || "—"}</p>
-                    <p className="mt-1 text-sm text-muted">{formState.subtitle || formState.model || "—"}</p>
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <span className="text-xl font-bold text-foreground">{formState.price ? formatMoney(locale, Number(formState.price)) : "—"}</span>
-                      {formState.compareAtPrice ? (
-                        <span className="text-sm text-muted line-through">{formatMoney(locale, Number(formState.compareAtPrice))}</span>
-                      ) : null}
-                    </div>
-                  </div>
-                  {saveError ? <p className="text-sm text-red-300">{saveError}</p> : null}
-                  {saveMessage ? <p className="text-sm text-green-300">{saveMessage}</p> : null}
-                  <button
-                    type="button"
-                    onClick={submitProduct}
-                    disabled={isSaving || !isDirty || !formState.title.trim() || !formState.price || Number(formState.price) <= 0}
-                    className="w-full rounded-xl bg-gold px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:-translate-y-0.5 hover:bg-gold-deep active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSaving ? (locale === "de" ? "Speichern ..." : "Saving ...") : (locale === "de" ? "Produkt speichern" : "Save product")}
-                  </button>
-                  {!formState.title.trim() || !formState.price || Number(formState.price) <= 0 ? (
-                    <p className="text-center text-xs text-muted">
-                      {locale === "de" ? "Titel und gültiger Preis sind erforderlich." : "Title and a valid price are required."}
-                    </p>
-                  ) : null}
-                </aside>
+                {saveError ? <p className="text-sm text-red-400">{saveError}</p> : null}
+                {saveMessage ? <p className="text-sm text-emerald-400">{saveMessage}</p> : null}
               </div>
             </section>
           ) : (

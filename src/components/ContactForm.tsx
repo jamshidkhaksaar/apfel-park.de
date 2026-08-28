@@ -139,7 +139,7 @@ function ContactFormContent({ lang }: ContactFormProps) {
       
       {status.type === "error" && !status.errors && (
         <div role="alert" className="rounded-xl bg-red-500/10 border border-red-500/30 p-4">
-          <div className="flex items-center gap-2 text-red-400">
+          <div className="flex items-center gap-2 text-red-text">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -150,7 +150,7 @@ function ContactFormContent({ lang }: ContactFormProps) {
 
       {status.type === "error" && status.errors && (
         <div role="alert" className="rounded-xl bg-red-500/10 border border-red-500/30 p-4">
-            <div className="flex items-center gap-2 text-red-400">
+            <div className="flex items-center gap-2 text-red-text">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -181,7 +181,7 @@ function ContactFormContent({ lang }: ContactFormProps) {
             aria-describedby={status.errors?.name ? `${id}-name-error` : undefined}
           />
           {status.errors?.name && (
-            <p id={`${id}-name-error`} className="mt-1 text-xs text-red-400">
+            <p id={`${id}-name-error`} className="mt-1 text-xs text-red-text">
               {status.errors.name}
             </p>
           )}
@@ -207,7 +207,7 @@ function ContactFormContent({ lang }: ContactFormProps) {
             aria-describedby={status.errors?.email ? `${id}-email-error` : undefined}
           />
           {status.errors?.email && (
-            <p id={`${id}-email-error`} className="mt-1 text-xs text-red-400">
+            <p id={`${id}-email-error`} className="mt-1 text-xs text-red-text">
               {status.errors.email}
             </p>
           )}
@@ -252,7 +252,7 @@ function ContactFormContent({ lang }: ContactFormProps) {
           aria-describedby={status.errors?.message ? `${id}-message-error` : undefined}
         />
         {status.errors?.message && (
-          <p id={`${id}-message-error`} className="mt-1 text-xs text-red-400">
+          <p id={`${id}-message-error`} className="mt-1 text-xs text-red-text">
             {status.errors.message}
           </p>
         )}
@@ -282,7 +282,7 @@ function ContactFormContent({ lang }: ContactFormProps) {
       </button>
       
       {/* Privacy notice for reCAPTCHA */}
-      <p className="text-xs text-muted/60 text-center">
+      <p className="text-center text-xs text-muted">
         {lang === "de" 
           ? "Diese Website ist durch reCAPTCHA geschützt. Es gelten die Google Datenschutzrichtlinien und Nutzungsbedingungen."
           : "This site is protected by reCAPTCHA. Google Privacy Policy and Terms of Service apply."}

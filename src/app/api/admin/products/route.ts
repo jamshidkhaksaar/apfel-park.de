@@ -14,11 +14,10 @@ import { validatedGtin } from "@/lib/product-identifiers";
 import { conditionDetailsChanged } from "@/lib/product-condition";
 import { eprelAssetRoutes } from "@/lib/eprel";
 import {
-  evaluateProductChannelReadiness,
   type BatteryDetails,
   type MarketplaceAttributes,
   type MarketplaceCategoryMappings,
-  type ProductChannelFacts,
+
   type ProductIdentifierStatus,
 } from "@/lib/product-channel-readiness";
 
@@ -668,39 +667,6 @@ const syncProductInventory = async (productId: string, product: ReturnType<typeo
   );
 };
 
-const channelReadiness = (data: ReturnType<typeof buildPayload>) =>
-  evaluateProductChannelReadiness({
-    title: data.title,
-    description: data.description ?? "",
-    category: data.category ?? "",
-    condition: data.condition,
-    conditionNote: data.conditionNote ?? "",
-    hasRealProductPhotos: data.hasRealProductPhotos,
-    brand: data.brand ?? "",
-    price: data.price ?? undefined,
-    stock: data.stock,
-    sku: data.sku ?? "",
-    mpn: data.mpn ?? "",
-    gtin: data.gtin ?? "",
-    identifierStatus: data.identifierStatus,
-    asin: data.asin ?? "",
-    ebayEpid: data.ebayEpid ?? "",
-    images: data.images,
-    variants: data.variants,
-    manufacturer: data.manufacturer,
-    euResponsiblePerson: data.euResponsiblePerson,
-    safetyWarnings: data.safetyWarnings,
-    countryOfOrigin: data.countryOfOrigin ?? "",
-    packageWeightKg: data.packageWeightKg,
-    packageLengthCm: data.packageLengthCm,
-    packageWidthCm: data.packageWidthCm,
-    packageHeightCm: data.packageHeightCm,
-    batteryDetails: data.batteryDetails,
-    marketplaceCategoryMappings: data.marketplaceCategoryMappings,
-    marketplaceAttributes: data.marketplaceAttributes,
-    amazonGtinExemption: data.amazonGtinExemption,
-    amazonRenewedApproved: data.amazonRenewedApproved,
-  } satisfies ProductChannelFacts);
 
 export async function POST(request: NextRequest) {
   const auth = await ensureAdmin(request);
@@ -736,10 +702,6 @@ export async function POST(request: NextRequest) {
         batteryHealth: product.batteryHealth,
       });
       return NextResponse.json({ error: validationError }, { status: 400 });
-    }
-    const readiness = channelReadiness(product);
-    if (product.isActive && (!readiness.store.ready || !readiness.google.ready)) {
-      return NextResponse.json({ error: auth.messages.activeNotReady, readiness }, { status: 400 });
     }
     await assertInventorySkuAvailability(null, product);
 
@@ -939,10 +901,6 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const readiness = channelReadiness(product);
-    if (product.isActive && !existing?.is_active && (!readiness.store.ready || !readiness.google.ready)) {
-      return NextResponse.json({ error: auth.messages.activeNotReady, readiness }, { status: 400 });
-    }
     await assertInventorySkuAvailability(payload.id, product);
     const invalidateConditionNoteTranslations = conditionDetailsChanged(
       { condition: existing?.condition, conditionNote: existing?.condition_note },
@@ -1082,7 +1040,7 @@ export async function PATCH(request: NextRequest) {
     await syncProductInventory(payload.id, product);
 
     await syncHomepageFeatured(payload.id, product.isHomepageFeatured);
-    await markOpenIntakeRunsStale(payload.id, "Manual catalog edit", { type: "admin", id: "catalog-editor" });
+    await markOpenIntakeRunsStale(payload.id, "Manual catalog edit");
 
     const socialPublishing = product.isActive
       ? await autoPublishProductPromotion(

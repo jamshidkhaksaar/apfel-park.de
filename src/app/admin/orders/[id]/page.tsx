@@ -112,8 +112,12 @@ export default async function OrderDetailPage({
               defaultValue={order.status ?? "pending"}
               className="rounded-lg border border-border/60 bg-surface-strong/40 px-3 py-2.5 text-sm normal-case tracking-normal text-foreground focus:outline-none"
             >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
+              {STATUS_OPTIONS.filter((option) =>
+                order.payment_status === "paid"
+                  ? option === "paid" || option === "shipped" || option === "delivered"
+                  : option === "pending" || option === "cancelled",
+              ).map((option) => (
+                <option key={option} value={option} disabled={option === "paid"}>
                   {dict.ordersPage.status[option]}
                 </option>
               ))}
@@ -247,6 +251,7 @@ export default async function OrderDetailPage({
               {order.subtotal_amount != null ? currency.format(Number(order.subtotal_amount)) : "-"}
             </dd>
           </div>
+          {Number(order.discount_amount ?? 0)>0?<div className="flex items-center justify-between text-emerald-500"><dt>{order.coupon_code?`Coupon ${order.coupon_code}`:"Discount"}</dt><dd className="font-medium">−{currency.format(Number(order.discount_amount))}</dd></div>:null}
           <div className="flex items-center justify-between">
             <dt className="text-muted">{t.shipping}</dt>
             <dd className="font-medium text-foreground">

@@ -6,7 +6,7 @@ import { readSessionUserFromRequest } from "@/lib/session";
 const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
 export async function GET(request: NextRequest) {
-  if (!readSessionUserFromRequest(request)) {
+  if (!(await readSessionUserFromRequest(request))) {
     return unauthorized();
   }
 

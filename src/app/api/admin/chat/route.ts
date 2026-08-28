@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { readSessionUserFromRequest } from "@/lib/session";
+import { canManageOrders } from "@/lib/admin-auth";
 import {
   addAdminMessage,
   getAdminConversation,
@@ -19,9 +20,8 @@ const allowedStatuses = new Set<ChatStatus>(["open", "waiting", "resolved"]);
 const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
 export async function GET(request: NextRequest) {
-  if (!readSessionUserFromRequest(request)) {
-    return unauthorized();
-  }
+  const user = await readSessionUserFromRequest(request);
+  if (!canManageOrders(user)) return unauthorized();
 
   const id = request.nextUrl.searchParams.get("id");
 
@@ -40,9 +40,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!readSessionUserFromRequest(request)) {
-    return unauthorized();
-  }
+  const user = await readSessionUserFromRequest(request);
+  if (!canManageOrders(user)) return unauthorized();
   const csrf = rejectCrossSiteAdminMutation(request);
   if (csrf) return csrf;
 

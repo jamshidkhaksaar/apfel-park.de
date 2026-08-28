@@ -29,7 +29,7 @@ type SubmitState = {
 const copy = {
   de: {
     title: "Reparatur anfragen",
-    subtitle: "Sende uns dein Gerat und den Fehler. Du bekommst direkt eine Bestatigung per E-Mail.",
+    subtitle: "Sende uns dein Gerät und den Fehler. Du bekommst direkt eine Bestätigung per E-Mail.",
     helperTitle: "So funktioniert es",
     helperItems: [
       "Anfrage absenden und Ticketnummer per E-Mail erhalten",
@@ -43,7 +43,7 @@ const copy = {
       customerName: "Name",
       customerEmail: "E-Mail",
       customerPhone: "Telefon",
-      deviceModel: "Gerat",
+      deviceModel: "Gerät",
       issueDescription: "Fehlerbeschreibung",
     },
     placeholders: {
@@ -58,9 +58,9 @@ const copy = {
     },
     errors: {
       customerName: "Bitte gib deinen Namen ein.",
-      customerEmail: "Bitte gib eine gultige E-Mail-Adresse ein.",
+      customerEmail: "Bitte gib eine gültige E-Mail-Adresse ein.",
       customerPhone: "Bitte gib deine Telefonnummer ein.",
-      deviceModel: "Bitte gib dein Gerat an.",
+      deviceModel: "Bitte gib dein Gerät an.",
       issueDescription: "Bitte beschreibe den Fehler.",
       generic: "Bitte korrigiere die markierten Felder.",
       submit: "Die Anfrage konnte gerade nicht gesendet werden. Bitte versuche es erneut.",

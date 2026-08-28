@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   attachProviderReference,
-  getOrderAmountCents,
+  claimWebhookEvent,
+  completeWebhookEvent,
+  getOrderPaymentExpectation,
+  isOrderInProviderState,
   markOrderCancelled,
   markOrderPaid,
-  recordWebhookEvent,
+  markOrderRefunded,
+  releaseWebhookEventClaim,
   verifyStripeSignature,
 } from "@/lib/checkout";
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
@@ -25,6 +29,9 @@ type StripeEvent = {
       amount_total?: number;
       /** PaymentIntent amount, in cents. */
       amount?: number;
+      /** Charge fields, used by refund events. */
+      amount_refunded?: number;
+      refunded?: boolean;
       currency?: string;
       metadata?: Record<string, string>;
     };
@@ -61,45 +68,46 @@ export async function POST(request: NextRequest) {
     return result.status === "failed";
   };
 
-  const isNew = await recordWebhookEvent({
-    provider: "stripe",
-    eventId: event.id,
-    eventType: event.type,
-    payload: event,
-  });
-  if (!isNew) {
-    if (await sendOrderNotification()) {
-      return NextResponse.json({ error: "Order notification delivery failed" }, { status: 503 });
-    }
-    return NextResponse.json({ received: true, duplicate: true });
-  }
-
-  let notificationFailed = false;
 
   /**
    * A paid event must carry the amount the order is actually for.
    *
-   * Fails open when the event carries no amount at all, so an unexpected
-   * payload shape can never strand a real payment; it only refuses when an
-   * amount is present and disagrees with the order.
+   * Missing amount, currency, order id, or order lookup all fail closed.
    */
   const amountMatchesOrder = async (): Promise<boolean> => {
     const claimed = session.amount_total ?? session.amount;
-    if (typeof claimed !== "number" || !orderId) return true;
-    const expected = await getOrderAmountCents(orderId);
-    if (expected === null) return true;
-    if (claimed === expected) return true;
+    if (typeof claimed !== "number" || !orderId || typeof session.currency !== "string") return false;
+    const expected = await getOrderPaymentExpectation(orderId);
+    if (!expected) return false;
+    if (claimed === expected.cents && session.currency.toUpperCase() === expected.currency) return true;
     console.error("Stripe webhook amount mismatch -- refusing to mark paid", {
       orderId,
       eventId: event.id,
       eventType: event.type,
       claimedCents: claimed,
-      expectedCents: expected,
+      expectedCents: expected.cents,
+      claimedCurrency: session.currency,
+      expectedCurrency: expected.currency,
     });
     return false;
   };
 
-  if (event.type === "checkout.session.completed" && session.payment_status === "paid" && (await amountMatchesOrder())) {
+  if (isPaidEvent && !(await amountMatchesOrder())) {
+    return NextResponse.json({ error: "Stripe amount or currency mismatch" }, { status: 400 });
+  }
+
+  const claim = await claimWebhookEvent({ provider: "stripe", eventId: event.id, eventType: event.type, payload: event });
+  if (claim.status === "processed") {
+    if (await sendOrderNotification()) return NextResponse.json({ error: "Order notification delivery failed" }, { status: 503 });
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+  if (claim.status === "busy") {
+    return NextResponse.json({ error: "Stripe event is already processing" }, { status: 503, headers: { "Retry-After": "5" } });
+  }
+  let notificationFailed = false;
+  try {
+
+  if (event.type === "checkout.session.completed" && session.payment_status === "paid") {
     const order = await markOrderPaid({
       orderId,
       provider: "stripe",
@@ -107,6 +115,9 @@ export async function POST(request: NextRequest) {
       providerPaymentId: session.payment_intent || session.id,
       providerStatus: session.payment_status,
     });
+    if (!order && !(await isOrderInProviderState({ provider: "stripe", orderId, providerSessionId: session.id, statuses: ["paid"], paymentStatuses: ["paid"] }))) {
+      throw new Error("Stripe Checkout paid event did not match a local order");
+    }
 
     if (order) {
       await sendPurchaseTrackingEvents(
@@ -130,7 +141,7 @@ export async function POST(request: NextRequest) {
 
   // The embedded Payment Element pays a PaymentIntent directly; there is no
   // Checkout Session, so the hosted-flow branch above never fires for it.
-  if (event.type === "payment_intent.succeeded" && (await amountMatchesOrder())) {
+  if (event.type === "payment_intent.succeeded") {
     const order = await markOrderPaid({
       orderId,
       provider: "stripe",
@@ -138,6 +149,9 @@ export async function POST(request: NextRequest) {
       providerPaymentId: session.id,
       providerStatus: "succeeded",
     });
+    if (!order && !(await isOrderInProviderState({ provider: "stripe", orderId, providerOrderId: session.id, statuses: ["paid"], paymentStatuses: ["paid"] }))) {
+      throw new Error("Stripe PaymentIntent paid event did not match a local order");
+    }
 
     if (order) {
       await sendPurchaseTrackingEvents(
@@ -166,31 +180,63 @@ export async function POST(request: NextRequest) {
     orderId &&
     (event.type === "payment_intent.payment_failed" || event.type === "payment_intent.processing")
   ) {
-    await attachProviderReference({
+    const attached = await attachProviderReference({
       orderId,
       provider: "stripe",
       providerOrderId: session.id,
       providerStatus: event.type === "payment_intent.processing" ? "processing" : "payment_failed",
     });
+    if (!attached) throw new Error("Stripe PaymentIntent status event did not match a local order");
   }
 
   // Cancellation is terminal, so it is safe to release the reservation.
   if (event.type === "payment_intent.canceled") {
-    await markOrderCancelled({
+    const cancelledOrderId = await markOrderCancelled({
       orderId,
       provider: "stripe",
       providerOrderId: session.id,
       providerStatus: "canceled",
     });
+    if (!cancelledOrderId && !(await isOrderInProviderState({ provider: "stripe", orderId, providerOrderId: session.id, statuses: ["cancelled"] }))) {
+      throw new Error("Stripe PaymentIntent cancellation did not match a local order");
+    }
+  }
+
+  // Stripe fires charge.refunded for both full and partial refunds; `refunded`
+  // is true only when the whole charge is back with the customer.
+  if (event.type === "charge.refunded") {
+    const fullyRefunded = session.refunded === true
+      || (typeof session.amount === "number" && session.amount_refunded === session.amount);
+    const refundedCount = await markOrderRefunded({
+      orderId,
+      provider: "stripe",
+      providerOrderId: session.payment_intent ?? null,
+      providerStatus: fullyRefunded ? "refunded" : "partially_refunded",
+      fullyRefunded,
+    });
+    const expectedPaymentStatus = fullyRefunded ? "refunded" : "partially_refunded";
+    if (refundedCount === 0 && !(await isOrderInProviderState({ provider: "stripe", orderId, providerOrderId: session.payment_intent ?? null, paymentStatuses: [expectedPaymentStatus] }))) {
+      throw new Error("Stripe refund did not match a local order");
+    }
   }
 
   if (event.type === "checkout.session.expired") {
-    await markOrderCancelled({
+    const cancelledOrderId = await markOrderCancelled({
       orderId,
       provider: "stripe",
       providerSessionId: session.id,
       providerStatus: session.status || "expired",
     });
+    if (!cancelledOrderId && !(await isOrderInProviderState({ provider: "stripe", orderId, providerSessionId: session.id, statuses: ["cancelled"] }))) {
+      throw new Error("Stripe Checkout expiration did not match a local order");
+    }
+  }
+
+  await completeWebhookEvent("stripe", event.id, claim.token);
+  } catch (error) {
+    await releaseWebhookEventClaim("stripe", event.id, claim.token, error);
+    console.error("Stripe webhook processing failed", { eventId: event.id, eventType: event.type });
+    return NextResponse.json({ error: "Stripe webhook processing failed" }, { status: 503 });
   }
 
   if (notificationFailed) {

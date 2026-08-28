@@ -7,6 +7,9 @@ set -Eeuo pipefail
 OWNER_MIGRATIONS=(
   20260819_product_intake_core.sql
   20260820_product_intake_workspace.sql
+  20260827_professional_product_platform.sql
+  20260827_campaign_redemption_history.sql
+  20260828_provider_reference_uniqueness.sql
 )
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RELEASE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"

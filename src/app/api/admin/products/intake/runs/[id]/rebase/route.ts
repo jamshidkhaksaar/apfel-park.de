@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = authorizeProductOwner(request);
+    const auth = await authorizeProductOwner(request);
     const { id } = await context.params;
     const runId = await resolveProductIntakeRunId(parseRunReference(id));
     const idempotencyKey = readAdminIdempotencyKey(request, `admin-rebase:${auth.actor.id}:${runId}`);

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import AdminShell from "@/components/admin/AdminShell";
 import ProductCatalogAdmin from "@/components/admin/ProductCatalogAdmin";
+import ProductExperienceAdmin from "@/components/admin/ProductExperienceAdmin";
 import ProductLinkedIntakeCard from "@/components/admin/ProductLinkedIntakeCard";
 import ProductTipsCard from "@/components/admin/ProductTipsCard";
 import { productMissingData } from "@/lib/product-missing-data";
@@ -62,6 +63,7 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
         <ProductLinkedIntakeCard locale={locale} productId={product.id} condition={product.condition} isOwner={isProductIntakeOwner(user)} />
       </div>
       <ProductCatalogAdmin locale={locale} products={[product]} promo={promo} editorOnly />
+      <ProductExperienceAdmin productId={product.id} locale={locale} />
     </AdminShell>
   );
 }

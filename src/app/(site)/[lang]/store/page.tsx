@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 
-import PageIntro from "../../../../components/PageIntro";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
+import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
-import TrendingProductsCarousel from "../../../../components/store/TrendingProductsCarousel";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStorePage, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
+import { getProducts, getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStorePage, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
@@ -13,16 +12,20 @@ import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/s
 
 export const generateMetadata = async ({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> => {
-  const { lang: rawLang } = await params;
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   return createMetadata(
     lang,
     lang === "de" ? "Online Shop" : "Online Store",
     lang === "de" ? "Smartphones, Tablets und Zubehör mit klaren Angaben zu Zustand, Preis und Verfügbarkeit kaufen." : "Buy smartphones, tablets and accessories with clear condition, price and availability details.",
     "/store",
+    undefined,
+    { noindex: Boolean(valueOf(query.q).trim()) },
   );
 };
 
@@ -39,10 +42,22 @@ export default async function StorePage({ params, searchParams }: { params: Prom
   const sort = parseStoreSort(query.sort);
   const page = parseStorePage(query.page);
   const activeFilters = parseStoreCatalogFilters(query);
-  const [catalog, trendingProducts] = await Promise.all([
-    getStoreCatalog({ category, sort, page, pageSize: 24, locale, filters: activeFilters }),
+  const [catalog, trendingProducts, allProducts] = await Promise.all([
+    getStoreCatalog({ category, sort, page, pageSize: 24, locale, filters: activeFilters, merchandising: "storefront" }),
     getTrendingProducts(locale, 8),
+    getProducts(undefined, undefined, locale),
   ]);
+  const showTrending = page === 1
+    && sort === "featured"
+    && category === "all"
+    && !activeFilters.query
+    && activeFilters.brands.length === 0
+    && activeFilters.storages.length === 0
+    && activeFilters.conditions.length === 0
+    && activeFilters.accessoryTypes.length === 0
+    && !activeFilters.inStockOnly
+    && activeFilters.priceMin === undefined
+    && activeFilters.priceMax === undefined;
 
   const pageUrl = `${siteInfo.url}/${lang}/store`;
   const storeName = lang === "de" ? "Online Shop" : "Online Store";
@@ -65,20 +80,22 @@ export default async function StorePage({ params, searchParams }: { params: Prom
     <div className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <PageIntro
+      <StoreCommerceHeader
+        lang={locale}
         title={lang === "de" ? "Online Shop" : "Online Store"}
         subtitle={lang === "de" 
           ? "Smartphones, Tablets und Zubehör mit klar ausgewiesenem Zustand, Preis und Verfügbarkeit."
           : "Smartphones, tablets and accessories with clearly stated condition, price and availability."}
         eyebrow={lang === "de" ? "Marktplatz" : "Marketplace"}
+        query={activeFilters.query}
+        resultCount={catalog.total}
       />
 
-      <StoreCollectionLinks lang={locale} />
+      <StoreCollectionLinks lang={locale} products={allProducts} />
 
-      <section className="section-pad">
+      <section className="bg-store-ground py-6 md:py-8">
         <div className="container-page">
-          <TrendingProductsCarousel products={trendingProducts} lang={locale} />
-          <StoreGrid products={catalog.products} lang={locale} activeCategory={category} sortBy={sort} total={catalog.total} page={catalog.page} pages={catalog.pages} counts={catalog.counts} facets={catalog.facets} activeFilters={activeFilters} />
+          <StoreGrid products={catalog.products} trendingProducts={showTrending ? trendingProducts : []} lang={locale} activeCategory={category} sortBy={sort} total={catalog.total} page={catalog.page} pages={catalog.pages} counts={catalog.counts} facets={catalog.facets} activeFilters={activeFilters} showSearch={false} />
         </div>
       </section>
     </div>

@@ -17,7 +17,7 @@ type Context = { params: Promise<{ id: string }> };
 
 export async function GET(request: NextRequest, context: Context) {
   try {
-    const actor = authorizeRunRead(request);
+    const actor = await authorizeRunRead(request);
     const { id } = await context.params;
     const runId = await resolveProductIntakeRunId(parseRunReference(id));
     const detail = await getProductIntakeRunDetail(runId);

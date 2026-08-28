@@ -4,6 +4,7 @@ import CheckoutClient from "@/components/checkout/CheckoutClient";
 import { normalizeShippingMethod } from "@/lib/checkout";
 import { createMetadata } from "@/lib/metadata";
 import { requireLocale } from "@/lib/route-locale";
+import { hasActiveCouponCampaign } from "@/lib/coupon-repository";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function CheckoutPage({
   params: Promise<{ lang: string }>;
   searchParams: Promise<{ shipping?: string }>;
 }) {
-  const [{ lang }, query] = await Promise.all([params, searchParams]);
+  const [{ lang }, query, couponEnabled] = await Promise.all([params, searchParams, hasActiveCouponCampaign()]);
   const locale = lang === "en" ? "en" : "de";
 
   return (
@@ -49,6 +50,7 @@ export default async function CheckoutPage({
           // the last step: PayPal returned "PayPal is not configured" after the
           // customer had filled in the whole form.
           paypalEnabled={Boolean(process.env.PAYPAL_CLIENT_ID?.trim() && process.env.PAYPAL_CLIENT_SECRET?.trim())}
+          couponEnabled={couponEnabled}
         />
       </div>
     </section>

@@ -10,7 +10,7 @@ export default async function ProductReviewsAdminPage() {
 
   // Pending first: that is the queue an admin actually has to act on.
   const result = await query(`
-    SELECT r.id, r.author_name, r.rating, r.title, r.body, r.verified, r.status, r.locale, r.created_at,
+    SELECT r.id, r.author_name, r.rating, r.title, r.body, r.verified, r.status, r.locale, r.created_at, r.media_urls,
            p.title AS product_title, p.slug AS product_slug
     FROM product_reviews r
     JOIN products p ON p.id = r.product_id
@@ -30,6 +30,7 @@ export default async function ProductReviewsAdminPage() {
     status: String(row.status ?? "pending"),
     locale: String(row.locale ?? "de"),
     createdAt: row.created_at ? String(row.created_at) : new Date().toISOString(),
+    mediaUrls: Array.isArray(row.media_urls) ? row.media_urls.filter((value):value is string=>typeof value==="string") : [],
   }));
 
   const pendingCount = reviews.filter((review) => review.status === "pending").length;

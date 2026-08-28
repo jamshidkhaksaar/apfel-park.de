@@ -232,7 +232,6 @@ export const listRecentProductRevisions = async (limit = 50): Promise<ProductRev
 export const markOpenIntakeRunsStale = async (
   productId: string,
   reason: string,
-  _actor: ProductIntakeActor,
 ): Promise<number> => {
   const result = await query(
     `UPDATE product_intake_runs

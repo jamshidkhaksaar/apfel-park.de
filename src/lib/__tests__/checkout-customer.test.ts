@@ -3,18 +3,29 @@ import { describe, expect, it } from "vitest";
 import { normalizeCheckoutCustomer } from "../checkout";
 
 describe("normalizeCheckoutCustomer", () => {
-  it("requires a phone number and complete address for German delivery", () => {
+  it("requires a complete address for German delivery while keeping phone optional", () => {
     expect(() =>
       normalizeCheckoutCustomer(
         {
           name: "Customer",
           email: "customer@example.com",
-          address: { line1: "Teststraße 1", postalCode: "21109", city: "Hamburg", country: "DE" },
+          address: { line1: "", postalCode: "21109", city: "Hamburg", country: "DE" },
         },
         "germany",
         "de",
       ),
-    ).toThrow("Telefonnummer");
+    ).toThrow("Lieferadresse");
+
+    const resultWithoutPhone = normalizeCheckoutCustomer(
+      {
+        name: "Customer",
+        email: "customer@example.com",
+        address: { line1: "Teststraße 1", postalCode: "21109", city: "Hamburg", country: "DE" },
+      },
+      "germany",
+      "de",
+    );
+    expect(resultWithoutPhone.phone).toBeNull();
   });
 
   it("normalizes delivery contact data", () => {

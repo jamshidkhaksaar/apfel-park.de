@@ -94,7 +94,7 @@ const getStatusClassName = (status: BatchPhoneStatus): string => {
   if (status === "sold") return "border-green-500/30 bg-green-500/10 text-green-300";
   if (status === "listed") return "border-gold/30 bg-gold/10 text-gold";
   if (status === "returned" || status === "scrapped") return "border-red-500/30 bg-red-500/10 text-red-300";
-  return "border-white/10 bg-white/5 text-muted";
+  return "border-border bg-surface-strong text-muted";
 };
 
 const statusLabel = (status: BatchPhoneStatus, text: AdminDictionary["batchBuyPage"]): string =>
@@ -1261,7 +1261,7 @@ function ImeiScannerModal({
           <button
             type="button"
             onClick={() => setFlipPreview((value) => !value)}
-            className="absolute bottom-3 right-3 rounded-full border border-white/20 bg-black/70 px-3 py-1 text-xs font-semibold text-white backdrop-blur transition hover:border-gold/60 hover:text-gold"
+            className="absolute bottom-3 right-3 rounded-full border border-border bg-black/70 px-3 py-1 text-xs font-semibold text-white backdrop-blur transition hover:border-gold/60 hover:text-gold"
           >
             {text.flipPreview}
           </button>

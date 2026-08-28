@@ -24,7 +24,7 @@ export default function PageIntro({
             </span>
           ) : null}
 
-          <h1 className={`font-bold tracking-tight text-foreground ${compact ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl lg:text-5xl"}`}>
+          <h1 className={`text-balance [overflow-wrap:anywhere] font-bold tracking-tight text-foreground ${compact ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl lg:text-5xl"}`}>
             {title}
           </h1>
 

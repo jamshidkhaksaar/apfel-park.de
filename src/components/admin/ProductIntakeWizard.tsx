@@ -115,6 +115,8 @@ export default function ProductIntakeWizard({
       brand: research.brand ?? current.brand,
       model: research.model ?? current.model,
       category: (research.category as typeof current.category) ?? current.category,
+      sku: research.skuSuggestion ?? current.sku,
+      eprelId: research.eprelId ?? current.eprelId,
       featureBullets: research.features?.length ? research.features : current.featureBullets,
       specs: research.specs?.length ? research.specs : current.specs,
       variants: research.variants?.length

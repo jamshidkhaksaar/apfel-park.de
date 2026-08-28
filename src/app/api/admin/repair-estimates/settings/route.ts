@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createAdminDbClient } from '@/lib/admin-db';
 import { requireRepairEstimateUser } from '@/lib/repair-estimate-auth';
+import { rejectCrossSiteAdminMutation } from '@/lib/admin-csrf';
 import { getEstimateTemplateSettings } from '@/lib/repair-estimate-settings';
 import {
   isValidBic,
@@ -18,6 +19,8 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   const auth = await requireRepairEstimateUser();
   if (auth.response) return auth.response;
+  const csrf = rejectCrossSiteAdminMutation(request);
+  if (csrf) return csrf;
   try {
     const settings = normalizeTemplateSettings(await request.json());
     if (!settings.issuerText || !settings.accountHolder || !isValidIban(settings.iban) || !isValidBic(settings.bic)) {

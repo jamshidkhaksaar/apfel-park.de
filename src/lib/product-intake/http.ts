@@ -81,18 +81,18 @@ export const authorizeIntegrationMutation = (
   options: { ownerOnly?: boolean } = {},
 ) => integrationActor(request, rawBody, { requireIdempotency: true, ownerOnly: options.ownerOnly });
 
-export const authorizeRunRead = (request: NextRequest): ProductIntakeActor => {
-  const user = readSessionUserFromRequest(request);
+export const authorizeRunRead = async (request: NextRequest): Promise<ProductIntakeActor> => {
+  const user = await readSessionUserFromRequest(request);
   if (isProductIntakeOwner(user)) return { type: "admin", id: user!.email ?? user!.id };
   if (user) throw new ProductIntakeError("forbidden", "Product-intake owner access is required", 403);
   return integrationActor(request, "", { requireIdempotency: false }).actor;
 };
 
-export const authorizeOwnerDecision = (
+export const authorizeOwnerDecision = async (
   request: NextRequest,
   rawBody: string,
-): { actor: ProductIntakeActor; idempotencyKey: string } => {
-  const user = readSessionUserFromRequest(request);
+): Promise<{ actor: ProductIntakeActor; idempotencyKey: string }> => {
+  const user = await readSessionUserFromRequest(request);
   if (isProductIntakeOwner(user)) {
     const idempotencyKey = parseIdempotencyKey(request.headers.get(intakeHmacHeaders.idempotencyKey));
     return { actor: { type: "admin", id: user!.email ?? user!.id }, idempotencyKey };

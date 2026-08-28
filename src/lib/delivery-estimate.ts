@@ -41,3 +41,43 @@ export const deliveryCountryCode = (stored: unknown): string => {
   const value = typeof stored === "string" ? stored.trim().toUpperCase() : "";
   return /^[A-Z]{2}$/.test(value) ? value : "DE";
 };
+
+/**
+ * The shop-facing delivery promise shown on the product page.
+ *
+ * "Lieferung bis Do., 28.08." reads as a commitment; "1–3 Werktage" reads as a
+ * disclaimer, which is why German electronics retailers lead with the date.
+ * Distinct from `estimatedDeliveryDate` above: that one feeds Google Customer
+ * Reviews and deliberately skips only Sunday, whereas a customer-facing arrival
+ * date must not land on a Saturday the carrier will not deliver on.
+ *
+ * Public holidays are not modelled, so the copy says "bis"/"by" rather than
+ * promising an exact day.
+ */
+const CUSTOMER_CUTOFF_HOUR = 15;
+
+export const addBusinessDays = (from: Date, days: number): Date => {
+  const date = new Date(from);
+  let remaining = days;
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) remaining -= 1;
+  }
+  return date;
+};
+
+export const deliveryEstimate = (
+  locale: "de" | "en",
+  { maxBusinessDays = SHIPPING_BUSINESS_DAYS, now = new Date() }: { maxBusinessDays?: number; now?: Date } = {},
+): string => {
+  // Past the cut-off the parcel goes out tomorrow, so shift the whole window.
+  const offset = now.getHours() >= CUSTOMER_CUTOFF_HOUR ? 1 : 0;
+  const target = addBusinessDays(now, maxBusinessDays + offset);
+  const formatted = new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  }).format(target);
+  return locale === "de" ? `Lieferung bis ${formatted}` : `Delivery by ${formatted}`;
+};

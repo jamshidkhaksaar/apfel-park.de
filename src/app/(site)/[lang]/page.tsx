@@ -112,26 +112,26 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <HeroSlider lang={lang} media={heroMedia} hero={home.hero} />
 
       {/* Brands Bar */}
-      <section className="border-y border-border bg-surface-strong py-7">
+      <section className="border-y border-border bg-surface-strong py-4 md:py-7">
         <div className="container-page">
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
+          <div className="flex flex-col items-center justify-center gap-3 md:flex-row md:gap-10">
             <span className="shrink-0 text-[10px] uppercase tracking-[0.28em] text-gold/70 font-semibold">
               {lang === "de" ? "Verkauf & Reparatur" : "We Sell & Repair"}
             </span>
             <div className="mx-4 h-4 w-px bg-border hidden md:block" />
-            <ul className="flex flex-wrap items-center justify-center gap-5 md:gap-8" role="list">
+            <ul className="grid w-full max-w-sm grid-cols-6 gap-2 md:flex md:w-auto md:max-w-none md:flex-wrap md:items-center md:justify-center md:gap-8" role="list">
               {deviceBrands.map((brand) => (
-                <li key={brand.name} className="group flex items-center gap-2.5 transition-transform duration-200 hover:scale-105">
+                <li key={brand.name} className="group flex min-w-0 items-center justify-center md:gap-2.5 md:transition-transform md:duration-200 md:hover:scale-105">
                   {/* White chip so each mark shows in its own colour: the bar is
                       #121214 in dark and #f9f6f0 in light, and Apple's brand
                       black would disappear against one while Sony's white
                       disappears against the other. */}
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/5">
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6" style={{ color: brand.color }} aria-hidden="true">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/5 md:size-11">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="size-5 md:size-6" style={{ color: brand.color }} aria-hidden="true">
                       <path d={brand.path} />
                     </svg>
                   </div>
-                  <span className="text-sm font-bold tracking-tight text-muted transition-colors group-hover:text-gold">
+                  <span className="sr-only text-muted transition-colors group-hover:text-gold md:not-sr-only md:truncate md:text-sm md:font-bold md:tracking-tight">
                     {brand.name}
                   </span>
                 </li>

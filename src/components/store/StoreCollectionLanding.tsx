@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import PageIntro from "@/components/PageIntro";
+import StoreCommerceHeader from "@/components/store/StoreCommerceHeader";
 import StoreGrid from "@/components/store/StoreGrid";
 import type { Locale } from "@/lib/i18n";
 import {
@@ -74,30 +74,9 @@ export default async function StoreCollectionLanding({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(faq) }} />
 
-      <PageIntro title={copy.title} subtitle={copy.description} eyebrow={copy.eyebrow} />
+      <StoreCommerceHeader lang={locale} title={copy.title} subtitle={copy.description} eyebrow={copy.eyebrow} query={activeFilters.query} resultCount={catalog.total} />
 
-      <section className="border-b border-white/5 bg-surface/30 py-10">
-        <div className="container-page">
-          <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-start">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground md:text-3xl">{copy.introTitle}</h2>
-              {copy.intro.map((paragraph) => (
-                <p key={paragraph} className="mt-4 max-w-3xl leading-7 text-muted">{paragraph}</p>
-              ))}
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-              {copy.benefits.map((benefit) => (
-                <div key={benefit.title} className="rounded-2xl border border-gold/20 bg-gold/5 p-5">
-                  <h3 className="font-bold text-foreground">{benefit.title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-muted">{benefit.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-pad" id="angebote">
+      <section className="bg-store-ground py-6 md:py-8" id="angebote">
         <div className="container-page">
           <StoreGrid
             products={catalog.products}
@@ -110,15 +89,33 @@ export default async function StoreCollectionLanding({
             counts={catalog.counts}
             facets={catalog.facets}
             activeFilters={activeFilters}
+            showSearch={false}
           />
           {catalog.total === 0 ? (
-            <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-muted">
+            <div className="mt-8 rounded-2xl border border-border bg-store-card p-6 text-center text-muted">
               <p>{locale === "de" ? "Aktuell ist in dieser Kategorie kein Gerät verfügbar." : "No device is currently available in this collection."}</p>
               <Link href={`/${locale}/smartphones`} className="mt-3 inline-block font-semibold text-gold hover:underline">
                 {locale === "de" ? "Alle Smartphones ansehen" : "View all smartphones"}
               </Link>
             </div>
           ) : null}
+        </div>
+      </section>
+
+      <section className="border-y border-border/60 bg-surface/30 py-8">
+        <div className="container-page grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">{copy.introTitle}</h2>
+            {copy.intro.map((paragraph) => <p key={paragraph} className="mt-3 max-w-3xl text-sm leading-7 text-muted">{paragraph}</p>)}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            {copy.benefits.map((benefit) => (
+              <div key={benefit.title} className="rounded-xl border border-gold/20 bg-gold/5 p-4">
+                <h3 className="text-sm font-bold text-foreground">{benefit.title}</h3>
+                <p className="mt-1 text-xs leading-5 text-muted">{benefit.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -129,7 +126,7 @@ export default async function StoreCollectionLanding({
           </h2>
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
             {copy.faq.map((item) => (
-              <article key={item.question} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <article key={item.question} className="rounded-2xl border border-border bg-store-card p-6">
                 <h3 className="font-bold text-foreground">{item.question}</h3>
                 <p className="mt-3 text-sm leading-6 text-muted">{item.answer}</p>
               </article>

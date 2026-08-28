@@ -13,7 +13,7 @@ const adminRedirect = (request: NextRequest, error: string): NextResponse =>
   NextResponse.redirect(new URL(`/admin/marketplaces?error=${encodeURIComponent(error)}`, request.url));
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const user = readSessionUserFromRequest(request);
+  const user = await readSessionUserFromRequest(request);
   if (!isAdminUser(user) || !user?.email) return adminRedirect(request, "auth");
 
   const environment = request.nextUrl.searchParams.get("environment");

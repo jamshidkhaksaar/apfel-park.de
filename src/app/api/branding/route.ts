@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminUser } from "@/lib/admin-auth";
+import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { uploadBrandingAsset } from "@/lib/blob";
 import { createAdminDbClient } from "@/lib/admin-db";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
@@ -75,6 +76,8 @@ export async function POST(request: NextRequest) {
   if (!isAdminUser(user)) {
     return NextResponse.json({ error: messages.unauthorized }, { status: 401 });
   }
+  const csrf = rejectCrossSiteAdminMutation(request);
+  if (csrf) return csrf;
 
   try {
     const formData = await request.formData();

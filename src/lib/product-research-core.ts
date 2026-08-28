@@ -9,6 +9,8 @@ export type ProductResearchResult = {
   brand?: string;
   model?: string;
   category?: string;
+  skuSuggestion?: string | null;
+  eprelId?: string | null;
   specs?: Array<{ label: string; value: string }>;
   features?: string[];
   variants?: Array<{ color: string; storage: string; sku?: string; images?: string[] }>;
@@ -16,7 +18,17 @@ export type ProductResearchResult = {
   batteryDetails?: { included?: boolean; wattHours?: number };
   manufacturer?: { name?: string; address?: string; email?: string };
   euResponsiblePerson?: { name?: string; address?: string; email?: string };
-  energyLabel?: { efficiencyClass?: string; batteryEndurance?: string };
+  energyLabel?: {
+    efficiencyClass?: string;
+    batteryEndurance?: string;
+    batteryCycles?: number;
+    reliabilityClass?: string;
+    repairabilityClass?: string;
+    ipRating?: string;
+    labelImage?: string;
+    ficheDe?: string;
+    ficheEn?: string;
+  };
   gtinSuggestion?: string | null;
   countryOfOrigin?: string;
   safetyWarnings?: string[];
@@ -76,6 +88,12 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
   const gtinSuggestion = gtinRaw ? validatedGtin(gtinRaw) : null;
   const mpnRaw = text("mpn", 120);
   const mpnSuggestion = mpnRaw && !/^(?:n\/?a|none|unknown)$/i.test(mpnRaw) ? mpnRaw : null;
+  const skuRaw = text("sku", 80) || text("skuSuggestion", 80);
+  const eprelRaw = text("eprelId", 50) || text("eprelRegistrationNumber", 50) || text("eprel", 50);
+
+  const energyLabelRaw = value.energyLabel && typeof value.energyLabel === "object"
+    ? value.energyLabel as Record<string, unknown>
+    : null;
 
   return {
     title: text("title", 255),
@@ -84,6 +102,8 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
     brand: text("brand", 100),
     model: text("model", 160),
     category: text("category", 80),
+    skuSuggestion: skuRaw || null,
+    eprelId: eprelRaw || null,
     specs,
     features: strings("features", 300),
     variants,
@@ -105,10 +125,19 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
           email: textFrom(value.euResponsiblePerson as Record<string, unknown>, "email", 200),
         }
       : undefined,
-    energyLabel: value.energyLabel && typeof value.energyLabel === "object"
+    energyLabel: energyLabelRaw
       ? {
-          efficiencyClass: textFrom(value.energyLabel as Record<string, unknown>, "efficiencyClass", 10),
-          batteryEndurance: textFrom(value.energyLabel as Record<string, unknown>, "batteryEndurance", 60),
+          efficiencyClass: textFrom(energyLabelRaw, "efficiencyClass", 10) || textFrom(energyLabelRaw, "energyClass", 10),
+          batteryEndurance: textFrom(energyLabelRaw, "batteryEndurance", 60),
+          batteryCycles: typeof energyLabelRaw.batteryCycles === "number" && Number.isFinite(energyLabelRaw.batteryCycles)
+            ? Math.round(energyLabelRaw.batteryCycles)
+            : undefined,
+          repairabilityClass: textFrom(energyLabelRaw, "repairabilityClass", 10),
+          reliabilityClass: textFrom(energyLabelRaw, "reliabilityClass", 10),
+          ipRating: textFrom(energyLabelRaw, "ipRating", 20) || textFrom(energyLabelRaw, "ingressProtection", 20),
+          labelImage: textFrom(energyLabelRaw, "labelImage", 300),
+          ficheDe: textFrom(energyLabelRaw, "ficheDe", 300),
+          ficheEn: textFrom(energyLabelRaw, "ficheEn", 300),
         }
       : undefined,
     gtinSuggestion,

@@ -114,4 +114,14 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
   return paths;
 };
 
+export const canAccessAdminPath = (user: User | null, pathname: string): boolean => {
+  if (!user || !pathname.startsWith("/admin")) return false;
+  if (isAdminUser(user)) return true;
+  const role = getUserRole(user);
+  if (role !== "manager" && role !== "product_editor") return false;
+  return getAuthorizedPaths(user).some(
+    (allowed) => pathname === allowed || (allowed !== "/admin" && pathname.startsWith(`${allowed}/`)),
+  );
+};
+
 export const canManageMarketplaces = (user: User | null): boolean => canManageOrders(user);

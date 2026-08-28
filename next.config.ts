@@ -10,7 +10,7 @@ const LOCALE_ROUTES = [
   'about', 'accessories', 'cart', 'checkout', 'contact', 'delivery-returns',
   'device-conditions', 'faq', 'gaming', 'gebrauchte-handys', 'gebrauchte-iphones',
   'iphone-17', 'laptops', 'open-box', 'privacy', 'repairs', 'smartphones',
-  'store', 'tablets', 'terms', 'withdrawal',
+  'store', 'tablets', 'terms', 'withdrawal', 'ratgeber/smartphone-laenger-nutzen',
 ] as const;
 
 const localePrefixRedirects = LOCALE_ROUTES.flatMap((route) => [
@@ -114,26 +114,6 @@ const nextConfig: NextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin'
-          }
-        ]
-      },
-      // Ensure JS chunks are not aggressively cached
-      {
-        source: '/_next/static/chunks/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          }
-        ]
-      },
-      // Cache optimized images aggressively
-      {
-        source: '/_next/image/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
           }
         ]
       }

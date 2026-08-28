@@ -255,7 +255,18 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     },
   }));
 
-  return [...staticEntries, ...repairServiceEntries, ...accessoryCollectionEntries, ...catalogEntries, ...productEntries];
+  const guideEntries = locales.map((locale) => ({
+    url: `${siteInfo.url}/${locale}/ratgeber/smartphone-laenger-nutzen`,
+    alternates: {
+      languages: {
+        de: `${siteInfo.url}/de/ratgeber/smartphone-laenger-nutzen`,
+        en: `${siteInfo.url}/en/ratgeber/smartphone-laenger-nutzen`,
+        "x-default": `${siteInfo.url}/de/ratgeber/smartphone-laenger-nutzen`,
+      },
+    },
+  }));
+
+  return [...staticEntries, ...repairServiceEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...productEntries];
 };
 
 export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {

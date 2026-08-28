@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { raw, value } = await readJsonRequest(request);
-    const auth = authorizeOwnerDecision(request, raw);
+    const auth = await authorizeOwnerDecision(request, raw);
     if (auth.actor.type === "admin") {
       const csrf = rejectCrossSiteAdminMutation(request);
       if (csrf) return csrf;

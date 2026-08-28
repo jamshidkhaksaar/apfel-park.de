@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { loadDashboardStats } from "@/lib/admin-dashboard";
 import { readSessionUserFromRequest } from "@/lib/session";
+import { canManageOrders } from "@/lib/admin-auth";
 
 const execFileAsync = promisify(execFile);
 const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,9 +52,8 @@ const readActiveVisitors = async () => {
 };
 
 export async function GET(request: NextRequest) {
-  if (!readSessionUserFromRequest(request)) {
-    return unauthorized();
-  }
+  const user = await readSessionUserFromRequest(request);
+  if (!canManageOrders(user)) return unauthorized();
 
   try {
     const [activeUsers, recentRepairs, recentOrders] =

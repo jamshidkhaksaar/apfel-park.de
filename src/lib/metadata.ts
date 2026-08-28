@@ -17,6 +17,13 @@ const normalizeImageUrl = (value: string) => {
   return `${siteInfo.url}${value.startsWith("/") ? value : `/${value}`}`;
 };
 
+export const normalizeMetadataTitle = (value: string): string =>
+  value
+    .trim()
+    .replace(/\s*[–-]\s*Apfel Park Hamburg$/i, " – Hamburg")
+    .replace(/\s*\|\s*Apfel Park$/i, "")
+    .trim();
+
 export type CreateMetadataOptions = {
   /** Force noindex regardless of route settings (cart, checkout, …). */
   noindex?: boolean;
@@ -42,7 +49,7 @@ export const createMetadata = async (
   const routeMetadata = route ? route.locales[locale] : null;
   // Registered routes: admin/default route copy wins so /admin/seo overrides work.
   // Unregistered paths (products, articles, …): the page-supplied copy wins.
-  const resolvedTitle = routeMetadata ? routeMetadata.title || title : title;
+  const resolvedTitle = normalizeMetadataTitle(routeMetadata ? routeMetadata.title || title : title);
   const resolvedDescription = routeMetadata
     ? routeMetadata.description || description
     : description;

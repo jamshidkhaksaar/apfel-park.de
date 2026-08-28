@@ -46,7 +46,7 @@ export default async function ProductCatalogPage({ params }: { params: Promise<{
   );
 
   return (
-    <main className="section-pad bg-background">
+    <div className="section-pad bg-background">
       <div className="container-page">
         <nav className="mb-6 text-sm text-muted" aria-label={locale === "de" ? "Brotkrumen" : "Breadcrumb"}>
           <Link href={`/${locale}/store`} className="transition hover:text-gold">
@@ -105,6 +105,6 @@ export default async function ProductCatalogPage({ params }: { params: Promise<{
           })}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

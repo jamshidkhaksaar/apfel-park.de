@@ -4,6 +4,8 @@ import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
 import AdminShell from "@/components/admin/AdminShell";
+import { KpiTile, StockComposition } from "@/components/admin/AdminStats";
+import { formatPrice } from "@/lib/format";
 import type { DashboardStats } from "@/lib/admin-dashboard";
 
 type DashboardActivity = {
@@ -23,21 +25,9 @@ const WrenchIcon = () => (
   </svg>
 );
 
-const BagIcon = () => (
-  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-  </svg>
-);
-
 const CubeIcon = () => (
   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
-  </svg>
-);
-
-const StarIcon = () => (
-  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
   </svg>
 );
 
@@ -124,99 +114,14 @@ export default function DashboardClient({
 
   type AccentKey = 'gold' | 'emerald' | 'indigo' | 'rose';
 
-  const statCards: Array<{
-    label: string;
-    value: number;
-    note: string;
-    accent: AccentKey;
-    Icon: () => ReactNode;
-  }> = [
-    {
-      label: dict.dashboard.stats.repairs,
-      value: liveStats.repairs,
-      note: lang === "de" ? "Offene Servicefälle" : "Open service tickets",
-      accent: 'gold',
-      Icon: WrenchIcon,
-    },
-    {
-      label: dict.dashboard.stats.orders,
-      value: liveStats.orders,
-      note: lang === "de" ? "Warten auf Bearbeitung" : "Awaiting fulfillment",
-      accent: 'emerald',
-      Icon: BagIcon,
-    },
-    {
-      label: lang === "de" ? "Aktive Katalogeinträge" : "Active catalog listings",
-      value: liveStats.catalogListings,
-      note: lang === "de" ? "Veröffentlichte Produktseiten" : "Published product pages",
-      accent: 'indigo',
-      Icon: CubeIcon,
-    },
-    {
-      label: dict.dashboard.stats.reviews,
-      value: liveStats.reviews,
-      note: lang === "de" ? "Bisher gesammelt" : "Collected to date",
-      accent: 'rose',
-      Icon: StarIcon,
-    },
-    {
-      label: lang === "de" ? "Live Nutzer" : "Live Users",
-      value: liveStats.liveUsers,
-      note: lang === "de" ? "Aktive Besucher in den letzten 5 Min." : "Active visitors in the last 5 min.",
-      accent: 'emerald',
-      Icon: () => (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372A9.337 9.337 0 0021.75 18c0-1.385-.945-2.598-2.31-2.94A5.999 5.999 0 0012 5.25a5.999 5.999 0 00-7.44 9.81C3.195 15.402 2.25 16.615 2.25 18a9.337 9.337 0 004.125 1.5A9.38 9.38 0 009 19.128m6 0a9.38 9.38 0 01-6 0m6 0a8.962 8.962 0 00-6 0" />
-        </svg>
-      ),
-    },
-    {
-      label: lang === "de" ? "Ungelesene Chats" : "Unread Chats",
-      value: liveStats.unreadChats,
-      note: lang === "de" ? "Neue Kundennachrichten" : "New customer messages",
-      accent: 'gold',
-      Icon: () => (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12c0-4.97 4.365-9 9.75-9s9.75 4.03 9.75 9-4.365 9-9.75 9a10.7 10.7 0 01-4.18-.84L3 20.25l1.3-3.9A8.88 8.88 0 012.25 12z" />
-        </svg>
-      ),
-    },
-    {
-      label: lang === "de" ? "Verfügbare SKUs" : "In-stock SKUs",
-      value: liveStats.inStockSkus,
-      note: lang === "de" ? "Mindestens ein Stück verkaufbar" : "At least one unit sellable",
-      accent: 'emerald',
-      Icon: CubeIcon,
-    },
-    {
-      label: lang === "de" ? "Ausverkaufte SKUs" : "Out-of-stock SKUs",
-      value: liveStats.outOfStockSkus,
-      note: lang === "de" ? "Aktuell nicht bestellbar" : "Currently unavailable",
-      accent: 'rose',
-      Icon: CubeIcon,
-    },
-    {
-      label: lang === "de" ? "Verkaufbare Einheiten" : "Sellable units",
-      value: liveStats.sellableUnits,
-      note: lang === "de" ? "Bestand abzüglich Reserven und Puffer" : "On hand minus reservations and buffer",
-      accent: 'emerald',
-      Icon: CubeIcon,
-    },
-    {
-      label: lang === "de" ? "Reservierte Einheiten" : "Reserved units",
-      value: liveStats.reservedUnits,
-      note: lang === "de" ? "Für offene Bestellungen reserviert" : "Held for open orders",
-      accent: 'gold',
-      Icon: BagIcon,
-    },
-    {
-      label: lang === "de" ? "Niedriger Bestand" : "Low-stock SKUs",
-      value: liveStats.lowStockSkus,
-      note: lang === "de" ? "Nur noch 1 bis 3 Stück" : "Only 1 to 3 units left",
-      accent: 'gold',
-      Icon: CubeIcon,
-    },
-  ];
+  const attentionItems = [
+    { label: lang === "de" ? "Offene Bestellungen" : "Pending orders", count: liveStats.orders, href: "/admin/orders", tone: "bg-gold/15 text-gold" },
+    { label: lang === "de" ? "Neue Reparaturen" : "New repairs", count: liveStats.repairs, href: "/admin/repairs", tone: "bg-gold/15 text-gold" },
+    { label: lang === "de" ? "Ungelesene Chats" : "Unread chats", count: liveStats.unreadChats, href: "/admin/chat", tone: "bg-gold/15 text-gold" },
+    { label: lang === "de" ? "Ausverkaufte SKUs" : "Out-of-stock SKUs", count: liveStats.outOfStockSkus, href: "/admin/inventory", tone: "bg-red/15 text-red" },
+    { label: lang === "de" ? "Fehlgeschlagene Syncs" : "Failed syncs", count: liveStats.failedSyncs, href: "/admin/marketplaces", tone: "bg-red/15 text-red" },
+    { label: lang === "de" ? "Wartende Syncs" : "Queued syncs", count: liveStats.pendingSyncs, href: "/admin/marketplaces", tone: "bg-gold/15 text-gold" },
+  ].filter((item) => item.count > 0);
 
   const getActivityStatus = (type: DashboardActivity["type"], status: string | null) => {
     const normalized = status?.toLowerCase().trim();
@@ -329,54 +234,87 @@ export default function DashboardClient({
   return (
     <AdminShell title={dict.dashboard.title}>
 
-      {/* ── Section label ── */}
-      <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
-        Live Metrics
-      </p>
-      <p className="-mt-3 mb-4 text-xs text-muted/50">
-        {lang === "de" ? "Automatisch aktualisiert: " : "Automatically refreshed: "}
-        <time suppressHydrationWarning>
-          {new Date(liveStats.updatedAt).toLocaleString(lang === "de" ? "de-DE" : "en-GB")}
-        </time>
-      </p>
+      {/* ── Business KPIs ──
+           Counts of pending work told you what to do next but never how the shop
+           is doing. Revenue and orders lead now, each against the previous 30
+           days. Deliberately no time-series chart: at the current order volume it
+           would be a flat line, and a flat line reads as "broken". */}
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-sm font-semibold text-foreground">
+          {lang === "de" ? "Letzte 30 Tage" : "Last 30 days"}
+        </h2>
+        <p className="text-xs text-muted">
+          {lang === "de" ? "Aktualisiert " : "Updated "}
+          <time suppressHydrationWarning>
+            {new Date(liveStats.updatedAt).toLocaleTimeString(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
+          </time>
+        </p>
+      </div>
 
-      {/* ── Stat cards ── */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {statCards.map(({ label, value, note, accent, Icon }) => {
-          const s = accentStyles[accent];
-          return (
-            <div
-              key={label}
-              className="relative overflow-hidden rounded-2xl border border-white/8 bg-surface p-6 transition-all duration-200 hover:border-white/12"
-            >
-              {/* Corner glow */}
-              <div
-                className={`absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-15 ${s.glow}`}
-                aria-hidden="true"
-              />
+        <KpiTile
+          locale={lang}
+          label={lang === "de" ? "Umsatz" : "Revenue"}
+          value={formatPrice(lang, liveStats.revenue30d.current)}
+          trend={liveStats.revenue30d}
+          sub={lang === "de" ? "bezahlt, ohne Erstattungen" : "paid, excluding refunds"}
+        />
+        <KpiTile
+          locale={lang}
+          label={lang === "de" ? "Bestellungen" : "Orders"}
+          value={String(liveStats.orders30d.current)}
+          trend={liveStats.orders30d}
+        />
+        <KpiTile
+          locale={lang}
+          label={lang === "de" ? "Ø Bestellwert" : "Avg. order value"}
+          value={liveStats.orders30d.current > 0 ? formatPrice(lang, liveStats.averageOrderValue) : "—"}
+        />
+        <KpiTile
+          locale={lang}
+          label={lang === "de" ? "Aktive Artikel" : "Active listings"}
+          value={String(liveStats.catalogListings)}
+          sub={lang === "de" ? `${liveStats.sellableUnits} Einheiten verkäuflich` : `${liveStats.sellableUnits} units sellable`}
+        />
+      </div>
 
-              {/* Icon pill */}
-              <div className={`inline-flex items-center justify-center rounded-lg p-2 ${s.pill}`}>
-                <span style={{ color: s.hex }}>
-                  <Icon />
-                </span>
-              </div>
+      {/* ── Needs attention ──
+           Only queues with something in them, each a direct link. Doubles as
+           navigation: you land on the work instead of hunting through a menu. */}
+      {attentionItems.length > 0 ? (
+        <div className="mt-4 rounded-2xl border border-border bg-surface p-5">
+          <h2 className="text-sm font-semibold text-foreground">
+            {lang === "de" ? "Braucht Aufmerksamkeit" : "Needs attention"}
+          </h2>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {attentionItems.map((item) => (
+              <li key={`${item.href}-${item.label}`}>
+                <Link
+                  href={item.href}
+                  className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 text-sm transition hover:border-gold/50 hover:bg-gold/5"
+                >
+                  <span className="truncate text-foreground">{item.label}</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${item.tone}`}>
+                    {item.count}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="mt-4 rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+          {lang === "de" ? "Nichts offen — alle Warteschlangen sind leer." : "Nothing open — every queue is clear."}
+        </p>
+      )}
 
-              {/* Number */}
-              <p className={`mt-4 font-mono text-5xl font-bold tabular-nums leading-none ${s.number}`}>
-                {String(value).padStart(2, '0')}
-              </p>
-
-              {/* Label */}
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                {label}
-              </p>
-
-              {/* Note */}
-              <p className="mt-3 text-xs text-muted/50">{note}</p>
-            </div>
-          );
-        })}
+      <div className="mt-4">
+        <StockComposition
+          locale={lang}
+          inStock={liveStats.inStockSkus}
+          lowStock={liveStats.lowStockSkus}
+          outOfStock={liveStats.outOfStockSkus}
+        />
       </div>
 
       {/* ── Quick actions ── */}
@@ -391,7 +329,7 @@ export default function DashboardClient({
               <Link
                 key={path}
                 href={path}
-                className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-white/8 bg-surface p-5 transition-all duration-200 hover:border-white/14 hover:bg-surface-strong/60"
+                className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-5 transition-all duration-200 hover:border-border hover:bg-surface-strong/60"
               >
                 {/* Icon */}
                 <div
@@ -428,7 +366,7 @@ export default function DashboardClient({
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
 
         {/* Recent Activity */}
-        <div className="rounded-2xl border border-white/8 bg-surface p-6">
+        <div className="rounded-2xl border border-border bg-surface p-6">
           <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
             Recent Activity
           </p>
@@ -438,7 +376,7 @@ export default function DashboardClient({
               return (
                 <li
                   key={item.id}
-                  className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-white/4"
+                  className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-surface-strong"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${cfg.dot}`} />
@@ -461,12 +399,12 @@ export default function DashboardClient({
         </div>
 
         {/* System */}
-        <div className="rounded-2xl border border-white/8 bg-surface p-6">
+        <div className="rounded-2xl border border-border bg-surface p-6">
           <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
             System
           </p>
           <ul className="space-y-3">
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
               <div className="flex items-center gap-3">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 <span className="text-xs text-muted/80">{lang === "de" ? "Hosting" : "Hosting"}</span>
@@ -476,7 +414,7 @@ export default function DashboardClient({
               </span>
             </li>
 
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
               <div className="flex items-center gap-3">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 <span className="text-xs text-muted/80">{lang === "de" ? "Datenbank" : "Database"}</span>
@@ -484,7 +422,7 @@ export default function DashboardClient({
               <span className="font-mono text-[10px] tabular-nums text-emerald-400/80">PostgreSQL</span>
             </li>
 
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
               <div className="flex items-center gap-3">
                 <span className={`h-1.5 w-1.5 rounded-full ${shopOpen ? 'bg-emerald-400' : 'bg-muted/40'}`} />
                 <span className="text-xs text-muted/80">{lang === "de" ? "Öffnungszeiten" : "Shop Hours"}</span>
@@ -494,7 +432,7 @@ export default function DashboardClient({
               </span>
             </li>
 
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
               <div className="flex items-center gap-3">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 <span className="text-xs text-muted/80">{lang === "de" ? "Dateispeicher" : "File Storage"}</span>
@@ -504,7 +442,7 @@ export default function DashboardClient({
               </span>
             </li>
 
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
               <div className="flex items-center gap-3">
                 <span className={`h-1.5 w-1.5 rounded-full ${liveStats.failedSyncs > 0 ? 'bg-rose-400' : liveStats.pendingSyncs > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
                 <span className="text-xs text-muted/80">{lang === "de" ? "Kanalsynchronisierung" : "Channel synchronization"}</span>
@@ -518,7 +456,7 @@ export default function DashboardClient({
               </span>
             </li>
 
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors duration-150">
+            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
               <div className="flex items-center gap-3">
                 <span className={`h-1.5 w-1.5 rounded-full ${liveStats.lastSyncedAt ? 'bg-emerald-400' : 'bg-muted/40'}`} />
                 <span className="text-xs text-muted/80">{lang === "de" ? "Letzte erfolgreiche Synchronisierung" : "Last successful synchronization"}</span>

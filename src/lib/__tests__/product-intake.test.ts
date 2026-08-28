@@ -10,7 +10,7 @@ import { findSensitiveDataIssues } from "../product-intake/redaction";
 import { parseCreateRunInput, parseProductProposal, parseRecordAssetInput, parseRunReference } from "../product-intake/schemas";
 import { isApprovedProposalSource } from "../product-intake/source-policy";
 import { transitionDecision } from "../product-intake/state";
-import type { ProductIntakeAsset, ProductIntakeRun, ProductMatchCandidate } from "../product-intake/types";
+import type { ProductIntakeAsset, ProductIntakeRun, ProductMatchCandidate, ProposalFact } from "../product-intake/types";
 import { validateProposalMatch } from "../product-intake/validation";
 
 const secret = "s".repeat(64);
@@ -175,11 +175,11 @@ describe("product-intake approvals and preview", () => {
       { id: "apple", kind: "manufacturer", url: "https://support.apple.com/example", title: "Apple" },
       { id: "shop", kind: "shop_record", url: "https://apfel-park.de/admin/product-intake", title: "Safi intake" },
     ],
-    facts: [
+    facts: ([
       ["product.title", "Apple iPhone 17 256 GB"], ["product.brand", "Apple"], ["product.model", "iPhone 17"],
       ["product.hardwareModel", "A3520"], ["product.storage", "256 GB"], ["product.color", "White"],
       ["product.category", "smartphones"], ["target.gtin", "4006381333931"], ["target.mpn", "M123"],
-    ].map(([field, value]) => ({ field, value, sourceUrl: "https://support.apple.com/example", sourceType: "manufacturer" as const, retrievedAt: "2026-08-19T00:00:00.000Z", confidence: 0.99 })).concat([
+    ] as Array<[string, string | number | boolean]>).map<ProposalFact>(([field, value]) => ({ field, value, sourceUrl: "https://support.apple.com/example", sourceType: "manufacturer", retrievedAt: "2026-08-19T00:00:00.000Z", confidence: 0.99 })).concat([
       { field: "changes.price", value: 899, sourceUrl: "https://apfel-park.de/admin/product-intake", sourceType: "shop_record" as const, retrievedAt: "2026-08-19T00:00:00.000Z", confidence: 1 },
       { field: "changes.inventory.mode", value: "set", sourceUrl: "https://apfel-park.de/admin/product-intake", sourceType: "shop_record" as const, retrievedAt: "2026-08-19T00:00:00.000Z", confidence: 1 },
       { field: "changes.inventory.quantity", value: 2, sourceUrl: "https://apfel-park.de/admin/product-intake", sourceType: "shop_record" as const, retrievedAt: "2026-08-19T00:00:00.000Z", confidence: 1 },

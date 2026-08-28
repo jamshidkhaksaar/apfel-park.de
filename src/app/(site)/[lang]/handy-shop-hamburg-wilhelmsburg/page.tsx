@@ -157,15 +157,7 @@ export default async function HamburgWilhelmsburgStorePage({
       { "@type": "ListItem", position: 2, name: content.title, item: pageUrl },
     ],
   };
-  const faq = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: content.faq.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: { "@type": "Answer", text: item.answer },
-    })),
-  };
+
   const webPage = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -183,7 +175,7 @@ export default async function HamburgWilhelmsburgStorePage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(webPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(itemList) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(faq) }} />
+
 
       <PageIntro title={content.title} subtitle={content.description} eyebrow={content.eyebrow} />
 
@@ -249,7 +241,7 @@ export default async function HamburgWilhelmsburgStorePage({
         </div>
       </section>
 
-      <section className="section-pad" id="angebote" aria-labelledby="local-inventory-heading">
+      <section className="bg-store-ground py-10 md:py-14" id="angebote" aria-labelledby="local-inventory-heading">
         <div className="container-page">
           <div className="mb-8 max-w-3xl">
             <h2 id="local-inventory-heading" className="text-2xl font-bold text-foreground md:text-3xl">{content.inventoryTitle}</h2>

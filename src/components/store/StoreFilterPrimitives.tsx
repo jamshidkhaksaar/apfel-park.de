@@ -26,7 +26,7 @@ export function FilterSection({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="group flex min-h-8 w-full items-center justify-between gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+        className="group flex min-h-11 w-full items-center justify-between gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         aria-expanded={open}
       >
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -86,7 +86,7 @@ export function Checklist({
         return (
           <label
             key={option.value}
-            className={`group flex min-h-10 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition-colors ${
+            className={`group flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition-colors ${
               checked
                 ? "border-gold/35 bg-gold/10"
                 : "border-transparent hover:border-border/70 hover:bg-surface-strong/50"
@@ -102,7 +102,7 @@ export function Checklist({
               aria-hidden="true"
               className={`pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all peer-focus-visible:ring-2 peer-focus-visible:ring-gold peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface ${
                 checked
-                  ? "border-gold bg-gold text-black shadow-[0_0_0_3px_rgba(201,161,74,0.12)]"
+                  ? "border-gold bg-gold text-black shadow-[0_0_0_3px_var(--gold-pulse)]"
                   : "border-border bg-background/50 text-transparent group-hover:border-gold/60"
               }`}
             >
@@ -129,7 +129,7 @@ export function Checklist({
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="min-h-9 rounded-lg px-3 text-xs font-semibold text-gold transition hover:bg-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
+          className="min-h-11 rounded-lg px-3 text-xs font-semibold text-gold transition hover:bg-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
         >
           {expanded ? showLessLabel : `${showMoreLabel} (${options.length - initialVisible})`}
         </button>

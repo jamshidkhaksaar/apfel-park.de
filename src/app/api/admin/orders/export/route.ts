@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createAdminDbClient } from "@/lib/admin-db";
 import { readSessionUser } from "@/lib/session";
+import { canManageOrders } from "@/lib/admin-auth";
 
 type OrderExportRow = {
   order_number: number | null;
@@ -12,6 +13,9 @@ type OrderExportRow = {
   provider: string | null;
   shipping_method: string | null;
   total_amount: number | string | null;
+  subtotal_amount: number | string | null;
+  discount_amount: number | string | null;
+  coupon_code: string | null;
   currency: string | null;
   created_at: string | null;
 };
@@ -43,14 +47,14 @@ const escapeCsv = (value: unknown): string => {
 
 export async function GET() {
   const user = await readSessionUser();
-  if (!user) {
+  if (!canManageOrders(user)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const admin = createAdminDbClient();
   const { data, error } = await admin
     .from("orders")
-    .select("order_number,customer_name,customer_email,status,payment_status,provider,shipping_method,total_amount,currency,created_at")
+    .select("order_number,customer_name,customer_email,status,payment_status,provider,shipping_method,subtotal_amount,coupon_code,discount_amount,total_amount,currency,created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -58,7 +62,7 @@ export async function GET() {
   }
 
   const rows = (data ?? []) as OrderExportRow[];
-  const header = ["order_number", "customer_name", "customer_email", "status", "payment_status", "provider", "shipping_method", "total_amount", "currency", "created_at"];
+  const header = ["order_number", "customer_name", "customer_email", "status", "payment_status", "provider", "shipping_method", "subtotal_amount", "coupon_code", "discount_amount", "total_amount", "currency", "created_at"];
 
   const csvRows = rows.map((row) =>
     (() => {
@@ -71,6 +75,9 @@ export async function GET() {
         row.payment_status ?? "",
         row.provider ?? "",
         row.shipping_method ?? "",
+        row.subtotal_amount ?? "",
+        row.coupon_code ?? "",
+        row.discount_amount ?? "",
         Number.isFinite(amount) ? amount.toString() : "",
         row.currency ?? "EUR",
         row.created_at ?? "",

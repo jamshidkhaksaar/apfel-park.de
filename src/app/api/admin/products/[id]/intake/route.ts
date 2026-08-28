@@ -15,7 +15,7 @@ const PRODUCT_SELECT = `SELECT id,title,subtitle,description,category,condition,
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    authorizeProductStaff(request);
+    await authorizeProductStaff(request);
     const { id } = await context.params;
     if (!uuidPattern.test(id)) throw new SchemaValidationError(["product id must be a UUID"]);
     const [productResult, featuredResult, runs, revisions] = await Promise.all([

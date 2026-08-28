@@ -139,7 +139,7 @@ export const productChannelPayload = (value: ProductChannelFieldState) => ({
   amazonRenewedApproved: value.amazonRenewedApproved,
 });
 
-const inputClass = "mt-2 w-full rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground";
+const inputClass = "mt-2 w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors";
 const labelClass = "text-[11px] font-semibold uppercase tracking-[0.18em] text-muted";
 
 const TriStateSelect = ({
@@ -317,7 +317,7 @@ export function ProductChannelFields({
       ) : null}
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <div className="rounded-2xl border border-border/60 bg-black/10 p-4">
+        <div className="rounded-2xl border border-border/80 bg-surface-strong/60 p-4">
           <p className={labelClass}>Google Merchant</p>
           <label className="mt-3 block">
             <span className="text-xs text-muted">{locale === "de" ? "Google-Produktkategorie (optional)" : "Google product category (optional)"}</span>
@@ -325,19 +325,19 @@ export function ProductChannelFields({
           </label>
         </div>
 
-        <div className="rounded-2xl border border-border/60 bg-black/10 p-4 xl:col-span-2">
+        <div className="rounded-2xl border border-border/80 bg-surface-strong/60 p-4 xl:col-span-2">
           <p className={labelClass}>eBay.de</p>
           <div className="mt-3 flex gap-2">
-            <input value={ebayQuery} onChange={(event) => setEbayQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void searchCategories(); } }} placeholder={locale === "de" ? "Produkt oder Kategorie suchen" : "Search product or category"} className="min-w-0 flex-1 rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-sm text-foreground" />
-            <button type="button" disabled={loading || ebayQuery.trim().length < 2} onClick={searchCategories} className="rounded-xl border border-gold/30 px-4 py-2 text-xs font-semibold text-gold disabled:opacity-50">
+            <input value={ebayQuery} onChange={(event) => setEbayQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void searchCategories(); } }} placeholder={locale === "de" ? "Produkt oder Kategorie suchen" : "Search product or category"} className="min-w-0 flex-1 rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted/60 focus:border-gold focus:outline-none" />
+            <button type="button" disabled={loading || ebayQuery.trim().length < 2} onClick={searchCategories} className="rounded-xl border border-gold/40 bg-gold/15 px-4 py-2 text-xs font-semibold text-gold hover:bg-gold/25 disabled:opacity-50 transition">
               {loading ? "…" : locale === "de" ? "Suchen" : "Search"}
             </button>
           </div>
-          {value.ebayCategoryId ? <p className="mt-2 text-xs text-emerald-300">{value.ebayCategoryName} · {value.ebayCategoryId}</p> : null}
+          {value.ebayCategoryId ? <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-300">{value.ebayCategoryName} · {value.ebayCategoryId}</p> : null}
           {suggestions.length > 0 ? (
-            <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-border/60 bg-background p-2">
+            <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-border/80 bg-surface p-2">
               {suggestions.map((suggestion) => (
-                <button key={suggestion.categoryId} type="button" onClick={() => selectCategory(suggestion)} className="block w-full rounded-lg px-3 py-2 text-left text-xs text-foreground hover:bg-gold/10">
+                <button key={suggestion.categoryId} type="button" onClick={() => selectCategory(suggestion)} className="block w-full rounded-lg px-3 py-2 text-left text-xs text-foreground hover:bg-gold/15">
                   {suggestion.breadcrumb}
                 </button>
               ))}
@@ -372,10 +372,10 @@ export function ProductChannelFields({
                 : (locale === "de" ? "Optionale Merkmale für bessere eBay-Sichtbarkeit anzeigen" : "Show optional aspects for better eBay visibility")}
             </button>
           ) : null}
-          {lookupError ? <p className="mt-2 text-xs text-red-400">{lookupError}</p> : null}
+          {lookupError ? <p className="mt-2 text-xs text-red-500">{lookupError}</p> : null}
         </div>
 
-        <div className="rounded-2xl border border-border/60 bg-black/10 p-4 xl:col-span-3">
+        <div className="rounded-2xl border border-border/80 bg-surface-strong/60 p-4 xl:col-span-3">
           <p className={labelClass}>Amazon.de {locale === "de" ? "Vorbereitung" : "preparation"}</p>
           <div className="mt-3 grid gap-4 md:grid-cols-3">
             <label><span className="text-xs text-muted">{locale === "de" ? "Amazon-Produkttyp" : "Amazon product type"}</span><input placeholder="CELLULAR_PHONE" value={value.amazonProductType} onChange={(event) => update("amazonProductType", event.target.value.toUpperCase().replace(/\s+/g, "_"))} className={inputClass} /></label>

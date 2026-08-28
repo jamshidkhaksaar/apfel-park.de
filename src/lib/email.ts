@@ -267,6 +267,8 @@ export type PaidOrderAdminEmailData = {
   items: unknown;
   subtotalAmount: number | string | null;
   shippingAmount: number | string | null;
+  couponCode?: string | null;
+  discountAmount?: number | string | null;
   totalAmount: number | string;
   currency: string | null;
   adminUrl?: string;
@@ -354,6 +356,7 @@ export const buildPaidOrderAdminEmail = (data: PaidOrderAdminEmailData) => {
     ...itemLines,
     "",
     `Zwischensumme: ${formatMoney(data.subtotalAmount)}`,
+    ...(toFiniteNumber(data.discountAmount) ? [`Gutschein${data.couponCode ? ` ${data.couponCode}` : ""}: -${formatMoney(data.discountAmount ?? null)}`] : []),
     `Versand: ${formatMoney(data.shippingAmount)}`,
     `Gesamt: ${formatMoney(data.totalAmount)}`,
     "",
@@ -386,6 +389,7 @@ export const buildPaidOrderAdminEmail = (data: PaidOrderAdminEmailData) => {
       </table>
       <p style="margin-top:20px;text-align:right;">
         Zwischensumme: ${escapeHtml(formatMoney(data.subtotalAmount))}<br />
+        ${toFiniteNumber(data.discountAmount) ? `Gutschein${data.couponCode ? ` ${escapeHtml(data.couponCode)}` : ""}: -${escapeHtml(formatMoney(data.discountAmount ?? null))}<br />` : ""}
         Versand: ${escapeHtml(formatMoney(data.shippingAmount))}<br />
         <strong>Gesamt: ${escapeHtml(formatMoney(data.totalAmount))}</strong>
       </p>

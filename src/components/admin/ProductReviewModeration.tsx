@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -15,6 +16,7 @@ export type PendingReviewRow = {
   status: string;
   locale: string;
   createdAt: string;
+  mediaUrls: string[];
 };
 
 export default function ProductReviewModeration({
@@ -87,6 +89,7 @@ export default function ProductReviewModeration({
           </p>
           {review.title ? <p className="mt-3 font-semibold text-foreground">{review.title}</p> : null}
           <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted">{review.body}</p>
+          {review.mediaUrls.length ? <div className="mt-4 flex gap-3 overflow-x-auto">{review.mediaUrls.map(value=>{const url=value.startsWith("/uploads/reviews/")?value:`/api/admin/reviews/assets/${encodeURIComponent(value)}`;return <a key={value} href={url} target="_blank" rel="noreferrer" className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-border bg-white"><Image src={url} alt="" fill sizes="112px" className="object-cover" unoptimized /></a>})}</div> : null}
           <div className="mt-4 flex flex-wrap gap-2">
             {review.status !== "approved" ? (
               <button

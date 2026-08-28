@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deliveryCountryCode, estimatedDeliveryDate } from "@/lib/delivery-estimate";
+import { addBusinessDays, deliveryCountryCode, deliveryEstimate, estimatedDeliveryDate } from "@/lib/delivery-estimate";
 
 describe("estimatedDeliveryDate", () => {
   it("uses the upper bound of the stated 1-3 business day shipping promise", () => {
@@ -40,5 +40,33 @@ describe("deliveryCountryCode", () => {
     expect(deliveryCountryCode("")).toBe("DE");
     expect(deliveryCountryCode(null)).toBe("DE");
     expect(deliveryCountryCode(undefined)).toBe("DE");
+  });
+});
+
+describe("deliveryEstimate (customer-facing product page promise)", () => {
+  it("never lands on a weekend", () => {
+    for (let start = 17; start <= 30; start += 1) {
+      for (let days = 1; days <= 5; days += 1) {
+        const day = addBusinessDays(new Date(`2026-08-${String(start).padStart(2, "0")}T09:00:00`), days).getDay();
+        expect(day).not.toBe(0);
+        expect(day).not.toBe(6);
+      }
+    }
+  });
+
+  it("skips the weekend when counting forward", () => {
+    // Friday 2026-08-21 + 1 business day = Monday 2026-08-24
+    expect(addBusinessDays(new Date("2026-08-21T09:00:00"), 1).getDate()).toBe(24);
+  });
+
+  it("shifts by one business day after the afternoon cut-off", () => {
+    const before = deliveryEstimate("de", { now: new Date("2026-08-24T09:00:00") });
+    const after = deliveryEstimate("de", { now: new Date("2026-08-24T18:00:00") });
+    expect(before).not.toBe(after);
+  });
+
+  it("localises the label", () => {
+    expect(deliveryEstimate("de", { now: new Date("2026-08-24T09:00:00") })).toMatch(/^Lieferung bis /);
+    expect(deliveryEstimate("en", { now: new Date("2026-08-24T09:00:00") })).toMatch(/^Delivery by /);
   });
 });

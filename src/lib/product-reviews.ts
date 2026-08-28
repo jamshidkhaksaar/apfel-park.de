@@ -27,6 +27,7 @@ export type ProductReview = {
   verified: boolean;
   locale: string;
   createdAt: string;
+  mediaUrls: string[];
 };
 
 export type ProductRatingSummary = {
@@ -77,6 +78,7 @@ export type SubmitReviewInput = {
   locale: string;
   orderId?: string | null;
   token?: string | null;
+  mediaUrls?: string[];
 };
 
 export type SubmitReviewResult =
@@ -101,8 +103,8 @@ export async function submitProductReview(input: SubmitReviewInput): Promise<Sub
 
   try {
     const result = await query(
-      `INSERT INTO product_reviews (product_id, order_id, author_name, rating, title, body, verified, status, locale)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8)
+      `INSERT INTO product_reviews (product_id, order_id, author_name, rating, title, body, verified, status, locale, media_urls)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8, $9::text[])
        ON CONFLICT (order_id, product_id) WHERE order_id IS NOT NULL DO NOTHING
        RETURNING id`,
       [
@@ -114,6 +116,7 @@ export async function submitProductReview(input: SubmitReviewInput): Promise<Sub
         body,
         verified,
         input.locale === "en" ? "en" : "de",
+        verified ? (input.mediaUrls ?? []).slice(0,3) : [],
       ],
     );
     if (result.rowCount === 0) return { ok: false, error: "duplicate" };
@@ -127,7 +130,7 @@ export async function submitProductReview(input: SubmitReviewInput): Promise<Sub
 export async function getApprovedReviews(productId: string, limit = 20): Promise<ProductReview[]> {
   try {
     const result = await query(
-      `SELECT id, product_id, author_name, rating, title, body, verified, locale, created_at
+      `SELECT id, product_id, author_name, rating, title, body, verified, locale, created_at, media_urls
        FROM product_reviews
        WHERE product_id = $1 AND status = 'approved'
        ORDER BY verified DESC, created_at DESC
@@ -144,6 +147,7 @@ export async function getApprovedReviews(productId: string, limit = 20): Promise
       verified: Boolean(row.verified),
       locale: String(row.locale ?? "de"),
       createdAt: row.created_at ? String(row.created_at) : new Date().toISOString(),
+      mediaUrls: Array.isArray(row.media_urls) ? row.media_urls.filter((url):url is string=>typeof url==="string"&&url.startsWith("/uploads/reviews/")) : [],
     }));
   } catch (error) {
     console.error("getApprovedReviews failed:", error);
@@ -165,5 +169,29 @@ export async function getRatingSummary(productId: string): Promise<ProductRating
   } catch (error) {
     console.error("getRatingSummary failed:", error);
     return null;
+  }
+}
+
+export async function getRatingSummaries(productIds: string[]): Promise<Record<string, ProductRatingSummary>> {
+  const ids = Array.from(new Set(productIds.filter(Boolean))).slice(0, 100);
+  if (ids.length === 0) return {};
+  try {
+    const result = await query(
+      `SELECT product_id, round(avg(rating)::numeric, 1)::float AS average, count(*)::int AS count
+       FROM product_reviews
+       WHERE product_id = ANY($1::uuid[]) AND status = 'approved'
+       GROUP BY product_id`,
+      [ids],
+    );
+    return (result.rows as Array<{ product_id: string; average: number; count: number }>).reduce<Record<string, ProductRatingSummary>>(
+      (summaries, row) => {
+        summaries[String(row.product_id)] = { average: Number(row.average), count: Number(row.count) };
+        return summaries;
+      },
+      {},
+    );
+  } catch (error) {
+    console.error("getRatingSummaries failed:", error);
+    return {};
   }
 }

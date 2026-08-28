@@ -65,10 +65,10 @@ export default function ProductGallery({ title, images }: Props) {
     "absolute top-1/2 z-10 -translate-y-1/2 rounded-full border border-border/60 bg-background/80 p-2 text-foreground backdrop-blur transition hover:border-gold/40 hover:text-gold";
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-hidden rounded-[32px] border border-border/60 bg-[#f5f5f5] p-4 shadow-2xl">
+    <div className="space-y-3 sm:space-y-4">
+      <div className="overflow-hidden rounded-2xl border border-border bg-white p-2 sm:p-4">
         <div
-          className="group relative aspect-square overflow-hidden rounded-[28px] bg-[#f5f5f5]"
+          className="group relative aspect-square overflow-hidden rounded-2xl bg-[#f5f5f5] sm:rounded-[28px]"
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
@@ -84,7 +84,7 @@ export default function ProductGallery({ title, images }: Props) {
             alt={title}
             fill
             priority
-            className={`object-contain p-6 transition-opacity duration-200 ${fading ? "opacity-0" : "opacity-100"}`}
+            className={`object-contain p-4 transition-opacity duration-200 sm:p-6 ${fading ? "opacity-0" : "opacity-100"}`}
             sizes="(max-width: 1280px) 100vw, 760px"
             unoptimized={shouldBypassImageOptimization(activeImage)}
           />
@@ -115,13 +115,13 @@ export default function ProductGallery({ title, images }: Props) {
       </div>
 
       {images.length > 1 ? (
-        <div className="flex gap-3 overflow-x-auto pb-1">
+        <div className="flex gap-2.5 overflow-x-auto pb-1 sm:gap-3">
           {images.map((image, index) => (
             <button
               key={`${image}-${index}`}
               type="button"
               onClick={() => switchTo(index)}
-              className={`relative w-20 shrink-0 overflow-hidden rounded-2xl border bg-[#f5f5f5] transition-all duration-200 sm:w-24 ${
+              className={`relative w-[4.5rem] shrink-0 overflow-hidden rounded-xl border bg-[#f5f5f5] transition-all duration-200 sm:w-24 sm:rounded-2xl ${
                 activeIndex === index
                   ? "border-gold/60 ring-2 ring-gold/30 scale-[1.03]"
                   : "border-border/60 hover:border-gold/30 hover:scale-[1.02]"

@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getPaymentMode, markOrderCancelled, markOrderPaid, recordWebhookEvent } from "@/lib/checkout";
+import {
+  claimWebhookEvent,
+  completeWebhookEvent,
+  getOrderPaymentExpectation,
+  getPaymentMode,
+  isOrderInProviderState,
+  markOrderCancelled,
+  markOrderPaid,
+  releaseWebhookEventClaim,
+} from "@/lib/checkout";
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
 import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 
@@ -10,6 +19,7 @@ type PayPalWebhookEvent = {
   resource?: {
     id?: string;
     status?: string;
+    amount?: { value?: string; currency_code?: string };
     custom_id?: string;
     invoice_id?: string;
     supplementary_data?: {
@@ -97,22 +107,25 @@ export async function POST(request: NextRequest) {
     return result.status === "failed";
   };
 
-  const isNew = await recordWebhookEvent({
-    provider: "paypal",
-    eventId: event.id,
-    eventType: event.event_type,
-    payload: event,
-  });
-  if (!isNew) {
-    if (await sendOrderNotification()) {
-      return NextResponse.json({ error: "Order notification delivery failed" }, { status: 503 });
-    }
-    return NextResponse.json({ received: true, duplicate: true });
-  }
-
   const paypalOrderId = resource?.supplementary_data?.related_ids?.order_id || resource?.id || null;
   const capture = resource?.purchase_units?.[0]?.payments?.captures?.[0];
+  if (isPaidEvent) {
+    const expected = orderId ? await getOrderPaymentExpectation(orderId) : null;
+    const capturedCents = resource?.amount?.value ? Math.round(Number(resource.amount.value) * 100) : null;
+    if (!expected || capturedCents !== expected.cents || resource?.amount?.currency_code?.toUpperCase() !== expected.currency) {
+      return NextResponse.json({ error: "PayPal amount or currency mismatch" }, { status: 400 });
+    }
+  }
+  const claim = await claimWebhookEvent({ provider: "paypal", eventId: event.id, eventType: event.event_type, payload: event });
+  if (claim.status === "processed") {
+    if (await sendOrderNotification()) return NextResponse.json({ error: "Order notification delivery failed" }, { status: 503 });
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+  if (claim.status === "busy") {
+    return NextResponse.json({ error: "PayPal event is already processing" }, { status: 503, headers: { "Retry-After": "5" } });
+  }
   let notificationFailed = false;
+  try {
 
   if (event.event_type === "PAYMENT.CAPTURE.COMPLETED") {
     const order = await markOrderPaid({
@@ -122,6 +135,9 @@ export async function POST(request: NextRequest) {
       providerPaymentId: capture?.id || resource?.id || paypalOrderId,
       providerStatus: capture?.status || resource?.status || "COMPLETED",
     });
+    if (!order && !(await isOrderInProviderState({ provider: "paypal", orderId, providerOrderId: paypalOrderId, statuses: ["paid"], paymentStatuses: ["paid"] }))) {
+      throw new Error("PayPal paid event did not match a local order");
+    }
 
     if (order) {
       await sendPurchaseTrackingEvents(
@@ -144,12 +160,22 @@ export async function POST(request: NextRequest) {
   }
 
   if (event.event_type === "CHECKOUT.ORDER.VOIDED" || event.event_type === "PAYMENT.CAPTURE.DENIED") {
-    await markOrderCancelled({
+    const cancelledOrderId = await markOrderCancelled({
       orderId,
       provider: "paypal",
       providerOrderId: paypalOrderId,
       providerStatus: resource?.status || event.event_type,
     });
+    if (!cancelledOrderId && !(await isOrderInProviderState({ provider: "paypal", orderId, providerOrderId: paypalOrderId, statuses: ["cancelled"] }))) {
+      throw new Error("PayPal cancellation event did not match a local order");
+    }
+  }
+
+  await completeWebhookEvent("paypal", event.id, claim.token);
+  } catch (error) {
+    await releaseWebhookEventClaim("paypal", event.id, claim.token, error);
+    console.error("PayPal webhook processing failed", { eventId: event.id, eventType: event.event_type });
+    return NextResponse.json({ error: "PayPal webhook processing failed" }, { status: 503 });
   }
 
   if (notificationFailed) {

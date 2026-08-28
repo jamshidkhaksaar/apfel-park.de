@@ -17,6 +17,7 @@ describe("mapAdminProduct", () => {
       brand: "Example",
       model: "Model 1",
       sku: "SKU-1",
+      mpn: null,
       price: 799,
       compare_at_price: null,
       stock: 1,

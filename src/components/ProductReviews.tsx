@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
+import { useReCaptcha } from "@/components/ReCaptcha";
 import type { ProductRatingSummary, ProductReview } from "@/lib/product-reviews";
 
 const Stars = ({ rating, className = "h-4 w-4" }: { rating: number; className?: string }) => (
@@ -65,6 +67,8 @@ export default function ProductReviews({
   const [body, setBody] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const { execute, ReCaptchaComponent, isLoading: recaptchaLoading } = useReCaptcha("product_review");
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -74,11 +78,10 @@ export default function ProductReviews({
     }
     setState("sending");
     setError("");
-    const response = await fetch("/api/reviews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, rating, authorName, title, body, locale, orderId, token }),
-    });
+    const recaptchaToken = await execute();
+    if (!recaptchaToken) { setState("idle"); setError(locale === "de" ? "Sicherheitsprüfung nicht verfügbar." : "Security check unavailable."); return; }
+    const form=new FormData();Object.entries({productId,rating:String(rating),authorName,title,body,locale,orderId:orderId??"",token:token??"",recaptchaToken}).forEach(([key,value])=>form.set(key,value));files.forEach(file=>form.append("images",file));
+    const response = await fetch("/api/reviews", { method: "POST", body: form });
     const data = (await response.json()) as { success: boolean; error?: string };
     if (!response.ok || !data.success) {
       setState("idle");
@@ -89,7 +92,7 @@ export default function ProductReviews({
   };
 
   return (
-    <div id="reviews" className="glass-panel rounded-[32px] p-8">
+    <div id="reviews" className="rounded-2xl border border-border bg-store-card p-6 sm:p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-xl font-semibold text-foreground">
           {locale === "de" ? "Bewertungen" : "Reviews"}
@@ -127,6 +130,7 @@ export default function ProductReviews({
               </div>
               {review.title ? <p className="mt-3 font-semibold text-foreground">{review.title}</p> : null}
               <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted">{review.body}</p>
+              {review.mediaUrls.length ? <div className="mt-4 flex gap-3 overflow-x-auto">{review.mediaUrls.map(url=><a key={url} href={url} target="_blank" rel="noreferrer" className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-border bg-white"><Image src={url} alt="" fill sizes="112px" className="object-cover" unoptimized /></a>)}</div> : null}
             </li>
           ))}
         </ul>
@@ -140,6 +144,7 @@ export default function ProductReviews({
         </p>
       ) : open ? (
         <form onSubmit={submit} className="mt-6 space-y-4 rounded-2xl border border-border/60 bg-surface/40 p-5">
+          <ReCaptchaComponent />
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
               {locale === "de" ? "Deine Bewertung *" : "Your rating *"}
@@ -200,8 +205,9 @@ export default function ProductReviews({
               className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"
             />
           </label>
+          {invited ? <label className="block space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale==="de"?"Kundenfotos (optional, max. 3)":"Customer photos (optional, max 3)"}</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={event=>setFiles(Array.from(event.target.files??[]).slice(0,3))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"/><span className="text-xs text-muted">{files.length}/3</span></label> : null}
           {error ? <p className="text-sm text-red-400" role="alert">{error}</p> : null}
-          <button type="submit" disabled={state === "sending"} className="btn-primary justify-center disabled:opacity-50">
+          <button type="submit" disabled={state === "sending" || recaptchaLoading} className="btn-primary justify-center disabled:opacity-50">
             {state === "sending"
               ? locale === "de" ? "Wird gesendet…" : "Sending…"
               : locale === "de" ? "Bewertung absenden" : "Submit review"}

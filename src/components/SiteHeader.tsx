@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
 import { getStoredCartCount, subscribeStoredCart } from "./checkout/cart";
@@ -27,6 +27,7 @@ export default function SiteHeader({
   const expandAt = 40;
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const cartCount = useSyncExternalStore(subscribeStoredCart, getStoredCartCount, () => 0);
   const cartBadge = cartCount > 9 ? "9+" : String(cartCount);
@@ -60,6 +61,18 @@ export default function SiteHeader({
       window.cancelAnimationFrame(frameId);
     };
   }, []);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setMobileMenuOpen(false);
+      mobileMenuButtonRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileMenuOpen]);
 
   return (
     <header
@@ -156,7 +169,7 @@ export default function SiteHeader({
           </nav>
 
           {/* Actions */}
-          <div className="flex h-full items-center gap-3 pr-4">
+          <div className="ml-auto flex h-full items-center gap-1 pr-2 sm:gap-3 sm:pr-4 lg:ml-0">
             <div className="hidden items-center gap-3 lg:flex">
               <LocaleSwitcher />
               <ThemeToggle />
@@ -190,15 +203,30 @@ export default function SiteHeader({
                 ) : null}
               </Link>
             </div>
-            <div className="flex items-center gap-3 lg:hidden">
-              <LocaleSwitcher />
-              <ThemeToggle />
-            </div>
+            <Link
+              href={`/${lang}/cart`}
+              className="relative flex h-11 w-11 items-center justify-center rounded-xl text-gold lg:hidden"
+              aria-label={
+                lang === "de"
+                  ? `Warenkorb öffnen${cartCount > 0 ? ` (${cartCount} Artikel)` : ""}`
+                  : `Open cart${cartCount > 0 ? ` (${cartCount} items)` : ""}`
+              }
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.5l2.1 12.15A2.25 2.25 0 008.07 17h8.56a2.25 2.25 0 002.2-1.78L20.25 8.5H5.25M9 21h.01M17 21h.01" />
+              </svg>
+              {cartCount > 0 ? (
+                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold leading-none text-background">
+                  {cartBadge}
+                </span>
+              ) : null}
+            </Link>
             
             {/* Mobile Menu Button */}
             <button 
+              ref={mobileMenuButtonRef}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden"
               aria-label={mobileMenuOpen ? labels.closeMenu : labels.openMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu-nav"
@@ -219,13 +247,14 @@ export default function SiteHeader({
       <div
         id="mobile-menu-nav"
         aria-hidden={!mobileMenuOpen}
-        className={`lg:hidden overflow-hidden transition-all duration-300 ease-out origin-top border-t border-white/5 bg-black/60 backdrop-blur-xl ${
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out border-t border-border bg-background/95 backdrop-blur-xl lg:hidden ${
           mobileMenuOpen
-            ? "max-h-[520px] opacity-100 translate-y-0"
-            : "max-h-0 opacity-0 -translate-y-2 pointer-events-none invisible"
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0 pointer-events-none invisible"
         }`}
       >
-        <nav className="container-page flex flex-col gap-1 py-4">
+        <div className="overflow-hidden">
+        <nav className="container-page flex max-h-[calc(100dvh-8rem)] flex-col gap-1 overflow-y-auto py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {navItems.map((item) => {
             const fullPath = `/${lang}${item.path}`;
             const isActive = item.path === ""
@@ -238,7 +267,7 @@ export default function SiteHeader({
                 key={item.path}
                 href={fullPath}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-gold/5 hover:text-gold ${
+                className={`flex min-h-11 items-center rounded-xl px-4 text-sm font-medium transition hover:bg-gold/5 hover:text-gold ${
                   isActive ? "bg-gold/5 text-gold" : "text-muted"
                 }`}
                 aria-current={isExactMatch ? "page" : undefined}
@@ -247,7 +276,7 @@ export default function SiteHeader({
               </Link>
             );
           })}
-          <div className="mt-4 flex flex-col gap-3 border-t border-white/5 pt-4">
+          <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
             <Link
               href={`/${lang}/store`}
               onClick={() => setMobileMenuOpen(false)}
@@ -258,23 +287,18 @@ export default function SiteHeader({
               </svg>
               <span>{lang === "de" ? "Zum Online Shop" : "Go to Store"}</span>
             </Link>
-            <Link
-              href={`/${lang}/cart`}
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 rounded-full border border-gold/30 px-4 py-3 text-sm font-bold uppercase tracking-wider text-gold"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.5l2.1 12.15A2.25 2.25 0 008.07 17h8.56a2.25 2.25 0 002.2-1.78L20.25 8.5H5.25M9 21h.01M17 21h.01" />
-              </svg>
-              <span>{lang === "de" ? "Warenkorb" : "Cart"}</span>
-              {cartCount > 0 ? (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[11px] font-bold leading-none text-background">
-                  {cartBadge}
-                </span>
-              ) : null}
-            </Link>
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                {lang === "de" ? "Sprache & Design" : "Language & theme"}
+              </span>
+              <div className="flex items-center gap-2">
+                <LocaleSwitcher />
+                <ThemeToggle />
+              </div>
+            </div>
           </div>
         </nav>
+        </div>
       </div>
     </header>
   );

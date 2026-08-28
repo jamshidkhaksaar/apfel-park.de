@@ -26,7 +26,7 @@ export type HeroMediaUploadResult = {
 };
 
 const ensureDir = async (dirPath: string) => {
-  await mkdir(dirPath, { recursive: true });
+  await mkdir(/*turbopackIgnore: true*/ dirPath, { recursive: true });
 };
 
 const sanitizeFileName = (fileName: string): string => {
@@ -39,8 +39,8 @@ const buildPublicUrl = (segments: string[]): string => `/${segments.join("/")}`;
 export const resolveUploadPath = (urlPath: string): string | null => {
   if (!urlPath.startsWith("/uploads/")) return null;
   const relativePath = urlPath.replace(/^\/uploads\//, "");
-  const resolved = path.resolve(uploadsRoot, relativePath);
-  const root = path.resolve(uploadsRoot);
+  const resolved = path.resolve(/*turbopackIgnore: true*/ uploadsRoot, relativePath);
+  const root = path.resolve(/*turbopackIgnore: true*/ uploadsRoot);
   if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) return null;
   return resolved;
 };
@@ -50,11 +50,11 @@ const writeUpload = async (
   fileName: string,
   content: ArrayBuffer | Uint8Array,
 ): Promise<string> => {
-  const targetDir = path.join(uploadsRoot, directory);
+  const targetDir = path.join(/*turbopackIgnore: true*/ uploadsRoot, directory);
   await ensureDir(targetDir);
-  const targetPath = path.join(targetDir, fileName);
+  const targetPath = path.join(/*turbopackIgnore: true*/ targetDir, fileName);
   const buffer = content instanceof Uint8Array ? content : Buffer.from(content);
-  await writeFile(targetPath, buffer);
+  await writeFile(/*turbopackIgnore: true*/ targetPath, buffer);
   return buildPublicUrl(["uploads", directory, fileName]);
 };
 
@@ -74,9 +74,9 @@ const createRasterVariant = async (
   width: number,
 ) => {
   const fileName = `${baseStem}--${variant}.webp`;
-  const targetDir = path.join(uploadsRoot, directory);
+  const targetDir = path.join(/*turbopackIgnore: true*/ uploadsRoot, directory);
   await ensureDir(targetDir);
-  const targetPath = path.join(targetDir, fileName);
+  const targetPath = path.join(/*turbopackIgnore: true*/ targetDir, fileName);
 
   const transformer = sharp(inputBuffer, { failOn: "warning" }).rotate().resize({
     width,
@@ -90,7 +90,7 @@ const createRasterVariant = async (
     effort: 6,
   }).toBuffer();
 
-  await writeFile(targetPath, optimizedBuffer);
+  await writeFile(/*turbopackIgnore: true*/ targetPath, optimizedBuffer);
 
   return {
     url: buildPublicUrl(["uploads", directory, fileName]),
@@ -215,20 +215,20 @@ export const uploadRepairBrandLogo = async (file: File): Promise<{ url: string }
 export const deleteBlobByUrl = async (url: string): Promise<void> => {
   if (!url.startsWith("/uploads/")) return;
   const relativePath = url.replace(/^\/uploads\//, "");
-  const targetPath = path.join(uploadsRoot, relativePath);
+  const targetPath = path.join(/*turbopackIgnore: true*/ uploadsRoot, relativePath);
   const directory = path.dirname(targetPath);
   const fileName = path.basename(targetPath);
   const familyStem = fileName.replace(/--(?:original|thumb|card|detail)\.[^.]+$/i, "");
 
   if (!familyStem || familyStem === fileName) {
-    await rm(targetPath, { force: true });
+    await rm(/*turbopackIgnore: true*/ targetPath, { force: true });
     return;
   }
 
-  const entries = await readdir(directory).catch(() => []);
+  const entries = await readdir(/*turbopackIgnore: true*/ directory).catch(() => []);
   await Promise.all(
     entries
       .filter((entry) => entry.startsWith(`${familyStem}--`))
-      .map((entry) => rm(path.join(directory, entry), { force: true })),
+      .map((entry) => rm(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ directory, entry), { force: true })),
   );
 };

@@ -2,6 +2,7 @@ import AdminShell from "../../../components/admin/AdminShell";
 import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
 import { getPaymentMode, getShopCurrency, getVatRate } from "@/lib/checkout";
 import { query } from "@/lib/db";
+import { resolveStripeConfiguration } from "@/lib/payment-provider-status";
 
 export const dynamic = "force-dynamic";
 
@@ -87,15 +88,23 @@ export default async function PaymentsPage() {
     getPaymentDiagnostics(),
   ]);
   const isGerman = locale === "de";
+  const stripeConfiguration = resolveStripeConfiguration({
+    secret: process.env.STRIPE_SECRET_KEY,
+    webhook: process.env.STRIPE_WEBHOOK_SECRET,
+    publishable: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  });
   const providers: ProviderStatus[] = [
     {
       name: "Stripe",
-      configured: Boolean(process.env.STRIPE_SECRET_KEY && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY),
-      webhookConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
+      configured: stripeConfiguration.ready,
+      webhookConfigured: stripeConfiguration.webhookConfigured,
       notes: [
         `Secret: ${mask(process.env.STRIPE_SECRET_KEY)}`,
-        `Publishable: ${mask(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)}`,
+        stripeConfiguration.publishableConfigured
+          ? `Publishable: ${mask(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)}`
+          : isGerman ? "Publishable: optional · Hosted Checkout aktiv" : "Publishable: optional · Hosted Checkout active",
         `Webhook: ${process.env.STRIPE_WEBHOOK_SECRET ? "configured" : "missing"}`,
+        `${isGerman ? "Modus" : "Mode"}: ${stripeConfiguration.checkoutMode === "embedded" ? "Payment Element" : "Hosted Checkout"}`,
       ],
     },
     {

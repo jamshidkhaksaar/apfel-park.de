@@ -3,6 +3,9 @@ export type AnalyticsItem = {
   item_name: string;
   item_category?: string;
   item_variant?: string;
+  item_list_id?: string;
+  item_list_name?: string;
+  index?: number;
   price?: number;
   quantity?: number;
 };

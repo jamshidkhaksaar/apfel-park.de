@@ -8,9 +8,9 @@ type ConditionBadgeProps = {
 };
 
 const STYLES: Record<string, string> = {
-  new: "bg-gold/15 text-gold ring-gold/30",
-  open_box: "bg-emerald-500/15 text-emerald-400 ring-emerald-500/30",
-  used: "bg-amber-500/15 text-amber-400 ring-amber-500/30",
+  new: "bg-gold/15 text-gold-text ring-gold/30",
+  open_box: "bg-green/15 text-green-text ring-green/30",
+  used: "bg-blue/15 text-blue-text ring-blue/30",
 };
 
 const LABELS: Record<string, { de: string; en: string }> = {

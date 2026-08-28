@@ -28,7 +28,7 @@ const KIND_BY_EVIDENCE: Record<string, RecordAssetInput["kind"]> = {
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = authorizeProductStaff(request, { mutate: true });
+    const auth = await authorizeProductStaff(request, { mutate: true });
     const { id } = await context.params;
     const runId = await resolveProductIntakeRunId(parseRunReference(id));
     const form = await request.formData();

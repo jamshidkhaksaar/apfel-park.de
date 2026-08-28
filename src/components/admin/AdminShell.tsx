@@ -7,6 +7,7 @@ import { type ReactNode, useState, useEffect } from "react";
 import { createAdminBrowserClient } from "@/lib/admin-auth-client";
 import { useAdmin } from "@/lib/admin-context";
 import { useTheme } from "@/components/ThemeProvider";
+import AdminCommandPalette, { type CommandItem } from "@/components/admin/AdminCommandPalette";
 
 const playAdminTone = () => {
   try {
@@ -268,6 +269,8 @@ export default function AdminShell({
     { label: dict.sidebar.chat,      path: '/admin/chat',     icon: 'chat',    badge: badges.chat },
     { label: dict.sidebar.reviews,   path: '/admin/reviews',  icon: 'reviews' },
     { label: lang === 'de' ? 'Produktbewertungen' : 'Product reviews', path: '/admin/product-reviews', icon: 'reviews' },
+    { label: lang === 'de' ? 'Trade-in Anfragen' : 'Trade-in requests', path: '/admin/trade-ins', icon: 'batchBuy' },
+    { label: lang === 'de' ? 'Kampagnen & Gutscheine' : 'Campaigns & coupons', path: '/admin/campaigns', icon: 'payments' },
   ];
 
   const adminItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
@@ -282,10 +285,29 @@ export default function AdminShell({
   ];
 
   const userRole = user?.role;
+  const canManage = userRole === "admin" || userRole === "manager";
   const navItems = [
     ...baseItems,
-    ...(userRole === "admin" || userRole === "manager" ? managerItems : []),
+    ...(canManage ? managerItems : []),
     ...(isAdmin ? adminItems : []),
+  ];
+
+  // The palette also reaches pages that have no sidebar entry, and carries
+  // search aliases so German and English terms both find the same page.
+  const groupLabels = lang === "de"
+    ? { catalog: "Katalog", ops: "Betrieb", system: "System" }
+    : { catalog: "Catalog", ops: "Operations", system: "System" };
+  const commandItems: CommandItem[] = [
+    ...baseItems.map((item) => ({ ...item, group: groupLabels.catalog })),
+    ...(canManage ? managerItems.map((item) => ({ ...item, group: groupLabels.ops })) : []),
+    ...(isAdmin ? adminItems.map((item) => ({ ...item, group: groupLabels.system })) : []),
+    { label: lang === "de" ? "Produkt anlegen" : "New product", path: "/admin/products/new", group: groupLabels.catalog, keywords: "neu new create add artikel" },
+    { label: lang === "de" ? "Aktionen & Rabatte" : "Promotions", path: "/admin/products/promotions", group: groupLabels.catalog, keywords: "rabatt discount sale aktion" },
+    ...(canManage ? [{ label: lang === "de" ? "Trade-in Anfragen" : "Trade-in requests", path: "/admin/trade-ins", group: groupLabels.ops, keywords: "trade in ankauf verkaufen quote angebot" }] : []),
+    ...(canManage ? [{ label: lang === "de" ? "Kampagnen & Gutscheine" : "Campaigns & coupons", path: "/admin/campaigns", group: groupLabels.catalog, keywords: "coupon gutschein rabatt campaign code" }] : []),
+    { label: lang === "de" ? "Produkt-Erfassung" : "Product intake", path: "/admin/product-intake", group: groupLabels.catalog, keywords: "intake erfassung scan" },
+    ...(canManage ? [{ label: lang === "de" ? "Kostenvoranschlag anlegen" : "New repair estimate", path: "/admin/repair-estimates/new", group: groupLabels.ops, keywords: "neu new angebot quote" }] : []),
+    { label: lang === "de" ? "Shop öffnen" : "Open storefront", path: `/${lang}/store`, group: groupLabels.system, keywords: "shop store frontend website" },
   ];
 
   // Breadcrumb segments
@@ -297,6 +319,7 @@ export default function AdminShell({
 
   return (
     <div className="admin-shell-root fixed inset-0 h-dvh min-h-dvh w-full overflow-hidden bg-background text-foreground" translate="no">
+      <AdminCommandPalette items={commandItems} lang={lang} />
       <div className="flex h-full min-h-0 overflow-hidden">
 
         {/* ── Mobile backdrop ── */}
@@ -315,7 +338,7 @@ export default function AdminShell({
           className={`
             admin-shell-panel
             fixed inset-y-0 left-0 z-40 flex h-full w-72 shrink-0 flex-col overflow-hidden
-            border-r border-white/5 bg-surface/95
+            border-r border-border bg-surface/95
             transition-[transform,width] duration-300 ease-in-out
             lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:bg-surface/40
             ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
@@ -336,7 +359,7 @@ export default function AdminShell({
                 type="button"
                 onClick={closeSidebar}
                 aria-label="Close navigation"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted/60 transition hover:bg-white/8 hover:text-foreground"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted/60 transition hover:bg-surface-strong hover:text-foreground"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -370,6 +393,19 @@ export default function AdminShell({
             </div>
 
             {/* Language + theme toggles */}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("admin-command-open"))}
+              className={`mt-4 flex min-h-10 w-full items-center gap-2 rounded-xl border border-border bg-surface-strong px-3 text-left text-sm text-muted transition hover:border-gold/40 hover:text-foreground ${sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''}`}
+              aria-label={lang === 'de' ? 'Schnellsuche öffnen' : 'Open quick search'}
+            >
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2m0 0A7.5 7.5 0 105.2 5.2a7.5 7.5 0 0010.6 10.6z" />
+              </svg>
+              <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{lang === 'de' ? 'Suchen' : 'Search'}</span>
+              <kbd className={`ml-auto rounded border border-border px-1.5 py-0.5 text-[10px] font-semibold ${sidebarCollapsed ? 'lg:hidden' : ''}`}>⌘K</kbd>
+            </button>
+
             <div className={`mt-4 flex items-center gap-1 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               <button
                 onClick={() => handleLangChange('de')}
@@ -393,7 +429,7 @@ export default function AdminShell({
                 <button
                   onClick={toggleTheme}
                   aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted/50 transition-all duration-150 hover:bg-white/8 hover:text-gold"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted/50 transition-all duration-150 hover:bg-surface-strong hover:text-gold"
                 >
                   {theme === 'dark' ? (
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -409,7 +445,7 @@ export default function AdminShell({
             </div>
           </div>
 
-          <div className="border-t border-white/5" />
+          <div className="border-t border-border" />
 
           {/* Nav */}
           <nav className={`flex-1 overflow-y-auto px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
@@ -442,7 +478,7 @@ export default function AdminShell({
                       className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs transition-all duration-150 lg:py-2 ${navigatingPath ? 'cursor-wait' : ''} ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${
                         isActive
                           ? 'border-l-2 border-gold bg-gold/5 pl-[10px] text-gold'
-                          : 'border-l-2 border-transparent pl-[10px] text-muted/70 hover:bg-white/4 hover:text-foreground'
+                          : 'border-l-2 border-transparent pl-[10px] text-muted/70 hover:bg-surface-strong hover:text-foreground'
                       }`}
                     >
                       <span className={`shrink-0 transition-colors duration-150 ${isActive ? 'text-gold' : 'text-muted/40 group-hover:text-muted/70'}`}>
@@ -464,13 +500,13 @@ export default function AdminShell({
           </nav>
 
           {/* Bottom links */}
-          <div className={`border-t border-white/5 px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
+          <div className={`border-t border-border px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
             <a
               href="https://mail.apfel-park.de"
               target="_blank"
               rel="noreferrer"
               title={sidebarCollapsed ? "Webmail Login" : undefined}
-              className={`flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-white/4 hover:text-foreground lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
+              className={`flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-surface-strong hover:text-foreground lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
               <svg className="h-4 w-4 shrink-0 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 7.5v9A2.25 2.25 0 0119.5 18.75h-15A2.25 2.25 0 012.25 16.5v-9m19.5 0A2.25 2.25 0 0019.5 5.25h-15A2.25 2.25 0 002.25 7.5m19.5 0v.243a2.25 2.25 0 01-1.07 1.91l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 9.653a2.25 2.25 0 01-1.07-1.91V7.5" />
@@ -481,7 +517,7 @@ export default function AdminShell({
               href={`/${lang}`}
               onClick={closeSidebar}
               title={sidebarCollapsed ? dict.sidebar.backToSite : undefined}
-              className={`flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-white/4 hover:text-foreground lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
+              className={`flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/60 transition-all duration-150 hover:bg-surface-strong hover:text-foreground lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
               <svg className="h-4 w-4 shrink-0 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -505,7 +541,7 @@ export default function AdminShell({
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 
           {/* Top header */}
-          <header className="admin-shell-panel flex h-14 shrink-0 items-center justify-between border-b border-white/5 bg-surface/20 px-4 lg:px-8">
+          <header className="admin-shell-panel flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface/20 px-4 lg:px-8">
 
             {/* Left: hamburger (mobile) + breadcrumb (desktop) + page title (mobile) */}
             <div className="flex min-w-0 items-center gap-3">
@@ -514,7 +550,7 @@ export default function AdminShell({
                 onClick={() => setSidebarCollapsed((value) => !value)}
                 aria-label={sidebarCollapsed ? dict.sidebar.expandNavigation : dict.sidebar.collapseNavigation}
                 title={sidebarCollapsed ? dict.sidebar.expandNavigation : dict.sidebar.collapseNavigation}
-                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted/70 transition-all duration-150 hover:border-gold/30 hover:bg-gold/10 hover:text-gold lg:flex"
+                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-strong text-muted/70 transition-all duration-150 hover:border-gold/30 hover:bg-gold/10 hover:text-gold lg:flex"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d={sidebarCollapsed ? "M9 4.5l7.5 7.5-7.5 7.5" : "M15 4.5L7.5 12l7.5 7.5"} />
@@ -528,7 +564,7 @@ export default function AdminShell({
                 aria-label="Open navigation menu"
                 aria-expanded={sidebarOpen}
                 aria-controls="admin-sidebar"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted/70 transition-all duration-150 hover:border-gold/30 hover:bg-gold/10 hover:text-gold lg:hidden"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-strong text-muted/70 transition-all duration-150 hover:border-gold/30 hover:bg-gold/10 hover:text-gold lg:hidden"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />

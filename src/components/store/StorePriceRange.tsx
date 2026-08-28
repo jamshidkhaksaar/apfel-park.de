@@ -63,7 +63,7 @@ export default function StorePriceRange({
                 placeholder={facets.priceMin > 0 ? String(Math.floor(facets.priceMin)) : "0"}
                 value={priceMin}
                 onChange={(event) => onMinChange(event.target.value)}
-                className="h-11 w-full rounded-xl border border-border/70 bg-background/55 py-2 pl-7 pr-2 text-sm tabular-nums text-foreground outline-none transition placeholder:text-muted/60 hover:border-gold/35 focus:border-gold/70 focus:ring-2 focus:ring-gold/15"
+                className="h-11 w-full rounded-xl border border-border/70 bg-background/55 py-2 pl-7 pr-2 text-base tabular-nums text-foreground lg:text-sm outline-none transition placeholder:text-muted/60 hover:border-gold/35 focus:border-gold/70 focus:ring-2 focus:ring-gold/15"
                 aria-label={isGerman ? "Mindestpreis in Euro" : "Minimum price in euros"}
                 aria-describedby={descriptionId}
               />
@@ -85,7 +85,7 @@ export default function StorePriceRange({
                 placeholder={facets.priceMax > 0 ? String(Math.ceil(facets.priceMax)) : ""}
                 value={priceMax}
                 onChange={(event) => onMaxChange(event.target.value)}
-                className="h-11 w-full rounded-xl border border-border/70 bg-background/55 py-2 pl-7 pr-2 text-sm tabular-nums text-foreground outline-none transition placeholder:text-muted/60 hover:border-gold/35 focus:border-gold/70 focus:ring-2 focus:ring-gold/15"
+                className="h-11 w-full rounded-xl border border-border/70 bg-background/55 py-2 pl-7 pr-2 text-base tabular-nums text-foreground lg:text-sm outline-none transition placeholder:text-muted/60 hover:border-gold/35 focus:border-gold/70 focus:ring-2 focus:ring-gold/15"
                 aria-label={isGerman ? "Höchstpreis in Euro" : "Maximum price in euros"}
                 aria-describedby={descriptionId}
               />
@@ -94,7 +94,7 @@ export default function StorePriceRange({
         </div>
         <button
           type="submit"
-          className="flex h-10 w-full items-center justify-center rounded-xl border border-gold/45 bg-gold/10 px-3 text-sm font-bold text-gold transition hover:border-gold hover:bg-gold hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+          className="flex h-11 w-full items-center justify-center rounded-xl border border-gold/45 bg-gold/10 px-3 text-sm font-bold text-gold transition hover:border-gold hover:bg-gold hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           {isGerman ? "Preis anwenden" : "Apply price"}
         </button>

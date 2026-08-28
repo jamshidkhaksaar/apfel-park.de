@@ -11,6 +11,9 @@ import {
   type CartInputItem,
   type CustomerDetails,
 } from "@/lib/checkout";
+import { applyCouponToValidatedCart } from "@/lib/coupon-repository";
+import { getPaymentIntentAmount } from "@/lib/payment-coupon";
+import { consumePublicRateLimit } from "@/lib/public-rate-limit";
 
 const stripeRequestId = (response: Response) => response.headers.get("request-id") || undefined;
 
@@ -26,6 +29,7 @@ type IntentPayload = {
   idempotencyKey?: string;
   conditionConsent?: boolean;
   termsConsent?: boolean;
+  couponCode?: string;
 };
 
 /**
@@ -39,6 +43,11 @@ type IntentPayload = {
  * for the account, without the redirect the hosted page requires.
  */
 export async function POST(request: NextRequest) {
+  const limit = await consumePublicRateLimit(request.headers, "checkout_create", 8, 15 * 60);
+  if (!limit.allowed) return NextResponse.json({ success: false, error: "Too many checkout attempts" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
+  let pendingOrderId: string | null = null;
+  let providerRequestStarted = false;
+  let remoteIntentId: string | null = null;
   try {
     const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
     if (!secretKey) {
@@ -49,7 +58,8 @@ export async function POST(request: NextRequest) {
     const locale = payload.locale === "en" ? "en" : "de";
     const shippingMethod = normalizeShippingMethod(payload.shippingMethod);
     const customer = normalizeCheckoutCustomer(payload.customer, shippingMethod, locale);
-    const cart = await validateCartItems(payload.items ?? [], shippingMethod);
+    let cart = await validateCartItems(payload.items ?? [], shippingMethod);
+    if(payload.couponCode?.trim()){const applied=await applyCouponToValidatedCart(payload.couponCode,cart);if(!applied.ok)return NextResponse.json({success:false,error:applied.error},{status:400});cart=applied.cart;}
 
     const hasNonNewItems = cart.items.some((line) => line.condition !== "new");
     if (hasNonNewItems && payload.conditionConsent !== true) {
@@ -88,9 +98,10 @@ export async function POST(request: NextRequest) {
       conditionConsent: buildConditionConsent(cart, true),
       termsConsentAt: new Date().toISOString(),
     });
+    pendingOrderId = order.id;
 
     const form = new URLSearchParams({
-      amount: String(cart.totalAmountCents),
+      amount: String(getPaymentIntentAmount(cart)),
       currency: cart.currency.toLowerCase(),
       "automatic_payment_methods[enabled]": "true",
       receipt_email: customer.email,
@@ -99,6 +110,8 @@ export async function POST(request: NextRequest) {
       "metadata[order_number]": order.orderNumber ? String(order.orderNumber) : "",
     });
 
+    if (!(await attachProviderReference({ orderId: order.id, provider: "stripe", providerStatus: "stripe_intent_requesting" }))) throw new Error("Stripe PaymentIntent request state could not be recorded");
+    providerRequestStarted = true;
     const response = await fetch(STRIPE_INTENT_URL, {
       method: "POST",
       headers: {
@@ -116,6 +129,7 @@ export async function POST(request: NextRequest) {
       client_secret?: string;
       error?: { message?: string };
     };
+    remoteIntentId = intent.id ?? null;
 
     if (!response.ok || !intent.client_secret || !intent.id) {
       console.error("Stripe PaymentIntent failed", {
@@ -124,23 +138,26 @@ export async function POST(request: NextRequest) {
         requestId: stripeRequestId(response),
         error: intent.error?.message || "missing intent id or client secret",
       });
-      await markOrderCancelled({
-        provider: "stripe",
-        orderId: order.id,
-        providerStatus: "intent_creation_failed",
-      });
+      const indeterminate = response.status >= 500 || response.ok || Boolean(intent.id);
+      if (indeterminate) {
+        const attached = await attachProviderReference({ orderId: order.id, provider: "stripe", providerOrderId: intent.id ?? null, providerStatus: "stripe_intent_outcome_unknown" });
+        if (!attached) throw new Error("Indeterminate Stripe PaymentIntent could not be recorded");
+      } else {
+        await markOrderCancelled({ provider: "stripe", orderId: order.id, providerStatus: "intent_creation_failed" });
+      }
       return NextResponse.json(
         { success: false, error: locale === "de" ? "Zahlung konnte nicht gestartet werden." : "Payment could not be started." },
-        { status: 502 },
+        { status: indeterminate ? 503 : 502 },
       );
     }
 
-    await attachProviderReference({
+    const attached = await attachProviderReference({
       orderId: order.id,
       provider: "stripe",
       providerOrderId: intent.id,
       providerStatus: "requires_payment_method",
     });
+    if (!attached) throw new Error("Stripe PaymentIntent could not be bound to the local order");
 
     return NextResponse.json({
       success: true,
@@ -148,6 +165,19 @@ export async function POST(request: NextRequest) {
       orderId: order.id,
     });
   } catch (error) {
+    if (pendingOrderId) {
+      try {
+        if (remoteIntentId) {
+          if (!(await attachProviderReference({ orderId: pendingOrderId, provider: "stripe", providerOrderId: remoteIntentId, providerStatus: "provider_response_recovered" }))) throw new Error("Stripe PaymentIntent response binding conflict");
+        } else if (!providerRequestStarted) {
+          await markOrderCancelled({ provider: "stripe", orderId: pendingOrderId, providerStatus: "provider_request_failed" });
+        } else {
+          if (!(await attachProviderReference({ orderId: pendingOrderId, provider: "stripe", providerStatus: "stripe_intent_outcome_unknown" }))) throw new Error("Stripe PaymentIntent unknown outcome could not be recorded");
+        }
+      } catch (cleanupError) {
+        console.error("Stripe PaymentIntent recovery failed", { orderId: pendingOrderId, error: cleanupError instanceof Error ? cleanupError.message : "recovery failed" });
+      }
+    }
     console.error("Create payment intent failed", {
       error: error instanceof Error ? error.message : "Payment intent failed",
     });

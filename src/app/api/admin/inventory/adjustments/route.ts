@@ -17,7 +17,7 @@ type AdjustmentPayload = {
 };
 
 export async function POST(request: NextRequest) {
-  const user = readSessionUserFromRequest(request);
+  const user = await readSessionUserFromRequest(request);
   if (!canManageProducts(user)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

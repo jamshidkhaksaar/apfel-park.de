@@ -20,6 +20,15 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+// An idle client that Postgres hangs up on (a restart, or `pg_terminate_backend`
+// from the nightly backup) emits 'error' on the pool. Without a listener Node
+// treats it as an unhandled 'error' event and kills the process -- this is what
+// took down apfel-park-marketplace-worker on 2026-08-22. pg discards the broken
+// client and the next query opens a fresh one, so logging is the right response.
+pool.on("error", (error) => {
+  console.error("[db] idle client error, connection discarded:", error.message);
+});
+
 
 const buildWhere = (filters: Filter[], startIndex = 1): { sql: string; values: unknown[] } => {
   if (filters.length === 0) {
