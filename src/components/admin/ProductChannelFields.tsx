@@ -406,15 +406,47 @@ export function ProductChannelReadinessPanel({ facts, locale }: { facts: Product
         {(Object.keys(channelLabels) as Array<keyof typeof channelLabels>).map((channel) => {
           const result = readiness[channel];
           return (
-            <div key={channel} className={`rounded-2xl border p-4 ${result.ready ? "border-emerald-500/30 bg-emerald-500/5" : "border-amber-500/30 bg-amber-500/5"}`}>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-foreground">{channelLabels[channel]}</span>
-                <span className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${result.ready ? "text-emerald-300" : "text-amber-300"}`}>
-                  {result.ready ? (locale === "de" ? "Bereit" : "Ready") : (locale === "de" ? "Entwurf" : "Draft")}
+            <div
+              key={channel}
+              className={`rounded-2xl border p-4 shadow-sm transition ${
+                result.ready
+                  ? "border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-500/5"
+                  : "border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/5"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+                <span className="text-sm font-bold text-heading">{channelLabels[channel]}</span>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                    result.ready
+                      ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-800 dark:text-emerald-300"
+                      : "border-amber-500/40 bg-amber-500/20 text-amber-900 dark:text-amber-300"
+                  }`}
+                >
+                  <span>{result.ready ? "✓" : "⚠️"}</span>
+                  <span>{result.ready ? (locale === "de" ? "Bereit" : "Ready") : (locale === "de" ? "Entwurf" : "Draft")}</span>
                 </span>
               </div>
-              {result.errors.length > 0 ? <ul className="mt-3 space-y-1 text-xs text-amber-100">{result.errors.map((message) => <li key={message}>• {message}</li>)}</ul> : null}
-              {result.warnings.length > 0 ? <ul className="mt-3 space-y-1 text-xs text-muted">{result.warnings.map((message) => <li key={message}>• {message}</li>)}</ul> : null}
+              {result.errors.length > 0 ? (
+                <ul className="mt-3 space-y-1.5 text-xs text-amber-950 dark:text-amber-200">
+                  {result.errors.map((message) => (
+                    <li key={message} className="flex items-start gap-1.5 leading-snug font-medium">
+                      <span className="text-amber-700 dark:text-amber-400 font-bold shrink-0">•</span>
+                      <span>{message}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {result.warnings.length > 0 ? (
+                <ul className="mt-2.5 space-y-1.5 text-xs text-foreground/80 dark:text-muted">
+                  {result.warnings.map((message) => (
+                    <li key={message} className="flex items-start gap-1.5 leading-snug">
+                      <span className="text-muted-foreground shrink-0">•</span>
+                      <span>{message}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           );
         })}

@@ -21,8 +21,16 @@ export default function ProductTipsCard({ tips, locale, onAiFill }: { tips: Miss
       {tips.items.length > 0 ? (
         <div className="mt-3 grid gap-2 md:grid-cols-2">
           {tips.items.map((item) => (
-            <div key={item.code} className={`rounded-xl border px-3 py-2 text-sm ${item.severity === "error" ? "border-amber-500/30 bg-amber-500/5 text-amber-200" : "border-border/60 bg-background/40 text-muted"}`}>
-              <span className="font-semibold text-foreground">{item.label}: </span>{item.message}
+            <div
+              key={item.code}
+              className={`rounded-xl border px-3 py-2 text-sm ${
+                item.severity === "error"
+                  ? "border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-200"
+                  : "border-border/60 bg-surface/50 text-foreground/80 dark:text-muted"
+              }`}
+            >
+              <span className="font-bold text-foreground">{item.label}: </span>
+              <span className="leading-snug">{item.message}</span>
             </div>
           ))}
         </div>
