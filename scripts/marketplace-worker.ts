@@ -1,9 +1,29 @@
 import { query } from "../src/lib/db";
-import { attachProviderReference, markOrderCancelled } from "../src/lib/checkout";
+import {
+  attachProviderReference,
+  getOrderPaymentExpectation,
+  getPaymentMode,
+  isOrderInProviderState,
+  markOrderCancelled,
+  markOrderPaid,
+} from "../src/lib/checkout";
 import { getMarketplaceAdapter } from "../src/lib/marketplaces";
 import { updateGoogleMerchantAvailability } from "../src/lib/marketplaces/google-merchant-api";
 import { loadMarketplaceListingInput } from "../src/lib/marketplaces/listing-input";
 import type { Marketplace, MarketplaceOperation } from "../src/lib/marketplaces/types";
+import { paypalCaptureIdentityMatches } from "../src/lib/payment-coupon";
+import { sendPurchaseTrackingEvents } from "../src/lib/marketing";
+import { notifyPaidOrderAdmin } from "../src/lib/order-notifications";
+import {
+  PAYPAL_STALE_ORDER_STATUSES,
+  PROVIDER_RECONCILIATION_AGE_SECONDS,
+  STRIPE_CHECKOUT_STALE_STATUSES,
+  STRIPE_INTENT_STALE_STATUSES,
+  classifyStripeCheckoutSession,
+  classifyStripePaymentIntent,
+  isStripeIntentReconciliationStatus,
+  providerPaymentMatchesExpectation,
+} from "../src/lib/checkout-reconciliation";
 
 type Job = {
   id: string;
@@ -41,10 +61,7 @@ type UncertainProviderOrder = {
   provider_order_id: string | null;
   provider_session_id: string | null;
   updated_at: string | Date;
-  provider_status:
-    | "stripe_checkout_requesting" | "stripe_checkout_outcome_unknown"
-    | "stripe_intent_requesting" | "stripe_intent_outcome_unknown"
-    | "paypal_order_requesting" | "paypal_order_outcome_unknown";
+  provider_status: string;
 };
 
 const errorMessage = (error: unknown): string =>
@@ -52,6 +69,119 @@ const errorMessage = (error: unknown): string =>
 
 const wait = (milliseconds: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+
+let paypalAccessToken: { token: string; expiresAt: number } | null = null;
+const getPayPalBaseUrl = () =>
+  getPaymentMode() === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+
+const getPayPalAccessToken = async (): Promise<string> => {
+  if (paypalAccessToken && paypalAccessToken.expiresAt > Date.now() + 60_000) return paypalAccessToken.token;
+  const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
+  if (!clientId || !clientSecret) throw new Error("PayPal is not configured for reconciliation");
+  const response = await fetch(`${getPayPalBaseUrl()}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      Authorization: "Basic " + Buffer.from(`${clientId}:${clientSecret}`).toString("base64"),
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials",
+    signal: AbortSignal.timeout(15_000),
+  });
+  const data = await response.json() as { access_token?: string; expires_in?: number; error_description?: string };
+  if (!response.ok || !data.access_token) throw new Error(data.error_description || "PayPal authentication failed");
+  paypalAccessToken = {
+    token: data.access_token,
+    expiresAt: Date.now() + Math.max(60, Number(data.expires_in) || 300) * 1000,
+  };
+  return data.access_token;
+};
+
+type PayPalOrderSnapshot = {
+  id?: string;
+  status?: string;
+  purchase_units?: Array<{
+    reference_id?: string;
+    custom_id?: string;
+    amount?: { value?: string; currency_code?: string };
+    payments?: { captures?: Array<{ id?: string; status?: string; amount?: { value?: string; currency_code?: string } }> };
+  }>;
+  message?: string;
+};
+
+const readPayPalOrder = async (providerOrderId: string): Promise<PayPalOrderSnapshot> => {
+  const token = await getPayPalAccessToken();
+  const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${providerOrderId}`, {
+    headers: { Authorization: "Bearer " + token },
+    signal: AbortSignal.timeout(15_000),
+  });
+  const data = await response.json() as PayPalOrderSnapshot;
+  if (!response.ok) throw new Error(data.message || "PayPal order lookup failed");
+  return data;
+};
+
+const recordReconciledPayment = async ({
+  order,
+  providerOrderId,
+  providerSessionId,
+  providerPaymentId,
+  providerStatus,
+  providerCents,
+  providerCurrency,
+}: {
+  order: UncertainProviderOrder;
+  providerOrderId?: string | null;
+  providerSessionId?: string | null;
+  providerPaymentId?: string | null;
+  providerStatus: string;
+  providerCents?: number | null;
+  providerCurrency?: string | null;
+}) => {
+  const expected = await getOrderPaymentExpectation(order.id);
+  if (!providerPaymentMatchesExpectation(expected, providerCents, providerCurrency)) {
+    throw new Error(`Reconciled ${order.provider} amount or currency mismatch`);
+  }
+  const paidOrder = await markOrderPaid({
+    orderId: order.id,
+    provider: order.provider,
+    providerOrderId: providerOrderId ?? order.provider_order_id,
+    providerSessionId: providerSessionId ?? order.provider_session_id,
+    providerPaymentId,
+    providerStatus,
+  });
+  if (!paidOrder) {
+    const alreadyPaid = await isOrderInProviderState({
+      provider: order.provider,
+      orderId: order.id,
+      providerOrderId: providerOrderId ?? order.provider_order_id,
+      providerSessionId: providerSessionId ?? order.provider_session_id,
+      statuses: ["paid"],
+      paymentStatuses: ["paid"],
+    });
+    if (!alreadyPaid) throw new Error(`Reconciled ${order.provider} payment could not transition locally`);
+    return;
+  }
+  try {
+    await sendPurchaseTrackingEvents({
+      eventId: `purchase-${paidOrder.id}`,
+      orderId: paidOrder.id,
+      email: paidOrder.customer_email,
+      firstName: paidOrder.customer_name,
+      value: Number(paidOrder.total_amount),
+      currency: paidOrder.currency || "EUR",
+      items: Array.isArray(paidOrder.items) ? paidOrder.items : [],
+    }, {
+      consentMode: paidOrder.consent_mode,
+      url: "https://apfel-park.de/checkout/success",
+    });
+  } catch (error) {
+    console.error(`[marketplace-worker] reconciled purchase tracking ${order.id}: ${errorMessage(error)}`);
+  }
+  const notification = await notifyPaidOrderAdmin(order.id);
+  if (notification.status === "failed") {
+    console.error(`[marketplace-worker] reconciled order notification ${order.id} failed`);
+  }
+};
 
 const resetInterruptedWork = async (): Promise<void> => {
   await Promise.all([
@@ -98,15 +228,176 @@ const reconcileUncertainProviderOutcomes = async (): Promise<void> => {
   const result = await query(
     `SELECT id, provider, provider_status, provider_order_id, provider_session_id, updated_at FROM orders
      WHERE status = 'pending' AND payment_status = 'unpaid' AND (
-       (provider_status IN ('stripe_intent_requesting','stripe_intent_outcome_unknown') AND created_at < now() - interval '15 minutes')
-       OR (provider_status IN ('stripe_checkout_requesting','stripe_checkout_outcome_unknown') AND created_at < now() - interval '25 hours')
-       OR (provider_status IN ('paypal_order_requesting','paypal_order_outcome_unknown') AND created_at < now() - interval '73 hours')
+       (provider = 'stripe' AND provider_status = ANY($1::text[]) AND created_at < now() - ($2::int * interval '1 second'))
+       OR (provider = 'stripe' AND provider_status = ANY($3::text[]) AND created_at < now() - ($4::int * interval '1 second'))
+       OR (provider = 'paypal' AND provider_status = ANY($5::text[]) AND created_at < now() - ($6::int * interval '1 second'))
+       OR (provider = 'stripe' AND provider_status = 'provider_response_recovered' AND provider_order_id IS NOT NULL AND created_at < now() - ($2::int * interval '1 second'))
+       OR (provider = 'stripe' AND provider_status = 'provider_response_recovered' AND provider_session_id IS NOT NULL AND created_at < now() - ($4::int * interval '1 second'))
+       OR (provider = 'paypal' AND provider_status = 'provider_response_recovered' AND created_at < now() - ($6::int * interval '1 second'))
      )
      ORDER BY created_at LIMIT 25`,
+    [
+      [...STRIPE_INTENT_STALE_STATUSES],
+      PROVIDER_RECONCILIATION_AGE_SECONDS.stripeIntent,
+      [...STRIPE_CHECKOUT_STALE_STATUSES],
+      PROVIDER_RECONCILIATION_AGE_SECONDS.stripeCheckout,
+      [...PAYPAL_STALE_ORDER_STATUSES],
+      PROVIDER_RECONCILIATION_AGE_SECONDS.paypalOrder,
+    ],
   );
   for (const order of result.rows as UncertainProviderOrder[]) {
     try {
-      if (order.provider_status !== "stripe_intent_outcome_unknown" && order.provider_status !== "stripe_intent_requesting") {
+      const isStripeIntent = order.provider === "stripe" && (
+        isStripeIntentReconciliationStatus(order.provider_status)
+        || (order.provider_status === "provider_response_recovered" && Boolean(order.provider_order_id))
+        || !order.provider_session_id
+      );
+      if (!isStripeIntent) {
+        if (order.provider === "stripe" && order.provider_session_id) {
+          const secret = process.env.STRIPE_SECRET_KEY?.trim();
+          if (!secret) throw new Error("Stripe is not configured for Checkout Session reconciliation");
+          const readSession = async () => {
+            const response = await fetch(`https://api.stripe.com/v1/checkout/sessions/${order.provider_session_id}`, {
+              headers: { Authorization: "Bearer " + secret },
+              signal: AbortSignal.timeout(15_000),
+            });
+            const data = await response.json() as {
+              status?: string;
+              payment_status?: string;
+              amount_total?: number;
+              currency?: string;
+              payment_intent?: string | null;
+              error?: { message?: string };
+            };
+            if (!response.ok) throw new Error(data.error?.message || "Stripe Checkout Session lookup failed");
+            return data;
+          };
+          let session = await readSession();
+          let action = classifyStripeCheckoutSession({ status: session.status, paymentStatus: session.payment_status });
+          if (action === "protect") {
+            if (session.payment_status === "paid") {
+              await recordReconciledPayment({
+                order,
+                providerSessionId: order.provider_session_id,
+                providerPaymentId: session.payment_intent ?? null,
+                providerStatus: session.status || "complete",
+                providerCents: session.amount_total,
+                providerCurrency: session.currency,
+              });
+              continue;
+            }
+            await attachProviderReference({
+              orderId: order.id,
+              provider: "stripe",
+              providerSessionId: order.provider_session_id,
+              providerStatus: `checkout_${session.status || "unknown"}_${session.payment_status || "unknown"}`,
+            });
+            continue;
+          }
+          if (action === "expire") {
+            const expired = await fetch(`https://api.stripe.com/v1/checkout/sessions/${order.provider_session_id}/expire`, {
+              method: "POST",
+              headers: { Authorization: "Bearer " + secret, "Idempotency-Key": `reconcile_expire_${order.id}` },
+              signal: AbortSignal.timeout(15_000),
+            });
+            session = await expired.json() as typeof session;
+            if (!expired.ok) throw new Error(session.error?.message || "Stripe Checkout Session expiration failed");
+            action = classifyStripeCheckoutSession({ status: session.status, paymentStatus: session.payment_status });
+          }
+          if (action !== "release") {
+            throw new Error(`Stripe Checkout Session remained ${session.status || "unknown"}/${session.payment_status || "unknown"}`);
+          }
+          const boundSnapshot = await attachProviderReference({
+            orderId: order.id,
+            provider: "stripe",
+            providerSessionId: order.provider_session_id,
+            providerStatus: session.status || "expired",
+          });
+          if (!boundSnapshot) throw new Error("Expired Stripe Checkout Session conflicts with the local order");
+          const cancelledOrderId = await markOrderCancelled({
+            orderId: order.id,
+            provider: "stripe",
+            providerSessionId: order.provider_session_id,
+            providerStatus: session.status || "expired",
+            expectedStatus: "pending",
+            expectedPaymentStatus: "unpaid",
+            expectedProviderStatus: session.status || "expired",
+            expectedProviderOrderId: order.provider_order_id,
+            expectedProviderSessionId: order.provider_session_id,
+            expectedUpdatedAt: boundSnapshot.updatedAt,
+          });
+          if (!cancelledOrderId) throw new Error("Expired Stripe Checkout Session changed before cancellation");
+          continue;
+        }
+        if (order.provider === "paypal") {
+          if (!order.provider_order_id) throw new Error("Stale PayPal order has no provider order id");
+          const snapshot = await readPayPalOrder(order.provider_order_id);
+          const purchaseUnit = snapshot.purchase_units?.[0];
+          if (!paypalCaptureIdentityMatches({
+            paypalOrderId: order.provider_order_id,
+            responseOrderId: snapshot.id,
+            referenceId: purchaseUnit?.reference_id,
+            customId: purchaseUnit?.custom_id,
+            localOrderId: order.id,
+          })) throw new Error("PayPal reconciliation identity mismatch");
+          const capture = purchaseUnit?.payments?.captures?.[0];
+          if (snapshot.status === "COMPLETED") {
+            const amount = capture?.amount ?? purchaseUnit?.amount;
+            const providerCents = amount?.value ? Math.round(Number(amount.value) * 100) : null;
+            await recordReconciledPayment({
+              order,
+              providerOrderId: order.provider_order_id,
+              providerPaymentId: capture?.id ?? snapshot.id ?? order.provider_order_id,
+              providerStatus: capture?.status ?? snapshot.status,
+              providerCents,
+              providerCurrency: amount?.currency_code,
+            });
+            continue;
+          }
+          if (snapshot.status === "VOIDED") {
+            const cancelledOrderId = await markOrderCancelled({
+              orderId: order.id,
+              provider: "paypal",
+              providerOrderId: order.provider_order_id,
+              providerStatus: "VOIDED",
+              expectedStatus: "pending",
+              expectedPaymentStatus: "unpaid",
+              expectedProviderStatus: order.provider_status,
+              expectedProviderOrderId: order.provider_order_id,
+              expectedProviderSessionId: order.provider_session_id,
+              expectedUpdatedAt: new Date(order.updated_at).toISOString(),
+            });
+            if (!cancelledOrderId) throw new Error("Voided PayPal order changed before cancellation");
+            continue;
+          }
+          if (!snapshot.status || !["CREATED", "PAYER_ACTION_REQUIRED", "APPROVED"].includes(snapshot.status)) {
+            throw new Error(`PayPal order has unhandled status ${snapshot.status || "unknown"}`);
+          }
+          if (order.provider_status !== "paypal_expiry_check") {
+            const fenced = await attachProviderReference({
+              orderId: order.id,
+              provider: "paypal",
+              providerOrderId: order.provider_order_id,
+              providerStatus: "paypal_expiry_check",
+            });
+            if (!fenced) throw new Error("PayPal expiry fence conflicted with the local order");
+            continue;
+          }
+          const cancelledOrderId = await markOrderCancelled({
+            orderId: order.id,
+            provider: "paypal",
+            providerOrderId: order.provider_order_id,
+            providerStatus: `${snapshot.status}_expired`,
+            expectedStatus: "pending",
+            expectedPaymentStatus: "unpaid",
+            expectedProviderStatus: "paypal_expiry_check",
+            expectedProviderOrderId: order.provider_order_id,
+            expectedProviderSessionId: order.provider_session_id,
+            expectedUpdatedAt: new Date(order.updated_at).toISOString(),
+          });
+          if (!cancelledOrderId) throw new Error("PayPal expiry reconciliation changed before cancellation");
+          continue;
+        }
         const cancelledOrderId = await markOrderCancelled({ orderId: order.id, provider: order.provider, providerStatus: "stale_provider_outcome_expired", expectedStatus: "pending", expectedPaymentStatus: "unpaid", expectedProviderStatus: order.provider_status, expectedProviderOrderId: order.provider_order_id, expectedProviderSessionId: order.provider_session_id, expectedUpdatedAt: new Date(order.updated_at).toISOString() });
         if (!cancelledOrderId) throw new Error("Stale provider outcome changed before cancellation");
         continue;
@@ -118,9 +409,12 @@ const reconcileUncertainProviderOutcomes = async (): Promise<void> => {
         headers: { Authorization: `Bearer ${secret}` },
         signal: AbortSignal.timeout(15_000),
       });
-      const searchData = await search.json() as { data?: Array<{ id?: string; status?: string }>; error?: { message?: string } };
+      const searchData = await search.json() as {
+        data?: Array<{ id?: string; status?: string; amount?: number; currency?: string }>;
+        error?: { message?: string };
+      };
       if (!search.ok) throw new Error(searchData.error?.message || "Stripe PaymentIntent search failed");
-      const intents = (searchData.data ?? []).filter((intent): intent is { id: string; status?: string } => Boolean(intent.id));
+      const intents = (searchData.data ?? []).filter((intent): intent is { id: string; status?: string; amount?: number; currency?: string } => Boolean(intent.id));
       if (intents.length > 1) throw new Error("Multiple PaymentIntents matched one local order");
       if (intents.length === 0) {
         const cancelledOrderId = await markOrderCancelled({ orderId: order.id, provider: "stripe", providerStatus: "no_remote_payment_intent", expectedStatus: "pending", expectedPaymentStatus: "unpaid", expectedProviderStatus: order.provider_status, expectedProviderOrderId: order.provider_order_id, expectedProviderSessionId: order.provider_session_id, expectedUpdatedAt: new Date(order.updated_at).toISOString() });
@@ -129,13 +423,30 @@ const reconcileUncertainProviderOutcomes = async (): Promise<void> => {
       }
       const intent = intents[0];
       const boundProviderStatus = intent.status || "reconciled";
+      const intentAction = classifyStripePaymentIntent(intent.status);
+      if (intentAction === "protect") {
+        if (intent.status === "succeeded") {
+          await recordReconciledPayment({
+            order,
+            providerOrderId: intent.id,
+            providerPaymentId: intent.id,
+            providerStatus: intent.status,
+            providerCents: intent.amount,
+            providerCurrency: intent.currency,
+          });
+        } else {
+          const protectedSnapshot = await attachProviderReference({ orderId: order.id, provider: "stripe", providerOrderId: intent.id, providerStatus: boundProviderStatus });
+          if (!protectedSnapshot) throw new Error("Processing PaymentIntent conflicts with the local order");
+        }
+        continue;
+      }
+      if (intentAction === "investigate") throw new Error(`Stripe PaymentIntent has unhandled status ${intent.status || "unknown"}`);
       const boundSnapshot = await attachProviderReference({ orderId: order.id, provider: "stripe", providerOrderId: intent.id, providerStatus: boundProviderStatus });
       if (!boundSnapshot) {
         throw new Error("Reconciled PaymentIntent conflicts with the local order");
       }
-      if (intent.status === "succeeded" || intent.status === "processing") continue;
       let finalStatus = intent.status;
-      if (intent.status !== "canceled") {
+      if (intentAction === "cancel") {
         const cancelled = await fetch(`https://api.stripe.com/v1/payment_intents/${intent.id}/cancel`, {
           method: "POST",
           headers: { Authorization: `Bearer ${secret}`, "Idempotency-Key": `reconcile_cancel_${order.id}` },

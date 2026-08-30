@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { ShippingMethod, ValidatedCart } from "@/lib/checkout";
@@ -9,15 +10,20 @@ import {
   getServerCartSnapshot,
   readStoredCart,
   subscribeStoredCart,
+  writeStoredCart,
   type StoredCartItem,
 } from "@/components/checkout/cart";
 
 import PaymentBrandIcons from "@/components/PaymentBrandIcons";
-import StripePaymentElement from "@/components/checkout/StripePaymentElement";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import { siteInfo } from "@/lib/site";
 import { buildStripePaymentReturnUrl } from "@/lib/stripe";
 import { fulfillmentCopy } from "@/lib/fulfillment-copy";
+
+const StripePaymentElement = dynamic(
+  () => import("@/components/checkout/StripePaymentElement"),
+  { ssr: false },
+);
 
 type Props = {
   locale: "de" | "en";
@@ -39,6 +45,8 @@ type CustomerState = {
   postalCode: string;
   city: string;
 };
+
+type CheckoutField = keyof CustomerState | "conditionConsent" | "termsConsent";
 
 const MONEY = "tabular-nums";
 
@@ -109,6 +117,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
     city: "",
   });
   const [error, setError] = useState("");
+  const [invalidField, setInvalidField] = useState<CheckoutField | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<"stripe" | "paypal" | null>(null);
   const [conditionConsent, setConditionConsent] = useState(false);
@@ -160,6 +169,15 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
       setLoading(false);
       return;
     }
+    const canonicalItems: StoredCartItem[] = data.cart.items.map((line) => ({
+      productId: line.productId,
+      variantColor: line.variantColor ?? null,
+      variantStorage: line.variantStorage ?? null,
+      quantity: line.quantity,
+    }));
+    if (JSON.stringify(canonicalItems) !== JSON.stringify(nextItems)) {
+      writeStoredCart(canonicalItems);
+    }
     setCart(data.cart);
     setLoading(false);
   }, [locale]);
@@ -176,43 +194,43 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
     [cart],
   );
 
-  const getValidationError = useCallback((): string | null => {
+  const getValidationIssue = useCallback((): { message: string; field: CheckoutField | null } | null => {
     if (!cart || cart.items.length === 0) {
-      return locale === "de" ? "Ihr Warenkorb ist leer." : "Your cart is empty.";
+      return { message: locale === "de" ? "Ihr Warenkorb ist leer." : "Your cart is empty.", field: null };
     }
     if (!customer.name.trim()) {
-      return locale === "de" ? "Bitte geben Sie Ihren vollständigen Namen ein." : "Please enter your full name.";
+      return { message: locale === "de" ? "Bitte geben Sie Ihren vollständigen Namen ein." : "Please enter your full name.", field: "name" };
     }
     if (!customer.email.trim() || !customer.email.includes("@")) {
-      return locale === "de" ? "Bitte geben Sie eine gültige E-Mail-Adresse ein." : "Please enter a valid email address.";
+      return { message: locale === "de" ? "Bitte geben Sie eine gültige E-Mail-Adresse ein." : "Please enter a valid email address.", field: "email" };
     }
     if (shippingMethod === "germany") {
       if (!customer.line1.trim()) {
-        return locale === "de" ? "Bitte geben Sie Straße und Hausnummer für die Lieferung ein." : "Please enter street and house number for delivery.";
+        return { message: locale === "de" ? "Bitte geben Sie Straße und Hausnummer für die Lieferung ein." : "Please enter street and house number for delivery.", field: "line1" };
       }
       if (!customer.postalCode.trim()) {
-        return locale === "de" ? "Bitte geben Sie Ihre Postleitzahl ein." : "Please enter your postal code.";
+        return { message: locale === "de" ? "Bitte geben Sie Ihre Postleitzahl ein." : "Please enter your postal code.", field: "postalCode" };
       }
       if (!customer.city.trim()) {
-        return locale === "de" ? "Bitte geben Sie Ihre Stadt ein." : "Please enter your city.";
+        return { message: locale === "de" ? "Bitte geben Sie Ihre Stadt ein." : "Please enter your city.", field: "city" };
       }
     }
     if (hasNonNewItems && !conditionConsent) {
-      return locale === "de"
+      return { message: locale === "de"
         ? "Bitte bestätigen Sie die Kenntnisnahme des Gerätezustands (Checkbox 'Mir ist bekannt...')."
-        : "Please confirm acknowledgment of the device condition for used/open-box items.";
+        : "Please confirm acknowledgment of the device condition for used/open-box items.", field: "conditionConsent" };
     }
     if (!termsConsent) {
-      return locale === "de"
+      return { message: locale === "de"
         ? "Bitte akzeptieren Sie die AGB und die Widerrufsbelehrung (Checkbox unten)."
-        : "Please accept the terms and conditions and the withdrawal policy.";
+        : "Please accept the terms and conditions and the withdrawal policy.", field: "termsConsent" };
     }
     return null;
   }, [cart, customer, shippingMethod, hasNonNewItems, conditionConsent, termsConsent, locale]);
 
   const canSubmit = useMemo(() => {
-    return getValidationError() === null;
-  }, [getValidationError]);
+    return getValidationIssue() === null;
+  }, [getValidationIssue]);
 
   const buildPayload = () => ({
     items,
@@ -248,12 +266,19 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
       return;
     }
 
-    const validationMsg = getValidationError();
-    if (validationMsg) {
-      setError(validationMsg);
+    const validationIssue = getValidationIssue();
+    if (validationIssue) {
+      setError(validationIssue.message);
+      setInvalidField(validationIssue.field);
+      if (validationIssue.field) {
+        window.requestAnimationFrame(() => {
+          document.querySelector<HTMLElement>(`[data-checkout-field="${validationIssue.field}"]`)?.focus();
+        });
+      }
       return;
     }
 
+    setInvalidField(null);
     setSubmitting(provider);
     setError("");
     window.apfelTrack?.("begin_checkout", {
@@ -324,6 +349,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
 
   const updateCustomerField = <K extends keyof CustomerState>(field: K, value: CustomerState[K]) => {
     setCustomer((current) => ({ ...current, [field]: value }));
+    if (invalidField === field) setInvalidField(null);
     setClientSecret(null);
     setEmbeddedOrderId(null);
     setIdempotencyKey(createIdempotencyKey());
@@ -366,7 +392,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
         </header>
 
         {error ? (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100" role="alert">
+          <div id="checkout-error-summary" className="rounded-lg border border-red/30 bg-red/10 px-4 py-3 text-sm text-red-text" role="alert" aria-live="assertive">
             {error}
           </div>
         ) : null}
@@ -379,11 +405,11 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             <label className="block">
               <span className={LABEL_CLASS}>{locale === "de" ? "Name *" : "Name *"}</span>
-              <input required autoComplete="name" className={FIELD_CLASS} value={customer.name} onChange={(event) => updateCustomerField("name", event.target.value)} />
+              <input required data-checkout-field="name" aria-invalid={invalidField === "name"} aria-describedby={invalidField === "name" ? "checkout-error-summary" : undefined} autoComplete="name" className={FIELD_CLASS} value={customer.name} onChange={(event) => updateCustomerField("name", event.target.value)} />
             </label>
             <label className="block">
               <span className={LABEL_CLASS}>{locale === "de" ? "E-Mail *" : "Email *"}</span>
-              <input required type="email" autoComplete="email" className={FIELD_CLASS} value={customer.email} onChange={(event) => updateCustomerField("email", event.target.value)} />
+              <input required type="email" data-checkout-field="email" aria-invalid={invalidField === "email"} aria-describedby={invalidField === "email" ? "checkout-error-summary" : undefined} autoComplete="email" className={FIELD_CLASS} value={customer.email} onChange={(event) => updateCustomerField("email", event.target.value)} />
             </label>
             <label className="block md:col-span-2">
               <span className={LABEL_CLASS}>{locale === "de" ? "Telefon (optional)" : "Phone (optional)"}</span>
@@ -434,8 +460,8 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                   <p id="checkout-pickup-details" className="mt-3 text-xs font-medium text-gold">{siteInfo.address.street}, {siteInfo.address.postalCode} {siteInfo.address.city}</p>
                   {clock ? (
                     <p className="mt-2 flex items-center gap-2 text-xs">
-                      <span className={`h-1.5 w-1.5 rounded-full ${storeOpen ? "bg-emerald-400" : "bg-muted-strong"}`} />
-                      <span className={storeOpen ? "text-emerald-400" : "text-muted"}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${storeOpen ? "bg-green" : "bg-muted-strong"}`} />
+                      <span className={storeOpen ? "text-green-text" : "text-muted"}>
                         {storeOpen
                           ? locale === "de" ? "Jetzt geöffnet bis 20:00 Uhr" : "Open now until 20:00"
                           : locale === "de" ? "Geschlossen · Mo–Sa ab 09:30 Uhr" : "Closed · Mon–Sat from 09:30"}
@@ -477,7 +503,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <label className="block md:col-span-2">
                 <span className={LABEL_CLASS}>{locale === "de" ? "Straße und Hausnummer *" : "Street and number *"}</span>
-                <input required autoComplete="address-line1" className={FIELD_CLASS} value={customer.line1} onChange={(event) => updateCustomerField("line1", event.target.value)} />
+                <input required data-checkout-field="line1" aria-invalid={invalidField === "line1"} aria-describedby={invalidField === "line1" ? "checkout-error-summary" : undefined} autoComplete="address-line1" className={FIELD_CLASS} value={customer.line1} onChange={(event) => updateCustomerField("line1", event.target.value)} />
               </label>
               <label className="block md:col-span-2">
                 <span className={LABEL_CLASS}>{locale === "de" ? "Adresszusatz (optional)" : "Address line 2 (optional)"}</span>
@@ -485,11 +511,11 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
               </label>
               <label className="block">
                 <span className={LABEL_CLASS}>{locale === "de" ? "PLZ *" : "Postal code *"}</span>
-                <input required autoComplete="postal-code" className={FIELD_CLASS} value={customer.postalCode} onChange={(event) => updateCustomerField("postalCode", event.target.value)} />
+                <input required data-checkout-field="postalCode" aria-invalid={invalidField === "postalCode"} aria-describedby={invalidField === "postalCode" ? "checkout-error-summary" : undefined} autoComplete="postal-code" className={FIELD_CLASS} value={customer.postalCode} onChange={(event) => updateCustomerField("postalCode", event.target.value)} />
               </label>
               <label className="block">
                 <span className={LABEL_CLASS}>{locale === "de" ? "Ort *" : "City *"}</span>
-                <input required autoComplete="address-level2" className={FIELD_CLASS} value={customer.city} onChange={(event) => updateCustomerField("city", event.target.value)} />
+                <input required data-checkout-field="city" aria-invalid={invalidField === "city"} aria-describedby={invalidField === "city" ? "checkout-error-summary" : undefined} autoComplete="address-level2" className={FIELD_CLASS} value={customer.city} onChange={(event) => updateCustomerField("city", event.target.value)} />
               </label>
             </div>
           ) : null}
@@ -520,7 +546,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm leading-snug text-foreground">{item.title}</span>
                       {item.condition && item.condition !== "new" ? (
-                        <span className="mt-1 inline-block text-[11px] uppercase tracking-[0.12em] text-emerald-400">
+                        <span className="mt-1 inline-block text-[11px] uppercase tracking-[0.12em] text-green-text">
                           {item.condition === "used" ? (locale === "de" ? "Gebraucht A+" : "Used A+") : "Open-Box"}
                         </span>
                       ) : null}
@@ -541,7 +567,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 </div>
                 {couponPreview ? <div className="flex justify-between text-green"><dt>{locale==="de"?`Gutschein ${couponCode}`:`Coupon ${couponCode}`}</dt><dd className={MONEY}>−{formatMoney(locale,couponPreview.discountAmountCents/100,cart.currency)}</dd></div> : null}
                 <div className="flex justify-between text-muted">
-                  <dt>{locale === "de" ? "Versand" : "Shipping"}</dt>
+                  <dt>{shippingMethod === "pickup" ? (locale === "de" ? "Abholung" : "Pickup") : (locale === "de" ? "Versand" : "Shipping")}</dt>
                   <dd className={MONEY}>
                     {cart.shippingAmount === 0
                       ? locale === "de" ? "Gratis" : "Free"
@@ -566,7 +592,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
 
               {hasNonNewItems ? (
                 <label className="mt-6 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted">
-                  <input type="checkbox" checked={conditionConsent} onChange={(event) => setConditionConsent(event.target.checked)} className="mt-0.5 accent-[color:var(--gold)]" required />
+                  <input type="checkbox" data-checkout-field="conditionConsent" aria-invalid={invalidField === "conditionConsent"} aria-describedby={invalidField === "conditionConsent" ? "checkout-error-summary" : undefined} checked={conditionConsent} onChange={(event) => { setConditionConsent(event.target.checked); if (invalidField === "conditionConsent") setInvalidField(null); }} className="mt-0.5 accent-[color:var(--gold)]" required />
                   <span>
                     {locale === "de"
                       ? "Mir ist bekannt, dass diese Bestellung Open-Box- bzw. Gebrauchtgeräte enthält. "
@@ -580,7 +606,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
               ) : null}
 
               <label className="mt-4 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted">
-                <input type="checkbox" checked={termsConsent} onChange={(event) => setTermsConsent(event.target.checked)} className="mt-0.5 accent-[color:var(--gold)]" required />
+                <input type="checkbox" data-checkout-field="termsConsent" aria-invalid={invalidField === "termsConsent"} aria-describedby={invalidField === "termsConsent" ? "checkout-error-summary" : undefined} checked={termsConsent} onChange={(event) => { setTermsConsent(event.target.checked); if (invalidField === "termsConsent") setInvalidField(null); }} className="mt-0.5 accent-[color:var(--gold)]" required />
                 <span>
                   {locale === "de" ? "Ich akzeptiere die " : "I accept the "}
                   <a href={`/${locale}/terms`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">
@@ -594,11 +620,6 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 </span>
               </label>
 
-              {error ? (
-                <div className="mt-4 rounded-xl border border-red-500/40 bg-red-500/15 p-3.5 text-xs font-semibold text-red-600 dark:text-red-200 shadow-sm" role="alert">
-                  ⚠️ {error}
-                </div>
-              ) : null}
 
               {embeddedPayments && clientSecret && embeddedOrderId && stripePublishableKey ? (
                 <StripePaymentElement

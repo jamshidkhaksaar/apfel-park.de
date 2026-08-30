@@ -137,20 +137,11 @@ export const merchantReturnPolicy = () => ({
   merchantReturnLink: `${siteInfo.url}/de/delivery-returns`,
 });
 
-export const offerValidFrom = (createdAt?: string): string => {
-  if (createdAt) {
-    const created = new Date(createdAt);
-    if (!Number.isNaN(created.getTime())) {
-      return created.toISOString().split("T")[0];
-    }
-  }
-  const date = new Date();
-  date.setDate(date.getDate() - 30);
-  return date.toISOString().split("T")[0];
+export const offerValidFrom = (createdAt?: string): string | undefined => {
+  if (!createdAt) return undefined;
+  const created = new Date(createdAt);
+  return Number.isNaN(created.getTime()) ? undefined : created.toISOString().split("T")[0];
 };
 
-export const offerPriceValidUntil = (): string => {
-  const date = new Date();
-  date.setDate(date.getDate() + 30);
-  return date.toISOString().split("T")[0];
-};
+/** Optional in Google merchant schema; omit until a real promotion end date exists. */
+export const offerPriceValidUntil = (): undefined => undefined;

@@ -86,6 +86,15 @@ export default function CartClient({ locale }: Props) {
       setLoading(false);
       return;
     }
+    const canonicalItems: StoredCartItem[] = data.cart.items.map((line) => ({
+      productId: line.productId,
+      variantColor: line.variantColor ?? null,
+      variantStorage: line.variantStorage ?? null,
+      quantity: line.quantity,
+    }));
+    if (JSON.stringify(canonicalItems) !== JSON.stringify(nextItems)) {
+      writeStoredCart(canonicalItems);
+    }
     setCart(data.cart);
     setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
     setLoading(false);
@@ -144,7 +153,7 @@ export default function CartClient({ locale }: Props) {
         </div>
 
         {error ? (
-          <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+          <div className="mt-6 rounded-xl border border-red/30 bg-red/10 p-4 text-sm text-red-text" role="alert">
             {error}
           </div>
         ) : null}
@@ -187,14 +196,14 @@ export default function CartClient({ locale }: Props) {
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     {line.condition && line.condition !== "new" ? (
-                      <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-500">
+                      <span className="rounded-md bg-green/10 px-2 py-0.5 text-xs font-medium text-green-text">
                         {line.condition === "used"
                           ? locale === "de" ? "Gebraucht A+" : "Used A+"
                           : "Open-Box"}
                       </span>
                     ) : null}
                     {typeof line.stock === "number" && line.stock > 0 && line.stock <= 3 ? (
-                      <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-500">
+                      <span className="rounded-md bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold-text">
                         {locale === "de" ? `Nur noch ${line.stock} verfügbar` : `Only ${line.stock} left`}
                       </span>
                     ) : null}
@@ -221,7 +230,7 @@ export default function CartClient({ locale }: Props) {
                     </button>
                     <button
                       type="button"
-                      className="text-sm text-muted transition hover:text-red-200"
+                      className="text-sm text-muted transition hover:text-red-text"
                       aria-label={locale === "de" ? `${line.title} entfernen` : `Remove ${line.title}`}
                       onClick={() => removeLine(line)}
                     >
@@ -336,7 +345,7 @@ export default function CartClient({ locale }: Props) {
               <span className="mt-1 block text-xs leading-5 text-muted">{fulfillmentCopy[locale].delivery.description}</span>
               <span className="mt-2 block text-[11px] font-medium text-muted">{fulfillmentCopy[locale].delivery.location} · {fulfillmentCopy[locale].delivery.timing}</span>
             </span>
-            <span className="ml-auto shrink-0 text-right text-xs font-semibold text-foreground">{cart ? formatMoney(locale, cart.shippingAmount, cart.currency) : "-"}{shippingMethod === "germany" ? <span className="mt-1 block text-[10px] uppercase tracking-wide text-gold">{fulfillmentCopy[locale].selected}</span> : null}</span>
+            <span className="ml-auto shrink-0 text-right text-xs font-semibold text-foreground">{shippingMethod === "germany" && cart ? formatMoney(locale, cart.shippingAmount, cart.currency) : (locale === "de" ? "Nach Auswahl" : "After selection")}{shippingMethod === "germany" ? <span className="mt-1 block text-[10px] uppercase tracking-wide text-gold">{fulfillmentCopy[locale].selected}</span> : null}</span>
           </label>
           </div>
         </section>
@@ -351,7 +360,7 @@ export default function CartClient({ locale }: Props) {
             <span>{cart ? formatMoney(locale, cart.subtotalAmount, cart.currency) : "-"}</span>
           </div>
           <div className="flex justify-between text-muted">
-            <span>{locale === "de" ? "Versand" : "Shipping"}</span>
+            <span>{shippingMethod === "pickup" ? (locale === "de" ? "Abholung" : "Pickup") : (locale === "de" ? "Versand" : "Shipping")}</span>
             <span>{cart ? formatMoney(locale, cart.shippingAmount, cart.currency) : "-"}</span>
           </div>
           <div className="flex justify-between text-xs text-muted">
@@ -364,19 +373,25 @@ export default function CartClient({ locale }: Props) {
           </div>
         </div>
 
-        <Link
-          href={`/${locale}/checkout?shipping=${shippingMethod}`}
-          className={`btn-primary mt-6 w-full justify-center ${!cart || cart.items.length === 0 ? "pointer-events-none opacity-50" : ""}`}
-          onClick={() => {
-            window.apfelTrack?.("begin_checkout", {
-              currency: cart?.currency || "EUR",
-              value: cart?.totalAmount || 0,
-              items: cart?.items.map((item) => ({ item_id: item.productId, item_name: item.title, quantity: item.quantity })) || [],
-            });
-          }}
-        >
-          {locale === "de" ? "Zur Kasse" : "Checkout"}
-        </Link>
+        {cart && cart.items.length > 0 ? (
+          <Link
+            href={`/${locale}/checkout?shipping=${shippingMethod}`}
+            className="btn-primary mt-6 w-full justify-center"
+            onClick={() => {
+              window.apfelTrack?.("begin_checkout", {
+                currency: cart.currency,
+                value: cart.totalAmount,
+                items: cart.items.map((item) => ({ item_id: item.productId, item_name: item.title, quantity: item.quantity })),
+              });
+            }}
+          >
+            {locale === "de" ? "Zur Kasse" : "Checkout"}
+          </Link>
+        ) : (
+          <button type="button" disabled className="btn-primary mt-6 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50">
+            {locale === "de" ? "Warenkorb ist leer" : "Cart is empty"}
+          </button>
+        )}
         <Link href={`/${locale}/delivery-returns`} className="mt-3 block text-center text-xs text-muted underline underline-offset-4 transition hover:text-gold">
           {locale === "de" ? "Lieferung, Rückgabe & Widerruf" : "Delivery, returns & withdrawal"}
         </Link>

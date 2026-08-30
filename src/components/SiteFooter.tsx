@@ -12,6 +12,7 @@ import CookieSettingsButton from "./CookieSettingsButton";
 import CopyAddressButton from "./CopyAddressButton";
 import ExternalMapEmbed from "./ExternalMapEmbed";
 import Logo from "./Logo";
+import OfferSubscription from "./OfferSubscription";
 import PaymentBrandIcons from "./PaymentBrandIcons";
 import SafeEmailLink from "./SafeEmailLink";
 import TrackedLink from "./TrackedLink";
@@ -289,7 +290,9 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             <PaymentBrandIcons iconClassName="h-8 w-auto" />
           </div>
 
-          {/* Copyright Bar */}
+          <OfferSubscription lang={lang} />
+
+        {/* Copyright Bar */}
           <div className="flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <p>
               © 2026 Apfel Park. {lang === "de" ? "Alle Rechte vorbehalten." : "All rights reserved."}

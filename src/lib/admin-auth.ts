@@ -66,6 +66,10 @@ export const canManageOrders = (user: User | null): boolean => {
   return role === "manager";
 };
 
+export const canManageCampaigns = (user: User | null): boolean => {
+  return canManageOrders(user);
+};
+
 export const canManageRepairs = (user: User | null): boolean => {
   if (!user) return false;
   if (isAdminUser(user)) return true;
@@ -98,6 +102,7 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
   if (role === "manager") {
     paths.push(
       "/admin/products",
+      "/admin/campaigns",
       "/admin/inventory",
       "/admin/orders",
       "/admin/repairs",

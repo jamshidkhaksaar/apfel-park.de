@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 
 import type { CatalogCardModel } from "@/lib/catalog-card";
 import { formatPrice } from "@/lib/format";
@@ -28,7 +28,6 @@ const ArrowIcon = ({ direction }: { direction: "left" | "right" }) => (
 
 export default function TrendingProductsCarousel({ products, lang, compact = false }: TrendingProductsCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const [paused, setPaused] = useState(false);
   const isGerman = lang === "de";
 
   const scroll = useCallback((direction: 1 | -1) => {
@@ -49,33 +48,6 @@ export default function TrendingProductsCarousel({ products, lang, compact = fal
     track.scrollBy({ left: distance * direction, behavior: "smooth" });
   }, []);
 
-  // Autoplay is a pointer-device affordance. On touch there is no hover to pause
-  // it, so a self-advancing track fights the user mid-swipe — don't run it there.
-  useEffect(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const coarsePointer = window.matchMedia("(pointer: coarse)");
-    if (paused || reduceMotion.matches || coarsePointer.matches || products.length < 5) return;
-    const timer = window.setInterval(() => {
-      if (document.hidden) return;
-      scroll(1);
-    }, 6_500);
-    return () => window.clearInterval(timer);
-  }, [paused, products.length, scroll]);
-
-  // Any direct interaction with the track stops autoplay for the rest of the visit.
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    const stop = () => setPaused(true);
-    track.addEventListener("touchstart", stop, { passive: true });
-    track.addEventListener("pointerdown", stop);
-    track.addEventListener("wheel", stop, { passive: true });
-    return () => {
-      track.removeEventListener("touchstart", stop);
-      track.removeEventListener("pointerdown", stop);
-      track.removeEventListener("wheel", stop);
-    };
-  }, []);
 
   if (products.length === 0) return null;
 
@@ -83,12 +55,6 @@ export default function TrendingProductsCarousel({ products, lang, compact = fal
     <section
       className={`${compact ? "my-5" : "mb-10"} overflow-hidden rounded-2xl border border-border p-4 sm:p-5`}
       aria-labelledby="trending-products-heading"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
-      }}
     >
       <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>

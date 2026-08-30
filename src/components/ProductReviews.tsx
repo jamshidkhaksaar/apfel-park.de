@@ -130,7 +130,20 @@ export default function ProductReviews({
               </div>
               {review.title ? <p className="mt-3 font-semibold text-foreground">{review.title}</p> : null}
               <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted">{review.body}</p>
-              {review.mediaUrls.length ? <div className="mt-4 flex gap-3 overflow-x-auto">{review.mediaUrls.map(url=><a key={url} href={url} target="_blank" rel="noreferrer" className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-border bg-white"><Image src={url} alt="" fill sizes="112px" className="object-cover" unoptimized /></a>)}</div> : null}
+              {review.mediaUrls.length ? (
+                <div className="mt-4 flex gap-3 overflow-x-auto">
+                  {review.mediaUrls.map((url, index) => {
+                    const label = locale === "de"
+                      ? `Kundenfoto ${index + 1} von ${review.authorName}`
+                      : `Customer photo ${index + 1} by ${review.authorName}`;
+                    return (
+                      <a key={url} href={url} target="_blank" rel="noreferrer" aria-label={label} className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-border bg-white">
+                        <Image src={url} alt={label} fill sizes="112px" className="object-cover" />
+                      </a>
+                    );
+                  })}
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -149,11 +162,13 @@ export default function ProductReviews({
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
               {locale === "de" ? "Deine Bewertung *" : "Your rating *"}
             </p>
-            <div className="mt-2 flex gap-1">
+            <div className="mt-2 flex gap-1" role="radiogroup" aria-label={locale === "de" ? "Bewertung in Sternen" : "Star rating"}>
               {[1, 2, 3, 4, 5].map((step) => (
                 <button
                   key={step}
                   type="button"
+                  role="radio"
+                  aria-checked={rating === step}
                   aria-label={`${step} / 5`}
                   onClick={() => setRating(step)}
                   className="transition hover:scale-110"
@@ -206,7 +221,7 @@ export default function ProductReviews({
             />
           </label>
           {invited ? <label className="block space-y-2"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{locale==="de"?"Kundenfotos (optional, max. 3)":"Customer photos (optional, max 3)"}</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={event=>setFiles(Array.from(event.target.files??[]).slice(0,3))} className="w-full rounded-2xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-foreground"/><span className="text-xs text-muted">{files.length}/3</span></label> : null}
-          {error ? <p className="text-sm text-red-400" role="alert">{error}</p> : null}
+          {error ? <p className="text-sm text-red-text" role="alert">{error}</p> : null}
           <button type="submit" disabled={state === "sending" || recaptchaLoading} className="btn-primary justify-center disabled:opacity-50">
             {state === "sending"
               ? locale === "de" ? "Wird gesendet…" : "Sending…"

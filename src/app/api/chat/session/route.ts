@@ -7,6 +7,9 @@ import {
   type ChatLocale,
   validateChatStart,
 } from "@/lib/chat";
+import { toPublicChatPayload } from "@/lib/chat-public";
+import { CHAT_SESSION_COOKIE, getChatSessionCookieOptions } from "@/lib/chat-session";
+import { consumePublicRateLimit } from "@/lib/public-rate-limit";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 
 type StartPayload = {
@@ -32,21 +35,33 @@ const messages = {
   },
 } as const;
 
+const sessionToken = (request: NextRequest) =>
+  request.cookies.get(CHAT_SESSION_COOKIE)?.value.trim() ?? "";
+
+const limited = (retryAfter: number) =>
+  NextResponse.json(
+    { success: false, error: "Too many chat requests" },
+    { status: 429, headers: { "Retry-After": String(retryAfter) } },
+  );
+
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token") ?? "";
-  if (!token) {
-    return NextResponse.json({ conversation: null, messages: [] });
-  }
+  const token = sessionToken(request);
+  if (!token) return NextResponse.json({ conversation: null, messages: [] });
+  const limit = await consumePublicRateLimit(request.headers, "chat_poll", 180, 5 * 60);
+  if (!limit.allowed) return limited(limit.retryAfter);
 
   const conversation = await getConversationByToken(token);
   if (!conversation) {
-    return NextResponse.json({ conversation: null, messages: [] });
+    const response = NextResponse.json({ conversation: null, messages: [] });
+    response.cookies.set(CHAT_SESSION_COOKIE, "", { ...getChatSessionCookieOptions(), maxAge: 0 });
+    return response;
   }
-
-  return NextResponse.json(conversation);
+  return NextResponse.json(toPublicChatPayload(conversation));
 }
 
 export async function POST(request: NextRequest) {
+  const limit = await consumePublicRateLimit(request.headers, "chat_start", 5, 15 * 60);
+  if (!limit.allowed) return limited(limit.retryAfter);
   try {
     const body = (await request.json()) as StartPayload;
     const locale: ChatLocale = body.locale === "en" ? "en" : "de";
@@ -76,14 +91,17 @@ export async function POST(request: NextRequest) {
       sourcePage: validated.sourcePage,
       message: validated.message,
     });
-
     const fullConversation = await getConversationByToken(created.publicToken);
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      token: created.publicToken,
-      ...(fullConversation ?? { conversation: created.conversation, messages: [] }),
+      ...toPublicChatPayload(fullConversation ?? { conversation: created.conversation, messages: [] }),
     });
+    response.cookies.set(
+      CHAT_SESSION_COOKIE,
+      created.publicToken,
+      getChatSessionCookieOptions(),
+    );
+    return response;
   } catch (error) {
     console.error("[Chat Session API] Failed:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
@@ -91,12 +109,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const limit = await consumePublicRateLimit(request.headers, "chat_typing", 120, 5 * 60);
+  if (!limit.allowed) return limited(limit.retryAfter);
   try {
-    const body = (await request.json()) as { token?: string; isTyping?: boolean };
-    const token = typeof body.token === "string" ? body.token.trim() : "";
-    if (!token) {
-      return NextResponse.json({ success: false, error: "Missing token" }, { status: 400 });
-    }
+    const body = (await request.json()) as { isTyping?: boolean };
+    const token = sessionToken(request);
+    if (!token) return NextResponse.json({ success: false, error: "Missing chat session" }, { status: 401 });
     const success = await setCustomerTyping(token, body.isTyping === true);
     if (!success) {
       return NextResponse.json({ success: false, error: "Conversation not found" }, { status: 404 });

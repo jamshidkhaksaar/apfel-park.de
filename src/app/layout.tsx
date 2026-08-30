@@ -39,7 +39,7 @@ export const generateMetadata = async (): Promise<Metadata> => {
 
   const defaultTitle = "Apfel Park – iPhone & Smartphones kaufen in Hamburg";
   const defaultDescription =
-    "Smartphones und iPhones in Hamburg-Wilhelmsburg: neu, Open Box und gebraucht – geprüft und mit Garantie. Ankauf und Reparatur vor Ort.";
+    "Smartphones und iPhones in Hamburg-Wilhelmsburg: neu, Open Box und gebraucht mit klar ausgewiesenem Zustand. Ankauf und Reparatur vor Ort.";
 
   return {
     metadataBase: new URL("https://apfel-park.de"),
@@ -102,17 +102,18 @@ export default async function RootLayout({
       ? "en"
       : "de";
   const themeCookie = cookieStore.get("apfel-theme");
-  const theme = themeCookie?.value === "dark" || themeCookie?.value === "mono"
-    ? themeCookie.value
-    : "mono";
-  const promo = await getPromoPopupSettings();
-  const [branding, promoProducts, marketing, whatsapp, socialLinks] = await Promise.all([
+  const hasThemeCookie = themeCookie?.value === "dark" || themeCookie?.value === "mono";
+  const theme: "dark" | "mono" = themeCookie?.value === "dark" ? "dark" : "mono";
+  const [branding, promo, marketing, whatsapp, socialLinks] = await Promise.all([
     getBrandingAssets(),
-    getPromoProducts(promo.pinnedProductIds),
+    getPromoPopupSettings(),
     getMarketingIntegrations(),
     getWhatsAppWidgetSettings(),
     getSiteSocialLinks(),
   ]);
+  const promoProducts = promo.enabled
+    ? await getPromoProducts(promo.pinnedProductIds)
+    : [];
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -149,9 +150,7 @@ export default async function RootLayout({
           name: siteInfo.owner.name,
         },
         vatID: siteInfo.vatId,
-        priceRange: "€€",
         currenciesAccepted: "EUR",
-        paymentAccepted: "Cash, Credit Card, Debit Card, Apple Pay, Klarna",
         hasMerchantReturnPolicy: merchantReturnPolicy(),
         hasShippingService: organizationShippingService(),
         address: {
@@ -167,11 +166,7 @@ export default async function RootLayout({
           opens: "09:30",
           closes: "20:00",
         }],
-        geo: {
-          "@type": "GeoCoordinates",
-          latitude: 53.498491,
-          longitude: 10.009589,
-        },
+
         areaServed: {
           "@type": "City",
           name: "Hamburg",
@@ -194,13 +189,14 @@ export default async function RootLayout({
     <html
       lang={lang}
       data-theme={theme}
+      data-theme-source={hasThemeCookie ? "cookie" : "default"}
       data-scroll-behavior="smooth"
       translate="no"
       suppressHydrationWarning
     >
       <head>
+        <meta id="apfel-theme-color" name="theme-color" content={theme === "dark" ? "#0b0b0c" : "#ffffff"} />
         <ThemeScript />
-        <meta name="theme-color" content="#09090b" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonStringify(organizationJsonLd) }}

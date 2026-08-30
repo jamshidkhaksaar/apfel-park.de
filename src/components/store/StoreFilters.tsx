@@ -57,6 +57,7 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   const [draftParams, setDraftParams] = useState<URLSearchParams | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const isGerman = lang === "de";
   const displayedFilters = drawerOpen && draftParams
     ? parseDraftFilters(draftParams)
@@ -124,6 +125,7 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   useEffect(() => {
     if (!drawerOpen) return;
     const previousOverflow = document.body.style.overflow;
+    const triggerButton = triggerButtonRef.current;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDrawerOpen(false);
       if (event.key !== "Tab" || !drawerRef.current) return;
@@ -145,6 +147,7 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
+      window.requestAnimationFrame(() => triggerButton?.focus());
     };
   }, [drawerOpen]);
 
@@ -207,8 +210,9 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   if (variant === "mobile") {
     return (
       <>
-        <div className="sticky bottom-0 z-[120] -mx-6 mt-6 flex items-center gap-2 border-t border-border bg-background/95 px-6 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+        <div className="-mx-6 mb-4 flex items-center gap-2 border-y border-border bg-background px-6 py-2.5 lg:hidden">
           <button
+            ref={triggerButtonRef}
             type="button"
             onClick={() => { setDraftParams(new URLSearchParams(searchParams.toString())); setDrawerOpen(true); }}
             className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition hover:border-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"

@@ -1,5 +1,5 @@
 import type { Locale } from "@/lib/i18n";
-import type { RepairCatalog, RepairCatalogModel } from "@/lib/repair-catalog";
+import type { RepairCatalog, RepairCatalogModel, RepairPartVariant } from "@/lib/repair-catalog";
 
 /**
  * Server-rendered repair price table.
@@ -43,18 +43,32 @@ const MODELS_PER_BRAND = 12;
 const euro = (value: number) =>
   new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value);
 
-/** Lowest listed price for a part on one model, or null when quote-on-request. */
-const lowestPartPrice = (model: RepairCatalogModel, key: PartKey): number | null => {
-  let lowest: number | null = null;
+const pricedPartVariants = (model: RepairCatalogModel, key: PartKey): RepairPartVariant[] => {
+  const variants: RepairPartVariant[] = [];
   for (const part of model.parts ?? []) {
     if (PART_ALIASES[part.name.trim().toLowerCase()] !== key) continue;
     for (const variant of part.variants) {
-      if (typeof variant.price === "number" && variant.price > 0) {
-        lowest = lowest === null ? variant.price : Math.min(lowest, variant.price);
-      }
+      if (typeof variant.price === "number" && variant.price > 0) variants.push(variant);
     }
   }
-  return lowest;
+  return variants;
+};
+
+const qualityLabel = (variant: RepairPartVariant, de: boolean): string => {
+  const label = variant.label.toLowerCase();
+  if (label.includes("original")) return "Original";
+  if (label.includes("soft oled") || label.includes("softoled")) return "Premium / Soft OLED";
+  if (label.includes("oem")) return "Premium / OEM";
+  if (label.includes("lcd")) return "Standard / LCD";
+  if (variant.quality === "genuine") return de ? "Original" : "Original";
+  if (variant.quality === "premium") return "Premium";
+  return "Standard";
+};
+
+/** Lowest listed price for a part on one model, or null when quote-on-request. */
+const lowestPartPrice = (model: RepairCatalogModel, key: PartKey): number | null => {
+  const prices = pricedPartVariants(model, key).map((variant) => variant.price as number);
+  return prices.length > 0 ? Math.min(...prices) : null;
 };
 
 /** Lowest price per part type across the whole catalogue, for the "ab" summary. */
@@ -121,7 +135,12 @@ export default function RepairPriceTable({
               ? `${brand.name} Reparatur – Preise`
               : `${brand.name} repair prices`}
           </h4>
-          <div className="overflow-x-auto rounded-xl border border-border/60">
+          <div
+            role="region"
+            aria-label={de ? `${brand.name} Reparaturpreistabelle` : `${brand.name} repair price table`}
+            tabIndex={0}
+            className="overflow-x-auto rounded-xl border border-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+          >
             <table className="w-full min-w-[520px] border-collapse text-sm">
               <caption className="sr-only">
                 {de
@@ -151,19 +170,23 @@ export default function RepairPriceTable({
                       {model.name}
                     </th>
                     {COLUMNS.map((column) => {
-                      const price = lowestPartPrice(model, column.key);
+                      const variants = pricedPartVariants(model, column.key);
                       return (
                         <td
                           key={column.key}
                           className="px-4 py-2.5 text-right tabular-nums text-muted"
                         >
-                          {price === null ? (
+                          {variants.length === 0 ? (
                             <span className="text-xs">{de ? "auf Anfrage" : "on request"}</span>
                           ) : (
-                            <>
-                              <span className="text-xs">{de ? "ab " : "from "}</span>
-                              {euro(price)}
-                            </>
+                            <span className="inline-flex flex-col items-end gap-1">
+                              {variants.map((variant) => (
+                                <span key={variant.id} className="whitespace-nowrap text-xs">
+                                  <span className="text-muted">{qualityLabel(variant, de)}: </span>
+                                  <span className="font-medium text-foreground">{euro(variant.price as number)}</span>
+                                </span>
+                              ))}
+                            </span>
                           )}
                         </td>
                       );

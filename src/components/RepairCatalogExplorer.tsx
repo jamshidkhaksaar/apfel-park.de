@@ -94,7 +94,7 @@ function getDeviceType(family: RepairCatalogFamily): RepairFamilyType {
 
 function DeviceSilhouette({ family }: { family: RepairCatalogFamily }) {
   const type = getDeviceType(family);
-  const cls = "text-gold/40 transition-colors duration-300 group-hover:text-gold/60";
+  const cls = "text-gold-text/40 transition-colors duration-300 group-hover:text-gold-text/60";
   if (type === "tablet") return <TabletSilhouette className={`h-20 w-16 ${cls}`} />;
   if (type === "watch")  return <WatchSilhouette  className={`h-20 w-20 ${cls}`} />;
   if (type === "laptop" || type === "pc" || type === "other") return <OtherSilhouette className={`h-20 w-20 ${cls}`} />;
@@ -176,11 +176,11 @@ function BrandGrid({
         className={`group flex w-[120px] flex-col overflow-hidden rounded-2xl border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50 ${
           active
             ? "border-gold/60 shadow-2xl shadow-gold/30 scale-105"
-            : "border-white/8 bg-white/3 hover:border-gold/40 hover:scale-[1.07] hover:shadow-2xl hover:shadow-gold/20"
+            : "border-border bg-surface-strong hover:border-gold/40 hover:scale-[1.07] hover:shadow-2xl hover:shadow-gold/20"
         }`}
       >
         {/* Icon area — fills card width, square aspect */}
-        <div className={`flex aspect-square w-full items-center justify-center p-4 ${active ? "bg-gold/10" : "bg-white/3 group-hover:bg-white/5"}`}>
+        <div className={`flex aspect-square w-full items-center justify-center p-4 ${active ? "bg-gold/10" : "bg-surface-strong group-hover:bg-surface-strong"}`}>
           <RepairBrandMark
             icon={brand.icon}
             name={brand.name}
@@ -188,8 +188,8 @@ function BrandGrid({
           />
         </div>
         {/* Name strip */}
-        <div className={`border-t px-2 py-2 text-center ${active ? "border-gold/20 bg-gold/10" : "border-white/5"}`}>
-          <span className={`block truncate text-xs font-semibold leading-tight ${active ? "text-gold" : "text-muted/70 group-hover:text-foreground"}`}>
+        <div className={`border-t px-2 py-2 text-center ${active ? "border-gold/20 bg-gold/10" : "border-border"}`}>
+          <span className={`block truncate text-xs font-semibold leading-tight ${active ? "text-gold-text" : "text-muted group-hover:text-foreground"}`}>
             {brand.name}
           </span>
         </div>
@@ -221,7 +221,7 @@ function CategoryTabs({
   lang: "de" | "en";
 }) {
   return (
-    <div className="border-b border-white/8">
+    <div className="border-b border-border">
       <div
         role="tablist"
         aria-label={lang === "de" ? "Gerätekategorie wählen" : "Select device category"}
@@ -238,15 +238,15 @@ function CategoryTabs({
               onClick={() => onSelect(family.id)}
               className={`flex shrink-0 items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-all duration-150 focus-visible:outline-none ${
                 active
-                  ? "border-gold text-gold"
-                  : "border-transparent text-muted/60 hover:text-foreground"
+                  ? "border-gold text-gold-text"
+                  : "border-transparent text-muted hover:text-foreground"
               }`}
             >
               <CategoryIcon family={family} />
               {family.name}
               <span
                 className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                  active ? "bg-gold/20 text-gold" : "bg-white/8 text-muted/50"
+                  active ? "bg-gold/20 text-foreground" : "bg-surface-strong text-muted"
                 }`}
               >
                 {family.models.length}
@@ -268,9 +268,9 @@ function QualityBadge({ quality, lang }: { quality: RepairPartQuality; lang: "de
     standard: { de: "Standard",  en: "Standard" },
   };
   const classes: Record<RepairPartQuality, string> = {
-    genuine:  "border-gold/40 bg-gold/15 text-gold",
-    premium:  "border-white/20 bg-white/8 text-muted/80",
-    standard: "border-white/10 bg-white/5 text-muted/50",
+    genuine:  "border-gold/40 bg-gold/15 text-gold-text",
+    premium:  "border-border bg-surface-strong text-muted",
+    standard: "border-border bg-surface-strong text-muted",
   };
   return (
     <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${classes[quality]}`}>
@@ -300,18 +300,18 @@ function PartAccordion({
   const isGerman = lang === "de";
 
   return (
-    <div className="rounded-xl border border-white/8 overflow-hidden">
+    <div className="rounded-xl border border-border overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-white/3 transition-colors"
+        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-strong transition-colors"
       >
         <span className="flex-1 text-sm font-semibold text-foreground">{part.name}</span>
-        <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-muted/60">
+        <span className="rounded-full bg-surface-strong px-2 py-0.5 text-[10px] text-muted">
           {part.variants.length} {isGerman ? "Optionen" : "options"}
         </span>
         <svg
-          className={`h-4 w-4 text-muted/50 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-muted transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -319,7 +319,7 @@ function PartAccordion({
       </button>
 
       {open && (
-        <div className="divide-y divide-white/5 border-t border-white/8">
+        <div className="divide-y divide-border border-t border-border">
           {part.variants.map((variant) => {
             const hasPrice = typeof variant.price === "number";
             const priceLabel = hasPrice
@@ -329,23 +329,23 @@ function PartAccordion({
             const href = `/${lang}/repairs?brand=${encodeURIComponent(brand.id)}&family=${encodeURIComponent(family.id)}&model=${encodeURIComponent(model.id)}&part=${encodeURIComponent(part.id)}&variant=${encodeURIComponent(variant.id)}#repair-request`;
 
             return (
-              <div key={variant.id} className="flex items-center gap-3 px-4 py-3">
+              <div key={variant.id} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-4 py-3 sm:flex sm:gap-3">
                 <QualityBadge quality={variant.quality} lang={lang} />
-                <span className="flex-1 text-sm text-muted/80">{variant.label}</span>
+                <span className="min-w-0 break-words text-sm text-muted sm:flex-1">{variant.label}</span>
                 {variant.note && (
-                  <span className="hidden text-[10px] text-muted/50 sm:block">{variant.note}</span>
+                  <span className="hidden text-[10px] text-muted sm:block">{variant.note}</span>
                 )}
-                <div className="flex shrink-0 flex-col items-end">
-                  <span className={`font-bold tabular-nums text-sm ${hasPrice ? "text-gold" : "text-muted/50"}`}>
+                <div className="flex shrink-0 flex-col items-start sm:items-end">
+                  <span className={`font-bold tabular-nums text-sm ${hasPrice ? "text-gold-text" : "text-muted"}`}>
                     {priceLabel}
                   </span>
                   {hasPrice && (
-                    <span className="text-[9px] text-muted/40">{isGerman ? "inkl. MwSt." : "incl. VAT"}</span>
+                    <span className="text-[9px] text-muted">{isGerman ? "inkl. MwSt." : "incl. VAT"}</span>
                   )}
                 </div>
                 <Link
                   href={href}
-                  className="shrink-0 rounded-lg bg-gold/15 px-3 py-1.5 text-[11px] font-semibold text-gold transition-all hover:bg-gold hover:text-black"
+                  className="shrink-0 justify-self-end rounded-lg bg-gold/15 px-3 py-1.5 text-[11px] font-semibold text-gold-text transition-all hover:bg-gold hover:text-black"
                 >
                   {isGerman ? "Anfragen" : "Book"}
                 </Link>
@@ -378,7 +378,7 @@ function PartsPanel({
     <div className="glass-panel animate-in fade-in slide-in-from-top-2 duration-300 mt-4 rounded-2xl border border-gold/20 p-5">
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/5">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface-strong">
           {model.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={model.image} alt={model.name} loading="lazy" decoding="async" className="h-10 w-auto max-w-full object-contain" />
@@ -387,22 +387,22 @@ function PartsPanel({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted/60">{brand.name} · {family.name}</p>
+          <p className="text-xs text-muted">{brand.name} · {family.name}</p>
           <h4 className="font-semibold text-foreground">{model.name}</h4>
           {(model.launchYear || model.colors?.length || model.modelNumbers?.length) && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {model.launchYear && (
-                <span className="rounded-full bg-white/6 px-2 py-0.5 text-[10px] text-muted/60">
+                <span className="rounded-full bg-surface-strong px-2 py-0.5 text-[10px] text-muted">
                   {isGerman ? "Eingeführt" : "Launched"} {model.launchYear}
                 </span>
               )}
               {!!model.colors?.length && (
-                <span className="rounded-full bg-white/6 px-2 py-0.5 text-[10px] text-muted/60">
+                <span className="rounded-full bg-surface-strong px-2 py-0.5 text-[10px] text-muted">
                   {model.colors.join(" · ")}
                 </span>
               )}
               {!!model.modelNumbers?.length && (
-                <span className="rounded-full border border-white/8 px-2 py-0.5 font-mono text-[10px] text-muted/40">
+                <span className="rounded-full border border-border px-2 py-0.5 font-mono text-[10px] text-muted">
                   {model.modelNumbers.join(" / ")}
                 </span>
               )}
@@ -412,7 +412,7 @@ function PartsPanel({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full border border-white/10 p-1.5 text-muted/50 transition hover:border-white/20 hover:text-foreground"
+          className="rounded-full border border-border p-1.5 text-muted transition hover:border-border hover:text-foreground"
           aria-label={isGerman ? "Schließen" : "Close"}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -436,8 +436,8 @@ function PartsPanel({
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-white/8 bg-white/3 p-4 text-center">
-          <p className="mb-3 text-sm text-muted/70">
+        <div className="rounded-xl border border-border bg-surface-strong p-4 text-center">
+          <p className="mb-3 text-sm text-muted">
             {isGerman
               ? "Für dieses Modell bieten wir individuelle Preise auf Anfrage."
               : "We offer individual pricing for this model on request."}
@@ -456,7 +456,7 @@ function PartsPanel({
 
       {/* Footer CTA (only when parts exist) */}
       {hasParts && (
-        <div className="mt-4 border-t border-white/8 pt-4 text-center">
+        <div className="mt-4 border-t border-border pt-4 text-center">
           <Link
             href={`/${lang}/repairs?brand=${encodeURIComponent(brand.id)}&family=${encodeURIComponent(family.id)}&model=${encodeURIComponent(model.id)}#repair-request`}
             className="btn-primary inline-flex items-center gap-2 text-sm"
@@ -493,12 +493,12 @@ function DisplayQualityGuide({ lang }: { lang: "de" | "en" }) {
           desc: "Von Apple oder zertifizierten Partnern gefertigt. Originalgetreue Farben, True Tone, Helligkeit und Touch-Präzision — exakt wie ab Werk. Die hochwertigste und teuerste Option.",
         },
         {
-          dot: "bg-white/50",
+          dot: "bg-surface-strong0",
           label: "Soft OLED",
           desc: "Nutzt dieselbe flexible OLED-Technologie wie Apples eigene Displays. Tiefe Schwarzwerte, lebendige Farben, widerstandsfähiger bei Stürzen. True Tone bleibt mit professioneller Kalibrierung erhalten. Bestes Preis-Leistungs-Verhältnis für anspruchsvolle Reparaturen.",
         },
         {
-          dot: "bg-white/25",
+          dot: "bg-muted",
           label: "LCD",
           desc: "Günstigste Option für ältere Modelle oder budgetorientierte Reparaturen. Farben und Kontrast sind alltagstauglich, Schwarzwerte wirken leicht gräulich. Robuste Panels mit zuverlässiger Touch-Reaktion.",
         },
@@ -510,12 +510,12 @@ function DisplayQualityGuide({ lang }: { lang: "de" | "en" }) {
           desc: "Manufactured by Apple or certified suppliers, restoring your device to factory spec. Accurate colors, True Tone, brightness, and touch sensitivity exactly as designed. The premium choice.",
         },
         {
-          dot: "bg-white/50",
+          dot: "bg-surface-strong0",
           label: "Soft OLED",
           desc: "Uses the same flexible OLED technology as Apple's own panels — vivid colors, deep blacks, and resilience to minor impacts. True Tone is preserved with professional calibration. Best quality-to-price ratio.",
         },
         {
-          dot: "bg-white/25",
+          dot: "bg-muted",
           label: "LCD",
           desc: "The most affordable option, suited to older models or cost-focused repairs. Color and contrast are solid for everyday use, though blacks appear slightly grey vs OLED. Durable panels with reliable touch response.",
         },
@@ -527,20 +527,20 @@ function DisplayQualityGuide({ lang }: { lang: "de" | "en" }) {
   const hardEN = "Rigid glass substrates make these panels more brittle and prone to micro-cracks. Color accuracy and touch response fall short of soft OLEDs — we don't install them because they don't meet our quality standards.";
 
   return (
-    <div className="rounded-xl border border-white/8 overflow-hidden">
+    <div className="rounded-xl border border-border overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-white/3 transition-colors"
+        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-strong transition-colors"
       >
-        <svg className="h-4 w-4 shrink-0 text-gold/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <svg className="h-4 w-4 shrink-0 text-gold-text/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
         </svg>
-        <span className="flex-1 text-xs font-semibold text-muted/70">
+        <span className="flex-1 text-xs font-semibold text-muted">
           {isGerman ? "Displayqualitäten erklärt" : "Display quality guide"}
         </span>
         <svg
-          className={`h-4 w-4 text-muted/40 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-muted transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -548,22 +548,22 @@ function DisplayQualityGuide({ lang }: { lang: "de" | "en" }) {
       </button>
 
       {open && (
-        <div className="border-t border-white/8 px-4 pb-4 pt-3 space-y-3">
+        <div className="border-t border-border px-4 pb-4 pt-3 space-y-3">
           {types.map(t => (
             <div key={t.label} className="flex gap-2.5">
               <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${t.dot}`} />
               <div>
                 <p className="text-xs font-semibold text-foreground">{t.label}</p>
-                <p className="text-[11px] leading-relaxed text-muted/60">{t.desc}</p>
+                <p className="text-[11px] leading-relaxed text-muted">{t.desc}</p>
               </div>
             </div>
           ))}
-          <div className="mt-2 rounded-lg bg-white/3 px-3 py-2 text-[11px] leading-relaxed text-muted/50">
-            <span className="font-semibold text-muted/70">{isGerman ? "Hinweis: " : "Note: "}</span>
+          <div className="mt-2 rounded-lg bg-surface-strong px-3 py-2 text-[11px] leading-relaxed text-muted">
+            <span className="font-semibold text-muted">{isGerman ? "Hinweis: " : "Note: "}</span>
             {isGerman ? noteDE : noteEN}
           </div>
-          <div className="rounded-lg bg-white/3 px-3 py-2 text-[11px] leading-relaxed text-muted/50">
-            <span className="font-semibold text-muted/70">{isGerman ? "Warum kein Hard OLED? " : "Why no Hard OLED? "}</span>
+          <div className="rounded-lg bg-surface-strong px-3 py-2 text-[11px] leading-relaxed text-muted">
+            <span className="font-semibold text-muted">{isGerman ? "Warum kein Hard OLED? " : "Why no Hard OLED? "}</span>
             {isGerman ? hardDE : hardEN}
           </div>
         </div>
@@ -637,26 +637,26 @@ function ModelGrid({
               </p>
 
               {model.note && (
-                <p className="text-center text-[10px] text-muted/60">{model.note}</p>
+                <p className="text-center text-[10px] text-muted">{model.note}</p>
               )}
 
               {/* Price or parts indicator */}
               {hasParts ? (
                 <div className="mt-auto rounded-lg bg-gold/10 px-2 py-1.5 text-center">
-                  <p className="text-[9px] font-semibold uppercase tracking-widest text-gold/70">
+                  <p className="text-[9px] font-semibold uppercase tracking-widest text-gold-text">
                     {isGerman ? "Preise anzeigen" : "View prices"}
                   </p>
                 </div>
               ) : (
                 <div className="mt-auto rounded-lg bg-background/40 px-2 py-1.5 text-center">
-                  <p className="text-[9px] uppercase tracking-widest text-muted/50">
+                  <p className="text-[9px] uppercase tracking-widest text-muted">
                     {isGerman ? "Ab" : "From"}
                   </p>
-                  <p className={`text-sm font-bold tabular-nums ${hasPrice ? "text-gold" : "text-muted/70"}`}>
+                  <p className={`text-sm font-bold tabular-nums ${hasPrice ? "text-gold-text" : "text-muted"}`}>
                     {priceLabel}
                   </p>
                   {hasPrice && (
-                    <p className="text-[9px] text-muted/40">{isGerman ? "inkl. MwSt." : "incl. VAT"}</p>
+                    <p className="text-[9px] text-muted">{isGerman ? "inkl. MwSt." : "incl. VAT"}</p>
                   )}
                 </div>
               )}

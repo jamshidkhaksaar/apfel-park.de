@@ -14,6 +14,9 @@ export default function ProductGallery({ title, images }: Props) {
   const [fading, setFading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const openButtonRef = useRef<HTMLButtonElement>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const activeImage = images[activeIndex] ?? images[0] ?? "";
 
   const switchTo = useCallback(
@@ -32,16 +35,34 @@ export default function ProductGallery({ title, images }: Props) {
   // Arrow keys page through the gallery while the lightbox is open; Escape closes.
   useEffect(() => {
     if (!lightboxOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : openButtonRef.current;
+    const previousOverflow = document.body.style.overflow;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setLightboxOpen(false);
       if (event.key === "ArrowRight") switchTo(activeIndex + 1);
       if (event.key === "ArrowLeft") switchTo(activeIndex - 1);
+      if (event.key !== "Tab" || !lightboxRef.current) return;
+      const focusable = Array.from(lightboxRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])',
+      ));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
     return () => {
       window.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+      window.requestAnimationFrame(() => previousFocus?.focus());
     };
   }, [lightboxOpen, activeIndex, switchTo]);
 
@@ -73,6 +94,7 @@ export default function ProductGallery({ title, images }: Props) {
           onTouchEnd={onTouchEnd}
         >
           <button
+            ref={openButtonRef}
             type="button"
             className="absolute inset-0 z-10 cursor-zoom-in"
             aria-label={title}
@@ -93,7 +115,7 @@ export default function ProductGallery({ title, images }: Props) {
               <button
                 type="button"
                 aria-label="Previous image"
-                className={`${arrowClass} left-3 z-20 opacity-0 transition group-hover:opacity-100`}
+                className={`${arrowClass} left-3 z-20 opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100`}
                 onClick={() => switchTo(activeIndex - 1)}
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6" /></svg>
@@ -101,7 +123,7 @@ export default function ProductGallery({ title, images }: Props) {
               <button
                 type="button"
                 aria-label="Next image"
-                className={`${arrowClass} right-3 z-20 opacity-0 transition group-hover:opacity-100`}
+                className={`${arrowClass} right-3 z-20 opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100`}
                 onClick={() => switchTo(activeIndex + 1)}
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 6 6 6-6 6" /></svg>
@@ -144,6 +166,7 @@ export default function ProductGallery({ title, images }: Props) {
 
       {lightboxOpen ? (
         <div
+          ref={lightboxRef}
           role="dialog"
           aria-modal="true"
           aria-label={title}
@@ -177,6 +200,7 @@ export default function ProductGallery({ title, images }: Props) {
             ) : null}
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             aria-label="Close"
             className="absolute right-5 top-5 rounded-full border border-border/60 bg-background/80 p-2.5 text-foreground backdrop-blur transition hover:border-gold/40 hover:text-gold"

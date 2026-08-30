@@ -18,10 +18,27 @@ const localePrefixRedirects = LOCALE_ROUTES.flatMap((route) => [
   { source: `/${route}/:path*`, destination: `/de/${route}/:path*`, permanent: true },
 ]);
 
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "form-action 'self' https://www.paypal.com https://www.sandbox.paypal.com",
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com https://www.google.com https://www.gstatic.com https://apis.google.com https://invitejs.trustpilot.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com https://www.gstatic.com https://*.googleusercontent.com https://maps.gstatic.com https://maps.googleapis.com https://www.facebook.com https://analytics.tiktok.com",
+  "font-src 'self' data:",
+  "connect-src 'self' https://api.stripe.com https://r.stripe.com https://m.stripe.network https://*.paypal.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://www.google.com https://*.google.com https://connect.facebook.net https://www.facebook.com https://analytics.tiktok.com https://*.tiktok.com",
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://www.google.com https://*.paypal.com https://widget.trustpilot.com",
+  "worker-src 'self' blob:",
+  "media-src 'self' blob:",
+  "manifest-src 'self'",
+].join("; ");
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   experimental: {
-    proxyClientMaxBodySize: '35mb',
+    proxyClientMaxBodySize: '25mb',
   },
   
   // Generate unique build IDs to help with cache invalidation
@@ -100,10 +117,6 @@ const nextConfig: NextConfig = {
             value: 'max-age=63072000; includeSubDomains; preload'
           },
           {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
-          },
-          {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN'
           },
@@ -113,7 +126,19 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
+            value: 'strict-origin-when-cross-origin'
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: contentSecurityPolicy
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), browsing-topics=(), usb=(), payment=(self "https://js.stripe.com" "https://hooks.stripe.com" "https://www.paypal.com" "https://www.sandbox.paypal.com")'
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups'
           }
         ]
       }

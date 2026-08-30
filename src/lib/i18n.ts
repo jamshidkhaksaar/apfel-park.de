@@ -66,9 +66,9 @@ export const dictionary = {
           "Professionelle Services von Sofort-Reparatur bis Geräte-Setup – alles im Apfel Park Hamburg.",
       },
       repairs: {
-        title: "Handy-Reparatur Hamburg – Display & Akku",
+        title: "Handy-Reparatur Hamburg – Preise für Display, Akku & Rückseite",
         description:
-          "Express-Reparatur für iPhone & Samsung in Hamburg-Wilhelmsburg: Display, Akku, Kamera & Wasserschaden mit Garantie. Tel. 040 58978787.",
+          "Modellbezogene Reparaturpreise für iPhone und Samsung in Hamburg-Wilhelmsburg: Display in Standard, Premium oder Original, Akkutausch und Rückcover.",
       },
       accessories: {
         title: "Handy-Zubehör in Hamburg kaufen",
@@ -159,7 +159,7 @@ export const dictionary = {
       highlights: [
         { label: "Versand", value: "1–3 Tage" },
         { label: "Abholung", value: "Hamburg" },
-        { label: "Garantie", value: "12 Monate" },
+        { label: "Zustand", value: "klar ausgewiesen" },
       ],
       services: {
         title: "Reparaturen & Services",
@@ -350,7 +350,7 @@ export const dictionary = {
       highlights: [
         "Express-Service in Hamburg",
         "Passende Qualitäts-Ersatzteile",
-        "12 Monate Garantie",
+        "Bedingungen vor Auftrag klar ausgewiesen",
         "Faire Preise ohne Überraschungen",
       ],
       repairTypes: [
@@ -426,7 +426,7 @@ export const dictionary = {
         },
       },
       highlights: [
-        "12 Monate zusätzliche Garantie",
+        "Zustand direkt am Artikel",
         "Zustand direkt am Artikel",
         "Transparente Preise",
         "Persönliche Beratung im Shop",
@@ -486,8 +486,8 @@ export const dictionary = {
           icon: "genuine",
         },
         {
-          title: "12 Monate Garantie",
-          description: "Zusätzlich zu den gesetzlichen Rechten gilt unsere 12-monatige Garantie für Produkte und Reparaturleistungen nach den jeweiligen Bedingungen.",
+          title: "Bedingungen vor Auftrag klar ausgewiesen",
+          description: "Zusätzliche Garantien gelten nur, wenn sie im jeweiligen Angebot oder Reparaturauftrag ausdrücklich mit ihren Bedingungen ausgewiesen sind.",
           icon: "warranty",
         },
         {
@@ -538,7 +538,7 @@ export const dictionary = {
         {
           question: "Gibt es Garantie?",
           answer:
-            "Ja, wir geben 12 Monate Garantie auf unsere Reparaturen und Premium-Ersatzteile.",
+            "Zusätzliche Garantien gelten nur, wenn sie im jeweiligen Reparaturauftrag ausdrücklich mit ihren Bedingungen ausgewiesen sind.",
         },
         {
           question: "Welche Marken repariert ihr?",
@@ -703,7 +703,7 @@ export const dictionary = {
         {
           title: "6. Garantie",
           body: [
-            "12 Monate Garantie auf Ersatzteile und Reparaturleistungen, sofern kein Fremdverschulden vorliegt.",
+            "Eine zusätzliche Garantie gilt nur, wenn sie im Reparaturauftrag ausdrücklich mit Umfang und Bedingungen ausgewiesen ist. Gesetzliche Rechte bleiben unberührt.",
           ],
         },
         {
@@ -779,9 +779,9 @@ export const dictionary = {
           "Professional services from instant repairs to device setup – all in one place in Hamburg.",
       },
       repairs: {
-        title: "Phone Repair Hamburg – Screen & Battery",
+        title: "Phone Repair Hamburg – Screen, Battery & Back Cover Prices",
         description:
-          "Screen, battery, camera or water damage: express repairs for iPhone & Samsung in Hamburg-Wilhelmsburg – with warranty. Call 040 58978787.",
+          "Model-specific iPhone and Samsung repair prices in Hamburg-Wilhelmsburg: Standard, Premium or Original displays, battery replacement and back covers.",
       },
       accessories: {
         title: "Phone Accessories in Hamburg",
@@ -872,7 +872,7 @@ export const dictionary = {
       highlights: [
         { label: "Delivery", value: "1–3 days" },
         { label: "Collection", value: "Hamburg" },
-        { label: "Warranty", value: "12 months" },
+        { label: "Condition", value: "clearly stated" },
       ],
       services: {
         title: "Repairs & Services",
@@ -1063,7 +1063,7 @@ export const dictionary = {
       highlights: [
         "Express service in Hamburg",
         "Suitable quality replacement parts",
-        "12-month warranty",
+        "Terms stated before work begins",
         "Fair prices with clarity",
       ],
       repairTypes: [
@@ -1139,7 +1139,7 @@ export const dictionary = {
         },
       },
       highlights: [
-        "Additional 12-month warranty",
+        "Condition shown on each item",
         "Condition shown on each item",
         "Transparent prices",
         "Personal in-store advice",
@@ -1199,8 +1199,8 @@ export const dictionary = {
           icon: "genuine",
         },
         {
-          title: "12-Month Warranty",
-          description: "In addition to statutory rights, our 12-month commercial warranty applies to products and repair services under its respective terms.",
+          title: "Clear Terms",
+          description: "Any additional guarantee applies only when its scope and terms are expressly stated for the specific offer or repair order.",
           icon: "warranty",
         },
         {
@@ -1251,7 +1251,7 @@ export const dictionary = {
         {
           question: "Do you offer warranty?",
           answer:
-            "Yes, we provide a 12-month warranty on our repairs and premium spare parts.",
+            "Any additional guarantee applies only when its scope and terms are expressly stated in the specific repair order.",
         },
         {
           question: "Which brands do you repair?",
@@ -1416,7 +1416,7 @@ export const dictionary = {
         {
           title: "6. Warranty",
           body: [
-            "12-month warranty on spare parts and repair services unless third-party damage occurs.",
+            "An additional guarantee applies only when its scope and terms are expressly stated in the repair order. Statutory rights remain unaffected.",
           ],
         },
         {

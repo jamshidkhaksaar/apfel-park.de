@@ -149,10 +149,6 @@ export default function AdminHealthWorkspace({ dict }: { dict: HealthDictionary 
     return new Date(data.generatedAt).toLocaleString();
   }, [data?.generatedAt]);
 
-  const triggerBackup = (type: "database" | "app") => {
-    window.location.href = `/api/admin/health/backup?type=${type}`;
-  };
-
   if (loading) {
     return <div className="glass-panel rounded-2xl p-6 text-sm text-muted">{dict.loading}</div>;
   }
@@ -306,24 +302,20 @@ export default function AdminHealthWorkspace({ dict }: { dict: HealthDictionary 
           <div className="glass-panel rounded-2xl p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.backup.database}</p>
             <p className="mt-3 text-sm text-muted">{dict.backup.databaseHint}</p>
-            <button
-              type="button"
-              onClick={() => triggerBackup("database")}
-              className="mt-5 inline-flex rounded-full bg-gold px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-black"
-            >
-              {dict.backup.database}
-            </button>
+            <form action="/api/admin/health/backup?type=database" method="post">
+              <button type="submit" className="mt-5 inline-flex rounded-full bg-gold px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-black">
+                {dict.backup.database}
+              </button>
+            </form>
           </div>
           <div className="glass-panel rounded-2xl p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.backup.app}</p>
             <p className="mt-3 text-sm text-muted">{dict.backup.appHint}</p>
-            <button
-              type="button"
-              onClick={() => triggerBackup("app")}
-              className="mt-5 inline-flex rounded-full bg-gold px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-black"
-            >
-              {dict.backup.app}
-            </button>
+            <form action="/api/admin/health/backup?type=app" method="post">
+              <button type="submit" className="mt-5 inline-flex rounded-full bg-gold px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-black">
+                {dict.backup.app}
+              </button>
+            </form>
           </div>
         </section>
       ) : null}

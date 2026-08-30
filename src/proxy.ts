@@ -18,15 +18,16 @@ const isBypassedPath = (pathname: string) => {
   );
 };
 
-const createPublicRedirect = (request: NextRequest, scope: "site" | "store") => {
-  const protocol = request.headers.get("x-forwarded-proto") ?? "https";
-  const host =
-    request.headers.get("x-forwarded-host") ??
-    request.headers.get("host") ??
-    request.nextUrl.host;
-
-  return NextResponse.redirect(`${protocol}://${host}/maintenance?scope=${scope}`);
+const redirectUrl = (path: string) => {
+  try {
+    return new URL(path, process.env.SITE_URL || "https://apfel-park.de");
+  } catch {
+    return new URL(path, "https://apfel-park.de");
+  }
 };
+
+const createPublicRedirect = (scope: "site" | "store") =>
+  NextResponse.redirect(redirectUrl(`/maintenance?scope=${scope}`));
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -34,13 +35,7 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-apfel-pathname", pathname);
 
   if (request.nextUrl.pathname.startsWith("/admin/content")) {
-    const protocol = request.headers.get("x-forwarded-proto") ?? "https";
-    const host =
-      request.headers.get("x-forwarded-host") ??
-      request.headers.get("host") ??
-      request.nextUrl.host;
-
-    return NextResponse.redirect(`${protocol}://${host}/admin`);
+    return NextResponse.redirect(redirectUrl("/admin"));
   }
 
   if (!isBypassedPath(pathname)) {
@@ -61,11 +56,11 @@ export async function proxy(request: NextRequest) {
         };
 
         if (maintenance.siteEnabled) {
-          return createPublicRedirect(request, "site");
+          return createPublicRedirect("site");
         }
 
         if (maintenance.storeEnabled && isPublicStorePath(pathname)) {
-          return createPublicRedirect(request, "store");
+          return createPublicRedirect("store");
         }
       }
     } catch {

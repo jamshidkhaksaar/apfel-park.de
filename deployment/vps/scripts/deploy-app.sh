@@ -17,6 +17,7 @@ RELEASES="$APP_ROOT/releases"
 CURRENT="$APP_ROOT/current"
 ENV_FILE="$APP_ROOT/shared/app.env"
 SERVICE=apfel-park-nextjs
+WORKER_SERVICE=apfel-park-marketplace-worker.service
 BASE_URL=http://127.0.0.1:3000
 KEEP=3
 
@@ -62,6 +63,15 @@ npm ci --no-audit --no-fund --include=dev
 log "npm test"
 npm test
 
+log "npm run lint"
+npm run lint
+
+log "npm run typecheck"
+npm run typecheck
+
+log "npm audit --audit-level=high"
+npm audit --audit-level=high
+
 log "npm run build"
 set -a; . "$ENV_FILE"; set +a
 npm run build
@@ -95,8 +105,8 @@ log "activating"
 ln -sfn "$release" "$CURRENT.tmp"
 mv -Tf "$CURRENT.tmp" "$CURRENT"
 systemctl restart "$SERVICE"
-if systemctl cat apfel-park-marketplace-worker.service >/dev/null 2>&1; then
-  systemctl restart apfel-park-marketplace-worker.service
+if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then
+  systemctl restart "$WORKER_SERVICE"
 fi
 
 log "health check"
@@ -112,7 +122,15 @@ if [ "$ok" -ne 1 ]; then
   ln -sfn "$previous" "$CURRENT.tmp"
   mv -Tf "$CURRENT.tmp" "$CURRENT"
   systemctl restart "$SERVICE"
+  if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then
+    systemctl restart "$WORKER_SERVICE"
+  fi
   die "rolled back; $release kept for inspection"
+fi
+
+systemctl is-active --quiet "$SERVICE" || die "$SERVICE is not active after deployment"
+if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then
+  systemctl is-active --quiet "$WORKER_SERVICE" || die "$WORKER_SERVICE is not active after deployment"
 fi
 
 # Unknown locales must 404. They returned 500 until cb99627f; this catches a

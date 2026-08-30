@@ -58,21 +58,11 @@ export default async function StoreCollectionLanding({
       { "@type": "ListItem", position: 3, name: copy.title, item: pageUrl },
     ],
   };
-  const faq = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: copy.faq.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: { "@type": "Answer", text: item.answer },
-    })),
-  };
 
   return (
     <div className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(itemList) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(faq) }} />
 
       <StoreCommerceHeader lang={locale} title={copy.title} subtitle={copy.description} eyebrow={copy.eyebrow} query={activeFilters.query} resultCount={catalog.total} />
 

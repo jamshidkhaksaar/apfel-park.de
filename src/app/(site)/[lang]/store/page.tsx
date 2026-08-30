@@ -9,6 +9,7 @@ import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
+import { resolveStoreIndexing } from "@/lib/store-indexing";
 
 export const generateMetadata = async ({
   params,
@@ -19,13 +20,14 @@ export const generateMetadata = async ({
 }): Promise<Metadata> => {
   const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
+  const indexing = resolveStoreIndexing(query);
   return createMetadata(
     lang,
     lang === "de" ? "Online Shop" : "Online Store",
     lang === "de" ? "Smartphones, Tablets und Zubehör mit klaren Angaben zu Zustand, Preis und Verfügbarkeit kaufen." : "Buy smartphones, tablets and accessories with clear condition, price and availability details.",
     "/store",
     undefined,
-    { noindex: Boolean(valueOf(query.q).trim()) },
+    { noindex: indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 

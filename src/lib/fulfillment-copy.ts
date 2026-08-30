@@ -21,7 +21,7 @@ export const fulfillmentCopy = {
       location: "Deutschlandweit",
     },
     selected: "Ausgewählt",
-    paymentNote: "Bezahle deine Bestellung sicher online per Stripe. Je nach Gerät können Karten, Wallets oder Klarna verfügbar sein.",
+    paymentNote: "Die für deine Bestellung verfügbaren Zahlungsarten werden vor Abschluss der Zahlung angezeigt.",
   },
   en: {
     heading: "How would you like to receive your order?",
@@ -41,7 +41,7 @@ export const fulfillmentCopy = {
       location: "Across Germany",
     },
     selected: "Selected",
-    paymentNote: "Pay securely online with Stripe. Depending on your device, card, wallets, or Klarna may be available.",
+    paymentNote: "The payment methods available for your order are shown before payment is completed.",
   },
 } as const;
 

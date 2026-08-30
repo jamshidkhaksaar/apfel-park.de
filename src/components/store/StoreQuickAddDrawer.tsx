@@ -42,6 +42,7 @@ export default function StoreQuickAddDrawer({
 
   useEffect(() => {
     if (!open) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
@@ -64,6 +65,7 @@ export default function StoreQuickAddDrawer({
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
+      window.requestAnimationFrame(() => previousFocus?.focus());
     };
   }, [onClose, open, variants]);
 

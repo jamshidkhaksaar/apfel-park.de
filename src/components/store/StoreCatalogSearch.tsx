@@ -126,13 +126,14 @@ export default function StoreCatalogSearch({
 
   return (
     <div ref={wrapperRef} className={`relative ${className}`}>
-      <form ref={formRef} onSubmit={submit} role="search" className="relative">
+      <form ref={formRef} action={`/${lang}/store`} method="get" onSubmit={submit} role="search" className="relative">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
         </svg>
         <input
           type="search"
+          name="q"
           role="combobox"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -145,11 +146,10 @@ export default function StoreCatalogSearch({
           aria-expanded={open && suggestions.length > 0}
           aria-activedescendant={open && suggestions.length > 0 && activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
           maxLength={80}
-          className="h-13 w-full rounded-2xl border border-border/80 bg-background/90 py-3 pl-12 pr-16 text-base text-foreground shadow-sm outline-none transition placeholder:text-muted focus:border-gold/60 focus:ring-4 focus:ring-gold/10 sm:pr-28"
+          className="h-13 w-full rounded-2xl border border-border/80 bg-background/90 py-3 pl-12 pr-20 text-base text-foreground shadow-sm outline-none transition placeholder:text-muted focus:border-gold/60 focus:ring-4 focus:ring-gold/10 sm:pr-28"
         />
         <button type="submit" className="absolute right-1 top-1 min-h-11 min-w-11 rounded-xl bg-foreground px-3 text-sm font-bold text-background transition hover:bg-gold hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold sm:px-5">
-          <span className="sm:hidden">{isGerman ? "Los" : "Go"}</span>
-          <span className="hidden sm:inline">{isGerman ? "Suchen" : "Search"}</span>
+          <span>{isGerman ? "Suchen" : "Search"}</span>
         </button>
       </form>
 

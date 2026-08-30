@@ -2,7 +2,8 @@
 
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe, type Appearance, type Stripe } from "@stripe/stripe-js";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useTheme } from "@/components/ThemeProvider";
 
 /**
  * On-site card and wallet payment.
@@ -20,17 +21,6 @@ let stripePromise: Promise<Stripe | null> | null = null;
 const getStripe = (publishableKey: string) => {
   stripePromise ??= loadStripe(publishableKey);
   return stripePromise;
-};
-
-const appearance: Appearance = {
-  theme: "night",
-  variables: {
-    colorPrimary: "#c8a862",
-    colorBackground: "#16161a",
-    colorText: "#f4f4f5",
-    borderRadius: "12px",
-    fontFamily: "system-ui, sans-serif",
-  },
 };
 
 function PaymentForm({
@@ -100,6 +90,28 @@ export default function StripePaymentElement({
   disabled?: boolean;
   onError: (message: string) => void;
 }) {
+  const { theme } = useTheme();
+  const appearance = useMemo<Appearance>(() => theme === "dark" ? {
+    theme: "night",
+    variables: {
+      colorPrimary: "#d49e42",
+      colorBackground: "#16161a",
+      colorText: "#f5f5f6",
+      colorDanger: "#e27f7f",
+      borderRadius: "12px",
+      fontFamily: "system-ui, sans-serif",
+    },
+  } : {
+    theme: "stripe",
+    variables: {
+      colorPrimary: "#8a6322",
+      colorBackground: "#ffffff",
+      colorText: "#1f1f23",
+      colorDanger: "#943f3f",
+      borderRadius: "12px",
+      fontFamily: "system-ui, sans-serif",
+    },
+  }, [theme]);
   return (
     <Elements
       stripe={getStripe(publishableKey)}

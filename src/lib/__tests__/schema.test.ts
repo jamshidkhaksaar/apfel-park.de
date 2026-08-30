@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { merchantReturnPolicy, offerShippingDetails } from "@/lib/schema";
+import {
+  merchantReturnPolicy,
+  offerPriceValidUntil,
+  offerShippingDetails,
+  offerValidFrom,
+} from "@/lib/schema";
 
 describe("merchant listing schema", () => {
   it("describes German shipping directly on a product offer", () => {
@@ -40,5 +45,11 @@ describe("merchant listing schema", () => {
       returnMethod: "https://schema.org/ReturnByMail",
       returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
     });
+  });
+
+  it("omits offer validity dates that are not backed by catalog data", () => {
+    expect(offerValidFrom()).toBeUndefined();
+    expect(offerValidFrom("2026-08-01T12:00:00.000Z")).toBe("2026-08-01");
+    expect(offerPriceValidUntil()).toBeUndefined();
   });
 });

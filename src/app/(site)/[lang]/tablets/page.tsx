@@ -48,8 +48,8 @@ export default async function TabletsPage({
   const tabletsName = locale === "de" ? "Tablets" : "Tablets";
   const tabletsDescription =
     locale === "de"
-      ? "Geräte mit klar ausgewiesenem Zustand, Garantie und persönlicher Beratung in Hamburg."
-      : "Devices with clearly stated condition, warranty, and personal advice in Hamburg.";
+      ? "Geräte mit klar ausgewiesenem Zustand, Preis, Verfügbarkeit und persönlicher Beratung in Hamburg."
+      : "Devices with clearly stated condition, price, availability, and personal advice in Hamburg.";
   const collectionPage = buildCollectionPageSchema({
     lang: locale,
     name: tabletsName,
@@ -74,7 +74,7 @@ export default async function TabletsPage({
         lang={locale}
         eyebrow={locale === "de" ? "Tablets" : "Tablets"}
         title={locale === "de" ? "Tablets und iPads" : "Tablets and iPads"}
-        subtitle={locale === "de" ? "Geräte mit klar ausgewiesenem Zustand, Garantie und persönlicher Beratung in Hamburg." : "Devices with clearly stated condition, warranty, and personal advice in Hamburg."}
+        subtitle={locale === "de" ? "Geräte mit klar ausgewiesenem Zustand, Preis, Verfügbarkeit und persönlicher Beratung in Hamburg." : "Devices with clearly stated condition, price, availability, and personal advice in Hamburg."}
         query={activeFilters.query}
         resultCount={catalog.total}
         breadcrumbs={[{ label: "Tablets" }]}
@@ -124,9 +124,9 @@ export default async function TabletsPage({
                 </Link>
               </div>
               <div className="tech-card rounded-2xl p-5">
-                <h3 className="font-semibold text-foreground">{locale === "de" ? "Rechte & Garantie" : "Rights & warranty"}</h3>
+                <h3 className="font-semibold text-foreground">{locale === "de" ? "Rechte & Bedingungen" : "Rights & terms"}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  {locale === "de" ? "14 Tage Widerrufsrecht beim Online-Kauf, gesetzliche Mängelrechte und zusätzlich 12 Monate Garantie." : "A 14-day online withdrawal right, statutory defect rights and an additional 12-month commercial warranty."}
+                  {locale === "de" ? "Details zu Widerruf, Rückgabe und gesetzlichen Rechten stehen in den verlinkten Bedingungen." : "Details about withdrawal, returns and statutory rights are provided in the linked terms."}
                 </p>
               </div>
             </div>

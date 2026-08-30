@@ -52,14 +52,21 @@ export function ThemeScript() {
     (function() {
       try {
         var existing = document.documentElement.getAttribute('data-theme');
-        var theme = existing && (existing === 'dark' || existing === 'mono') ? existing : null;
+        var source = document.documentElement.getAttribute('data-theme-source');
+        var stored = localStorage.getItem('${THEME_STORAGE_KEY}');
+        var theme = source !== 'cookie' && (stored === 'dark' || stored === 'mono')
+          ? stored
+          : existing && (existing === 'dark' || existing === 'mono') ? existing : null;
         if (!theme) {
           var cookieMatch = document.cookie.match(/(?:^|; )apfel-theme=([^;]+)/);
           var cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-          var stored = cookieTheme || localStorage.getItem('${THEME_STORAGE_KEY}') || '${DEFAULT_THEME}';
-          theme = stored === 'dark' || stored === 'mono' ? stored : '${DEFAULT_THEME}';
-          document.documentElement.setAttribute('data-theme', theme);
+          var fallback = cookieTheme || stored || '${DEFAULT_THEME}';
+          theme = fallback === 'dark' || fallback === 'mono' ? fallback : '${DEFAULT_THEME}';
         }
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-theme-source', source === 'cookie' ? 'cookie' : 'client');
+        var themeColor = document.getElementById('apfel-theme-color');
+        if (themeColor) themeColor.setAttribute('content', theme === 'dark' ? '#0b0b0c' : '#ffffff');
         try {
           localStorage.setItem('${THEME_STORAGE_KEY}', theme);
           document.cookie = 'apfel-theme=' + theme + '; path=/; max-age=31536000';
@@ -117,6 +124,11 @@ export default function ThemeProvider({
   const setTheme = useCallback((newTheme: Theme) => {
     // Update DOM first so getSnapshot reads the new value immediately
     document.documentElement.setAttribute("data-theme", newTheme);
+    document.documentElement.setAttribute("data-theme-source", "client");
+    document.getElementById("apfel-theme-color")?.setAttribute(
+      "content",
+      newTheme === "dark" ? "#0b0b0c" : "#ffffff",
+    );
     // Then update store to trigger re-renders
     themeStore.setTheme(newTheme);
     try {

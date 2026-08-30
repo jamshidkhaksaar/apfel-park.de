@@ -14,6 +14,8 @@ import {
 import { applyCouponToValidatedCart } from "@/lib/coupon-repository";
 import { getPaymentIntentAmount } from "@/lib/payment-coupon";
 import { consumePublicRateLimit } from "@/lib/public-rate-limit";
+import { createCheckoutReturnToken } from "@/lib/checkout-return-token";
+import { CHECKOUT_RETURN_COOKIE, createCheckoutReturnSession, getCheckoutReturnCookieOptions } from "@/lib/checkout-return-session";
 
 const stripeRequestId = (response: Response) => response.headers.get("request-id") || undefined;
 
@@ -99,6 +101,7 @@ export async function POST(request: NextRequest) {
       termsConsentAt: new Date().toISOString(),
     });
     pendingOrderId = order.id;
+    const returnToken = createCheckoutReturnToken(order.id);
 
     const form = new URLSearchParams({
       amount: String(getPaymentIntentAmount(cart)),
@@ -159,11 +162,13 @@ export async function POST(request: NextRequest) {
     });
     if (!attached) throw new Error("Stripe PaymentIntent could not be bound to the local order");
 
-    return NextResponse.json({
+    const result = NextResponse.json({
       success: true,
       clientSecret: intent.client_secret,
       orderId: order.id,
     });
+    result.cookies.set(CHECKOUT_RETURN_COOKIE, createCheckoutReturnSession(order.id, returnToken), getCheckoutReturnCookieOptions());
+    return result;
   } catch (error) {
     if (pendingOrderId) {
       try {

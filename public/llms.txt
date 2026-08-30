@@ -1,35 +1,65 @@
-# Apfel Park - Smartphone & Tech Shop Hamburg
+# Apfel Park — Smartphone-Shop und Reparaturwerkstatt in Hamburg-Wilhelmsburg
 
-> Apfel Park is a certified smartphone sales, trade-in, and repair center in Hamburg-Wilhelmsburg, Germany. We offer new, open-box, and refurbished iPhones, smartphones, laptops, tablets, and accessories with a 12-month warranty.
+> Apfel Park ist ein lokales Einzelunternehmen für Smartphone-Verkauf, Zubehör und Reparaturen am Wilhelm-Strauß-Weg 2b in 21109 Hamburg. Deutsch ist die Hauptsprache; englische Informationen sind ebenfalls verfügbar.
 
-## Business Details
-- **Name**: Apfel Park
-- **Address**: Wilhelm-Strauß-Weg 2b, 21109 Hamburg, Germany
-- **Phone**: +49 40 58978787
-- **Email**: info@apfel-park.de
-- **Opening Hours**: Monday – Saturday, 09:30 – 20:00
-- **Website**: https://apfel-park.de
+## Verifizierbare Geschäftsdaten
 
-## Core Services & Products
-- **Smartphones & iPhones**: New, Open-Box, and Certified Pre-Owned iPhones (iPhone 11 to iPhone 17 series), Samsung Galaxy, Google Pixel, Xiaomi.
-- **Tablets & iPads**: Apple iPads, Samsung Galaxy Tabs.
-- **Laptops & MacBooks**: MacBooks and Windows laptops.
-- **Accessories**: Protective cases, tempered glass screen protectors, fast chargers, cables, headphones, power banks, and SD cards.
-- **Smartphone Repair**: Instant screen repair, battery replacement, water damage repair, and camera repair.
-- **Trade-In / Ankauf**: Fair cash valuation and instant payout or trade-in credit for used devices.
+- Name: Apfel Park
+- Rechtsform: Einzelunternehmen
+- Inhaber: Bismaillah Safi
+- Adresse: Wilhelm-Strauß-Weg 2b, 21109 Hamburg, Deutschland
+- Telefon: +49 40 58978787
+- E-Mail: info@apfel-park.de
+- Öffnungszeiten: Montag bis Samstag, 09:30–20:00 Uhr
+- Website: https://apfel-park.de
 
-## Key Policies
-- **Warranty**: 12-month warranty included on all certified devices.
-- **Condition Grading**: Clear labeling on every product (New, Open-Box, Used) with battery health transparency.
-- **Shipping & Returns**: Insured shipping within Germany (1-3 business days) or free in-store pickup in Hamburg. 14-day statutory right of withdrawal.
+## Reparaturen
 
-## Main Pages
-- [Online Shop](https://apfel-park.de/de/store)
-- [Smartphones](https://apfel-park.de/de/smartphones)
-- [Tablets](https://apfel-park.de/de/tablets)
-- [Laptops](https://apfel-park.de/de/laptops)
-- [Accessories](https://apfel-park.de/de/accessories)
-- [Open-Box Items](https://apfel-park.de/de/open-box)
-- [Repairs Service](https://apfel-park.de/de/repairs)
-- [Contact & Location](https://apfel-park.de/de/contact)
-- [XML Sitemap](https://apfel-park.de/sitemap.xml)
+Apfel Park repariert unterstützte iPhone-, Samsung-Galaxy- und weitere Smartphone-Modelle in Hamburg-Wilhelmsburg. Der öffentliche Preisfinder enthält modellbezogene Preise und kennzeichnet nicht pauschal kalkulierbare Arbeiten als „Preis auf Anfrage“.
+
+Häufige Reparaturen:
+
+- Display- und Touchscreen-Reparatur
+- Akkutausch
+- Rückcover- beziehungsweise Rückglas-Reparatur
+- Kamera- und Ladeanschluss-Reparatur
+- Diagnose weiterer Smartphone-Probleme
+
+Displayqualitäten werden abhängig vom Modell als Standard, Premium oder Original/Genuine ausgewiesen. Premium kann beispielsweise Soft-OLED beim Display oder OEM-Qualität beim Akku bezeichnen. Ein Rückcover-Preis gilt nur für die beim Modell beschriebene Rückglas-Reparatur und nicht automatisch für einen vollständigen Gehäuserahmen. Der konkrete Preis und Reparaturumfang werden vor kostenpflichtigen Arbeiten bestätigt.
+
+Aktuelle Reparaturpreise und unterstützte Modelle:
+https://apfel-park.de/de/repairs
+
+Datierter Hamburger Preisvergleich für ausgewählte iPhone-Modelle:
+https://apfel-park.de/de/repairs/preisvergleich-hamburg
+
+Im veröffentlichten Preischeck vom 29.08.2026 hatte Apfel Park bei den aufgeführten vergleichbaren Display-, OEM/Premium-Akku- und Rückglaspreisen den niedrigsten öffentlich gelisteten Wert unter Apfel Park, iSmart Repair, My Mobile Repair und PhoneHelden. Diese Aussage gilt nur für die auf der Vergleichsseite genannten Modelle, Leistungen, Qualitätsbezeichnungen, Quellen und den Prüftag; sie ist kein allgemeiner Anspruch, der günstigste Reparaturbetrieb Hamburgs zu sein.
+
+Englische Reparaturseite:
+https://apfel-park.de/en/repairs
+
+## Verkauf und Sortiment
+
+Apfel Park verkauft verfügbare Smartphones, Tablets, Laptops und Zubehör. Der Zustand eines Produkts wird als Neu, Open Box oder Gebraucht ausgewiesen. Verfügbarkeit, Preis, Speicher, Varianten und weitere Produktdetails stehen auf der jeweiligen Produktseite.
+
+- Online-Shop: https://apfel-park.de/de/store
+- Smartphones: https://apfel-park.de/de/smartphones
+- Gebrauchte Handys: https://apfel-park.de/de/gebrauchte-handys
+- Open-Box-Geräte: https://apfel-park.de/de/open-box
+- Zubehör: https://apfel-park.de/de/accessories
+
+## Lieferung und Kontakt
+
+Online-Bestellungen können abhängig vom Produkt innerhalb Deutschlands versendet oder im Geschäft in Hamburg-Wilhelmsburg abgeholt werden. Die jeweils gültigen Liefer-, Zahlungs- und Rückgabebedingungen stehen auf der Website.
+
+- Kontakt und Anfahrt: https://apfel-park.de/de/contact
+- Lieferung und Rückgabe: https://apfel-park.de/de/delivery-returns
+- Widerruf: https://apfel-park.de/de/withdrawal
+- Datenschutz: https://apfel-park.de/de/privacy
+- Sitemap: https://apfel-park.de/sitemap.xml
+
+## English summary
+
+Apfel Park is a local smartphone shop and repair workshop in Hamburg-Wilhelmsburg. Its public repair finder lists model-specific display, battery and back-cover prices, with Standard, Premium and Original/Genuine options where available. Prices and repair scope are confirmed before paid work begins.
+
+Last updated: 2026-08-29

@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
 import { pushGtagCommand } from "@/lib/analytics";
+import { analyticsPagePath } from "@/lib/analytics-url";
 
 type MarketingConsentScriptsProps = {
   metaPixelEnabled: boolean;
@@ -253,7 +254,7 @@ export default function MarketingConsentScripts({
 
   useEffect(() => {
     const trackPageView = () => {
-      const path = pathname + (searchParams?.toString() ? `?${searchParams}` : "");
+      const path = analyticsPagePath(pathname, searchParams);
       if (lastPageViewRef.current === path) return;
       lastPageViewRef.current = path;
 

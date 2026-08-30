@@ -472,7 +472,7 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
           {status.type === "loading" ? text.submitting : text.submit}
         </button>
 
-        {recaptchaError && <p className="text-xs text-red-400">{recaptchaError}</p>}
+        {recaptchaError && <p className="text-xs text-red-text" role="alert">{recaptchaError}</p>}
         <p className="text-xs text-muted">{text.privacy}</p>
         <ReCaptchaComponent />
       </form>

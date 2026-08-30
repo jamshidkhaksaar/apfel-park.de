@@ -13,7 +13,6 @@ type Props = {
   orderId?: string | null;
   orderNumber?: number | null;
   provider?: string | null;
-  paypalToken?: string | null;
   initiallyPaid: boolean;
   totalAmount?: number | null;
   currency?: string | null;
@@ -51,7 +50,6 @@ export default function CheckoutSuccessClient({
   orderId,
   orderNumber,
   provider,
-  paypalToken,
   initiallyPaid,
   totalAmount,
   currency,
@@ -68,7 +66,7 @@ export default function CheckoutSuccessClient({
   const [paid, setPaid] = useState(initiallyPaid);
   const purchaseSentRef = useRef(false);
   const [message, setMessage] = useState(() =>
-    provider === "paypal" && orderId && paypalToken && !initiallyPaid
+    provider === "paypal" && orderId && !initiallyPaid
       ? locale === "de" ? "PayPal-Zahlung wird bestätigt..." : "Confirming PayPal payment..."
       : "",
   );
@@ -131,13 +129,13 @@ export default function CheckoutSuccessClient({
   }, [currency, items, orderId, paid, totalAmount]);
 
   useEffect(() => {
-    if (provider !== "paypal" || !orderId || !paypalToken || paid) return;
+    if (provider !== "paypal" || !orderId || paid) return;
 
     let cancelled = false;
     void fetch("/api/checkout/paypal/capture", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId, paypalOrderId: paypalToken }),
+      body: "{}",
     })
       .then(async (response) => {
         const data = (await response.json()) as { success: boolean; error?: string };
@@ -156,7 +154,7 @@ export default function CheckoutSuccessClient({
     return () => {
       cancelled = true;
     };
-  }, [locale, orderId, paid, paypalToken, provider]);
+  }, [locale, orderId, paid, provider]);
 
   return (
     <div className="glass-panel mx-auto max-w-2xl rounded-2xl p-8 text-center">

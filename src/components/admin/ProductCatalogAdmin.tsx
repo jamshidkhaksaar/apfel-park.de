@@ -28,7 +28,6 @@ import {
   PRODUCT_EXPERIENCE_SECTIONS,
   sanitizeProductExperienceProfile,
   type ProductExperienceProfile,
-  type ProductExperienceSection,
 } from "@/lib/product-experience";
 
 type AdminLocale = "de" | "en";
@@ -109,8 +108,8 @@ const EXPERIENCE_PRESETS = {
   ],
   trustPoints: [
     {
-      title: { de: "12 Monate Store-Garantie", en: "12 Months Store Warranty" },
-      description: { de: "Volle Absicherung für alle Hardwarekomponenten direkt über unseren Hamburger Fachbetrieb.", en: "Full coverage for all hardware components directly from our Hamburg repair shop." },
+      title: { de: "Klare Zustandsangaben", en: "Clear Condition Details" },
+      description: { de: "Zustand, Lieferumfang und bekannte Hinweise direkt am konkreten Angebot.", en: "Condition, included items, and known notes stated on the specific offer." },
     },
     {
       title: { de: "14 Tage Rückgaberecht", en: "14-Day Money Back Guarantee" },
@@ -567,8 +566,6 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const [candidateProducts, setCandidateProducts] = useState<ExperienceCandidate[]>([]);
   const [experienceContentsText, setExperienceContentsText] = useState("");
   const [experienceConditionText, setExperienceConditionText] = useState("");
-  const [experienceRefurbishmentText, setExperienceRefurbishmentText] = useState("");
-  const [experienceTrustText, setExperienceTrustText] = useState("");
   const [experienceTab, setExperienceTab] = useState<"features" | "family" | "contents" | "condition" | "trust" | "compare" | "campaign">("features");
   const [experienceRawMode, setExperienceRawMode] = useState<Record<string, boolean>>({});
   const [familyQuery, setFamilyQuery] = useState("");
@@ -668,23 +665,6 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     setExperienceProfile((prev) => ({ ...prev, conditionGuide: parsed }));
   };
 
-  const syncRefurbishmentFromRaw = (text: string) => {
-    setExperienceRefurbishmentText(text);
-    const parsed = parseExperienceRows(text, 2).map(([titleDe, titleEn, descriptionDe, descriptionEn]) => ({
-      title: { de: titleDe || "", en: titleEn || titleDe || "" },
-      description: { de: descriptionDe || "", en: descriptionEn || descriptionDe || "" },
-    }));
-    setExperienceProfile((prev) => ({ ...prev, refurbishmentSteps: parsed }));
-  };
-
-  const syncTrustFromRaw = (text: string) => {
-    setExperienceTrustText(text);
-    const parsed = parseExperienceRows(text, 2).map(([titleDe, titleEn, descriptionDe, descriptionEn]) => ({
-      title: { de: titleDe || "", en: titleEn || titleDe || "" },
-      description: { de: descriptionDe || "", en: descriptionEn || descriptionDe || "" },
-    }));
-    setExperienceProfile((prev) => ({ ...prev, trustPoints: parsed }));
-  };
 
   useEffect(() => {
     if (selectedProduct && selectedProduct.id !== formState.id) {
@@ -711,8 +691,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
         setCandidateProducts(payload.products ?? []);
         setExperienceContentsText(experienceLines(nextProfile.packageContents.map((item) => [item.label.de, item.label.en, item.included ? "yes" : "no"])));
         setExperienceConditionText(experienceLines(nextProfile.conditionGuide.map((item) => [item.condition, item.label.de, item.label.en, item.description.de, item.description.en, item.imageUrls.join(",")])));
-        setExperienceRefurbishmentText(experienceLines(nextProfile.refurbishmentSteps.map((item) => [item.title.de, item.title.en, item.description.de, item.description.en])));
-        setExperienceTrustText(experienceLines(nextProfile.trustPoints.map((item) => [item.title.de, item.title.en, item.description.de, item.description.en])));
+
         if (payload.family) {
           setFamilyState({
             id: payload.family.id,
@@ -918,7 +897,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
         ...prev,
         refurbishmentSteps: research.refurbishmentSteps!,
       }));
-      setExperienceRefurbishmentText(experienceLines(research.refurbishmentSteps.map((item) => [item.title.de, item.title.en, item.description.de, item.description.en])));
+
     }
     if (research.campaignSuggestion) {
       setExperienceProfile((prev) => ({
@@ -2620,7 +2599,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                         trustPoints: prev.trustPoints.map((t, i) => (i === idx ? { ...t, title: { ...t.title, de: e.target.value } } : t)),
                                       }))
                                     }
-                                    placeholder="Titel DE (z. B. 12 Monate Garantie)"
+                                    placeholder="Titel DE (z. B. Klare Zustandsangaben)"
                                     className="w-full rounded-lg border border-border/80 bg-surface px-2.5 py-1.5 text-xs text-foreground focus:border-gold focus:outline-none"
                                   />
                                   <input

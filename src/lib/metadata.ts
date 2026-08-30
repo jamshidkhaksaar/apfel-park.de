@@ -29,6 +29,8 @@ export type CreateMetadataOptions = {
   noindex?: boolean;
   /** Locales this page exists in; limits hreflang alternates (default: all). */
   locales?: Locale[];
+  /** Query string retained only for an intentional canonical, such as page=2. */
+  canonicalQuery?: string;
 };
 
 export const createMetadata = async (
@@ -41,7 +43,8 @@ export const createMetadata = async (
 ): Promise<Metadata> => {
   const normalizedPath = normalizePath(path);
   const pathWithLocale = `/${locale}${normalizedPath}`;
-  const canonical = `${siteInfo.url}${pathWithLocale}`;
+  const canonicalSuffix = options?.canonicalQuery ? `?${options.canonicalQuery}` : "";
+  const canonical = `${siteInfo.url}${pathWithLocale}${canonicalSuffix}`;
   const routeId = getSeoRouteIdByPath(normalizedPath || "/");
   const settings = await getSeoSettings();
   const global = settings.global;
@@ -62,10 +65,10 @@ export const createMetadata = async (
   const availableLocales = options?.locales?.length ? options.locales : allLocales;
   const languageAlternates: Record<string, string> = {};
   for (const altLocale of availableLocales) {
-    languageAlternates[altLocale] = `${siteInfo.url}/${altLocale}${normalizedPath}`;
+    languageAlternates[altLocale] = `${siteInfo.url}/${altLocale}${normalizedPath}${canonicalSuffix}`;
   }
   if (availableLocales.includes("de")) {
-    languageAlternates["x-default"] = `${siteInfo.url}/de${normalizedPath}`;
+    languageAlternates["x-default"] = `${siteInfo.url}/de${normalizedPath}${canonicalSuffix}`;
   }
 
   return {

@@ -92,7 +92,7 @@ export const setCustomerTyping = async (publicToken: string, isTyping: boolean) 
   const result = await query(
     `UPDATE chat_conversations
      SET customer_typing_until = CASE WHEN $2 THEN NOW() + INTERVAL '6 seconds' ELSE NULL END
-     WHERE public_token = $1
+     WHERE public_token = $1 AND created_at >= NOW() - INTERVAL '30 days'
      RETURNING id`,
     [publicToken, isTyping],
   );
@@ -234,7 +234,9 @@ export const createConversation = async (payload: {
 
 export const getConversationByToken = async (publicToken: string): Promise<PublicChatConversation | null> => {
   const conversationResult = await query(
-    `SELECT * FROM chat_conversations WHERE public_token = $1 LIMIT 1`,
+    `SELECT * FROM chat_conversations
+     WHERE public_token = $1 AND created_at >= NOW() - INTERVAL '30 days'
+     LIMIT 1`,
     [publicToken],
   );
 

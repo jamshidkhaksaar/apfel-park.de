@@ -11,21 +11,12 @@ type ChatStatus = "open" | "waiting" | "resolved";
 type ChatSenderRole = "customer" | "admin" | "system";
 
 type ChatConversation = {
-  id: string;
   status: ChatStatus;
-  customerName: string;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  customerLocale: ChatLocale;
-  lastMessageAt: string;
-  customerUnreadCount: number;
-  customerTyping: boolean;
   adminTyping: boolean;
 };
 
 type ChatMessage = {
   id: string;
-  conversationId: string;
   createdAt: string;
   senderRole: ChatSenderRole;
   message: string;
@@ -46,7 +37,6 @@ type ChatWidgetProps = {
   };
 };
 
-const STORAGE_KEY = "apfel-chat-token";
 
 const copy = {
   de: {
@@ -152,7 +142,6 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Partial<Record<"customerName" | "customerEmail" | "message", string>>>({});
-  const [token, setToken] = useState("");
   const [conversation, setConversation] = useState<ChatConversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageDraft, setMessageDraft] = useState("");
@@ -186,17 +175,23 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
       ? `https://wa.me/${normalizeNumber(whatsapp.number)}?text=${encodeURIComponent(whatsappMessage)}`
       : null;
 
-  const syncSession = useCallback(async (nextToken = token, silent = false) => {
-    if (!nextToken) return;
-    if (!silent) setLoading(true);
-
+  useEffect(() => {
     try {
-      const response = await fetch(`/api/chat/session?token=${encodeURIComponent(nextToken)}`, {
-        cache: "no-store",
-      });
+      window.localStorage.removeItem("apfel-chat-token");
+    } catch {
+      // Ignore unavailable storage; the secure cookie is authoritative.
+    }
+  }, []);
+
+  const syncSession = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const response = await fetch("/api/chat/session", { cache: "no-store" });
+      if (!response.ok) return;
       const payload = (await response.json()) as SessionResponse;
       setConversation(payload.conversation);
       setMessages(payload.messages || []);
+      if (payload.conversation) setMode("local");
 
       const latestAdminMessage = [...(payload.messages || [])].reverse().find((item) => item.senderRole === "admin");
       if (latestAdminMessage && lastAdminMessageIdRef.current && latestAdminMessage.id !== lastAdminMessageIdRef.current) {
@@ -208,44 +203,28 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [token]);
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setToken(stored);
-      }
-    } catch {
-      // ignore storage failures
-    }
   }, []);
 
   useEffect(() => {
-    if (!token) return;
-    void syncSession(token);
-  }, [token, syncSession]);
-
-  useEffect(() => {
-    if (!open || !token) return;
+    if (!open || !conversation) return;
     const interval = window.setInterval(() => {
-      void syncSession(token, true);
-    }, 2000);
+      void syncSession(true);
+    }, 3000);
     return () => window.clearInterval(interval);
-  }, [open, token, syncSession]);
+  }, [conversation, open, syncSession]);
 
   const updateTyping = useCallback(async (isTyping: boolean) => {
-    if (!token) return;
+    if (!conversation) return;
     try {
       await fetch("/api/chat/session", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, isTyping }),
+        body: JSON.stringify({ isTyping }),
       });
     } catch {
       // Typing presence is best-effort and must never interrupt messaging.
     }
-  }, [token]);
+  }, [conversation]);
 
   const handleDraftChange = (value: string) => {
     setMessageDraft(value);
@@ -266,14 +245,14 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
   }, [updateTyping]);
 
   useEffect(() => {
-    if (open && token) {
+    if (open && conversation) {
       void fetch("/api/chat/messages", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: "{}",
       });
     }
-  }, [open, token, messages.length]);
+  }, [conversation, messages.length, open]);
 
   useEffect(() => {
     if (!open) {
@@ -337,18 +316,12 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
         }),
       });
 
-      const payload = (await response.json()) as SessionResponse & { success?: boolean; error?: string; token?: string };
-      if (!response.ok || !payload.success || !payload.token) {
+      const payload = (await response.json()) as SessionResponse & { success?: boolean; error?: string };
+      if (!response.ok || !payload.success || !payload.conversation) {
         setError(payload.error || "Chat unavailable");
         return;
       }
 
-      setToken(payload.token);
-      try {
-        window.localStorage.setItem(STORAGE_KEY, payload.token);
-      } catch {
-        // ignore storage issues
-      }
       setConversation(payload.conversation);
       setMessages(payload.messages || []);
       setForm({ customerName: "", customerEmail: "", customerPhone: "", message: "" });
@@ -365,7 +338,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
 
   const handleSendMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!token || !messageDraft.trim()) return;
+    if (!conversation || !messageDraft.trim()) return;
 
     setLoading(true);
     setError(null);
@@ -377,7 +350,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
       const response = await fetch("/api/chat/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, message: messageDraft }),
+        body: JSON.stringify({ message: messageDraft }),
       });
       const payload = (await response.json()) as SessionResponse & { success?: boolean; error?: string };
       if (!response.ok || !payload.success) {
@@ -635,6 +608,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
           onClick={() => {
             setMode(conversation ? "local" : "chooser");
             setOpen(true);
+            void syncSession();
           }}
           aria-haspopup="dialog"
           aria-expanded={open}
@@ -648,7 +622,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
             </svg>
           </span>
           <span className="relative hidden text-left sm:block">
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-gold">{text.launcher}</span>
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-soft">{text.launcher}</span>
             <span className="mt-0.5 block text-xs text-white/75">
               {lang === "de" ? "Antwort während der Öffnungszeiten" : "Replies during opening hours"}
             </span>

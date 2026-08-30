@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { Locale } from "../lib/i18n";
 import { useLanguageSwitch } from "./LanguageTransition";
@@ -14,35 +14,20 @@ export default function LocaleSwitcher() {
   const [optimisticLocale, setOptimisticLocale] = useState<Locale | null>(null);
   const timeoutRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-      }
-    };
+  useEffect(() => () => {
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
   }, []);
 
-  if (!pathname) {
-    return null;
-  }
+  if (!pathname) return null;
 
   const parts = pathname.split("/").filter(Boolean);
-  const activeLocale = locales.includes(parts[0] as Locale)
-    ? (parts[0] as Locale)
-    : "de";
-    
+  const activeLocale = locales.includes(parts[0] as Locale) ? (parts[0] as Locale) : "de";
   const currentLocale = optimisticLocale || activeLocale;
 
   const handleSwitch = (targetLocale: Locale) => {
     if (targetLocale === activeLocale || optimisticLocale) return;
-    
-    // 1. Animate toggle immediately
     setOptimisticLocale(targetLocale);
-    
-    // 2. Wait for toggle animation (400ms) before starting page transition
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-    }
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
     timeoutRef.current = window.setTimeout(() => {
       const nextPath = `/${[targetLocale, ...parts.slice(1)].join("/")}`;
       switchLanguage(nextPath, targetLocale);
@@ -53,24 +38,31 @@ export default function LocaleSwitcher() {
   return (
     <div
       role="radiogroup"
-      aria-label="Language switcher"
+      aria-label="Sprache / Language"
+      onKeyDown={(event) => {
+        if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+          event.preventDefault();
+          handleSwitch("de");
+        }
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+          event.preventDefault();
+          handleSwitch("en");
+        }
+      }}
       className="relative flex h-8 w-20 items-center rounded-full bg-black/40 p-1 shadow-inner ring-1 ring-white/10 backdrop-blur-md focus-within:ring-2 focus-within:ring-gold focus-within:ring-offset-2 focus-within:ring-offset-background"
     >
-      {/* Sliding Indicator */}
       <div
-        className={`absolute h-6 w-[34px] rounded-full bg-white/20 shadow-sm backdrop-blur-md transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]
-          ${currentLocale === "de" ? "translate-x-0" : "translate-x-[40px]"}
-        `}
+        aria-hidden="true"
+        className={`absolute h-6 w-[34px] rounded-full bg-white/20 shadow-sm backdrop-blur-md transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${currentLocale === "de" ? "translate-x-0" : "translate-x-[40px]"}`}
       />
-      
-      {/* DE Button */}
+
       <button
         type="button"
+        data-compact-touch
         role="radio"
+        tabIndex={currentLocale === "de" ? 0 : -1}
         onClick={() => handleSwitch("de")}
-        className={`z-10 flex w-1/2 items-center justify-center rounded-full text-[10px] font-bold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1 focus-visible:ring-offset-surface
-          ${currentLocale === "de" ? "text-white" : "text-muted hover:text-white/80"}
-        `}
+        className={`z-10 flex w-1/2 items-center justify-center rounded-full text-[10px] font-bold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1 focus-visible:ring-offset-surface ${currentLocale === "de" ? "text-white" : "text-muted hover:text-white/80"}`}
         aria-checked={currentLocale === "de"}
         aria-label="Deutsch"
         title="Deutsch"
@@ -78,14 +70,13 @@ export default function LocaleSwitcher() {
         DE
       </button>
 
-      {/* EN Button */}
       <button
         type="button"
+        data-compact-touch
         role="radio"
+        tabIndex={currentLocale === "en" ? 0 : -1}
         onClick={() => handleSwitch("en")}
-        className={`z-10 flex w-1/2 items-center justify-center rounded-full text-[10px] font-bold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1 focus-visible:ring-offset-surface
-          ${currentLocale === "en" ? "text-white" : "text-muted hover:text-white/80"}
-        `}
+        className={`z-10 flex w-1/2 items-center justify-center rounded-full text-[10px] font-bold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1 focus-visible:ring-offset-surface ${currentLocale === "en" ? "text-white" : "text-muted hover:text-white/80"}`}
         aria-checked={currentLocale === "en"}
         aria-label="English"
         title="English"

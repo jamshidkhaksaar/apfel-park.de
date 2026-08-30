@@ -15,6 +15,8 @@ import {
 import { applyCouponToValidatedCart } from "@/lib/coupon-repository";
 import { buildStripeCouponForm } from "@/lib/payment-coupon";
 import { consumePublicRateLimit } from "@/lib/public-rate-limit";
+import { createCheckoutReturnToken } from "@/lib/checkout-return-token";
+import { CHECKOUT_RETURN_COOKIE, createCheckoutReturnSession, getCheckoutReturnCookieOptions } from "@/lib/checkout-return-session";
 
 const stripeRequestId = (response: Response) => response.headers.get("request-id") || undefined;
 
@@ -90,12 +92,14 @@ export async function POST(request: NextRequest) {
       termsConsentAt: new Date().toISOString(),
     });
     pendingOrderId = order.id;
+    const returnToken = createCheckoutReturnToken(order.id);
 
     const origin = getCheckoutBaseUrl();
     const form = new URLSearchParams({
       mode: "payment",
-      success_url: `${origin}/${locale}/checkout/success?order_id=${order.id}&provider=stripe&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/${locale}/checkout/cancel?order_id=${order.id}&provider=stripe`,
+      expires_at: String(Math.floor(Date.now() / 1000) + 60 * 60),
+      success_url: `${origin}/api/checkout/return/${locale}?order_id=${order.id}&provider=stripe&return_token=${encodeURIComponent(returnToken)}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/${locale}/checkout/cancel`,
       customer_email: customer.email,
       client_reference_id: order.id,
       "metadata[order_id]": order.id,
@@ -177,7 +181,9 @@ export async function POST(request: NextRequest) {
     });
     if (!attached) throw new Error("Stripe Checkout Session could not be bound to the local order");
 
-    return NextResponse.json({ success: true, checkoutUrl: data.url, orderId: order.id });
+    const result = NextResponse.json({ success: true, checkoutUrl: data.url, orderId: order.id });
+    result.cookies.set(CHECKOUT_RETURN_COOKIE, createCheckoutReturnSession(order.id, returnToken), getCheckoutReturnCookieOptions());
+    return result;
   } catch (error) {
     if (pendingOrderId) {
       try {

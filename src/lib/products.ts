@@ -7,6 +7,7 @@ import type {
   MarketplaceCategoryMappings,
   ProductIdentifierStatus,
 } from "@/lib/product-channel-readiness";
+import { cache } from "react";
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
 
@@ -536,7 +537,7 @@ type ProductInventoryRow = {
 };
 
 /** Overlay compatibility stock fields with the authoritative reservation ledger. */
-const hydrateProductsWithInventory = async (products: Product[]): Promise<Product[]> => {
+const hydrateProductsWithInventory = async (products: Product[], failOnError = false): Promise<Product[]> => {
   if (products.length === 0) return products;
   try {
     const result = await query(
@@ -571,42 +572,54 @@ const hydrateProductsWithInventory = async (products: Product[]): Promise<Produc
   } catch (error) {
     // Rolling deployments briefly run before the new SQL function exists.
     console.error("hydrateProductsWithInventory failed:", error);
+    if (failOnError) throw error;
     return products;
   }
 };
 
-/**
- * Fetches products from the database.
- */
-export async function getProducts(category?: ProductCategory, limit?: number, locale: Locale = "de"): Promise<Product[]> {
+/** Fetches and request-memoizes the active catalog plus authoritative inventory. */
+const getProductsCached = cache(async (
+  category: ProductCategory | null,
+  limit: number | null,
+  locale: Locale,
+  failOnError: boolean,
+): Promise<Product[]> => {
   const db = createDbClient();
 
-  let query = db
+  let productQuery = db
     .from<DbProduct[]>("products")
     .select(baseSelect)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
-  if (category) {
-    query = query.or(categoryFilters[category]);
+  if (category) productQuery = productQuery.or(categoryFilters[category]);
+  if (limit) productQuery = productQuery.limit(limit);
+
+  const { data, error } = await productQuery;
+  if (error || !data) {
+    if (failOnError) throw error ?? new Error("Product catalogue query returned no data");
+    return [];
   }
-
-  if (limit) {
-    query = query.limit(limit);
-  }
-
-  const { data, error } = await query;
-
-  if (error || !data) return [];
 
   const products = (data as DbProduct[])
     .map((row) => mapProduct(row, locale))
     .filter((item): item is Product => item !== null);
-
-  const hydrated = await hydrateProductsWithInventory(products);
+  const hydrated = await hydrateProductsWithInventory(products, failOnError);
   if (!category) return hydrated;
   return hydrated.filter((product) => product.category === category);
-}
+});
+
+export const getProducts = (
+  category?: ProductCategory,
+  limit?: number,
+  locale: Locale = "de",
+  options: { failOnError?: boolean } = {},
+): Promise<Product[]> => getProductsCached(
+  category ?? null,
+  limit ?? null,
+  locale,
+  options.failOnError === true,
+);
 
 export type StoreCatalogCategory = "all" | ProductCategory | "open-box-smartphones-tablets";
 export type StoreCatalogCollection =

@@ -8,6 +8,7 @@ import { createCheckoutFingerprint } from "@/lib/checkout-idempotency";
 import { canReserveCampaignRedemption } from "@/lib/coupon";
 import { siteInfo } from "@/lib/site";
 import { paypalCaptureRequestMatchesLocalOrder } from "@/lib/payment-coupon";
+import { resolveCheckoutQuantity } from "@/lib/checkout-stock";
 
 export type CartInputItem = {
   productId: string;
@@ -118,11 +119,6 @@ const toCents = (value: number) => Math.round(value * 100);
 const fromCents = (value: number) => Math.round(value) / 100;
 
 const normalizeText = (value: string | null | undefined) => (value ?? "").trim();
-
-const normalizeQuantity = (value: number) => {
-  if (!Number.isFinite(value)) return 1;
-  return Math.min(MAX_QUANTITY, Math.max(1, Math.floor(value)));
-};
 
 const getVariantKey = (productId: string, variant?: ProductVariant | null) =>
   [productId, variant?.color ?? "", variant?.storage ?? ""].join(":");
@@ -242,11 +238,7 @@ export async function validateCartItems(
     }
 
     const stock = variant?.stock ?? product.stock;
-    const requestedQuantity = normalizeQuantity(inputItem.quantity);
-    const quantity =
-      typeof stock === "number" && stock > 0
-        ? Math.min(requestedQuantity, Math.max(1, stock))
-        : requestedQuantity;
+    const quantity = resolveCheckoutQuantity(inputItem.quantity, stock, product.title);
 
     const key = getVariantKey(product.id, variant);
     const existing = merged.get(key);
@@ -499,13 +491,13 @@ export async function getOrderPaymentExpectation(orderId: string): Promise<{ cen
 export async function getPayPalCaptureExpectation(orderId: string, paypalOrderId: string): Promise<{ cents: number; currency: string } | null> {
   try {
     const result = await query(
-      `SELECT provider, status, payment_status, provider_order_id,
+      `SELECT provider, status, payment_status, provider_status, provider_order_id,
               round(total_amount * 100)::int AS cents, upper(currency) AS currency
        FROM orders WHERE id = $1 LIMIT 1`,
       [orderId],
     );
     const row = result.rows[0] as Record<string, unknown> | undefined;
-    if (!row || !paypalCaptureRequestMatchesLocalOrder({
+    if (!row || row.provider_status === "paypal_expiry_check" || !paypalCaptureRequestMatchesLocalOrder({
       localProvider: typeof row.provider === "string" ? row.provider : null,
       status: typeof row.status === "string" ? row.status : null,
       paymentStatus: typeof row.payment_status === "string" ? row.payment_status : null,

@@ -16,6 +16,8 @@ import {
 import { applyCouponToValidatedCart } from "@/lib/coupon-repository";
 import { buildPayPalDiscountedAmount } from "@/lib/payment-coupon";
 import { consumePublicRateLimit } from "@/lib/public-rate-limit";
+import { createCheckoutReturnToken } from "@/lib/checkout-return-token";
+import { CHECKOUT_RETURN_COOKIE, createCheckoutReturnSession, getCheckoutReturnCookieOptions } from "@/lib/checkout-return-session";
 
 type PayPalCreatePayload = {
   items?: CartInputItem[];
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
       termsConsentAt: new Date().toISOString(),
     });
     pendingOrderId = order.id;
+    const returnToken = createCheckoutReturnToken(order.id);
     const token = await getAccessToken();
 
     const origin = getCheckoutBaseUrl();
@@ -143,8 +146,8 @@ export async function POST(request: NextRequest) {
               locale: locale === "de" ? "de-DE" : "en-US",
               landing_page: "LOGIN",
               user_action: "PAY_NOW",
-              return_url: `${origin}/${locale}/checkout/success?order_id=${order.id}&provider=paypal`,
-              cancel_url: `${origin}/${locale}/checkout/cancel?order_id=${order.id}&provider=paypal`,
+              return_url: `${origin}/api/checkout/return/${locale}?order_id=${order.id}&provider=paypal&return_token=${encodeURIComponent(returnToken)}`,
+              cancel_url: `${origin}/${locale}/checkout/cancel`,
             },
           },
         },
@@ -181,12 +184,14 @@ export async function POST(request: NextRequest) {
     });
     if (!attached) throw new Error("PayPal order could not be bound to the local order");
 
-    return NextResponse.json({
+    const result = NextResponse.json({
       success: true,
       orderId: order.id,
       paypalOrderId: data.id,
       approveUrl: data.links?.find((link) => link.rel === "payer-action" || link.rel === "approve")?.href ?? null,
     });
+    result.cookies.set(CHECKOUT_RETURN_COOKIE, createCheckoutReturnSession(order.id, returnToken, data.id), getCheckoutReturnCookieOptions());
+    return result;
   } catch (error) {
     if (pendingOrderId) {
       try {

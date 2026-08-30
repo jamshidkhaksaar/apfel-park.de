@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 
 import { createAdminDbClient } from "@/lib/admin-db";
 import { escapeHtml } from "@/lib/security";
+import { siteInfo } from "@/lib/site";
 
 type ContactNotificationData = {
   name: string;
@@ -223,6 +224,30 @@ const sendTransactionalEmail = async (email: OutboundEmail): Promise<EmailSendRe
   }
 
   return smtpResult;
+};
+
+export const sendOfferSubscriptionConfirmationEmail = async (data: {
+  email: string;
+  locale: "de" | "en";
+  token: string;
+}): Promise<EmailSendResult> => {
+  const confirmationUrl = `${siteInfo.url}/api/offer-subscribe/confirm?token=${encodeURIComponent(data.token)}`;
+  const german = data.locale === "de";
+  const subject = german ? "Bitte bestätige deine Apfel-Park-Anmeldung" : "Confirm your Apfel Park subscription";
+  const text = german
+    ? `Bitte bestätige deine Anmeldung für Angebote von Apfel Park: ${confirmationUrl}\n\nWenn du dich nicht angemeldet hast, kannst du diese E-Mail ignorieren.`
+    : `Please confirm your subscription to Apfel Park offers: ${confirmationUrl}\n\nIf you did not request this, you can ignore this email.`;
+  const html = german
+    ? `<p>Bitte bestätige deine Anmeldung für Angebote von Apfel Park.</p><p><a href="${confirmationUrl}">Anmeldung bestätigen</a></p><p>Wenn du dich nicht angemeldet hast, kannst du diese E-Mail ignorieren.</p>`
+    : `<p>Please confirm your subscription to Apfel Park offers.</p><p><a href="${confirmationUrl}">Confirm subscription</a></p><p>If you did not request this, you can ignore this email.</p>`;
+
+  return sendTransactionalEmail({
+    to: data.email,
+    subject,
+    text,
+    html,
+    identity: "sales",
+  });
 };
 
 const getContactRecipient = async (): Promise<string | null> => {

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { eprelProductUrl } from "@/lib/eprel";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -48,6 +49,7 @@ const getDefaultVariant = (variants: ProductVariant[]) =>
   variants.find((variant) => variant.isDefault) ?? variants[0] ?? null;
 
 export default function ProductDetailExperience({ locale, product, ratingSummary, initialVariantToken, experience }: Props) {
+  const router = useRouter();
   const requestedVariant = initialVariantToken
     ? product.variants.find((variant) =>
         variant.sku === initialVariantToken || `${variant.color} ${variant.storage}`.trim() === initialVariantToken,
@@ -642,8 +644,8 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                 ? ["Gaming & Performance", "Flüssige Darstellung und schnelle Chips für Spiele und anspruchsvolle Apps."]
                 : ["Gaming & performance", "Smooth rendering and fast chips for games and demanding apps."],
               locale === "de"
-                ? ["Alltag & Familie", "Einfache Bedienung, regelmäßige Updates und bei uns geprüft mit Garantie."]
-                : ["Everyday & family", "Easy to use, regularly updated, and tested by us with warranty."],
+                ? ["Alltag & Familie", "Einfache Bedienung, regelmäßige Updates und ein klar ausgewiesener Gerätezustand."]
+                : ["Everyday & family", "Easy to use, regularly updated, with the device condition clearly stated."],
             ].map(([heading, text]) => (
               <div key={heading} className="rounded-2xl border border-border/60 bg-surface/40 p-5">
                 <p className="text-sm font-semibold text-foreground">{heading}</p>
@@ -658,7 +660,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           while scanning price and availability. */}
       <div className="rounded-2xl border border-border bg-store-card p-6 sm:p-8">
         <h2 className="text-xl font-semibold text-foreground">
-          {locale === "de" ? "Kauf, Versand & Garantie" : "Purchase, shipping & warranty"}
+          {locale === "de" ? "Kauf & Lieferung" : "Purchase & delivery"}
         </h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="grid gap-3 rounded-2xl border border-border bg-surface-strong p-5 text-sm text-muted sm:col-span-2">
@@ -668,14 +670,9 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
               : locale === "de" ? "Abholung im Store oder versicherter Versand innerhalb Deutschlands." : "Store pickup or tracked shipping within Germany."}
           </p>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p>{locale === "de" ? "Sichere Zahlung mit Kreditkarte, Apple Pay oder Klarna. Preise inkl. gesetzlicher MwSt." : "Secure payment by credit card, Apple Pay, or Klarna. Prices include VAT."}</p>
+            <p>{locale === "de" ? "Die für Ihre Bestellung verfügbaren Zahlungsarten werden im Checkout angezeigt." : "The payment methods available for your order are shown during checkout."}</p>
             <PaymentBrandIcons iconClassName="h-5 w-auto" />
           </div>
-          <p>
-            {locale === "de"
-              ? "14 Tage Widerrufsrecht · 24 Monate gesetzliche Gewährleistung · zusätzlich 12 Monate Garantie."
-              : "14-day right of withdrawal · 24-month statutory warranty · plus a 12-month commercial warranty."}
-          </p>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-6 text-sm text-muted">
@@ -692,7 +689,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
               if (selectedVariant) {
                 query.set("variant", `${selectedVariant.color} ${selectedVariant.storage}`);
               }
-              window.location.assign(`/${locale}/contact?${query.toString()}`);
+              router.push(`/${locale}/contact?${query.toString()}`);
             }}
           >
             {locale === "de" ? "Jetzt anfragen" : "Send inquiry"}

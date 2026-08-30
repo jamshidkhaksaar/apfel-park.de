@@ -8,6 +8,7 @@ import {
   readConsentMode,
   writeConsentMode,
 } from "@/lib/consent";
+import { clearMapConsent } from "@/lib/map-consent";
 
 type Props = {
   lang: "de" | "en";
@@ -51,6 +52,7 @@ export default function CookieBanner({ lang }: Props) {
 
   const applyConsent = (mode: "necessary" | "external") => {
     setForceOpen(false);
+    if (mode === "necessary") clearMapConsent();
     writeConsentMode(mode);
   };
 

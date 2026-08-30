@@ -16,6 +16,7 @@ const TERMINAL_PROVIDER_STATUSES = new Set([
   "provider_request_failed", "order_creation_failed", "checkout_creation_failed",
   "intent_creation_failed", "coupon_creation_failed", "no_remote_payment_intent",
   "stale_provider_outcome_expired", "canceled_by_reconciliation",
+  "payment_failed", "failed",
 ]);
 
 export const validateAdminOrderTransition = ({

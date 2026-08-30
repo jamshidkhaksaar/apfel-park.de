@@ -5,6 +5,7 @@ import { createAdminDbClient } from "@/lib/admin-db";
 import { sendWithdrawalAdminEmail, sendWithdrawalCustomerEmail } from "@/lib/email";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { isValidEmail, isValidInputLength, sanitizeInput } from "@/lib/security";
+import { consumePublicRateLimit } from "@/lib/public-rate-limit";
 
 type WithdrawalFormData = {
   name: string;
@@ -17,6 +18,8 @@ type WithdrawalFormData = {
 };
 
 export async function POST(request: NextRequest) {
+  const limit = await consumePublicRateLimit(request.headers, "withdrawal", 5, 15 * 60);
+  if (!limit.allowed) return NextResponse.json({ success: false, error: "Too many requests" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
   try {
     const payload: WithdrawalFormData = await request.json();
     const locale = payload.locale === "en" ? "en" : "de";

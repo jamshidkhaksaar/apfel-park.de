@@ -287,11 +287,11 @@ export default function SiteHeader({
               </svg>
               <span>{lang === "de" ? "Zum Online Shop" : "Go to Store"}</span>
             </Link>
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2 max-[359px]:flex-col max-[359px]:items-stretch">
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
                 {lang === "de" ? "Sprache & Design" : "Language & theme"}
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 max-[359px]:justify-between">
                 <LocaleSwitcher />
                 <ThemeToggle />
               </div>

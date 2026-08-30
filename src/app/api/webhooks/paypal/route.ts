@@ -12,6 +12,8 @@ import {
 } from "@/lib/checkout";
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
 import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
+import { validatePayPalWebhookEnvelope } from "@/lib/paypal-webhook-envelope";
+import { consumePublicRateLimit } from "@/lib/public-rate-limit";
 
 type PayPalWebhookEvent = {
   id: string;
@@ -38,7 +40,12 @@ type PayPalWebhookEvent = {
 const getPayPalBaseUrl = () =>
   getPaymentMode() === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
 
+let cachedAccessToken: { token: string; expiresAt: number } | null = null;
+
 const getAccessToken = async () => {
+  if (cachedAccessToken && cachedAccessToken.expiresAt > Date.now() + 60_000) {
+    return cachedAccessToken.token;
+  }
   const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
   if (!clientId || !clientSecret) throw new Error("PayPal is not configured");
@@ -52,8 +59,12 @@ const getAccessToken = async () => {
     body: "grant_type=client_credentials",
     signal: AbortSignal.timeout(10000),
   });
-  const data = (await response.json()) as { access_token?: string };
+  const data = (await response.json()) as { access_token?: string; expires_in?: number };
   if (!response.ok || !data.access_token) throw new Error("Could not authenticate with PayPal");
+  cachedAccessToken = {
+    token: data.access_token,
+    expiresAt: Date.now() + Math.max(60, Number(data.expires_in) || 300) * 1000,
+  };
   return data.access_token;
 };
 
@@ -84,11 +95,27 @@ const verifyWebhook = async (request: NextRequest, body: PayPalWebhookEvent) => 
 };
 
 export async function POST(request: NextRequest) {
+  const limit = await consumePublicRateLimit(request.headers, "paypal_webhook", 120, 5 * 60);
+  if (!limit.allowed) return NextResponse.json({ error: "Too many webhook requests" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
   if (!process.env.PAYPAL_WEBHOOK_ID?.trim()) {
     return NextResponse.json({ error: "PayPal webhook verification is not configured" }, { status: 503 });
   }
 
-  const event = (await request.json()) as PayPalWebhookEvent;
+  const declaredLength = Number(request.headers.get("content-length"));
+  if (!Number.isSafeInteger(declaredLength) || declaredLength <= 0 || declaredLength > 1024 * 1024) {
+    return NextResponse.json({ error: "Invalid webhook body size" }, { status: 413 });
+  }
+  const rawBody = await request.text();
+  const bodyBytes = Buffer.byteLength(rawBody, "utf8");
+  let event: PayPalWebhookEvent;
+  try {
+    event = JSON.parse(rawBody) as PayPalWebhookEvent;
+  } catch {
+    return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
+  }
+  if (!validatePayPalWebhookEnvelope({ headers: request.headers, bodyBytes, eventId: event.id, eventType: event.event_type })) {
+    return NextResponse.json({ error: "Invalid PayPal webhook envelope" }, { status: 400 });
+  }
   const verified = await verifyWebhook(request, event);
   if (!verified) {
     return NextResponse.json({ error: "Invalid PayPal webhook signature" }, { status: 400 });

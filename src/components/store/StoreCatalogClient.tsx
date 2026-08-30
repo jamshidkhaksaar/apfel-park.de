@@ -155,7 +155,7 @@ export default function StoreCatalogClient({
               <p className="px-2 pb-1 pt-1 text-xs font-bold uppercase tracking-[0.12em] text-muted">{isGerman ? "Kategorien" : "Categories"}</p>
               {categoryOrder.filter((category) => category === "all" || counts[category] > 0).map((category) => (
                 <Link key={category} href={buildHref({ category, page: 1 })} scroll={false} aria-current={activeCategory === category ? "page" : undefined} className={`flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 text-sm transition ${activeCategory === category ? "bg-gold/15 font-bold text-foreground" : "text-muted hover:bg-surface-strong hover:text-foreground"}`}>
-                  <span>{categoryLabels[lang][category]}</span><span className="text-xs tabular-nums text-muted">{counts[category]}</span>
+                  <span>{categoryLabels[lang][category]}</span><span className={`text-xs tabular-nums ${activeCategory === category ? "text-foreground" : "text-muted"}`}>{counts[category]}</span>
                 </Link>
               ))}
             </nav>
@@ -205,6 +205,12 @@ export default function StoreCatalogClient({
             </div>
           </div>
 
+          <StoreFilters lang={lang} facets={facets} activeFilters={activeFilters} resultCount={total} variant="mobile">
+            <select value={sortBy} onChange={(event) => onSort(event.target.value)} aria-label={isGerman ? "Sortieren nach" : "Sort by"} className={`flex-1 ${sortSelectClass}`}>
+              {sortOptions(isGerman).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </StoreFilters>
+
           {chips.length > 0 ? (
             <div className="mb-4 flex flex-wrap items-center gap-2" aria-label={isGerman ? "Aktive Filter" : "Active filters"}>
               {chips.map((chip) => (
@@ -224,7 +230,7 @@ export default function StoreCatalogClient({
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {products.map((product, index) => (
                   <StoreProductCard key={product.id} product={product} locale={lang} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 4} />
                 ))}
@@ -240,20 +246,15 @@ export default function StoreCatalogClient({
 
           {pages > 1 ? (
             <nav className="mt-8 flex items-center justify-center gap-2" aria-label={isGerman ? "Seitennavigation" : "Pagination"}>
-              <Link aria-disabled={page <= 1} href={page > 1 ? buildHref({ page: page - 1 }) : buildHref({ page: 1 })} scroll={false} rel={page > 1 ? "prev" : undefined} className={`min-h-11 rounded-xl border border-border px-4 py-2.5 text-sm ${page <= 1 ? "pointer-events-none opacity-40" : "hover:border-gold"}`}>{isGerman ? "Zurück" : "Previous"}</Link>
+              <Link tabIndex={page <= 1 ? -1 : undefined} aria-disabled={page <= 1} href={page > 1 ? buildHref({ page: page - 1 }) : buildHref({ page: 1 })} scroll={false} rel={page > 1 ? "prev" : undefined} className={`min-h-11 rounded-xl border border-border px-4 py-2.5 text-sm ${page <= 1 ? "pointer-events-none opacity-40" : "hover:border-gold"}`}>{isGerman ? "Zurück" : "Previous"}</Link>
               <span className="px-2 text-sm tabular-nums text-muted">{page} / {pages}</span>
-              <Link aria-disabled={page >= pages} href={page < pages ? buildHref({ page: page + 1 }) : buildHref({ page })} scroll={false} rel={page < pages ? "next" : undefined} className={`min-h-11 rounded-xl border border-border px-4 py-2.5 text-sm ${page >= pages ? "pointer-events-none opacity-40" : "hover:border-gold"}`}>{isGerman ? "Weiter" : "Next"}</Link>
+              <Link tabIndex={page >= pages ? -1 : undefined} aria-disabled={page >= pages} href={page < pages ? buildHref({ page: page + 1 }) : buildHref({ page })} scroll={false} rel={page < pages ? "next" : undefined} className={`min-h-11 rounded-xl border border-border px-4 py-2.5 text-sm ${page >= pages ? "pointer-events-none opacity-40" : "hover:border-gold"}`}>{isGerman ? "Weiter" : "Next"}</Link>
             </nav>
           ) : null}
 
           {/* Kept out of the result list — an interruption mid-grid breaks scanning. */}
           {trendingProducts.length >= 5 ? <TrendingProductsCarousel products={trendingProducts} lang={lang} compact /> : null}
 
-          <StoreFilters lang={lang} facets={facets} activeFilters={activeFilters} resultCount={total} variant="mobile">
-            <select value={sortBy} onChange={(event) => onSort(event.target.value)} aria-label={isGerman ? "Sortieren nach" : "Sort by"} className={`flex-1 ${sortSelectClass}`}>
-              {sortOptions(isGerman).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-          </StoreFilters>
         </div>
       </div>
     </div>

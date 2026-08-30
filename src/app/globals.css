@@ -2,6 +2,7 @@
 
 :root {
   /* Dark Theme - Brand Gold */
+  color-scheme: dark;
   --background: #0b0b0c;
   --background-alt: #121214;
   /* Store surfaces: results ground vs. card plate (existing palette values) */
@@ -56,6 +57,7 @@
    ======================================== */
 [data-theme="mono"] {
   /* Core Colors - Light Theme */
+  color-scheme: light;
   --background: #ffffff;
   --background-alt: #f9f6f0;
   /* Store surfaces: cards need a tinted ground to read as cards on white */
@@ -193,7 +195,7 @@
     margin-left: auto;
     margin-right: auto;
     width: 100%;
-    max-width: 80rem;
+    max-width: 108rem;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
@@ -1299,11 +1301,9 @@
 /* Page enter transition */
 @keyframes page-enter {
   from {
-    opacity: 0;
     transform: translateY(8px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -2357,7 +2357,7 @@
 
 /* Minimum touch target size for mobile accessibility (48x48px) */
 @media (pointer: coarse) {
-  button,
+  button:not([data-compact-touch]),
   a,
   [role="button"],
   input[type="submit"],

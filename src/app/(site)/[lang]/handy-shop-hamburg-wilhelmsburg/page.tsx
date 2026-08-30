@@ -24,23 +24,23 @@ const path = "/handy-shop-hamburg-wilhelmsburg";
 
 const copy = {
   de: {
-    metaTitle: "Handy Shop Hamburg-Wilhelmsburg",
-    title: "Handy Shop in Hamburg-Wilhelmsburg",
+    metaTitle: "Handy Reparatur Wilhelmsburg | Apfel Park Hamburg",
+    title: "Handy-Reparatur & Smartphone-Shop in Hamburg-Wilhelmsburg",
     description:
-      "Smartphones, iPhones, Samsung Handys und Zubehör bei Apfel Park in Hamburg-Wilhelmsburg kaufen. Live-Bestand, Abholung im Store oder Versand.",
+      "Handy-Reparatur für iPhone, Samsung und weitere Smartphones bei Apfel Park in Hamburg-Wilhelmsburg. Dazu Smartphones, Zubehör, Abholung und Versand.",
     eyebrow: "Apfel Park vor Ort",
-    introTitle: "Smartphones ansehen, vergleichen und direkt mitnehmen",
+    introTitle: "Handy-Reparatur in Wilhelmsburg – transparent und vor Ort",
     intro: [
-      "Bei Apfel Park im LunaCenter findest du Smartphones und Zubehör mit klar ausgewiesenem Preis, Speicher und Gerätezustand. Unser Online-Bestand wird direkt aus dem aktiven Sortiment geladen, damit du dich vor dem Besuch informieren kannst.",
-      "Bestelle bequem online mit Versand innerhalb Deutschlands oder wähle die Abholung in Hamburg-Wilhelmsburg. Im Laden kannst du verfügbare Geräte ansehen und persönliche Fragen vor dem Kauf klären.",
+      "Bei Apfel Park im LunaCenter helfen wir bei Display-, Akku-, Kamera- und weiteren Smartphone-Problemen. Wir erklären den nächsten Schritt verständlich und nennen den Preis für dein konkretes Gerät vor der Reparatur.",
+      "Du kannst außerdem Smartphones und Zubehör mit klar ausgewiesenem Preis, Speicher und Gerätezustand ansehen. Bestelle online mit Versand innerhalb Deutschlands oder wähle die Abholung in Hamburg-Wilhelmsburg.",
     ],
     benefits: [
-      { title: "Live-Bestand", text: "Aktuelle Smartphones aus unserem aktiven Sortiment statt einer statischen Produktliste." },
+      { title: "Handy-Reparatur", text: "Display, Akku, Kamera und weitere Smartphone-Services mit persönlicher Beratung vor Ort." },
       { title: "Transparent", text: "Neu, Open Box oder gebraucht wird am jeweiligen Angebot klar ausgewiesen." },
       { title: "Vor Ort & online", text: "Abholung in Wilhelmsburg oder Versand an deine Adresse in Deutschland." },
     ],
     inventoryTitle: "Aktuell verfügbare Smartphones",
-    inventoryText: "Vergleiche verfügbare iPhones, Samsung Galaxy Modelle und weitere Smartphones direkt aus unserem Shop.",
+    inventoryText: "Vergleiche verfügbare iPhones, Samsung Galaxy Modelle und weitere Smartphones direkt aus unserem Shop – oder frage zuerst eine Reparatur an.",
     visitTitle: "So findest du Apfel Park im LunaCenter",
     visitText: "Unser Ladengeschäft befindet sich am Wilhelm-Strauß-Weg 2b in 21109 Hamburg. Der Eingang und Parkmöglichkeiten am LunaCenter sind barrierefrei zugänglich.",
     route: "Route planen",
@@ -261,6 +261,7 @@ export default async function HamburgWilhelmsburgStorePage({
           />
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href={`/${locale}/iphone-17`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">iPhone 17</Link>
+            <Link href={`/${locale}/repairs`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Handy-Reparatur" : "Phone repair"}</Link>
             <Link href={`/${locale}/samsung-handys`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Samsung Handys" : "Samsung phones"}</Link>
             <Link href={`/${locale}/handys-ohne-vertrag`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Handys ohne Vertrag" : "Phones without contract"}</Link>
             <Link href={`/${locale}/store`} className="rounded-full border border-white/15 px-5 py-2 text-sm font-semibold text-foreground hover:border-gold/30">{content.store}</Link>

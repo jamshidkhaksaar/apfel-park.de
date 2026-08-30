@@ -262,6 +262,12 @@ export async function POST(request: NextRequest) {
   if (!canManageProducts(user)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const csrf = rejectCrossSiteAdminMutation(request);
   if (csrf) return csrf;
+  if (process.env.LEGACY_PRODUCT_RESEARCH_ENABLED !== "true") {
+    return NextResponse.json(
+      { error: "Legacy product research is disabled; use Product Intake v2", code: "legacy_research_disabled" },
+      { status: 410 },
+    );
+  }
 
   try {
     const contentType = request.headers.get("content-type") ?? "";

@@ -49,11 +49,11 @@ const getDescription = (product: Product): string =>
   product.featureBullets.join(" ") ||
   `${product.title} bei ${siteInfo.name} in Hamburg.`;
 
-const getInventory = (product: Product): number => Math.max(0, Math.floor(product.stock ?? 1));
+const getInventory = (product: Product): number => Math.max(0, Math.floor(product.stock ?? 0));
 const getAvailabilityAddress = () =>
   `${siteInfo.address.street}, ${siteInfo.address.postalCode} ${siteInfo.address.city}, Germany`;
 
-const productToRow = (product: Product): string[] => {
+export const buildMetaCatalogRow = (product: Product): string[] => {
   const inventory = getInventory(product);
 
   return [
@@ -65,22 +65,22 @@ const productToRow = (product: Product): string[] => {
     `${product.price.toFixed(2)} EUR`,
     `${siteInfo.url}/de/store/${product.slug}`,
     absoluteUrl(product.image),
-    product.brand || siteInfo.name,
+    product.brand || "",
     product.gtin || "",
     product.mpn || "",
     categoryMap[product.category],
     inventory,
     getAvailabilityAddress(),
-    "25 km",
-    "53.5000,10.0000",
+    "",
+    "",
   ].map(csvEscape);
 };
 
 export const buildMetaCatalogCsv = async () => {
-  const products = await getProducts();
+  const products = await getProducts(undefined, undefined, "de", { failOnError: true });
   return [
     META_CATALOG_HEADERS.join(","),
-    ...products.map((product) => productToRow(product).join(",")),
+    ...products.map((product) => buildMetaCatalogRow(product).join(",")),
   ].join("\n");
 };
 

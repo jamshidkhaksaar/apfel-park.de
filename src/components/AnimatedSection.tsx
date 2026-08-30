@@ -49,6 +49,7 @@ export default function AnimatedSection({
     threshold,
     rootMargin,
     triggerOnce: true,
+    initialInView: true,
   });
 
   return (
@@ -95,6 +96,7 @@ export function AnimatedList({
   const [ref, inView] = useInView({
     threshold: 0.05,
     rootMargin: "0px 0px -20px 0px",
+    initialInView: true,
   });
   const itemAnimation = animationClasses[animation];
 

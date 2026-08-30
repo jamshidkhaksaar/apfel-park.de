@@ -15,7 +15,7 @@ export default function StoreCatalogSkeleton({ cards = 12 }: { cards?: number })
           <div className="h-56 rounded-2xl border border-border bg-store-card" />
           <div className="h-96 rounded-2xl border border-border bg-store-card" />
         </div>
-        <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+        <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {Array.from({ length: cards }, (_, index) => (
             <div key={index} className="overflow-hidden rounded-2xl border border-border bg-store-card">
               <div className="aspect-square bg-surface-strong" />

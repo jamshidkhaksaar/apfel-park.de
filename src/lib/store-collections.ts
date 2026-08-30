@@ -21,12 +21,12 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/iphone-17",
       title: "iPhone 17 kaufen – Pro, Pro Max & Air",
       metaTitle: "iPhone 17 kaufen – Pro, Pro Max & Air",
-      description: "iPhone 17, 17 Air, 17 Pro und 17 Pro Max bei Apfel Park kaufen. Geprüfte Geräte, 12 Monate Garantie, Versand oder Abholung in Hamburg.",
+      description: "iPhone 17, 17 Air, 17 Pro und 17 Pro Max bei Apfel Park kaufen. Zustand, Preis und Verfügbarkeit klar ausgewiesen; Versand oder Abholung in Hamburg.",
       eyebrow: "Apple iPhone 17",
       introTitle: "Welches iPhone 17 passt zu dir?",
       intro: [
         "Entdecke die aktuell verfügbaren Modelle der iPhone-17-Serie bei Apfel Park. Diese Seite bündelt iPhone 17, iPhone 17 Air, iPhone 17 Pro und iPhone 17 Pro Max, damit du Preise, Speichergrößen und Gerätezustände direkt vergleichen kannst.",
-        "Jedes Angebot zeigt seinen tatsächlichen Zustand transparent am Produkt. Du erhältst eine Rechnung und 12 Monate Garantie. Bestelle online mit Versand innerhalb Deutschlands oder reserviere dein Wunschgerät zur persönlichen Abholung in Hamburg-Wilhelmsburg.",
+        "Jedes Angebot zeigt Zustand, Preis und Verfügbarkeit direkt am Produkt. Bestelle online mit Versand innerhalb Deutschlands oder wähle die persönliche Abholung in Hamburg-Wilhelmsburg.",
       ],
       benefits: [
         { title: "Alle 17-Modelle", text: "Standard, Air, Pro und Pro Max in einer übersichtlichen Auswahl." },
@@ -36,19 +36,19 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       faq: [
         { question: "Welche iPhone-17-Modelle bietet Apfel Park an?", answer: "Die Auswahl wird direkt aus unserem aktuellen Bestand erzeugt und kann iPhone 17, iPhone 17 Air, iPhone 17 Pro und iPhone 17 Pro Max umfassen." },
         { question: "Kann ich ein iPhone 17 in Hamburg abholen?", answer: "Ja. Verfügbare Geräte können online bestellt und bei Apfel Park in Hamburg-Wilhelmsburg abgeholt werden." },
-        { question: "Erhalte ich Garantie auf ein iPhone 17?", answer: "Ja. Unsere angebotenen Smartphones werden mit Rechnung und 12 Monaten Garantie verkauft." },
+        { question: "Welche Angaben sehe ich vor dem Kauf?", answer: "Jedes Angebot zeigt den aktuellen Zustand, Preis, Speicher und die Verfügbarkeit des konkreten Geräts." },
       ],
     },
     en: {
       path: "/iphone-17",
       title: "Buy iPhone 17 – Pro, Pro Max & Air",
       metaTitle: "Buy iPhone 17 – Pro, Pro Max & Air",
-      description: "Buy iPhone 17, 17 Air, 17 Pro and 17 Pro Max at Apfel Park. Tested devices, 12-month warranty, delivery or pickup in Hamburg.",
+      description: "Buy iPhone 17, 17 Air, 17 Pro and 17 Pro Max at Apfel Park. Condition, price and availability are clearly stated, with delivery or collection in Hamburg.",
       eyebrow: "Apple iPhone 17",
       introTitle: "Which iPhone 17 is right for you?",
       intro: [
         "Explore the currently available iPhone 17 range at Apfel Park. This page brings together iPhone 17, iPhone 17 Air, iPhone 17 Pro and iPhone 17 Pro Max so you can compare prices, storage and device condition.",
-        "Every offer clearly states its actual condition. Your purchase includes an invoice and a 12-month warranty. Order online for delivery in Germany or collect your chosen device in person from our Hamburg-Wilhelmsburg store.",
+        "Every offer clearly states condition, price and availability. Order online for delivery in Germany or collect your chosen device in person from our Hamburg-Wilhelmsburg store.",
       ],
       benefits: [
         { title: "Every 17 model", text: "Standard, Air, Pro and Pro Max in one clear selection." },
@@ -58,7 +58,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       faq: [
         { question: "Which iPhone 17 models does Apfel Park sell?", answer: "The selection comes directly from our current inventory and may include iPhone 17, iPhone 17 Air, iPhone 17 Pro and iPhone 17 Pro Max." },
         { question: "Can I collect an iPhone 17 in Hamburg?", answer: "Yes. Available devices can be ordered online and collected from Apfel Park in Hamburg-Wilhelmsburg." },
-        { question: "Does an iPhone 17 include a warranty?", answer: "Yes. Our listed smartphones are sold with an invoice and a 12-month warranty." },
+        { question: "What information is shown before purchase?", answer: "Each offer shows the current condition, price, storage and availability of the specific device." },
       ],
     },
   },
@@ -67,7 +67,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/iphone-16-pro-max",
       title: "iPhone 16 Pro Max kaufen – Angebote vergleichen",
       metaTitle: "iPhone 16 Pro Max kaufen – Angebote",
-      description: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher und Preis vergleichen. Mit Garantie, Versand in Deutschland oder Abholung in Hamburg.",
+      description: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in Deutschland oder Abholung in Hamburg.",
       eyebrow: "Apple iPhone 16 Pro Max",
       introTitle: "Aktuelle iPhone-16-Pro-Max-Angebote",
       intro: [
@@ -77,7 +77,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       benefits: [
         { title: "Ein Modell, alle Angebote", text: "Verfügbare iPhone-16-Pro-Max-Geräte übersichtlich vergleichen." },
         { title: "Zustand sichtbar", text: "Neu, Open Box oder Gebraucht steht direkt am Produkt." },
-        { title: "Garantie inklusive", text: "Jedes angebotene Smartphone kommt mit Rechnung und 12 Monaten Garantie." },
+        { title: "Angebot transparent", text: "Zustand, Speicher, Preis und Verfügbarkeit stehen direkt am Gerät." },
       ],
       faq: [
         { question: "Ist das iPhone 16 Pro Max ohne Vertrag erhältlich?", answer: "Ja. Die hier gelisteten Geräte werden ohne Mobilfunkvertrag verkauft." },
@@ -89,7 +89,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/iphone-16-pro-max",
       title: "Buy iPhone 16 Pro Max – Compare Offers",
       metaTitle: "Buy iPhone 16 Pro Max – Compare Offers",
-      description: "Compare iPhone 16 Pro Max offers by condition, storage and price. Warranty, delivery in Germany or collection from our Hamburg store.",
+      description: "Compare iPhone 16 Pro Max offers by condition, storage, price and availability, with delivery in Germany or collection from our Hamburg store.",
       eyebrow: "Apple iPhone 16 Pro Max",
       introTitle: "Current iPhone 16 Pro Max offers",
       intro: [
@@ -99,7 +99,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       benefits: [
         { title: "One model, every offer", text: "Compare available iPhone 16 Pro Max devices in one place." },
         { title: "Condition made clear", text: "New, Open Box or Used appears directly on each product." },
-        { title: "Warranty included", text: "Every offered smartphone includes an invoice and 12-month warranty." },
+        { title: "Transparent offer", text: "Condition, storage, price and availability are shown on each device." },
       ],
       faq: [
         { question: "Can I buy an iPhone 16 Pro Max without a contract?", answer: "Yes. Devices listed here are sold without a mobile contract." },
@@ -113,7 +113,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/samsung-handys",
       title: "Samsung Handys kaufen – Galaxy ohne Vertrag",
       metaTitle: "Samsung Handys kaufen – Galaxy ohne Vertrag",
-      description: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu und Open Box mit transparentem Zustand, Garantie und Versand in ganz Deutschland.",
+      description: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu und Open Box mit transparentem Zustand und Versand in ganz Deutschland.",
       eyebrow: "Samsung Galaxy",
       introTitle: "Samsung Galaxy Modelle direkt vergleichen",
       intro: [
@@ -128,14 +128,14 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       faq: [
         { question: "Verkauft Apfel Park Samsung Handys ohne Vertrag?", answer: "Ja. Alle auf dieser Seite gelisteten Samsung Smartphones werden ohne Mobilfunkvertrag verkauft." },
         { question: "Welche Samsung Galaxy Modelle sind verfügbar?", answer: "Die Auswahl wird direkt aus dem aktuellen Lagerbestand erzeugt und kann Galaxy-S-, A- und M-Modelle umfassen." },
-        { question: "Haben Open-Box-Samsung-Handys Garantie?", answer: "Ja. Jedes angebotene Smartphone wird mit Rechnung und 12 Monaten Garantie verkauft." },
+        { question: "Wie erkenne ich Open-Box-Geräte?", answer: "Der aktuelle Zustand wird direkt am jeweiligen Samsung-Angebot ausgewiesen." },
       ],
     },
     en: {
       path: "/samsung-handys",
       title: "Buy Samsung Phones – Galaxy Without Contract",
       metaTitle: "Buy Samsung Galaxy Phones Without Contract",
-      description: "Buy Samsung Galaxy phones without a mobile contract. New and open-box devices with clear condition, warranty and delivery across Germany.",
+      description: "Buy Samsung Galaxy phones without a mobile contract. New and open-box devices with clear condition and delivery across Germany.",
       eyebrow: "Samsung Galaxy",
       introTitle: "Compare Samsung Galaxy models",
       intro: [
@@ -150,7 +150,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       faq: [
         { question: "Does Apfel Park sell Samsung phones without a contract?", answer: "Yes. Every Samsung smartphone listed on this page is sold without a mobile contract." },
         { question: "Which Samsung Galaxy models are available?", answer: "The selection comes directly from current inventory and may include Galaxy S, A and M models." },
-        { question: "Do open-box Samsung phones include a warranty?", answer: "Yes. Every offered smartphone includes an invoice and a 12-month warranty." },
+        { question: "How are open-box devices identified?", answer: "The current condition is shown directly on each Samsung offer." },
       ],
     },
   },
@@ -159,7 +159,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/handys-ohne-vertrag",
       title: "Handys ohne Vertrag günstig kaufen",
       metaTitle: "Handys ohne Vertrag günstig kaufen",
-      description: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr kaufen. Neu, Open Box oder gebraucht mit Garantie und Versand in Deutschland.",
+      description: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr. Neu, Open Box oder gebraucht mit klarer Zustandsangabe und Versand in Deutschland.",
       eyebrow: "Smartphones ohne Vertrag",
       introTitle: "Flexibel bleiben und nur das Gerät kaufen",
       intro: [
@@ -181,7 +181,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/handys-ohne-vertrag",
       title: "Buy Phones Without a Contract in Germany",
       metaTitle: "Buy Phones Without a Contract in Germany",
-      description: "Buy phones without a mobile contract from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with warranty and delivery in Germany.",
+      description: "Buy contract-free phones from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
       eyebrow: "Phones without a contract",
       introTitle: "Stay flexible and buy the device only",
       intro: [
@@ -205,21 +205,21 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/gebrauchte-handys",
       title: "Gebrauchte Handys kaufen – Open Box & geprüft",
       metaTitle: "Gebrauchte Handys kaufen – Open Box & geprüft",
-      description: "Gebrauchte und Open-Box-Handys günstig kaufen: Apple, Samsung, Google und mehr. Mit 12 Monaten Garantie, Versand oder Abholung in Hamburg.",
+      description: "Gebrauchte und Open-Box-Handys von Apple, Samsung, Google und weiteren Marken mit transparentem Zustand, Versand oder Abholung in Hamburg vergleichen.",
       eyebrow: "Gebraucht & Open Box",
       introTitle: "Smartphones mit transparentem Zustand",
       intro: [
         "Ein gebrauchtes oder bereits geöffnetes Handy spart Geld und verlängert die Nutzungsdauer hochwertiger Technik. Bei Apfel Park findest du verfügbare Smartphones verschiedener Marken – vom iPhone bis zu ausgewählten Android-Modellen.",
-        "Die Auswahl umfasst ausschließlich Geräte, die als Gebraucht oder Open Box gekennzeichnet sind. Der exakte Zustand steht direkt am Produkt. Reale Produktbilder, technische Angaben und klar ausgezeichnete Preise helfen dir beim Vergleich. Alle angebotenen Geräte werden mit Rechnung und 12 Monaten Garantie verkauft.",
+        "Die Auswahl umfasst ausschließlich Geräte, die als Gebraucht oder Open Box gekennzeichnet sind. Der exakte Zustand, reale Produktbilder, technische Angaben und klar ausgezeichnete Preise helfen dir beim Vergleich.",
       ],
       benefits: [
         { title: "Gebraucht oder Open Box", text: "Der genaue Zustand ist direkt am jeweiligen Angebot sichtbar." },
         { title: "Faire Vergleichbarkeit", text: "Preis, Speicher und Zustand stehen direkt beim jeweiligen Gerät." },
-        { title: "12 Monate Garantie", text: "Rechnung und Garantie gehören zu jedem angebotenen Smartphone." },
+        { title: "Klare Angebotsdaten", text: "Zustand, Preis, Speicher und Produktbilder stehen am konkreten Gerät." },
       ],
       faq: [
         { question: "Was ist der Unterschied zwischen Gebraucht und Open Box?", answer: "Gebraucht bezeichnet ein zuvor genutztes Gerät. Open Box bezeichnet ein geöffnetes Gerät, das nicht als gebraucht verkauft wird. Der genaue Zustand steht am jeweiligen Produkt." },
-        { question: "Haben gebrauchte Handys Garantie?", answer: "Ja. Die angebotenen Smartphones werden mit Rechnung und 12 Monaten Garantie verkauft." },
+        { question: "Welche Angaben gibt es zu gebrauchten Handys?", answer: "Zustand, Preis, Speicher, Produktbilder und Verfügbarkeit werden am jeweiligen Angebot ausgewiesen." },
         { question: "Kann ich gebrauchte Handys in Hamburg ansehen?", answer: "Ja. Verfügbare Geräte können im Apfel Park Store in Hamburg-Wilhelmsburg angesehen und abgeholt werden." },
       ],
     },
@@ -227,21 +227,21 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/gebrauchte-handys",
       title: "Buy Used & Open-Box Phones – Tested",
       metaTitle: "Buy Used & Open-Box Phones – Tested",
-      description: "Buy used and open-box phones from Apple, Samsung, Google and more. 12-month warranty, delivery in Germany or collection in Hamburg.",
+      description: "Compare used and open-box phones from Apple, Samsung, Google and more with clear condition details, delivery in Germany or collection in Hamburg.",
       eyebrow: "Used & Open Box",
       introTitle: "Smartphones with transparent condition",
       intro: [
         "A used or previously opened phone saves money and extends the useful life of quality technology. Apfel Park offers available smartphones from several brands, ranging from iPhones to selected Android models.",
-        "This selection contains only devices marked Used or Open Box. The exact condition appears on each product. Real product photos, technical details and clear prices make comparison easier. Every listed device is sold with an invoice and a 12-month warranty.",
+        "This selection contains only devices marked Used or Open Box. The exact condition, real product photos, technical details and clear prices make comparison easier.",
       ],
       benefits: [
         { title: "Used or Open Box", text: "The exact condition is visible on each individual offer." },
         { title: "Easy to compare", text: "Price, storage and condition are shown on each device." },
-        { title: "12-month warranty", text: "Every offered smartphone includes an invoice and warranty." },
+        { title: "Clear offer details", text: "Condition, price, storage and product photos appear on each device." },
       ],
       faq: [
         { question: "What is the difference between Used and Open Box?", answer: "Used means a previously owned device. Open Box means an opened device that is not sold as used. The exact condition appears on each product." },
-        { question: "Do used phones include a warranty?", answer: "Yes. Listed smartphones are sold with an invoice and a 12-month warranty." },
+        { question: "What details are shown for used phones?", answer: "Condition, price, storage, product photos and availability are shown on each offer." },
         { question: "Can I view used phones in Hamburg?", answer: "Yes. Available devices can be viewed and collected from the Apfel Park store in Hamburg-Wilhelmsburg." },
       ],
     },
@@ -251,12 +251,12 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/gebrauchte-iphones",
       title: "Gebrauchte iPhones kaufen – Open Box & geprüft",
       metaTitle: "Gebrauchte iPhones kaufen – Open Box & geprüft",
-      description: "Gebrauchte und Open-Box-iPhones günstig kaufen. Zustand und Speicher vergleichen, mit 12 Monaten Garantie und Versand aus Hamburg.",
+      description: "Gebrauchte und Open-Box-iPhones nach Zustand, Speicher, Preis und Verfügbarkeit vergleichen; Versand aus Hamburg.",
       eyebrow: "Gebrauchte & Open-Box-iPhones",
       introTitle: "Das passende iPhone zum besseren Preis finden",
       intro: [
         "Auf dieser Seite findest du die aktuell verfügbaren gebrauchten und Open-Box-iPhones von Apfel Park. Vergleiche Modelle, Speichergrößen, Preise und den individuell beschriebenen Gerätezustand, ohne dich durch neue Angebote suchen zu müssen.",
-        "Wir kennzeichnen Gebraucht und Open Box getrennt direkt am Produkt und bezeichnen ein Gerät nicht automatisch als generalüberholt. Jedes angebotene iPhone wird mit Rechnung und 12 Monaten Garantie verkauft. Bestellungen sind mit Versand innerhalb Deutschlands oder zur Abholung in Hamburg-Wilhelmsburg möglich.",
+        "Wir kennzeichnen Gebraucht und Open Box getrennt direkt am Produkt und bezeichnen ein Gerät nicht automatisch als generalüberholt. Bestellungen sind mit Versand innerhalb Deutschlands oder zur Abholung in Hamburg-Wilhelmsburg möglich.",
       ],
       benefits: [
         { title: "Gebraucht & Open Box", text: "Die Auswahl enthält Apple Geräte beider Zustände – eindeutig gekennzeichnet." },
@@ -273,12 +273,12 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/gebrauchte-iphones",
       title: "Buy Used iPhones – Open Box & Tested",
       metaTitle: "Buy Used iPhones – Open Box & Tested",
-      description: "Buy used and open-box iPhones. Compare condition, storage and price with a 12-month warranty and delivery from Hamburg across Germany.",
+      description: "Buy used and open-box iPhones. Compare condition, storage, price and availability with delivery from Hamburg across Germany.",
       eyebrow: "Used & Open-Box iPhones",
       introTitle: "Find the right iPhone at a better price",
       intro: [
         "This page lists the used and open-box iPhones currently available from Apfel Park. Compare models, storage, prices and individually described condition without searching through new offers.",
-        "Used and Open Box are labeled separately on every product, and a device is not automatically described as refurbished. Every listed iPhone is sold with an invoice and a 12-month warranty. Order for delivery in Germany or collect from Hamburg-Wilhelmsburg.",
+        "Used and Open Box are labeled separately on every product, and a device is not automatically described as refurbished. Order for delivery in Germany or collect from Hamburg-Wilhelmsburg.",
       ],
       benefits: [
         { title: "Used & Open Box", text: "The selection contains both conditions, clearly labeled on each offer." },

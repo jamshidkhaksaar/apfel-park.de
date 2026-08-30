@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import type { ValidatedCart } from "@/lib/checkout";
 import {
@@ -33,6 +33,8 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
   const [open, setOpen] = useState(false);
   const [cart, setCart] = useState<ValidatedCart | null>(null);
   const [loading, setLoading] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onOpen = () => setOpen(true);
@@ -73,14 +75,32 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
 
   useEffect(() => {
     if (!open) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])',
+      ));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
     return () => {
       window.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+      window.requestAnimationFrame(() => previousFocus?.focus());
     };
   }, [open]);
 
@@ -97,6 +117,7 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
       aria-label={locale === "de" ? "Warenkorb" : "Cart"}
     >
       <div
+        ref={panelRef}
         className="flex h-full w-full max-w-md flex-col border-l border-border/60 bg-background shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
@@ -105,6 +126,7 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
             {locale === "de" ? "Zum Warenkorb hinzugefügt" : "Added to cart"}
           </p>
           <button
+            ref={closeButtonRef}
             type="button"
             aria-label={locale === "de" ? "Schließen" : "Close"}
             className="rounded-full border border-border/60 p-2 text-muted transition hover:border-gold/40 hover:text-gold"

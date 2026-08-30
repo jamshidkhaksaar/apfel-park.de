@@ -181,4 +181,6 @@ export const buildGoogleMerchantFeedForProducts = (products: Product[]): string 
 };
 
 export const buildGoogleMerchantFeed = async (): Promise<string> =>
-  buildGoogleMerchantFeedForProducts(await getProducts(undefined, undefined, 'de'));
+  buildGoogleMerchantFeedForProducts(
+    await getProducts(undefined, undefined, 'de', { failOnError: true }),
+  );

@@ -41,7 +41,7 @@ export default function StoreProductCard({
   return (
     <article
       className={`group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-store-card transition-colors focus-within:border-gold ${
-        isOutOfStock ? "border-border opacity-75" : "border-border hover:border-gold/60"
+        isOutOfStock ? "border-border" : "border-border hover:border-gold/60"
       }`}
     >
       {/* The whole card is the link. Interactive controls sit above it on z-20. */}
@@ -59,7 +59,7 @@ export default function StoreProductCard({
           fill
           priority={priority}
           sizes="(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 23vw"
-          className="object-contain p-4"
+          className={`object-contain p-4 ${isOutOfStock ? "opacity-55 grayscale-[0.15]" : ""}`}
           unoptimized={shouldBypassImageOptimization(product.image)}
         />
         {/* Saving top-right, energy class bottom-left: both corners the product

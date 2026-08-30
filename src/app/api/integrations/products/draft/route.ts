@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -8,6 +8,7 @@ import { uploadProductImage } from "@/lib/blob";
 import { query } from "@/lib/db";
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 import { isValidInputLength, sanitizeInput, validateImageFileExtension } from "@/lib/security";
+import { resolveLegacyDraftPolicy } from "@/lib/legacy-draft-policy";
 
 export const runtime = "nodejs";
 
@@ -183,7 +184,7 @@ export async function POST(request: NextRequest) {
     const price = parsePrice(payload.price);
     const compareAtPrice = parsePrice(payload.compareAtPrice);
     const stock = payload.stock === undefined ? 0 : Number(payload.stock);
-    const isActive = payload.isActive === true;
+    const isActive = false;
     const importKey = sanitizeInput(typeof payload.importKey === "string" ? payload.importKey.toLowerCase() : "");
     const sourceImageSha256 = sanitizeInput(
       typeof payload.sourceImageSha256 === "string" ? payload.sourceImageSha256.toLowerCase() : "",
@@ -192,6 +193,22 @@ export async function POST(request: NextRequest) {
     const conditionNoteI18n = cleanLocalized(payload.conditionNoteI18n, 1000);
     const updateExisting = payload.updateExisting === true;
     const importMetadata = cleanImportMetadata(payload, conditionNoteI18n);
+
+    if (importKey && updateExisting) {
+      const state = await query(
+        `SELECT "is_active" FROM "products" WHERE "import_key" = $1 LIMIT 1`,
+        [importKey],
+      );
+      const existingIsActive = typeof state.rows[0]?.is_active === "boolean"
+        ? Boolean(state.rows[0].is_active)
+        : null;
+      if (!resolveLegacyDraftPolicy({ updateExisting, existingIsActive }).allowWrite) {
+        return NextResponse.json(
+          { error: "Legacy draft integration cannot modify a live product" },
+          { status: 409 },
+        );
+      }
+    }
 
     const baseTitle = title.de || title.en;
     if (!baseTitle) return NextResponse.json({ error: "Title (de or en) is required" }, { status: 400 });
@@ -270,20 +287,33 @@ export async function POST(request: NextRequest) {
       if (!resolved.startsWith(PIPELINE_MEDIA_ROOT + path.sep)) {
         return NextResponse.json({ error: `Image path outside ${PIPELINE_MEDIA_ROOT}: ${imagePath}` }, { status: 400 });
       }
-      const mime = mimeFromExtension(resolved);
+      let confinedPath: string;
+      try {
+        const [mediaRoot, candidate] = await Promise.all([
+          realpath(PIPELINE_MEDIA_ROOT),
+          realpath(resolved),
+        ]);
+        if (!candidate.startsWith(mediaRoot + path.sep)) {
+          return NextResponse.json({ error: `Image path escapes ${PIPELINE_MEDIA_ROOT}` }, { status: 400 });
+        }
+        confinedPath = candidate;
+      } catch {
+        return NextResponse.json({ error: `Image not found: ${imagePath}` }, { status: 400 });
+      }
+      const mime = mimeFromExtension(confinedPath);
       if (!mime) {
         return NextResponse.json({ error: `Unsupported image extension: ${imagePath}` }, { status: 400 });
       }
       let buffer: Buffer;
       try {
-        buffer = await readFile(resolved);
+        buffer = await readFile(confinedPath);
       } catch {
         return NextResponse.json({ error: `Image not found: ${imagePath}` }, { status: 400 });
       }
       if (buffer.length > MAX_IMAGE_SIZE) {
         return NextResponse.json({ error: `Image exceeds 10MB limit: ${imagePath}` }, { status: 400 });
       }
-      const uploaded = await uploadProductImage(new File([new Uint8Array(buffer)], path.basename(resolved), { type: mime }));
+      const uploaded = await uploadProductImage(new File([new Uint8Array(buffer)], path.basename(confinedPath), { type: mime }));
       images.push(uploaded.url);
     }
 

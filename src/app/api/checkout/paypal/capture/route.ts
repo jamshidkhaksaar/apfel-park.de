@@ -4,6 +4,7 @@ import { getPayPalCaptureExpectation, getPaymentMode, isOrderInProviderState, ma
 import { sendPurchaseTrackingEvents } from "@/lib/marketing";
 import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 import { paypalCaptureIdentityMatches } from "@/lib/payment-coupon";
+import { CHECKOUT_RETURN_COOKIE, getCheckoutReturnCookieOptions, readCheckoutReturnSession } from "@/lib/checkout-return-session";
 
 const getPayPalBaseUrl = () =>
   getPaymentMode() === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
@@ -32,22 +33,24 @@ const getAccessToken = async () => {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = (await request.json()) as { orderId?: string; paypalOrderId?: string };
-    if (!payload.orderId || !payload.paypalOrderId) {
+    const returnSession = readCheckoutReturnSession(request.cookies.get(CHECKOUT_RETURN_COOKIE)?.value);
+    const orderId = returnSession?.orderId;
+    const paypalOrderId = returnSession?.paypalOrderId;
+    if (!orderId || !paypalOrderId) {
       return NextResponse.json({ success: false, error: "Missing order reference" }, { status: 400 });
     }
 
-    const expected = await getPayPalCaptureExpectation(payload.orderId, payload.paypalOrderId);
+    const expected = await getPayPalCaptureExpectation(orderId, paypalOrderId);
     if (!expected) {
       return NextResponse.json({ success: false, error: "PayPal payment does not match an eligible order" }, { status: 400 });
     }
     const token = await getAccessToken();
-    const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${payload.paypalOrderId}/capture`, {
+    const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${paypalOrderId}/capture`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
-        "PayPal-Request-Id": `${payload.orderId}-capture`,
+        "PayPal-Request-Id": `${orderId}-capture`,
       },
       signal: AbortSignal.timeout(10000),
     });
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     const purchaseUnit = data.purchase_units?.[0];
-    if (!paypalCaptureIdentityMatches({ paypalOrderId: payload.paypalOrderId, responseOrderId: data.id, referenceId: purchaseUnit?.reference_id, customId: purchaseUnit?.custom_id, localOrderId: payload.orderId })) {
+    if (!paypalCaptureIdentityMatches({ paypalOrderId, responseOrderId: data.id, referenceId: purchaseUnit?.reference_id, customId: purchaseUnit?.custom_id, localOrderId: orderId })) {
       return NextResponse.json(
         { success: false, error: "PayPal payment does not match this order" },
         { status: 400 },
@@ -84,13 +87,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "PayPal captured amount does not match this order" }, { status: 400 });
     }
     const order = await markOrderPaid({
-      orderId: payload.orderId,
+      orderId,
       provider: "paypal",
-      providerOrderId: payload.paypalOrderId,
-      providerPaymentId: capture?.id ?? data.id ?? payload.paypalOrderId,
+      providerOrderId: paypalOrderId,
+      providerPaymentId: capture?.id ?? data.id ?? paypalOrderId,
       providerStatus: capture?.status ?? data.status,
     });
-    if (!order && !(await isOrderInProviderState({ provider: "paypal", orderId: payload.orderId, providerOrderId: payload.paypalOrderId, statuses: ["paid"], paymentStatuses: ["paid"] }))) {
+    if (!order && !(await isOrderInProviderState({ provider: "paypal", orderId, providerOrderId: paypalOrderId, statuses: ["paid"], paymentStatuses: ["paid"] }))) {
       return NextResponse.json({ success: false, error: "PayPal capture requires reconciliation" }, { status: 503 });
     }
 
@@ -112,14 +115,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const notification = await notifyPaidOrderAdmin(payload.orderId);
+    const notification = await notifyPaidOrderAdmin(orderId);
     if (notification.status === "failed") {
       console.error("PayPal capture completed but order notification failed", {
-        orderId: payload.orderId,
+        orderId,
       });
     }
 
-    return NextResponse.json({ success: true, orderId: payload.orderId });
+    const result = NextResponse.json({ success: true, orderId });
+    result.cookies.set(CHECKOUT_RETURN_COOKIE, "", { ...getCheckoutReturnCookieOptions(), maxAge: 0 });
+    return result;
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "PayPal capture failed" },

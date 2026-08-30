@@ -2,11 +2,17 @@
   "name": "apfel",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.12.0",
+  "engines": {
+    "node": ">=24.14.0 <25",
+    "npm": ">=11.12.0 <12"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit --pretty false",
     "marketplace:worker": "tsx scripts/marketplace-worker.ts",
     "qa:production": "tsx scripts/production-qa.ts",
     "db:status": "node scripts/migrate.mjs status",
@@ -19,42 +25,40 @@
     "seo:indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^6.8.0",
-    "@stripe/stripe-js": "^9.13.0",
-    "@types/pdfkit": "^0.17.6",
+    "@stripe/react-stripe-js": "6.8.2",
+    "@stripe/stripe-js": "9.14.0",
     "@zxing/browser": "^0.2.1",
-    "gsap": "^3.14.2",
+    "@zxing/library": "0.23.0",
     "he": "^1.2.0",
     "js-cookie": "^3.0.5",
-    "next": "^16.2.6",
-    "nodemailer": "^9.0.3",
+    "next": "16.3.3",
+    "nodemailer": "9.0.6",
     "pdfkit": "^0.19.1",
-    "pg": "^8.16.3",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "sharp": "^0.35.3",
-    "simple-icons": "^16.14.0"
+    "pg": "8.23.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "sharp": "0.35.4",
+    "simple-icons": "16.29.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/postcss": "4.3.3",
     "@types/he": "^1.2.3",
     "@types/js-cookie": "^3.0.6",
-    "@types/node": "^20",
-    "@types/nodemailer": "^7.0.11",
-    "@types/pg": "^8.20.0",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "dotenv": "^17.2.3",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.1",
-    "tailwindcss": "^4",
-    "tsx": "^4.21.0",
+    "@types/node": "24.13.3",
+    "@types/nodemailer": "7.0.12",
+    "@types/pdfkit": "0.17.6",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.3",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.13",
     "typescript": "^5",
-    "vitest": "^4.1.10"
+    "vitest": "4.1.11"
   },
   "overrides": {
-    "sharp": "^0.35.3",
-    "postcss": "^8.5.25",
+    "eslint-plugin-react-hooks": "7.0.1",
     "nanoid": "^3.3.18"
   }
 }

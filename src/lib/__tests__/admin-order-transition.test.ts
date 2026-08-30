@@ -8,7 +8,7 @@ describe("admin order transitions", () => {
   });
 
   it("allows only unpaid pending orders to use the cancellation path", () => {
-    expect(validateAdminOrderTransition({ currentStatus: "pending", paymentStatus: "unpaid", nextStatus: "cancelled" })).toEqual({ allowed: true, mode: "cancel" });
+    expect(validateAdminOrderTransition({ currentStatus: "pending", paymentStatus: "unpaid", nextStatus: "cancelled", providerStatus: "payment_failed", providerOrderId: "pi_failed", providerSessionId: "cs_failed" })).toEqual({ allowed: true, mode: "cancel" });
     expect(validateAdminOrderTransition({ currentStatus: "paid", paymentStatus: "paid", nextStatus: "cancelled" })).toEqual({ allowed: false, reason: "refund_required" });
   });
 

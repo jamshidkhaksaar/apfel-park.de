@@ -59,6 +59,17 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
     { key: "backcover" as const, de: "Rückcover-Reparatur", en: "Back cover repair" },
     { key: "camera" as const, de: "Kamera-Reparatur", en: "Camera repair" },
   ].filter((offer) => floors[offer.key] !== undefined);
+  const qualityTiers = lang === "de"
+    ? [
+        { title: "Original / Genuine", text: "Original- oder Herstellerqualität, sofern sie für das konkrete Modell im Preisfinder angeboten wird." },
+        { title: "Premium", text: "Hochwertige Alternative, zum Beispiel Soft-OLED beim Display oder OEM-Qualität beim Akku, sofern verfügbar." },
+        { title: "Standard", text: "Preisorientierte Ersatzteiloption für unterstützte Modelle. Verfügbarkeit und genaue Ausführung stehen direkt beim Modell." },
+      ]
+    : [
+        { title: "Original / Genuine", text: "Original or manufacturer-grade parts where offered for the selected model in the price finder." },
+        { title: "Premium", text: "A high-quality alternative, such as Soft OLED displays or OEM-grade batteries where available." },
+        { title: "Standard", text: "A price-focused replacement option for supported models. Availability and exact specification are shown per model." },
+      ];
 
   // The [service] sub-pages already emit Service schema; the parent page did
   // not, so the price list had no machine-readable counterpart.
@@ -161,6 +172,29 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
         </div>
       </section>
 
+      <section className="border-b border-border/60 bg-surface/10 py-10" aria-labelledby="repair-quality-heading">
+        <div className="container-page">
+          <div className="max-w-3xl">
+            <h2 id="repair-quality-heading" className="text-2xl font-bold text-foreground md:text-3xl">
+              {lang === "de" ? "Ersatzteilqualität verständlich vergleichen" : "Compare repair-part quality clearly"}
+            </h2>
+            <p className="mt-3 leading-7 text-muted">
+              {lang === "de"
+                ? "Displaypreise werden je nach Modell als Standard, Premium oder Original/Genuine ausgewiesen. Akkus können als Original oder OEM/Premium angeboten werden. Ein Rückcover-Preis bezieht sich auf die gelistete Rückglas-Reparatur und nicht automatisch auf einen kompletten Gehäuserahmen."
+                : "Display prices may be listed as Standard, Premium or Original/Genuine depending on the model. Batteries may be offered as Original or OEM/Premium. A back-cover price refers to the listed rear-glass repair and does not automatically include a complete housing frame."}
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {qualityTiers.map((tier) => (
+              <article key={tier.title} className="rounded-2xl border border-border/60 bg-surface/30 p-5">
+                <h3 className="font-semibold text-foreground">{tier.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">{tier.text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── 1. Price finder ─────────────────────────────────────────────── */}
       <section className="section-pad bg-surface/20">
         <div className="container-page">
@@ -176,6 +210,9 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
                 ? "Wähle zuerst deine Marke und dein Modell. Für gelistete Geräte zeigen wir Startpreise, für Spezialfälle markieren wir bewusst Preis auf Anfrage."
                 : "Choose your brand and model first. Listed devices show starting prices, while special cases are clearly marked as quote on request."}
             </p>
+            <Link href={`/${lang}/repairs/preisvergleich-hamburg`} className="mt-5 inline-flex text-sm font-semibold text-gold underline-offset-4 hover:underline">
+              {lang === "de" ? "Öffentlichen Hamburger Preisvergleich ansehen" : "View the public Hamburg price comparison"} →
+            </Link>
           </div>
 
           <RepairCatalogExplorer lang={lang} catalog={repairCatalog} />
@@ -233,21 +270,6 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
               ))}
             </ul>
 
-            {/* Stats */}
-            <div className="mt-8 grid grid-cols-3 gap-4 border-t border-white/10 pt-8">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gold">30</p>
-                <p className="mt-1 text-xs text-muted">min</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-amber">12</p>
-                <p className="mt-1 text-xs text-muted">{lang === "de" ? "Monate" : "months"}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-bronze">5K+</p>
-                <p className="mt-1 text-xs text-muted">{lang === "de" ? "Reparaturen" : "repairs"}</p>
-              </div>
-            </div>
           </div>
 
           {/* Right: Repair Types Grid */}

@@ -186,15 +186,15 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.93,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Handy Shop Hamburg-Wilhelmsburg",
+      de: "Handy Reparatur Wilhelmsburg | Apfel Park Hamburg",
       en: "Phone Store Hamburg-Wilhelmsburg",
     },
     defaultDescription: {
-      de: "Smartphones, iPhones, Samsung Handys und Zubehör bei Apfel Park in Hamburg-Wilhelmsburg kaufen. Live-Bestand, Abholung im Store oder Versand.",
+      de: "Handy-Reparatur für iPhone, Samsung und weitere Smartphones bei Apfel Park in Hamburg-Wilhelmsburg. Dazu Smartphones, Zubehör, Abholung und Versand.",
       en: "Buy smartphones, iPhones, Samsung phones and accessories at Apfel Park in Hamburg-Wilhelmsburg. Live stock, store collection or delivery.",
     },
     defaultKeywords: {
-      de: "Handy Shop Hamburg, Handy Shop Wilhelmsburg, Smartphone kaufen Hamburg, iPhone kaufen Hamburg",
+      de: "Handy Reparatur Wilhelmsburg, Handy Reparatur Hamburg, iPhone Reparatur Wilhelmsburg, Handy Shop Wilhelmsburg",
       en: "phone store Hamburg, phone store Wilhelmsburg, buy smartphone Hamburg, buy iPhone Hamburg",
     },
   },
@@ -209,8 +209,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy iPhone 17 – Pro, Pro Max & Air",
     },
     defaultDescription: {
-      de: "iPhone 17, 17 Air, 17 Pro und 17 Pro Max bei Apfel Park kaufen. Geprüfte Geräte, 12 Monate Garantie, Versand oder Abholung in Hamburg.",
-      en: "Buy iPhone 17, 17 Air, 17 Pro and 17 Pro Max at Apfel Park. Tested devices, 12-month warranty, delivery or pickup in Hamburg.",
+      de: "iPhone 17, 17 Air, 17 Pro und 17 Pro Max bei Apfel Park kaufen. Zustand, Preis und Verfügbarkeit klar ausgewiesen; Versand oder Abholung in Hamburg.",
+      en: "Buy iPhone 17, 17 Air, 17 Pro and 17 Pro Max at Apfel Park. Condition, price and availability are clearly stated, with delivery or collection in Hamburg.",
     },
     defaultKeywords: {
       de: "iPhone 17 kaufen, iPhone 17 Pro kaufen, iPhone 17 Pro Max kaufen, iPhone 17 Air kaufen",
@@ -228,8 +228,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy iPhone 16 Pro Max – Compare Offers",
     },
     defaultDescription: {
-      de: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher und Preis vergleichen. Mit Garantie, Versand in Deutschland oder Abholung in Hamburg.",
-      en: "Compare iPhone 16 Pro Max offers by condition, storage and price. Warranty, delivery in Germany or collection from our Hamburg store.",
+      de: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in Deutschland oder Abholung in Hamburg.",
+      en: "Compare iPhone 16 Pro Max offers by condition, storage, price and availability, with delivery in Germany or collection from our Hamburg store.",
     },
     defaultKeywords: {
       de: "iPhone 16 Pro Max, iPhone 16 Pro Max kaufen, iPhone 16 Pro Max gebraucht",
@@ -247,8 +247,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy Samsung Galaxy Phones Without Contract",
     },
     defaultDescription: {
-      de: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu und Open Box mit transparentem Zustand, Garantie und Versand in ganz Deutschland.",
-      en: "Buy Samsung Galaxy phones without a mobile contract. New and open-box devices with clear condition, warranty and delivery across Germany.",
+      de: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu und Open Box mit transparentem Zustand und Versand in ganz Deutschland.",
+      en: "Buy Samsung Galaxy phones without a mobile contract. New and open-box devices with clear condition and delivery across Germany.",
     },
     defaultKeywords: {
       de: "Samsung Handys, Samsung Handy ohne Vertrag, Samsung Galaxy kaufen",
@@ -266,8 +266,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy Phones Without a Contract in Germany",
     },
     defaultDescription: {
-      de: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr kaufen. Neu, Open Box oder gebraucht mit Garantie und Versand in Deutschland.",
-      en: "Buy phones without a mobile contract from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with warranty and delivery in Germany.",
+      de: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr kaufen. Neu, Open Box oder gebraucht mit klarer Zustandsangabe und Versand in Deutschland.",
+      en: "Buy phones without a mobile contract from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
     },
     defaultKeywords: {
       de: "Handy ohne Vertrag, Handy günstig ohne Vertrag, Smartphone ohne Vertrag",
@@ -285,8 +285,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy Used & Open-Box Phones – Tested",
     },
     defaultDescription: {
-      de: "Gebrauchte und Open-Box-Handys günstig kaufen: Apple, Samsung, Google und mehr. Mit 12 Monaten Garantie, Versand oder Abholung in Hamburg.",
-      en: "Buy used and open-box phones from Apple, Samsung, Google and more. 12-month warranty, delivery in Germany or collection in Hamburg.",
+      de: "Gebrauchte und Open-Box-Handys von Apple, Samsung, Google und weiteren Marken mit transparentem Zustand, Versand oder Abholung in Hamburg vergleichen.",
+      en: "Compare used and open-box phones from Apple, Samsung, Google and more with clear condition details, delivery in Germany or collection in Hamburg.",
     },
     defaultKeywords: {
       de: "Handy gebraucht kaufen, gebrauchte Handys, Open Box Smartphone kaufen",
@@ -304,8 +304,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy Used iPhones – Open Box & Tested",
     },
     defaultDescription: {
-      de: "Gebrauchte und Open-Box-iPhones günstig kaufen. Zustand und Speicher vergleichen, mit 12 Monaten Garantie und Versand aus Hamburg.",
-      en: "Buy used and open-box iPhones. Compare condition, storage and price with a 12-month warranty and delivery from Hamburg across Germany.",
+      de: "Gebrauchte und Open-Box-iPhones nach Zustand, Speicher, Preis und Verfügbarkeit vergleichen; Versand aus Hamburg.",
+      en: "Buy used and open-box iPhones. Compare condition, storage, price and availability with delivery from Hamburg across Germany.",
     },
     defaultKeywords: {
       de: "iPhone gebraucht kaufen, gebrauchte iPhones, gebrauchtes Apple iPhone",
@@ -421,8 +421,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy Open-Box Phones & Tablets",
     },
     defaultDescription: {
-      de: "B-Ware und Open-Box Smartphones bei Apfel Park Hamburg: geöffnete Originalgeräte, vollständig geprüft, mit Garantie und deutlich günstiger als neu.",
-      en: "What does Open Box mean? Original devices, opened, fully tested – significantly cheaper than new, with warranty. Current open-box deals at Apfel Park Hamburg.",
+      de: "B-Ware und Open-Box Smartphones bei Apfel Park Hamburg mit klar ausgewiesenem Zustand, Preis und Verfügbarkeit.",
+      en: "What does Open Box mean? See current open-box devices with clearly stated condition, price and availability at Apfel Park Hamburg.",
     },
     defaultKeywords: {
       de: "B-Ware Handy, B Ware Smartphone, B-Ware Hamburg, Open Box iPhone, Open Box Smartphone, iPhone günstiger Hamburg",
@@ -478,8 +478,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Device Conditions: New, Open Box & Used",
     },
     defaultDescription: {
-      de: "So bewerten wir unsere Geräte: Was Neu, Open Box und Gebraucht bei Apfel Park bedeuten – transparent erklärt, inkl. Akkuzustand und Garantie.",
-      en: "How we grade our devices: what New, Open Box and Used mean at Apfel Park – explained transparently, incl. battery health and warranty.",
+      de: "So bewerten wir unsere Geräte: Was Neu, Open Box und Gebraucht bei Apfel Park bedeuten – transparent erklärt, einschließlich Akkuzustand.",
+      en: "How we grade devices: what New, Open Box and Used mean at Apfel Park, including battery-health details where available.",
     },
     defaultKeywords: {
       de: "Gerätezustand iPhone, Open Box Bedeutung, gebrauchtes iPhone Zustand",
@@ -574,7 +574,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     },
     defaultDescription: {
       de: dictionary.de.meta.terms.description,
-      en: "Terms for purchases, payments, delivery, warranty and services provided by Apfel Park in Germany.",
+      en: "Terms for purchases, payments, delivery, statutory rights and services provided by Apfel Park in Germany.",
     },
     defaultKeywords: {
       de: "AGB Apfel Park",

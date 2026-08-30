@@ -266,7 +266,19 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     },
   }));
 
-  return [...staticEntries, ...repairServiceEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...productEntries];
+  const repairComparisonEntries = locales.map((locale) => ({
+    url: `${siteInfo.url}/${locale}/repairs/preisvergleich-hamburg`,
+    lastModified: new Date("2026-08-29T00:00:00+02:00"),
+    alternates: {
+      languages: {
+        de: `${siteInfo.url}/de/repairs/preisvergleich-hamburg`,
+        en: `${siteInfo.url}/en/repairs/preisvergleich-hamburg`,
+        "x-default": `${siteInfo.url}/de/repairs/preisvergleich-hamburg`,
+      },
+    },
+  }));
+
+  return [...staticEntries, ...repairServiceEntries, ...repairComparisonEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...productEntries];
 };
 
 export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {

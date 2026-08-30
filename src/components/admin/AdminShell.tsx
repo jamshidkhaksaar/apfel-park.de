@@ -276,6 +276,7 @@ export default function AdminShell({
   const adminItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
     { label: dict.sidebar.users,     path: '/admin/users',    icon: 'users' },
     { label: dict.sidebar.mail,      path: '/admin/mail',     icon: 'mail' },
+    { label: lang === 'de' ? 'Abonnenten' : 'Subscribers', path: '/admin/subscribers', icon: 'mail' },
     { label: dict.sidebar.seo,       path: '/admin/seo',      icon: 'seo' },
     { label: dict.sidebar.payments,  path: '/admin/payments', icon: 'payments' },
     { label: dict.sidebar.branding,  path: '/admin/branding', icon: 'branding' },

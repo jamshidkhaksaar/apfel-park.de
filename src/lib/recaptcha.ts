@@ -47,11 +47,13 @@ export const getReCaptchaSettings = async (): Promise<ReCaptchaSettings> => {
   try {
     const adminDb = createAdminDbClient();
 
-    const { data } = await adminDb
+    const { data, error } = await adminDb
       .from("store_settings")
       .select("value")
       .eq("key", "recaptcha")
       .maybeSingle();
+
+    if (error) throw error;
 
     const storedValue = data?.value as Partial<ReCaptchaSettings> | null | undefined;
     if (storedValue) {
@@ -64,7 +66,9 @@ export const getReCaptchaSettings = async (): Promise<ReCaptchaSettings> => {
     console.error("Error fetching reCAPTCHA settings:", error);
   }
 
-  return DEFAULT_SETTINGS;
+  return process.env.NODE_ENV === "production"
+    ? { ...DEFAULT_SETTINGS, enabled: true }
+    : DEFAULT_SETTINGS;
 };
 
 /**

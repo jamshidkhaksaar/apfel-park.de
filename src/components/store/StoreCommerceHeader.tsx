@@ -4,8 +4,8 @@ import type { Locale } from "@/lib/i18n";
 import StoreCatalogSearch from "./StoreCatalogSearch";
 
 const trustItems = {
-  de: ["12 Monate Garantie", "Sichere Zahlung", "Versand in Deutschland", "Abholung in Wilhelmsburg"],
-  en: ["12-month warranty", "Secure payment", "Delivery in Germany", "Pickup in Wilhelmsburg"],
+  de: ["Zustand klar ausgewiesen", "Preise aus dem aktuellen Katalog", "Versand oder Abholung", "Abholung in Wilhelmsburg"],
+  en: ["Condition clearly stated", "Prices from the current catalog", "Delivery or collection", "Collection in Wilhelmsburg"],
 } as const;
 
 export type StoreCrumb = { label: string; href?: string };

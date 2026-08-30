@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 
 import CheckoutSuccessClient from "@/components/checkout/CheckoutSuccessClient";
 import { getOrderForConfirmation, getOrderProductGtins } from "@/lib/checkout";
 import { deliveryCountryCode, estimatedDeliveryDate } from "@/lib/delivery-estimate";
 import { siteInfo } from "@/lib/site";
 import { requireLocale } from "@/lib/route-locale";
+import { CHECKOUT_RETURN_COOKIE, readCheckoutReturnSession } from "@/lib/checkout-return-session";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
+  referrer: "no-referrer",
 };
 
 export default async function CheckoutSuccessPage({
@@ -18,11 +21,15 @@ export default async function CheckoutSuccessPage({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ order_id?: string; provider?: string; token?: string }>;
+  searchParams: Promise<{ order_id?: string; provider?: string }>;
 }) {
-  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
+  const [{ lang: rawLang }, query, cookieStore] = await Promise.all([params, searchParams, cookies()]);
   const locale = requireLocale(rawLang);
-  const order = query.order_id ? await getOrderForConfirmation(query.order_id).catch(() => null) : null;
+  const returnSession = readCheckoutReturnSession(cookieStore.get(CHECKOUT_RETURN_COOKIE)?.value);
+  const authorized = Boolean(query.order_id && returnSession?.orderId === query.order_id);
+  const order = authorized && query.order_id
+    ? await getOrderForConfirmation(query.order_id).catch(() => null)
+    : null;
   const paid = order?.payment_status === "paid";
   // orders.items is the JSON snapshot taken when the order was created, so the
   // recap shows what was actually bought even if a price changes later.
@@ -74,10 +81,9 @@ export default async function CheckoutSuccessPage({
       <div className="container-page">
         <CheckoutSuccessClient
           locale={locale}
-          orderId={query.order_id ?? null}
+          orderId={order?.id ?? null}
           orderNumber={order?.order_number ?? null}
-          provider={query.provider ?? null}
-          paypalToken={query.token ?? null}
+          provider={order ? query.provider ?? null : null}
           initiallyPaid={paid}
           totalAmount={order ? Number(order.total_amount) : null}
           currency={order?.currency ?? "EUR"}

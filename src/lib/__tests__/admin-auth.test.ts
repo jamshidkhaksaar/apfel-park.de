@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { canAccessAdminPath } from "../admin-auth";
+import { canAccessAdminPath, canManageCampaigns } from "../admin-auth";
 import type { User } from "../auth-types";
 
 const user = (role: string): User => ({
@@ -23,6 +23,7 @@ describe("admin page path authorization", () => {
     const manager = user("manager");
     expect(canAccessAdminPath(manager, "/admin/orders/abc")).toBe(true);
     expect(canAccessAdminPath(manager, "/admin/chat")).toBe(true);
+    expect(canAccessAdminPath(manager, "/admin/campaigns")).toBe(true);
     expect(canAccessAdminPath(manager, "/admin/settings")).toBe(false);
     expect(canAccessAdminPath(manager, "/admin/health")).toBe(false);
   });
@@ -30,5 +31,14 @@ describe("admin page path authorization", () => {
   it("allows administrators and rejects unknown roles", () => {
     expect(canAccessAdminPath(user("admin"), "/admin/settings")).toBe(true);
     expect(canAccessAdminPath(user("unknown"), "/admin")).toBe(false);
+  });
+});
+
+describe("campaign authorization", () => {
+  it("allows administrators and managers but rejects product editors", () => {
+    expect(canManageCampaigns(user("admin"))).toBe(true);
+    expect(canManageCampaigns(user("manager"))).toBe(true);
+    expect(canManageCampaigns(user("product_editor"))).toBe(false);
+    expect(canManageCampaigns(null)).toBe(false);
   });
 });
