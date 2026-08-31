@@ -198,6 +198,12 @@ export default async function RootLayout({
         <meta id="apfel-theme-color" name="theme-color" content={theme === "dark" ? "#0b0b0c" : "#ffffff"} />
         <ThemeScript />
         <script
+          id="ahrefs-web-analytics"
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="LaVNM6b1mT7pRZ+y3FqQEw"
+          async
+        />
+        <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonStringify(organizationJsonLd) }}
         />
