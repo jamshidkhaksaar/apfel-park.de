@@ -284,7 +284,6 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
 export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
   const settings = await getSeoSettings();
   const common = {
-    host: siteInfo.url,
     sitemap: settings.global.enableSitemap ? `${siteInfo.url}/sitemap.xml` : undefined,
   };
 
