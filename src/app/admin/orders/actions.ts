@@ -11,6 +11,7 @@ import { enqueueMarketplaceJob } from "@/lib/marketplaces";
 import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 import { sanitizeInput } from "@/lib/security";
 import { attachProviderReference, isOrderInProviderState, markOrderCancelled } from "@/lib/checkout";
+import { toIsoTimestamp } from "@/lib/database-timestamp";
 import { expireStripeCheckoutSessionForAdmin } from "@/lib/stripe-checkout-admin";
 
 const ALLOWED_STATUSES = new Set(["pending", "paid", "shipped", "delivered", "cancelled"]);
@@ -41,10 +42,12 @@ export async function updateOrderFulfillment(formData: FormData) {
     `SELECT status, payment_status, provider, provider_order_id, provider_session_id, provider_status, updated_at FROM orders WHERE id = $1 LIMIT 1`,
     [id],
   );
-  const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; updated_at?: string | null } | undefined;
+  const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; updated_at?: unknown } | undefined;
   if (!current) redirect("/admin/orders?error=not-found");
   const orderPath = returnTo === "detail" ? `/admin/orders/${id}` : "/admin/orders";
   const redirectError = (reason: string): never => redirect(`${orderPath}?error=${reason}`);
+  const currentUpdatedAt = toIsoTimestamp(current.updated_at);
+  if (!currentUpdatedAt) return redirectError("conflict");
   const decision = validateAdminOrderTransition({
     currentStatus: current.status ?? "",
     paymentStatus: current.payment_status ?? "",
@@ -110,7 +113,7 @@ export async function updateOrderFulfillment(formData: FormData) {
       expectedProviderStatus: remoteCancellation?.providerStatus ?? current.provider_status,
       expectedProviderOrderId: current.provider_order_id,
       expectedProviderSessionId: current.provider_session_id,
-      expectedUpdatedAt: remoteCancellation?.updatedAt ?? current.updated_at,
+      expectedUpdatedAt: remoteCancellation?.updatedAt ?? currentUpdatedAt,
     });
     if (!cancelledOrderId) {
       if (!(await isOrderInProviderState({ provider: current.provider, orderId: id, statuses: ["cancelled"] }))) {

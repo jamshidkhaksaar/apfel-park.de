@@ -1,6 +1,7 @@
 import { randomUUID, timingSafeEqual, createHmac } from "node:crypto";
 
 import { query, withTransaction, type TransactionClient } from "@/lib/db";
+import { toIsoTimestamp } from "@/lib/database-timestamp";
 import { releaseInventoryReservation, reserveInventoryBatch } from "@/lib/marketplaces/inventory";
 import { getProducts, type Product, type ProductVariant } from "@/lib/products";
 import { isValidEmail, sanitizeInput } from "@/lib/security";
@@ -459,7 +460,8 @@ export async function attachProviderReference(input: {
      RETURNING updated_at`,
     [input.orderId, input.provider, input.providerOrderId ?? null, input.providerSessionId ?? null, input.providerStatus ?? null],
   );
-  return result.rows[0]?.updated_at ? { updatedAt: String(result.rows[0].updated_at) } : null;
+  const updatedAt = toIsoTimestamp(result.rows[0]?.updated_at);
+  return updatedAt ? { updatedAt } : null;
 }
 
 /**
