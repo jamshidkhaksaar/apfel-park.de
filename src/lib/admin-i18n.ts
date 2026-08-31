@@ -93,6 +93,13 @@ export const adminDictionary = {
       },
       saved: "Gespeichert.",
       saveError: "Speichern fehlgeschlagen.",
+      errors: {
+        generic: "Speichern fehlgeschlagen.",
+        providerActive: "Die Zahlung ist beim Zahlungsanbieter noch aktiv und kann nicht lokal storniert werden.",
+        providerCancelFailed: "Die Zahlung konnte beim Zahlungsanbieter nicht sicher beendet werden. Bitte erneut versuchen.",
+        refundRequired: "Die Zahlung wurde bereits abgeschlossen. Bitte zuerst über den Zahlungsanbieter erstatten.",
+        conflict: "Die Bestellung wurde zwischenzeitlich geändert. Bitte neu laden und erneut versuchen.",
+      },
       status: {
         unknown: "Unbekannt",
         pending: "Ausstehend",
@@ -1023,6 +1030,13 @@ export const adminDictionary = {
       },
       saved: "Saved.",
       saveError: "Saving failed.",
+      errors: {
+        generic: "Saving failed.",
+        providerActive: "The payment is still active with the payment provider and cannot be cancelled locally.",
+        providerCancelFailed: "The payment could not be ended safely with the payment provider. Please try again.",
+        refundRequired: "The payment has already completed. Refund it through the payment provider first.",
+        conflict: "The order changed in the meantime. Reload it and try again.",
+      },
       status: {
         unknown: "Unknown",
         pending: "Pending",

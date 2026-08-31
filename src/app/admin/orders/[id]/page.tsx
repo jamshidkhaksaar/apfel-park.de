@@ -5,6 +5,7 @@ import { getAdminDictionary, getAdminNumberLocale } from "@/lib/admin-i18n-serve
 import AdminShell from "../../../../components/admin/AdminShell";
 import { resendOrderNotification, updateOrderFulfillment } from "../actions";
 import { formatVariant, getOrderDetail } from "../order-data";
+import { getOrderErrorMessageKey } from "../order-errors";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +16,10 @@ export default async function OrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ updated?: string; notified?: string; notifyError?: string }>;
+  searchParams: Promise<{ updated?: string; notified?: string; notifyError?: string; error?: string }>;
 }) {
   const { id } = await params;
-  const { updated, notified, notifyError } = await searchParams;
+  const { updated, notified, notifyError, error } = await searchParams;
   const [order, dict, numberLocale] = await Promise.all([
     getOrderDetail(id),
     getAdminDictionary(),
@@ -40,6 +41,7 @@ export default async function OrderDetailPage({
   const address = order.customer_address;
   const orderLabel = order.order_number ? `#A-${order.order_number}` : `#${order.id.slice(0, 8)}`;
   const isShipping = order.shipping_method === "germany";
+  const errorMessage = error ? dict.ordersPage.errors[getOrderErrorMessageKey(error)] : null;
 
   const infoRows: Array<[string, string]> = [
     [t.createdAt, formatDate(order.created_at)],
@@ -72,6 +74,11 @@ export default async function OrderDetailPage({
       {updated ? (
         <div className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600">
           {dict.ordersPage.saved}
+        </div>
+      ) : null}
+      {errorMessage ? (
+        <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-600">
+          {errorMessage}
         </div>
       ) : null}
       {notified ? (

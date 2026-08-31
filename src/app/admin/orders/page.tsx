@@ -5,6 +5,7 @@ import { getAdminDictionary, getAdminNumberLocale } from "@/lib/admin-i18n-serve
 import type { AdminDictionary } from "@/lib/admin-i18n";
 import AdminShell from "../../../components/admin/AdminShell";
 import { updateOrderFulfillment } from "./actions";
+import { getOrderErrorMessageKey } from "./order-errors";
 
 export const dynamic = "force-dynamic";
 
@@ -155,6 +156,9 @@ export default async function OrdersPage({
 
   const currencyFormat = new Intl.NumberFormat(numberLocale, { style: "currency", currency: "EUR" });
   const dateFormat = new Intl.DateTimeFormat(numberLocale, { dateStyle: "medium", timeStyle: "short" });
+  const errorMessage = params.error
+    ? dict.ordersPage.errors[getOrderErrorMessageKey(params.error)]
+    : null;
 
   const statCards = [
     { label: dict.ordersPage.stats.revenue, value: currencyFormat.format(Number(totals.revenue)) },
@@ -170,9 +174,9 @@ export default async function OrdersPage({
           {dict.ordersPage.saved}
         </div>
       ) : null}
-      {params.error ? (
+      {errorMessage ? (
         <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-600">
-          {dict.ordersPage.saveError}
+          {errorMessage}
         </div>
       ) : null}
 

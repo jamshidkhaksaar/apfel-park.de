@@ -5,12 +5,13 @@ import { redirect } from "next/navigation";
 
 import { canManageOrders } from "@/lib/admin-auth";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
+import { validateAdminOrderTransition } from "@/lib/admin-order-transition";
 import { query } from "@/lib/db";
 import { enqueueMarketplaceJob } from "@/lib/marketplaces";
 import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 import { sanitizeInput } from "@/lib/security";
-import { validateAdminOrderTransition } from "@/lib/admin-order-transition";
-import { markOrderCancelled } from "@/lib/checkout";
+import { attachProviderReference, isOrderInProviderState, markOrderCancelled } from "@/lib/checkout";
+import { expireStripeCheckoutSessionForAdmin } from "@/lib/stripe-checkout-admin";
 
 const ALLOWED_STATUSES = new Set(["pending", "paid", "shipped", "delivered", "cancelled"]);
 
@@ -42,6 +43,8 @@ export async function updateOrderFulfillment(formData: FormData) {
   );
   const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; updated_at?: string | null } | undefined;
   if (!current) redirect("/admin/orders?error=not-found");
+  const orderPath = returnTo === "detail" ? `/admin/orders/${id}` : "/admin/orders";
+  const redirectError = (reason: string): never => redirect(`${orderPath}?error=${reason}`);
   const decision = validateAdminOrderTransition({
     currentStatus: current.status ?? "",
     paymentStatus: current.payment_status ?? "",
@@ -50,25 +53,71 @@ export async function updateOrderFulfillment(formData: FormData) {
     providerSessionId: current.provider_session_id,
     providerStatus: current.provider_status,
   });
-  if (!decision.allowed) redirect(`/admin/orders?error=${decision.reason}`);
+  let remoteCancellation: { providerStatus: string; updatedAt: string } | null = null;
+  if (!decision.allowed) {
+    const providerSessionId = current.provider_session_id;
+    const canExpireStripeCheckout = decision.reason === "provider_active"
+      && nextStatus === "cancelled"
+      && current.provider === "stripe"
+      && Boolean(providerSessionId);
+    if (!canExpireStripeCheckout) return redirectError(decision.reason);
 
-  if (decision.mode === "cancel") {
+    const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
+    if (!secretKey || !providerSessionId) return redirectError("provider_cancel_failed");
+    let expiration: Awaited<ReturnType<typeof expireStripeCheckoutSessionForAdmin>> | null = null;
+    try {
+      expiration = await expireStripeCheckoutSessionForAdmin({
+        sessionId: providerSessionId,
+        orderId: id,
+        secretKey,
+      });
+    } catch (error) {
+      console.error("Admin Stripe Checkout cancellation failed", {
+        orderId: id,
+        error: error instanceof Error ? error.message : "Stripe cancellation failed",
+      });
+    }
+    if (!expiration) return redirectError("provider_cancel_failed");
+    if (expiration.outcome === "protected") return redirectError("provider_paid");
+
+    const snapshot = await attachProviderReference({
+      orderId: id,
+      provider: "stripe",
+      providerSessionId,
+      providerStatus: expiration.providerStatus,
+    });
+    if (!snapshot) {
+      if (await isOrderInProviderState({ provider: "stripe", orderId: id, statuses: ["cancelled"] })) {
+        revalidatePath("/admin/orders");
+        revalidatePath(`/admin/orders/${id}`);
+        redirect(`${orderPath}?updated=1`);
+      }
+      return redirectError("conflict");
+    }
+    remoteCancellation = { providerStatus: expiration.providerStatus, updatedAt: snapshot.updatedAt };
+  }
+
+  if ((decision.allowed && decision.mode === "cancel") || remoteCancellation) {
     if (current.provider !== "stripe" && current.provider !== "paypal") redirect("/admin/orders?error=invalid-provider");
     const cancelledOrderId = await markOrderCancelled({
       orderId: id,
       provider: current.provider,
       providerOrderId: current.provider_order_id,
       providerSessionId: current.provider_session_id,
-      providerStatus: "cancelled_by_admin",
+      providerStatus: remoteCancellation?.providerStatus ?? "cancelled_by_admin",
       expectedStatus: current.status,
       expectedPaymentStatus: current.payment_status,
-      expectedProviderStatus: current.provider_status,
+      expectedProviderStatus: remoteCancellation?.providerStatus ?? current.provider_status,
       expectedProviderOrderId: current.provider_order_id,
       expectedProviderSessionId: current.provider_session_id,
-      expectedUpdatedAt: current.updated_at,
+      expectedUpdatedAt: remoteCancellation?.updatedAt ?? current.updated_at,
     });
-    if (!cancelledOrderId) redirect("/admin/orders?error=conflict");
-  } else if (decision.mode === "fulfillment") {
+    if (!cancelledOrderId) {
+      if (!(await isOrderInProviderState({ provider: current.provider, orderId: id, statuses: ["cancelled"] }))) {
+        redirectError("conflict");
+      }
+    }
+  } else if (decision.allowed && decision.mode === "fulfillment") {
     const update = await query(
       `UPDATE orders
        SET status = $2,
@@ -79,7 +128,7 @@ export async function updateOrderFulfillment(formData: FormData) {
        RETURNING id`,
       [id, nextStatus, hasTracking ? trackingId || null : null, current.payment_status, current.status],
     );
-    if (!update.rows[0]) redirect("/admin/orders?error=conflict");
+    if (!update.rows[0]) redirectError("conflict");
     if (trackingId) {
       const marketplaceOrders = await query(
         `SELECT marketplace, external_order_id FROM marketplace_orders WHERE order_id = $1`,
@@ -100,8 +149,7 @@ export async function updateOrderFulfillment(formData: FormData) {
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${id}`);
 
-  const target = returnTo === "detail" ? `/admin/orders/${id}?updated=1` : "/admin/orders?updated=1";
-  redirect(target);
+  redirect(`${orderPath}?updated=1`);
 }
 
 export async function resendOrderNotification(formData: FormData) {
