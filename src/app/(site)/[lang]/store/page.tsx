@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import { createMetadata } from "../../../../lib/metadata";
-import { getProducts, getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStorePage, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
+import { getProducts, getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
-import { resolveStoreIndexing } from "@/lib/store-indexing";
+import {
+  buildStoreCanonicalUrl,
+  isStorePaginationOutOfRange,
+  resolveStoreIndexing,
+} from "@/lib/store-indexing";
 
 export const generateMetadata = async ({
   params,
@@ -39,16 +44,18 @@ export default async function StorePage({ params, searchParams }: { params: Prom
   const lang = requireLocale(rawLang);
   const locale = lang;
   const query = await searchParams;
+  const indexing = resolveStoreIndexing(query);
   const requestedCategory = valueOf(query.category) as StoreCatalogCategory;
   const category = catalogCategories.has(requestedCategory) ? requestedCategory : "all";
   const sort = parseStoreSort(query.sort);
-  const page = parseStorePage(query.page);
+  const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
   const [catalog, trendingProducts, allProducts] = await Promise.all([
     getStoreCatalog({ category, sort, page, pageSize: 24, locale, filters: activeFilters, merchandising: "storefront" }),
     getTrendingProducts(locale, 8),
     getProducts(undefined, undefined, locale),
   ]);
+  if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
   const showTrending = page === 1
     && sort === "featured"
     && category === "all"
@@ -61,7 +68,7 @@ export default async function StorePage({ params, searchParams }: { params: Prom
     && activeFilters.priceMin === undefined
     && activeFilters.priceMax === undefined;
 
-  const pageUrl = `${siteInfo.url}/${lang}/store`;
+  const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${lang}/store`, indexing);
   const storeName = lang === "de" ? "Online Shop" : "Online Store";
   const collectionPage = buildCollectionPageSchema({
     lang: locale,

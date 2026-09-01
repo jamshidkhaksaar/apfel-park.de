@@ -37,6 +37,7 @@ export const dictionary = {
         { label: "Zubehör", path: "/accessories" },
         { label: "Laptops", path: "/laptops" },
       ],
+      catalogLink: { label: "Alle Produkte A–Z", path: "/store/catalog" },
       companyLinks: [
         { label: "Über uns", path: "/about" },
         { label: "FAQ", path: "/faq" },
@@ -750,6 +751,7 @@ export const dictionary = {
         { label: "Accessories", path: "/accessories" },
         { label: "Laptops", path: "/laptops" },
       ],
+      catalogLink: { label: "All Products A–Z", path: "/store/catalog" },
       companyLinks: [
         { label: "About", path: "/about" },
         { label: "FAQ", path: "/faq" },

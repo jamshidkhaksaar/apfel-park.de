@@ -830,10 +830,6 @@ export const parseStoreSort = (value: string | string[] | undefined): StoreCatal
   return STORE_SORT_SET.has(str) ? str : "featured";
 };
 
-export const parseStorePage = (value: string | string[] | undefined): number => {
-  return Math.max(1, Number.parseInt(valueOfParam(value) || "1", 10) || 1);
-};
-
 export const ACCESSORY_TYPES = [
   "cases",
   "screen-protectors",
@@ -1218,7 +1214,7 @@ export async function getTrendingProducts(locale: Locale = "de", limit = 8): Pro
   return [...configured, ...fallback].slice(0, Math.max(1, limit));
 }
 
-export async function getProductBySlug(slug: string, locale: Locale = "de"): Promise<Product | null> {
+const getProductBySlugCached = cache(async (slug: string, locale: Locale): Promise<Product | null> => {
   const db = createDbClient();
   const { data, error } = await db
     .from<DbProduct>("products")
@@ -1227,11 +1223,33 @@ export async function getProductBySlug(slug: string, locale: Locale = "de"): Pro
     .eq("is_active", true)
     .single();
 
-  if (error || !data) return null;
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    throw error;
+  }
+  if (!data) {
+    throw new Error(`Product query returned no data for slug "${slug}"`);
+  }
   const mapped = mapProduct(data as DbProduct, locale);
-  if (!mapped) return null;
-  return (await hydrateProductsWithInventory([mapped]))[0] ?? null;
-}
+  if (!mapped) {
+    throw new Error(`Product query returned an invalid row for slug "${slug}"`);
+  }
+  const hydrated = (await hydrateProductsWithInventory([mapped]))[0];
+  if (!hydrated) {
+    throw new Error(`Product inventory hydration lost slug "${slug}"`);
+  }
+  return hydrated;
+});
+
+/**
+ * React's cache is scoped to the current server render, so metadata and page
+ * rendering share one live inventory lookup without retaining stock between
+ * requests.
+ */
+export const getProductBySlug = (
+  slug: string,
+  locale: Locale = "de",
+): Promise<Product | null> => getProductBySlugCached(slug, locale);
 
 /**
  * Resolve an old product slug to its current one, if the slug was rewritten

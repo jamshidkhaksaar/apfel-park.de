@@ -11,6 +11,7 @@ import ProductGallery from "@/components/ProductGallery";
 import { ProductFamilyConfigurator, ProductWishlistButton } from "@/components/ProductProfessionalExperience";
 import ProductMobilePurchaseBar from "@/components/ProductMobilePurchaseBar";
 import ProductPurchaseFacts from "@/components/ProductPurchaseFacts";
+import ProductGpsrContacts from "@/components/ProductGpsrContacts";
 import PaymentBrandIcons from "@/components/PaymentBrandIcons";
 import EuEnergyLabelSection, { EnergyClassArrow } from "@/components/EuEnergyLabelSection";
 import { addStoredCartItem } from "@/components/checkout/cart";
@@ -549,22 +550,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             {locale === "de" ? "Produkt- und Sicherheitsinformationen" : "Product and safety information"}
           </summary>
           <div className="mt-5 grid gap-5 text-sm text-muted md:grid-cols-2">
-            {product.gpsr?.manufacturer ? (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Hersteller" : "Manufacturer"}</p>
-                <p className="mt-2 text-foreground">{product.gpsr.manufacturer.name}</p>
-                {product.gpsr.manufacturer.address ? <p className="mt-1 whitespace-pre-line">{product.gpsr.manufacturer.address}</p> : null}
-                {product.gpsr.manufacturer.email ? <p className="mt-1">{product.gpsr.manufacturer.email}</p> : null}
-              </div>
-            ) : null}
-            {product.gpsr?.euResponsible ? (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Verantwortliche Person in der EU" : "Responsible person in the EU"}</p>
-                <p className="mt-2 text-foreground">{product.gpsr.euResponsible.name}</p>
-                {product.gpsr.euResponsible.address ? <p className="mt-1 whitespace-pre-line">{product.gpsr.euResponsible.address}</p> : null}
-                {product.gpsr.euResponsible.email ? <p className="mt-1">{product.gpsr.euResponsible.email}</p> : null}
-              </div>
-            ) : null}
+            {product.gpsr ? <ProductGpsrContacts locale={locale} gpsr={product.gpsr} /> : null}
             {product.charging || product.batteryDetails ? (
               <div className="md:col-span-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em]">{locale === "de" ? "Laden und Batterie" : "Charging and battery"}</p>

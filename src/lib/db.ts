@@ -2,7 +2,11 @@ import { Pool, type PoolClient } from "pg";
 
 import { parseColumns, quoteIdentifier } from "./sql-identifier";
 
-type QueryResponse<T> = { data: T | null; error: { message: string } | null; count?: number | null };
+type QueryResponse<T> = {
+  data: T | null;
+  error: { message: string; code?: string } | null;
+  count?: number | null;
+};
 
 type Filter =
   | { type: "eq"; column: string; value: unknown }
@@ -202,7 +206,10 @@ class QueryBuilder<T = Record<string, unknown>> implements PromiseLike<QueryResp
 
     if (this.singleMode === "single") {
       if (result.rows.length !== 1) {
-        return { data: null, error: { message: "Expected a single row" } };
+        return {
+          data: null,
+          error: { message: "Expected a single row", code: "PGRST116" },
+        };
       }
       return { data: result.rows[0] as T, error: null };
     }

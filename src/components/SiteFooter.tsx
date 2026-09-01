@@ -112,7 +112,11 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             </div>
           </div>
 
-          <FooterLinkGroup title="Navigation" links={dict.footer.quickLinks} lang={lang} />
+          <FooterLinkGroup
+            title="Navigation"
+            links={[...dict.footer.quickLinks, dict.footer.catalogLink]}
+            lang={lang}
+          />
 
           <FooterLinkGroup title="Info" links={dict.footer.companyLinks} lang={lang} />
 

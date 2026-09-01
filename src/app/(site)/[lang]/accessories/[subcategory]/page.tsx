@@ -9,14 +9,17 @@ import { createMetadata } from "@/lib/metadata";
 import {
   countActiveSubcategoryProducts,
   getStoreCatalog,
-  hasCatalogSearchQuery,
   parseStoreCatalogFilters,
-  parseStorePage,
   parseStoreSort,
 } from "@/lib/products";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import { getAccessoryCollection } from "@/lib/accessory-collections";
+import {
+  buildStoreCanonicalUrl,
+  isStorePaginationOutOfRange,
+  resolveStoreIndexing,
+} from "@/lib/store-indexing";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +33,7 @@ export const generateMetadata = async ({
   const [{ lang: rawLang, subcategory }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const copy = getAccessoryCollection(subcategory, lang);
+  const indexing = resolveStoreIndexing(query);
   if (!copy) {
     return createMetadata(
       lang,
@@ -42,7 +46,8 @@ export const generateMetadata = async ({
   // has stock rather than publishing a page with no products on it.
   const available = await countActiveSubcategoryProducts(copy.subcategory);
   return createMetadata(lang, copy.metaTitle, copy.description, `/accessories/${copy.slug}`, undefined, {
-    noindex: available === 0 || hasCatalogSearchQuery(query),
+    noindex: available === 0 || indexing.noindex,
+    canonicalQuery: indexing.canonicalQuery,
   });
 };
 
@@ -59,8 +64,9 @@ export default async function AccessorySubcategoryPage({
   if (!copy) notFound();
 
   const query = await searchParams;
+  const indexing = resolveStoreIndexing(query);
   const sort = parseStoreSort(query.sort);
-  const page = parseStorePage(query.page);
+  const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
   const catalog = await getStoreCatalog({
     category: "accessories",
@@ -71,8 +77,12 @@ export default async function AccessorySubcategoryPage({
     locale: lang,
     filters: activeFilters,
   });
+  if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
 
-  const pageUrl = `${siteInfo.url}/${lang}/accessories/${copy.slug}`;
+  const pageUrl = buildStoreCanonicalUrl(
+    `${siteInfo.url}/${lang}/accessories/${copy.slug}`,
+    indexing,
+  );
   const collectionPage = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",

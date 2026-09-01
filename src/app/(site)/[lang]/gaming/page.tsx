@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import PageIntro from "../../../../components/PageIntro";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getGamingContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
+import { isStorePaginationOutOfRange, resolveStoreIndexing } from "@/lib/store-indexing";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export const generateMetadata = async ({
   const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
+  const indexing = resolveStoreIndexing(query);
   const catalog = await getStoreCatalog({ category: "consoles", page: 1, pageSize: 1, locale: lang });
   return createMetadata(
     lang,
@@ -29,7 +32,7 @@ export const generateMetadata = async ({
     dict.meta.gaming.description,
     "/gaming",
     undefined,
-    { noindex: catalog.total === 0 || hasCatalogSearchQuery(query) },
+    { noindex: catalog.total === 0 || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 
@@ -43,10 +46,11 @@ export default async function GamingPage({
   const { lang: rawLang } = await params;
   const lang = requireLocale(rawLang);
   const query = await searchParams;
+  const indexing = resolveStoreIndexing(query);
   const dict = getDictionary(lang);
   const gaming = await getGamingContent(lang);
   const sort = parseStoreSort(query.sort);
-  const page = parseStorePage(query.page);
+  const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
 
   const catalog = await getStoreCatalog({
@@ -57,6 +61,7 @@ export default async function GamingPage({
     locale: lang,
     filters: activeFilters,
   });
+  if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
 
   return (
     <div className="bg-background">

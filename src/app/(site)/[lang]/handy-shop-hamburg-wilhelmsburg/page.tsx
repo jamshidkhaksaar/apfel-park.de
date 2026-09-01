@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import ExternalMapEmbed from "@/components/ExternalMapEmbed";
 import PageIntro from "@/components/PageIntro";
@@ -11,12 +12,16 @@ import { createMetadata } from "@/lib/metadata";
 import {
   getStoreCatalog,
   parseStoreCatalogFilters,
-  parseStorePage,
   parseStoreSort,
 } from "@/lib/products";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
+import {
+  buildStoreCanonicalUrl,
+  isStorePaginationOutOfRange,
+  resolveStoreIndexing,
+} from "@/lib/store-indexing";
 
 export const dynamic = "force-dynamic";
 
@@ -107,11 +112,21 @@ const copy = {
   faq: Array<{ question: string; answer: string }>;
 }>;
 
-export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
-  const { lang: rawLang } = await params;
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const locale = requireLocale(rawLang);
   const content = copy[locale];
-  return createMetadata(locale, content.metaTitle, content.description, path, "/images/shop1.jpg");
+  const indexing = resolveStoreIndexing(query);
+  return createMetadata(locale, content.metaTitle, content.description, path, "/images/shop1.jpg", {
+    noindex: indexing.noindex,
+    canonicalQuery: indexing.canonicalQuery,
+  });
 }
 
 export default async function HamburgWilhelmsburgStorePage({
@@ -125,8 +140,9 @@ export default async function HamburgWilhelmsburgStorePage({
   const locale = requireLocale(rawLang);
   const content = copy[locale];
   const query = await searchParams;
+  const indexing = resolveStoreIndexing(query);
   const sort = parseStoreSort(query.sort);
-  const page = parseStorePage(query.page);
+  const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
   const catalog = await getStoreCatalog({
     category: "smartphones",
@@ -136,7 +152,8 @@ export default async function HamburgWilhelmsburgStorePage({
     locale,
     filters: activeFilters,
   });
-  const pageUrl = `${siteInfo.url}/${locale}${path}`;
+  if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
+  const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${locale}${path}`, indexing);
   const itemList = {
     "@context": "https://schema.org",
     "@type": "ItemList",

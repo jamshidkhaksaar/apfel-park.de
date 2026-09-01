@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
+import {
+  buildStoreCanonicalUrl,
+  isStorePaginationOutOfRange,
+  resolveStoreIndexing,
+} from "@/lib/store-indexing";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +54,11 @@ export const generateMetadata = async ({
   const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const locale = (lang === "en" ? "en" : "de") as Locale;
-  return createMetadata(locale, copy[locale].title, copy[locale].description, "/open-box", undefined, { noindex: hasCatalogSearchQuery(query) });
+  const indexing = resolveStoreIndexing(query);
+  return createMetadata(locale, copy[locale].title, copy[locale].description, "/open-box", undefined, {
+    noindex: indexing.noindex,
+    canonicalQuery: indexing.canonicalQuery,
+  });
 };
 
 export default async function OpenBoxPage({
@@ -61,9 +71,10 @@ export default async function OpenBoxPage({
   const { lang: rawLang } = await params;
   const lang = requireLocale(rawLang);
   const query = await searchParams;
+  const indexing = resolveStoreIndexing(query);
   const locale = (lang === "en" ? "en" : "de") as Locale;
   const sort = parseStoreSort(query.sort);
-  const page = parseStorePage(query.page);
+  const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
   const t = copy[locale];
 
@@ -75,8 +86,9 @@ export default async function OpenBoxPage({
     locale,
     filters: activeFilters,
   });
+  if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
 
-  const pageUrl = `${siteInfo.url}/${locale}/open-box`;
+  const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${locale}/open-box`, indexing);
   const collectionPage = buildCollectionPageSchema({
     lang: locale,
     name: t.title,

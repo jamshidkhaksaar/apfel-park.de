@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import StoreCommerceHeader from "@/components/store/StoreCommerceHeader";
 import StoreGrid from "@/components/store/StoreGrid";
@@ -6,13 +7,18 @@ import type { Locale } from "@/lib/i18n";
 import {
   getStoreCatalog,
   parseStoreCatalogFilters,
-  parseStorePage,
   parseStoreSort,
   type StoreCatalogCollection,
 } from "@/lib/products";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import { getStoreCollectionCopy } from "@/lib/store-collections";
+import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
+import {
+  buildStoreCanonicalUrl,
+  isStorePaginationOutOfRange,
+  resolveStoreIndexing,
+} from "@/lib/store-indexing";
 
 export default async function StoreCollectionLanding({
   collection,
@@ -24,8 +30,9 @@ export default async function StoreCollectionLanding({
   query: Record<string, string | string[] | undefined>;
 }) {
   const copy = getStoreCollectionCopy(collection, locale);
+  const indexing = resolveStoreIndexing(query);
   const sort = parseStoreSort(query.sort);
-  const page = parseStorePage(query.page);
+  const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
   const catalog = await getStoreCatalog({
     category: "smartphones",
@@ -36,32 +43,28 @@ export default async function StoreCollectionLanding({
     locale,
     filters: activeFilters,
   });
-  const pageUrl = `${siteInfo.url}/${locale}${copy.path}`;
-  const itemList = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
+  if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
+  const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${locale}${copy.path}`, indexing);
+  const collectionPage = buildCollectionPageSchema({
+    lang: locale,
     name: copy.title,
-    numberOfItems: catalog.total,
-    itemListElement: catalog.products.map((product, index) => ({
-      "@type": "ListItem",
-      position: (catalog.page - 1) * 24 + index + 1,
-      name: product.title,
-      url: `${siteInfo.url}/${locale}/store/${product.slug}`,
-    })),
-  };
-  const breadcrumb = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: locale === "de" ? "Startseite" : "Home", item: `${siteInfo.url}/${locale}` },
-      { "@type": "ListItem", position: 2, name: "Smartphones", item: `${siteInfo.url}/${locale}/smartphones` },
-      { "@type": "ListItem", position: 3, name: copy.title, item: pageUrl },
-    ],
-  };
+    description: copy.description,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+  });
+  const breadcrumb = buildListingBreadcrumbSchema({
+    lang: locale,
+    name: copy.title,
+    url: pageUrl,
+    catalog: { total: catalog.total, page: catalog.page },
+    products: catalog.products,
+    parent: { name: "Smartphones", url: `${siteInfo.url}/${locale}/smartphones` },
+  });
 
   return (
     <div className="bg-background">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(itemList) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
 
       <StoreCommerceHeader lang={locale} title={copy.title} subtitle={copy.description} eyebrow={copy.eyebrow} query={activeFilters.query} resultCount={catalog.total} />

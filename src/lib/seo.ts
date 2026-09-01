@@ -4,6 +4,7 @@ import { createAdminDbClient } from "@/lib/admin-db";
 import { locales, type Locale } from "@/lib/i18n";
 import { accessoryCollectionSlugs, getAccessoryCollection } from "@/lib/accessory-collections";
 import { countActiveSubcategoryProducts, getProducts } from "@/lib/products";
+import { isRepairBenchmarkPublished } from "@/lib/repair-price-benchmark";
 import { repairServiceSlugs } from "@/lib/repair-services";
 import {
   buildDefaultSeoSettings,
@@ -266,17 +267,19 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     },
   }));
 
-  const repairComparisonEntries = locales.map((locale) => ({
-    url: `${siteInfo.url}/${locale}/repairs/preisvergleich-hamburg`,
-    lastModified: new Date("2026-08-29T00:00:00+02:00"),
-    alternates: {
-      languages: {
-        de: `${siteInfo.url}/de/repairs/preisvergleich-hamburg`,
-        en: `${siteInfo.url}/en/repairs/preisvergleich-hamburg`,
-        "x-default": `${siteInfo.url}/de/repairs/preisvergleich-hamburg`,
-      },
-    },
-  }));
+  const repairComparisonEntries = isRepairBenchmarkPublished()
+    ? locales.map((locale) => ({
+        url: `${siteInfo.url}/${locale}/repairs/preisvergleich-hamburg`,
+        lastModified: new Date("2026-08-29T00:00:00+02:00"),
+        alternates: {
+          languages: {
+            de: `${siteInfo.url}/de/repairs/preisvergleich-hamburg`,
+            en: `${siteInfo.url}/en/repairs/preisvergleich-hamburg`,
+            "x-default": `${siteInfo.url}/de/repairs/preisvergleich-hamburg`,
+          },
+        },
+      }))
+    : [];
 
   return [...staticEntries, ...repairServiceEntries, ...repairComparisonEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...productEntries];
 };

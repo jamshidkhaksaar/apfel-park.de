@@ -1,17 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "../../../../lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getSmartphonesContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
+import {
+  buildStoreCanonicalUrl,
+  isStorePaginationOutOfRange,
+  resolveStoreIndexing,
+} from "@/lib/store-indexing";
 
 export const dynamic = "force-dynamic";
 
@@ -25,13 +31,14 @@ export const generateMetadata = async ({
   const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
+  const indexing = resolveStoreIndexing(query);
   return createMetadata(
     lang,
     dict.meta.smartphones.title,
     dict.meta.smartphones.description,
     "/smartphones",
     undefined,
-    { noindex: hasCatalogSearchQuery(query) },
+    { noindex: indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 
@@ -45,10 +52,11 @@ export default async function SmartphonesPage({
   const { lang: rawLang } = await params;
   const lang = requireLocale(rawLang);
   const query = await searchParams;
+  const indexing = resolveStoreIndexing(query);
   const dict = getDictionary(lang);
   const smartphonesContent = await getSmartphonesContent(lang);
   const sort = parseStoreSort(query.sort);
-  const page = parseStorePage(query.page);
+  const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
   const catalog = await getStoreCatalog({
     category: "smartphones",
@@ -58,8 +66,9 @@ export default async function SmartphonesPage({
     locale: lang,
     filters: activeFilters,
   });
+  if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
 
-  const pageUrl = `${siteInfo.url}/${lang}/smartphones`;
+  const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${lang}/smartphones`, indexing);
   const smartphonesName = dict.meta.smartphones.title;
   const collectionPage = buildCollectionPageSchema({
     lang,

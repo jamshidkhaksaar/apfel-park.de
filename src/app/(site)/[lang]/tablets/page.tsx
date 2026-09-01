@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import StoreCommerceHeader from "@/components/store/StoreCommerceHeader";
 import StoreGrid from "@/components/store/StoreGrid";
 import { getDictionary } from "@/lib/i18n";
 import { createMetadata } from "@/lib/metadata";
-import { getStoreCatalog, hasCatalogSearchQuery, parseStoreCatalogFilters, parseStorePage, parseStoreSort } from "@/lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "@/lib/products";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
+import {
+  buildStoreCanonicalUrl,
+  isStorePaginationOutOfRange,
+  resolveStoreIndexing,
+} from "@/lib/store-indexing";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +23,11 @@ export const generateMetadata = async ({ params, searchParams }: { params: Promi
   const [{ lang: rawLang }, query] = await Promise.all([params, searchParams]);
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
-  return createMetadata(lang, dict.meta.tablets.title, dict.meta.tablets.description, "/tablets", undefined, { noindex: hasCatalogSearchQuery(query) });
+  const indexing = resolveStoreIndexing(query);
+  return createMetadata(lang, dict.meta.tablets.title, dict.meta.tablets.description, "/tablets", undefined, {
+    noindex: indexing.noindex,
+    canonicalQuery: indexing.canonicalQuery,
+  });
 };
 
 export default async function TabletsPage({
@@ -30,9 +40,10 @@ export default async function TabletsPage({
   const { lang: rawLang } = await params;
   const lang = requireLocale(rawLang);
   const query = await searchParams;
+  const indexing = resolveStoreIndexing(query);
   const locale = lang;
   const sort = parseStoreSort(query.sort);
-  const page = parseStorePage(query.page);
+  const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
 
   const catalog = await getStoreCatalog({
@@ -43,8 +54,9 @@ export default async function TabletsPage({
     locale,
     filters: activeFilters,
   });
+  if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
 
-  const pageUrl = `${siteInfo.url}/${locale}/tablets`;
+  const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${locale}/tablets`, indexing);
   const tabletsName = locale === "de" ? "Tablets" : "Tablets";
   const tabletsDescription =
     locale === "de"
