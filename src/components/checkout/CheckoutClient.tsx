@@ -654,9 +654,15 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                         <span>{embeddedPayments
                           ? (locale === "de" ? "Mit Karte oder Wallet zahlen" : "Pay by card or wallet")
                           : (locale === "de" ? "Sicher zur Kasse" : "Secure checkout")}</span>
-                        <span className="flex items-center gap-2 border-l border-black/20 pl-3" aria-hidden="true">
-                          <PaymentBrandMark label="Apple Pay" className="h-5 w-8" />
-                          <PaymentBrandMark label="Google Pay" className="h-5 w-8" />
+                        <span className="flex items-center gap-1.5 border-l border-black/20 pl-3" aria-hidden="true">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-white/75 px-1.5 py-1 text-[9px] font-bold text-black shadow-sm">
+                            <PaymentBrandMark label="Apple Pay" className="h-4 w-4" />
+                            <span>Apple Pay</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-md bg-white/75 px-1.5 py-1 text-[9px] font-bold text-black shadow-sm">
+                            <PaymentBrandMark label="Google Pay" className="h-4 w-4" />
+                            <span>Google Pay</span>
+                          </span>
                         </span>
                       </>
                     )}
@@ -698,9 +704,9 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 </p>
               </div>
 
-              <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/60 pt-5">
-                <PaymentBrandIcons iconClassName="h-4 w-auto" includePayPal={paypalEnabled} />
-                <span className="text-[11px] text-muted">
+              <div className="mt-5 flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <PaymentBrandIcons className="flex-wrap gap-1.5" includePayPal={paypalEnabled} showLabels />
+                <span className="shrink-0 text-[11px] text-muted">
                   {locale === "de" ? "SSL-verschlüsselt" : "SSL encrypted"}
                 </span>
               </div>

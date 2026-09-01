@@ -33,12 +33,10 @@ export function PaymentBrandMark({
 type PaymentBrandIconsProps = {
   className?: string;
   iconClassName?: string;
+  showLabels?: boolean;
   /**
-   * PayPal is off by default because the shop cannot take it: it is disabled on
-   * the Stripe account and there are no PayPal SDK credentials. Showing a mark
-   * for a method that does not work is what Google calls misrepresentation, and
-   * it blocked the whole catalogue in Germany. Pass true only where PayPal has
-   * been confirmed available, as the checkout does.
+   * PayPal stays opt-in so generic trust rows never claim a payment method that
+   * is unavailable. The checkout enables it only when live credentials exist.
    */
   includePayPal?: boolean;
 };
@@ -60,24 +58,31 @@ export default function PaymentBrandIcons({
   className = "",
   iconClassName = "h-5 w-auto",
   includePayPal = false,
+  showLabels = false,
 }: PaymentBrandIconsProps) {
   const brands = includePayPal
     ? paymentBrands
     : paymentBrands.filter((brand) => brand.label !== "PayPal");
 
   return (
-    <div className={`flex items-center gap-3 ${className}`} aria-label="Accepted payment methods" role="img">
+    <div className={`flex items-center gap-3 ${className}`} aria-label="Accepted payment methods" role="group">
       {brands.map(({ icon, label }) => (
-        <svg
+        <span
           key={icon.slug}
-          aria-label={label}
-          className={iconClassName}
-          fill={`#${icon.hex}`}
-          role="img"
-          viewBox="0 0 24 24"
+          className={showLabels ? "inline-flex min-h-7 items-center gap-1.5 rounded-md border border-border/70 bg-surface px-2 py-1" : "inline-flex items-center"}
         >
-          <path d={icon.path} />
-        </svg>
+          <svg
+            aria-hidden={showLabels || undefined}
+            aria-label={showLabels ? undefined : label}
+            className={showLabels ? "h-4 w-4 shrink-0" : iconClassName}
+            fill={`#${icon.hex}`}
+            role={showLabels ? undefined : "img"}
+            viewBox="0 0 24 24"
+          >
+            <path d={icon.path} />
+          </svg>
+          {showLabels ? <span className="whitespace-nowrap text-[10px] font-semibold text-foreground/80">{label}</span> : null}
+        </span>
       ))}
     </div>
   );
