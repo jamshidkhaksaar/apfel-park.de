@@ -1,4 +1,34 @@
-import { siApplepay, siKlarna, siMastercard, siPaypal, siStripe, siVisa } from "simple-icons";
+import { siApplepay, siGooglepay, siKlarna, siMastercard, siPaypal, siStripe, siVisa } from "simple-icons";
+
+const iconsByLabel = {
+  "Apple Pay": siApplepay,
+  "Google Pay": siGooglepay,
+  PayPal: siPaypal,
+} as const;
+
+export type PaymentBrandLabel = keyof typeof iconsByLabel;
+
+export function PaymentBrandMark({
+  label,
+  className = "h-5 w-auto",
+}: {
+  label: PaymentBrandLabel;
+  className?: string;
+}) {
+  const icon = iconsByLabel[label];
+
+  return (
+    <svg
+      aria-label={label}
+      className={className}
+      fill={`#${icon.hex}`}
+      role="img"
+      viewBox="0 0 24 24"
+    >
+      <path d={icon.path} />
+    </svg>
+  );
+}
 
 type PaymentBrandIconsProps = {
   className?: string;
@@ -21,6 +51,7 @@ const paymentBrands = [
   { icon: siVisa, label: "Visa" },
   { icon: siMastercard, label: "Mastercard" },
   { icon: siApplepay, label: "Apple Pay" },
+  { icon: siGooglepay, label: "Google Pay" },
   { icon: siKlarna, label: "Klarna" },
   { icon: siPaypal, label: "PayPal" },
 ] as const;

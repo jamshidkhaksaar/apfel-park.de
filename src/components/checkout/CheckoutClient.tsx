@@ -14,7 +14,7 @@ import {
   type StoredCartItem,
 } from "@/components/checkout/cart";
 
-import PaymentBrandIcons from "@/components/PaymentBrandIcons";
+import PaymentBrandIcons, { PaymentBrandMark } from "@/components/PaymentBrandIcons";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import { siteInfo } from "@/lib/site";
 import { buildStripePaymentReturnUrl } from "@/lib/stripe";
@@ -636,12 +636,12 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 {fulfillmentCopy[locale].paymentNote}
               </p>
 
-              <div className="mt-6 grid gap-2.5">
+              <div className="mt-6 grid gap-3" aria-label={locale === "de" ? "Zahlungsarten" : "Payment methods"}>
                 {clientSecret ? null : (
                   <button
                     type="button"
                     disabled={submitting !== null || loading || !cart}
-                    className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-40"
+                    className="group flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-gold px-5 py-3 font-bold text-black shadow-sm transition hover:-translate-y-0.5 hover:bg-gold-light hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
                     onClick={() => void startCheckout("stripe")}
                   >
                     {submitting === "stripe" ? (
@@ -649,18 +649,33 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                         <span className="animate-spin">⏳</span>
                         <span>{locale === "de" ? "Wird vorbereitet…" : "Preparing…"}</span>
                       </span>
-                    ) : embeddedPayments ? (
-                      locale === "de" ? "Mit Karte oder Wallet zahlen" : "Pay by card or wallet"
                     ) : (
-                      locale === "de" ? "Zahlungspflichtig bestellen" : "Order with obligation to pay"
+                      <>
+                        <span>{embeddedPayments
+                          ? (locale === "de" ? "Mit Karte oder Wallet zahlen" : "Pay by card or wallet")
+                          : (locale === "de" ? "Sicher zur Kasse" : "Secure checkout")}</span>
+                        <span className="flex items-center gap-2 border-l border-black/20 pl-3" aria-hidden="true">
+                          <PaymentBrandMark label="Apple Pay" className="h-5 w-8" />
+                          <PaymentBrandMark label="Google Pay" className="h-5 w-8" />
+                        </span>
+                      </>
                     )}
                   </button>
                 )}
+                {paypalEnabled && !clientSecret ? (
+                  <div className="flex items-center gap-3" aria-hidden="true">
+                    <span className="h-px flex-1 bg-border/80" />
+                    <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+                      {locale === "de" ? "oder" : "or"}
+                    </span>
+                    <span className="h-px flex-1 bg-border/80" />
+                  </div>
+                ) : null}
                 {paypalEnabled ? (
                   <button
                     type="button"
                     disabled={submitting !== null || loading || !cart}
-                    className="btn-secondary justify-center disabled:cursor-not-allowed disabled:opacity-40"
+                    className="group flex min-h-14 w-full items-center justify-center gap-3 rounded-full border border-[#142c8e]/15 bg-[#ffc439] px-5 py-3 font-bold text-[#142c8e] shadow-sm transition hover:-translate-y-0.5 hover:bg-[#f4b72f] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0070e0] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
                     onClick={() => void startCheckout("paypal")}
                   >
                     {submitting === "paypal" ? (
@@ -669,10 +684,18 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                         <span>{locale === "de" ? "PayPal wird geöffnet…" : "Opening PayPal…"}</span>
                       </span>
                     ) : (
-                      locale === "de" ? "Mit PayPal bestellen" : "Order with PayPal"
+                      <>
+                        <PaymentBrandMark label="PayPal" className="h-6 w-8" />
+                        <span>{locale === "de" ? "Mit PayPal bezahlen" : "Pay with PayPal"}</span>
+                      </>
                     )}
                   </button>
                 ) : null}
+                <p className="text-center text-[11px] leading-relaxed text-muted">
+                  {locale === "de"
+                    ? "Sichere, verschlüsselte Zahlung. Verfügbare Wallets werden beim Bezahlen angezeigt."
+                    : "Secure encrypted payment. Available wallets are shown during payment."}
+                </p>
               </div>
 
               <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/60 pt-5">
