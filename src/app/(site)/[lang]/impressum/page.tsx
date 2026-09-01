@@ -170,7 +170,7 @@ export default async function ImpressumPage({
             <Row
               label={isGerman ? "Website" : "Website"}
               value={
-                <a href={siteInfo.url} className="transition hover:text-gold">
+                <a href={`/${lang}`} className="transition hover:text-gold">
                   {siteInfo.url}
                 </a>
               }
