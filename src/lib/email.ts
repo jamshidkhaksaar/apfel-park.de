@@ -455,7 +455,7 @@ export const buildEmailContent = (data: ContactNotificationData) => {
 
   const textLines = [
     `Name: ${data.name}`,
-    `Email: ${data.email}`,
+    `Email: ${data.email || "-"}`,
     `Device: ${data.device || "-"}`,
     "",
     data.message,
@@ -465,7 +465,7 @@ export const buildEmailContent = (data: ContactNotificationData) => {
   const html = `
     <h2>${escapeHtml(subject)}</h2>
     <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
-    <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+    <p><strong>Email:</strong> ${escapeHtml(data.email || "-")}</p>
     <p><strong>Device:</strong> ${escapeHtml(data.device || "-")}</p>
     <p><strong>Message:</strong></p>
     <p>${escapeHtml(data.message).replace(/\n/g, "<br/>")}</p>
@@ -489,7 +489,7 @@ export const sendContactNotificationEmail = async (
 
   return sendTransactionalEmail({
     to: toEmail,
-    replyTo: data.email,
+    replyTo: data.email || undefined,
     subject,
     text,
     html,

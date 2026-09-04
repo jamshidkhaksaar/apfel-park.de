@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 
 const mocks = vi.hoisted(() => ({
   getStoreCatalog: vi.fn(),
   notFound: vi.fn(),
+  DeviceQuoteForm: vi.fn(() => null),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -22,7 +24,11 @@ vi.mock("@/lib/products", () => ({
   parseStoreSort: vi.fn(() => "featured"),
 }));
 
-import StoreCollectionLanding from "@/components/store/StoreCollectionLanding";
+vi.mock("@/components/DeviceQuoteForm", () => ({
+  default: mocks.DeviceQuoteForm,
+}));
+
+import StoreCollectionLanding, { getDeviceQuoteBrand } from "@/components/store/StoreCollectionLanding";
 
 const catalogResult = (pages: number, page: number, total = pages * 24) => ({
   products: [],
@@ -73,5 +79,35 @@ describe("StoreCollectionLanding pagination", () => {
       query: { brand: "Apple" },
     })).resolves.toBeTruthy();
     expect(mocks.notFound).not.toHaveBeenCalled();
+  });
+});
+
+describe("StoreCollectionLanding device quote placement", () => {
+  it("offers quote requests on brand hubs only", () => {
+    expect(getDeviceQuoteBrand("samsung-phones")).toBe("Samsung");
+    expect(getDeviceQuoteBrand("xiaomi-redmi-phones")).toBe("Xiaomi / Redmi / Poco");
+    expect(getDeviceQuoteBrand("iphone-17")).toBeNull();
+    expect(getDeviceQuoteBrand("used-phones")).toBeNull();
+  });
+
+  it("keeps the stocked catalog before the request-only form on a brand hub", async () => {
+    mocks.getStoreCatalog.mockResolvedValue(catalogResult(1, 1, 2));
+
+    const landing = await StoreCollectionLanding({
+      collection: "samsung-phones",
+      locale: "de",
+      query: {},
+    }) as ReactElement<{ children: ReactNode }>;
+    const children = Children.toArray(landing.props.children);
+    const catalogIndex = children.findIndex((child) =>
+      isValidElement<{ id?: string }>(child) && child.props.id === "angebote");
+    const quoteIndex = children.findIndex((child) =>
+      isValidElement(child) && child.type === mocks.DeviceQuoteForm);
+
+    expect(catalogIndex).toBeGreaterThan(-1);
+    expect(quoteIndex).toBeGreaterThan(catalogIndex);
+    expect(
+      isValidElement<{ initialBrand?: string }>(children[quoteIndex]) && children[quoteIndex].props.initialBrand,
+    ).toBe("Samsung");
   });
 });
