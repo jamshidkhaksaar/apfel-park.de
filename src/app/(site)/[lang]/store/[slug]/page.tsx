@@ -86,12 +86,13 @@ export const generateMetadata = async ({
   const locale = lang;
   const product = await getProductBySlug(slug, locale);
   if (!product) {
-    return createMetadata(
-      lang,
-      lang === "de" ? "Produkt nicht gefunden" : "Product not found",
-      lang === "de" ? "Dieses Produkt ist nicht verfügbar." : "This product is not available.",
-      `/store/${slug}`,
-    );
+    const currentSlug = await getCurrentSlugForOldSlug(slug);
+    if (currentSlug) {
+      permanentRedirect(`/${locale}/store/${currentSlug}`);
+    }
+    // Throw during metadata resolution so Next can send a genuine 404 before
+    // the dynamic page starts streaming. Next also adds robots noindex here.
+    notFound();
   }
 
   const conditionLabel = productConditionLabel(locale, product.condition);
