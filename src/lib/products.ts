@@ -628,6 +628,7 @@ export type StoreCatalogCollection =
   | "used-phones"
   | "used-iphones"
   | "samsung-phones"
+  | "xiaomi-redmi-phones"
   | "phones-without-contract";
 export type StoreCatalogSort = "featured" | "price-asc" | "price-desc" | "newest";
 
@@ -682,6 +683,12 @@ export const normalizeProductBrand = (brand?: string): string | null => {
   if (/^trusmi$/i.test(value)) return "TRUSMI";
   const lower = value.toLowerCase();
   return lower.charAt(0).toUpperCase() + lower.slice(1);
+};
+
+export const isXiaomiRedmiPhone = (product: Product): boolean => {
+  const brand = normalizeProductBrand(product.brand);
+  return product.category === "smartphones"
+    && (brand === "Xiaomi" || brand === "Poco");
 };
 
 const BRAND_PRIORITY = ["Apple", "Samsung", "Google", "Xiaomi", "Motorola", "Huawei", "Nokia"];
@@ -987,6 +994,9 @@ export async function getStoreCatalog({
     if (collection === "samsung-phones") {
       return product.category === "smartphones"
         && normalizeProductBrand(product.brand) === "Samsung";
+    }
+    if (collection === "xiaomi-redmi-phones") {
+      return isXiaomiRedmiPhone(product);
     }
     if (collection === "phones-without-contract") {
       return product.category === "smartphones";

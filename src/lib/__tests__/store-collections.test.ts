@@ -7,6 +7,7 @@ describe("store collections", () => {
     expect(storeCollectionIds).toEqual(expect.arrayContaining([
       "iphone-16-pro-max",
       "samsung-phones",
+      "xiaomi-redmi-phones",
       "phones-without-contract",
     ]));
   });
@@ -15,6 +16,7 @@ describe("store collections", () => {
     ["iphone-17", "/iphone-17"],
     ["iphone-16-pro-max", "/iphone-16-pro-max"],
     ["samsung-phones", "/samsung-handys"],
+    ["xiaomi-redmi-phones", "/xiaomi-redmi-handys"],
     ["phones-without-contract", "/handys-ohne-vertrag"],
   ] as const)("%s has localized, search-safe metadata", (id, path) => {
     for (const locale of ["de", "en"] as const) {
@@ -36,5 +38,17 @@ describe("store collections", () => {
     expect(iphone17.description).toContain("delivery across Germany");
     expect(iphone16ProMax.metaTitle).toContain("in Germany");
     expect(iphone16ProMax.metaTitle).toContain("Prices");
+  });
+
+  it("discloses Poco when Poco phones are included in the Xiaomi collection", () => {
+    for (const locale of ["de", "en"] as const) {
+      const copy = getStoreCollectionCopy("xiaomi-redmi-phones", locale);
+      expect([
+        copy.title,
+        copy.description,
+        copy.introTitle,
+        ...copy.intro,
+      ].join(" ")).toMatch(/Poco/i);
+    }
   });
 });
