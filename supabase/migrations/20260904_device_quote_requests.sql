@@ -32,4 +32,24 @@ alter table public.device_quote_requests enable row level security;
 
 drop policy if exists "Admins can read device quote requests" on public.device_quote_requests;
 
+-- Production's orders table is owned by postgres, so the foreign key above
+-- must be created by the owner-migration runner. Hand this application table
+-- back to the runtime role afterward. Fresh/dev databases run directly as the
+-- application role and do not need an ownership transfer.
+do $$
+declare
+  runtime_role text := nullif(current_setting('apfel.runtime_role', true), '');
+begin
+  if runtime_role is null or runtime_role = current_user then
+    return;
+  end if;
+
+  if not exists (select 1 from pg_roles where rolname = runtime_role) then
+    raise exception 'Configured device-quote runtime role does not exist';
+  end if;
+
+  execute format('alter table public.device_quote_requests owner to %I', runtime_role);
+end;
+$$;
+
 commit;
