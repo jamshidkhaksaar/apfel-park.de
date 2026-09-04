@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import DeviceQuoteForm from "@/components/DeviceQuoteForm";
 import StoreCommerceHeader from "@/components/store/StoreCommerceHeader";
 import StoreGrid from "@/components/store/StoreGrid";
 import type { Locale } from "@/lib/i18n";
@@ -20,6 +21,12 @@ import {
   resolveStoreIndexing,
 } from "@/lib/store-indexing";
 
+export const getDeviceQuoteBrand = (collection: StoreCatalogCollection): string | null => {
+  if (collection === "samsung-phones") return "Samsung";
+  if (collection === "xiaomi-redmi-phones") return "Xiaomi / Redmi / Poco";
+  return null;
+};
+
 export default async function StoreCollectionLanding({
   collection,
   locale,
@@ -34,6 +41,7 @@ export default async function StoreCollectionLanding({
   const sort = parseStoreSort(query.sort);
   const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
+  const deviceQuoteBrand = getDeviceQuoteBrand(collection);
   const catalog = await getStoreCatalog({
     category: "smartphones",
     collection,
@@ -94,6 +102,8 @@ export default async function StoreCollectionLanding({
           ) : null}
         </div>
       </section>
+
+      {deviceQuoteBrand ? <DeviceQuoteForm locale={locale} initialBrand={deviceQuoteBrand} /> : null}
 
       <section className="border-y border-border/60 bg-surface/30 py-8">
         <div className="container-page grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
