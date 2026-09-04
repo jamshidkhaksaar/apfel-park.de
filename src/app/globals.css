@@ -2320,8 +2320,8 @@
 }
 
 /* Ensure skip-to-content link is visible when focused */
-.sr-only:focus,
-.sr-only:focus-visible {
+.skip-link:focus,
+.skip-link:focus-visible {
   position: fixed !important;
   width: auto !important;
   height: auto !important;

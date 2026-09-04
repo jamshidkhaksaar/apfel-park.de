@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 
 export type EprelMatch = {
   registration_number: string;
@@ -34,29 +34,47 @@ export default function EprelPicker({
   locale: "de" | "en";
   onSelect: (match: EprelMatch) => void;
 }) {
+  const inputId = useId();
   const [term, setTerm] = useState("");
   const [results, setResults] = useState<EprelMatch[]>([]);
-  const [state, setState] = useState<"idle" | "loading" | "empty">("idle");
+  const [state, setState] = useState<"idle" | "empty" | "error">("idle");
+  const [loading, setLoading] = useState(false);
+  const pending = useRef(false);
 
   const search = async () => {
-    if (term.trim().length < 2) return;
-    setState("loading");
-    const response = await fetch(`/api/admin/eprel?q=${encodeURIComponent(term.trim())}`);
-    const data = (await response.json()) as { success: boolean; results?: EprelMatch[] };
-    const rows = data.results ?? [];
-    setResults(rows);
-    setState(rows.length === 0 ? "empty" : "idle");
+    if (pending.current || term.trim().length < 2) return;
+    pending.current = true;
+    setLoading(true);
+    setState("idle");
+    setResults([]);
+    try {
+      const response = await fetch(`/api/admin/eprel?q=${encodeURIComponent(term.trim())}`);
+      if (!response.ok) throw new Error("EPREL request failed");
+      const data = (await response.json()) as { success: boolean; results?: EprelMatch[] };
+      if (!data.success || !Array.isArray(data.results)) throw new Error("Invalid EPREL response");
+      setResults(data.results);
+      setState(data.results.length === 0 ? "empty" : "idle");
+    } catch {
+      setState("error");
+    } finally {
+      pending.current = false;
+      setLoading(false);
+    }
   };
 
   return (
     <div className="mt-3 rounded-xl border border-border/60 bg-surface/40 p-3">
-      <p className="text-xs text-muted">
+      <label htmlFor={inputId} className="block text-sm font-medium">{locale === "de" ? "Modellnummer" : "Model number"}</label>
+      <p id={`${inputId}-help`} className="text-xs text-muted">
         {locale === "de"
           ? "Offizielle EPREL-Registrierung suchen — nach der Modellnummer vom Karton oder aus den Geräte-Einstellungen (z. B. A3090, SM-S931B), nicht nach dem Verkaufsnamen."
           : "Find the official EPREL registration — search by the model number from the box or the device settings (e.g. A3090, SM-S931B), not the marketing name."}
       </p>
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <input
+          id={inputId}
+          aria-describedby={`${inputId}-help${state === "error" ? ` ${inputId}-error` : ""}`}
+          disabled={loading}
           value={term}
           onChange={(event) => setTerm(event.target.value)}
           onKeyDown={(event) => {
@@ -66,19 +84,22 @@ export default function EprelPicker({
             }
           }}
           placeholder="A3090 / SM-S931B / Apple"
-          className="w-full rounded-xl border border-border/60 bg-surface/70 px-3 py-2 text-sm text-foreground"
+          className="min-w-0 w-full rounded-xl border border-border/60 bg-surface/70 px-3 py-2 text-sm text-foreground"
         />
         <button
           type="button"
+          disabled={loading || term.trim().length < 2}
           onClick={() => void search()}
           className="shrink-0 rounded-xl border border-gold/40 px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/10"
         >
-          {state === "loading" ? "…" : locale === "de" ? "Suchen" : "Search"}
+          {loading ? (locale === "de" ? "Suche …" : "Searching …") : state === "error" ? (locale === "de" ? "Erneut versuchen" : "Retry") : locale === "de" ? "Suchen" : "Search"}
         </button>
       </div>
 
+      {state === "error" ? <p id={`${inputId}-error`} role="alert" className="mt-2 text-xs text-red-500">{locale === "de" ? "EPREL-Suche fehlgeschlagen. Bitte erneut versuchen." : "EPREL search failed. Please retry."}</p> : null}
+      <p role="status" className="mt-2 text-xs text-muted">{loading ? (locale === "de" ? "Suche läuft …" : "Searching …") : results.length > 0 ? `${results.length} ${locale === "de" ? "Registrierungen gefunden." : "registrations found."}` : ""}</p>
       {state === "empty" ? (
-        <p className="mt-2 text-xs text-muted">
+        <p role="status" className="mt-2 text-xs text-muted">
           {locale === "de" ? "Keine Registrierung gefunden." : "No registration found."}
         </p>
       ) : null}

@@ -126,6 +126,14 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
     if (!drawerOpen) return;
     const previousOverflow = document.body.style.overflow;
     const triggerButton = triggerButtonRef.current;
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeOnDesktop = () => {
+      if (!desktop.matches) return;
+      setDrawerOpen(false);
+      setDraftParams(null);
+    };
+    desktop.addEventListener("change", closeOnDesktop);
+    closeOnDesktop();
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDrawerOpen(false);
       if (event.key !== "Tab" || !drawerRef.current) return;
@@ -147,7 +155,18 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
-      window.requestAnimationFrame(() => triggerButton?.focus());
+      desktop.removeEventListener("change", closeOnDesktop);
+      // Restore synchronously so an obsolete close cannot outlive a reopen.
+      if (!triggerButton?.isConnected) return;
+      if (triggerButton.getClientRects().length) {
+        triggerButton.focus();
+        return;
+      }
+      // The connected mobile trigger is hidden at lg; focus the visible sidebar instead.
+      const sidebar = Array.from(document.querySelectorAll<HTMLElement>('[data-store-desktop-filters]'))
+        .find((element) => element.getClientRects().length > 0);
+      const target = sidebar ?? document.getElementById("main-content");
+      target?.focus({ preventScroll: true });
     };
   }, [drawerOpen]);
 
@@ -234,7 +253,7 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-store-card p-4">
+    <div data-store-desktop-filters tabIndex={-1} className="rounded-2xl border border-border bg-store-card p-4 focus:outline-2 focus:outline-gold focus:outline-offset-2">
       {panels}
     </div>
   );

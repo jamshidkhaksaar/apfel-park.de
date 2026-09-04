@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { sellableCatalogVariants, type CatalogCardModel, type CatalogCardVariant } from "@/lib/catalog-card";
 import PriceBlock from "./PriceBlock";
@@ -20,6 +20,7 @@ export default function StoreQuickAddDrawer({
   onClose: () => void;
   onConfirm: (variant: CatalogCardVariant) => void;
 }) {
+  const selectionId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const variants = useMemo(() => sellableCatalogVariants(product), [product]);
@@ -101,9 +102,12 @@ export default function StoreQuickAddDrawer({
         {colors.length > 0 ? (
           <fieldset className="mt-6">
             <legend className="text-sm font-bold text-foreground">{isGerman ? "Farbe" : "Color"}</legend>
-            <div className="mt-3 flex flex-wrap gap-2" role="radiogroup">
+            <div className="mt-3 flex flex-wrap gap-2">
               {colors.map((value) => (
-                <button key={value} type="button" onClick={() => chooseColor(value)} role="radio" aria-checked={color === value} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${color === value ? "border-gold bg-gold/10 text-foreground" : "border-border text-muted hover:border-gold/50"}`}>{value}</button>
+                <label key={value} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition focus-within:ring-2 focus-within:ring-gold ${color === value ? "border-gold bg-gold/10 text-foreground" : "border-border text-muted hover:border-gold/50"}`}>
+                  <input type="radio" name={`${selectionId}-color`} value={value} checked={color === value} onChange={() => chooseColor(value)} className="h-4 w-4 shrink-0 accent-gold" />
+                  {value}
+                </label>
               ))}
             </div>
           </fieldset>
@@ -112,9 +116,12 @@ export default function StoreQuickAddDrawer({
         {storages.length > 0 ? (
           <fieldset className="mt-6">
             <legend className="text-sm font-bold text-foreground">{isGerman ? "Speicher" : "Storage"}</legend>
-            <div className="mt-3 flex flex-wrap gap-2" role="radiogroup">
+            <div className="mt-3 flex flex-wrap gap-2">
               {storages.map((value) => (
-                <button key={value} type="button" onClick={() => setStorage(value)} role="radio" aria-checked={storage === value} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${storage === value ? "border-gold bg-gold/10 text-foreground" : "border-border text-muted hover:border-gold/50"}`}>{value}</button>
+                <label key={value} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition focus-within:ring-2 focus-within:ring-gold ${storage === value ? "border-gold bg-gold/10 text-foreground" : "border-border text-muted hover:border-gold/50"}`}>
+                  <input type="radio" name={`${selectionId}-storage`} value={value} checked={storage === value} onChange={() => setStorage(value)} className="h-4 w-4 shrink-0 accent-gold" />
+                  {value}
+                </label>
               ))}
             </div>
           </fieldset>

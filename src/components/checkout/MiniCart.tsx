@@ -33,6 +33,8 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
   const [open, setOpen] = useState(false);
   const [cart, setCart] = useState<ValidatedCart | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const validationId = useRef(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -47,8 +49,11 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
   }, [open]);
 
   const validate = useCallback(async () => {
+    const requestId = ++validationId.current;
+    setError(false);
+    setCart(null);
     if (items.length === 0) {
-      setCart(null);
+      setLoading(false);
       return;
     }
     setLoading(true);
@@ -59,11 +64,12 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
         body: JSON.stringify({ items, shippingMethod: "pickup" }),
       });
       const data = (await response.json()) as { success: boolean; cart?: ValidatedCart };
-      setCart(response.ok && data.success && data.cart ? data.cart : null);
+      if (!response.ok || !data.success || !data.cart) throw new Error("Cart validation failed");
+      if (requestId === validationId.current) setCart(data.cart);
     } catch {
-      setCart(null);
+      if (requestId === validationId.current) setError(true);
     } finally {
-      setLoading(false);
+      if (requestId === validationId.current) setLoading(false);
     }
   }, [items]);
 
@@ -123,7 +129,7 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
       >
         <div className="flex items-center justify-between border-b border-border/60 px-6 py-5">
           <p className="text-lg font-semibold text-foreground">
-            {locale === "de" ? "Zum Warenkorb hinzugefügt" : "Added to cart"}
+            {locale === "de" ? "Warenkorb" : "Cart"}
           </p>
           <button
             ref={closeButtonRef}
@@ -139,8 +145,22 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          {loading && !cart ? (
-            <p className="text-sm text-muted">{locale === "de" ? "Warenkorb wird geprüft…" : "Checking cart…"}</p>
+          {loading ? (
+            <p role="status" className="text-sm text-muted">{locale === "de" ? "Warenkorb wird geprüft…" : "Checking cart…"}</p>
+          ) : error ? (
+            <div className="space-y-4">
+              <p role="alert" className="text-sm text-foreground">
+                {locale === "de"
+                  ? "Der Warenkorb konnte nicht geprüft werden. Deine Auswahl bleibt gespeichert. Bitte versuche es erneut."
+                  : "The cart could not be checked. Your selection is still saved. Please try again."}
+              </p>
+              <button type="button" className="btn-primary justify-center" onClick={() => void validate()}>
+                {locale === "de" ? "Erneut versuchen" : "Retry"}
+              </button>
+              <Link href={`/${locale}/cart`} className="btn-secondary justify-center" onClick={() => setOpen(false)}>
+                {locale === "de" ? "Warenkorb ansehen" : "View cart"}
+              </Link>
+            </div>
           ) : !cart || cart.items.length === 0 ? (
             <p className="text-sm text-muted">{locale === "de" ? "Dein Warenkorb ist leer." : "Your cart is empty."}</p>
           ) : (

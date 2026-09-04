@@ -207,7 +207,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
       {/* No order swap: the gallery is first in the DOM so a phone shows the
           product before the purchase panel, and desktop still puts it left. */}
       <div className="min-w-0 space-y-6">
-        <ProductGallery key={`${selectedColor}-${selectedStorage}-${activeImage}`} title={product.title} images={galleryImages} />
+        <ProductGallery key={`${selectedColor}-${selectedStorage}-${activeImage}`} title={product.title} images={galleryImages} locale={locale} />
 
       </div>
 

@@ -82,7 +82,7 @@ export default function SiteHeader({
     >
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-md focus:bg-white focus:text-black focus:dark:bg-zinc-900 focus:dark:text-white focus:ring-2 focus:ring-gold shadow-lg"
+        className="skip-link sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-md focus:bg-white focus:text-black focus:dark:bg-zinc-900 focus:dark:text-white focus:ring-2 focus:ring-gold shadow-lg"
       >
         {labels.skipToContent}
       </a>
