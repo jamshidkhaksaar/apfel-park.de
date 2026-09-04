@@ -1,71 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 
 import { useReCaptcha } from "@/components/ReCaptcha";
 import { parseDeviceQuoteRequest } from "@/lib/device-quote";
-import type { Locale } from "@/lib/i18n";
+import { deviceQuoteCopy, type Locale } from "@/lib/i18n";
 
-const copy = {
-  de: {
-    badge: "Derzeit nicht auf Lager",
-    title: "Preis anfragen",
-    intro: "Du suchst ein Gerät, das aktuell nicht im Shop verfügbar ist? Sende uns eine unverbindliche Anfrage. Wir prüfen Beschaffungsmöglichkeiten und melden uns in der Regel innerhalb von 1–2 Werktagen. Verfügbarkeit und Preis sind nicht garantiert.",
-    brand: "Marke",
-    model: "Modell",
-    condition: "Zustand",
-    conditionNew: "Neu",
-    conditionOpenBox: "Open Box",
-    conditionUsed: "Gebraucht",
-    storage: "Speicher (optional)",
-    color: "Farbe (optional)",
-    budget: "Bevorzugte Preisspanne (optional)",
-    fulfillment: "Übergabe",
-    pickup: "Abholung",
-    shipping: "Versand",
-    name: "Name",
-    contact: "E-Mail oder Telefonnummer",
-    email: "E-Mail (eine Kontaktmöglichkeit erforderlich)",
-    phone: "Telefon (eine Kontaktmöglichkeit erforderlich)",
-    consent: "Ich stimme der Verarbeitung meiner Angaben zur Bearbeitung dieser unverbindlichen Geräteanfrage gemäß der Datenschutzerklärung zu.",
-    privacy: "Datenschutzerklärung",
-    submit: "Unverbindlich anfragen",
-    sending: "Anfrage wird gesendet…",
-    success: "Danke. Wir haben deine unverbindliche Anfrage erhalten und melden uns in der Regel innerhalb von 1–2 Werktagen.",
-    error: "Die Anfrage konnte nicht gesendet werden. Bitte prüfe deine Angaben und versuche es erneut.",
-  },
-  en: {
-    badge: "Currently not in stock",
-    title: "Request a quote",
-    intro: "Looking for a device that is not currently available in our shop? Send a non-binding request. We normally check sourcing options and reply within 1–2 business days. Availability and price are not guaranteed.",
-    brand: "Brand",
-    model: "Model",
-    condition: "Condition",
-    conditionNew: "New",
-    conditionOpenBox: "Open Box",
-    conditionUsed: "Used",
-    storage: "Storage (optional)",
-    color: "Color (optional)",
-    budget: "Preferred price range (optional)",
-    fulfillment: "Fulfillment",
-    pickup: "Pickup",
-    shipping: "Shipping",
-    name: "Name",
-    contact: "Email or phone number",
-    email: "Email (one contact route required)",
-    phone: "Phone (one contact route required)",
-    consent: "I consent to the processing of my details to handle this non-binding device request as described in the Privacy Policy.",
-    privacy: "Privacy Policy",
-    submit: "Send non-binding request",
-    sending: "Sending request…",
-    success: "Thank you. We received your non-binding request and normally reply within 1–2 business days.",
-    error: "The request could not be sent. Check your details and try again.",
-  },
-} as const;
 
-const inputClassName = "w-full rounded-xl border border-border bg-background/70 px-4 py-3 text-sm text-foreground placeholder:text-muted focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold";
-const labelClassName = "mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted";
+const inputClassName = "w-full rounded-xl border border-border bg-background/70 px-4 py-3 text-base text-foreground placeholder:text-muted focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold";
+const labelClassName = "mb-2 block text-sm font-medium text-foreground";
 
 type SubmitDeviceQuoteDependencies = {
   executeRecaptcha: () => Promise<string>;
@@ -122,7 +66,9 @@ export const submitDeviceQuote = async (
 };
 
 export function DeviceQuoteFormContent({ locale, initialBrand = "" }: { locale: Locale; initialBrand?: string }) {
-  const text = copy[locale];
+  const text = deviceQuoteCopy[locale];
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const { execute, isLoading: recaptchaLoading, error: recaptchaError, ReCaptchaComponent } = useReCaptcha("device_quote");
 
@@ -143,15 +89,28 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "" }: { locale: 
   };
 
   return (
-    <section className="border-y border-gold/20 bg-gold/5 py-10" aria-labelledby="device-quote-heading">
-      <div className="container-page grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+    <section className="border-y border-border bg-gold/5 py-6" aria-labelledby="device-quote-heading">
+      <div className="container-page flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="badge-gold inline-flex">{text.badge}</p>
-          <h2 id="device-quote-heading" className="mt-4 text-2xl font-bold text-foreground md:text-3xl">{text.title}</h2>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-muted">{text.intro}</p>
+          <h2 id="device-quote-heading" className="scroll-mt-24 text-lg font-semibold text-foreground">{text.badge}</h2>
+          <p className="mt-1 max-w-xl text-sm leading-6 text-muted">{text.teaser}</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="rounded-3xl border border-border bg-store-card p-6 shadow-sm md:p-8">
+        <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-controls="device-quote-dialog"
+          onClick={() => dialogRef.current?.showModal()}
+          className="btn-primary shrink-0 justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold">
+          {text.title}<span aria-hidden="true">↗</span>
+        </button>
+      </div>
+      <dialog ref={dialogRef} id="device-quote-dialog" aria-labelledby="device-quote-dialog-heading" aria-describedby="device-quote-description"
+        onClose={() => triggerRef.current?.focus({ preventScroll: true })}
+        className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto overscroll-contain rounded-2xl border border-border bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/60">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-5 py-4 sm:px-7">
+          <h2 id="device-quote-dialog-heading" className="text-xl font-semibold">{text.title}</h2>
+          <button type="button" onClick={() => dialogRef.current?.close()}
+            className="min-h-11 rounded-lg border border-border px-3 text-sm font-medium hover:bg-gold/10 focus-visible:outline-2 focus-visible:outline-gold">{text.close}</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 sm:p-7" aria-busy={status === "sending"}>
+          <p id="device-quote-description" className="mb-6 text-sm leading-6 text-muted">{text.intro}</p>
           <div className="grid gap-5 sm:grid-cols-2">
             <label>
               <span className={labelClassName}>{text.brand} *</span>
@@ -177,6 +136,29 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "" }: { locale: 
                 <option value="shipping">{text.shipping}</option>
               </select>
             </label>
+            <label className="sm:col-span-2">
+              <span className={labelClassName}>{text.name} *</span>
+              <input name="customerName" required maxLength={120} autoComplete="name" className={inputClassName} />
+            </label>
+          </div>
+
+          <fieldset className="mt-5">
+            <legend className={labelClassName}>{text.contact} *</legend>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label>
+                <span className={labelClassName}>{text.email}</span>
+                <input name="email" type="email" maxLength={254} autoComplete="email" className={inputClassName} />
+              </label>
+              <label>
+                <span className={labelClassName}>{text.phone}</span>
+                <input name="phone" type="tel" maxLength={40} autoComplete="tel" className={inputClassName} />
+              </label>
+            </div>
+          </fieldset>
+
+          <details className="mt-5 rounded-xl border border-border p-4">
+            <summary className="cursor-pointer text-sm font-semibold focus-visible:outline-2 focus-visible:outline-gold">{text.preferences}</summary>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label>
               <span className={labelClassName}>{text.storage}</span>
               <input name="storage" maxLength={120} className={inputClassName} />
@@ -189,25 +171,8 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "" }: { locale: 
               <span className={labelClassName}>{text.budget}</span>
               <input name="budget" maxLength={120} className={inputClassName} />
             </label>
-            <label className="sm:col-span-2">
-              <span className={labelClassName}>{text.name} *</span>
-              <input name="customerName" required maxLength={120} autoComplete="name" className={inputClassName} />
-            </label>
-          </div>
-
-          <fieldset className="mt-5">
-            <legend className={labelClassName}>{text.contact} *</legend>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <label>
-                <span className="sr-only">{text.email}</span>
-                <input name="email" type="email" maxLength={254} autoComplete="email" placeholder={text.email} className={inputClassName} />
-              </label>
-              <label>
-                <span className="sr-only">{text.phone}</span>
-                <input name="phone" type="tel" maxLength={40} autoComplete="tel" placeholder={text.phone} className={inputClassName} />
-              </label>
             </div>
-          </fieldset>
+          </details>
 
           <label className="mt-5 flex items-start gap-3 text-sm leading-6 text-muted">
             <input name="consent" type="checkbox" required className="mt-1 h-4 w-4 accent-gold" />
@@ -219,13 +184,13 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "" }: { locale: 
 
           <ReCaptchaComponent />
           {recaptchaError ? <p className="mt-4 text-sm text-red-text" role="alert">{recaptchaError}</p> : null}
-          {status === "success" ? <p className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-700" role="status">{text.success}</p> : null}
+          {status === "success" ? <p className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-sm text-foreground" role="status">{text.success}</p> : null}
           {status === "error" ? <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-text" role="alert">{text.error}</p> : null}
           <button type="submit" disabled={status === "sending" || recaptchaLoading || Boolean(recaptchaError)} className="btn-primary mt-6 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50">
             {status === "sending" ? text.sending : text.submit}
           </button>
         </form>
-      </div>
+      </dialog>
     </section>
   );
 }
