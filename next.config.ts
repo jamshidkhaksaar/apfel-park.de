@@ -81,6 +81,8 @@ const nextConfig: NextConfig = {
       { source: '/product-category/:path*', destination: '/de/store', permanent: true },
       { source: '/shop', destination: '/de/store', permanent: true },
       { source: '/shop/:path*', destination: '/de/store', permanent: true },
+      { source: '/:lang(de|en)/shop', destination: '/:lang/store', permanent: true },
+      { source: '/:lang(de|en)/shop/:path*', destination: '/:lang/store', permanent: true },
       { source: '/tech-help', destination: '/de/repairs', permanent: true },
       { source: '/tech-help/:path*', destination: '/de/repairs', permanent: true },
       { source: '/service/smartphone-reparatur', destination: '/de/repairs', permanent: true },
