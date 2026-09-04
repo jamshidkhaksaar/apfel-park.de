@@ -7,6 +7,12 @@ const isPublicStorePath = (pathname: string) => {
   return /^\/(?:de|en)\/store(?:\/.*)?$/.test(pathname);
 };
 
+const publicProductPath = (pathname: string) => {
+  const match = pathname.match(/^\/(de|en)\/store\/([^/]+)$/);
+  if (!match || match[2] === 'catalog') return null;
+  return { locale: match[1], slug: match[2] };
+};
+
 const isBypassedPath = (pathname: string) => {
   return (
     pathname.startsWith("/admin") ||
@@ -65,6 +71,39 @@ export async function proxy(request: NextRequest) {
       }
     } catch {
       // Fail open if maintenance settings cannot be read.
+    }
+
+    const productPath = publicProductPath(pathname);
+    if (productPath) {
+      try {
+        const internalAppUrl = process.env.INTERNAL_APP_URL ?? 'http://127.0.0.1:3000';
+        const routeUrl = new URL(
+          `/api/public/product-route/${encodeURIComponent(productPath.slug)}`,
+          internalAppUrl,
+        );
+        const response = await fetch(routeUrl, { cache: 'no-store' });
+        if (response.ok) {
+          const resolution = (await response.json()) as {
+            kind?: 'active' | 'redirect' | 'missing';
+            slug?: string;
+          };
+          if (resolution.kind === 'redirect' && resolution.slug) {
+            return NextResponse.redirect(
+              redirectUrl(`/${productPath.locale}/store/${resolution.slug}`),
+              301,
+            );
+          }
+          if (resolution.kind === 'missing') {
+            const missingUrl = request.nextUrl.clone();
+            missingUrl.pathname = `/${productPath.locale}/__missing-product`;
+            const missing = NextResponse.rewrite(missingUrl, { status: 404 });
+            missing.headers.set('X-Robots-Tag', 'noindex');
+            return missing;
+          }
+        }
+      } catch {
+        // Fail open on resolver errors so a database issue cannot hide products.
+      }
     }
   }
 
