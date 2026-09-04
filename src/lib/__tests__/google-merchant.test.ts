@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildGoogleMerchantFeedForProducts } from "../google-merchant";
+import { buildGoogleMerchantFeedForProducts, googleMerchantTitle } from "../google-merchant";
 import type { Product } from "../products";
 
 const product = {
@@ -54,5 +54,38 @@ describe("Google Merchant feed", () => {
     const xml = buildGoogleMerchantFeedForProducts([product]);
     expect(xml.match(/<g:gtin>4006381333931<\/g:gtin>/g)).toHaveLength(1);
     expect(xml).toContain("<g:identifier_exists>no</g:identifier_exists>");
+  });
+
+  it("adds the real non-new condition to the shopping title", () => {
+    const openBoxProduct = {
+      ...product,
+      condition: "open_box" as const,
+      title: "Apple iPhone 15 Pro 128 GB Titan Schwarz",
+      variants: [],
+    };
+
+    const xml = buildGoogleMerchantFeedForProducts([openBoxProduct]);
+
+    expect(xml).toContain(
+      "<g:title>Apple iPhone 15 Pro 128 GB Titan Schwarz Open Box</g:title>",
+    );
+    expect(xml).toContain("<g:condition>used</g:condition>");
+  });
+
+  it("does not duplicate color or storage already present in the title", () => {
+    const usedProduct = {
+      ...product,
+      condition: "used" as const,
+      title: "Nokia T20 LTE 64 GB Ozeanblau",
+    };
+    const variant = {
+      color: "Ozeanblau",
+      storage: "64 GB",
+      stock: 1,
+    };
+
+    expect(googleMerchantTitle(usedProduct, variant)).toBe(
+      "Nokia T20 LTE 64 GB Ozeanblau Gebraucht",
+    );
   });
 });
