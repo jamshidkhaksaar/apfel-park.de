@@ -9,6 +9,7 @@ export type SeoRouteId =
   | "iphone17"
   | "iphone16ProMax"
   | "samsungPhones"
+  | "xiaomiRedmiPhones"
   | "phonesWithoutContract"
   | "usedPhones"
   | "usedIphones"
@@ -253,6 +254,25 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     defaultKeywords: {
       de: "Samsung Handys, Samsung Handy ohne Vertrag, Samsung Galaxy kaufen",
       en: "buy Samsung phone Germany, Samsung Galaxy without contract, Samsung phones",
+    },
+  },
+  {
+    id: "xiaomiRedmiPhones",
+    path: "/xiaomi-redmi-handys",
+    labels: { de: "Xiaomi, Redmi & Poco Handys", en: "Xiaomi, Redmi & Poco Phones" },
+    priority: 0.9,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "Xiaomi, Redmi & Poco Handys kaufen",
+      en: "Buy Xiaomi, Redmi & Poco Phones in Germany",
+    },
+    defaultDescription: {
+      de: "Xiaomi, Redmi und Poco Smartphones ohne Vertrag vergleichen: Preis, Speicher, Zustand und Verfügbarkeit; Versand oder Abholung in Hamburg.",
+      en: "Compare Xiaomi, Redmi and Poco phones without a contract by price, storage, condition and availability, with Germany delivery or Hamburg pickup.",
+    },
+    defaultKeywords: {
+      de: "Xiaomi Handy kaufen, Xiaomi Handy ohne Vertrag, Redmi Handy kaufen, Poco Handy kaufen",
+      en: "buy Xiaomi phone Germany, buy Redmi phone, Xiaomi phone without contract, buy Poco phone",
     },
   },
   {

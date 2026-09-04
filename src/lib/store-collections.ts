@@ -108,6 +108,52 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       ],
     },
   },
+  "xiaomi-redmi-phones": {
+    de: {
+      path: "/xiaomi-redmi-handys",
+      title: "Xiaomi, Redmi & Poco Handys kaufen",
+      metaTitle: "Xiaomi, Redmi & Poco Handys kaufen",
+      description: "Xiaomi, Redmi und Poco Smartphones ohne Vertrag vergleichen: Preis, Speicher, Zustand und Verfügbarkeit; Versand oder Abholung in Hamburg.",
+      eyebrow: "Xiaomi, Redmi & Poco",
+      introTitle: "Xiaomi, Redmi und Poco Modelle vergleichen",
+      intro: [
+        "Vergleiche die aktuell im Shop geführten Xiaomi- und Redmi-Smartphones bei Apfel Park nach Modell, Preis, Speicher und Gerätezustand. Poco-Modelle erscheinen ebenfalls hier, sobald sie im Shop geführt werden.",
+        "Alle gelisteten Geräte werden ohne Mobilfunkvertrag angeboten. Lieferbare Smartphones können innerhalb Deutschlands versendet oder in Hamburg-Wilhelmsburg abgeholt werden.",
+      ],
+      benefits: [
+        { title: "Ohne Vertrag", text: "Nur das Smartphone kaufen und den eigenen Tarif behalten." },
+        { title: "Aktuelles Sortiment", text: "Die Auswahl wird direkt aus dem realen Shop-Katalog erzeugt." },
+        { title: "Zustand klar ausgewiesen", text: "Neu, Open Box oder Gebraucht steht direkt am Produkt." },
+      ],
+      faq: [
+        { question: "Welche Xiaomi- und Redmi-Handys sind gelistet?", answer: "Die Produktliste wird direkt aus dem Shop-Katalog erzeugt. Preis, Zustand und aktuelle Verfügbarkeit stehen am jeweiligen Xiaomi- oder Redmi-Smartphone." },
+        { question: "Sind die Geräte ohne Vertrag erhältlich?", answer: "Ja. Alle auf dieser Seite gelisteten Smartphones werden ohne Mobilfunkvertrag verkauft." },
+        { question: "Kann ich ein Xiaomi- oder Redmi-Handy in Hamburg abholen?", answer: "Ja. Verfügbare Geräte können online bestellt und bei Apfel Park in Hamburg-Wilhelmsburg abgeholt werden." },
+      ],
+    },
+    en: {
+      path: "/xiaomi-redmi-handys",
+      title: "Buy Xiaomi, Redmi & Poco Phones in Germany",
+      metaTitle: "Buy Xiaomi, Redmi & Poco Phones in Germany",
+      description: "Compare Xiaomi, Redmi and Poco phones without a contract by price, storage, condition and availability, with Germany delivery or Hamburg pickup.",
+      eyebrow: "Xiaomi, Redmi & Poco",
+      introTitle: "Compare Xiaomi, Redmi and Poco phones",
+      intro: [
+        "Compare the Xiaomi and Redmi smartphones currently listed by Apfel Park by model, price, storage and device condition. Poco models also appear here once they are listed in the shop.",
+        "Every listed phone is sold without a mobile contract. Deliverable devices can be shipped within Germany or collected from Hamburg-Wilhelmsburg.",
+      ],
+      benefits: [
+        { title: "No contract", text: "Buy only the phone and keep your preferred mobile plan." },
+        { title: "Current range", text: "The selection is generated directly from the real shop catalogue." },
+        { title: "Clear condition", text: "New, Open Box or Used appears directly on each product." },
+      ],
+      faq: [
+        { question: "Which Xiaomi and Redmi phones are listed?", answer: "The product list comes directly from the shop catalogue. Price, condition and current availability appear on each Xiaomi or Redmi smartphone." },
+        { question: "Are the phones available without a contract?", answer: "Yes. Every smartphone listed on this page is sold without a mobile contract." },
+        { question: "Can I collect a Xiaomi or Redmi phone in Hamburg?", answer: "Yes. Available devices can be ordered online and collected from Apfel Park in Hamburg-Wilhelmsburg." },
+      ],
+    },
+  },
   "samsung-phones": {
     de: {
       path: "/samsung-handys",

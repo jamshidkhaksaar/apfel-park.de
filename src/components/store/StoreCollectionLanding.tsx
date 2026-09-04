@@ -129,6 +129,7 @@ export default async function StoreCollectionLanding({
             <Link href={`/${locale}/iphone-17`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">iPhone 17</Link>
             <Link href={`/${locale}/iphone-16-pro-max`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">iPhone 16 Pro Max</Link>
             <Link href={`/${locale}/samsung-handys`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Samsung Handys" : "Samsung Phones"}</Link>
+            <Link href={`/${locale}/xiaomi-redmi-handys`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">Xiaomi, Redmi & Poco</Link>
             <Link href={`/${locale}/handys-ohne-vertrag`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Handys ohne Vertrag" : "Phones without a contract"}</Link>
             <Link href={`/${locale}/gebrauchte-iphones`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Gebrauchte iPhones" : "Used iPhones"}</Link>
             <Link href={`/${locale}/gebrauchte-handys`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Gebrauchte Handys" : "Used phones"}</Link>

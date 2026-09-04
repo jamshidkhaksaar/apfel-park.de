@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { Locale } from "@/lib/i18n";
-import { normalizeProductBrand, type Product } from "@/lib/products";
+import { isXiaomiRedmiPhone, normalizeProductBrand, type Product } from "@/lib/products";
 import { shouldBypassImageOptimization } from "@/lib/image";
 
 const items = {
@@ -10,6 +10,7 @@ const items = {
     { href: "/iphone-17", title: "iPhone 17", text: "Air, Pro und Pro Max", matches: (product: Product) => /iphone\s*17/i.test(`${product.title} ${product.model ?? ""}`) },
     { href: "/iphone-16-pro-max", title: "iPhone 16 Pro Max", text: "Neu, Open Box & gebraucht", matches: (product: Product) => /iphone\s*16\s*pro\s*max/i.test(`${product.title} ${product.model ?? ""}`) },
     { href: "/samsung-handys", title: "Samsung Galaxy", text: "Smartphones ohne Vertrag", matches: (product: Product) => product.category === "smartphones" && normalizeProductBrand(product.brand) === "Samsung" },
+    { href: "/xiaomi-redmi-handys", title: "Xiaomi, Redmi & Poco", text: "Smartphones ohne Vertrag", matches: isXiaomiRedmiPhone },
     { href: "/handys-ohne-vertrag", title: "Ohne Vertrag", text: "Tarif frei wählen", matches: (product: Product) => product.category === "smartphones" },
     { href: "/gebrauchte-iphones", title: "Gebrauchte iPhones", text: "Geprüft mit Garantie", matches: (product: Product) => product.category === "smartphones" && normalizeProductBrand(product.brand) === "Apple" && product.condition !== "new" },
     { href: "/open-box", title: "B-Ware & Open Box", text: "Ausgepackt und geprüft", matches: (product: Product) => (product.category === "smartphones" || product.category === "tablets") && product.condition === "open_box" },
@@ -19,6 +20,7 @@ const items = {
     { href: "/iphone-17", title: "iPhone 17", text: "Air, Pro and Pro Max", matches: (product: Product) => /iphone\s*17/i.test(`${product.title} ${product.model ?? ""}`) },
     { href: "/iphone-16-pro-max", title: "iPhone 16 Pro Max", text: "New, open box and used", matches: (product: Product) => /iphone\s*16\s*pro\s*max/i.test(`${product.title} ${product.model ?? ""}`) },
     { href: "/samsung-handys", title: "Samsung Galaxy", text: "Phones without a contract", matches: (product: Product) => product.category === "smartphones" && normalizeProductBrand(product.brand) === "Samsung" },
+    { href: "/xiaomi-redmi-handys", title: "Xiaomi, Redmi & Poco", text: "Phones without a contract", matches: isXiaomiRedmiPhone },
     { href: "/handys-ohne-vertrag", title: "No contract", text: "Keep your preferred plan", matches: (product: Product) => product.category === "smartphones" },
     { href: "/gebrauchte-iphones", title: "Used iPhones", text: "Tested with warranty", matches: (product: Product) => product.category === "smartphones" && normalizeProductBrand(product.brand) === "Apple" && product.condition !== "new" },
     { href: "/open-box", title: "Open Box", text: "Unboxed and tested", matches: (product: Product) => (product.category === "smartphones" || product.category === "tablets") && product.condition === "open_box" },

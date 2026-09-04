@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { seoRouteDefinitions, splitKeywords } from "@/lib/seo-shared";
+import { getStoreCollectionCopy } from "@/lib/store-collections";
 
 describe("splitKeywords", () => {
   it("splits, trims and drops empties", () => {
@@ -24,6 +25,7 @@ describe("splitKeywords", () => {
     const paths = new Set(seoRouteDefinitions.map((route) => route.path));
     expect(paths).toContain("/iphone-16-pro-max");
     expect(paths).toContain("/samsung-handys");
+    expect(paths).toContain("/xiaomi-redmi-handys");
     expect(paths).toContain("/handys-ohne-vertrag");
     expect(paths).toContain("/handy-shop-hamburg-wilhelmsburg");
     expect(paths.size).toBe(seoRouteDefinitions.length);
@@ -38,5 +40,15 @@ describe("splitKeywords", () => {
     expect(iphone16ProMax?.defaultTitle.en).toContain("in Germany");
     expect(localShop?.defaultTitle.de).not.toMatch(/Apfel Park/i);
     expect(localShop?.defaultTitle.de.length).toBeLessThanOrEqual(47);
+  });
+
+  it("keeps Xiaomi and Redmi route metadata synchronized with the collection", () => {
+    const route = seoRouteDefinitions.find((entry) => entry.path === "/xiaomi-redmi-handys");
+
+    for (const locale of ["de", "en"] as const) {
+      const copy = getStoreCollectionCopy("xiaomi-redmi-phones", locale);
+      expect(route?.defaultTitle[locale]).toBe(copy.metaTitle);
+      expect(route?.defaultDescription[locale]).toBe(copy.description);
+    }
   });
 });
