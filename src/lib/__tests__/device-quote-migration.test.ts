@@ -6,6 +6,10 @@ const migrationPath = path.join(
   process.cwd(),
   "supabase/migrations/20260904_device_quote_requests.sql",
 );
+const ownerMigrationRunnerPath = path.join(
+  process.cwd(),
+  "deployment/vps/product-intake/apply-owner-migration.sh",
+);
 
 describe("device quote request migration", () => {
   it("stores a consented lead lifecycle without creating catalog inventory or commerce claims", async () => {
@@ -24,5 +28,16 @@ describe("device quote request migration", () => {
     expect(sql).not.toContain("merchant");
     expect(sql).not.toContain("stock");
     expect(sql).not.toContain("sale_count");
+  });
+
+  it("uses the owner migration path and hands the new table to the app role", async () => {
+    const [sql, ownerRunner] = await Promise.all([
+      readFile(migrationPath, "utf8"),
+      readFile(ownerMigrationRunnerPath, "utf8"),
+    ]);
+
+    expect(ownerRunner).toContain("20260904_device_quote_requests.sql");
+    expect(sql).toContain("current_setting('apfel.runtime_role', true)");
+    expect(sql).toContain("alter table public.device_quote_requests owner to");
   });
 });
