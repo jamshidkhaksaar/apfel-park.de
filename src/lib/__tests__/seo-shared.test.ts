@@ -28,4 +28,15 @@ describe("splitKeywords", () => {
     expect(paths).toContain("/handy-shop-hamburg-wilhelmsburg");
     expect(paths.size).toBe(seoRouteDefinitions.length);
   });
+
+  it("keeps registered iPhone and local-shop defaults aligned with search intent", () => {
+    const iphone17 = seoRouteDefinitions.find((route) => route.path === "/iphone-17");
+    const iphone16ProMax = seoRouteDefinitions.find((route) => route.path === "/iphone-16-pro-max");
+    const localShop = seoRouteDefinitions.find((route) => route.path === "/handy-shop-hamburg-wilhelmsburg");
+
+    expect(iphone17?.defaultTitle.en).toContain("in Germany");
+    expect(iphone16ProMax?.defaultTitle.en).toContain("in Germany");
+    expect(localShop?.defaultTitle.de).not.toMatch(/Apfel Park/i);
+    expect(localShop?.defaultTitle.de.length).toBeLessThanOrEqual(47);
+  });
 });

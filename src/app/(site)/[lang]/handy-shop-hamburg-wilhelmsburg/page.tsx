@@ -29,7 +29,7 @@ const path = "/handy-shop-hamburg-wilhelmsburg";
 
 const copy = {
   de: {
-    metaTitle: "Handy Reparatur Wilhelmsburg | Apfel Park Hamburg",
+    metaTitle: "Handy-Reparatur Wilhelmsburg – Hamburg",
     title: "Handy-Reparatur & Smartphone-Shop in Hamburg-Wilhelmsburg",
     description:
       "Handy-Reparatur für iPhone, Samsung und weitere Smartphones bei Apfel Park in Hamburg-Wilhelmsburg. Dazu Smartphones, Zubehör, Abholung und Versand.",
