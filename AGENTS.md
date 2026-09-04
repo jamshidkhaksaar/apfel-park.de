@@ -12,7 +12,7 @@ This document provides guidelines for AI coding agents working in the Apfel Park
 |----------|------------|
 | Framework | Next.js 16.x (App Router) |
 | Language | TypeScript 5.x (strict mode) |
-| Runtime | Node.js 18+ |
+| Runtime | Node.js >=24.14.0 <25; npm >=11.12.0 <12 |
 | UI | React 19.x |
 | Styling | Tailwind CSS 4.x |
 | Linting | ESLint 9 with Next.js + TypeScript presets |
@@ -22,7 +22,7 @@ This document provides guidelines for AI coding agents working in the Apfel Park
 
 ```bash
 # Development
-npm run dev          # Start dev server at localhost:3000
+npm run dev -- --port 3100  # Development; never bind production port 3000
 
 # Production
 npm run build        # Build for production
@@ -38,10 +38,24 @@ docker run -p 3000:3000 apfel              # Run container
 
 ### Running Tests
 
-No testing framework is currently configured. When adding tests:
-- Recommended: Vitest or Jest with React Testing Library
-- Place test files adjacent to source: `Component.test.tsx`
-- Run single test: `npx vitest run path/to/file.test.tsx`
+Vitest is configured: `npm test` runs the suite; `npm run test:watch` watches.
+- Run single test: `npx vitest run path/to/file.test.tsx`.
+- TypeScript gate: `npm run typecheck`; lint: `npm run lint`.
+- Deployment regression suite (temporary mocked fixture, no live operations):
+  `python3 -m unittest discover -s deployment/vps/tests -v`.
+- Use strict test-first changes; follow existing `__tests__` conventions.
+
+### Operations (updated 2026-09-04)
+
+Read `OPERATIONS.md` before deployment or rollback. Editable clone is
+`/srv/apfel-park/app/source`; development worktrees are under `app/worktrees`.
+`app/current` selects an immutable release under `app/releases`, not editable
+source. The historical `app/releases/repo` path is superseded. Use the pinned,
+pushed-SHA `deployment/vps/scripts/deploy-app.sh` workflow only after approval;
+a standalone build or service restart alone is not deployment. Keep migrations
+compatible with the previous web and worker releases. Never change production
+configs, restart services, or deploy during isolated code work. Select Node/npm
+from `package.json`; the default shell runtime may differ.
 
 ## Project Structure
 

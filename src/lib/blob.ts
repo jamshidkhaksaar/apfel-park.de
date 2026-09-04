@@ -1,6 +1,7 @@
-import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { lstat, realpath, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import { isSecureSvg } from "./security";
 
 const uploadsRoot = process.env.UPLOADS_DIR || "/srv/apfel-park/app/shared/uploads";
 const rasterMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
@@ -104,11 +105,24 @@ export const uploadProductImage = async (file: File): Promise<ProductImageUpload
   const safeFileName = sanitizeFileName(file.name || "product-image");
   const { ext, base } = splitName(safeFileName);
   const timePrefix = `${Date.now()}-${base}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const originalFileName = `${timePrefix}--original${ext || ".bin"}`;
+  let buffer = Buffer.from(await file.arrayBuffer());
+  const declaredSvg = file.type === "image/svg+xml" || ext === ".svg";
+  if ((declaredSvg || buffer.toString("utf8", 0, 256).trimStart().startsWith("<")) && !isSecureSvg(buffer.toString("utf8"))) {
+    throw new Error("Unsafe SVG content detected");
+  }
+  const metadata = await sharp(buffer, { failOn: "warning", limitInputPixels: 25_000_000 }).metadata();
+  const svg = declaredSvg || metadata.format === "svg";
+  if (svg) {
+    if (!isSecureSvg(buffer.toString("utf8"))) throw new Error("Unsafe SVG content detected");
+    // Never publish active XML, including the original, even with a spoofed MIME.
+    buffer = Buffer.from(await sharp(buffer, { failOn: "warning", limitInputPixels: 25_000_000 })
+      .resize({ width: 1400, height: 1400, fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 90 }).toBuffer());
+  }
+  const originalFileName = `${timePrefix}--original${svg ? ".webp" : ext || ".bin"}`;
   const originalUrl = await writeUpload("products", originalFileName, buffer);
 
-  if (!rasterMimeTypes.has(file.type)) {
+  if (!svg && !rasterMimeTypes.has(file.type)) {
     const passthroughVariant = {
       url: originalUrl,
       width: 0,
@@ -214,21 +228,38 @@ export const uploadRepairBrandLogo = async (file: File): Promise<{ url: string }
 
 export const deleteBlobByUrl = async (url: string): Promise<void> => {
   if (!url.startsWith("/uploads/")) return;
-  const relativePath = url.replace(/^\/uploads\//, "");
-  const targetPath = path.join(/*turbopackIgnore: true*/ uploadsRoot, relativePath);
-  const directory = path.dirname(targetPath);
-  const fileName = path.basename(targetPath);
-  const familyStem = fileName.replace(/--(?:original|thumb|card|detail)\.[^.]+$/i, "");
+  const segments = url.slice("/uploads/".length).split("/");
+  // Upload names are generated from this alphabet. Never URL-decode stored paths.
+  if (segments.some((segment) => !/^[a-zA-Z0-9_-][a-zA-Z0-9._-]*$/.test(segment))) return;
+  const root = await realpath(/*turbopackIgnore: true*/ uploadsRoot).catch(() => null);
+  if (!root) return;
+  let directory = root;
+  for (const segment of segments.slice(0, -1)) {
+    directory = path.join(/*turbopackIgnore: true*/ directory, segment);
+    const stat = await lstat(/*turbopackIgnore: true*/ directory).catch(() => null);
+    if (!stat?.isDirectory() || stat.isSymbolicLink()) return;
+  }
+  const fileName = segments[segments.length - 1];
+  const targetPath = path.join(/*turbopackIgnore: true*/ directory, fileName);
+  const targetStat = await lstat(/*turbopackIgnore: true*/ targetPath).catch(() => null);
+  if (targetStat && (!targetStat.isFile() || targetStat.isSymbolicLink())) return;
+  const canonicalDirectory = await realpath(/*turbopackIgnore: true*/ directory);
+  if (canonicalDirectory !== root && !canonicalDirectory.startsWith(`${root}${path.sep}`)) return;
+  const familyMatch = /^(.*)--(?:original\.(?:png|jpe?g|webp|svg|bin)|(?:thumb|card|detail)\.webp)$/.exec(fileName);
+  const familyStem = familyMatch?.[1];
 
-  if (!familyStem || familyStem === fileName) {
+  if (!familyStem) {
     await rm(/*turbopackIgnore: true*/ targetPath, { force: true });
     return;
   }
 
+  const suffixes = ["original.png", "original.jpg", "original.jpeg", "original.webp", "original.svg", "original.bin", "thumb.webp", "card.webp", "detail.webp"];
   const entries = await readdir(/*turbopackIgnore: true*/ directory).catch(() => []);
-  await Promise.all(
-    entries
-      .filter((entry) => entry.startsWith(`${familyStem}--`))
-      .map((entry) => rm(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ directory, entry), { force: true })),
-  );
+  for (const entry of entries) {
+    if (!suffixes.some((suffix) => entry === `${familyStem}--${suffix}`)) continue;
+    const candidate = path.join(/*turbopackIgnore: true*/ directory, entry);
+    const stat = await lstat(/*turbopackIgnore: true*/ candidate).catch(() => null);
+    if (!stat?.isFile() || stat.isSymbolicLink()) continue;
+    await rm(/*turbopackIgnore: true*/ candidate, { force: true });
+  }
 };

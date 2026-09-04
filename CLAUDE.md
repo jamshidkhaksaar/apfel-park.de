@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start dev server at localhost:3000
+npm run dev -- --port 3100  # Development; production owns port 3000
 npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
@@ -19,7 +19,21 @@ docker build -t apfel .
 docker run -p 3000:3000 apfel
 ```
 
-No testing framework is configured. Recommended: Vitest or Jest with React Testing Library. Run a single test: `npx vitest run path/to/file.test.tsx`
+Vitest is configured: `npm test`, `npm run test:watch`, or a single test with
+`npx vitest run path/to/file.test.tsx`. Run `npm run typecheck` as well as lint/build.
+Deployment shell regression tests: `python3 -m unittest discover -s deployment/vps/tests -v`
+(temporary mocked filesystem fixture, not live deployment).
+
+### Operations (updated 2026-09-04)
+
+Follow `OPERATIONS.md` and `AGENTS.md`. Source is `/srv/apfel-park/app/source`;
+use `app/worktrees/<name>` for isolated work. `app/current` points to an immutable
+built release; do not edit generated output. Node >=24.14.0 <25 and npm >=11.12.0
+<12 are required by `package.json`; explicitly select the correct PATH.
+Deployment requires approval and a pinned pushed SHA through
+`deployment/vps/scripts/deploy-app.sh`, not a build plus restart. Automatic code
+rollback cannot undo schema changes; maintain old web/worker compatibility.
+No production config/service changes belong in an isolated hardening task.
 
 ## Architecture
 

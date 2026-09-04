@@ -1,7 +1,7 @@
 import { randomUUID, timingSafeEqual, createHmac } from "node:crypto";
 
 import { query, withTransaction, type TransactionClient } from "@/lib/db";
-import { toIsoTimestamp } from "@/lib/database-timestamp";
+import { toDatabaseTimestampToken } from "@/lib/database-timestamp";
 import { releaseInventoryReservation, reserveInventoryBatch } from "@/lib/marketplaces/inventory";
 import { getProducts, type Product, type ProductVariant } from "@/lib/products";
 import { isValidEmail, sanitizeInput } from "@/lib/security";
@@ -161,7 +161,7 @@ export const normalizeCheckoutCustomer = (
         line2: sanitizeInput(customer.address.line2),
         postalCode: sanitizeInput(customer.address.postalCode),
         city: sanitizeInput(customer.address.city),
-        country: sanitizeInput(customer.address.country || "DE") || "DE",
+        country: sanitizeInput(customer.address.country).toUpperCase() || "DE",
       }
     : null;
 
@@ -174,6 +174,14 @@ export const normalizeCheckoutCustomer = (
   }
 
   if (shippingMethod === "germany") {
+    if (address && address.country !== "DE") {
+      throw new Error(
+        locale === "de"
+          ? "Eine Lieferung ist nur innerhalb Deutschlands möglich."
+          : "Delivery is only available within Germany.",
+      );
+    }
+
     if (phone) {
       const phoneDigits = phone.replace(/\D/g, "");
       if (phone.length > 40 || phoneDigits.length < 6 || phoneDigits.length > 15) {
@@ -191,7 +199,7 @@ export const normalizeCheckoutCustomer = (
       !address.city ||
       address.line1.length > 200 ||
       (address.line2?.length ?? 0) > 200 ||
-      address.postalCode.length > 20 ||
+      !/^[0-9]{5}$/.test(address.postalCode) ||
       address.city.length > 100
     ) {
       throw new Error(
@@ -457,10 +465,10 @@ export async function attachProviderReference(input: {
        AND status = 'pending' AND payment_status = 'unpaid'
        AND ($3::text IS NULL OR provider_order_id IS NULL OR provider_order_id = $3)
        AND ($4::text IS NULL OR provider_session_id IS NULL OR provider_session_id = $4)
-     RETURNING updated_at`,
+     RETURNING updated_at::text AS updated_at`,
     [input.orderId, input.provider, input.providerOrderId ?? null, input.providerSessionId ?? null, input.providerStatus ?? null],
   );
-  const updatedAt = toIsoTimestamp(result.rows[0]?.updated_at);
+  const updatedAt = toDatabaseTimestampToken(result.rows[0]?.updated_at);
   return updatedAt ? { updatedAt } : null;
 }
 

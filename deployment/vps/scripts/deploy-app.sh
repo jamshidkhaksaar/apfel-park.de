@@ -106,51 +106,129 @@ ln -sfn "$APP_ROOT/shared/uploads" "$release/.next/standalone/public/uploads"
 chmod 0755 "$release" "$release/.next"
 chmod -R a+rX "$release/.next/static"
 
-previous="$(readlink -f "$CURRENT" 2>/dev/null || true)"
+previous="$(readlink -e "$CURRENT" 2>/dev/null || true)"
+worker_present=0
+if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then worker_present=1; fi
 
-log "activating"
+http_code() {
+  curl -sS --connect-timeout 3 --max-time 10 -o /dev/null -w '%{http_code}' "$BASE_URL$1"
+}
+
+wait_for_web() {
+  local attempt
+  for attempt in {1..20}; do
+    [ "$(http_code /de || true)" = "200" ] && return 0
+    sleep 2
+  done
+  return 1
+}
+
+services_active() {
+  systemctl is-active --quiet "$SERVICE" || return 1
+  if [ "$worker_present" = 1 ]; then
+    systemctl is-active --quiet "$WORKER_SERVICE" || return 1
+  fi
+}
+
+# Arm before the atomic switch; compare the link in the handler so a failed
+# pre-switch ln/mv never restarts the old service. EXIT also catches explicit
+# die and set -e failures, unlike an ERR-only trap. Signals become failures.
+activation_pending=1
+rollback_on_exit() {
+  local status=$? rollback_failed=0
+  trap - EXIT INT TERM
+  if [ "$status" -eq 0 ] || [ "$activation_pending" -ne 1 ] ||
+     [ "$(readlink -f "$CURRENT" 2>/dev/null || true)" != "$release" ]; then
+    exit "$status"
+  fi
+  log "activation FAILED; failed release $release retained for inspection"
+  # This marker survives later successful deploys; operator removes it only
+  # after investigation. Code rollback NEVER reverses database migrations.
+  touch "$release/.deploy-failed" || true
+  if [ -z "$previous" ] || [ ! -d "$previous" ]; then
+    log "ERROR: no previous release to roll back to; manual recovery required"
+    exit "$status"
+  fi
+  log "rolling back to $previous"
+  if ! ln -sfn "$previous" "$CURRENT.tmp" || ! mv -Tf "$CURRENT.tmp" "$CURRENT"; then
+    log "ERROR: rollback link restoration FAILED; manual recovery required"
+    exit "$status"
+  fi
+  # Try both services and health even if one restart fails; never recurse.
+  systemctl restart "$SERVICE" || rollback_failed=1
+  if [ "$worker_present" = 1 ]; then
+    systemctl restart "$WORKER_SERVICE" || rollback_failed=1
+  fi
+  wait_for_web || rollback_failed=1
+  services_active || rollback_failed=1
+  if [ "$rollback_failed" = 0 ]; then
+    log "rollback verified healthy; $release kept for inspection"
+  else
+    log "ERROR: rollback health/restart FAILED; manual recovery required"
+  fi
+  exit "$status"
+}
+trap rollback_on_exit EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+log "activating (previous: ${previous:-none})"
 ln -sfn "$release" "$CURRENT.tmp"
 mv -Tf "$CURRENT.tmp" "$CURRENT"
 systemctl restart "$SERVICE"
-if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then
+if [ "$worker_present" = 1 ]; then
   systemctl restart "$WORKER_SERVICE"
 fi
 
 log "health check"
-ok=0
-for _ in $(seq 1 20); do
-  [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/de" || true)" = "200" ] && { ok=1; break; }
-  sleep 2
+wait_for_web || die "web health check failed"
+services_active || die "service is not active after deployment"
+
+# GET-only critical smoke: no login, cart mutation, order, or payment request.
+expect_http() {
+  local path=$1 expected=$2 code
+  code="$(http_code "$path" || true)"
+  [ "$code" = "$expected" ] || die "$path returned $code, expected $expected"
+}
+expect_http /xx 404
+expect_http / 308
+for locale in de en; do
+  for page in "" /store /cart /checkout; do
+    expect_http "/$locale$page" 200
+  done
+done
+# Select a current product link without credentials or guessing a stale slug.
+# An empty catalog is not a valid production storefront smoke fixture.
+product_path="$(curl -fsS --connect-timeout 3 --max-time 10 "$BASE_URL/de/store" | node -e '
+  let html = "";
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", chunk => { html += chunk; });
+  process.stdin.on("end", () => {
+    const match = html.match(/href="(\/de\/store\/[A-Za-z0-9%_-]+)"/);
+    if (!match) process.exit(1);
+    process.stdout.write(match[1]);
+  });
+')" || die "could not discover a product for smoke"
+expect_http "$product_path" 200
+# This uncached route performs a DB-backed lookup and returns 503 on DB errors.
+expect_http /api/public/product-route/deploy-smoke-nonexistent 200
+expect_http /admin 307
+
+# Probe real generated JS and CSS, including the deploymentId query used by
+# Next. The public HTTPS probe also exercises nginx/CDN asset routing (not just
+# the standalone copy). Keep TLS verification enabled and all requests bounded.
+for extension in js css; do
+  asset="$(find "$release/.next/static" -type f -name "*.$extension" -print -quit)"
+  [ -n "$asset" ] || die "no generated $extension asset"
+  asset_path="/_next/static/${asset#"$release/.next/static/"}?dpl=$sha"
+  expect_http "$asset_path" 200
+  code="$(curl -sS --connect-timeout 3 --max-time 10 -o /dev/null -w '%{http_code}' "https://apfel-park.de$asset_path" || true)"
+  [ "$code" = 200 ] || die "public $extension asset returned $code"
 done
 
-if [ "$ok" -ne 1 ]; then
-  [ -n "$previous" ] && [ -d "$previous" ] || die "health check failed; no previous release to roll back to"
-  log "health check FAILED -- rolling back to $(basename "$previous")"
-  ln -sfn "$previous" "$CURRENT.tmp"
-  mv -Tf "$CURRENT.tmp" "$CURRENT"
-  systemctl restart "$SERVICE"
-  if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then
-    systemctl restart "$WORKER_SERVICE"
-  fi
-  die "rolled back; $release kept for inspection"
-fi
-
-systemctl is-active --quiet "$SERVICE" || die "$SERVICE is not active after deployment"
-if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then
-  systemctl is-active --quiet "$WORKER_SERVICE" || die "$WORKER_SERVICE is not active after deployment"
-fi
-
-# Unknown locales must 404. They returned 500 until cb99627f; this catches a
-# regression before it reaches the crawlers.
-code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/xx" || true)"
-[ "$code" = "404" ] || log "WARNING: /xx returned $code, expected 404"
-
-# / must redirect to /de PERMANENTLY (308). A 307 tells Google to keep the bare
-# domain indexed instead of consolidating onto /de, which split the homepage
-# across four indexed URLs and left the legacy http://www variant outranking
-# the canonical one.
-code="$(curl -s -o /dev/null -w '%{http_code}' --max-redirs 0 "$BASE_URL/" || true)"
-[ "$code" = "308" ] || log "WARNING: / returned $code, expected 308 (permanent redirect to /de)"
+# Activation is committed only after every critical check. Optional indexing
+# and retention failures must not undo an already healthy release.
+activation_pending=0
 
 # Tell Bing, Yandex, Seznam and Naver the content changed. The key file has
 # been served since July but nothing ever submitted to it. The script skips
@@ -164,6 +242,8 @@ fi
 log "pruning old releases (keeping $KEEP)"
 ls -1dt "$RELEASES"/*/ 2>/dev/null | tail -n +$((KEEP + 1)) | while read -r old; do
   [ "$(readlink -f "$old")" = "$(readlink -f "$CURRENT")" ] && continue
+  [ "$(readlink -f "$old")" = "$previous" ] && continue
+  [ -f "$old/.deploy-failed" ] && continue
   log "  removing $(basename "$old")"
   rm -rf "$old"
 done
