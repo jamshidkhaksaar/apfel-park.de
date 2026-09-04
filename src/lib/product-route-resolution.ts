@@ -5,6 +5,11 @@ export type PublicProductRouteResolution =
   | { kind: 'redirect'; slug: string }
   | { kind: 'missing' };
 
+export const internalMissingProductUrl = (
+  internalAppUrl: string,
+  locale: string,
+): string => new URL(`/${locale}/__missing-product`, internalAppUrl).toString();
+
 export const resolvePublicProductRoute = async (
   slug: string,
 ): Promise<PublicProductRouteResolution> => {

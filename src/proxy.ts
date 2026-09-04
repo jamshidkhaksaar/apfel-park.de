@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { internalMissingProductUrl } from '@/lib/product-route-resolution';
+
 const isPublicStorePath = (pathname: string) => {
   // Only the generic /store aggregator obeys the store-maintenance toggle.
   // Category pages (/smartphones, /accessories, …) and the Open-Box catalog
@@ -94,8 +96,7 @@ export async function proxy(request: NextRequest) {
             );
           }
           if (resolution.kind === 'missing') {
-            const missingUrl = request.nextUrl.clone();
-            missingUrl.pathname = `/${productPath.locale}/__missing-product`;
+            const missingUrl = internalMissingProductUrl(internalAppUrl, productPath.locale);
             const missing = NextResponse.rewrite(missingUrl, { status: 404 });
             missing.headers.set('X-Robots-Tag', 'noindex');
             return missing;
