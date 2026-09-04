@@ -43,6 +43,13 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 31536000,
   },
   
+  async redirects() {
+    return [
+      { source: '/:lang(de|en)/shop', destination: '/:lang/store', permanent: true },
+      { source: '/shop', destination: '/de/store', permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       {
