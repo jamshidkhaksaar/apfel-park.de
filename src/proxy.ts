@@ -1,10 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { internalMissingProductUrl } from '@/lib/product-route-resolution';
+
 const isPublicStorePath = (pathname: string) => {
   // Only the generic /store aggregator obeys the store-maintenance toggle.
   // Category pages (/smartphones, /accessories, …) and the Open-Box catalog
   // (/open-box) stay reachable, consistent with the other nav category links.
   return /^\/(?:de|en)\/store(?:\/.*)?$/.test(pathname);
+};
+
+const publicProductPath = (pathname: string) => {
+  const match = pathname.match(/^\/(de|en)\/store\/([^/]+)$/);
+  if (!match || match[2] === 'catalog') return null;
+  return { locale: match[1], slug: match[2] };
 };
 
 const isBypassedPath = (pathname: string) => {
@@ -65,6 +73,38 @@ export async function proxy(request: NextRequest) {
       }
     } catch {
       // Fail open if maintenance settings cannot be read.
+    }
+
+    const productPath = publicProductPath(pathname);
+    if (productPath) {
+      try {
+        const internalAppUrl = process.env.INTERNAL_APP_URL ?? 'http://127.0.0.1:3000';
+        const routeUrl = new URL(
+          `/api/public/product-route/${encodeURIComponent(productPath.slug)}`,
+          internalAppUrl,
+        );
+        const response = await fetch(routeUrl, { cache: 'no-store' });
+        if (response.ok) {
+          const resolution = (await response.json()) as {
+            kind?: 'active' | 'redirect' | 'missing';
+            slug?: string;
+          };
+          if (resolution.kind === 'redirect' && resolution.slug) {
+            return NextResponse.redirect(
+              redirectUrl(`/${productPath.locale}/store/${resolution.slug}`),
+              301,
+            );
+          }
+          if (resolution.kind === 'missing') {
+            const missingUrl = internalMissingProductUrl(internalAppUrl, productPath.locale);
+            const missing = NextResponse.rewrite(missingUrl, { status: 404 });
+            missing.headers.set('X-Robots-Tag', 'noindex');
+            return missing;
+          }
+        }
+      } catch {
+        // Fail open on resolver errors so a database issue cannot hide products.
+      }
     }
   }
 
