@@ -10,6 +10,7 @@
 # that is reachable from origin, so the deployed tree always has a name.
 
 set -euo pipefail
+umask 022
 
 APP_ROOT=/srv/apfel-park/app
 SOURCE="$APP_ROOT/source"
@@ -36,6 +37,7 @@ branch="$(git -C "$SOURCE" rev-parse --abbrev-ref HEAD)"
 ref="${1:-origin/$branch}"
 sha="$(git -C "$SOURCE" rev-parse --verify "$ref^{commit}" 2>/dev/null)" \
   || die "ref not found: $ref"
+export DEPLOYMENT_VERSION="$sha"
 
 # Refuse a commit that exists only locally -- deploying it would recreate the
 # exact "it only lives on the VPS" problem this script was written to prevent.
@@ -98,6 +100,11 @@ cp -r "$release/public/." "$release/.next/standalone/public/"
 # avif/webp config in next.config.ts is dead weight. Must exist before the
 # service starts -- Next resolves public/ at boot.
 ln -sfn "$APP_ROOT/shared/uploads" "$release/.next/standalone/public/uploads"
+
+# Nginx serves .next/static directly. Make the release path traversable and
+# static build artifacts readable even when the invoking shell had umask 077.
+chmod 0755 "$release" "$release/.next"
+chmod -R a+rX "$release/.next/static"
 
 previous="$(readlink -f "$CURRENT" 2>/dev/null || true)"
 
