@@ -8,6 +8,7 @@ import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
 import { getStoredCartCount, subscribeStoredCart } from "./checkout/cart";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
+import DeviceQuoteForm from "./DeviceQuoteForm";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import TrackedLink from "./TrackedLink";
@@ -136,11 +137,11 @@ export default function SiteHeader({
       {/* Main Navigation */}
       <div className="container-page relative z-10 flex items-start">
         <div className="relative flex flex-1 items-center navbar-border navbar-shell bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-lg">
-          <div className="navbar-logo-slot flex items-center justify-center pl-1" suppressHydrationWarning>
+          <div className="navbar-logo-slot flex shrink-0 items-center justify-center pl-1" suppressHydrationWarning>
             <Logo href={`/${lang}`} size="xl" className="navbar-logo" priority />
           </div>
           {/* Desktop Navigation */}
-          <nav className="hidden h-full flex-1 items-center justify-center gap-0.5 lg:flex">
+          <nav className="hidden h-full flex-1 items-center justify-center gap-0.5 xl:flex">
             {navItems.map((item) => {
               const fullPath = `/${lang}${item.path}`;
               const isActive = item.path === ""
@@ -152,7 +153,7 @@ export default function SiteHeader({
                 <Link
                   key={item.path}
                   href={fullPath}
-                  className={`group relative whitespace-nowrap px-3 py-2 text-sm font-medium transition hover:text-foreground ${
+                  className={`group relative whitespace-nowrap px-2 py-2 text-xs font-medium transition hover:text-foreground 2xl:px-3 2xl:text-sm ${
                     isActive ? "text-foreground" : "text-muted"
                   }`}
                   aria-current={isExactMatch ? "page" : undefined}
@@ -169,8 +170,9 @@ export default function SiteHeader({
           </nav>
 
           {/* Actions */}
-          <div className="ml-auto flex h-full items-center gap-1 pr-2 sm:gap-3 sm:pr-4 lg:ml-0">
-            <div className="hidden items-center gap-3 lg:flex">
+          <div className="ml-auto flex h-full shrink-0 items-center gap-1 pr-2 sm:gap-3 sm:pr-4 xl:ml-0">
+            <DeviceQuoteForm locale={lang} variant="header" />
+            <div className="hidden items-center gap-3 xl:flex">
               <LocaleSwitcher />
               <ThemeToggle />
               
@@ -205,7 +207,7 @@ export default function SiteHeader({
             </div>
             <Link
               href={`/${lang}/cart`}
-              className="relative flex h-11 w-11 items-center justify-center rounded-xl text-gold lg:hidden"
+              className="relative flex h-11 w-11 items-center justify-center rounded-xl text-gold xl:hidden"
               aria-label={
                 lang === "de"
                   ? `Warenkorb öffnen${cartCount > 0 ? ` (${cartCount} Artikel)` : ""}`
@@ -226,7 +228,7 @@ export default function SiteHeader({
             <button 
               ref={mobileMenuButtonRef}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold xl:hidden"
               aria-label={mobileMenuOpen ? labels.closeMenu : labels.openMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu-nav"
@@ -247,7 +249,7 @@ export default function SiteHeader({
       <div
         id="mobile-menu-nav"
         aria-hidden={!mobileMenuOpen}
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out border-t border-border bg-background/95 backdrop-blur-xl lg:hidden ${
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out border-t border-border bg-background/95 backdrop-blur-xl xl:hidden ${
           mobileMenuOpen
             ? "grid-rows-[1fr] opacity-100"
             : "grid-rows-[0fr] opacity-0 pointer-events-none invisible"

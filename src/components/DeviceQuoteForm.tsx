@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useId, useRef, useState } from "react";
 
 import { useReCaptcha } from "@/components/ReCaptcha";
 import { parseDeviceQuoteRequest } from "@/lib/device-quote";
@@ -65,8 +65,13 @@ export const submitDeviceQuote = async (
   return { success: true, id: result.id };
 };
 
-export function DeviceQuoteFormContent({ locale, initialBrand = "" }: { locale: Locale; initialBrand?: string }) {
+type DeviceQuoteFormProps = { locale: Locale; initialBrand?: string; variant?: "catalog" | "header" };
+
+export function DeviceQuoteFormContent({ locale, initialBrand = "", variant = "catalog" }: DeviceQuoteFormProps) {
+  const isHeader = variant === "header";
+  const Wrapper = isHeader ? "div" : "section";
   const text = deviceQuoteCopy[locale];
+  const id = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
@@ -89,28 +94,30 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "" }: { locale: 
   };
 
   return (
-    <section className="border-y border-border bg-gold/5 py-6" aria-labelledby="device-quote-heading">
-      <div className="container-page flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 id="device-quote-heading" className="scroll-mt-24 text-lg font-semibold text-foreground">{text.badge}</h2>
+    <Wrapper className={isHeader ? "shrink-0" : "border-y border-border bg-gold/5 py-6"} aria-labelledby={isHeader ? undefined : `device-quote-heading-${id}`}>
+      <div className={isHeader ? "" : "container-page flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"}>
+        {!isHeader && <div>
+          <h2 id={`device-quote-heading-${id}`} className="scroll-mt-24 text-lg font-semibold text-foreground">{text.badge}</h2>
           <p className="mt-1 max-w-xl text-sm leading-6 text-muted">{text.teaser}</p>
-        </div>
-        <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-controls="device-quote-dialog"
+        </div>}
+        <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-controls={`device-quote-dialog-${id}`}
           onClick={() => dialogRef.current?.showModal()}
-          className="btn-primary shrink-0 justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold">
-          {text.title}<span aria-hidden="true">↗</span>
+          className={isHeader
+            ? "inline-flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-gold/50 bg-gold/10 px-2.5 text-xs font-semibold text-gold transition-colors hover:bg-gold/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:px-3 sm:text-sm"
+            : "btn-primary shrink-0 justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"}>
+          {isHeader ? text.headerTitle : text.title}{!isHeader && <span aria-hidden="true">↗</span>}
         </button>
       </div>
-      <dialog ref={dialogRef} id="device-quote-dialog" aria-labelledby="device-quote-dialog-heading" aria-describedby="device-quote-description"
+      <dialog ref={dialogRef} id={`device-quote-dialog-${id}`} aria-labelledby={`device-quote-dialog-heading-${id}`} aria-describedby={`device-quote-description-${id}`}
         onClose={() => triggerRef.current?.focus({ preventScroll: true })}
         className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto overscroll-contain rounded-2xl border border-border bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/60">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-5 py-4 sm:px-7">
-          <h2 id="device-quote-dialog-heading" className="text-xl font-semibold">{text.title}</h2>
+          <h2 id={`device-quote-dialog-heading-${id}`} className="text-xl font-semibold">{text.title}</h2>
           <button type="button" onClick={() => dialogRef.current?.close()}
             className="min-h-11 rounded-lg border border-border px-3 text-sm font-medium hover:bg-gold/10 focus-visible:outline-2 focus-visible:outline-gold">{text.close}</button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 sm:p-7" aria-busy={status === "sending"}>
-          <p id="device-quote-description" className="mb-6 text-sm leading-6 text-muted">{text.intro}</p>
+          <p id={`device-quote-description-${id}`} className="mb-6 text-sm leading-6 text-muted">{text.intro}</p>
           <div className="grid gap-5 sm:grid-cols-2">
             <label>
               <span className={labelClassName}>{text.brand} *</span>
@@ -191,10 +198,10 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "" }: { locale: 
           </button>
         </form>
       </dialog>
-    </section>
+    </Wrapper>
   );
 }
 
-export default function DeviceQuoteForm({ locale, initialBrand }: { locale: Locale; initialBrand?: string }) {
-  return <DeviceQuoteFormContent locale={locale} initialBrand={initialBrand} />;
+export default function DeviceQuoteForm(props: DeviceQuoteFormProps) {
+  return <DeviceQuoteFormContent {...props} />;
 }

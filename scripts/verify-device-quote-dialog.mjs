@@ -12,11 +12,11 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright-c
       const path = locale === 'de' ? 'samsung-handys' : 'xiaomi-redmi-handys';
       await page.goto(`${process.env.BASE_URL || 'http://127.0.0.1:3094'}/${locale}/${path}`, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: locale === 'de' ? 'Nur notwendige' : 'Necessary only', exact: true }).click();
-      await page.evaluate(theme => document.documentElement.dataset.theme = theme, theme);
-      const dialog = page.locator('#device-quote-dialog');
-      const trigger = page.locator('button[aria-controls="device-quote-dialog"]');
+      await page.evaluate(theme => document.documentElement.dataset.theme = theme === 'light' ? 'mono' : 'dark', theme);
+      const dialog = page.locator('main dialog[id^="device-quote-dialog-"]');
+      const trigger = page.locator('main button[aria-haspopup="dialog"]');
       assert.equal(await dialog.isVisible(), false);
-      const height = await page.locator('section[aria-labelledby="device-quote-heading"]').evaluate(e => e.getBoundingClientRect().height);
+      const height = await page.locator('section[aria-labelledby^="device-quote-heading-"]').evaluate(e => e.getBoundingClientRect().height);
       assert.ok(height < 240, `CTA too tall: ${height}`);
       await trigger.click();
       assert.equal(await dialog.isVisible(), true);
