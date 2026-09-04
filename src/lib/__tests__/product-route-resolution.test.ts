@@ -4,7 +4,10 @@ const mocks = vi.hoisted(() => ({ query: vi.fn() }));
 
 vi.mock('@/lib/db', () => ({ query: mocks.query }));
 
-import { resolvePublicProductRoute } from '@/lib/product-route-resolution';
+import {
+  internalMissingProductUrl,
+  resolvePublicProductRoute,
+} from '@/lib/product-route-resolution';
 
 describe('resolvePublicProductRoute', () => {
   beforeEach(() => mocks.query.mockReset());
@@ -25,5 +28,11 @@ describe('resolvePublicProductRoute', () => {
   it('marks an unknown product route missing', async () => {
     mocks.query.mockResolvedValue({ rows: [] });
     await expect(resolvePublicProductRoute('removed-product')).resolves.toEqual({ kind: 'missing' });
+  });
+
+  it('builds missing-page rewrites from the internal HTTP origin', () => {
+    expect(internalMissingProductUrl('http://127.0.0.1:3000', 'de')).toBe(
+      'http://127.0.0.1:3000/de/__missing-product',
+    );
   });
 });
