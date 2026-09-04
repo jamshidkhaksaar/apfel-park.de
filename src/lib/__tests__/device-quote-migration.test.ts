@@ -37,6 +37,8 @@ describe("device quote request migration", () => {
     ]);
 
     expect(ownerRunner).toContain("20260904_device_quote_requests.sql");
+    expect(ownerRunner).toContain("--file=-");
+    expect(ownerRunner).toContain('< "$MIGRATION_FILE"');
     expect(sql).toContain("current_setting('apfel.runtime_role', true)");
     expect(sql).toContain("alter table public.device_quote_requests owner to");
   });
