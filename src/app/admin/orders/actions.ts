@@ -10,8 +10,9 @@ import { query } from "@/lib/db";
 import { enqueueMarketplaceJob } from "@/lib/marketplaces";
 import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 import { sanitizeInput } from "@/lib/security";
-import { attachProviderReference, isOrderInProviderState, markOrderCancelled } from "@/lib/checkout";
+import { attachProviderReference, getPaymentMode, isOrderInProviderState, markOrderCancelled } from "@/lib/checkout";
 import { toIsoTimestamp } from "@/lib/database-timestamp";
+import { inspectPayPalOrderForAdminCancellation } from "@/lib/paypal-order-admin";
 import { expireStripeCheckoutSessionForAdmin } from "@/lib/stripe-checkout-admin";
 
 const ALLOWED_STATUSES = new Set(["pending", "paid", "shipped", "delivered", "cancelled"]);
@@ -59,45 +60,84 @@ export async function updateOrderFulfillment(formData: FormData) {
   let remoteCancellation: { providerStatus: string; updatedAt: string } | null = null;
   if (!decision.allowed) {
     const providerSessionId = current.provider_session_id;
+    const providerOrderId = current.provider_order_id;
     const canExpireStripeCheckout = decision.reason === "provider_active"
       && nextStatus === "cancelled"
       && current.provider === "stripe"
       && Boolean(providerSessionId);
-    if (!canExpireStripeCheckout) return redirectError(decision.reason);
+    const canInspectPayPalOrder = decision.reason === "provider_active"
+      && nextStatus === "cancelled"
+      && current.provider === "paypal"
+      && Boolean(providerOrderId);
+    if (!canExpireStripeCheckout && !canInspectPayPalOrder) return redirectError(decision.reason);
 
-    const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
-    if (!secretKey || !providerSessionId) return redirectError("provider_cancel_failed");
-    let expiration: Awaited<ReturnType<typeof expireStripeCheckoutSessionForAdmin>> | null = null;
-    try {
-      expiration = await expireStripeCheckoutSessionForAdmin({
-        sessionId: providerSessionId,
-        orderId: id,
-        secretKey,
-      });
-    } catch (error) {
-      console.error("Admin Stripe Checkout cancellation failed", {
-        orderId: id,
-        error: error instanceof Error ? error.message : "Stripe cancellation failed",
-      });
-    }
-    if (!expiration) return redirectError("provider_cancel_failed");
-    if (expiration.outcome === "protected") return redirectError("provider_paid");
-
-    const snapshot = await attachProviderReference({
-      orderId: id,
-      provider: "stripe",
-      providerSessionId,
-      providerStatus: expiration.providerStatus,
-    });
-    if (!snapshot) {
-      if (await isOrderInProviderState({ provider: "stripe", orderId: id, statuses: ["cancelled"] })) {
-        revalidatePath("/admin/orders");
-        revalidatePath(`/admin/orders/${id}`);
-        redirect(`${orderPath}?updated=1`);
+    if (canInspectPayPalOrder && providerOrderId) {
+      const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
+      const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
+      if (!clientId || !clientSecret) return redirectError("provider_cancel_failed");
+      let inspection: Awaited<ReturnType<typeof inspectPayPalOrderForAdminCancellation>> | null = null;
+      try {
+        inspection = await inspectPayPalOrderForAdminCancellation({
+          orderId: providerOrderId,
+          clientId,
+          clientSecret,
+          mode: getPaymentMode(),
+        });
+      } catch (error) {
+        console.error("Admin PayPal order cancellation check failed", {
+          orderId: id,
+          error: error instanceof Error ? error.message : "PayPal order lookup failed",
+        });
       }
-      return redirectError("conflict");
+      if (!inspection) return redirectError("provider_cancel_failed");
+      if (inspection.outcome === "protected") return redirectError("provider_paid");
+      if (inspection.outcome === "active") return redirectError("provider_active");
+
+      const snapshot = await attachProviderReference({
+        orderId: id,
+        provider: "paypal",
+        providerOrderId,
+        providerStatus: inspection.providerStatus,
+      });
+      if (!snapshot) return redirectError("conflict");
+      remoteCancellation = { providerStatus: inspection.providerStatus, updatedAt: snapshot.updatedAt };
     }
-    remoteCancellation = { providerStatus: expiration.providerStatus, updatedAt: snapshot.updatedAt };
+
+    if (canExpireStripeCheckout) {
+      const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
+      if (!secretKey || !providerSessionId) return redirectError("provider_cancel_failed");
+      let expiration: Awaited<ReturnType<typeof expireStripeCheckoutSessionForAdmin>> | null = null;
+      try {
+        expiration = await expireStripeCheckoutSessionForAdmin({
+          sessionId: providerSessionId,
+          orderId: id,
+          secretKey,
+        });
+      } catch (error) {
+        console.error("Admin Stripe Checkout cancellation failed", {
+          orderId: id,
+          error: error instanceof Error ? error.message : "Stripe cancellation failed",
+        });
+      }
+      if (!expiration) return redirectError("provider_cancel_failed");
+      if (expiration.outcome === "protected") return redirectError("provider_paid");
+
+      const snapshot = await attachProviderReference({
+        orderId: id,
+        provider: "stripe",
+        providerSessionId,
+        providerStatus: expiration.providerStatus,
+      });
+      if (!snapshot) {
+        if (await isOrderInProviderState({ provider: "stripe", orderId: id, statuses: ["cancelled"] })) {
+          revalidatePath("/admin/orders");
+          revalidatePath(`/admin/orders/${id}`);
+          redirect(`${orderPath}?updated=1`);
+        }
+        return redirectError("conflict");
+      }
+      remoteCancellation = { providerStatus: expiration.providerStatus, updatedAt: snapshot.updatedAt };
+    }
   }
 
   if ((decision.allowed && decision.mode === "cancel") || remoteCancellation) {
