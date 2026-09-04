@@ -14,6 +14,22 @@ vi.mock("../ReCaptcha", () => ({
 import { DeviceQuoteFormContent, submitDeviceQuote } from "../DeviceQuoteForm";
 
 describe("DeviceQuoteForm", () => {
+  it("keeps the form in a closed labelled native dialog behind a compact CTA", () => {
+    const html = renderToStaticMarkup(createElement(DeviceQuoteFormContent, { locale: "en" }));
+    expect(html).toContain('aria-haspopup="dialog"');
+    expect(html).toContain('aria-controls="device-quote-dialog"');
+    expect(html).toMatch(/<dialog[^>]*aria-labelledby="device-quote-dialog-heading"/);
+    expect(html).not.toMatch(/<dialog[^>]*\sopen(?:=|\s|>)/);
+    expect(html).toContain('id="device-quote-heading"');
+    expect(html).toContain('Close');
+  });
+  it("groups optional preferences and keeps contact labels visible", () => {
+    const html = renderToStaticMarkup(createElement(DeviceQuoteFormContent, { locale: "en" }));
+    expect(html).toContain('<summary');
+    expect(html).toContain('Preferences (optional)');
+    expect(html).not.toContain('class="sr-only">Email');
+    expect(html).not.toContain('class="sr-only">Phone');
+  });
   it("renders the complete German request-only form without commerce claims", () => {
     const html = renderToStaticMarkup(createElement(DeviceQuoteFormContent, { locale: "de" }));
 
