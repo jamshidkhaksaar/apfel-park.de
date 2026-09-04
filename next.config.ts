@@ -37,6 +37,7 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  deploymentId: process.env.DEPLOYMENT_VERSION,
   experimental: {
     proxyClientMaxBodySize: '25mb',
   },
