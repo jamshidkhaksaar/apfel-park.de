@@ -186,7 +186,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.93,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Handy Reparatur Wilhelmsburg | Apfel Park Hamburg",
+      de: "Handy-Reparatur Wilhelmsburg – Hamburg",
       en: "Phone Store Hamburg-Wilhelmsburg",
     },
     defaultDescription: {
@@ -206,11 +206,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     changeFrequency: "daily",
     defaultTitle: {
       de: "iPhone 17 kaufen – Pro, Pro Max & Air",
-      en: "Buy iPhone 17 – Pro, Pro Max & Air",
+      en: "Buy iPhone 17 in Germany – Prices & Stock",
     },
     defaultDescription: {
       de: "iPhone 17, 17 Air, 17 Pro und 17 Pro Max bei Apfel Park kaufen. Zustand, Preis und Verfügbarkeit klar ausgewiesen; Versand oder Abholung in Hamburg.",
-      en: "Buy iPhone 17, 17 Air, 17 Pro and 17 Pro Max at Apfel Park. Condition, price and availability are clearly stated, with delivery or collection in Hamburg.",
+      en: "Buy iPhone 17, Air, Pro or Pro Max in Germany. Compare current prices, storage and condition, with delivery across Germany or Hamburg pickup.",
     },
     defaultKeywords: {
       de: "iPhone 17 kaufen, iPhone 17 Pro kaufen, iPhone 17 Pro Max kaufen, iPhone 17 Air kaufen",
@@ -225,11 +225,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     changeFrequency: "daily",
     defaultTitle: {
       de: "iPhone 16 Pro Max kaufen – Angebote",
-      en: "Buy iPhone 16 Pro Max – Compare Offers",
+      en: "Buy iPhone 16 Pro Max in Germany – Prices",
     },
     defaultDescription: {
       de: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in Deutschland oder Abholung in Hamburg.",
-      en: "Compare iPhone 16 Pro Max offers by condition, storage, price and availability, with delivery in Germany or collection from our Hamburg store.",
+      en: "Buy an iPhone 16 Pro Max in Germany. Compare current prices, storage, condition and availability, with delivery across Germany or Hamburg pickup.",
     },
     defaultKeywords: {
       de: "iPhone 16 Pro Max, iPhone 16 Pro Max kaufen, iPhone 16 Pro Max gebraucht",

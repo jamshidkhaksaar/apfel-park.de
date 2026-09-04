@@ -41,14 +41,14 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/iphone-17",
-      title: "Buy iPhone 17 – Pro, Pro Max & Air",
-      metaTitle: "Buy iPhone 17 – Pro, Pro Max & Air",
-      description: "Buy iPhone 17, 17 Air, 17 Pro and 17 Pro Max at Apfel Park. Condition, price and availability are clearly stated, with delivery or collection in Hamburg.",
+      title: "Buy iPhone 17 in Germany – Prices & Stock",
+      metaTitle: "Buy iPhone 17 in Germany – Prices & Stock",
+      description: "Buy iPhone 17, Air, Pro or Pro Max in Germany. Compare current prices, storage and condition, with delivery across Germany or Hamburg pickup.",
       eyebrow: "Apple iPhone 17",
-      introTitle: "Which iPhone 17 is right for you?",
+      introTitle: "Compare iPhone 17 prices and current stock",
       intro: [
-        "Explore the currently available iPhone 17 range at Apfel Park. This page brings together iPhone 17, iPhone 17 Air, iPhone 17 Pro and iPhone 17 Pro Max so you can compare prices, storage and device condition.",
-        "Every offer clearly states condition, price and availability. Order online for delivery in Germany or collect your chosen device in person from our Hamburg-Wilhelmsburg store.",
+        "Explore the iPhone 17 models currently available from Apfel Park in Germany. This page brings together iPhone 17, iPhone 17 Air, iPhone 17 Pro and iPhone 17 Pro Max so you can compare current prices, storage and device condition.",
+        "Every offer clearly states condition, price and availability. Order online for delivery across Germany or collect your chosen device from our Hamburg-Wilhelmsburg store.",
       ],
       benefits: [
         { title: "Every 17 model", text: "Standard, Air, Pro and Pro Max in one clear selection." },
@@ -87,14 +87,14 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/iphone-16-pro-max",
-      title: "Buy iPhone 16 Pro Max – Compare Offers",
-      metaTitle: "Buy iPhone 16 Pro Max – Compare Offers",
-      description: "Compare iPhone 16 Pro Max offers by condition, storage, price and availability, with delivery in Germany or collection from our Hamburg store.",
+      title: "Buy iPhone 16 Pro Max in Germany – Prices",
+      metaTitle: "Buy iPhone 16 Pro Max in Germany – Prices",
+      description: "Buy an iPhone 16 Pro Max in Germany. Compare current prices, storage, condition and availability, with delivery across Germany or Hamburg pickup.",
       eyebrow: "Apple iPhone 16 Pro Max",
-      introTitle: "Current iPhone 16 Pro Max offers",
+      introTitle: "Compare current iPhone 16 Pro Max prices",
       intro: [
-        "This model page brings together the iPhone 16 Pro Max devices currently offered by Apfel Park. Compare storage, price and condition in one permanent place even when individual colours or offers change.",
-        "New, Open Box and Used are shown separately on every product. Available devices can be delivered within Germany or collected from Hamburg-Wilhelmsburg.",
+        "This model page brings together the iPhone 16 Pro Max devices currently offered by Apfel Park in Germany. Compare current prices, storage and condition in one permanent place even when individual colours or offers change.",
+        "New, Open Box and Used are shown separately on every product. Available devices can be delivered across Germany or collected from Hamburg-Wilhelmsburg.",
       ],
       benefits: [
         { title: "One model, every offer", text: "Compare available iPhone 16 Pro Max devices in one place." },
