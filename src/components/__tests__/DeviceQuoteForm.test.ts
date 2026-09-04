@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -14,13 +15,36 @@ vi.mock("../ReCaptcha", () => ({
 import { DeviceQuoteFormContent, submitDeviceQuote } from "../DeviceQuoteForm";
 
 describe("DeviceQuoteForm", () => {
+  it("places the smartphone quote CTA before the catalog grid", () => {
+    const source = readFileSync('src/app/(site)/[lang]/smartphones/page.tsx', 'utf8');
+    expect(source).toContain('<DeviceQuoteForm locale={lang}');
+    expect(source.indexOf('<DeviceQuoteForm')).toBeLessThan(source.indexOf('<StoreGrid'));
+  });
+  it("renders a labelled header button without the catalog teaser", () => {
+    const html = renderToStaticMarkup(createElement(DeviceQuoteFormContent, { locale: "de", variant: "header" }));
+    expect(html).toContain('Preis anfragen');
+    expect(html).toContain('aria-haspopup="dialog"');
+    expect(html).not.toContain('<section');
+    expect(html).not.toContain('Derzeit nicht auf Lager');
+  });
+  it("keeps multiple quote dialogs and their accessible references unique", () => {
+    const html = renderToStaticMarkup(createElement("div", null,
+      createElement(DeviceQuoteFormContent, { locale: "en" }),
+      createElement(DeviceQuoteFormContent, { locale: "en" }),
+    ));
+    const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const match of html.matchAll(/aria-(?:controls|labelledby|describedby)="([^"]+)"/g)) {
+      expect(ids).toContain(match[1]);
+    }
+  });
   it("keeps the form in a closed labelled native dialog behind a compact CTA", () => {
     const html = renderToStaticMarkup(createElement(DeviceQuoteFormContent, { locale: "en" }));
     expect(html).toContain('aria-haspopup="dialog"');
-    expect(html).toContain('aria-controls="device-quote-dialog"');
-    expect(html).toMatch(/<dialog[^>]*aria-labelledby="device-quote-dialog-heading"/);
+    expect(html).toMatch(/aria-controls="device-quote-dialog-[^"]+"/);
+    expect(html).toMatch(/<dialog[^>]*aria-labelledby="device-quote-dialog-heading-[^"]+"/);
     expect(html).not.toMatch(/<dialog[^>]*\sopen(?:=|\s|>)/);
-    expect(html).toContain('id="device-quote-heading"');
+    expect(html).toMatch(/id="device-quote-heading-[^"]+"/);
     expect(html).toContain('Close');
   });
   it("groups optional preferences and keeps contact labels visible", () => {

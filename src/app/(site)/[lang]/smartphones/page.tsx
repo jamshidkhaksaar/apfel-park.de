@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import DeviceQuoteForm from "@/components/DeviceQuoteForm";
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
@@ -99,6 +100,8 @@ export default async function SmartphonesPage({
         resultCount={catalog.total}
         breadcrumbs={[{ label: "Smartphones" }]}
       />
+
+      <DeviceQuoteForm locale={lang} initialBrand={activeFilters.brands.length === 1 ? activeFilters.brands[0] : undefined} />
 
       <StoreCollectionLinks lang={lang} products={catalog.products} />
 
