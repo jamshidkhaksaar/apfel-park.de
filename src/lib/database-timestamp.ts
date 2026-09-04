@@ -7,3 +7,10 @@ export const toIsoTimestamp = (value: unknown): string | null => {
 
   return date && Number.isFinite(date.getTime()) ? date.toISOString() : null;
 };
+
+export const toDatabaseTimestampToken = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    return Number.isFinite(new Date(value).getTime()) ? value : null;
+  }
+  return toIsoTimestamp(value);
+};

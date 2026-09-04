@@ -11,7 +11,7 @@ import { enqueueMarketplaceJob } from "@/lib/marketplaces";
 import { notifyPaidOrderAdmin } from "@/lib/order-notifications";
 import { sanitizeInput } from "@/lib/security";
 import { attachProviderReference, getPaymentMode, isOrderInProviderState, markOrderCancelled } from "@/lib/checkout";
-import { toIsoTimestamp } from "@/lib/database-timestamp";
+import { toDatabaseTimestampToken } from "@/lib/database-timestamp";
 import { inspectPayPalOrderForAdminCancellation } from "@/lib/paypal-order-admin";
 import { expireStripeCheckoutSessionForAdmin } from "@/lib/stripe-checkout-admin";
 
@@ -40,14 +40,14 @@ export async function updateOrderFulfillment(formData: FormData) {
     redirect("/admin/orders?error=invalid");
   }
   const currentResult = await query(
-    `SELECT status, payment_status, provider, provider_order_id, provider_session_id, provider_status, updated_at FROM orders WHERE id = $1 LIMIT 1`,
+    `SELECT status, payment_status, provider, provider_order_id, provider_session_id, provider_status, updated_at::text AS updated_at FROM orders WHERE id = $1 LIMIT 1`,
     [id],
   );
   const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; updated_at?: unknown } | undefined;
   if (!current) redirect("/admin/orders?error=not-found");
   const orderPath = returnTo === "detail" ? `/admin/orders/${id}` : "/admin/orders";
   const redirectError = (reason: string): never => redirect(`${orderPath}?error=${reason}`);
-  const currentUpdatedAt = toIsoTimestamp(current.updated_at);
+  const currentUpdatedAt = toDatabaseTimestampToken(current.updated_at);
   if (!currentUpdatedAt) return redirectError("conflict");
   const decision = validateAdminOrderTransition({
     currentStatus: current.status ?? "",

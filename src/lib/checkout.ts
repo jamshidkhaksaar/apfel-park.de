@@ -1,7 +1,7 @@
 import { randomUUID, timingSafeEqual, createHmac } from "node:crypto";
 
 import { query, withTransaction, type TransactionClient } from "@/lib/db";
-import { toIsoTimestamp } from "@/lib/database-timestamp";
+import { toDatabaseTimestampToken } from "@/lib/database-timestamp";
 import { releaseInventoryReservation, reserveInventoryBatch } from "@/lib/marketplaces/inventory";
 import { getProducts, type Product, type ProductVariant } from "@/lib/products";
 import { isValidEmail, sanitizeInput } from "@/lib/security";
@@ -457,10 +457,10 @@ export async function attachProviderReference(input: {
        AND status = 'pending' AND payment_status = 'unpaid'
        AND ($3::text IS NULL OR provider_order_id IS NULL OR provider_order_id = $3)
        AND ($4::text IS NULL OR provider_session_id IS NULL OR provider_session_id = $4)
-     RETURNING updated_at`,
+     RETURNING updated_at::text AS updated_at`,
     [input.orderId, input.provider, input.providerOrderId ?? null, input.providerSessionId ?? null, input.providerStatus ?? null],
   );
-  const updatedAt = toIsoTimestamp(result.rows[0]?.updated_at);
+  const updatedAt = toDatabaseTimestampToken(result.rows[0]?.updated_at);
   return updatedAt ? { updatedAt } : null;
 }
 
