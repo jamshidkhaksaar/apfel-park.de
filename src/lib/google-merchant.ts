@@ -22,6 +22,27 @@ const xmlEscape = (value: string | number): string =>
 const cleanText = (value: string, maxLength: number): string =>
   value.replace(/\s+/g, ' ').trim().slice(0, maxLength);
 
+const titleIncludes = (title: string, detail: string): boolean =>
+  cleanText(title, 1000).toLocaleLowerCase('de-DE').includes(
+    cleanText(detail, 1000).toLocaleLowerCase('de-DE'),
+  );
+
+export const googleMerchantTitle = (
+  product: Product,
+  variant: Product["variants"][number] | undefined,
+): string => {
+  const condition = product.condition === 'used'
+    ? 'Gebraucht'
+    : product.condition === 'open_box'
+      ? 'Open Box'
+      : '';
+  const variantDetails = [variant?.color, variant?.storage]
+    .filter((detail): detail is string => Boolean(detail?.trim()))
+    .filter((detail) => !titleIncludes(product.title, detail));
+
+  return cleanText([product.title, condition, ...variantDetails].filter(Boolean).join(' '), 150);
+};
+
 const stableSuffix = (value: string): string => {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
@@ -89,10 +110,7 @@ const itemXml = (product: Product, variant: Product["variants"][number] | undefi
     .slice(0, 10)
     .map((image) => `      <g:additional_image_link>${xmlEscape(absoluteUrl(image))}</g:additional_image_link>`)
     .join('\n');
-  const titleSuffix = [color, storage].filter(Boolean).join(" ");
-  const title = titleSuffix && !product.title.toLowerCase().includes(titleSuffix.toLowerCase())
-    ? `${product.title} ${titleSuffix}`
-    : product.title;
+  const title = googleMerchantTitle(product, variant);
   const googleCategory = product.marketplaceCategoryMappings?.google?.category || categoryMap[product.category];
   const variantOptions = variant
     ? [
@@ -127,7 +145,7 @@ const itemXml = (product: Product, variant: Product["variants"][number] | undefi
   return [
     '    <item>',
     `      <g:id>${xmlEscape(itemId)}</g:id>`,
-    `      <g:title>${xmlEscape(cleanText(title, 150))}</g:title>`,
+    `      <g:title>${xmlEscape(title)}</g:title>`,
     `      <g:description>${xmlEscape(descriptionFor(product))}</g:description>`,
     `      <g:link>${xmlEscape(link)}</g:link>`,
     `      <g:image_link>${xmlEscape(absoluteUrl(primaryImage))}</g:image_link>`,
