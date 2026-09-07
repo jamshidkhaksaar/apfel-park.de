@@ -536,7 +536,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Right of Withdrawal",
     },
     defaultDescription: {
-      de: "Widerrufsbelehrung und Muster-Widerrufsformular für Bestellungen bei Apfel Park.",
+      de: "Informationen zum Widerruf Ihrer Bestellung bei Apfel Park: Fristen, Rücksendung, Erstattung und das Online-Formular zur Erklärung Ihres Widerrufs.",
       en: "Right of withdrawal, deadlines and model cancellation form for orders placed with Apfel Park in Germany.",
     },
     defaultKeywords: {
@@ -555,8 +555,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Legal Notice",
     },
     defaultDescription: {
-      de: "Impressum und Anbieterkennzeichnung von Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg.",
-      en: "Legal notice and provider identification of Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg.",
+      de: "Anbieterkennzeichnung von Apfel Park in Hamburg-Wilhelmsburg: Inhaber Bismaillah Safi, Geschäftsanschrift, Kontaktmöglichkeiten und Unternehmensangaben.",
+      en: "Legal information for Apfel Park in Hamburg-Wilhelmsburg: proprietor Bismaillah Safi, business address, contact details and business identification.",
     },
     defaultKeywords: {
       de: "Impressum Apfel Park",

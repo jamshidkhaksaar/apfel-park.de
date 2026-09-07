@@ -191,7 +191,10 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const lang = requireLocale(rawLang);
   const locale = lang === "en" ? "en" : "de";
   const copy = content[locale];
-  return createMetadata(locale, copy.title, copy.subtitle, guidePath);
+  return createMetadata(locale,
+    locale === "de" ? "Smartphone länger nutzen: Reparatur & Gebrauchtkauf" : "Phone repair, used buying & safe handover",
+    locale === "de" ? copy.subtitle : "Decide whether to repair, buy used or replace your phone. Practical checks for battery health, backups, account security and safe device handover.",
+    guidePath);
 }
 
 export default async function SmartphoneLongevityGuidePage({ params }: { params: Promise<{ lang: string }> }) {

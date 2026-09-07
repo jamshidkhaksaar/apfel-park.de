@@ -4,7 +4,7 @@ import { requireLocale } from "@/lib/route-locale";
 
 export const generateMetadata = async ({ params }: { params: Promise<{ lang: string }> }) => {
   const { lang } = await params; const locale = requireLocale(lang);
-  return createMetadata(locale, locale === "de" ? "Gerät verkaufen | Apfel Park" : "Sell your device | Apfel Park", locale === "de" ? "Fotos senden und ein unverbindliches, manuell geprüftes Trade-in Angebot erhalten." : "Send photos and receive a non-binding, manually reviewed trade-in quote.", "/trade-in");
+  return createMetadata(locale, locale === "de" ? "Gerät verkaufen | Apfel Park" : "Sell your device | Apfel Park", locale === "de" ? "Smartphone bei Apfel Park in Hamburg zum Ankauf anbieten: Modell, Zustand und Fotos senden und ein unverbindliches, manuell geprüftes Angebot erhalten." : "Offer your smartphone to Apfel Park in Hamburg: send the model, condition and photos to receive a non-binding trade-in quote reviewed by our team.", "/trade-in");
 };
 
 export default async function TradeInPage({ params }: { params: Promise<{ lang: string }> }) {

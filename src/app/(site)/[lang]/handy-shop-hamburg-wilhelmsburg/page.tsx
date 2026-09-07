@@ -183,7 +183,10 @@ export default async function HamburgWilhelmsburgStorePage({
     name: content.metaTitle,
     description: content.description,
     about: { "@id": `${siteInfo.url}/#store` },
-    primaryImageOfPage: `${siteInfo.url}/images/shop1.jpg`,
+    primaryImageOfPage: {
+      "@type": "ImageObject",
+      url: `${siteInfo.url}/images/shop1.jpg`,
+    },
     inLanguage: locale === "de" ? "de-DE" : "en-DE",
   };
 

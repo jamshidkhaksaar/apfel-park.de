@@ -16,6 +16,13 @@ import { getSitemapEntries } from "@/lib/seo";
 const comparisonPath = "/repairs/preisvergleich-hamburg";
 
 describe("repair comparison sitemap publication gate", () => {
+  it("includes both public trade-in pages without indexing cart or checkout", async () => {
+    const entries = await getSitemapEntries();
+    expect(entries.filter((entry) => entry.url.endsWith('/trade-in')).map((entry) => entry.url)).toEqual([
+      'https://apfel-park.de/de/trade-in', 'https://apfel-park.de/en/trade-in',
+    ]);
+    expect(entries.some((entry) => /\/(cart|checkout)$/.test(entry.url))).toBe(false);
+  });
   afterEach(() => {
     vi.unstubAllEnvs();
   });

@@ -111,6 +111,12 @@ ln -sfn "$APP_ROOT/shared/uploads" "$release/.next/standalone/public/uploads"
 chmod 0755 "$release" "$release/.next"
 chmod -R a+rX "$release/.next/static"
 
+# nginx serves this shared archive, not the current-release symlink. Seed every
+# retained release before activation so cached HTML continues to find its assets.
+log "preserving immutable assets across deployments"
+bash "$release/deployment/vps/scripts/preserve-static-assets.sh" \
+  "$APP_ROOT/shared/next-static" "$RELEASES"/*/.next/static "$release/.next/static"
+
 previous="$(readlink -e "$CURRENT" 2>/dev/null || true)"
 worker_present=0
 if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then worker_present=1; fi

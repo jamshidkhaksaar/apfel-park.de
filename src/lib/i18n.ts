@@ -67,7 +67,7 @@ export const dictionary = {
           "Professionelle Services von Sofort-Reparatur bis Geräte-Setup – alles im Apfel Park Hamburg.",
       },
       repairs: {
-        title: "Handy-Reparatur Hamburg – Preise für Display, Akku & Rückseite",
+        title: "Handy-Reparatur Hamburg: Preise & Service",
         description:
           "Modellbezogene Reparaturpreise für iPhone und Samsung in Hamburg-Wilhelmsburg: Display in Standard, Premium oder Original, Akkutausch und Rückcover.",
       },
@@ -114,12 +114,12 @@ export const dictionary = {
       privacy: {
         title: "Datenschutz – Apfel Park Hamburg",
         description:
-          "Datenschutzinformationen für Apfel Park – transparent, sicher und DSGVO-konform.",
+          "Wie Apfel Park personenbezogene Daten bei Bestellungen, Reparaturanfragen und Kontakt verarbeitet: Informationen zu Cookies, Diensten und Ihren Rechten.",
       },
       terms: {
         title: "AGB – Apfel Park Hamburg",
         description:
-          "Allgemeine Geschäftsbedingungen für Reparaturen, Verkäufe und Services im Apfel Park Hamburg.",
+          "Allgemeine Geschäftsbedingungen von Apfel Park in Hamburg: Informationen zu Kaufverträgen, Zahlung, Lieferung, Reparaturen und gesetzlichen Rechten.",
       },
     },
     home: {
@@ -781,7 +781,7 @@ export const dictionary = {
           "Professional services from instant repairs to device setup – all in one place in Hamburg.",
       },
       repairs: {
-        title: "Phone Repair Hamburg – Screen, Battery & Back Cover Prices",
+        title: "Phone Repair Hamburg: Prices & Service",
         description:
           "Model-specific iPhone and Samsung repair prices in Hamburg-Wilhelmsburg: Standard, Premium or Original displays, battery replacement and back covers.",
       },
@@ -828,7 +828,7 @@ export const dictionary = {
       privacy: {
         title: "Privacy Policy – Apfel Park Hamburg",
         description:
-          "Privacy information for Apfel Park – transparent, secure, and GDPR compliant.",
+          "How Apfel Park processes personal data for orders, repair requests and enquiries. Read about cookies, external services and your data protection rights.",
       },
       terms: {
         title: "Terms & Conditions",

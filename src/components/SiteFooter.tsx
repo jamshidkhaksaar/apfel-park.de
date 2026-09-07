@@ -118,7 +118,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             lang={lang}
           />
 
-          <FooterLinkGroup title="Info" links={dict.footer.companyLinks} lang={lang} />
+          <FooterLinkGroup title="Info" links={[...dict.footer.companyLinks, { label: lang === "de" ? "Gerät verkaufen" : "Sell your device", path: "/trade-in" }]} lang={lang} />
 
           {/* Location Column */}
           <div className="space-y-4">

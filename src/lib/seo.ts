@@ -271,7 +271,18 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
       }))
     : [];
 
-  return [...staticEntries, ...repairServiceEntries, ...repairComparisonEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...productEntries];
+  const tradeInEntries = locales.map((locale) => ({
+    url: `${siteInfo.url}/${locale}/trade-in`,
+    alternates: {
+      languages: {
+        de: `${siteInfo.url}/de/trade-in`,
+        en: `${siteInfo.url}/en/trade-in`,
+        "x-default": `${siteInfo.url}/de/trade-in`,
+      },
+    },
+  }));
+
+  return [...staticEntries, ...repairServiceEntries, ...repairComparisonEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...tradeInEntries, ...productEntries];
 };
 
 export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
