@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import StoreBrandCards from "@/components/store/StoreBrandCards";
 import { notFound } from "next/navigation";
 
 import DeviceQuoteForm from "@/components/DeviceQuoteForm";
@@ -124,70 +125,7 @@ export default async function SmartphonesPage({
         </div>
       </section>
 
-      {/* Featured Brands */}
-      <section className="section-pad">
-        <div className="container-page">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-foreground md:text-4xl">
-              {lang === "de" ? "Top Marken" : "Top Brands"}
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-muted">
-              {lang === "de"
-                ? "Wir führen alle führenden Smartphone-Marken"
-                : "We carry all leading smartphone brands"}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
-            {/* Apple */}
-            <div className="tech-card-hover group flex flex-col items-center justify-center rounded-2xl p-8 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-white/10 to-white/5 transition group-hover:from-gold/20 group-hover:to-amber/20">
-                <svg className="h-8 w-8 text-muted transition group-hover:text-gold" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                </svg>
-              </div>
-              <p className="font-semibold text-foreground">Apple</p>
-              <p className="mt-1 text-xs text-muted">iPhone</p>
-            </div>
-
-            {/* Samsung */}
-            <div className="tech-card-hover group flex flex-col items-center justify-center rounded-2xl p-8 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/10 to-amber/10 transition group-hover:from-gold/20 group-hover:to-amber/20">
-                <span className="text-xl font-bold text-muted transition group-hover:text-gold">S</span>
-              </div>
-              <p className="font-semibold text-foreground">Samsung</p>
-              <p className="mt-1 text-xs text-muted">Galaxy</p>
-            </div>
-
-            {/* Google */}
-            <div className="tech-card-hover group flex flex-col items-center justify-center rounded-2xl p-8 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-red/10 via-yellow/10 to-green/10 transition group-hover:from-gold/20 group-hover:to-amber/20">
-                <span className="text-xl font-bold text-muted transition group-hover:text-gold">G</span>
-              </div>
-              <p className="font-semibold text-foreground">Google</p>
-              <p className="mt-1 text-xs text-muted">Pixel</p>
-            </div>
-
-            {/* Xiaomi */}
-            <div className="tech-card-hover group flex flex-col items-center justify-center rounded-2xl p-8 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange/10 to-orange/5 transition group-hover:from-gold/20 group-hover:to-amber/20">
-                <span className="text-xl font-bold text-muted transition group-hover:text-gold">Mi</span>
-              </div>
-              <p className="font-semibold text-foreground">Xiaomi</p>
-              <p className="mt-1 text-xs text-muted">Mi & Redmi</p>
-            </div>
-
-            {/* Huawei */}
-            <div className="tech-card-hover group flex flex-col items-center justify-center rounded-2xl p-8 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-red/10 to-red/5 transition group-hover:from-gold/20 group-hover:to-amber/20">
-                <span className="text-xl font-bold text-muted transition group-hover:text-gold">H</span>
-              </div>
-              <p className="font-semibold text-foreground">Huawei</p>
-              <p className="mt-1 text-xs text-muted">Mate & Pura</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <StoreBrandCards lang={lang} />
 
       {/* Services */}
       <section className="section-pad bg-surface/30">
