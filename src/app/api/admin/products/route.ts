@@ -226,10 +226,11 @@ export async function POST(request: NextRequest) {
         "marketplace_category_mappings",
         "marketplace_attributes",
         "amazon_gtin_exemption",
-        "amazon_renewed_approved"
+        "amazon_renewed_approved",
+        "catalog_enabled"
       ) VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23,$24::jsonb,$25::jsonb,$26,$27,$28,$29::jsonb,$30::jsonb,
-        $31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43::jsonb,$44::jsonb,$45::jsonb,$46,$47
+        $31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43::jsonb,$44::jsonb,$45::jsonb,$46,$47,true
       )
       RETURNING "id"`,
       [

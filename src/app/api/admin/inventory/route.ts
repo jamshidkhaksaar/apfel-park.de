@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { canManageProducts } from "@/lib/admin-auth";
+import { inventoryCatalogFrom, inventoryCatalogWhere } from "@/lib/inventory-catalog";
 import { query } from "@/lib/db";
 import { readSessionUserFromRequest } from "@/lib/session";
 
@@ -11,34 +12,33 @@ export async function GET(request: NextRequest) {
   if (!canManageProducts(user)) return unauthorized();
 
   const search = request.nextUrl.searchParams.get("q")?.trim().slice(0, 100) ?? "";
-  const limit = Math.min(100, Math.max(1, Number(request.nextUrl.searchParams.get("limit")) || 50));
+  const limit = Math.min(100, Math.max(1, Number.parseInt(request.nextUrl.searchParams.get("limit") ?? "50", 10) || 50));
+  const requestedPage = Math.max(1, Math.min(1000000, Number.parseInt(request.nextUrl.searchParams.get("page") ?? "1", 10) || 1));
+  const requestedStatus = request.nextUrl.searchParams.get("status") ?? "all";
+  const status = ["all", "inventory", "draft", "published"].includes(requestedStatus) ? requestedStatus : "all";
   const pattern = `%${search}%`;
 
   try {
+    const count = await query(`SELECT count(*)::int AS total ${inventoryCatalogFrom} ${inventoryCatalogWhere}`, [search, pattern, status]);
+    const total = Number(count.rows[0]?.total ?? 0);
+    const pages = Math.max(1, Math.ceil(total / limit));
+    const page = Math.min(requestedPage, pages);
     const [inventory, adjustments, summary] = await Promise.all([
       query(
         `SELECT
-           inventory.sku,
-           inventory.on_hand,
-           inventory.reserved,
-           inventory.safety_buffer,
-           available_inventory(inventory.on_hand, inventory.reserved, inventory.safety_buffer) AS available,
-           inventory.version,
-           inventory.updated_at,
-           product.id AS product_id,
-           product.title,
-           product.model,
-           product.is_active
-         FROM inventory_skus inventory
-         JOIN products product ON product.id = inventory.product_id
-         WHERE inventory.location = 'local' AND inventory.is_active = true
-           AND ($1 = '' OR inventory.sku ILIKE $2 OR product.title ILIKE $2 OR coalesce(product.model, '') ILIKE $2)
-         ORDER BY
-           CASE WHEN available_inventory(inventory.on_hand, inventory.reserved, inventory.safety_buffer) = 0 THEN 1 ELSE 0 END,
-           product.title,
-           inventory.sku
-         LIMIT $3`,
-        [search, pattern, limit],
+           coalesce(inventory.sku, product.sku, '') AS sku,
+           coalesce(inventory.on_hand, product.stock, 0) AS on_hand,
+           coalesce(inventory.reserved, 0) AS reserved,
+           coalesce(inventory.safety_buffer, 0) AS safety_buffer,
+           CASE WHEN inventory.id IS NULL THEN 0 ELSE available_inventory(inventory.on_hand, inventory.reserved, inventory.safety_buffer) END AS available,
+           coalesce(inventory.version, 0) AS version,
+           coalesce(inventory.updated_at, product.updated_at, product.created_at) AS updated_at,
+           inventory.id IS NOT NULL AS can_adjust,
+           product.id AS product_id, product.title, product.model, product.is_active, product.catalog_enabled
+         ${inventoryCatalogFrom} ${inventoryCatalogWhere}
+         ORDER BY product.title, product.id, inventory.sku
+         LIMIT $4 OFFSET $5`,
+        [search, pattern, status, limit, (page - 1) * limit],
       ),
       query(
         `SELECT adjustment.id,
@@ -66,12 +66,15 @@ export async function GET(request: NextRequest) {
     ]);
 
     return NextResponse.json({
+      pagination: { page, pages, total, limit },
       items: inventory.rows.map((row) => ({
         sku: String(row.sku),
         productId: String(row.product_id),
         title: String(row.title),
         model: row.model ? String(row.model) : null,
         active: Boolean(row.is_active),
+        catalogEnabled: Boolean(row.catalog_enabled),
+        canAdjust: Boolean(row.can_adjust),
         onHand: Number(row.on_hand),
         reserved: Number(row.reserved),
         safetyBuffer: Number(row.safety_buffer),

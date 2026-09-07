@@ -1,0 +1,16 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+import { NextRequest, NextResponse } from 'next/server';
+const mocks = vi.hoisted(() => ({ canManage: vi.fn(), csrf: vi.fn(), setEnabled: vi.fn() }));
+vi.mock('@/lib/admin-auth', () => ({ canManageProducts: mocks.canManage }));
+vi.mock('@/lib/session', () => ({ readSessionUserFromRequest: async () => ({ email: 'test@example.invalid' }) }));
+vi.mock('@/lib/admin-csrf', () => ({ rejectCrossSiteAdminMutation: mocks.csrf }));
+vi.mock('@/lib/inventory-catalog', () => ({ setInventoryCatalogEnabled: mocks.setEnabled }));
+import { PATCH } from './route';
+const productId = '00000000-0000-4000-8000-000000000001';
+const run = (body: unknown = { productId, catalogEnabled: true }) => PATCH(new NextRequest('https://apfel-park.de/api/admin/inventory/catalog', { method: 'PATCH', body: JSON.stringify(body) }));
+beforeEach(() => { vi.resetAllMocks(); mocks.canManage.mockReturnValue(true); mocks.csrf.mockReturnValue(null); });
+it('rejects users without product management permission', async () => { mocks.canManage.mockReturnValue(false); expect((await run()).status).toBe(401); expect(mocks.setEnabled).not.toHaveBeenCalled(); });
+it('rejects cross-site mutations', async () => { mocks.csrf.mockReturnValue(NextResponse.json({}, { status: 403 })); expect((await run()).status).toBe(403); expect(mocks.setEnabled).not.toHaveBeenCalled(); });
+it.each([null, {}, { productId, catalogEnabled: 'true' }, { productId: 'bad', catalogEnabled: true }])('rejects invalid input %j', async body => { expect((await run(body)).status).toBe(400); expect(mocks.setEnabled).not.toHaveBeenCalled(); });
+it('returns the saved draft state', async () => { mocks.setEnabled.mockResolvedValue({ catalogEnabled: true, active: false }); const response = await run(); expect(response.status).toBe(200); expect(await response.json()).toEqual({ catalogEnabled: true, active: false }); });
+it('reports a missing product', async () => { mocks.setEnabled.mockResolvedValue(null); expect((await run()).status).toBe(404); });
