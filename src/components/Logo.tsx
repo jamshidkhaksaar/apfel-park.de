@@ -16,6 +16,8 @@ type LogoProps = {
   showText?: boolean;
   /** Priority loading for LCP */
   priority?: boolean;
+  /** Actual rendered width when CSS overrides the size variant. */
+  sizes?: string;
 };
 
 const sizeMap = {
@@ -40,6 +42,7 @@ export default function Logo({
   className = "",
   showText = false,
   priority = false,
+  sizes,
 }: LogoProps) {
   const { width, height, containerClass } = sizeMap[size];
   const { theme } = useTheme();
@@ -63,7 +66,7 @@ export default function Logo({
         priority={priority}
         loading={priority ? "eager" : undefined}
         fetchPriority={priority ? "high" : undefined}
-        sizes={`${width}px`}
+        sizes={sizes ?? `${width}px`}
         unoptimized={shouldBypassImageOptimization(activeLogoSrc)}
         suppressHydrationWarning
       />

@@ -9,7 +9,7 @@ import StoreGrid from "../../../../components/store/StoreGrid";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
+import { getProducts, getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getSmartphonesContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
@@ -60,14 +60,18 @@ export default async function SmartphonesPage({
   const sort = parseStoreSort(query.sort);
   const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
-  const catalog = await getStoreCatalog({
-    category: "smartphones",
-    sort,
-    page,
-    pageSize: 24,
-    locale: lang,
-    filters: activeFilters,
-  });
+  const [catalog, collectionProducts] = await Promise.all([
+    getStoreCatalog({
+      category: "smartphones",
+      sort,
+      page,
+      pageSize: 24,
+      locale: lang,
+      filters: activeFilters,
+    }),
+    // Same primitive arguments as getStoreCatalog: request-memoized DB read.
+    getProducts(undefined, undefined, lang),
+  ]);
   if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
 
   const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${lang}/smartphones`, indexing);
@@ -104,7 +108,7 @@ export default async function SmartphonesPage({
 
       <DeviceQuoteForm locale={lang} initialBrand={activeFilters.brands.length === 1 ? activeFilters.brands[0] : undefined} />
 
-      <StoreCollectionLinks lang={lang} products={catalog.products} />
+      <StoreCollectionLinks lang={lang} products={collectionProducts} />
 
       {/* Smartphone Store Grid with Filters */}
       <section className="bg-store-ground py-6 md:py-8" id="store">

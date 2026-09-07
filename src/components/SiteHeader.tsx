@@ -9,6 +9,7 @@ import { getStoredCartCount, subscribeStoredCart } from "./checkout/cart";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
 import DeviceQuoteForm from "./DeviceQuoteForm";
+import { headerLogoSizes } from '@/lib/store-image-sizes';
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import TrackedLink from "./TrackedLink";
@@ -138,7 +139,7 @@ export default function SiteHeader({
       <div className="container-page relative z-10 flex items-start">
         <div className="relative flex flex-1 items-center navbar-border navbar-shell bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-lg">
           <div className="navbar-logo-slot flex shrink-0 items-center justify-center pl-1" suppressHydrationWarning>
-            <Logo href={`/${lang}`} size="xl" className="navbar-logo" priority />
+            <Logo href={`/${lang}`} size="xl" className="navbar-logo" sizes={headerLogoSizes} priority />
           </div>
           {/* Desktop Navigation */}
           <nav className="hidden h-full flex-1 items-center justify-center gap-0.5 xl:flex">

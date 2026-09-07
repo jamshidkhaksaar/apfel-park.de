@@ -9,7 +9,8 @@ import type { NextConfig } from "next";
 const LOCALE_ROUTES = [
   'about', 'accessories', 'cart', 'checkout', 'contact', 'delivery-returns',
   'device-conditions', 'faq', 'gaming', 'gebrauchte-handys', 'gebrauchte-iphones',
-  'iphone-17', 'laptops', 'open-box', 'privacy', 'repairs', 'smartphones',
+  'iphone-17', 'iphone-16-pro-max', 'samsung-handys', 'xiaomi-redmi-handys',
+  'handys-ohne-vertrag', 'trade-in', 'laptops', 'open-box', 'privacy', 'repairs', 'smartphones',
   'store', 'tablets', 'terms', 'withdrawal', 'ratgeber/smartphone-laenger-nutzen',
 ] as const;
 
@@ -68,7 +69,7 @@ const nextConfig: NextConfig = {
     // Device sizes for responsive images
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     // Image sizes for next/image
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    imageSizes: [16, 32, 48, 64, 96, 128, 160, 192, 256, 320, 384, 512],
     // Minimum cache TTL for optimized images (1 year)
     minimumCacheTTL: 31536000,
   },
