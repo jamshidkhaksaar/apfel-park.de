@@ -11,14 +11,16 @@ type Address = {
 export default function CopyAddressButton({
   address,
   label = "Copy address",
+  copiedLabel = "Copied!",
 }: {
   address: Address;
   label?: string;
+  copiedLabel?: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const fullAddress = `${address.street}, ${address.postalCode} ${address.city}`;
 
   const handleCopy = async () => {
-    const fullAddress = `${address.street}, ${address.postalCode} ${address.city}`;
     try {
       await navigator.clipboard.writeText(fullAddress);
       setCopied(true);
@@ -29,10 +31,12 @@ export default function CopyAddressButton({
   };
 
   return (
+    <div className="relative w-fit">
     <button
+      type="button"
       onClick={handleCopy}
       className="group relative text-left text-sm text-muted transition hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-      aria-label={label}
+      aria-label={`${fullAddress} – ${label}`}
       title={label}
     >
       <div className="flex items-start gap-2">
@@ -72,17 +76,19 @@ export default function CopyAddressButton({
           )}
         </div>
       </div>
+    </button>
 
       {/* Feedback Tooltip */}
       <div
         role="status"
         aria-live="polite"
+        aria-atomic="true"
         className={`absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-surface-strong px-2 py-1 text-xs font-medium text-gold shadow-lg ring-1 ring-white/10 transition-all duration-200 ${
           copied ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 pointer-events-none"
         }`}
       >
-        Copied!
+        {copied ? copiedLabel : ""}
       </div>
-    </button>
+    </div>
   );
 }

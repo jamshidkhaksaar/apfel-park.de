@@ -163,6 +163,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             <CopyAddressButton
               address={siteInfo.address}
               label={lang === "de" ? "Adresse kopieren" : "Copy address"}
+              copiedLabel={lang === "de" ? "Kopiert!" : "Copied!"}
             />
             
             <Link
