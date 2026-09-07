@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import { getRelatedStoreCollectionLinks, getStoreCollectionCopy, storeCollectionIds } from "@/lib/store-collections";
+import { seoRouteDefinitions } from '@/lib/seo-shared';
 
 describe("store collections", () => {
+  it('keeps all collection snippets synchronized with central SEO defaults', () => {
+    for (const id of storeCollectionIds) {
+      for (const locale of ['de', 'en'] as const) {
+        const copy = getStoreCollectionCopy(id, locale);
+        const route = seoRouteDefinitions.find(route => route.path === copy.path);
+        expect(route?.defaultTitle[locale]).toBe(copy.metaTitle);
+        expect(route?.defaultDescription[locale]).toBe(copy.description);
+      }
+    }
+  });
   it.each(['de', 'en'] as const)('links to distinct related indexed collections, not itself, in %s', locale => {
     for (const id of storeCollectionIds) {
       const links = getRelatedStoreCollectionLinks(id, locale);

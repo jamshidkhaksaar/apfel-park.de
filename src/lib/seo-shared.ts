@@ -210,7 +210,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy iPhone 17 in Germany – Prices & Stock",
     },
     defaultDescription: {
-      de: "iPhone 17, 17 Air, 17 Pro und 17 Pro Max bei Apfel Park kaufen. Zustand, Preis und Verfügbarkeit klar ausgewiesen; Versand oder Abholung in Hamburg.",
+      de: "iPhone 17, Pro, Pro Max und iPhone Air vergleichen: Speicher, Zustand, Preis und Verfügbarkeit. Versand in Deutschland oder Abholung in Hamburg.",
       en: "Buy iPhone 17, Air, Pro or Pro Max in Germany. Compare current prices, storage and condition, with delivery across Germany or Hamburg pickup.",
     },
     defaultKeywords: {
@@ -263,7 +263,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Xiaomi, Redmi & Poco Handys kaufen",
+      de: "Xiaomi & Redmi Handys ohne Vertrag kaufen",
       en: "Buy Xiaomi, Redmi & Poco Phones in Germany",
     },
     defaultDescription: {
@@ -286,8 +286,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy Phones Without a Contract in Germany",
     },
     defaultDescription: {
-      de: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr kaufen. Neu, Open Box oder gebraucht mit klarer Zustandsangabe und Versand in Deutschland.",
-      en: "Buy phones without a mobile contract from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
+      de: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr. Neu, Open Box oder gebraucht mit klarer Zustandsangabe und Versand in Deutschland.",
+      en: "Buy contract-free phones from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
     },
     defaultKeywords: {
       de: "Handy ohne Vertrag, Handy günstig ohne Vertrag, Smartphone ohne Vertrag",
@@ -320,11 +320,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.93,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Gebrauchte iPhones kaufen – Open Box & geprüft",
-      en: "Buy Used iPhones – Open Box & Tested",
+      de: "Gebrauchte iPhones kaufen in Hamburg",
+      en: "Buy Used iPhones in Hamburg",
     },
     defaultDescription: {
-      de: "Gebrauchte und Open-Box-iPhones nach Zustand, Speicher, Preis und Verfügbarkeit vergleichen; Versand aus Hamburg.",
+      de: "Gebrauchte und Open-Box-iPhones: Zustand, Speicher und Preis vergleichen. Abholung in Hamburg-Wilhelmsburg oder Versand innerhalb Deutschlands.",
       en: "Buy used and open-box iPhones. Compare condition, storage, price and availability with delivery from Hamburg across Germany.",
     },
     defaultKeywords: {
