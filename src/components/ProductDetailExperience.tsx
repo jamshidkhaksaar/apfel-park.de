@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import ProductDesktopPurchaseBar from "@/components/ProductDesktopPurchaseBar";
 import ProductGallery from "@/components/ProductGallery";
+import { productGalleryImages } from "@/lib/product-gallery";
 import { ProductFamilyConfigurator, ProductWishlistButton } from "@/components/ProductProfessionalExperience";
 import ProductMobilePurchaseBar from "@/components/ProductMobilePurchaseBar";
 import ProductPurchaseFacts from "@/components/ProductPurchaseFacts";
@@ -99,23 +100,11 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
   const activeDiscount = getDiscount(activePrice, activeComparePrice);
   const activeStock = selectedVariant?.stock ?? product.stock;
   const activeSku = selectedVariant?.sku || product.sku;
-  const activeImage = selectedVariant?.images?.length
-    ? selectedVariant.images[0]
-    : (selectedVariant?.imageIndex !== undefined && product.images[selectedVariant.imageIndex]
-      ? product.images[selectedVariant.imageIndex]
-      : product.image);
-  const galleryImages = useMemo(() => {
-    const variantImgs = selectedVariant?.images?.length
-      ? selectedVariant.images
-      : (selectedVariant?.imageIndex !== undefined && product.images[selectedVariant.imageIndex]
-        ? [product.images[selectedVariant.imageIndex]]
-        : (product.image ? [product.image] : []));
-    const combined = [
-      ...variantImgs,
-      ...product.images.filter((image) => !variantImgs.includes(image)),
-    ];
-    return combined.length > 0 ? combined : (product.images.length > 0 ? product.images : (product.image ? [product.image] : []));
-  }, [selectedVariant, product.images, product.image]);
+  const galleryImages = useMemo(
+    () => productGalleryImages(product, selectedVariant),
+    [selectedVariant, product],
+  );
+  const activeImage = galleryImages[0] ?? product.image;
   const [quantity, setQuantity] = useState(1);
   const maxQuantity = Math.max(1, Math.min(10, activeStock ?? 10));
   const cartItem = {
