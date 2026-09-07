@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import ProductDeactivateButton from "@/components/admin/ProductDeactivateButton";
 import AdminFilterForm from "@/components/admin/AdminFilterForm";
 import ProductTipsBadge from "@/components/admin/ProductTipsBadge";
 import { productMissingData } from "@/lib/product-missing-data";
@@ -297,7 +298,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                     <tr key={product.id} className={`group transition hover:bg-gold/[0.04] ${justEdited ? "bg-gold/[0.05]" : ""}`}>
                       <td className="px-4 py-3"><Link href={`/admin/products/${product.id}`} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex items-center gap-2"><span className="truncate text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block truncate text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span></span></Link></td>
                       <td className="px-4 py-3 text-sm text-muted">{product.category}{product.subcategory && product.subcategory !== product.category ? <span className="mt-0.5 block text-xs text-muted/70">{subcategoryLabel(product.subcategory, locale)}</span> : null}</td><td className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? (locale === "de" ? "Gebraucht" : "Used") : (locale === "de" ? "Neu" : "New")}</td>
-                      <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ${product.is_active ? "bg-emerald-500/10 text-emerald-600" : "bg-surface text-muted"}`}>{product.is_active ? (locale === "de" ? "Aktiv" : "Active") : (locale === "de" ? "Entwurf" : "Draft")}</span></td>
+                      <td className="px-4 py-3"><ProductDeactivateButton id={product.id} title={product.title} isActive={Boolean(product.is_active)} locale={locale} /></td>
                       <td className="px-4 py-3"><ProductTipsBadge tips={tipsByProduct.get(product.id)!} locale={locale} /></td>
                       <td className="px-4 py-3 text-sm text-muted">{statusLabel(summaries.get(product.id)?.status ?? "none")}<span className="mt-0.5 block text-xs">{summaries.get(product.id)?.intakeCode ?? "—"}</span></td>
                       <td className="px-4 py-3"><Link href={`/admin/products/${product.id}#ai-intake`} prefetch={false} className="text-sm font-semibold text-gold">{dict.productsWorkspace.aiUpdate}</Link></td>

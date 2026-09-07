@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { type ReactNode, useState, useEffect, useRef } from "react";
 
+import { useAdminSidebar } from "@/lib/admin-sidebar";
+
 import { createAdminBrowserClient } from "@/lib/admin-auth-client";
 import { useAdmin } from "@/lib/admin-context";
 import { useTheme } from "@/components/ThemeProvider";
@@ -149,7 +151,7 @@ export default function AdminShell({
   const [logoutPending, setLogoutPending] = useState(false);
   const [logoutFailed, setLogoutFailed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, toggleSidebarCollapsed] = useAdminSidebar();
   const [navigatingPath, setNavigatingPath] = useState<string | null>(null);
   const [badges, setBadges] = useState<AdminBadgeCounts>({ chat: 0, repairs: 0, orders: 0 });
 
@@ -600,7 +602,9 @@ export default function AdminShell({
               <button
                 type="button"
                 ref={desktopTriggerRef}
-                onClick={() => setSidebarCollapsed((value) => !value)}
+                onClick={toggleSidebarCollapsed}
+                aria-expanded={!sidebarCollapsed}
+                aria-controls="admin-sidebar"
                 aria-label={sidebarCollapsed ? dict.sidebar.expandNavigation : dict.sidebar.collapseNavigation}
                 title={sidebarCollapsed ? dict.sidebar.expandNavigation : dict.sidebar.collapseNavigation}
                 className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-strong text-muted/70 transition-all duration-150 hover:border-gold/30 hover:bg-gold/10 hover:text-gold lg:flex"

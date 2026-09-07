@@ -608,6 +608,13 @@ export const adminDictionary = {
       reject: "Ablehnen",
       openPreview: "Vorschau öffnen",
     },
+    productActivation: {
+      deactivate: "Deaktivieren",
+      inactive: "Inaktiv",
+      active: "Aktiv",
+      saving: "Wird deaktiviert…",
+      failed: "Deaktivierung fehlgeschlagen. Bitte erneut versuchen.",
+    },
     productsWorkspace: {
       tabsLabel: "Produktbereiche",
       catalogTab: "Katalog",
@@ -1545,6 +1552,13 @@ export const adminDictionary = {
       requestChanges: "Request changes",
       reject: "Reject",
       openPreview: "Open preview",
+    },
+    productActivation: {
+      deactivate: "Deactivate",
+      inactive: "Inactive",
+      active: "Active",
+      saving: "Deactivating…",
+      failed: "Deactivation failed. Please try again.",
     },
     productsWorkspace: {
       tabsLabel: "Product sections",
