@@ -119,7 +119,7 @@ export default function SmartphoneWizard({
     const id = new URLSearchParams(window.location.search).get('draft');
     (id
       ? call(`/api/admin/smartphone-drafts/${id}`)
-      : call('/api/admin/smartphone-drafts')
+      : call(`/api/admin/smartphone-drafts${productId ? `?productId=${encodeURIComponent(productId)}` : ''}`)
     )
       .then((result) => {
         if (!active) return;
@@ -135,7 +135,7 @@ export default function SmartphoneWizard({
     return () => {
       active = false;
     };
-  }, [load]);
+  }, [load, productId]);
   const flush = useCallback(async () => {
     if (saving.current) await saving.current;
     if (
@@ -274,10 +274,16 @@ export default function SmartphoneWizard({
         el?.focus();
       }, 50);
   };
-  const start = async () => {
+  const start = async (step?: number) => {
     setBusy(true);
     try {
-      load(await call('/api/admin/smartphone-drafts', 'POST', { productId }));
+      const next = await call('/api/admin/smartphone-drafts', 'POST', { productId });
+      load(next);
+      if (step !== undefined) {
+        const document = { ...next.document, step };
+        current.current = document;
+        setDocument(document);
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -330,10 +336,15 @@ export default function SmartphoneWizard({
         <button
           className="btn-primary"
           disabled={busy || initializing}
-          onClick={start}
+          onClick={() => void start(productId ? 1 : undefined)}
         >
-          {t.newDraft}
+          {productId ? (locale === 'de' ? 'Varianten bearbeiten' : 'Edit versions') : t.newDraft}
         </button>
+        {productId ? <div className="flex flex-wrap gap-3">
+          <button className="btn-secondary" disabled={busy || initializing} onClick={() => void start(3)}>{locale === 'de' ? 'Variantenfotos bearbeiten' : 'Edit variant photos'}</button>
+          <button className="btn-secondary" disabled={busy || initializing} onClick={() => void start(2)}>{t.priceShortcut}</button>
+          <p className="w-full text-sm text-muted">{locale === 'de' ? 'Die vorhandenen Varianten werden als Entwurf geladen. Das veröffentlichte Produkt ändert sich erst nach der Prüfung und Veröffentlichung.' : 'Existing versions open as a draft. The live product changes only after review and publication.'}</p>
+        </div> : null}
         <h3>{t.resume}</h3>
         {drafts.length ? (
           drafts.map((item) => (

@@ -6,6 +6,7 @@ import { query } from '@/lib/db';
 import {
   createPhoneDraft,
   loadPhoneDraft,
+  listPhoneDrafts,
   savePhoneDraft,
   publishPhoneDraft,
 } from './repository';
@@ -183,6 +184,8 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
     const initial = await publish(await seed());
     const id = initial.results[0].productId;
     const edit = await createPhoneDraft('editor', id);
+    expect((await listPhoneDrafts(id)).some(d => d.id === edit.id)).toBe(true);
+    expect(await listPhoneDrafts(randomUUID())).toEqual([]);
     edit.document.entries[0].price = 777;
     const saved = await savePhoneDraft(
       edit.id,

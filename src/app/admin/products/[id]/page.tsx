@@ -59,6 +59,7 @@ export default async function ProductEditorPage({ params, searchParams }: { para
   return (
     <AdminShell title={product.title}>
       <div className="mx-auto mb-3 w-full max-w-[1500px]">
+        {phoneEditorEnabled() && product.category === "smartphones" ? <Link className="btn-primary mb-4 inline-flex" href={`/admin/products/${product.id}`}>{locale === "de" ? "Varianten und Fotos im Smartphone-Editor bearbeiten" : "Edit versions and photos in the smartphone editor"}</Link> : null}
         <Link href="/admin/products" className="inline-flex items-center gap-2 text-sm font-medium text-muted transition hover:text-gold">← {locale === "de" ? "Zurück zum Produktkatalog" : "Back to product catalog"}</Link>
       </div>
       <ProductTipsCard tips={tips} locale={locale} />

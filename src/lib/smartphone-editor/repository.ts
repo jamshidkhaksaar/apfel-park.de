@@ -101,10 +101,11 @@ export const loadPhoneDraft = async (id: string): Promise<PhoneDraft> => {
   }
   return result;
 };
-export const listPhoneDrafts = async () =>
+export const listPhoneDrafts = async (productId?: string) =>
   (
     await query(
-      `SELECT id,revision,document->'shared'->>'title' AS title,updated_at FROM smartphone_editor_drafts ORDER BY updated_at DESC LIMIT 100`,
+      `SELECT id,revision,document->'shared'->>'title' AS title,updated_at FROM smartphone_editor_drafts WHERE ($1::text IS NULL OR sources ? $1) ORDER BY updated_at DESC LIMIT 100`,
+      [productId ?? null],
     )
   ).rows;
 export const searchPhoneModels = async (search: string) =>
