@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
 import { pushGtagCommand } from "@/lib/analytics";
-import { analyticsPagePath } from "@/lib/analytics-url";
+import { analyticsPageContext, analyticsPagePath } from "@/lib/analytics-url";
 
 type MarketingConsentScriptsProps = {
   metaPixelEnabled: boolean;
@@ -56,7 +56,7 @@ type TikTokQueue = Array<unknown[]> & {
   track?: (eventName: string, payload?: Record<string, unknown>, options?: Record<string, unknown>) => void;
 } & Partial<Record<TikTokMethod, (...args: unknown[]) => void>>;
 
-const setupGoogleAnalytics = (gaId: string) => {
+const setupGoogleAnalytics = (gaId: string, pageContext: Record<string, string>) => {
   if (!gaId || window.gtag) return;
   window.dataLayer = window.dataLayer || [];
   window.gtag = (...args: unknown[]) => {
@@ -69,7 +69,7 @@ const setupGoogleAnalytics = (gaId: string) => {
     ad_personalization: "denied",
   });
   window.gtag("js", new Date());
-  window.gtag("config", gaId, { send_page_view: false });
+  window.gtag("config", gaId, { send_page_view: false, ...pageContext });
   loadScript("ga-script", `https://www.googletagmanager.com/gtag/js?id=${gaId}`);
 };
 
@@ -249,7 +249,6 @@ export default function MarketingConsentScripts({
 }: MarketingConsentScriptsProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const initializedRef = useRef(false);
   const lastPageViewRef = useRef("");
 
   useEffect(() => {
@@ -268,7 +267,7 @@ export default function MarketingConsentScripts({
 
       if (googleAnalyticsEnabled && googleAnalyticsId && window.gtag) {
         window.gtag("event", "page_view", {
-          page_path: path,
+          ...analyticsPageContext(pathname, searchParams, window.location.origin, document.referrer),
         });
       }
     };
@@ -279,7 +278,6 @@ export default function MarketingConsentScripts({
           updateGoogleAnalyticsConsent(googleAnalyticsId, false);
         }
         updateMarketingConsent(false);
-        initializedRef.current = false;
         lastPageViewRef.current = "";
         return;
       }
@@ -296,10 +294,9 @@ export default function MarketingConsentScripts({
 
       if (googleAnalyticsEnabled && googleAnalyticsId) {
         updateGoogleAnalyticsConsent(googleAnalyticsId, true);
-        setupGoogleAnalytics(googleAnalyticsId);
+        setupGoogleAnalytics(googleAnalyticsId, analyticsPageContext(pathname, searchParams, window.location.origin, document.referrer));
       }
 
-      initializedRef.current = true;
       trackPageView();
     };
 
@@ -318,18 +315,19 @@ export default function MarketingConsentScripts({
 
   useEffect(() => {
     window.apfelTrack = (eventName, payload = {}, eventId) => {
-      if (readConsentMode() !== "external") return;
+      if (readConsentMode() !== "external" || isExcludedPath(pathname)) return;
 
       if (googleAnalyticsEnabled && googleAnalyticsId && window.gtag) {
         window.gtag("event", eventName, {
           ...payload,
           event_id: eventId,
+          ...analyticsPageContext(pathname, searchParams, window.location.origin, document.referrer),
         });
       }
 
       if (isConversionPath(pathname) && metaPixelEnabled && metaPixelId && window.fbq) {
         const metaEvent = toMetaEventName(eventName);
-        const method = ["contact_click", "whatsapp_click"].includes(eventName) ? "trackCustom" : "track";
+        const method = ["contact_click", "whatsapp_click", "inquiry_start", "device_quote_request"].includes(eventName) ? "trackCustom" : "track";
         window.fbq(method, metaEvent, payload, eventId ? { eventID: eventId } : undefined);
       }
 
@@ -341,18 +339,6 @@ export default function MarketingConsentScripts({
     return () => {
       delete window.apfelTrack;
     };
-  }, [pathname, metaPixelEnabled, metaPixelId, tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId]);
-
-  useEffect(() => {
-    if (!initializedRef.current) return;
-    if (readConsentMode() !== "external") return;
-
-    const path = pathname + (searchParams?.toString() ? `?${searchParams}` : "");
-    if (lastPageViewRef.current === path) return;
-    lastPageViewRef.current = path;
-    window.apfelTrack?.("page_view", {
-      page_path: path,
-    });
   }, [pathname, searchParams, metaPixelEnabled, metaPixelId, tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId]);
 
   return null;

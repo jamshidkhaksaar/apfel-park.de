@@ -137,5 +137,12 @@ describe("DeviceQuoteForm", () => {
     });
     expect(track.mock.calls[0]?.[1]).not.toHaveProperty("budget");
     expect(track.mock.calls[0]?.[1]).not.toHaveProperty("price");
+    expect(track).toHaveBeenCalledWith("generate_lead", { lead_type: "device_quote", locale: "en" });
+    expect(track).toHaveBeenCalledTimes(2);
+    for (const [, payload] of track.mock.calls) {
+      expect(payload).not.toHaveProperty("customerName");
+      expect(payload).not.toHaveProperty("email");
+      expect(payload).not.toHaveProperty("phone");
+    }
   });
 });

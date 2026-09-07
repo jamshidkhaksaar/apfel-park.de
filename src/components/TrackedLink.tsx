@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { safelyTrack, trackedLinkEvents } from "@/lib/lead-analytics";
 
 type Props = {
   href: string;
@@ -31,13 +32,8 @@ export default function TrackedLink({
   eventId,
 }: Props) {
   const handleClick = () => {
-    window.apfelTrack?.(eventName, eventPayload ?? {}, eventId);
-    if (href.startsWith("mailto:") || href.startsWith("tel:")) {
-      window.apfelTrack?.("contact_click", {
-        type: href.startsWith("tel:") ? "phone" : "email",
-        href,
-        ...(eventPayload ?? {}),
-      });
+    for (const event of trackedLinkEvents(href, eventName, eventPayload)) {
+      safelyTrack(event.name, event.payload, (name, payload) => window.apfelTrack?.(name, payload, eventId));
     }
   };
 

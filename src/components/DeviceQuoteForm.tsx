@@ -6,6 +6,7 @@ import { type FormEvent, useId, useRef, useState } from "react";
 import { useReCaptcha } from "@/components/ReCaptcha";
 import { parseDeviceQuoteRequest } from "@/lib/device-quote";
 import { deviceQuoteCopy, type Locale } from "@/lib/i18n";
+import { safelyTrack, trackSuccessfulLead } from "@/lib/lead-analytics";
 
 
 const inputClassName = "w-full rounded-xl border border-border bg-background/70 px-4 py-3 text-base text-foreground placeholder:text-muted focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold";
@@ -56,12 +57,13 @@ export const submitDeviceQuote = async (
     return { success: false, error: result.error || "failed" };
   }
 
-  dependencies.track?.("device_quote_request", {
+  safelyTrack("device_quote_request", {
     brand: parsed.data.brand,
     condition: parsed.data.condition,
     fulfillment: parsed.data.fulfillment,
     locale,
-  });
+  }, dependencies.track);
+  trackSuccessfulLead("device_quote", locale, dependencies.track);
   return { success: true, id: result.id };
 };
 

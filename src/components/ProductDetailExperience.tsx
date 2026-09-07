@@ -655,7 +655,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             type="button"
             className="underline underline-offset-4 transition hover:text-gold"
             onClick={() => {
-              window.apfelTrack?.("generate_lead", {
+              window.apfelTrack?.("inquiry_start", {
                 item_id: product.id,
                 item_name: product.title,
                 source: "product_detail",
