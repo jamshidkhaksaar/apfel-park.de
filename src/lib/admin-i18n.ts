@@ -611,6 +611,19 @@ export const adminDictionary = {
     productEditor: {
       experienceSaveFailed: "Produkt gespeichert, aber Erlebnis- oder Familieneinstellungen konnten nicht gespeichert werden. Bitte erneut speichern.",
     },
+    inventoryFilters: {
+      title: "Filter",
+      reset: "Filter zurücksetzen",
+      brand: "Marke",
+      category: "Kategorie",
+      condition: "Zustand",
+      stock: "Bestand",
+      all: "Alle",
+      inStock: "Auf Lager",
+      low: "Niedriger Bestand (1–3)",
+      out: "Ausverkauft",
+      noImage: "Kein Bild",
+    },
     inventoryCatalog: {
       title: "Online-Shop",
       explanation: "Alle Produkte bleiben im Lager. Für Produkte aktivieren, dort bearbeiten und anschließend im Shop veröffentlichen.",
@@ -1578,6 +1591,19 @@ export const adminDictionary = {
     },
     productEditor: {
       experienceSaveFailed: "Product saved, but experience or family settings could not be saved. Please save again.",
+    },
+    inventoryFilters: {
+      title: "Filters",
+      reset: "Reset filters",
+      brand: "Brand",
+      category: "Category",
+      condition: "Condition",
+      stock: "Stock",
+      all: "All",
+      inStock: "In stock",
+      low: "Low stock (1–3)",
+      out: "Out of stock",
+      noImage: "No image",
     },
     inventoryCatalog: {
       title: "Online shop",

@@ -20,4 +20,12 @@ export const inventoryCatalogFrom = `FROM products product
 export const inventoryCatalogWhere = `WHERE ($1 = '' OR inventory.sku ILIKE $2 OR product.sku ILIKE $2 OR product.title ILIKE $2 OR coalesce(product.model, '') ILIKE $2)
   AND ($3 = 'all' OR ($3 = 'inventory' AND product.catalog_enabled = false)
     OR ($3 = 'draft' AND product.catalog_enabled = true AND coalesce(product.is_active, false) = false)
-    OR ($3 = 'published' AND product.is_active = true))`;
+    OR ($3 = 'published' AND product.is_active = true))
+  AND ($4 = '' OR product.brand = $4)
+  AND ($5 = '' OR product.category = $5)
+  AND ($6 = '' OR product.condition = $6)
+  AND ($7 = 'all'
+    OR ($7 = 'in_stock' AND inventory.id IS NOT NULL AND available_inventory(inventory.on_hand, inventory.reserved, inventory.safety_buffer) > 0)
+    OR ($7 = 'low' AND inventory.id IS NOT NULL AND available_inventory(inventory.on_hand, inventory.reserved, inventory.safety_buffer) BETWEEN 1 AND 3)
+    OR ($7 = 'out' AND inventory.id IS NOT NULL AND available_inventory(inventory.on_hand, inventory.reserved, inventory.safety_buffer) = 0)
+    OR ($7 = 'untracked' AND inventory.id IS NULL))`;

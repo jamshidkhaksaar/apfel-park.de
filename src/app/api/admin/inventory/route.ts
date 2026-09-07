@@ -17,13 +17,19 @@ export async function GET(request: NextRequest) {
   const requestedStatus = request.nextUrl.searchParams.get("status") ?? "all";
   const status = ["all", "inventory", "draft", "published"].includes(requestedStatus) ? requestedStatus : "all";
   const pattern = `%${search}%`;
+  const brand = request.nextUrl.searchParams.get("brand")?.trim().slice(0, 200) ?? "";
+  const category = request.nextUrl.searchParams.get("category")?.trim().slice(0, 100) ?? "";
+  const condition = request.nextUrl.searchParams.get("condition")?.trim().slice(0, 100) ?? "";
+  const requestedStock = request.nextUrl.searchParams.get("stock") ?? "all";
+  const stock = ["all", "in_stock", "low", "out", "untracked"].includes(requestedStock) ? requestedStock : "all";
+  const filters = [search, pattern, status, brand, category, condition, stock];
 
   try {
-    const count = await query(`SELECT count(*)::int AS total ${inventoryCatalogFrom} ${inventoryCatalogWhere}`, [search, pattern, status]);
+    const count = await query(`SELECT count(*)::int AS total ${inventoryCatalogFrom} ${inventoryCatalogWhere}`, filters);
     const total = Number(count.rows[0]?.total ?? 0);
     const pages = Math.max(1, Math.ceil(total / limit));
     const page = Math.min(requestedPage, pages);
-    const [inventory, adjustments, summary] = await Promise.all([
+    const [inventory, adjustments, summary, filterOptions] = await Promise.all([
       query(
         `SELECT
            coalesce(inventory.sku, product.sku, '') AS sku,
@@ -34,11 +40,11 @@ export async function GET(request: NextRequest) {
            coalesce(inventory.version, 0) AS version,
            coalesce(inventory.updated_at, product.updated_at, product.created_at) AS updated_at,
            inventory.id IS NOT NULL AS can_adjust,
-           product.id AS product_id, product.title, product.model, product.is_active, product.catalog_enabled
+           product.id AS product_id, product.title, product.model, product.images, product.brand, product.category, product.condition, product.is_active, product.catalog_enabled
          ${inventoryCatalogFrom} ${inventoryCatalogWhere}
          ORDER BY product.title, product.id, inventory.sku
-         LIMIT $4 OFFSET $5`,
-        [search, pattern, status, limit, (page - 1) * limit],
+         LIMIT $8 OFFSET $9`,
+        [...filters, limit, (page - 1) * limit],
       ),
       query(
         `SELECT adjustment.id,
@@ -63,15 +69,29 @@ export async function GET(request: NextRequest) {
          JOIN products product ON product.id = inventory.product_id
         WHERE inventory.location = 'local' AND inventory.is_active = true AND product.is_active = true`,
       ),
+      query(`SELECT
+        array_agg(DISTINCT brand ORDER BY brand) FILTER (WHERE coalesce(brand, '') <> '') AS brands,
+        array_agg(DISTINCT category ORDER BY category) FILTER (WHERE coalesce(category, '') <> '') AS categories,
+        array_agg(DISTINCT condition ORDER BY condition) FILTER (WHERE coalesce(condition, '') <> '') AS conditions
+        FROM products`),
     ]);
 
     return NextResponse.json({
       pagination: { page, pages, total, limit },
+      filterOptions: {
+        brands: filterOptions.rows[0]?.brands ?? [],
+        categories: filterOptions.rows[0]?.categories ?? [],
+        conditions: filterOptions.rows[0]?.conditions ?? [],
+      },
       items: inventory.rows.map((row) => ({
         sku: String(row.sku),
         productId: String(row.product_id),
         title: String(row.title),
         model: row.model ? String(row.model) : null,
+        image: Array.isArray(row.images) ? row.images.find((image: unknown) => typeof image === "string" && image.trim()) ?? null : null,
+        brand: row.brand ? String(row.brand) : null,
+        category: row.category ? String(row.category) : null,
+        condition: row.condition ? String(row.condition) : null,
         active: Boolean(row.is_active),
         catalogEnabled: Boolean(row.catalog_enabled),
         canAdjust: Boolean(row.can_adjust),

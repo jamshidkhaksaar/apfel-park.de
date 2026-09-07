@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { adminDictionary } from "@/lib/admin-i18n";
 
@@ -10,6 +11,7 @@ type InventoryRow = {
   productId: string;
   title: string;
   model: string | null;
+  image: string | null;
   active: boolean;
   catalogEnabled: boolean;
   canAdjust: boolean;
@@ -40,8 +42,22 @@ const adjustmentLabels: Record<AdjustmentType, { de: string; en: string }> = {
   return: { de: "Kundenretoure", en: "Customer return" },
 };
 
+type InventoryFilters = { brand: string; category: string; condition: string; stock: string };
+const emptyFilters: InventoryFilters = { brand: "", category: "", condition: "", stock: "all" };
+
+function InventoryThumbnail({ src, title, fallback }: { src: string | null; title: string; fallback: string }) {
+  const [failed, setFailed] = useState(false);
+  return <span className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-white">
+    {src && !failed ? <Image src={src} alt={title} fill sizes="64px" className="object-contain p-1" unoptimized={src.startsWith("/uploads/")} onError={() => setFailed(true)} />
+      : <span className="px-1 text-center text-[10px] leading-tight text-neutral-500">{fallback}</span>}
+  </span>;
+}
+
 export default function AdminInventoryManager({ locale }: { locale: "de" | "en" }) {
   const text = adminDictionary[locale].inventoryCatalog;
+  const filterText = adminDictionary[locale].inventoryFilters;
+  const [filters, setFilters] = useState<InventoryFilters>(emptyFilters);
+  const [filterOptions, setFilterOptions] = useState<{ brands: string[]; categories: string[]; conditions: string[] }>({ brands: [], categories: [], conditions: [] });
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [status, setStatus] = useState("all");
   const [busyProduct, setBusyProduct] = useState<string | null>(null);
@@ -59,16 +75,18 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
   const [note, setNote] = useState("");
   const language = locale === "de" ? "de-DE" : "en-GB";
 
-  const loadInventory = useCallback(async (search = "", page = 1, filter = "all") => {
+  const loadInventory = useCallback(async (search = "", page = 1, filter = "all", selectedFilters: InventoryFilters = emptyFilters) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/inventory?q=${encodeURIComponent(search)}&page=${page}&status=${encodeURIComponent(filter)}`, {
+      const params = new URLSearchParams({ q: search, page: String(page), status: filter, ...selectedFilters });
+      const response = await fetch(`/api/admin/inventory?${params}`, {
         credentials: "include",
         cache: "no-store",
       });
       const payload = await response.json() as {
         pagination?: { page: number; pages: number; total: number };
+        filterOptions?: { brands: string[]; categories: string[]; conditions: string[] };
         items?: InventoryRow[];
         recentAdjustments?: RecentAdjustment[];
         summary?: { available: number; reserved: number; low: number; out: number };
@@ -77,6 +95,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       if (!response.ok) throw new Error(payload.error || "Inventory could not be loaded");
       const nextItems = payload.items ?? [];
       setItems(nextItems);
+      if (payload.filterOptions) setFilterOptions(payload.filterOptions);
       if (payload.pagination) setPagination(payload.pagination);
       setHistory(payload.recentAdjustments ?? []);
       if (payload.summary) setSummary(payload.summary);
@@ -141,7 +160,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       );
       setNote("");
       setQuantity("1");
-      await loadInventory(query, pagination.page, status);
+      await loadInventory(query, pagination.page, status, filters);
     } catch (adjustmentError) {
       setError(adjustmentError instanceof Error ? adjustmentError.message : "Inventory adjustment failed");
     } finally {
@@ -163,14 +182,31 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       });
       if (!response.ok) throw new Error(text.failed);
       setNotice(text.updated);
-      await loadInventory(query, pagination.page, status);
+      await loadInventory(query, pagination.page, status, filters);
     } catch { setError(text.failed); }
     finally { setBusyProduct(null); }
   };
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
-    if (!loading && !busyProduct && !busySku) void loadInventory(query, 1, status);
+    if (!loading && !busyProduct && !busySku) void loadInventory(query, 1, status, filters);
+  };
+
+  const changeFilter = (key: keyof InventoryFilters, value: string) => {
+    const next = { ...filters, [key]: value };
+    setFilters(next);
+    void loadInventory(query, 1, status, next);
+  };
+  const resetFilters = () => {
+    setQuery(""); setStatus("all"); setFilters(emptyFilters);
+    void loadInventory();
+  };
+  const categoryLabels: Record<string, string> = adminDictionary[locale].productForm.categories;
+  const conditionLabels: Record<string, string> = {
+    new: adminDictionary[locale].productForm.conditionNew,
+    used: adminDictionary[locale].productForm.conditionUsed,
+    refurbished: adminDictionary[locale].productForm.conditionRefurbished,
+    open_box: "Open-Box",
   };
 
   const submitAdjustment = (event: FormEvent) => {
@@ -207,6 +243,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         </div>
         <form onSubmit={submitSearch} className="flex w-full max-w-lg gap-2 sm:w-auto">
           <input
+            aria-label={locale === "de" ? "Produkt oder SKU suchen" : "Search product or SKU"}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={locale === "de" ? "Produkt oder SKU suchen" : "Search product or SKU"}
@@ -235,17 +272,42 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         ))}
       </section>
 
+      <section aria-label={filterText.title} className="glass-panel rounded-2xl p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="font-semibold">{filterText.title}</h2>
+          <button type="button" onClick={resetFilters} disabled={loading || Boolean(busyProduct) || Boolean(busySku)} className="text-sm font-semibold text-gold disabled:opacity-50">{filterText.reset}</button>
+        </div>
+        <fieldset disabled={loading || Boolean(busyProduct) || Boolean(busySku)} className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5 disabled:opacity-60">
+          <label className="min-w-0 text-xs text-muted">{text.title}
+            <select value={status} onChange={(event) => { setStatus(event.target.value); void loadInventory(query, 1, event.target.value, filters); }} className="mt-1 w-full min-w-0 rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm text-foreground">
+              <option value="all">{text.all}</option><option value="inventory">{text.inventoryOnly}</option><option value="draft">{text.draft}</option><option value="published">{text.published}</option>
+            </select>
+          </label>
+          {([['brand', 'brands', filterText.brand], ['category', 'categories', filterText.category], ['condition', 'conditions', filterText.condition]] as const).map(([key, options, label]) => <label key={key} className="min-w-0 text-xs text-muted">{label}
+            <select value={filters[key]} onChange={(event) => changeFilter(key, event.target.value)} className="mt-1 w-full min-w-0 rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm text-foreground">
+              <option value="">{filterText.all}</option>
+              {filterOptions[options].map((value) => <option key={value} value={value}>{key === 'category' ? categoryLabels[value] ?? value : key === 'condition' ? conditionLabels[value] ?? value : value}</option>)}
+            </select>
+          </label>)}
+          <label className="min-w-0 text-xs text-muted">{filterText.stock}
+            <select value={filters.stock} onChange={(event) => changeFilter('stock', event.target.value)} className="mt-1 w-full min-w-0 rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm text-foreground">
+              <option value="all">{filterText.all}</option><option value="in_stock">{filterText.inStock}</option><option value="low">{filterText.low}</option><option value="out">{filterText.out}</option><option value="untracked">{text.noStockRecord}</option>
+            </select>
+          </label>
+        </fieldset>
+      </section>
+
       <section className="glass-panel rounded-2xl p-5">
         <h2 className="text-lg font-semibold">{locale === "de" ? "Bestand buchen" : "Record inventory movement"}</h2>
         <form onSubmit={submitAdjustment} className="mt-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_190px_120px_minmax(220px,1fr)_auto]">
-          <select value={selectedSku} onChange={(event) => setSelectedSku(event.target.value)} className="rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm">
+          <select value={selectedSku} onChange={(event) => setSelectedSku(event.target.value)} className="min-w-0 max-w-full rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm">
             {items.filter((item) => item.canAdjust).map((item) => <option key={item.sku} value={item.sku}>{item.title} · {item.sku}</option>)}
           </select>
-          <select value={type} onChange={(event) => setType(event.target.value as AdjustmentType)} className="rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm">
+          <select value={type} onChange={(event) => setType(event.target.value as AdjustmentType)} className="min-w-0 max-w-full rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm">
             {(Object.keys(adjustmentLabels) as AdjustmentType[]).map((value) => <option key={value} value={value}>{adjustmentLabels[value][locale]}</option>)}
           </select>
-          <input value={quantity} onChange={(event) => setQuantity(event.target.value)} inputMode="numeric" type="number" step="1" min={type === "correction" ? undefined : 1} className="rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm" aria-label={locale === "de" ? "Menge" : "Quantity"} />
-          <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder={locale === "de" ? "Notiz (optional)" : "Note (optional)"} className="rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm" />
+          <input value={quantity} onChange={(event) => setQuantity(event.target.value)} inputMode="numeric" type="number" step="1" min={type === "correction" ? undefined : 1} className="min-w-0 max-w-full rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm" aria-label={locale === "de" ? "Menge" : "Quantity"} />
+          <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder={locale === "de" ? "Notiz (optional)" : "Note (optional)"} className="min-w-0 max-w-full rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm" />
           <button disabled={loading || !selectedSku || Boolean(busySku) || Boolean(busyProduct)} className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50">
             {busySku ? (locale === "de" ? "Speichert…" : "Saving…") : (locale === "de" ? "Buchen" : "Record")}
           </button>
@@ -254,15 +316,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       </section>
 
       <section className="glass-panel overflow-hidden rounded-2xl">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 p-4">
-          <p className="max-w-2xl text-sm text-muted">{text.explanation}</p>
-          <select aria-label={text.title} value={status} disabled={loading || Boolean(busyProduct) || Boolean(busySku)}
-            onChange={(event) => { setStatus(event.target.value); void loadInventory(query, 1, event.target.value); }}
-            className="rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm">
-            <option value="all">{text.all}</option><option value="inventory">{text.inventoryOnly}</option>
-            <option value="draft">{text.draft}</option><option value="published">{text.published}</option>
-          </select>
-        </div>
+        <p className="border-b border-border/60 p-4 text-sm text-muted">{text.explanation}</p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px] text-left text-sm">
             <thead className="border-b border-border/60 bg-surface/50 text-xs uppercase tracking-wide text-muted">
@@ -271,7 +325,10 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
             <tbody className="divide-y divide-border/50">
               {loading ? <tr><td colSpan={8} className="px-4 py-12 text-center text-muted">{locale === "de" ? "Lager wird geladen…" : "Loading inventory…"}</td></tr> : items.length ? items.map((item) => (
                 <tr key={`${item.productId}:${item.sku}`} className="hover:bg-gold/[0.03]">
-                  <td className="px-4 py-3"><p className="font-medium">{item.title}</p><p className="mt-0.5 font-mono text-xs text-muted">{item.sku || "—"}</p></td>
+                  <td className="px-4 py-3"><div className="flex items-center gap-3">
+                    <InventoryThumbnail key={item.image} src={item.image} title={item.title} fallback={filterText.noImage} />
+                    <div className="min-w-0"><p className="font-medium">{item.title}</p><p className="mt-0.5 break-all font-mono text-xs text-muted">{item.sku || "—"}</p></div>
+                  </div></td>
                   <td className="px-4 py-3">
                     <div className="flex min-w-48 flex-col items-start gap-2">
                       <span className={`rounded-md px-2 py-1 text-xs font-medium ${item.active ? 'bg-emerald-500/10 text-emerald-600' : item.catalogEnabled ? 'bg-gold/10 text-gold' : 'bg-surface text-muted'}`}>
@@ -300,8 +357,8 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 p-4 text-sm">
           <span className="text-muted">{text.page} {pagination.page} {text.of} {pagination.pages} · {pagination.total} {text.entries}</span>
           <div className="flex gap-2">
-            <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page <= 1} onClick={() => void loadInventory(query, pagination.page - 1, status)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.previous}</button>
-            <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page >= pagination.pages} onClick={() => void loadInventory(query, pagination.page + 1, status)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.next}</button>
+            <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page <= 1} onClick={() => void loadInventory(query, pagination.page - 1, status, filters)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.previous}</button>
+            <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page >= pagination.pages} onClick={() => void loadInventory(query, pagination.page + 1, status, filters)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.next}</button>
           </div>
         </div>
       </section>
