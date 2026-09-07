@@ -81,9 +81,11 @@ Six things it enforces, each learned the hard way:
   aborts the deploy with production still on the previous release.
 - **It symlinks `shared/uploads` into `.next/standalone/public/`.** Uploads
   live outside releases and are served by nginx via `alias`, but `next/image`
-  resolves local paths against the standalone public dir. Without the symlink
-  every `/_next/image?url=/uploads/...` returns 400 and no product image is
-  ever optimized -- one 765KB PNG becomes a 5KB AVIF once it works.
+  resolves local paths inside Next. The symlink covers existing files;
+  `src/app/uploads/[...path]/route.ts` serves raster images added after startup,
+  because Next snapshots `public/` at boot. The release also runs
+  `npm run test:image-uploads` against an isolated standalone process, creating
+  WebP, PNG and JPEG images after startup and checking four optimizer widths.
 - **It submits changed URLs to IndexNow.** Bing, Yandex, Seznam and Naver get
   told within minutes instead of waiting for a crawl. The verification key had
   been served since July with nothing ever submitting to it. Skips

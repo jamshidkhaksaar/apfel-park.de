@@ -25,11 +25,11 @@ it.each([['logo.svg', 'image/svg+xml'], ['spoof.png', 'image/png']])('never publ
   }
   expect(await readdir(path.join(root, 'products'))).toHaveLength(4);
 });
-it('preserves normal PNG originals and produces WebP variants', async () => {
-  const png = await sharp({ create: { width: 40, height: 30, channels: 4, background: '#ff0000' } }).png().toBuffer();
-  const result = await uploadProductImage(new File([new Uint8Array(png)], 'phone.png', { type: 'image/png' }));
-  expect(result.originalUrl).toMatch(/--original\.png$/);
-  expect(await readFile(path.join(root, result.originalUrl.slice('/uploads/'.length)))).toEqual(png);
+it.each(['png', 'webp', 'jpeg'] as const)('preserves %s originals and produces WebP variants', async (format) => {
+  const input = await sharp({ create: { width: 40, height: 30, channels: 4, background: '#ff0000' } }).toFormat(format).toBuffer();
+  const result = await uploadProductImage(new File([new Uint8Array(input)], `phone.${format}`, { type: `image/${format}` }));
+  expect(result.originalUrl.endsWith(`--original.${format}`)).toBe(true);
+  expect(await readFile(path.join(root, result.originalUrl.slice('/uploads/'.length)))).toEqual(input);
   for (const variant of Object.values(result.variants)) {
     expect((await sharp(await readFile(path.join(root, variant.url.slice('/uploads/'.length)))).metadata()).format).toBe('webp');
   }
