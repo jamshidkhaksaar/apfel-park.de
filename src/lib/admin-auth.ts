@@ -10,16 +10,6 @@ const toStringArray = (value: unknown): string[] => {
   return [];
 };
 
-const getAdminEmails = (): Set<string> => {
-  const raw = process.env.ADMIN_EMAILS ?? "";
-  return new Set(
-    raw
-      .split(",")
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean),
-  );
-};
-
 const getUserRole = (user: User | null): string | null => {
   if (!user) return null;
 
@@ -41,11 +31,7 @@ export const isAdminUser = (user: User | null): boolean => {
   const appRoles = toStringArray(user.app_metadata?.roles).map((r) => r.toLowerCase());
   if (appRoles.includes("admin")) return true;
 
-  const adminEmails = getAdminEmails();
-  if (adminEmails.size === 0) return false;
-
-  const email = user.email?.toLowerCase().trim();
-  return Boolean(email && adminEmails.has(email));
+  return false;
 };
 
 export const canManageUsers = (user: User | null): boolean => {

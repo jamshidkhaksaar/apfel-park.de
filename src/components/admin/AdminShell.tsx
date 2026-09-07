@@ -146,6 +146,8 @@ export default function AdminShell({
   const { dict, lang, setLang, user } = useAdmin();
   const { theme, toggleTheme } = useTheme();
   const [clock, setClock] = useState('');
+  const [logoutPending, setLogoutPending] = useState(false);
+  const [logoutFailed, setLogoutFailed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [navigatingPath, setNavigatingPath] = useState<string | null>(null);
@@ -276,10 +278,18 @@ export default function AdminShell({
   };
 
   const handleLogout = async () => {
-    const adminClient = createAdminBrowserClient();
-    await adminClient.auth.signOut();
-    router.push('/login');
-    router.refresh();
+    if (logoutPending) return;
+    setLogoutPending(true);
+    setLogoutFailed(false);
+    try {
+      await createAdminBrowserClient().auth.signOut();
+      router.push('/login');
+      router.refresh();
+    } catch {
+      setLogoutFailed(true);
+    } finally {
+      setLogoutPending(false);
+    }
   };
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -537,6 +547,7 @@ export default function AdminShell({
           </nav>
 
           {/* Bottom links */}
+          {logoutFailed && sidebarOpen ? <p id="logout-error" role="alert" className="px-4 py-2 text-sm text-red-600 dark:text-red-400">{dict.sidebar.logoutFailed}</p> : null}
           <div className={`border-t border-border px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
             <a
               href="https://mail.apfel-park.de"
@@ -563,6 +574,10 @@ export default function AdminShell({
             </Link>
             <button
               onClick={handleLogout}
+              disabled={logoutPending}
+              aria-busy={logoutPending}
+              aria-label={dict.sidebar.logout}
+              aria-describedby={logoutFailed ? 'logout-error' : undefined}
               title={sidebarCollapsed ? dict.sidebar.logout : undefined}
               className={`mt-0.5 flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-red-400/70 transition-all duration-150 hover:bg-red-500/8 hover:text-red-400 lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
@@ -661,6 +676,10 @@ export default function AdminShell({
               {/* Logout */}
               <button
                 onClick={handleLogout}
+                disabled={logoutPending}
+                aria-busy={logoutPending}
+                aria-label={dict.sidebar.logout}
+                aria-describedby={logoutFailed ? 'logout-error' : undefined}
                 title={dict.sidebar.logout}
                 className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium text-muted/50 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 sm:flex"
               >
@@ -672,6 +691,8 @@ export default function AdminShell({
             </div>
           </header>
           {navigatingPath ? <div className="relative z-20 h-0.5 shrink-0 overflow-hidden bg-gold/15"><div className="h-full w-1/3 animate-pulse bg-gold" /></div> : null}
+
+          {logoutFailed && !sidebarOpen ? <p id="logout-error" role="alert" className="px-4 py-2 text-sm text-red-600 dark:text-red-400">{dict.sidebar.logoutFailed}</p> : null}
 
           {/* Page content */}
           <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 lg:p-6">

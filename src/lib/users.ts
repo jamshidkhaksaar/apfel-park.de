@@ -9,6 +9,7 @@ export type UserRow = {
   id: string;
   email: string;
   password_hash: string;
+  security_version: number;
   role: UserRole;
   is_active: boolean;
   created_at: string;
@@ -189,9 +190,9 @@ export const deleteUser = async (id: string): Promise<boolean> => {
 export const verifyUserCredentials = async (
   email: string,
   password: string,
-): Promise<{ valid: false } | { valid: true; role: UserRole }> => {
+): Promise<{ valid: false } | { valid: true; userId: string; role: UserRole; securityVersion: number }> => {
   const user = await getUserByEmail(email);
   if (!user) return { valid: false };
   if (!verifyPassword(password, user.password_hash)) return { valid: false };
-  return { valid: true, role: user.role };
+  return { valid: true, userId: user.id, role: user.role, securityVersion: user.security_version };
 };
