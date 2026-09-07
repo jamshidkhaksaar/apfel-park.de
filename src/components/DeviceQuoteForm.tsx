@@ -103,8 +103,16 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "", variant = "c
         <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-controls={`device-quote-dialog-${id}`}
           onClick={() => dialogRef.current?.showModal()}
           className={isHeader
-            ? "inline-flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-gold/50 bg-gold/10 px-2.5 text-xs font-semibold text-gold transition-colors hover:bg-gold/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:px-3 sm:text-sm"
+            ? "group inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gold/40 bg-gold/10 px-2.5 text-xs font-semibold text-gold shadow-sm shadow-gold/10 transition-colors hover:border-gold/70 hover:bg-gold/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:px-3 sm:text-sm"
             : "btn-primary shrink-0 justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"}>
+          {isHeader && (
+            <span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-gold/15 transition-colors group-hover:bg-gold/25">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+                <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 2V11.5A8.5 8.5 0 0 1 9.5 3h3A8.5 8.5 0 0 1 21 11.5Z" />
+                <path d="M7 9h8M7 13h5" />
+              </svg>
+            </span>
+          )}
           {isHeader ? text.headerTitle : text.title}{!isHeader && <span aria-hidden="true">↗</span>}
         </button>
       </div>
