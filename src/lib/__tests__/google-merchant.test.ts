@@ -37,6 +37,28 @@ const product = {
 } satisfies Product;
 
 describe("Google Merchant feed", () => {
+  it("restores legacy products with supplied identifiers without inventing an exemption", () => {
+    const xml = buildGoogleMerchantFeedForProducts([{ ...product, variants: [], identifierStatus: "unknown" }]);
+    expect(xml).toContain("<g:gtin>4006381333931</g:gtin>");
+    expect(xml).toContain("<g:id>product-1</g:id>");
+    expect(xml).not.toContain("<g:identifier_exists>no</g:identifier_exists>");
+  });
+
+  it("aborts instead of publishing an unexpectedly empty catalog", () => {
+    expect(() => buildGoogleMerchantFeedForProducts([{ ...product, variants: [], gtin: undefined, identifierStatus: "unknown" }])).toThrow("all selected products failed readiness");
+  });
+
+  it("respects explicit feed opt-outs and still omits genuinely unready products", () => {
+    const xml = buildGoogleMerchantFeedForProducts([
+      { ...product, id: "ready", variants: [] },
+      { ...product, id: "unready", variants: [], gtin: undefined, identifierStatus: "unknown" },
+      { ...product, id: "opted-out", variants: [], googleFeedEnabled: false },
+    ]);
+    expect(xml.match(/<item>/g)).toHaveLength(1);
+    expect(xml).toContain("<g:id>ready</g:id>");
+    expect(buildGoogleMerchantFeedForProducts([{ ...product, googleFeedEnabled: false }])).not.toContain("<item>");
+  });
+
   it("publishes each sellable variant as a separate grouped item", () => {
     const xml = buildGoogleMerchantFeedForProducts([product]);
     expect(xml.match(/<item>/g)).toHaveLength(2);

@@ -1,4 +1,4 @@
-import { evaluateProductChannelReadiness } from '@/lib/product-channel-readiness';
+import { eligibleGoogleFeedProducts } from '@/lib/google-feed-eligibility';
 import { getProducts, type Product } from '@/lib/products';
 import { validatedGtin } from '@/lib/product-identifiers';
 import { germanyShippingAmount } from '@/lib/schema';
@@ -188,7 +188,7 @@ export const buildGoogleMerchantFeedForProducts = (products: Product[]): string 
     `    <title>${xmlEscape(siteInfo.name)} Produktfeed</title>`,
     `    <link>${xmlEscape(siteInfo.url)}</link>`,
     `    <description>${xmlEscape('Smartphones, Tablets und Zubehör von Apfel Park.')}</description>`,
-    ...products.filter(product => product.googleFeedEnabled !== false && evaluateProductChannelReadiness(product).google.ready).flatMap((product) =>
+    ...eligibleGoogleFeedProducts(products).flatMap((product) =>
       product.variants.length > 0
         ? product.variants.map((variant, index) => itemXml(product, variant, index))
         : [itemXml(product, undefined, 0)],

@@ -32,6 +32,12 @@ const product = {
 } satisfies Product;
 
 describe('Google local inventory feed', () => {
+  it('uses the same legacy-identifier readiness and empty-feed guard as the online feed', () => {
+    const legacy = { ...product, variants: [], identifierStatus: 'unknown' as const, gtin: '4006381333931' };
+    expect(buildGoogleLocalInventoryFeedForProducts([legacy], 'hamburg-store')).toContain('hamburg-store\tproduct-1\t3\tin_stock');
+    expect(() => buildGoogleLocalInventoryFeedForProducts([{ ...legacy, gtin: undefined }], 'hamburg-store')).toThrow('all selected products failed readiness');
+  });
+
   it('publishes the required shop, item, quantity and availability columns', () => {
     const feed = buildGoogleLocalInventoryFeedForProducts([product], 'hamburg-store');
     const lines = feed.trim().split('\n');

@@ -1,4 +1,4 @@
-import { evaluateProductChannelReadiness } from '@/lib/product-channel-readiness';
+import { eligibleGoogleFeedProducts } from '@/lib/google-feed-eligibility';
 import { googleMerchantItemId } from '@/lib/google-merchant';
 import { getProducts, type Product } from '@/lib/products';
 import { siteInfo } from '@/lib/site';
@@ -23,12 +23,12 @@ export const buildGoogleLocalInventoryFeedForProducts = (
   storeCode = siteInfo.googleBusinessProfile.storeCode,
 ): string => [
   'store_code\tid\tquantity\tavailability',
-  ...products.filter(product => product.googleFeedEnabled !== false && evaluateProductChannelReadiness(product).google.ready).flatMap((product) => inventoryRowsForProduct(product, storeCode)),
+  ...eligibleGoogleFeedProducts(products).flatMap((product) => inventoryRowsForProduct(product, storeCode)),
   '',
 ].join('\n');
 
 export const buildGoogleLocalInventoryFeed = async (): Promise<string> => {
-  const products = await getProducts(undefined, undefined, 'de');
+  const products = await getProducts(undefined, undefined, 'de', { failOnError: true });
   if (products.length === 0) {
     throw new Error('Local inventory feed aborted because no active products were returned.');
   }
