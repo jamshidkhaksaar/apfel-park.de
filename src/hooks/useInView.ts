@@ -60,29 +60,6 @@ export function useInView<T extends HTMLElement = HTMLDivElement>({
   return [ref, prefersReducedMotion ? true : inView];
 }
 
-/**
- * Hook to stagger animations for multiple elements
- */
-export function useStaggeredInView<T extends HTMLElement = HTMLDivElement>(
-  options: UseInViewOptions & { staggerDelay?: number } = {}
-): [RefObject<T | null>, boolean, (index: number) => string] {
-  const { staggerDelay = 100, ...inViewOptions } = options;
-  const [ref, inView] = useInView<T>(inViewOptions);
-
-  const getStaggerStyle = (): string => {
-    if (!inView) return "opacity-0 translate-y-8";
-    return `opacity-100 translate-y-0 transition-all duration-500 ease-out`;
-  };
-
-  const getStaggerDelay = (index: number): string => {
-    return `${index * staggerDelay}ms`;
-  };
-
-  return [ref, inView, (index: number) => 
-    `${getStaggerStyle()} [transition-delay:${getStaggerDelay(index)}]`
-  ];
-}
-
 type AnimationVariant = 
   | "fade-up"
   | "fade-down"

@@ -831,9 +831,6 @@ const STORE_SORT_SET = new Set<StoreCatalogSort>(["featured", "newest", "price-a
 const valueOfParam = (value: string | string[] | undefined): string =>
   Array.isArray(value) ? value[0] ?? "" : value ?? "";
 
-export const hasCatalogSearchQuery = (query: Record<string, string | string[] | undefined>): boolean =>
-  valueOfParam(query.q).trim().length > 0;
-
 export const parseStoreSort = (value: string | string[] | undefined): StoreCatalogSort => {
   const str = valueOfParam(value) as StoreCatalogSort;
   return STORE_SORT_SET.has(str) ? str : "featured";
@@ -1387,17 +1384,6 @@ export async function getRelatedProducts(product: Product, limit = 4, locale: Lo
   }
 
   return hydrateProductsWithInventory(collected.slice(0, limit));
-}
-
-export async function getDiscountedProducts(limit = 6, locale: Locale = "de"): Promise<Product[]> {
-  const products = await getProducts(undefined, undefined, locale);
-  return products.filter((product) => product.hasDiscount).slice(0, limit);
-}
-
-export async function getOpenBoxProducts(limit?: number, locale: Locale = "de"): Promise<Product[]> {
-  const products = await getProducts(undefined, undefined, locale);
-  const openBox = products.filter((product) => product.isOpenBox);
-  return limit ? openBox.slice(0, limit) : openBox;
 }
 
 export async function getPromoProducts(pinnedIds?: string[], locale: Locale = "de"): Promise<Product[]> {

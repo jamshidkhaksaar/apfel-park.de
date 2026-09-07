@@ -1,6 +1,6 @@
 import { canonicalJsonHash } from "./json";
 import { assertRedacted } from "./redaction";
-import { productIntakeConditions, type JsonObject, type ProductIntakeCondition, type ProductIntakeRun, type ProductIntakeStatus } from "./types";
+import { productIntakeConditions, type JsonObject, type ProductIntakeCondition, type ProductIntakeRun } from "./types";
 import {
   allowedAcceptedPaths,
   productIntakeScopes,
@@ -33,17 +33,12 @@ export const productIntakeDispatchStatuses = [
 ] as const;
 export type ProductIntakeDispatchStatus = (typeof productIntakeDispatchStatuses)[number];
 
-const TERMINAL_STATUSES = new Set<ProductIntakeStatus>(["applied", "rejected", "cancelled"]);
-
 export const catalogConditionToIntake = (condition: string | null | undefined): ProductIntakeCondition => {
   const value = (condition ?? "new").trim().toLowerCase();
   if (value === "open_box" || value === "refurbished") return "open_box";
   if (value === "used") return "used";
   return "sealed";
 };
-
-export const intakeConditionToCatalog = (condition: ProductIntakeCondition): "new" | "open_box" | "used" =>
-  condition === "open_box" ? "open_box" : condition === "used" ? "used" : "new";
 
 export const parseProductIntakeScopes = (value: unknown): ProductIntakeScope[] => {
   if (!Array.isArray(value) || value.length === 0) return ["commerce"];
@@ -85,9 +80,6 @@ export const defaultAcceptedPathsForScopes = (scopes: ProductIntakeScope[]): Pro
   if (scopes.includes("images")) paths.add("images");
   return paths.size > 0 ? [...paths] : ["changes.price", "changes.inventory"];
 };
-
-export const acceptedPathsHash = (paths: string[]): string =>
-  canonicalJsonHash(paths.slice().sort() as unknown as JsonObject);
 
 export type CatalogSnapshot = {
   productId: string;
@@ -143,8 +135,6 @@ export const dispatchStatusForRun = (run: Pick<ProductIntakeRun, "status" | "mod
   if (run.status === "awaiting_condition" || run.status === "collecting_assets") return "collecting";
   return "queued";
 };
-
-export const isTerminalIntakeStatus = (status: ProductIntakeStatus): boolean => TERMINAL_STATUSES.has(status);
 
 export const workspaceViewFromParam = (value: string | null | undefined): ProductIntakeWorkspaceView => {
   const normalized = (value ?? "").trim().toLowerCase();

@@ -114,5 +114,3 @@ export const canAccessAdminPath = (user: User | null, pathname: string): boolean
     (allowed) => pathname === allowed || (allowed !== "/admin" && pathname.startsWith(`${allowed}/`)),
   );
 };
-
-export const canManageMarketplaces = (user: User | null): boolean => canManageOrders(user);

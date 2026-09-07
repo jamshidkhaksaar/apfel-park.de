@@ -7,7 +7,7 @@ import { ProductChannelReadinessPanel } from "@/components/admin/ProductChannelF
 import { evaluateProductChannelReadiness } from "@/lib/product-channel-readiness";
 import { adminDictionary } from "@/lib/admin-i18n";
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
-import type { AdminProductRecord } from "@/components/admin/ProductCatalogAdmin";
+import type { AdminProductRecord } from "@/lib/admin-product-types";
 import type { ProductChannelFacts } from "@/lib/product-channel-readiness";
 import { mergeCoverAndGallery, type WizardCondition, type WizardStep } from "@/lib/product-intake/safi-wizard";
 import { manufacturerPhotoFile } from "@/lib/product-intake/manufacturer-photos";

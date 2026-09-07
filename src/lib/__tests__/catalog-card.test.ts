@@ -40,7 +40,7 @@ describe("catalog card facts", () => {
   });
 
   it("creates a compact client model without full descriptions or gallery data", () => {
-    const model = toCatalogCardModel(phone(), "de", { average: 4.8, count: 5 });
+    const model = toCatalogCardModel(phone(), { average: 4.8, count: 5 });
     expect(model).toMatchObject({ energyClass: "A", stock: 3, rating: { average: 4.8, count: 5 } });
     expect(model).not.toHaveProperty("description");
     expect(model).not.toHaveProperty("images");
@@ -58,7 +58,7 @@ describe("catalog card facts", () => {
         { color: "Blau", storage: "256 GB", stock: 1 },
         { color: "Silber", storage: "512 GB", stock: 0 },
       ],
-    }), "de");
+    }));
     expect(sellableCatalogVariants(model)).toEqual([expect.objectContaining({ color: "Blau", storage: "256 GB" })]);
   });
 });

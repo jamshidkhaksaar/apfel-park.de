@@ -1,3 +1,4 @@
+import { markOpenIntakeRunsStale } from "@/lib/product-intake/stale-runs";
 import { withTransaction } from '@/lib/db';
 
 export const setInventoryCatalogEnabled = async (id: string, enabled: boolean) => withTransaction(async (db) => {
@@ -8,9 +9,7 @@ export const setInventoryCatalogEnabled = async (id: string, enabled: boolean) =
 
   // Selecting a product for editing never publishes it. Removing it also hides it from the store.
   await db.query('UPDATE products SET catalog_enabled = $2, is_active = false, updated_at = now() WHERE id = $1', [id, enabled]);
-  await db.query(`UPDATE product_intake_runs SET stale_at = now(), stale_reason = 'Inventory catalog selection changed', dispatch_status = 'stale'
-    WHERE (origin_product_id = $1::uuid OR target_product_id = $1::uuid)
-      AND status NOT IN ('applied', 'rejected', 'cancelled') AND stale_at IS NULL`, [id]);
+  await markOpenIntakeRunsStale(id, "Inventory catalog selection changed", db);
   return { catalogEnabled: enabled, active: false };
 });
 

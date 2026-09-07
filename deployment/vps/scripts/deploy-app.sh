@@ -71,6 +71,9 @@ npm run lint
 log "npm run typecheck"
 npm run typecheck
 
+log "npm run audit:unused"
+npm run audit:unused
+
 log "npm audit --audit-level=high"
 npm audit --audit-level=high
 

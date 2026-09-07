@@ -23,7 +23,8 @@
     "test:watch": "vitest",
     "dev:product-intake-ui-fixture": "tsx scripts/product-intake-ui-fixture.tsx",
     "branding:favicons": "node scripts/generate-favicons.mjs",
-    "seo:indexnow": "node scripts/indexnow.mjs"
+    "seo:indexnow": "node scripts/indexnow.mjs",
+    "audit:unused": "node scripts/audit-unused-source.mjs"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "6.8.2",

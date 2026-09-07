@@ -1,4 +1,4 @@
-import type { AdminProductRecord } from "@/components/admin/ProductCatalogAdmin";
+import type { AdminProductRecord } from "@/lib/admin-product-types";
 import type {
   BatteryDetails,
   MarketplaceAttributes,

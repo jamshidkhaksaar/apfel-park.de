@@ -9,7 +9,6 @@ import { saveRepairCatalog } from "@/app/admin/repairs/catalog-actions";
 const inputClassName =
   "w-full rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-sm text-foreground focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40";
 
-const textareaClassName = `${inputClassName} min-h-24`;
 
 const makeId = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -1262,6 +1261,3 @@ export default function AdminRepairCatalogManager({ locale, initialCatalog }: Pr
     </div>
   );
 }
-
-// Kept for TS — suppress unused warning on textareaClassName
-void textareaClassName;

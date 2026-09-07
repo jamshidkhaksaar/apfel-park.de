@@ -35,6 +35,9 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      - name: Unused source audit
+        run: npm run audit:unused
+
       - name: Unit and integration tests
         run: npm test
 

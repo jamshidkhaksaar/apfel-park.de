@@ -49,19 +49,6 @@ export const writeConsentMode = (mode: Exclude<ConsentMode, "unset">) => {
   window.dispatchEvent(new CustomEvent(CONSENT_EVENT_NAME, { detail: mode }));
 };
 
-export const clearConsentMode = () => {
-  if (typeof document === "undefined") return;
-
-  try {
-    window.localStorage.removeItem(CONSENT_STORAGE_KEY);
-  } catch {
-    // ignore storage failure
-  }
-
-  document.cookie = `${CONSENT_COOKIE_NAME}=; ${getCookieDomain()}path=/; max-age=0; SameSite=Lax${getSecureFlag()}`;
-  window.dispatchEvent(new CustomEvent(CONSENT_EVENT_NAME, { detail: "unset" }));
-};
-
 export const openConsentSettings = () => {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(CONSENT_OPEN_EVENT_NAME));

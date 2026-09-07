@@ -608,6 +608,9 @@ export const adminDictionary = {
       reject: "Ablehnen",
       openPreview: "Vorschau öffnen",
     },
+    productEditor: {
+      experienceSaveFailed: "Produkt gespeichert, aber Erlebnis- oder Familieneinstellungen konnten nicht gespeichert werden. Bitte erneut speichern.",
+    },
     inventoryCatalog: {
       title: "Online-Shop",
       explanation: "Alle Produkte bleiben im Lager. Für Produkte aktivieren, dort bearbeiten und anschließend im Shop veröffentlichen.",
@@ -1572,6 +1575,9 @@ export const adminDictionary = {
       requestChanges: "Request changes",
       reject: "Reject",
       openPreview: "Open preview",
+    },
+    productEditor: {
+      experienceSaveFailed: "Product saved, but experience or family settings could not be saved. Please save again.",
     },
     inventoryCatalog: {
       title: "Online shop",

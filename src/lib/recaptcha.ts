@@ -149,11 +149,3 @@ export const verifyReCaptcha = async (
     return { success: false, error: "Verification request failed" };
   }
 };
-
-/**
- * Check if reCAPTCHA is enabled (for conditional rendering)
- */
-export const isReCaptchaEnabled = async (): Promise<boolean> => {
-  const settings = await getReCaptchaSettings();
-  return settings.enabled && !!settings.siteKey;
-};

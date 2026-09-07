@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { createAdminDbClient } from "@/lib/admin-db";
-import { locales, type Locale } from "@/lib/i18n";
+import { locales } from "@/lib/i18n";
 import { accessoryCollectionSlugs, getAccessoryCollection } from "@/lib/accessory-collections";
 import { countActiveSubcategoryProducts, getProducts } from "@/lib/products";
 import { isRepairBenchmarkPublished } from "@/lib/repair-price-benchmark";
@@ -143,16 +143,6 @@ export const getSeoSettings = async (): Promise<SeoSettings> => {
   } catch {
     return buildDefaultSeoSettings();
   }
-};
-
-export const resolveSeoPage = async (routeId: SeoRouteId, locale: Locale) => {
-  const settings = await getSeoSettings();
-  const route = settings.pages[routeId];
-  return {
-    global: settings.global,
-    route,
-    metadata: route.locales[locale],
-  };
 };
 
 export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {

@@ -36,26 +36,27 @@ docker build -t apfel .                    # Build Docker image
 docker run -p 3000:3000 apfel              # Run container
 ```
 
-### Running Tests
+### Validation and releases
 
-Vitest is configured: `npm test` runs the suite; `npm run test:watch` watches.
-- Run single test: `npx vitest run path/to/file.test.tsx`.
-- TypeScript gate: `npm run typecheck`; lint: `npm run lint`.
-- Deployment regression suite (temporary mocked fixture, no live operations):
-  `python3 -m unittest discover -s deployment/vps/tests -v`.
-- Use strict test-first changes; follow existing `__tests__` conventions.
+```bash
+npm test              # Vitest suite (src/**/*.test.ts)
+npm run typecheck     # strict TypeScript, including unused locals/parameters
+npm run audit:unused  # review unreachable source files
+npm run lint
+```
 
-### Operations (updated 2026-09-04)
+Browser regression scripts live in `scripts/`. They use synthetic data and accept
+`PLAYWRIGHT_MODULE` where documented. Integration tests that need an isolated
+PostgreSQL database have their own runners in `scripts/integration/`.
 
-Read `OPERATIONS.md` before deployment or rollback. Editable clone is
-`/srv/apfel-park/app/source`; development worktrees are under `app/worktrees`.
-`app/current` selects an immutable release under `app/releases`, not editable
-source. The historical `app/releases/repo` path is superseded. Use the pinned,
-pushed-SHA `deployment/vps/scripts/deploy-app.sh` workflow only after approval;
-a standalone build or service restart alone is not deployment. Keep migrations
-compatible with the previous web and worker releases. Never change production
-configs, restart services, or deploy during isolated code work. Select Node/npm
-from `package.json`; the default shell runtime may differ.
+Production source is `/srv/apfel-park/app/source`; `/srv/apfel-park/app/current`
+points to an immutable release. Work in an isolated git worktree based on the
+current release SHA, then commit and push before using `bash scripts/deploy.sh <ref>`.
+The canonical script runs tests, lint, typecheck, audit, build and runtime checks
+before activation, and rolls back failed health checks. Do not edit release files
+or restart a development build onto port 3000. Add new migrations; never rewrite
+applied migrations. Catalog-table schema changes need the existing owner migration
+workflow in `deployment/vps/product-intake/apply-owner-migration.sh`.
 
 ## Project Structure
 

@@ -44,5 +44,3 @@ export const fulfillmentCopy = {
     paymentNote: "The payment methods available for your order are shown before payment is completed.",
   },
 } as const;
-
-export type FulfillmentLocale = "de" | "en";

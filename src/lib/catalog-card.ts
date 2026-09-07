@@ -1,4 +1,3 @@
-import type { Locale } from "@/lib/i18n";
 import type { Product, ProductCategory, ProductCondition } from "@/lib/products";
 import type { ProductRatingSummary } from "@/lib/product-reviews";
 
@@ -75,7 +74,6 @@ export const catalogCardFacts = (product: Product): string[] => {
 
 export const toCatalogCardModel = (
   product: Product,
-  locale: Locale,
   rating?: ProductRatingSummary,
 ): CatalogCardModel => ({
   id: product.id,

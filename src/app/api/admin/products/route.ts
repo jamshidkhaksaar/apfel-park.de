@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { canManageProducts } from "@/lib/admin-auth";
-import { markOpenIntakeRunsStale } from "@/lib/product-intake/workspace-repository";
+import { markOpenIntakeRunsStale } from "@/lib/product-intake/stale-runs";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import { createAdminDbClient } from "@/lib/admin-db";
 import { query } from "@/lib/db";

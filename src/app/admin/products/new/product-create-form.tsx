@@ -11,14 +11,14 @@ import type { ProductResearchResult } from "@/lib/product-research";
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import EprelPicker, { type EprelMatch } from "@/components/admin/EprelPicker";
 import {
-  createEmptyProductChannelFields,
   ProductChannelFields,
   ProductChannelReadinessPanel,
-  productChannelPayload,
-  type ProductChannelFieldState,
 } from "@/components/admin/ProductChannelFields";
 import { eprelCycles, eprelEndurance } from "@/lib/eprel";
 import type { ProductChannelFacts, ProductIdentifierStatus } from "@/lib/product-channel-readiness";
+
+import { createEmptyProductChannelFields, productChannelPayload, type ProductChannelFieldState } from '@/lib/product-channel-form';
+import { parseFeatureBullets } from '@/lib/admin-product-form';
 
 export type FormState = {
   title: string;
@@ -141,12 +141,6 @@ const createEmptyVariant = () => ({
   imageIndex: undefined,
   isDefault: false,
 });
-
-const parseFeatureBullets = (value: string) =>
-  value
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean);
 
 const parseSpecs = (value: string) =>
   value

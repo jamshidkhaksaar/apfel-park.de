@@ -1,0 +1,148 @@
+import type { BatteryDetails, MarketplaceAttributes, MarketplaceCategoryMappings, ProductIdentifierStatus } from '@/lib/product-channel-readiness';
+import type { ProductChannelFieldState } from '@/lib/product-channel-form';
+
+export type ProductSpec = {
+  label: string;
+  value: string;
+  /** Optional group heading (Display / Akku / Kamera …) set via "## Group". */
+  group?: string;
+};
+
+export type ProductVariant = {
+  color: string;
+  storage: string;
+  price?: number;
+  compareAtPrice?: number;
+  stock?: number;
+  mpn?: string;
+  gtin?: string;
+  identifierStatus?: ProductIdentifierStatus;
+  asin?: string;
+  ebayEpid?: string;
+  sku?: string;
+  imageIndex?: number;
+  images?: string[];
+  isDefault?: boolean;
+};
+
+export type AdminProductRecord = {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  category: string;
+  condition: string;
+  batteryHealth?: number | null;
+  hasRealProductPhotos?: boolean;
+  conditionNote?: string;
+  brand: string;
+  model: string;
+  mpn: string;
+  gtin: string;
+  identifierStatus?: ProductIdentifierStatus;
+  asin?: string;
+  ebayEpid?: string;
+  countryOfOrigin?: string;
+  packageWeightKg?: number | null;
+  packageLengthCm?: number | null;
+  packageWidthCm?: number | null;
+  packageHeightCm?: number | null;
+  batteryDetails?: BatteryDetails;
+  chargerIncluded?: boolean | null;
+  chargingPowerMinW?: number | null;
+  chargingPowerMaxW?: number | null;
+  usbPdSupported?: boolean | null;
+  marketplaceCategoryMappings?: MarketplaceCategoryMappings;
+  marketplaceAttributes?: MarketplaceAttributes;
+  amazonGtinExemption?: boolean;
+  amazonRenewedApproved?: boolean;
+  sku: string;
+  price: number;
+  compareAtPrice: number | null;
+  stock: number;
+  slug: string;
+  isActive: boolean;
+  images: string[];
+  featureBullets: string[];
+  specs: ProductSpec[];
+  variants: ProductVariant[];
+  manufacturer?: { name?: string; address?: string; email?: string } | null;
+  euResponsiblePerson?: { name?: string; address?: string; email?: string } | null;
+  safetyWarnings?: string[];
+  safetyDocuments?: string[];
+  eprelId?: string;
+  faq?: { de: Array<{ q: string; a: string }>; en: Array<{ q: string; a: string }> } | null;
+  energyLabel?: {
+    efficiencyClass?: string;
+    batteryEndurance?: string;
+    batteryCycles?: number;
+    reliabilityClass?: string;
+    repairabilityClass?: string;
+    ipRating?: string;
+    labelImage?: string;
+    ficheDe?: string;
+    ficheEn?: string;
+  } | null;
+  isHomepageFeatured?: boolean;
+  createdAt: string;
+};
+
+export type PromoSettings = {
+  enabled: boolean;
+  title: { de: string; en: string };
+  description: { de: string; en: string };
+  ctaLabel: { de: string; en: string };
+  ctaHref: string;
+  pinnedProductIds?: string[];
+};
+
+export type ProductFormState = {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  category: string;
+  condition: string;
+  batteryHealth: string;
+  hasRealProductPhotos: boolean;
+  conditionNote: string;
+  brand: string;
+  model: string;
+  mpn: string;
+  gtin: string;
+  manufacturerName: string;
+  manufacturerAddress: string;
+  manufacturerEmail: string;
+  euResponsibleName: string;
+  euResponsibleAddress: string;
+  euResponsibleEmail: string;
+  safetyWarningsText: string;
+  safetyDocumentsText: string;
+  eprelId: string;
+  energyEfficiencyClass: string;
+  energyBatteryEndurance: string;
+  energyBatteryCycles: string;
+  energyReliabilityClass: string;
+  energyRepairabilityClass: string;
+  energyIpRating: string;
+  energyLabelImage: string;
+  energyFicheDe: string;
+  energyFicheEn: string;
+  faqDeText: string;
+  faqEnText: string;
+  sku: string;
+  price: string;
+  compareAtPrice: string;
+  stock: string;
+  isActive: boolean;
+  images: string[];
+  variants: ProductVariant[];
+  isHomepageFeatured: boolean;
+  featureBulletsText: string;
+  specsText: string;
+  channelFields: ProductChannelFieldState;
+};
+
+export type ExperienceCandidate = { id: string; title: string; brand?: string; model?: string; condition?: string; price: number; stock: number; images?: string[] };
+export type ExperienceFamilyMember = { productId: string; optionValues: Record<string, string>; position: number; isActive: boolean };
+export type ExperienceFamilyState = { id?: string; name: string; slug: string; optionAxes: string[]; isActive: boolean; members: ExperienceFamilyMember[] };
