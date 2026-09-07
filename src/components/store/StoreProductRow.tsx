@@ -123,7 +123,10 @@ export default function StoreProductRow({
         {added ? (isGerman ? `${product.title} wurde zum Warenkorb hinzugefügt.` : `${product.title} was added to cart.`) : ""}
       </span>
 
-      <StoreQuickAddDrawer product={product} locale={locale} open={drawerOpen} onClose={() => setDrawerOpen(false)} onConfirm={add} />
+      {/* Skip closed-drawer hooks without an asynchronous gap before modal setup. */}
+      {drawerOpen ? (
+        <StoreQuickAddDrawer product={product} locale={locale} open onClose={() => setDrawerOpen(false)} onConfirm={add} />
+      ) : null}
     </article>
   );
 }

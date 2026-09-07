@@ -114,7 +114,10 @@ export default function StoreProductCard({
         </span>
       </div>
 
-      <StoreQuickAddDrawer product={product} locale={locale} open={drawerOpen} onClose={() => setDrawerOpen(false)} onConfirm={add} />
+      {/* Skip closed-drawer hooks without an asynchronous gap before modal setup. */}
+      {drawerOpen ? (
+        <StoreQuickAddDrawer product={product} locale={locale} open onClose={() => setDrawerOpen(false)} onConfirm={add} />
+      ) : null}
     </article>
   );
 }

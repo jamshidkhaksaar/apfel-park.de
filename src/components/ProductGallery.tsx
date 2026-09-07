@@ -169,7 +169,7 @@ export default function ProductGallery({ title, images, locale }: Props) {
                   alt=""
                   fill
                   className={`object-contain p-2 transition-opacity duration-200 ${activeIndex === index ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
-                  sizes="160px"
+                  sizes="(max-width: 639px) 72px, 96px"
                   unoptimized={shouldBypassImageOptimization(image)}
                 />
               </div>
