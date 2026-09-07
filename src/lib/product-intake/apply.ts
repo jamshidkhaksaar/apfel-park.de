@@ -455,8 +455,8 @@ export const publishApprovedProductDraft = async (
   if (run.status !== "approved_twice" || run.approvalCount !== 2) {
     throw new ProductIntakeError("state_conflict", "The second approval is required before publication", 409);
   }
-  if (!run.validation.readiness.store.ready || !run.validation.readiness.google.ready) {
-    throw new ProductIntakeError("state_conflict", "Store and Google readiness blockers must be resolved before publication", 409);
+  if (!run.validation.readiness.store.ready) {
+    throw new ProductIntakeError("state_conflict", "Store readiness blockers must be resolved before publication", 409);
   }
   return withTransaction(async (client) => {
     const lockedRun = await client.query(

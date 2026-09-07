@@ -53,6 +53,8 @@ export type ProductExperienceProfile = {
 };
 
 export type ProductFamilyMember = {
+  conditionNote?: string;
+  batteryHealth?: number;
   productId: string;
   slug: string;
   title: string;

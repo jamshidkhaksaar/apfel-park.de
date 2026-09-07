@@ -139,11 +139,11 @@ const addUnitErrors = (
   units.forEach((unit, index) => {
     const label = unitLabel(unit, index, units.length);
     const sku = unit.sku || input.sku;
-    const status = unit.identifierStatus || input.identifierStatus || "unknown";
-    const gtinInput = unit.gtin || input.gtin;
+    const status = unit.identifierStatus || (units.length === 1 ? input.identifierStatus : undefined) || "unknown";
+    const gtinInput = unit.gtin || (units.length === 1 ? input.gtin : undefined);
     const gtin = validatedGtin(gtinInput);
-    const mpn = unit.mpn || input.mpn;
-    const asin = unit.asin || input.asin;
+    const mpn = unit.mpn || (units.length === 1 ? input.mpn : undefined);
+    const asin = unit.asin || (units.length === 1 ? input.asin : undefined);
 
     if (!nonEmpty(sku)) {
       target.errors.push(`${label}: add a unique sellable SKU.`);

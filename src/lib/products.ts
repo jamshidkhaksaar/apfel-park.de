@@ -39,6 +39,7 @@ export type ProductVariant = {
 };
 
 export type Product = {
+  googleFeedEnabled?: boolean;
   id: string;
   title: string;
   subtitle: string;
@@ -208,7 +209,7 @@ type DbProduct = {
   battery_health?: number | string | null;
   has_real_product_photos?: boolean | null;
   condition_note?: string | null;
-  import_metadata?: { conditionNoteI18n?: LocalizedText | null } | null;
+  import_metadata?: { smartphoneEditor?: {googleSelected?:boolean}; conditionNoteI18n?: LocalizedText | null } | null;
   brand: string | null;
   model: string | null;
   sku: string | null;
@@ -468,6 +469,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     isOpenBox: condition !== "new",
     batteryHealth: batteryHealth !== undefined ? Math.max(1, Math.min(100, Math.round(batteryHealth))) : undefined,
     hasRealProductPhotos: Boolean(row.has_real_product_photos),
+    googleFeedEnabled: row.import_metadata?.smartphoneEditor?.googleSelected !== false,
     conditionNote: resolveProductConditionNote(row.import_metadata?.conditionNoteI18n, locale, row.condition_note) || undefined,
     image,
     images: images.length > 0 ? images : [image],

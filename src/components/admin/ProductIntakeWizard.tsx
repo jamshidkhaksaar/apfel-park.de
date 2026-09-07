@@ -310,7 +310,7 @@ export default function ProductIntakeWizard({
         euResponsiblePerson: listing.euResponsiblePerson ?? undefined,
         safetyWarnings: listing.safetyWarnings,
         eprelId: listing.eprelId,
-        isActive: publishLive && evaluateProductChannelReadiness(readinessFacts).store.ready && evaluateProductChannelReadiness(readinessFacts).google.ready,
+        isActive: publishLive && evaluateProductChannelReadiness(readinessFacts).store.ready,
       };
       const response = await fetch("/api/admin/products", {
         method: mode === "existing" ? "PATCH" : "POST",

@@ -18,15 +18,15 @@ const product = {
   images: ['/iphone.webp'],
   brand: 'Apple',
   sku: 'IP17',
-  identifierStatus: 'unknown',
+  identifierStatus: 'not_applicable',
   stock: 3,
   slug: 'apple-iphone-17',
   featureBullets: [],
   specs: [],
   faq: [],
   variants: [
-    { color: 'Schwarz', storage: '128 GB', stock: 2, sku: 'IP17-BLK-128' },
-    { color: 'Blau', storage: '256 GB', stock: 0, sku: 'IP17-BLU-256' },
+    { color: 'Schwarz', storage: '128 GB', stock: 2, sku: 'IP17-BLK-128', identifierStatus: 'not_applicable' },
+    { color: 'Blau', storage: '256 GB', stock: 0, sku: 'IP17-BLU-256', identifierStatus: 'not_applicable' },
   ],
   hasDiscount: false,
 } satisfies Product;

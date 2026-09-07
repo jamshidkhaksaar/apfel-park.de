@@ -1,0 +1,365 @@
+export const phoneEditorText = {
+  en: {
+    title: 'Phone workspace',
+    steps: [
+      'Choose the phone',
+      'Available versions',
+      'Price and condition',
+      'Four photos',
+      'Product information',
+      'Selling channels',
+      'Review and publish',
+    ],
+    back: 'Back',
+    next: 'Next',
+    saving: 'Saving…',
+    saved: 'Saved',
+    save_failed: 'Save failed — retry',
+    conflict:
+      'Another person or an order changed this data. Reload the draft; live changes must be reviewed in a new revision.',
+    newDraft: 'Start a new phone workspace',
+    resume: 'Resume a draft',
+    search: 'Search saved models',
+    reuse: 'Reuse model information',
+    brand: 'Brand',
+    model: 'Model',
+    name: 'Product title',
+    add: 'Add another device / version',
+    remove: 'Remove',
+    color: 'Color',
+    storage: 'Storage',
+    condition: 'Condition',
+    new: 'New',
+    open_box: 'Open-box',
+    used: 'Used',
+    price: 'Price (€)',
+    stock: 'Quantity',
+    sku: 'Internal SKU',
+    batteryHealth: 'Battery health (%)',
+    conditionNote: 'Condition notes',
+    defects: 'Defects (or none)',
+    accessories: 'Included accessories',
+    hasRealProductPhotos: 'I confirm these photos show this exact device.',
+    photos: ['Front', 'Back', 'Side', 'Details / Accessories'],
+    replace: 'Choose / replace photo',
+    retry: 'Retry upload',
+    cover: 'Cover',
+    makeCover: 'Use as cover',
+    left: 'Move left',
+    right: 'Move right',
+    copy: 'Copy approved same-color photos',
+    approveCopy:
+      'I approve reuse of these photos for this new same-color version.',
+    description: 'Description',
+    specs: 'Specifications (one Label: Value per line)',
+    manufacturer: 'Manufacturer',
+    euResponsiblePerson: 'EU responsible person',
+    address: 'Postal address',
+    email: 'Email',
+    safetyWarnings: 'Safety warnings (one per line)',
+    shared: 'Shared information applies to these entries:',
+    apply: 'Apply to listed entries',
+    identifiers: 'Version identifiers',
+    mpn: 'Manufacturer MPN',
+    gtin: 'GTIN / EAN',
+    asin: 'Amazon ASIN',
+    ebayEpid: 'eBay EPID',
+    identifierStatus: 'Manufacturer identifiers',
+    unknown: 'Unknown',
+    assigned: 'Assigned',
+    not_applicable: 'Not applicable',
+    store: 'Website',
+    google: 'Google Merchant',
+    ebay: 'eBay',
+    amazon: 'Amazon',
+    incomplete: 'Information missing',
+    complete: 'Information complete',
+    connection_required: 'Connection / approval required',
+    pending: 'Pending',
+    published: 'Published',
+    failed: 'Failed',
+    publish: 'Publish selected ready entries',
+    select: 'Select entry',
+    tasks: 'Missing information',
+    empty: 'No drafts yet.',
+    loading: 'Loading…',
+    legacy:
+      'Legacy variants remain one product. Select all variants to publish; device condition is shared.',
+    priceShortcut: 'Go to price / stock',
+    review: 'Review shared changes before applying them.',
+    connections: 'Channel connections and approvals',
+    packageWeightKg: 'Packaged weight (kg)',
+    packageLengthCm: 'Package length (cm)',
+    packageWidthCm: 'Package width (cm)',
+    packageHeightCm: 'Package height (cm)',
+    countryOfOrigin: 'Country of origin (ISO)',
+    categoryId: 'eBay category ID',
+    productType: 'Amazon product type',
+    amazonRenewedApproved: 'Amazon Renewed approval documented',
+    amazonGtinExemption: 'Documented GTIN exemption',
+    battery: 'Battery',
+    included: 'Battery included',
+    cellComposition: 'Cell composition',
+    count: 'Cell count',
+    wattHours: 'Watt hours',
+    unNumber: 'UN number',
+    refresh: 'Reload draft',
+    noSelection: 'Select at least one ready entry.',
+    uploadFailed: 'Upload failed. Retry or choose another file.',
+    source: 'Copy photos from',
+    choose: 'Choose…',
+    photoCount: 'photos',
+    saveFirst: 'Wait for uploads and saving before publishing.',
+  },
+  de: {
+    title: 'Smartphone-Arbeitsbereich',
+    steps: [
+      'Telefon auswählen',
+      'Verfügbare Versionen',
+      'Preis und Zustand',
+      'Vier Fotos',
+      'Produktinformationen',
+      'Verkaufskanäle',
+      'Prüfen und veröffentlichen',
+    ],
+    back: 'Zurück',
+    next: 'Weiter',
+    saving: 'Wird gespeichert…',
+    saved: 'Gespeichert',
+    save_failed: 'Speichern fehlgeschlagen — erneut versuchen',
+    conflict:
+      'Eine andere Person oder Bestellung hat die Daten geändert. Entwurf neu laden; Live-Änderungen in einer neuen Revision prüfen.',
+    newDraft: 'Neuen Smartphone-Arbeitsbereich starten',
+    resume: 'Entwurf fortsetzen',
+    search: 'Gespeicherte Modelle suchen',
+    reuse: 'Modellinformationen übernehmen',
+    brand: 'Marke',
+    model: 'Modell',
+    name: 'Produkttitel',
+    add: 'Weiteres Gerät / Version hinzufügen',
+    remove: 'Entfernen',
+    color: 'Farbe',
+    storage: 'Speicher',
+    condition: 'Zustand',
+    new: 'Neu',
+    open_box: 'Open-Box',
+    used: 'Gebraucht',
+    price: 'Preis (€)',
+    stock: 'Anzahl',
+    sku: 'Interne SKU',
+    batteryHealth: 'Batteriekapazität (%)',
+    conditionNote: 'Zustandshinweise',
+    defects: 'Mängel (oder keine)',
+    accessories: 'Enthaltenes Zubehör',
+    hasRealProductPhotos:
+      'Ich bestätige, dass diese Fotos genau dieses Gerät zeigen.',
+    photos: ['Vorderseite', 'Rückseite', 'Seite', 'Details / Zubehör'],
+    replace: 'Foto auswählen / ersetzen',
+    retry: 'Upload wiederholen',
+    cover: 'Titelbild',
+    makeCover: 'Als Titelbild',
+    left: 'Nach links',
+    right: 'Nach rechts',
+    copy: 'Freigegebene Fotos derselben Farbe kopieren',
+    approveCopy:
+      'Ich gebe diese Fotos für diese neue Version derselben Farbe frei.',
+    description: 'Beschreibung',
+    specs: 'Technische Daten (eine Zeile je Merkmal: Wert)',
+    manufacturer: 'Hersteller',
+    euResponsiblePerson: 'EU-Verantwortlicher',
+    address: 'Postanschrift',
+    email: 'E-Mail',
+    safetyWarnings: 'Sicherheitshinweise (einer pro Zeile)',
+    shared: 'Gemeinsame Informationen gelten für diese Einträge:',
+    apply: 'Auf aufgeführte Einträge anwenden',
+    identifiers: 'Versionskennungen',
+    mpn: 'Hersteller-MPN',
+    gtin: 'GTIN / EAN',
+    asin: 'Amazon-ASIN',
+    ebayEpid: 'eBay-EPID',
+    identifierStatus: 'Herstellerkennungen',
+    unknown: 'Unbekannt',
+    assigned: 'Zugewiesen',
+    not_applicable: 'Nicht zutreffend',
+    store: 'Webseite',
+    google: 'Google Merchant',
+    ebay: 'eBay',
+    amazon: 'Amazon',
+    incomplete: 'Informationen fehlen',
+    complete: 'Informationen vollständig',
+    connection_required: 'Verbindung / Freigabe erforderlich',
+    pending: 'Ausstehend',
+    published: 'Veröffentlicht',
+    failed: 'Fehlgeschlagen',
+    publish: 'Ausgewählte vollständige Einträge veröffentlichen',
+    select: 'Eintrag auswählen',
+    tasks: 'Fehlende Informationen',
+    empty: 'Noch keine Entwürfe.',
+    loading: 'Wird geladen…',
+    legacy:
+      'Bestehende Varianten bleiben ein Produkt. Zur Veröffentlichung alle Varianten auswählen; der Gerätezustand gilt gemeinsam.',
+    priceShortcut: 'Direkt zu Preis / Bestand',
+    review: 'Gemeinsame Änderungen vor der Übernahme prüfen.',
+    connections: 'Kanalverbindungen und Freigaben',
+    packageWeightKg: 'Paketgewicht (kg)',
+    packageLengthCm: 'Paketlänge (cm)',
+    packageWidthCm: 'Paketbreite (cm)',
+    packageHeightCm: 'Pakethöhe (cm)',
+    countryOfOrigin: 'Ursprungsland (ISO)',
+    categoryId: 'eBay-Kategorie-ID',
+    productType: 'Amazon-Produkttyp',
+    amazonRenewedApproved: 'Amazon-Renewed-Freigabe dokumentiert',
+    amazonGtinExemption: 'Dokumentierte GTIN-Ausnahme',
+    battery: 'Batterie',
+    included: 'Batterie enthalten',
+    cellComposition: 'Zellzusammensetzung',
+    count: 'Zellenzahl',
+    wattHours: 'Wattstunden',
+    unNumber: 'UN-Nummer',
+    refresh: 'Entwurf neu laden',
+    noSelection: 'Mindestens einen vollständigen Eintrag auswählen.',
+    uploadFailed:
+      'Upload fehlgeschlagen. Wiederholen oder andere Datei wählen.',
+    source: 'Fotos kopieren von',
+    choose: 'Auswählen…',
+    photoCount: 'Fotos',
+    saveFirst: 'Vor der Veröffentlichung Uploads und Speicherung abwarten.',
+  },
+};
+
+const channelMessages: Record<string, string> = {
+  'Add a product title.': 'Produkttitel ergänzen.',
+  'Add an accurate product description.':
+    'Eine zutreffende Produktbeschreibung ergänzen.',
+  'Choose a product category.': 'Produktkategorie auswählen.',
+  'Set a price greater than zero.': 'Preis größer als null eintragen.',
+  'Add at least one product image.': 'Mindestens ein Produktbild ergänzen.',
+  'Add a condition note for this non-new item.':
+    'Zustandshinweis für dieses Gerät ergänzen.',
+  'Confirm that the photos show the exact non-new item.':
+    'Bestätigen, dass die Fotos genau dieses Gerät zeigen.',
+  'Add the GPSR manufacturer name, postal address and email.':
+    'GPSR-Herstellername, Postanschrift und E-Mail ergänzen.',
+  'Add the EU responsible person name, postal address and email.':
+    'Name, Postanschrift und E-Mail des EU-Verantwortlichen ergänzen.',
+  'Add a safety warning or an explicit no-known-warnings statement.':
+    'Sicherheitshinweise ergänzen oder ausdrücklich bestätigen, dass keine bekannt sind.',
+  'Add the product brand for Google Merchant.':
+    'Produktmarke für Google Merchant ergänzen.',
+  'Choose an eBay.de category.': 'eBay.de-Kategorie auswählen.',
+  'Choose the Amazon.de product type.': 'Amazon.de-Produkttyp auswählen.',
+  'Add a two-letter country of origin code.':
+    'Zweistelligen Ländercode des Ursprungslands ergänzen.',
+  'Add the packaged shipping weight in kg.':
+    'Versandgewicht mit Verpackung in kg ergänzen.',
+  'Add all packaged dimensions in cm.': 'Alle Paketmaße in cm ergänzen.',
+  'Amazon publication remains blocked until Amazon Renewed approval is documented.':
+    'Für die Veröffentlichung bei Amazon muss die Amazon-Renewed-Freigabe dokumentiert sein.',
+  'Confirm whether the product contains or includes a battery.':
+    'Bestätigen, ob eine Batterie enthalten ist.',
+  'Add the battery cell composition.':
+    'Zusammensetzung der Batteriezellen ergänzen.',
+  'Add the number of batteries or cells included.':
+    'Anzahl der Batterien oder Zellen ergänzen.',
+  'Add the battery watt-hour rating.': 'Wattstunden der Batterie ergänzen.',
+  'Add the battery UN number, for example UN3481.':
+    'UN-Nummer der Batterie ergänzen, zum Beispiel UN3481.',
+  'add a unique sellable SKU.': 'eine eindeutige Verkaufs-SKU ergänzen.',
+  'its SKU duplicates another variant.':
+    'die SKU wird bereits von einer anderen Variante verwendet.',
+  'correct the invalid GTIN/EAN checksum.':
+    'die ungültige GTIN/EAN-Prüfziffer korrigieren.',
+  'its GTIN duplicates another variant.':
+    'die GTIN wird bereits von einer anderen Variante verwendet.',
+  'add every variant-defining color and storage value.':
+    'Farbe und Speicher dieser Variante ergänzen.',
+  'confirm whether manufacturer identifiers exist.':
+    'bestätigen, ob Herstellerkennungen existieren.',
+  'add its assigned GTIN or manufacturer MPN.':
+    'die zugewiesene GTIN oder Hersteller-MPN ergänzen.',
+  'add a valid GTIN, an existing ASIN, or a documented Amazon GTIN exemption.':
+    'eine gültige GTIN, bestehende ASIN oder dokumentierte Amazon-GTIN-Ausnahme ergänzen.',
+};
+export const translatePhoneChannelMessage = (
+  message: string,
+  locale: 'de' | 'en',
+): string => {
+  if (locale === 'en') return message;
+  if (channelMessages[message]) return channelMessages[message];
+  if (message.startsWith('Product: '))
+    return `Produkt: ${channelMessages[message.slice(9)] ?? message.slice(9)}`;
+  if (message.startsWith('eBay required aspect:'))
+    return message.replace(
+      'eBay required aspect: add',
+      'Erforderliches eBay-Merkmal ergänzen:',
+    );
+  return message;
+};
+export const phoneErrorText = (code: string, locale: 'de' | 'en'): string => {
+  const texts: Record<string, [string, string]> = {
+    duplicate_new_configuration: [
+      'This new color/storage combination already exists. Open the existing model workspace and edit its quantity.',
+      'Diese neue Farb-/Speicherkombination existiert bereits. Im bestehenden Modellarbeitsbereich die Anzahl bearbeiten.',
+    ],
+    individual_quantity_required: [
+      'Each individual device has at most one unit. Add another device for additional stock.',
+      'Jedes Einzelgerät hat höchstens eine Einheit. Für weiteren Bestand ein weiteres Gerät hinzufügen.',
+    ],
+    duplicate_sku: [
+      'This SKU belongs to another entry.',
+      'Diese SKU gehört zu einem anderen Eintrag.',
+    ],
+    uploaded_photos_required: [
+      'Upload all four photos through the photo controls.',
+      'Alle vier Fotos über die Foto-Felder hochladen.',
+    ],
+    photo_missing: [
+      'A photo cannot be read. Replace it and retry.',
+      'Ein Foto ist nicht lesbar. Ersetzen und erneut versuchen.',
+    ],
+    device_photo_reused: [
+      'These photos belong to another device or color. Upload the correct photos.',
+      'Diese Fotos gehören zu einem anderen Gerät oder einer anderen Farbe. Passende Fotos hochladen.',
+    ],
+    distinct_photos_required: [
+      'Four different photos are required.',
+      'Vier unterschiedliche Fotos sind erforderlich.',
+    ],
+    select_all_legacy_variants: [
+      'Select every variant of this legacy product.',
+      'Alle Varianten dieses bestehenden Produkts auswählen.',
+    ],
+    legacy_condition_shared: [
+      'Legacy variants share one condition record.',
+      'Bestehende Varianten teilen einen Zustandsdatensatz.',
+    ],
+    entry_incomplete: [
+      'Complete the selected entries before publishing.',
+      'Die ausgewählten Einträge vor der Veröffentlichung vervollständigen.',
+    ],
+    invalid_selection: [
+      'Select entries and at least one channel for each.',
+      'Einträge und mindestens einen Kanal pro Eintrag auswählen.',
+    ],
+    website_incomplete: [
+      'Complete the website information for the selected entries.',
+      'Webseiteninformationen der ausgewählten Einträge vervollständigen.',
+    ],
+    review_shared_changes: [
+      'Review and apply the shared information first.',
+      'Gemeinsame Informationen zuerst prüfen und übernehmen.',
+    ],
+    invalid_document: [
+      'The draft data is invalid. Reload and retry.',
+      'Die Entwurfsdaten sind ungültig. Neu laden und erneut versuchen.',
+    ],
+    not_found: [
+      'Workspace not found or the editor is disabled.',
+      'Arbeitsbereich nicht gefunden oder Editor deaktiviert.',
+    ],
+  };
+  return (
+    texts[code]?.[locale === 'de' ? 1 : 0] ??
+    translatePhoneChannelMessage(code, locale)
+  );
+};

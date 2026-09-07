@@ -98,7 +98,7 @@ const persistProfile = async (client: TransactionClient, productId: string, inpu
 
 const persistFamily = async (client: TransactionClient, input: FamilySaveInput): Promise<string | null> => {
   const axes=Array.from(new Set((input.optionAxes??[]).map(axis=>familyText(axis,40)).filter(Boolean))).slice(0,6);
-  const members=(input.members??[]).filter(member=>/^[0-9a-f-]{36}$/i.test(member.productId)).slice(0,100).map(member=>({...member,optionValues:normalizeFamilyOptionValues(axes,member.optionValues??{})}));
+  const members=(input.members??[]).filter(member=>/^[0-9a-f-]{36}$/i.test(member.productId)).slice(0,100).map(member=>({...member,optionValues:{...normalizeFamilyOptionValues(axes,member.optionValues??{}),...(member.optionValues?.device===member.productId?{device:member.productId}:{})}}));
   if(!members.length){if(input.id)await client.query(`DELETE FROM product_families WHERE id=$1`,[input.id]);return null;}
   validateFamilyConfiguration(axes,members);
   const name=familyText(input.name,160);const slug=slugify(input.slug||name);if(!name||!slug)throw new Error("invalid_family");
@@ -126,7 +126,7 @@ export async function getProductFamilyForProduct(productId: string, locale: Loca
     if (!family) return null;
     const membersResult = await query(
       `SELECT m.product_id,m.option_values,m.position,p.slug,p.title,p.title_i18n,p.images,
-              p.price,p.compare_at_price,p.stock
+              p.price,p.compare_at_price,p.stock,p.condition_note,p.battery_health
        FROM product_family_members m JOIN products p ON p.id=m.product_id
        WHERE m.family_id=$1 AND m.is_active=true AND p.is_active=true
        ORDER BY m.position,p.created_at`,
@@ -136,6 +136,8 @@ export async function getProductFamilyForProduct(productId: string, locale: Loca
       const localized = row.title_i18n && typeof row.title_i18n === "object" ? row.title_i18n as { de: string; en: string } : { de: "", en: "" };
       const images = Array.isArray(row.images) ? row.images.filter((item): item is string => typeof item === "string") : [];
       return {
+        conditionNote: String(row.condition_note ?? ""),
+        batteryHealth: row.battery_health == null ? undefined : Number(row.battery_health),
         productId: String(row.product_id),
         slug: String(row.slug),
         title: localizedText(localized, locale) || String(row.title),

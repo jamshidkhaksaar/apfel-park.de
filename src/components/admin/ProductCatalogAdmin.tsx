@@ -1,5 +1,6 @@
 "use client";
 
+import LegacyPhonePhotos from "@/components/admin/LegacyPhonePhotos";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -547,6 +548,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const [conditionError, setConditionError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [imageFiles, setImageFiles] = useState<Array<File | null>>([null, null, null, null]);
+  const [photoUploadBusy, setPhotoUploadBusy] = useState(false);
   const [variantImageFiles, setVariantImageFiles] = useState<Array<Array<File | null>>>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
@@ -957,6 +959,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
       return;
     }
 
+    if (photoUploadBusy) return;
     startSaving(async () => {
       setSaveError("");
       setConditionError("");
@@ -965,7 +968,8 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
       try {
         const uploadedUrls = [...formState.images];
 
-        for (const file of imageFiles.filter((item): item is File => Boolean(item)).slice(0, 4)) {
+        for (const [slotIndex, file] of imageFiles.slice(0, 4).entries()) {
+          if (!file) continue;
           const upload = new FormData();
           upload.append("file", file);
           const uploadResponse = await fetch("/api/admin/products/upload", { method: "POST", body: upload });
@@ -973,7 +977,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           if (!uploadResponse.ok) {
             throw new Error(uploadPayload.error || "Upload failed");
           }
-          uploadedUrls.push(uploadPayload.url as string);
+          uploadedUrls[slotIndex] = uploadPayload.url as string;
         }
 
         const variantsToSave = formState.variants.map((variant) => ({ ...variant }));
@@ -983,7 +987,8 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           const existingImages = variantsToSave[index].images ?? [];
           const newImages = [...existingImages];
 
-          for (const file of variantSlots.filter((f): f is File => Boolean(f))) {
+          for (const [slotIndex, file] of variantSlots.entries()) {
+            if (!file) continue;
             const upload = new FormData();
             upload.append("file", file);
             const uploadResponse = await fetch("/api/admin/products/upload", { method: "POST", body: upload });
@@ -991,7 +996,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
             if (!uploadResponse.ok) {
               throw new Error(uploadPayload.error || "Upload failed");
             }
-            newImages.push(uploadPayload.url as string);
+            newImages[slotIndex] = uploadPayload.url as string;
           }
 
           if (newImages.length > 0) {
@@ -1762,7 +1767,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                         </div>
                       ) : (
                         formState.variants.map((variant, index) => (
-                          <div key={`${variant.color}-${variant.storage}-${index}`} className="rounded-2xl border border-border/80 bg-surface-strong/70 p-4 space-y-3">
+                          <div key={index} className="rounded-2xl border border-border/80 bg-surface-strong/70 p-4 space-y-3">
                             <div className="flex items-center justify-between border-b border-border/60 pb-2">
                               <span className="text-xs font-bold uppercase tracking-wider text-gold">
                                 {locale === "de" ? `Variante #${index + 1}` : `Variant #${index + 1}`} {variant.color ? `· ${variant.color}` : ""} {variant.storage ? `· ${variant.storage}` : ""}
@@ -1864,6 +1869,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                 <span className="text-xs font-semibold text-foreground">{locale === "de" ? "Standard-Variante" : "Default"}</span>
                               </label>
                             </div>
+<LegacyPhonePhotos locale={locale} images={variant.images ?? []} onChange={images => patchVariant(index, { images })} onBusy={setPhotoUploadBusy} />
                           </div>
                         ))
                       )}

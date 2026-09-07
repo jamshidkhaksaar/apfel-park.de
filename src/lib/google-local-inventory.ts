@@ -1,3 +1,4 @@
+import { evaluateProductChannelReadiness } from '@/lib/product-channel-readiness';
 import { googleMerchantItemId } from '@/lib/google-merchant';
 import { getProducts, type Product } from '@/lib/products';
 import { siteInfo } from '@/lib/site';
@@ -22,7 +23,7 @@ export const buildGoogleLocalInventoryFeedForProducts = (
   storeCode = siteInfo.googleBusinessProfile.storeCode,
 ): string => [
   'store_code\tid\tquantity\tavailability',
-  ...products.flatMap((product) => inventoryRowsForProduct(product, storeCode)),
+  ...products.filter(product => product.googleFeedEnabled !== false && evaluateProductChannelReadiness(product).google.ready).flatMap((product) => inventoryRowsForProduct(product, storeCode)),
   '',
 ].join('\n');
 

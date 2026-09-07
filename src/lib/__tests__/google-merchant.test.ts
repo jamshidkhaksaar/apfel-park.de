@@ -60,6 +60,8 @@ describe("Google Merchant feed", () => {
     const openBoxProduct = {
       ...product,
       condition: "open_box" as const,
+      hasRealProductPhotos: true,
+      conditionNote: "Tested, minor scratches.",
       title: "Apple iPhone 15 Pro 128 GB Titan Schwarz",
       variants: [],
     };
@@ -76,6 +78,8 @@ describe("Google Merchant feed", () => {
     const usedProduct = {
       ...product,
       condition: "used" as const,
+      hasRealProductPhotos: true,
+      conditionNote: "Tested, minor scratches.",
       title: "Nokia T20 LTE 64 GB Ozeanblau",
     };
     const variant = {

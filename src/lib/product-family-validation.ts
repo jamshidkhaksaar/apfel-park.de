@@ -15,7 +15,8 @@ export const validateFamilyConfiguration = (axes: string[], members: FamilyMembe
     const values = normalizedAxes.map((axis) => member.optionValues?.[axis]?.trim() || "");
     if (values.some((value) => !value)) throw new Error("family_axis_value_required");
     const combination = JSON.stringify(values.map((value) => value.toLocaleLowerCase("en-US")));
-    if (combinations.has(combination)) throw new Error("duplicate_family_combination");
+    const individual = member.optionValues.condition && member.optionValues.condition !== "new" && member.optionValues.device === member.productId;
+    if (combinations.has(combination) && !individual) throw new Error("duplicate_family_combination");
     combinations.add(combination);
   }
 };
