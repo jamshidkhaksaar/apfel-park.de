@@ -11,6 +11,12 @@ const brands = [
   { name: "Huawei", family: "Mate & Pura", icon: siHuawei },
 ];
 
+export const getBrandBrowsePath = (brand: string): string => {
+  if (brand === 'Samsung') return '/samsung-handys#angebote';
+  if (brand === 'Xiaomi') return '/xiaomi-redmi-handys#angebote';
+  return `/smartphones?brand=${encodeURIComponent(brand)}#store`;
+};
+
 export default function StoreBrandCards({ lang }: { lang: Locale }) {
   return (
     <section className="py-10 md:py-16" aria-labelledby="smartphone-brands-heading">
@@ -24,7 +30,7 @@ export default function StoreBrandCards({ lang }: { lang: Locale }) {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
           {brands.map(({ name, family, icon }) => (
-            <Link key={name} href={`/${lang}/smartphones?brand=${encodeURIComponent(name)}#store`}
+            <Link key={name} href={`/${lang}${getBrandBrowsePath(name)}`}
               data-brand-card={name}
               className="group flex min-w-0 flex-col rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-gold/60 hover:bg-gold/5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold sm:p-5">
               <div className="mb-5 flex h-20 items-center justify-center rounded-xl bg-white px-4 ring-1 ring-black/5">

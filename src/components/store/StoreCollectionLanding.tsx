@@ -13,7 +13,7 @@ import {
 } from "@/lib/products";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
-import { getStoreCollectionCopy } from "@/lib/store-collections";
+import { getRelatedStoreCollectionLinks, getStoreCollectionCopy } from "@/lib/store-collections";
 import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
 import {
   buildStoreCanonicalUrl,
@@ -110,6 +110,7 @@ export default async function StoreCollectionLanding({
           <div>
             <h2 className="text-2xl font-bold text-foreground">{copy.introTitle}</h2>
             {copy.intro.map((paragraph) => <p key={paragraph} className="mt-3 max-w-3xl text-sm leading-7 text-muted">{paragraph}</p>)}
+            {copy.sources?.map(source => <p key={source.href} className="mt-3 text-sm leading-6"><a href={source.href} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-gold">{source.label}</a></p>)}
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
             {copy.benefits.map((benefit) => (
@@ -135,16 +136,11 @@ export default async function StoreCollectionLanding({
               </article>
             ))}
           </div>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={`/${locale}/iphone-17`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">iPhone 17</Link>
-            <Link href={`/${locale}/iphone-16-pro-max`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">iPhone 16 Pro Max</Link>
-            <Link href={`/${locale}/samsung-handys`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Samsung Handys" : "Samsung Phones"}</Link>
-            <Link href={`/${locale}/xiaomi-redmi-handys`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">Xiaomi, Redmi & Poco</Link>
-            <Link href={`/${locale}/handys-ohne-vertrag`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Handys ohne Vertrag" : "Phones without a contract"}</Link>
-            <Link href={`/${locale}/gebrauchte-iphones`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Gebrauchte iPhones" : "Used iPhones"}</Link>
-            <Link href={`/${locale}/gebrauchte-handys`} className="rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === "de" ? "Gebrauchte Handys" : "Used phones"}</Link>
+          <nav className="mt-8 flex flex-wrap gap-3" aria-label={locale === 'de' ? 'Weitere Kaufberatung und Kategorien' : 'More buying information and collections'}>
+            {getRelatedStoreCollectionLinks(collection, locale).map(link => <Link key={link.href} href={`/${locale}${link.href}`} className="inline-flex min-h-11 items-center rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{link.label}</Link>)}
             <Link href={`/${locale}/device-conditions`} className="rounded-full border border-white/15 px-5 py-2 text-sm font-semibold text-foreground hover:border-gold/30">{locale === "de" ? "Gerätezustände erklärt" : "Device conditions explained"}</Link>
-          </div>
+            <Link href={`/${locale}/delivery-returns`} className="inline-flex min-h-11 items-center rounded-full border border-gold/30 px-5 py-2 text-sm font-semibold text-gold hover:bg-gold/10">{locale === 'de' ? 'Versandkosten & Rückgabe' : 'Delivery costs & returns'}</Link>
+          </nav>
         </div>
       </section>
     </div>

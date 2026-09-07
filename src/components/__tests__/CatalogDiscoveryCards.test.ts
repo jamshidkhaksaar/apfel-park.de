@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import StoreBrandCards from "../store/StoreBrandCards";
+import StoreBrandCards, { getBrandBrowsePath } from "../store/StoreBrandCards";
 import AccessoryCategoryCards from "../store/AccessoryCategoryCards";
 
 describe("catalog discovery cards", () => {
@@ -9,12 +9,15 @@ describe("catalog discovery cards", () => {
     const html = renderToStaticMarkup(createElement(StoreBrandCards, { lang: "de" }));
     for (const name of ["Apple", "Samsung", "Google", "Xiaomi", "Huawei"]) {
       expect(html).toContain(`data-brand-card="${name}"`);
-      expect(html).toContain(`/de/smartphones?brand=${name}#store`);
+      expect(html).toContain(`/de${getBrandBrowsePath(name)}`);
     }
     expect(html.match(/fill="#[A-F0-9]{6}"/g)).toHaveLength(4);
     expect(html).toContain("/images/brands/google-wordmark.svg");
     expect(html).toContain("Top Marken");
     expect(html).not.toContain("Wir führen alle");
+    expect(getBrandBrowsePath('Samsung')).toBe('/samsung-handys#angebote');
+    expect(getBrandBrowsePath('Xiaomi')).toBe('/xiaomi-redmi-handys#angebote');
+    expect(getBrandBrowsePath('Apple')).toBe('/smartphones?brand=Apple#store');
   });
 
   it.each(["de", "en"] as const)("renders four lightweight category images and original routes in %s", (lang) => {

@@ -173,18 +173,18 @@ export default async function SmartphonesPage({
               </p>
             </div>
 
-            {/* Financing */}
+            {/* Payment information */}
             <div className="tech-card-hover group rounded-2xl p-8">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                 <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-foreground">{lang === "de" ? "Finanzierung" : "Financing"}</h3>
+              <h3 className="text-xl font-bold text-foreground">{lang === "de" ? "Zahlungsarten im Checkout" : "Payment options at checkout"}</h3>
               <p className="mt-3 text-muted">
                 {lang === "de"
-                  ? "Flexible Ratenzahlung für dein Wunsch-Smartphone. Frag uns nach den Möglichkeiten."
-                  : "Flexible installment payments for your dream smartphone. Ask us about options."}
+                  ? "Die für deine Bestellung verfügbaren Zahlungsarten werden dir vor Abschluss im Checkout angezeigt."
+                  : "The payment methods available for your order are shown at checkout before you complete your purchase."}
               </p>
             </div>
           </div>
