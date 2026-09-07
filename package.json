@@ -19,6 +19,7 @@
     "db:migrate": "node scripts/migrate.mjs up",
     "db:baseline": "node scripts/migrate.mjs baseline",
     "test": "vitest run",
+    "test:image-uploads": "node scripts/image-upload-regression.mjs",
     "test:watch": "vitest",
     "dev:product-intake-ui-fixture": "tsx scripts/product-intake-ui-fixture.tsx",
     "branding:favicons": "node scripts/generate-favicons.mjs",

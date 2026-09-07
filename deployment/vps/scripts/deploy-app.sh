@@ -78,6 +78,11 @@ log "npm run build"
 set -a; . "$ENV_FILE"; set +a
 npm run build
 
+# Use an isolated standalone process and temporary upload directory to verify
+# images added after startup. A symlink alone only covers pre-existing files.
+log "runtime image upload regression"
+npm run test:image-uploads
+
 # Apply additive schema changes before switching the live symlink. A failed
 # migration stops the release here; the currently running app remains active.
 # Migrations are transactional and recorded in schema_migrations.
@@ -93,12 +98,9 @@ log "copying static assets into standalone"
 cp -r "$release/.next/static" "$release/.next/standalone/.next/static"
 cp -r "$release/public/." "$release/.next/standalone/public/"
 
-# /uploads is ~1.2GB of user uploads kept in shared/ (outside releases) and
-# served by nginx via alias. next/image resolves local paths against the
-# standalone public dir, so without this symlink every
-# /_next/image?url=/uploads/... returns 400 "not a valid image" and the
-# avif/webp config in next.config.ts is dead weight. Must exist before the
-# service starts -- Next resolves public/ at boot.
+# Uploads live outside releases and nginx serves them via alias. Keep the
+# public symlink for files present at boot. The /uploads/[...path] route also
+# lets next/image read raster images uploaded after Next's public snapshot.
 ln -sfn "$APP_ROOT/shared/uploads" "$release/.next/standalone/public/uploads"
 
 # Nginx serves .next/static directly. Make the release path traversable and
