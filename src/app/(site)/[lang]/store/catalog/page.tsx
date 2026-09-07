@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     locale === "de" ? "Alle Produkte A–Z" : "All Products A–Z",
     locale === "de"
       ? "Alle Smartphones, iPhones, Tablets und Zubehör bei Apfel Park von A bis Z: Preise und Gerätezustände vergleichen, online bestellen oder in Hamburg abholen."
-      : "Browse the Apfel Park catalog of smartphones, iPhones, tablets and accessories. Compare prices and device conditions, with delivery in Germany or Hamburg pickup.",
+      : "Browse Apfel Park smartphones, iPhones, tablets and accessories. Compare prices and conditions, with delivery in Germany or Hamburg pickup.",
     "/store/catalog",
   );
 }
