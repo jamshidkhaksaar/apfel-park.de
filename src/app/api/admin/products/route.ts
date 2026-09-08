@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildAiTextProvenance } from '@/lib/product-text-provenance';
 
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { canManageProducts } from "@/lib/admin-auth";
@@ -227,10 +228,11 @@ export async function POST(request: NextRequest) {
         "marketplace_attributes",
         "amazon_gtin_exemption",
         "amazon_renewed_approved",
-        "catalog_enabled"
+        "catalog_enabled",
+        "import_metadata"
       ) VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23,$24::jsonb,$25::jsonb,$26,$27,$28,$29::jsonb,$30::jsonb,
-        $31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43::jsonb,$44::jsonb,$45::jsonb,$46,$47,true
+        $31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43::jsonb,$44::jsonb,$45::jsonb,$46,$47,true,$48::jsonb
       )
       RETURNING "id"`,
       [
@@ -281,6 +283,7 @@ export async function POST(request: NextRequest) {
         JSON.stringify(product.marketplaceAttributes),
         product.amazonGtinExemption,
         product.amazonRenewedApproved,
+        JSON.stringify({ contentProvenance: buildAiTextProvenance(null, {}, product, product.aiGeneratedFields) }),
       ],
     );
 
@@ -351,8 +354,11 @@ export async function PATCH(request: NextRequest) {
         condition_note: string | null;
         eprel_id: string | null;
         energy_label: unknown;
+        title: string | null;
+        description: string | null;
+        import_metadata: unknown;
       }>("products")
-      .select("slug,is_active,condition,condition_note,eprel_id,energy_label")
+      .select("slug,is_active,condition,condition_note,eprel_id,energy_label,title,description,import_metadata")
       .eq("id", payload.id)
       .maybeSingle();
     if (existingError) throw new Error(`Could not load existing product: ${existingError.message}`);
@@ -405,6 +411,11 @@ export async function PATCH(request: NextRequest) {
          "title" = $2,
          "subtitle" = $3,
          "description" = $4,
+         "title_i18n" = CASE WHEN "title" IS DISTINCT FROM $2 THEN '{}'::jsonb ELSE "title_i18n" END,
+         "subtitle_i18n" = CASE WHEN "subtitle" IS DISTINCT FROM $3 THEN '{}'::jsonb ELSE "subtitle_i18n" END,
+         "description_i18n" = CASE WHEN "description" IS DISTINCT FROM $4 THEN '{}'::jsonb ELSE "description_i18n" END,
+         "feature_bullets_i18n" = CASE WHEN "feature_bullets" IS DISTINCT FROM $15 THEN '{}'::jsonb ELSE "feature_bullets_i18n" END,
+         "specs_i18n" = CASE WHEN "specs" IS DISTINCT FROM $16::jsonb THEN '{}'::jsonb ELSE "specs_i18n" END,
          "price" = $5,
          "compare_at_price" = $6,
          "category" = $7,
@@ -449,11 +460,12 @@ export async function PATCH(request: NextRequest) {
         "marketplace_attributes" = $46::jsonb,
         "amazon_gtin_exemption" = $47,
         "amazon_renewed_approved" = $48,
-        "import_metadata" = CASE
+        "import_metadata" = coalesce(CASE
           WHEN $49::boolean AND ("import_metadata" ? 'conditionNoteI18n')
             THEN "import_metadata" - 'conditionNoteI18n'
           ELSE "import_metadata"
-        END,
+        END,'{}'::jsonb) || jsonb_build_object('contentProvenance',
+          CASE WHEN jsonb_typeof("import_metadata"->'contentProvenance')='object' THEN "import_metadata"->'contentProvenance' ELSE '{}'::jsonb END || $50::jsonb),
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -506,6 +518,7 @@ export async function PATCH(request: NextRequest) {
         product.amazonGtinExemption,
         product.amazonRenewedApproved,
         invalidateConditionNoteTranslations,
+        JSON.stringify(buildAiTextProvenance(existing?.import_metadata, existing ?? {}, product, product.aiGeneratedFields)),
       ],
     );
 

@@ -1,6 +1,7 @@
 import type { AdminProductRecord, ProductFormState, ProductSpec, ProductVariant } from '@/lib/admin-product-types';
 
 export const productToForm = (product: AdminProductRecord): ProductFormState => ({
+  aiGeneratedFields: product.aiGeneratedFields,
   id: product.id,
   title: product.title,
   subtitle: product.subtitle,

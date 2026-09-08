@@ -4,12 +4,25 @@ import {
   newPhoneEntry,
   copyNewPhonePhotos,
   entryImages,
+  entryPayload,
   entryProblems,
   entryReadiness,
   validateDocument,
 } from './model';
 
 describe('smartphone workspace rules', () => {
+  it('inherits AI origin only from the field source actually used by an entry', () => {
+    const document = newPhoneDocument();
+    document.shared = { title: 'AI shared title', description: 'AI shared description', aiGeneratedFields: ['title', 'description'] };
+    const entry = document.entries[0];
+    expect(entryPayload(document, entry).aiGeneratedFields).toEqual(['title', 'description']);
+    entry.details = { title: 'Manual entry-specific title' };
+    expect(entryPayload(document, entry).aiGeneratedFields).toEqual(['description']);
+    entry.details = { title: 'Edited AI entry title', aiGeneratedFields: ['title'] };
+    expect(entryPayload(document, entry).aiGeneratedFields).toEqual(['title', 'description']);
+    entry.details = { title: 'Manual title', description: 'Manual description' };
+    expect(entryPayload(document, entry).aiGeneratedFields).toEqual([]);
+  });
   it('duplicates configuration but never identity, device evidence, or photos', () => {
     const source = newPhoneEntry();
     Object.assign(source, {

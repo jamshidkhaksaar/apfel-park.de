@@ -1,4 +1,5 @@
 import type { ProductPayload } from '@/lib/product-write-payload';
+import { normalizeAiTextFields } from '@/lib/product-ai-fields';
 import {
   evaluateProductChannelReadiness,
   type ChannelKey,
@@ -102,6 +103,9 @@ export const entryPayload = (
 ): ProductPayload => ({
   ...document.shared,
   ...entry.details,
+  aiGeneratedFields: (['title', 'description'] as const).filter(field => normalizeAiTextFields(
+    Object.prototype.hasOwnProperty.call(entry.details, field) ? entry.details.aiGeneratedFields : document.shared.aiGeneratedFields,
+  ).includes(field)),
   category: 'smartphones',
   condition: entry.condition,
   price: entry.price,

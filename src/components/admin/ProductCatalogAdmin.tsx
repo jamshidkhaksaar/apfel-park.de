@@ -17,6 +17,7 @@ import type {
 } from "@/lib/product-channel-readiness";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
+import { appliedResearchTextFields } from '@/lib/product-ai-fields';
 import type { ProductCondition } from "@/lib/products";
 import {
   sanitizeProductExperienceProfile,
@@ -380,6 +381,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
         title: research.title || prev.title,
         subtitle: research.subtitle || prev.subtitle,
         description: research.description || prev.description,
+        aiGeneratedFields: appliedResearchTextFields(prev.aiGeneratedFields, research),
         brand: research.brand || prev.brand,
         model: research.model || prev.model,
         category: (research.category as ProductFormState["category"]) || prev.category,
@@ -553,6 +555,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
             title: formState.title,
             subtitle: formState.subtitle,
             description: formState.description,
+            aiGeneratedFields: formState.aiGeneratedFields,
             category: formState.category,
             condition: formState.condition,
             batteryHealth: formState.batteryHealth ? Number(formState.batteryHealth) : null,

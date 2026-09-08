@@ -1,4 +1,5 @@
 import type { AdminProductRecord } from "@/lib/admin-product-types";
+import { knownAiTextFields } from '@/lib/product-text-provenance';
 import type {
   BatteryDetails,
   MarketplaceAttributes,
@@ -7,6 +8,7 @@ import type {
 } from "@/lib/product-channel-readiness";
 
 export type ProductRow = {
+  import_metadata?: unknown;
   id: string;
   title: string;
   subtitle: string | null;
@@ -170,6 +172,7 @@ const toVariants = (value: unknown) => {
 };
 
 export const mapAdminProduct = (row: ProductRow, featuredIds: string[] = []): AdminProductRecord => ({
+  aiGeneratedFields: knownAiTextFields(row.import_metadata, row),
   id: row.id,
   title: row.title,
   subtitle: row.subtitle ?? "",

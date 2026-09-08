@@ -13,6 +13,7 @@ import { mergeCoverAndGallery, type WizardCondition, type WizardStep } from "@/l
 import { manufacturerPhotoFile } from "@/lib/product-intake/manufacturer-photos";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
+import { appliedResearchTextFields, type AiTextField } from '@/lib/product-ai-fields';
 
 type CatalogOption = {
   id: string;
@@ -28,6 +29,7 @@ type CatalogOption = {
 const steps: WizardStep[] = ["device", "facts", "listing", "review"];
 
 const emptyListing = {
+  aiGeneratedFields: [] as AiTextField[],
   title: "",
   subtitle: "",
   description: "",
@@ -112,6 +114,7 @@ export default function ProductIntakeWizard({
       title: research.title ?? current.title,
       subtitle: research.subtitle ?? current.subtitle,
       description: research.description ?? current.description,
+      aiGeneratedFields: appliedResearchTextFields(current.aiGeneratedFields, research),
       brand: research.brand ?? current.brand,
       model: research.model ?? current.model,
       category: (research.category as typeof current.category) ?? current.category,
@@ -158,6 +161,7 @@ export default function ProductIntakeWizard({
 
   const applyProduct = (product: AdminProductRecord, nextCondition: WizardCondition) => {
     setListing({
+      aiGeneratedFields: product.aiGeneratedFields ?? [],
       title: product.title,
       subtitle: product.subtitle,
       description: product.description,
@@ -289,6 +293,7 @@ export default function ProductIntakeWizard({
         title: listing.title,
         subtitle: listing.subtitle,
         description: listing.description,
+        aiGeneratedFields: listing.aiGeneratedFields,
         category: listing.category,
         condition,
         batteryHealth: batteryHealth ? Number(batteryHealth) : null,

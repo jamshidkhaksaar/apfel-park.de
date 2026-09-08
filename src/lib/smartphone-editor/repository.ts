@@ -2,6 +2,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import sharp from 'sharp';
 import { query, withTransaction, type TransactionClient } from '@/lib/db';
 import { mapAdminProduct, type ProductRow } from '@/lib/admin-product-data';
+import { buildAiTextProvenance } from '@/lib/product-text-provenance';
 import {
   buildPayload,
   validatePayload,
@@ -125,6 +126,7 @@ export const phoneModelTemplate = async (
   if (!result.rows[0]) throw new DraftError('not_found', 404);
   const p = mapAdminProduct(result.rows[0] as ProductRow, []);
   return {
+    aiGeneratedFields: p.aiGeneratedFields,
     title: p.title,
     brand: p.brand,
     model: p.model,
@@ -356,15 +358,17 @@ const jsonFields = new Set<string>([
 ]);
 const column = (field: string) =>
   '"' + field.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase()) + '"';
-const writeProduct = async (
+export const writeProduct = async (
   client: TransactionClient,
   id: string,
   payload: ProductPayload,
   existing: boolean,
-) => {
+): Promise<void> => {
   const p = buildPayload(payload);
   const error = validatePayload(p, getMessages(true));
   if (error) throw new DraftError(error);
+  const prior = existing ? (await client.query('SELECT title,description,import_metadata FROM products WHERE id=$1 FOR UPDATE', [id])).rows[0] : undefined;
+  const provenance = JSON.stringify(buildAiTextProvenance(prior?.import_metadata, prior ?? {}, p, p.aiGeneratedFields));
   const values = fields.map((f) =>
     jsonFields.has(f) ? JSON.stringify(p[f]) : p[f],
   );
@@ -386,14 +390,14 @@ const writeProduct = async (
     .join(',');
   if (existing) {
     await client.query(
-      `UPDATE products SET ${fields.map((f, i) => `${column(f)}=$${i + 2}${jsonFields.has(f) ? '::jsonb' : ''}`).join(',')},${translationUpdates},import_metadata=CASE WHEN condition IS DISTINCT FROM ${bind('condition')} OR condition_note IS DISTINCT FROM ${bind('conditionNote')} THEN coalesce(import_metadata,'{}'::jsonb)-'conditionNoteI18n' ELSE import_metadata END,updated_at=now() WHERE id=$1`,
-      [id, ...values],
+      `UPDATE products SET ${fields.map((f, i) => `${column(f)}=$${i + 2}${jsonFields.has(f) ? '::jsonb' : ''}`).join(',')},${translationUpdates},import_metadata=coalesce(CASE WHEN condition IS DISTINCT FROM ${bind('condition')} OR condition_note IS DISTINCT FROM ${bind('conditionNote')} THEN coalesce(import_metadata,'{}'::jsonb)-'conditionNoteI18n' ELSE import_metadata END,'{}'::jsonb) || jsonb_build_object('contentProvenance',CASE WHEN jsonb_typeof(import_metadata->'contentProvenance')='object' THEN import_metadata->'contentProvenance' ELSE '{}'::jsonb END || $${values.length + 2}::jsonb),updated_at=now() WHERE id=$1`,
+      [id, ...values, provenance],
     );
   } else {
     const slug = `${buildBaseSlug(payload)}-${id.slice(0, 8)}`;
     await client.query(
-      `INSERT INTO products(id,slug,${fields.map(column).join(',')}) VALUES($1,$2,${fields.map((f, i) => `$${i + 3}${jsonFields.has(f) ? '::jsonb' : ''}`).join(',')})`,
-      [id, slug, ...values],
+      `INSERT INTO products(id,slug,${fields.map(column).join(',')},import_metadata) VALUES($1,$2,${fields.map((f, i) => `$${i + 3}${jsonFields.has(f) ? '::jsonb' : ''}`).join(',')},jsonb_build_object('contentProvenance',$${values.length + 3}::jsonb))`,
+      [id, slug, ...values, provenance],
     );
   }
   const units = p.variants.length

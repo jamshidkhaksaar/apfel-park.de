@@ -8,6 +8,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
+import { appliedResearchTextFields, type AiTextField } from '@/lib/product-ai-fields';
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import EprelPicker, { type EprelMatch } from "@/components/admin/EprelPicker";
 import {
@@ -21,6 +22,7 @@ import { createEmptyProductChannelFields, productChannelPayload, type ProductCha
 import { parseFeatureBullets } from '@/lib/admin-product-form';
 
 export type FormState = {
+  aiGeneratedFields?: AiTextField[];
   title: string;
   subtitle: string;
   description: string;
@@ -338,6 +340,7 @@ export default function ProductCreateForm() {
       title: research.title ?? prev.title,
       subtitle: research.subtitle ?? prev.subtitle,
       description: research.description ?? prev.description,
+      aiGeneratedFields: appliedResearchTextFields(prev.aiGeneratedFields, research),
       brand: research.brand ?? prev.brand,
       model: research.model ?? prev.model,
       category: (research.category as FormState["category"]) ?? prev.category,
@@ -573,6 +576,7 @@ export default function ProductCreateForm() {
           title: state.title,
           subtitle: state.subtitle,
           description: state.description,
+          aiGeneratedFields: state.aiGeneratedFields,
           category: state.category,
           condition: state.condition,
           batteryHealth: state.batteryHealth ? Number(state.batteryHealth) : null,

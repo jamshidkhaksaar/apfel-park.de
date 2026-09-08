@@ -2,6 +2,7 @@ import { isValidInputLength, sanitizeInput } from '@/lib/security';
 import { classifySubcategory } from '@/lib/product-subcategory';
 import { validatedGtin } from '@/lib/product-identifiers';
 import { eprelAssetRoutes } from '@/lib/eprel';
+import { normalizeAiTextFields, type AiTextField } from '@/lib/product-ai-fields';
 import type {
   BatteryDetails,
   MarketplaceAttributes,
@@ -10,6 +11,7 @@ import type {
 } from '@/lib/product-channel-readiness';
 
 export type ProductPayload = {
+  aiGeneratedFields?: AiTextField[];
   id?: string;
   title?: string;
   subtitle?: string;
@@ -617,6 +619,7 @@ export const buildPayload = (payload: ProductPayload, slug?: string) => {
   const specs = sanitizeSpecs(payload.specs);
 
   return {
+    aiGeneratedFields: normalizeAiTextFields(payload.aiGeneratedFields),
     title,
     subtitle,
     description,

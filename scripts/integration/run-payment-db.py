@@ -29,7 +29,7 @@ def sql(statement):
         raise RuntimeError('Local postgres command failed (details suppressed for secret safety)')
     return result.stdout.strip()
 
-def main():
+def main(config='scripts/integration/payment-db.config.mts'):
     if not NODE.is_file():
         raise RuntimeError('Pinned Node 24 binary missing')
     print(subprocess.check_output(
@@ -65,7 +65,7 @@ def main():
         if not stopped:
             child = subprocess.Popen([
                 str(NODE), 'node_modules/vitest/vitest.mjs', 'run', '--config',
-                'scripts/integration/payment-db.config.mts', '--no-cache', '--reporter=verbose',
+                config, '--no-cache', '--reporter=verbose',
             ], cwd=ROOT, env=env)
             while not stopped:
                 try:

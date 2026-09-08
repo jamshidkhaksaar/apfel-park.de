@@ -1,7 +1,44 @@
 import { describe, expect, it } from 'vitest';
-import { isAiGeneratedDescription, merchantDescriptionHash, readDescriptionAiHashes } from '../product-text-provenance';
+import { aiIntakeTextProvenance, buildAiTextProvenance, knownAiTextFields, isAiGeneratedDescription, merchantDescriptionHash, readDescriptionAiHashes } from '../product-text-provenance';
+import { appliedResearchTextFields, normalizeAiTextFields } from '../product-ai-fields';
 
 describe('description provenance', () => {
+  it('marks only text returned by applied research and retains edited AI lineage', () => {
+    expect(appliedResearchTextFields([], { title: 'AI title', description: '' })).toEqual(['title']);
+    expect(appliedResearchTextFields(['description'], { title: 'AI title' })).toEqual(['title', 'description']);
+    expect(normalizeAiTextFields(['stock', 'mpn', 'title', 'title'])).toEqual(['title']);
+    expect(normalizeAiTextFields('description')).toEqual([]);
+  });
+  it('hashes reviewed edits rather than unreviewed research and does not trust submitted hashes', () => {
+    const next = { title: 'Reviewed title', description: 'Reviewed German text' };
+    const metadata = { contentProvenance: buildAiTextProvenance(null, {}, next, ['title', 'description']) };
+    expect(knownAiTextFields(metadata, next)).toEqual(['title', 'description']);
+    expect(knownAiTextFields(metadata, { title: 'Raw AI result' })).toEqual([]);
+    expect(buildAiTextProvenance(null, {}, next, { descriptionAiHashes: ['injected'] })).toEqual({ titleAiHashes: [], descriptionAiHashes: [] });
+  });
+  it('carries existing AI origin through a manual edit even when the client omits flags', () => {
+    const before = { title: 'Manual title', description: 'Known AI description' };
+    const metadata = { contentProvenance: buildAiTextProvenance(null, {}, before, ['description']), unrelated: 'kept' };
+    const copy = JSON.stringify(metadata);
+    const next = { title: 'Manual title edited', description: 'AI description with staff corrections' };
+    const provenance = buildAiTextProvenance(metadata, before, next, []);
+    expect(knownAiTextFields({ contentProvenance: provenance }, next)).toEqual(['description']);
+    expect(provenance.descriptionAiHashes).toContain(merchantDescriptionHash(before.description));
+    expect(JSON.stringify(metadata)).toBe(copy);
+  });
+  it('does not carry stale or different-field markers onto manual copy', () => {
+    const metadata = { contentProvenance: { descriptionAiHashes: [merchantDescriptionHash('Older text')] } };
+    const result = buildAiTextProvenance(metadata, { description: 'Manual replacement' }, { title: 'Older text', description: 'New manual text' }, []);
+    expect(knownAiTextFields({ contentProvenance: result }, { title: 'Older text', description: 'New manual text' })).toEqual([]);
+  });
+  it('records bilingual AI intake copy without treating manual/test intake as generated', () => {
+    const de = { title: 'Deutscher Titel', description: 'Deutscher Text' };
+    const en = { title: 'English title', description: 'English text' };
+    const provenance = aiIntakeTextProvenance(de, en, ['title', 'description']);
+    expect(knownAiTextFields({ contentProvenance: provenance }, de)).toEqual(['title', 'description']);
+    expect(knownAiTextFields({ contentProvenance: provenance }, en)).toEqual(['title', 'description']);
+    expect(aiIntakeTextProvenance(de, en, [])).toEqual({ titleAiHashes: [], descriptionAiHashes: [] });
+  });
   it('recognizes only exact known text, allowing feed whitespace normalization', () => {
     const hashes = [merchantDescriptionHash('Kapazität: 20.000 mAh. Für unterwegs.')];
     expect(isAiGeneratedDescription(' Kapazität: 20.000 mAh.\nFür unterwegs. ', hashes)).toBe(true);

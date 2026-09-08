@@ -128,6 +128,14 @@ const itemXml = (product: Product, variant: Product["variants"][number] | undefi
     .map((image) => `      <g:additional_image_link>${xmlEscape(absoluteUrl(image))}</g:additional_image_link>`)
     .join('\n');
   const title = googleMerchantTitle(product, variant);
+  const titleXml = isAiGeneratedDescription(product.title, product.titleAiHashes)
+    ? [
+        '      <g:structured_title>',
+        '        <g:digital_source_type>trained_algorithmic_media</g:digital_source_type>',
+        `        <g:content>${xmlEscape(title)}</g:content>`,
+        '      </g:structured_title>',
+      ].join('\n')
+    : `      <g:title>${xmlEscape(title)}</g:title>`;
   const googleCategory = product.marketplaceCategoryMappings?.google?.category || categoryMap[product.category];
   const variantOptions = variant
     ? [
@@ -162,7 +170,7 @@ const itemXml = (product: Product, variant: Product["variants"][number] | undefi
   return [
     '    <item>',
     `      <g:id>${xmlEscape(itemId)}</g:id>`,
-    `      <g:title>${xmlEscape(title)}</g:title>`,
+    titleXml,
     googleMerchantDescriptionXml(product),
     `      <g:link>${xmlEscape(link)}</g:link>`,
     `      <g:image_link>${xmlEscape(absoluteUrl(primaryImage))}</g:image_link>`,

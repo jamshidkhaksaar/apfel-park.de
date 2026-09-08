@@ -50,6 +50,7 @@ export type Product = {
   description: string;
   /** Known AI-created description fingerprints, including independently marked translations. */
   descriptionAiHashes?: string[];
+  titleAiHashes?: string[];
   price: number;
   compareAtPrice?: number;
   category: ProductCategory;
@@ -219,7 +220,7 @@ type DbProduct = {
   battery_health?: number | string | null;
   has_real_product_photos?: boolean | null;
   condition_note?: string | null;
-  import_metadata?: { smartphoneEditor?: {googleSelected?:boolean}; conditionNoteI18n?: LocalizedText | null; contentProvenance?: { descriptionAiHashes?: unknown } } | null;
+  import_metadata?: { smartphoneEditor?: {googleSelected?:boolean}; conditionNoteI18n?: LocalizedText | null; contentProvenance?: { descriptionAiHashes?: unknown; titleAiHashes?: unknown } } | null;
   brand: string | null;
   model: string | null;
   sku: string | null;
@@ -473,6 +474,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     subtitle: localizedText(row.subtitle_i18n, locale, row.subtitle),
     description: localizedText(row.description_i18n, locale, row.description),
     descriptionAiHashes: readDescriptionAiHashes(row.import_metadata?.contentProvenance?.descriptionAiHashes),
+    titleAiHashes: readDescriptionAiHashes(row.import_metadata?.contentProvenance?.titleAiHashes),
     price,
     compareAtPrice,
     category,

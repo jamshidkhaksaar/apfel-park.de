@@ -38,6 +38,20 @@ const product = {
 } satisfies Product;
 
 describe("Google Merchant feed", () => {
+  it('uses a structured AI title with the exact variant details and no ordinary duplicate', () => {
+    const xml = buildGoogleMerchantFeedForProducts([{ ...product, titleAiHashes: [merchantDescriptionHash(product.title)] }]);
+    expect(xml.match(/<g:structured_title>/g)).toHaveLength(2);
+    expect(xml).toContain('<g:content>Apple iPhone 17 Schwarz 128 GB</g:content>');
+    expect(xml).toContain('<g:content>Apple iPhone 17 Blau 256 GB</g:content>');
+    expect(xml).not.toContain('<g:title>');
+    expect(xml).toContain('<g:description>Originalverpacktes Smartphone</g:description>');
+  });
+  it('does not use a stale title marker or a description marker for a manual title', () => {
+    const xml = buildGoogleMerchantFeedForProducts([{ ...product, variants: [], titleAiHashes: [merchantDescriptionHash('Old title')], descriptionAiHashes: [merchantDescriptionHash(product.description)] }]);
+    expect(xml).toContain('<g:title>Apple iPhone 17</g:title>');
+    expect(xml).not.toContain('<g:structured_title>');
+    expect(xml).toContain('<g:structured_description>');
+  });
   it('labels known AI descriptions once, with escaped German text', () => {
     const description = 'Powerbank: 20.000 mAh & USB. <Keine Garantie> "Details"';
     const xml = buildGoogleMerchantFeedForProducts([{ ...product, variants: [], description, descriptionAiHashes: [merchantDescriptionHash(description)] }]);

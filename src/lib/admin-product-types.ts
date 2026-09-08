@@ -1,5 +1,6 @@
 import type { BatteryDetails, MarketplaceAttributes, MarketplaceCategoryMappings, ProductIdentifierStatus } from '@/lib/product-channel-readiness';
 import type { ProductChannelFieldState } from '@/lib/product-channel-form';
+import type { AiTextField } from '@/lib/product-ai-fields';
 
 export type ProductSpec = {
   label: string;
@@ -26,6 +27,7 @@ export type ProductVariant = {
 };
 
 export type AdminProductRecord = {
+  aiGeneratedFields?: AiTextField[];
   id: string;
   title: string;
   subtitle: string;
@@ -97,6 +99,7 @@ export type PromoSettings = {
 };
 
 export type ProductFormState = {
+  aiGeneratedFields?: AiTextField[];
   id: string;
   title: string;
   subtitle: string;

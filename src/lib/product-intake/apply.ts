@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { deleteBlobByUrl, resolveUploadPath, uploadProductImage } from "@/lib/blob";
 import { withTransaction } from "@/lib/db";
+import { aiIntakeTextProvenance } from '@/lib/product-text-provenance';
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 
 import { ProductIntakeError } from "./errors";
@@ -346,6 +347,11 @@ export const createApprovedProductDraft = async (
         identifierStatus,
       };
       const metadata = {
+        contentProvenance: aiIntakeTextProvenance(
+          proposal.listingPreview.de,
+          proposal.listingPreview.en,
+          ['hermes', 'n8n_v2', 'safi_bot'].includes(run.source) ? ['title', 'description'] : [],
+        ),
         productIntake: {
           runId: run.id,
           proposalHash: run.proposalHash,

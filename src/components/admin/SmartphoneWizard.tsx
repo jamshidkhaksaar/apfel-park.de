@@ -1,4 +1,6 @@
 'use client';
+
+import { appliedResearchTextFields, normalizeAiTextFields } from '@/lib/product-ai-fields';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -481,14 +483,15 @@ export default function SmartphoneWizard({
                       ...d,
                       pendingShared: {
                         ...d.shared,
-                        title: result.title,
-                        brand: result.brand,
-                        model: result.model,
-                        description: result.description,
-                        specs: result.specs,
-                        manufacturer: result.manufacturer,
-                        euResponsiblePerson: result.euResponsiblePerson,
-                        safetyWarnings: result.safetyWarnings,
+                        title: result.title ?? d.shared.title,
+                        brand: result.brand ?? d.shared.brand,
+                        model: result.model ?? d.shared.model,
+                        description: result.description ?? d.shared.description,
+                        aiGeneratedFields: appliedResearchTextFields(d.shared.aiGeneratedFields, result),
+                        specs: result.specs ?? d.shared.specs,
+                        manufacturer: result.manufacturer ?? d.shared.manufacturer,
+                        euResponsiblePerson: result.euResponsiblePerson ?? d.shared.euResponsiblePerson,
+                        safetyWarnings: result.safetyWarnings ?? d.shared.safetyWarnings,
                       },
                     }));
                   } catch (e) {
@@ -849,6 +852,7 @@ export default function SmartphoneWizard({
                 {Object.entries(sharedEdit)
                   .filter(
                     ([key, value]) =>
+                      key !== 'aiGeneratedFields' &&
                       JSON.stringify(value) !==
                       JSON.stringify(
                         (document.shared as Record<string, unknown>)[key],
@@ -904,6 +908,12 @@ export default function SmartphoneWizard({
                             ),
                         ),
                       ),
+                      aiGeneratedFields: appliedResearchTextFields(e.details.aiGeneratedFields, Object.fromEntries(
+                        Object.entries(sharedEdit).filter(([key, value]) =>
+                          normalizeAiTextFields(sharedEdit.aiGeneratedFields).includes(key as 'title' | 'description')
+                          && JSON.stringify(value) !== JSON.stringify((d.shared as Record<string, unknown>)[key]),
+                        ),
+                      )),
                     },
                   })),
                   pendingShared: undefined,
