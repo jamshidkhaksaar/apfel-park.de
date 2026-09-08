@@ -7,6 +7,7 @@ import GoogleCustomerReviews from "@/components/checkout/GoogleCustomerReviews";
 import TrustpilotInvitation from "@/components/checkout/TrustpilotInvitation";
 import { analyticsItem, withGa4Items } from "@/lib/analytics";
 import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
+import { startCheckoutConfirmationPolling } from "@/lib/checkout-confirmation-polling";
 
 type Props = {
   locale: "de" | "en";
@@ -64,6 +65,7 @@ export default function CheckoutSuccessClient({
   productGtins,
 }: Props) {
   const [paid, setPaid] = useState(initiallyPaid);
+  const [confirmationIssue, setConfirmationIssue] = useState(false);
   const purchaseSentRef = useRef(false);
   const [message, setMessage] = useState(() =>
     provider === "paypal" && orderId && !initiallyPaid
@@ -129,6 +131,37 @@ export default function CheckoutSuccessClient({
   }, [currency, items, orderId, paid, totalAmount]);
 
   useEffect(() => {
+    if (provider !== "stripe" || !orderId || paid) return;
+    return startCheckoutConfirmationPolling({
+      orderId,
+      onResult: (result) => {
+        if (result === "paid") {
+          setPaid(true);
+          setConfirmationIssue(false);
+          setMessage(locale === "de" ? "Zahlung bestätigt." : "Payment confirmed.");
+          return;
+        }
+        setConfirmationIssue(result !== "timeout");
+        const de = {
+          failed: "Die Zahlung wurde nicht bestätigt. Bei Fragen kontaktiere uns bitte mit deiner Bestellnummer.",
+          cancelled: "Diese Bestellung wurde storniert. Bei Fragen zur Zahlung kontaktiere uns bitte.",
+          refunded: "Für diese Bestellung wurde eine vollständige oder teilweise Rückerstattung erfasst. Bei Fragen kontaktiere uns bitte.",
+          unavailable: "Der Bestellstatus kann hier nicht abgerufen werden. Bitte kontaktiere uns bei Fragen mit deiner Bestellnummer.",
+          timeout: "Die Zahlungsbestätigung steht noch aus. Du kannst diese Seite später erneut laden oder uns mit deiner Bestellnummer kontaktieren.",
+        };
+        const en = {
+          failed: "Payment has not been confirmed. Please contact us with your order number if you need help.",
+          cancelled: "This order has been cancelled. Please contact us with any payment questions.",
+          refunded: "A full or partial refund has been recorded for this order. Please contact us with any questions.",
+          unavailable: "The order status cannot be retrieved here. Please contact us with your order number if you need help.",
+          timeout: "Payment confirmation is still pending. You can reload this page later or contact us with your order number.",
+        };
+        setMessage(locale === "de" ? de[result] : en[result]);
+      },
+    });
+  }, [locale, orderId, paid, provider]);
+
+  useEffect(() => {
     if (provider !== "paypal" || !orderId || paid) return;
 
     let cancelled = false;
@@ -141,14 +174,19 @@ export default function CheckoutSuccessClient({
         const data = (await response.json()) as { success: boolean; error?: string };
         if (cancelled) return;
         if (!response.ok || !data.success) {
+          setConfirmationIssue(true);
           setMessage(data.error || (locale === "de" ? "PayPal-Bestätigung fehlgeschlagen." : "PayPal confirmation failed."));
           return;
         }
         setPaid(true);
+        setConfirmationIssue(false);
         setMessage(locale === "de" ? "Zahlung bestätigt." : "Payment confirmed.");
       })
       .catch(() => {
-        if (!cancelled) setMessage(locale === "de" ? "PayPal-Bestätigung fehlgeschlagen." : "PayPal confirmation failed.");
+        if (!cancelled) {
+          setConfirmationIssue(true);
+          setMessage(locale === "de" ? "PayPal-Bestätigung fehlgeschlagen." : "PayPal confirmation failed.");
+        }
       });
 
     return () => {
@@ -188,14 +226,18 @@ export default function CheckoutSuccessClient({
       <h1 className="mt-3 text-3xl font-semibold text-foreground">
         {paid
           ? locale === "de" ? "Danke für deine Bestellung." : "Thank you for your order."
-          : locale === "de" ? "Wir warten auf die Zahlungsbestätigung." : "Waiting for payment confirmation."}
+          : confirmationIssue
+            ? locale === "de" ? "Bitte prüfe deinen Bestellstatus." : "Please check your order status."
+            : locale === "de" ? "Wir warten auf die Zahlungsbestätigung." : "Waiting for payment confirmation."}
       </h1>
       <p className="mt-4 text-sm leading-6 text-muted">
         {paid
           ? locale === "de" ? "Wir melden uns mit den nächsten Schritten für Abholung oder Versand." : "We will follow up with pickup or shipping details."
-          : locale === "de" ? "Bei Stripe kann die Webhook-Bestätigung einen kurzen Moment dauern." : "For Stripe, webhook confirmation can take a short moment."}
+          : confirmationIssue
+            ? locale === "de" ? "Bei Fragen helfen wir dir mit deiner Bestellnummer weiter." : "We can help if you contact us with your order number."
+            : locale === "de" ? "Bei Stripe kann die Webhook-Bestätigung einen kurzen Moment dauern." : "For Stripe, webhook confirmation can take a short moment."}
       </p>
-      {message ? <p className="mt-4 text-sm text-muted">{message}</p> : null}
+      <p role="status" aria-live="polite" aria-atomic="true" className={message ? "mt-4 text-sm text-muted" : "sr-only"}>{message}</p>
       {orderId ? (
         <div className="mt-6 rounded-xl border border-border/60 bg-surface/40 p-4 text-sm text-muted">
           <div>
@@ -229,7 +271,7 @@ export default function CheckoutSuccessClient({
         </div>
       ) : null}
 
-      {orderId ? (
+      {orderId && !confirmationIssue ? (
         <div className="mt-5 rounded-xl border border-border/60 bg-surface/40 p-5 text-left text-sm text-muted">
           <p className="font-semibold text-foreground">
             {locale === "de" ? "Wie es weitergeht" : "What happens next"}
