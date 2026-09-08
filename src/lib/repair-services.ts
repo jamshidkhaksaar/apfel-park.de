@@ -1,4 +1,5 @@
 import type { Locale } from '@/lib/i18n';
+import { businessAddress } from '@/lib/business-identity';
 
 export const repairServiceSlugs = [
   'apple',
@@ -384,7 +385,7 @@ export const repairServices: RepairService[] = [
         diagnosis: [
           'Mit der S-Bahn: ab Hamburg-Harburg wenige Minuten bis Wilhelmsburg, danach kurzer Fußweg',
           'Mit dem Auto: Richtung Norden, Parkplätze gibt es direkt am Luna Center',
-          'Adresse: Wilhelm-Strauß-Weg 2b, 21109 Hamburg',
+          `Adresse: ${businessAddress('de', false)}`,
           'Geöffnet Montag bis Samstag von 09:30 bis 20:00 Uhr, ohne Termin',
         ],
         processTitle: 'So läuft die Reparatur ab',
@@ -414,7 +415,7 @@ export const repairServices: RepairService[] = [
         diagnosis: [
           'By S-Bahn: a few minutes from Hamburg-Harburg to Wilhelmsburg, then a short walk',
           'By car: head north, parking is available at the Luna Center',
-          'Address: Wilhelm-Strauß-Weg 2b, 21109 Hamburg',
+          `Address: ${businessAddress('en')}`,
           'Open Monday to Saturday, 09:30 to 20:00, no appointment needed',
         ],
         processTitle: 'How the repair works',

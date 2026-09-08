@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import FooterLinkGroup from "@/components/FooterLinkGroup";
+import LegalBusinessIdentity from '@/components/LegalBusinessIdentity';
 
 import { getDictionary, type Locale } from "../lib/i18n";
 import { getGooglePreferredSourceBadge } from "../lib/google-preferred-source";
@@ -40,6 +41,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             </Link>
             
             <p className="max-w-sm text-sm text-muted">{dict.footer.description}</p>
+            <LegalBusinessIdentity lang={lang} />
 
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
               <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-green" />

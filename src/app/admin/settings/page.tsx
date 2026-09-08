@@ -1,4 +1,5 @@
 import { createAdminDbClient } from "@/lib/admin-db";
+import { businessAddress, businessIdentity } from '@/lib/business-identity';
 import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
 
 import AdminShell from "../../../components/admin/AdminShell";
@@ -30,11 +31,11 @@ export default async function SettingsPage() {
   // Default values fallback
   const initialSettings = {
     general: {
-      shopName: general.shopName || "Apfel Park",
-      owner: general.owner || "",
-      address: general.address || "",
-      email: general.email || "",
-      phone: general.phone || "",
+      shopName: general.shopName || businessIdentity.tradingName,
+      owner: general.owner || businessIdentity.legalOwner,
+      address: general.address || businessAddress(locale),
+      email: general.email || businessIdentity.email,
+      phone: general.phone || businessIdentity.phones.customerService[locale],
     },
     hours: {
       monday: hours.monday || "09:00 - 18:00",
@@ -57,7 +58,7 @@ export default async function SettingsPage() {
     },
     integrations: {
       whatsappWidgetEnabled: integrations.whatsappWidgetEnabled ?? true,
-      whatsappNumber: integrations.whatsappNumber || "494058978787",
+      whatsappNumber: integrations.whatsappNumber || businessIdentity.phones.customerService.e164.slice(1),
       whatsappDefaultMessageDe: integrations.whatsappDefaultMessageDe || "Hallo! Ich habe eine Frage zu Ihren Services.",
       whatsappDefaultMessageEn: integrations.whatsappDefaultMessageEn || "Hello! I have a question about your services.",
       whatsappCloudApiEnabled: integrations.whatsappCloudApiEnabled || false,

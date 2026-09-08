@@ -9,6 +9,7 @@ import { safeJsonStringify } from "@/lib/security";
 import { merchantReturnPolicy, organizationShippingService } from "@/lib/schema";
 import { getSeoSettings, splitKeywords } from "@/lib/seo";
 import { siteInfo } from "@/lib/site";
+import { businessSchemaIdentity } from '@/lib/business-identity';
 import { canBootstrapPublicAnalytics, isPrivateAnalyticsPath } from "@/lib/analytics-url";
 import { getMarketingIntegrations, getSiteSocialLinks, getWhatsAppWidgetSettings } from "@/lib/site-settings-server";
 
@@ -123,48 +124,12 @@ export default async function RootLayout({
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": ["Store", "LocalBusiness"],
-        "@id": `${siteInfo.url}/#store`,
-        name: siteInfo.name,
-        legalName: siteInfo.legalName,
-        url: siteInfo.url,
-        // E.164 so Google can match this against the Business Profile
-        // without guessing the country code.
-        telephone: siteInfo.phoneE164,
-        email: siteInfo.email,
-        contactPoint: [
-          {
-            "@type": "ContactPoint",
-            telephone: siteInfo.phoneE164,
-            contactType: "customer service",
-            areaServed: "DE",
-            availableLanguage: ["de", "en"],
-          },
-          {
-            "@type": "ContactPoint",
-            telephone: siteInfo.landlineE164,
-            contactType: "customer service",
-            areaServed: "DE",
-            availableLanguage: ["de", "en"],
-          },
-        ],
+        ...businessSchemaIdentity,
         image: normalizeImageUrl(branding?.ogImage ?? ""),
         logo: normalizeImageUrl(branding?.logo ?? ""),
-        founder: {
-          "@type": "Person",
-          name: siteInfo.owner.name,
-        },
-        vatID: siteInfo.vatId,
         currenciesAccepted: "EUR",
         hasMerchantReturnPolicy: merchantReturnPolicy(),
         hasShippingService: organizationShippingService(),
-        address: {
-          "@type": "PostalAddress",
-          streetAddress: siteInfo.address.street,
-          addressLocality: siteInfo.address.city,
-          postalCode: siteInfo.address.postalCode,
-          addressCountry: "DE",
-        },
         openingHoursSpecification: [{
           "@type": "OpeningHoursSpecification",
           dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],

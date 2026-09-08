@@ -1,4 +1,5 @@
 import { dictionary, type Locale } from "@/lib/i18n";
+import { businessIdentity } from '@/lib/business-identity';
 
 export type SeoRouteId =
   | "home"
@@ -464,8 +465,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: dictionary.en.meta.contact.description,
     },
     defaultKeywords: {
-      de: "Kontakt Apfel Park, Handy Laden Hamburg Kontakt, Wilhelm-Strauß-Weg 2b Hamburg",
-      en: "contact Apfel Park, phone store Hamburg contact, Wilhelm-Strauß-Weg 2b Hamburg",
+      de: `Kontakt Apfel Park, Handy Laden Hamburg Kontakt, ${businessIdentity.address.street} Hamburg`,
+      en: `contact Apfel Park, phone store Hamburg contact, ${businessIdentity.address.street} Hamburg`,
     },
   },
   {
@@ -555,8 +556,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Legal Notice",
     },
     defaultDescription: {
-      de: "Anbieterkennzeichnung von Apfel Park in Hamburg-Wilhelmsburg: Inhaber Bismaillah Safi, Geschäftsanschrift, Kontaktmöglichkeiten und Unternehmensangaben.",
-      en: "Legal information for Apfel Park in Hamburg-Wilhelmsburg: proprietor Bismaillah Safi, business address, contact details and business identification.",
+      de: dictionary.de.business.noticeDescription,
+      en: dictionary.en.business.noticeDescription,
     },
     defaultKeywords: {
       de: "Impressum Apfel Park",

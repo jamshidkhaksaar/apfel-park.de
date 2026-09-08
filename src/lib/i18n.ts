@@ -1,9 +1,20 @@
+import { businessAddress, businessIdentity, legalIdentityText, legalProvider } from './business-identity';
+
 export type Locale = "de" | "en";
 
 export const locales: Locale[] = ["de", "en"];
 
 export const dictionary = {
   de: {
+    business: {
+      providerLabel: 'Anbieter',
+      proprietorStatement: `${businessIdentity.tradingName} ist die Geschäftsbezeichnung des Einzelunternehmens von ${businessIdentity.legalOwner}.`,
+      noticeDescription: `Anbieterkennzeichnung gemäß § 5 DDG: ${legalProvider('de')}, Hamburg.`,
+      legalContact: 'Geschäftlicher Kontakt des Inhabers',
+      customerService: 'Kundenservice / WhatsApp',
+      storePhone: 'Telefon Ladengeschäft',
+      returnInstruction: `Bitte senden Sie die Ware innerhalb von 14 Tagen an: ${legalIdentityText('de')}.`,
+    },
     nav: [
       { label: "Startseite", path: "" },
       { label: "Reparatur & Service", path: "/repairs" },
@@ -59,7 +70,7 @@ export const dictionary = {
       home: {
         title: "iPhone & Smartphone kaufen Hamburg",
         description:
-          "Smartphones & iPhones in Hamburg: neu, Open Box & gebraucht mit Garantie. Sofort abholbar oder schneller Versand. Tel. 040 58978787.",
+          `Smartphones & iPhones in Hamburg: neu, Open Box & gebraucht mit Garantie. Sofort abholbar oder schneller Versand. Tel. ${businessIdentity.phones.store.de}.`,
       },
       services: {
         title: "Services & Reparatur Hamburg",
@@ -99,7 +110,7 @@ export const dictionary = {
       contact: {
         title: "Kontakt & Anfahrt – Apfel Park Hamburg",
         description:
-          "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg. Mo–Sa 9:30–20:00 Uhr. Tel. 040 58978787 – ruf an oder schreib per WhatsApp.",
+          `${businessIdentity.tradingName}, ${businessAddress('de', false)}. Mo–Sa 9:30–20:00 Uhr. Tel. ${businessIdentity.phones.store.de} – ruf an oder schreib per WhatsApp.`,
       },
       about: {
         title: "Über uns – Smartphone-Experten Hamburg",
@@ -459,11 +470,11 @@ export const dictionary = {
       contactCards: [
         {
           title: "Besuche uns",
-          description: "Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
+          description: businessAddress('de', false),
         },
         {
           title: "Ruf uns an",
-          description: "040 58978787",
+          description: businessIdentity.phones.store.de,
         },
         {
           title: "Schreib uns",
@@ -478,7 +489,7 @@ export const dictionary = {
       intro: "Apfel Park verbindet einen lokalen Smartphone-Shop in Hamburg-Wilhelmsburg mit einem deutschlandweiten Online-Shop. Bei Geräten, Zubehör und Reparaturen setzen wir auf klare Angaben, nachvollziehbare Preise und persönliche Beratung.",
       story: {
         title: "Unsere Geschichte",
-        content: "In unserem Geschäft am Wilhelm-Strauß-Weg 2b kannst du Smartphones und Zubehör ansehen, Bestellungen abholen und Reparaturen besprechen. Online zeigen wir Preis, Verfügbarkeit, Gerätezustand und die wichtigsten Produktdetails, damit du vor dem Kauf vergleichen kannst.",
+        content: `In unserem Geschäft am ${businessIdentity.address.street} kannst du Smartphones und Zubehör ansehen, Bestellungen abholen und Reparaturen besprechen. Online zeigen wir Preis, Verfügbarkeit, Gerätezustand und die wichtigsten Produktdetails, damit du vor dem Kauf vergleichen kannst.`,
       },
       features: [
         {
@@ -585,8 +596,8 @@ export const dictionary = {
         {
           title: "1. Verantwortlicher",
           body: [
-            "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
-            "E-Mail: info [at] apfel-park [dot] de | Telefon: 040 58978787",
+            legalIdentityText('de'),
+            `E-Mail: ${businessIdentity.email} | Telefon: ${businessIdentity.phones.legalBusiness.de}`,
             "Bei Datenschutzanfragen können Sie uns jederzeit über die oben genannten Kontaktdaten erreichen.",
           ],
         },
@@ -659,7 +670,7 @@ export const dictionary = {
     terms: {
       heroTitle: "Allgemeine Geschäftsbedingungen",
       intro:
-        "Diese AGB gelten für alle Reparatur-, Service- und Kaufverträge mit Apfel Park.",
+        `Diese Allgemeinen Geschäftsbedingungen gelten für Reparatur-, Service- und Kaufverträge mit ${legalIdentityText('de')}.`,
       sections: [
         {
           title: "1. Leistungen",
@@ -718,6 +729,15 @@ export const dictionary = {
     },
   },
   en: {
+    business: {
+      providerLabel: 'Provider',
+      proprietorStatement: `${businessIdentity.tradingName} is the trading name of the sole proprietorship owned by ${businessIdentity.legalOwner}.`,
+      noticeDescription: `Legal notice pursuant to § 5 DDG: ${legalProvider('en')}, Hamburg.`,
+      legalContact: "Owner's business contact",
+      customerService: 'Customer service / WhatsApp',
+      storePhone: 'Store landline',
+      returnInstruction: `Please return the goods within 14 days to: ${legalIdentityText('en')}.`,
+    },
     nav: [
       { label: "Home", path: "" },
       { label: "Repair & Service", path: "/repairs" },
@@ -773,7 +793,7 @@ export const dictionary = {
       home: {
         title: "Buy iPhones & Smartphones in Hamburg",
         description:
-          "Smartphones & iPhones in Hamburg: new, open box & used with warranty. Pick up in store or fast shipping across Germany. Call 040 58978787.",
+          `Smartphones & iPhones in Hamburg: new, open box & used with warranty. Pick up in store or fast shipping across Germany. Call ${businessIdentity.phones.store.en}.`,
       },
       services: {
         title: "Services & Repair Hamburg",
@@ -813,7 +833,7 @@ export const dictionary = {
       contact: {
         title: "Contact & Directions – Apfel Park Hamburg",
         description:
-          "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg. Mon–Sat 9:30–20:00. Call 040 58978787 or message us on WhatsApp.",
+          `${businessIdentity.tradingName}, ${businessAddress('en', false)}. Mon–Sat 9:30–20:00. Call ${businessIdentity.phones.store.en} or message us on WhatsApp.`,
       },
       about: {
         title: "About Us – Smartphone Experts Hamburg",
@@ -1173,11 +1193,11 @@ export const dictionary = {
       contactCards: [
         {
           title: "Visit us",
-          description: "Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
+          description: businessAddress('en'),
         },
         {
           title: "Call us",
-          description: "040 58978787",
+          description: businessIdentity.phones.store.en,
         },
         {
           title: "Write to us",
@@ -1192,7 +1212,7 @@ export const dictionary = {
       intro: "Apfel Park combines a local smartphone shop in Hamburg-Wilhelmsburg with an online store serving Germany. For devices, accessories and repairs, we focus on clear information, transparent prices and personal advice.",
       story: {
         title: "Our Story",
-        content: "At Wilhelm-Strauß-Weg 2b you can view smartphones and accessories, collect orders and discuss repairs. Online we show price, availability, device condition and key product details so you can compare before buying.",
+        content: `At ${businessIdentity.address.street} you can view smartphones and accessories, collect orders and discuss repairs. Online we show price, availability, device condition and key product details so you can compare before buying.`,
       },
       features: [
         {
@@ -1299,8 +1319,8 @@ export const dictionary = {
         {
           title: "1. Controller",
           body: [
-            "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
-            "Email: info [at] apfel-park [dot] de | Phone: 040 58978787",
+            legalIdentityText('en'),
+            `Email: ${businessIdentity.email} | Phone: ${businessIdentity.phones.legalBusiness.en}`,
             "You can contact us at any time using the details above for privacy-related questions.",
           ],
         },
@@ -1373,7 +1393,7 @@ export const dictionary = {
     terms: {
       heroTitle: "Terms & Conditions",
       intro:
-        "These terms apply to all repairs, services and purchases with Apfel Park.",
+        `These terms apply to repair, service and purchase contracts with ${legalIdentityText('en')}.`,
       sections: [
         {
           title: "1. Services",

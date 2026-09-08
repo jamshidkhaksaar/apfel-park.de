@@ -5,6 +5,8 @@ import SafeEmailLink from "../../../../components/SafeEmailLink";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
 import { requireLocale } from "@/lib/route-locale";
+import { businessIdentity } from '@/lib/business-identity';
+import { getDictionary } from '@/lib/i18n';
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +20,7 @@ export const generateMetadata = async ({
   return createMetadata(
     lang,
     lang === "de" ? "Impressum" : "Legal Notice",
-    lang === "de"
-      ? "Anbieterkennzeichnung gemäß § 5 DDG: Bismaillah Safi, handelnd unter Apfel Park, Hamburg."
-      : "Legal notice pursuant to § 5 DDG: Bismaillah Safi, trading as Apfel Park, Hamburg.",
+    getDictionary(lang).business.noticeDescription,
     "/impressum",
   );
 };
@@ -66,6 +66,7 @@ export default async function ImpressumPage({
   const { lang: rawLang } = await params;
   const lang = requireLocale(rawLang);
   const isGerman = lang === "de";
+  const copy = getDictionary(lang).business;
 
   return (
     <div className="bg-background">
@@ -96,9 +97,7 @@ export default async function ImpressumPage({
 
           <div className="rounded-2xl border border-gold/25 bg-gold/5 p-6">
             <p className="font-semibold text-foreground">
-              {isGerman
-                ? "Apfel Park ist die Geschäftsbezeichnung des Einzelunternehmens von Bismaillah Safi."
-                : "Apfel Park is the trading name of the sole proprietorship owned by Bismaillah Safi."}
+              {copy.proprietorStatement}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted">
               {isGerman
@@ -129,7 +128,7 @@ export default async function ImpressumPage({
                   <br />
                   {siteInfo.address.postalCode} {siteInfo.address.city}
                   <br />
-                  {isGerman ? "Deutschland" : "Germany"}
+                  {isGerman ? businessIdentity.address.countryDe : businessIdentity.address.countryEn}
                 </address>
               }
             />
@@ -140,8 +139,8 @@ export default async function ImpressumPage({
             <Row
               label={isGerman ? "Kundenservice / WhatsApp" : "Customer service / WhatsApp"}
               value={
-                <a href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="transition hover:text-gold">
-                  {siteInfo.phone}
+                <a href={`tel:${siteInfo.phoneE164}`} className="transition hover:text-gold">
+                  {businessIdentity.phones.customerService[lang]}
                 </a>
               }
             />
@@ -156,8 +155,8 @@ export default async function ImpressumPage({
             <Row
               label={isGerman ? "Telefon Ladengeschäft" : "Store landline"}
               value={
-                <a href={`tel:${siteInfo.landline.replace(/\s/g, "")}`} className="transition hover:text-gold">
-                  {siteInfo.landline}
+                <a href={`tel:${siteInfo.landlineE164}`} className="transition hover:text-gold">
+                  {businessIdentity.phones.store[lang]}
                 </a>
               }
             />
@@ -272,7 +271,7 @@ export default async function ImpressumPage({
 
           <p className="text-xs text-muted/60">
             {isGerman ? "Stand der Anbieterangaben:" : "Provider information last reviewed:"}{" "}
-            <time dateTime="2026-08-13">{formatLegalDate("2026-08-13", lang)}</time>
+            <time dateTime="2026-09-08">{formatLegalDate("2026-09-08", lang)}</time>
           </p>
 
           {/* Links to legal pages */}

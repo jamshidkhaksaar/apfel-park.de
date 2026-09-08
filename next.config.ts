@@ -82,6 +82,8 @@ const nextConfig: NextConfig = {
   // the closest relevant page; never blanket-redirect everything to home).
   async redirects() {
     return [
+      // Preserve the old portrait URL; new markup uses the correct spelling.
+      { source: '/images/owner/bismiallah-safi.webp', destination: '/images/owner/bismaillah-safi.webp', statusCode: 301 },
       // A distinct query also escapes a browser-cached old permanent locale hop.
       { source: '/:lang(de|en)/store/preview/:token', destination: '/store/preview/:token?preview_route=1', permanent: false },
       { source: '/urun/:slug*', destination: '/de/store', permanent: true },

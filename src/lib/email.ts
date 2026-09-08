@@ -3,6 +3,8 @@ import nodemailer from "nodemailer";
 import { createAdminDbClient } from "@/lib/admin-db";
 import { escapeHtml } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
+import { legalIdentityText } from '@/lib/business-identity';
+import { withBusinessEmailIdentity } from '@/lib/business-email-identity';
 
 type ContactNotificationData = {
   name: string;
@@ -214,13 +216,14 @@ const sendWithResend = async (email: OutboundEmail): Promise<EmailSendResult> =>
 };
 
 const sendTransactionalEmail = async (email: OutboundEmail): Promise<EmailSendResult> => {
-  const smtpResult = await sendWithSmtp(email);
+  const identifiedEmail = withBusinessEmailIdentity(email);
+  const smtpResult = await sendWithSmtp(identifiedEmail);
   if (smtpResult.success) {
     return smtpResult;
   }
 
   if (process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL) {
-    return sendWithResend(email);
+    return sendWithResend(identifiedEmail);
   }
 
   return smtpResult;
@@ -889,7 +892,7 @@ const buildWithdrawalCustomerEmail = (data: WithdrawalEmailData) => {
         `hiermit bestätigen wir den Eingang Ihres Widerrufs am ${timestamp} (Bestellung ${data.orderNumber}).`,
         "",
         "Bitte senden Sie die Ware innerhalb von 14 Tagen an:",
-        "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg",
+        legalIdentityText('de'),
         "",
         "Wichtig vor der Rücksendung eines Telefons: Daten sichern, iPhone: Apple-ID abmelden und 'Wo ist?' deaktivieren (Einstellungen → Name → Abmelden, dann 'Alle Inhalte & Einstellungen löschen'); Android: Google-Konto entfernen.",
         "",
@@ -903,7 +906,7 @@ const buildWithdrawalCustomerEmail = (data: WithdrawalEmailData) => {
         `we hereby confirm receipt of your withdrawal on ${timestamp} (order ${data.orderNumber}).`,
         "",
         "Please return the goods within 14 days to:",
-        "Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg, Germany",
+        legalIdentityText('en'),
         "",
         "Important before returning a phone: back up your data; iPhone: sign out of your Apple ID and disable Find My (Settings → your name → Sign Out, then 'Erase All Content and Settings'); Android: remove your Google account.",
         "",
@@ -985,7 +988,7 @@ export const sendRepairEstimateEmail = async (data: {
       </div>
       ${optionalMessage ? `<p>${escapeHtml(optionalMessage).replace(/\n/g, "<br/>")}</p>` : ""}
       <p>${escapeHtml(closing)}</p>
-      <p><strong>Apfel Park</strong><br/>Wilhelm-Strauß-Weg 2b<br/>21109 Hamburg</p>
+      <p>${escapeHtml(legalIdentityText(data.language))}</p>
     </div>
   `;
   return sendTransactionalEmail({

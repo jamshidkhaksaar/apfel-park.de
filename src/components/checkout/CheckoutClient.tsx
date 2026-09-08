@@ -17,6 +17,7 @@ import {
 import PaymentBrandIcons, { PaymentBrandMark } from "@/components/PaymentBrandIcons";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import { siteInfo } from "@/lib/site";
+import LegalBusinessIdentity from '@/components/LegalBusinessIdentity';
 import { buildStripePaymentReturnUrl } from "@/lib/stripe";
 import { fulfillmentCopy } from "@/lib/fulfillment-copy";
 
@@ -605,6 +606,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 </label>
               ) : null}
 
+              <LegalBusinessIdentity lang={locale} />
               <label className="mt-4 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted">
                 <input type="checkbox" data-checkout-field="termsConsent" aria-invalid={invalidField === "termsConsent"} aria-describedby={invalidField === "termsConsent" ? "checkout-error-summary" : undefined} checked={termsConsent} onChange={(event) => { setTermsConsent(event.target.checked); if (invalidField === "termsConsent") setInvalidField(null); }} className="mt-0.5 accent-[color:var(--gold)]" required />
                 <span>
