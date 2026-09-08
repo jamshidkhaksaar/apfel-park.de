@@ -25,6 +25,7 @@ import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import ProductProfessionalExperience from "@/components/ProductProfessionalExperience";
 import { requireLocale } from "@/lib/route-locale";
 import { validatedGtin } from "@/lib/product-identifiers";
+import { productVariantIdentifiers } from "@/lib/product-variant-identifiers";
 import { PRODUCT_PAGE_CONTAINER_CLASS } from "@/lib/product-page-layout";
 import { getProductModelCollectionLink } from "@/lib/product-model-collection";
 import { getProductExperienceView } from "@/lib/product-experience-repository";
@@ -245,6 +246,7 @@ export default async function ProductDetailPage({
             ? ["https://schema.org/color"]
             : undefined,
           hasVariant: product.variants.map((variant, index) => {
+            const identifiers = productVariantIdentifiers(product, variant);
             const variantToken = variant.sku || `${variant.color} ${variant.storage}`.trim();
             const price = variant.price ?? product.price;
             const stock = variant.stock ?? product.stock;
@@ -256,9 +258,9 @@ export default async function ProductDetailPage({
               "@id": `${siteInfo.url}/${locale}/store/${product.slug}#variant-${index + 1}`,
               name: [product.title, variant.color, variant.storage].filter(Boolean).join(" "),
               description: [product.description || product.subtitle, variant.color, variant.storage].filter(Boolean).join(" · "),
-              sku: variant.sku,
-              mpn: variant.mpn,
-              ...gtinProperties(variant.gtin),
+              sku: identifiers.sku,
+              mpn: identifiers.mpn,
+              ...gtinProperties(identifiers.gtin),
               color: variant.color,
               additionalProperty: variant.storage
                 ? [{ "@type": "PropertyValue", name: "storage", value: variant.storage }]
