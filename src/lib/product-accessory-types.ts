@@ -1,8 +1,13 @@
 import type {AccessoryType,Product} from './products';
-type AccessoryProduct = Pick<Product,'category'|'title'|'model'|'subcategory'|'description'|'featureBullets'|'specs'>;
+type AccessoryProduct = Pick<Product,'category'|'title'|'model'|'subcategory'|'description'|'featureBullets'|'specs'|'bluetoothEvidence'>;
 
 const primaryPart = (value:string):string => value.toLowerCase().split(/\b(?:for|für|fuer|with|mit|compatible|kompatibel|passend)\b/)[0];
-const casePattern=/\b(?:hardcases?|softcases?|phonecases?|cases?|covers?)\b|hülle|huelle|handytasche/;
+const casePattern=/\b(?:hardcases?|softcases?|phonecases?|cases?|covers?|phone pouch|phone bag)\b|hülle|huelle|handytasche/;
+
+export const hasExplicitBluetoothEvidence = (texts:readonly string[]):boolean => {
+  const text=texts.join(' ').toLowerCase();
+  return /bluetooth/.test(text) && !/\b(?:no|without|ohne)\s+bluetooth\b|bluetooth\s*:\s*(?:no|nein|false|nicht)/.test(text);
+};
 
 /** Identify the sold item, not other devices mentioned in its compatibility copy. */
 export const classifyAccessoryTypes = (product:AccessoryProduct):AccessoryType[] => {
@@ -19,15 +24,16 @@ export const classifyAccessoryTypes = (product:AccessoryProduct):AccessoryType[]
   const isCable=cableIdentity&&!isCase&&!isPowerBank&&!headphoneName;
   if(isCase) types.push('cases');
   if(!isCase&&/screen protector|displayschutz|panzerglas|schutzfolie|tempered glass/.test(identity)) types.push('screen-protectors');
-  if(!isCase&&!isPowerBank&&!isHeadphone&&!isCable&&!/\botg\b|audio.*adapter/.test(identity)
+  const connectorAdapter=/\bmale\b.*\bfemale\b|\bfemale\b.*\bmale\b|stecker.*buchse|buchse.*stecker/.test(identity);
+  if(!isCase&&!isPowerBank&&!isHeadphone&&!isCable&&!connectorAdapter&&!/\botg\b|audio.*adapter/.test(identity)
     &&/\bchargers?\b|ladegerät|ladegeraet|netzteil|charging adapter|wall adapter|power adapter/.test(identity)) types.push('chargers');
   if(isCable) types.push('cables');
   if(isHeadphone) types.push('headphones');
   const audioDevice=isHeadphone||/speaker|lautsprecher/.test(identity);
   if(!isCase&&!isPowerBank&&(audioDevice||/bluetooth/.test(identity))) {
     const details=[product.title,product.description,...product.featureBullets,...product.specs.map(s=>`${s.label}: ${s.value}`)].join(' ').toLowerCase();
-    const explicitlyNoBluetooth=/\b(?:no|without|ohne)\s+bluetooth\b|bluetooth\s*:\s*(?:no|nein|false|nicht)/.test(details);
-    if(!explicitlyNoBluetooth&&/bluetooth/.test(details)) types.push('bluetooth');
+    const supported=product.bluetoothEvidence ?? hasExplicitBluetoothEvidence([details]);
+    if(supported) types.push('bluetooth');
   }
   if(isPowerBank) types.push('power-banks');
   if(/sd card|sd-karte|microsd|memory card|speicherkarte/.test(identity)&&!isCase) types.push('sd-cards');

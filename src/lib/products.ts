@@ -9,7 +9,7 @@ import type {
 } from "@/lib/product-channel-readiness";
 import { cache } from "react";
 import { normalizeStorageValue, parseStorageFilterValues, productStorages } from '@/lib/product-storage';
-import { classifyAccessoryTypes } from '@/lib/product-accessory-types';
+import { classifyAccessoryTypes, hasExplicitBluetoothEvidence } from '@/lib/product-accessory-types';
 import { selectTrendingProducts } from '@/lib/trending-products';
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
@@ -83,6 +83,8 @@ export type Product = {
   slug: string;
   /** Server-side evidence: stock was resolved against active local ledger rows. */
   inventoryVerified?: boolean;
+  /** Shared capability evidence, independent of which translation is displayed. */
+  bluetoothEvidence?: boolean;
   featureBullets: string[];
   specs: ProductSpec[];
   faq: ProductFaqEntry[];
@@ -474,6 +476,15 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     isOpenBox: condition !== "new",
     batteryHealth: batteryHealth !== undefined ? Math.max(1, Math.min(100, Math.round(batteryHealth))) : undefined,
     hasRealProductPhotos: Boolean(row.has_real_product_photos),
+    bluetoothEvidence: category === 'accessories' ? hasExplicitBluetoothEvidence([
+      row.title ?? '', row.description ?? '', ...(row.feature_bullets ?? []),
+      ...(['de','en'] as const).flatMap(language => [
+        localizedText(row.title_i18n,language,row.title),
+        localizedText(row.description_i18n,language,row.description),
+        ...localizedStringArray(row.feature_bullets_i18n,language,row.feature_bullets),
+        ...toLocalizedSpecs(row.specs_i18n,language,row.specs).map(spec=>`${spec.label}: ${spec.value}`),
+      ]),
+    ]) : undefined,
     googleFeedEnabled: row.import_metadata?.smartphoneEditor?.googleSelected !== false,
     conditionNote: resolveProductConditionNote(row.import_metadata?.conditionNoteI18n, locale, row.condition_note) || undefined,
     image,
