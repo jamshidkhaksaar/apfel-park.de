@@ -867,7 +867,11 @@ export const productAccessoryTypes = (product: Product): AccessoryType[] => {
   if (product.category !== "accessories") return [];
   const text = accessorySearchText(product);
   const types: AccessoryType[] = [];
-  if (/\bcase\b|cover|hülle|schutzhülle|handytasche|crossbody/.test(text)) types.push("cases");
+  // Compatibility copy (e.g. a car holder that works with MagSafe cases) is
+  // not product identity. Prefer the stored case bucket or the actual title/model.
+  const identity = `${product.title} ${product.model ?? ''}`.toLowerCase();
+  if (product.subcategory?.startsWith('cases-')
+    || /\b(?:hardcases?|softcases?|phonecases?|cases?|covers?)\b|hülle|huelle|handytasche/.test(identity)) types.push('cases');
   if (/screen protector|displayschutz|panzerglas|schutzfolie|tempered glass/.test(text)) types.push("screen-protectors");
   if (/charger|ladegerät|netzteil|charging adapter|wall adapter/.test(text)) types.push("chargers");
   if (/\bcable\b|\bkabel\b|usb-c kabel|lightning kabel/.test(text)) types.push("cables");
