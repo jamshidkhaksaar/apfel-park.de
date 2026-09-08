@@ -897,7 +897,10 @@ export const productAccessoryTypes = (product: Product): AccessoryType[] => {
     || /\b(?:hardcases?|softcases?|phonecases?|cases?|covers?)\b|hülle|huelle|handytasche/.test(identity)) types.push('cases');
   if (/screen protector|displayschutz|panzerglas|schutzfolie|tempered glass/.test(text)) types.push("screen-protectors");
   if (/charger|ladegerät|netzteil|charging adapter|wall adapter/.test(text)) types.push("chargers");
-  if (/\bcable\b|\bkabel\b|usb-c kabel|lightning kabel/.test(text)) types.push("cables");
+  const cableIdentity = /kabel(?:n)?\b|\bcables?\b/.test(identity)
+    || (/\bhdmi\b/.test(identity) && /(?:kabel|cable)box\b/.test(identity));
+  const differentPrimaryItem = /power\s*bank|kopfhörer|headphone|headset|earbuds?/.test(identity);
+  if (cableIdentity && !differentPrimaryItem && !types.includes('cases')) types.push('cables');
   if (/headphone|kopfhörer|earbud|headset|airpods|over-ear|in-ear/.test(text)) types.push("headphones");
   if (/bluetooth|true wireless|\btws\b/.test(text)) types.push("bluetooth");
   else if (/wireless|kabellos|kabellose/.test(text) && /headphone|kopfhörer|earbud|headset|airpods|speaker|lautsprecher|over-ear|in-ear/.test(text)) types.push("bluetooth");
