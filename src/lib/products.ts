@@ -8,6 +8,8 @@ import type {
   ProductIdentifierStatus,
 } from "@/lib/product-channel-readiness";
 import { cache } from "react";
+import { normalizeStorageValue, parseStorageFilterValues, productStorages } from '@/lib/product-storage';
+import { classifyAccessoryTypes } from '@/lib/product-accessory-types';
 import { selectTrendingProducts } from '@/lib/trending-products';
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
@@ -742,26 +744,6 @@ const bestBrandDisplay = (current: string | undefined, next: string): string => 
   return current;
 };
 
-const normalizeStorageValue = (storage?: string): { label: string; gb: number } | null => {
-  if (!storage) return null;
-  const match = storage.trim().match(/(\d+(?:\.\d+)?)\s*(gb|tb)/i);
-  if (!match) return null;
-  const num = parseFloat(match[1]);
-  if (!Number.isFinite(num) || num <= 0) return null;
-  const isTb = /tb/i.test(match[2]);
-  const gb = isTb ? num * 1024 : num;
-  const clean = num % 1 === 0 ? String(num) : String(num).replace(/0+$/, "").replace(/\.$/, "");
-  return { label: `${clean}${isTb ? "TB" : "GB"}`, gb };
-};
-
-const productStorages = (product: Product): string[] => {
-  const seen = new Set<string>();
-  for (const variant of product.variants ?? []) {
-    const normalized = normalizeStorageValue(variant.storage);
-    if (normalized) seen.add(normalized.label);
-  }
-  return Array.from(seen);
-};
 
 export const normalizeCatalogSearchText = (value: string): string =>
   value
@@ -844,7 +826,7 @@ export const parseStoreCatalogFilters = (
   return {
     query: get("q").trim().slice(0, 80),
     brands: list("brand"),
-    storages: list("storage"),
+    storages: parseStorageFilterValues(get('storage')),
     conditions: list("condition").filter((v): v is ProductCondition =>
       CONDITION_VALUES.includes(v as ProductCondition),
     ),
@@ -879,36 +861,7 @@ export const ACCESSORY_TYPES = [
 ] as const;
 export type AccessoryType = (typeof ACCESSORY_TYPES)[number];
 
-const accessorySearchText = (product: Product): string =>
-  [product.title, product.subtitle, product.description, product.brand, product.model, ...product.featureBullets]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-/** All accessory-type buckets a product matches (a product can match several). */
-export const productAccessoryTypes = (product: Product): AccessoryType[] => {
-  if (product.category !== "accessories") return [];
-  const text = accessorySearchText(product);
-  const types: AccessoryType[] = [];
-  // Compatibility copy (e.g. a car holder that works with MagSafe cases) is
-  // not product identity. Prefer the stored case bucket or the actual title/model.
-  const identity = `${product.title} ${product.model ?? ''}`.toLowerCase();
-  if (product.subcategory?.startsWith('cases-')
-    || /\b(?:hardcases?|softcases?|phonecases?|cases?|covers?)\b|hülle|huelle|handytasche/.test(identity)) types.push('cases');
-  if (/screen protector|displayschutz|panzerglas|schutzfolie|tempered glass/.test(text)) types.push("screen-protectors");
-  if (/charger|ladegerät|netzteil|charging adapter|wall adapter/.test(text)) types.push("chargers");
-  const cableIdentity = /kabel(?:n)?\b|\bcables?\b/.test(identity)
-    || (/\bhdmi\b/.test(identity) && /(?:kabel|cable)box\b/.test(identity));
-  const differentPrimaryItem = /power\s*bank|kopfhörer|headphone|headset|earbuds?/.test(identity);
-  if (cableIdentity && !differentPrimaryItem && !types.includes('cases')) types.push('cables');
-  if (/headphone|kopfhörer|earbud|headset|airpods|over-ear|in-ear/.test(text)) types.push("headphones");
-  if (/bluetooth|true wireless|\btws\b/.test(text)) types.push("bluetooth");
-  else if (/wireless|kabellos|kabellose/.test(text) && /headphone|kopfhörer|earbud|headset|airpods|speaker|lautsprecher|over-ear|in-ear/.test(text)) types.push("bluetooth");
-  if (/powerbank|power bank|externer akku|external battery/.test(text)) types.push("power-banks");
-  if (/sd card|sd-karte|microsd|memory card|speicherkarte/.test(text)) types.push("sd-cards");
-  if (/smart home|smarthome|homekit|smart plug|smart light|wifi camera/.test(text)) types.push("smart-home");
-  return types;
-};
+export const productAccessoryTypes = (product: Product): AccessoryType[] => classifyAccessoryTypes(product);
 
 /**
  * Counts sellable products in an accessory subcategory.
@@ -965,7 +918,7 @@ export const filterCatalogWithFacets = (
 ): { filtered: Product[]; facets: StoreCatalogFacets } => {
   type Group = 'brand' | 'storage' | 'condition' | 'type' | 'stock' | 'price';
   const activeBrands = new Set((filters?.brands ?? []).map(value => value.toLowerCase()));
-  const activeStorages = new Set(filters?.storages ?? []);
+  const activeStorages = new Set((filters?.storages ?? []).map(value=>normalizeStorageValue(value)?.label).filter((value):value is string=>Boolean(value)));
   const activeConditions = new Set(filters?.conditions ?? []);
   const activeTypes = new Set(filters?.accessoryTypes ?? []);
   const brandCounts = new Map<string, number>();
@@ -983,26 +936,34 @@ export const filterCatalogWithFacets = (
     const key = brand?.toLowerCase();
     if (brand && key) brandDisplay.set(key, bestBrandDisplay(brandDisplay.get(key), brand));
     const storages = productStorages(product);
+    const availableStorages = productStorages(product, true);
+    const storageAvailable = activeStorages.size
+      ? availableStorages.some(value=>activeStorages.has(value))
+      : (product.stock ?? 0) > 0;
     const types = productAccessoryTypes(product);
     const failed: Group[] = [];
     if (activeBrands.size && (!key || !activeBrands.has(key))) failed.push('brand');
     if (activeStorages.size && !storages.some(value => activeStorages.has(value))) failed.push('storage');
     if (activeConditions.size && !activeConditions.has(product.condition)) failed.push('condition');
     if (activeTypes.size && !types.some(value => activeTypes.has(value))) failed.push('type');
-    if (filters?.inStockOnly && (product.stock ?? 0) <= 0) failed.push('stock');
+    if (filters?.inStockOnly && !storageAvailable) failed.push('stock');
     if ((filters?.priceMin !== undefined && product.price < filters.priceMin)
       || (filters?.priceMax !== undefined && product.price > filters.priceMax)) failed.push('price');
     if (!failed.length) filtered.push(product);
     const eligible = (group: Group): boolean => failed.every(value => value === group);
 
     if (key && eligible('brand')) brandCounts.set(key, (brandCounts.get(key) ?? 0) + 1);
-    if (eligible('storage')) for (const value of storages) {
+    // When counting storage alternatives, ignore the selected capacity as well
+    // as its stock failure; show other capacities that are actually available.
+    const storageFacetEligible = failed.every(value=>value==='storage'||value==='stock')
+      && (!filters?.inStockOnly || (product.stock ?? 0)>0);
+    if (storageFacetEligible) for (const value of filters?.inStockOnly ? availableStorages : storages) {
       const storage = normalizeStorageValue(value);
       if (storage) storageCounts.set(storage.label, {count:(storageCounts.get(storage.label)?.count ?? 0) + 1,gb:storage.gb});
     }
     if (eligible('condition')) conditionCounts.set(product.condition, (conditionCounts.get(product.condition) ?? 0) + 1);
     if (eligible('type')) for (const type of types) typeCounts.set(type, (typeCounts.get(type) ?? 0) + 1);
-    if (eligible('stock') && (product.stock ?? 0) > 0) inStock += 1;
+    if (eligible('stock') && storageAvailable) inStock += 1;
     if (eligible('price')) {
       priceMin = Math.min(priceMin, product.price);
       priceMax = Math.max(priceMax, product.price);

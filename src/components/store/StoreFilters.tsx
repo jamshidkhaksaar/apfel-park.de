@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 
 import { facetPreviewCopy, type Locale } from "../../lib/i18n";
 import { buildFacetPreviewUrl, isCatalogFacetPreview, type CatalogFacetPreview } from '@/lib/catalog-facet-preview';
+import { normalizeStorageValue, parseStorageFilterValues } from '@/lib/product-storage';
 import type { ProductCondition, StoreCatalogFacets, StoreCatalogFilters } from "../../lib/products";
 import StoreFilterPanels, { type StoreFilterMultiParam } from "./StoreFilterPanels";
 
@@ -42,7 +43,7 @@ const parseDraftFilters = (params: URLSearchParams): StoreCatalogFilters => {
   return {
     query: (params.get("q") ?? "").trim().slice(0, 80),
     brands: parseList(params.get("brand")),
-    storages: parseList(params.get("storage")),
+    storages: parseStorageFilterValues(params.get('storage') ?? ''),
     conditions: parseList(params.get("condition")).filter((value): value is ProductCondition => value === "new" || value === "open_box" || value === "used"),
     accessoryTypes: parseList(params.get("atype")),
     inStockOnly: params.get("stock") === "available",
@@ -124,9 +125,9 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   const toggleMulti = (param: StoreFilterMultiParam, value: string) => {
     pushParams((next) => {
       const current = new Set(
-        parseList(next.get(param)).map((entry) => param === "brand" ? entry.toLowerCase() : entry),
+        (param === 'storage' ? parseStorageFilterValues(next.get(param) ?? '') : parseList(next.get(param))).map((entry) => param === 'brand' ? entry.toLowerCase() : entry),
       );
-      const key = param === "brand" ? value.toLowerCase() : value;
+      const key = param === 'brand' ? value.toLowerCase() : param === 'storage' ? normalizeStorageValue(value)?.label ?? value : value;
       if (current.has(key)) current.delete(key);
       else current.add(key);
       if (current.size === 0) next.delete(param);

@@ -8,6 +8,7 @@ import { analyticsItem, withGa4Items } from "@/lib/analytics";
 import { subscribeConsentedTracking } from "@/lib/consented-tracking";
 import type { CatalogCardModel } from "@/lib/catalog-card";
 import { accessoryTypeLabels, type Locale } from "@/lib/i18n";
+import { parseStorageFilterValues } from '@/lib/product-storage';
 import type { StoreCatalogCategory, StoreCatalogFacets, StoreCatalogFilters, StoreCatalogSort } from "@/lib/products";
 import StoreCatalogSearch from "./StoreCatalogSearch";
 import StoreFilters from "./StoreFilters";
@@ -123,7 +124,7 @@ export default function StoreCatalogClient({
   }, [listName, page, pathname, products]);
 
   const removeMulti = (param: "brand" | "storage" | "condition" | "atype", value: string) => pushParams((next) => {
-    const values = (next.get(param) ?? "").split(",").map((entry) => entry.trim()).filter(Boolean);
+    const values = param === 'storage' ? parseStorageFilterValues(next.get(param) ?? '') : (next.get(param) ?? "").split(",").map((entry) => entry.trim()).filter(Boolean);
     const filtered = values.filter((entry) => entry.toLowerCase() !== value.toLowerCase());
     if (filtered.length > 0) next.set(param, filtered.join(",")); else next.delete(param);
   }, param, value);
