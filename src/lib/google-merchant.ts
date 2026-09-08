@@ -3,6 +3,7 @@ import { getProducts, type Product } from '@/lib/products';
 import { validatedGtin } from '@/lib/product-identifiers';
 import { germanyShippingAmount } from '@/lib/schema';
 import { siteInfo } from '@/lib/site';
+import { isAiGeneratedDescription } from '@/lib/product-text-provenance';
 
 const categoryMap: Record<Product['category'], string> = {
   smartphones: 'Electronics > Communications > Telephony > Mobile Phones',
@@ -77,12 +78,27 @@ const descriptionFor = (product: Product): string =>
     product.description ||
       product.subtitle ||
       product.featureBullets.join(' ') ||
-      `${product.title} bei ${siteInfo.name} in Hamburg.`,
+      product.title,
     5000,
   );
 
 const conditionFor = (product: Product): 'new' | 'used' =>
   product.condition === 'new' ? 'new' : 'used';
+
+export const googleMerchantDescriptionXml = (product: Product): string => {
+  const description = descriptionFor(product);
+  if (!isAiGeneratedDescription(description, product.descriptionAiHashes)) {
+    return `      <g:description>${xmlEscape(description)}</g:description>`;
+  }
+  // Google ignores structured_description if ordinary description is also sent.
+  // Emit exactly one representation and preserve the same landing-page wording.
+  return [
+    '      <g:structured_description>',
+    '        <g:digital_source_type>trained_algorithmic_media</g:digital_source_type>',
+    `        <g:content>${xmlEscape(description)}</g:content>`,
+    '      </g:structured_description>',
+  ].join('\n');
+};
 
 const itemXml = (product: Product, variant: Product["variants"][number] | undefined, index: number): string => {
   const price = variant?.price ?? product.price;
@@ -147,7 +163,7 @@ const itemXml = (product: Product, variant: Product["variants"][number] | undefi
     '    <item>',
     `      <g:id>${xmlEscape(itemId)}</g:id>`,
     `      <g:title>${xmlEscape(title)}</g:title>`,
-    `      <g:description>${xmlEscape(descriptionFor(product))}</g:description>`,
+    googleMerchantDescriptionXml(product),
     `      <g:link>${xmlEscape(link)}</g:link>`,
     `      <g:image_link>${xmlEscape(absoluteUrl(primaryImage))}</g:image_link>`,
     additionalImages,

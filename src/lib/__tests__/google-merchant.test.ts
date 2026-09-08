@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { buildGoogleMerchantFeedForProducts, googleMerchantTitle } from "../google-merchant";
+import { buildGoogleMerchantFeedForProducts, googleMerchantTitle, googleMerchantDescriptionXml } from "../google-merchant";
 import type { Product } from "../products";
+import { merchantDescriptionHash } from '../product-text-provenance';
 
 const product = {
   id: "product-1",
@@ -37,6 +38,40 @@ const product = {
 } satisfies Product;
 
 describe("Google Merchant feed", () => {
+  it('labels known AI descriptions once, with escaped German text', () => {
+    const description = 'Powerbank: 20.000 mAh & USB. <Keine Garantie> "Details"';
+    const xml = buildGoogleMerchantFeedForProducts([{ ...product, variants: [], description, descriptionAiHashes: [merchantDescriptionHash(description)] }]);
+    expect(xml.match(/<g:structured_description>/g)).toHaveLength(1);
+    expect(xml).toContain('<g:digital_source_type>trained_algorithmic_media</g:digital_source_type>');
+    expect(xml).toContain('<g:content>Powerbank: 20.000 mAh &amp; USB. &lt;Keine Garantie&gt; &quot;Details&quot;</g:content>');
+    expect(xml).not.toContain('<g:description>');
+  });
+  it('keeps unknown and subsequently edited descriptions in the existing format', () => {
+    for (const descriptionAiHashes of [undefined, [], [merchantDescriptionHash('Old AI copy')]]) {
+      const xml = buildGoogleMerchantFeedForProducts([{ ...product, variants: [], descriptionAiHashes }]);
+      expect(xml).toContain('<g:description>Originalverpacktes Smartphone</g:description>');
+      expect(xml).not.toContain('<g:structured_description>');
+    }
+  });
+  it('checks the actual fallback, without copying a description marker onto a subtitle', () => {
+    const xml = googleMerchantDescriptionXml({ ...product, variants: [], description: '', descriptionAiHashes: [merchantDescriptionHash(product.description)] });
+    expect(xml).toContain('<g:description>Neu &amp; versiegelt</g:description>');
+    expect(xml).not.toContain('<g:structured_description>');
+  });
+  it('supports marked bullet fallback and keeps title-only fallback free of shop promotion', () => {
+    const fallback = { ...product, variants: [], description: '', subtitle: '' };
+    const xml = googleMerchantDescriptionXml({ ...fallback, featureBullets: ['USB', '20.000 mAh'], descriptionAiHashes: [merchantDescriptionHash('USB 20.000 mAh')] });
+    expect(xml).toContain('<g:content>USB 20.000 mAh</g:content>');
+    expect(googleMerchantDescriptionXml(fallback)).toContain('<g:description>Apple iPhone 17</g:description>');
+  });
+  it('uses marked descriptions for every variant and bounds the actual content', () => {
+    const description = 'b'.repeat(5100);
+    const xml = buildGoogleMerchantFeedForProducts([{ ...product, description, descriptionAiHashes: [merchantDescriptionHash(description)] }]);
+    expect(xml.match(/<g:structured_description>/g)).toHaveLength(2);
+    expect(xml).toContain(`<g:content>${'b'.repeat(5000)}</g:content>`);
+    expect(xml).not.toContain('<g:description>');
+  });
+
   it("restores legacy products with supplied identifiers without inventing an exemption", () => {
     const xml = buildGoogleMerchantFeedForProducts([{ ...product, variants: [], identifierStatus: "unknown" }]);
     expect(xml).toContain("<g:gtin>4006381333931</g:gtin>");

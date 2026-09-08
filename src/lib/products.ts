@@ -11,6 +11,7 @@ import { cache } from "react";
 import { normalizeStorageValue, parseStorageFilterValues, productStorages } from '@/lib/product-storage';
 import { classifyAccessoryTypes, hasExplicitBluetoothEvidence } from '@/lib/product-accessory-types';
 import { selectTrendingProducts } from '@/lib/trending-products';
+import { readDescriptionAiHashes } from '@/lib/product-text-provenance';
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
 
@@ -47,6 +48,8 @@ export type Product = {
   title: string;
   subtitle: string;
   description: string;
+  /** Known AI-created description fingerprints, including independently marked translations. */
+  descriptionAiHashes?: string[];
   price: number;
   compareAtPrice?: number;
   category: ProductCategory;
@@ -216,7 +219,7 @@ type DbProduct = {
   battery_health?: number | string | null;
   has_real_product_photos?: boolean | null;
   condition_note?: string | null;
-  import_metadata?: { smartphoneEditor?: {googleSelected?:boolean}; conditionNoteI18n?: LocalizedText | null } | null;
+  import_metadata?: { smartphoneEditor?: {googleSelected?:boolean}; conditionNoteI18n?: LocalizedText | null; contentProvenance?: { descriptionAiHashes?: unknown } } | null;
   brand: string | null;
   model: string | null;
   sku: string | null;
@@ -469,6 +472,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     title: localizedText(row.title_i18n, locale, row.title),
     subtitle: localizedText(row.subtitle_i18n, locale, row.subtitle),
     description: localizedText(row.description_i18n, locale, row.description),
+    descriptionAiHashes: readDescriptionAiHashes(row.import_metadata?.contentProvenance?.descriptionAiHashes),
     price,
     compareAtPrice,
     category,
