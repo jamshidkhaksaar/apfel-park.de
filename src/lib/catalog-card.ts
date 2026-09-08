@@ -91,7 +91,9 @@ export const toCatalogCardModel = (
   energyClass: product.energyLabel?.efficiencyClass,
   facts: catalogCardFacts(product),
   colors: uniqueValues(product.variants.map((variant) => variant.color)),
-  storages: productStorages(product).map(value=>value.replace(/(GB|TB)$/,' $1')),
+  // This list describes actual variant choices. Non-variant capacity is already
+  // included in facts; duplicating it here would repeat the same label in cards.
+  storages: uniqueValues(product.variants.map(variant=>variant.storage)),
   variants: product.variants.map((variant) => ({
     color: variant.color,
     storage: variant.storage,

@@ -55,7 +55,7 @@ describe('storage evidence',()=>{
   it('does not invent variants or change the SKU when adding card facts',()=>{
     const p=product({sku:'SKU-128',specs:[{label:'Speicher',value:'128 GB'}]});
     expect(catalogCardFacts(p)[0]).toBe('128 GB');
-    expect(toCatalogCardModel(p)).toMatchObject({storages:['128 GB'],variants:[],sku:'SKU-128'});
+    expect(toCatalogCardModel(p)).toMatchObject({storages:[],variants:[],sku:'SKU-128'});
     expect(p.variants).toEqual([]);
   });
   it('normalizes bookmarked storage filters',()=>{
