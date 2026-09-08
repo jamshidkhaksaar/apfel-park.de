@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
 import { analyticsItem, withGa4Items } from "@/lib/analytics";
+import { subscribeConsentedTracking } from "@/lib/consented-tracking";
 
 type ProductViewTrackerProps = {
   productId: string;
@@ -24,25 +24,22 @@ export default function ProductViewTracker({
   slug,
   condition,
 }: ProductViewTrackerProps) {
-  const sentRef = useRef(false);
-  const attemptsRef = useRef(0);
+  const impressionRef = useRef<{ key: string; eventId: string; sent: boolean } | null>(null);
 
   useEffect(() => {
-    const sendViewContent = () => {
-      if (sentRef.current) return;
-      if (readConsentMode() !== "external") return;
-      if (!window.apfelTrack && attemptsRef.current < 10) {
-        attemptsRef.current += 1;
-        window.setTimeout(sendViewContent, 100);
-        return;
-      }
-
+    const key = `${locale}:${productId}:${slug}`;
+    if (impressionRef.current?.key !== key) {
       const eventId = typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `view-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      impressionRef.current = { key, eventId, sent: false };
+    }
+    const impression = impressionRef.current;
+    return subscribeConsentedTracking((track) => {
+      if (impression.sent) return;
+      const eventId = impression.eventId;
 
-      sentRef.current = true;
-      window.apfelTrack?.("view_item", withGa4Items({
+      const queued = track("view_item", withGa4Items({
         currency: "EUR",
         value: price ?? 0,
         item_id: productId,
@@ -61,6 +58,8 @@ export default function ProductViewTracker({
         price: price ?? 0,
         quantity: 1,
       })]), eventId);
+      if (queued === false) return;
+      impression.sent = true;
 
       void fetch("/api/marketing/view-content", {
         method: "POST",
@@ -79,23 +78,9 @@ export default function ProductViewTracker({
         }),
         keepalive: true,
       }).catch(() => {
-        sentRef.current = false;
+        // A failed server request must not replay an already queued browser view.
       });
-    };
-
-    const handleConsentChange = (event: Event) => {
-      const next = (event as CustomEvent<ConsentMode>).detail ?? readConsentMode();
-      if (next === "external") {
-        window.setTimeout(sendViewContent, 0);
-      }
-    };
-
-    window.setTimeout(sendViewContent, 0);
-    window.addEventListener(CONSENT_EVENT_NAME, handleConsentChange as EventListener);
-
-    return () => {
-      window.removeEventListener(CONSENT_EVENT_NAME, handleConsentChange as EventListener);
-    };
+    });
   }, [category, condition, locale, price, productId, slug, title]);
 
   return null;

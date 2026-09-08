@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { clearStoredCart } from "@/components/checkout/cart";
 import GoogleCustomerReviews from "@/components/checkout/GoogleCustomerReviews";
 import TrustpilotInvitation from "@/components/checkout/TrustpilotInvitation";
-import { analyticsItem, TRACKING_READY_EVENT, withGa4Items } from "@/lib/analytics";
-import { readConsentMode } from "@/lib/consent";
+import { analyticsItem, withGa4Items } from "@/lib/analytics";
+import { subscribeConsentedTracking } from "@/lib/consented-tracking";
 import { startCheckoutConfirmationPolling } from "@/lib/checkout-confirmation-polling";
 
 type Props = {
@@ -84,13 +84,11 @@ export default function CheckoutSuccessClient({
     }
     if (!orderId || typeof totalAmount !== "number" || purchaseSentRef.current) return;
 
-    let cancelled = false;
-    const sendPurchase = () => {
-      if (cancelled || purchaseSentRef.current || readConsentMode() !== "external") return;
-      if (!window.apfelTrack) return;
+    return subscribeConsentedTracking((track) => {
+      if (purchaseSentRef.current) return;
 
       try {
-        window.apfelTrack("purchase", withGa4Items({
+        const queued = track("purchase", withGa4Items({
           transaction_id: orderId,
           value: totalAmount,
           currency: currency || "EUR",
@@ -106,20 +104,12 @@ export default function CheckoutSuccessClient({
               : undefined,
           quantity: item.quantity,
         }))), `purchase-${orderId}`);
-        purchaseSentRef.current = true;
+        if (queued !== false) purchaseSentRef.current = true;
       } catch {
         // Optional tracking must not crash a paid receipt. A later bridge-ready
         // signal can retry with the same transaction/event identity.
       }
-    };
-
-    window.addEventListener(TRACKING_READY_EVENT, sendPurchase);
-    sendPurchase();
-
-    return () => {
-      cancelled = true;
-      window.removeEventListener(TRACKING_READY_EVENT, sendPurchase);
-    };
+    });
   }, [currency, items, orderId, paid, totalAmount]);
 
   useEffect(() => {

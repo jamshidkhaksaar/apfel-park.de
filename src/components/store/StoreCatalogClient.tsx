@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { analyticsItem, withGa4Items } from "@/lib/analytics";
+import { subscribeConsentedTracking } from "@/lib/consented-tracking";
 import type { CatalogCardModel } from "@/lib/catalog-card";
 import type { Locale } from "@/lib/i18n";
 import type { StoreCatalogCategory, StoreCatalogFacets, StoreCatalogFilters, StoreCatalogSort } from "@/lib/products";
@@ -70,6 +71,7 @@ export default function StoreCatalogClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const lastListImpression = useRef('');
   const isGerman = lang === "de";
   const view: StoreView = searchParams.get("view") === "list" ? "list" : "grid";
   const listName = lockedCategory && lockedCategory !== "all"
@@ -101,19 +103,24 @@ export default function StoreCatalogClient({
 
   useEffect(() => {
     if (products.length === 0) return;
-    window.apfelTrack?.("view_item_list", withGa4Items({
-      item_list_id: "store-catalog",
-      item_list_name: listName,
-    }, products.map((product, index) => analyticsItem({
-      item_id: product.id,
-      item_name: product.title,
-      item_category: product.category,
-      price: product.price,
-      index: (page - 1) * 24 + index + 1,
-      item_list_id: "store-catalog",
-      item_list_name: listName,
-    }))));
-  }, [listName, page, products]);
+    const key = JSON.stringify([pathname, listName, page, products.map(product => product.id)]);
+    return subscribeConsentedTracking(track => {
+      if (lastListImpression.current === key) return;
+      const queued = track("view_item_list", withGa4Items({
+        item_list_id: "store-catalog",
+        item_list_name: listName,
+      }, products.map((product, index) => analyticsItem({
+        item_id: product.id,
+        item_name: product.title,
+        item_category: product.category,
+        price: product.price,
+        index: (page - 1) * 24 + index + 1,
+        item_list_id: "store-catalog",
+        item_list_name: listName,
+      }))));
+      if (queued !== false) lastListImpression.current = key;
+    });
+  }, [listName, page, pathname, products]);
 
   const removeMulti = (param: "brand" | "storage" | "condition" | "atype", value: string) => pushParams((next) => {
     const values = (next.get(param) ?? "").split(",").map((entry) => entry.trim()).filter(Boolean);

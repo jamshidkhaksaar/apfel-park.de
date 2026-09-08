@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import MarketingConsentScripts from "./MarketingConsentScripts";
+import { isPrivateAnalyticsPath } from "@/lib/analytics-url";
 import { siteInfo } from "@/lib/site";
 
 const CookieBanner = dynamic(() => import("./CookieBanner"), { ssr: false });
@@ -47,6 +48,7 @@ type AppWrapperProps = {
 
 export default function AppWrapper({ children, lang, promo, discountedProducts, marketing, whatsapp }: AppWrapperProps) {
   const pathname = usePathname();
+  const privateTrackingPage = !pathname || isPrivateAnalyticsPath(pathname);
   const effectiveLang = pathname?.startsWith("/en") ? "en" : pathname?.startsWith("/de") ? "de" : lang;
 
   useEffect(() => {
@@ -128,11 +130,13 @@ export default function AppWrapper({ children, lang, promo, discountedProducts, 
     <>
       <div className="relative z-10">{children}</div>
       <MarketingConsentScripts {...marketing} />
-      <ProductPromoPopup lang={effectiveLang} promo={promo} discountedProducts={discountedProducts} />
-      <ChatWidget lang={effectiveLang} whatsapp={whatsapp} />
-      {siteInfo.googleReviewsBadge ? (
-        <GoogleReviewsBadge merchantId={siteInfo.googleMerchantId} locale={effectiveLang} />
-      ) : null}
+      {!privateTrackingPage ? <>
+        <ProductPromoPopup lang={effectiveLang} promo={promo} discountedProducts={discountedProducts} />
+        <ChatWidget lang={effectiveLang} whatsapp={whatsapp} />
+        {siteInfo.googleReviewsBadge ? (
+          <GoogleReviewsBadge merchantId={siteInfo.googleMerchantId} locale={effectiveLang} />
+        ) : null}
+      </> : null}
       <CookieBanner lang={effectiveLang} />
     </>
   );

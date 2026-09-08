@@ -51,7 +51,7 @@ beforeEach(() => {
   harness.cleanups.length = 0;
   harness.pathname = '/de/checkout/success';
   vi.stubGlobal('window', Object.assign(new EventTarget(), {
-    location: { origin: 'https://apfel-park.de', hostname: 'apfel-park.de', protocol: 'https:' },
+    location: { origin: 'https://apfel-park.de', hostname: 'apfel-park.de', protocol: 'https:', get pathname() { return harness.pathname; }, search: '?provider=stripe&order_id=private-test-order&token=private-test-token' },
     localStorage: { getItem: vi.fn(() => null) },
     setTimeout: (callback: () => void, delay: number) => setTimeout(callback, delay),
     clearTimeout: (timer: ReturnType<typeof setTimeout>) => clearTimeout(timer),
@@ -104,6 +104,15 @@ describe('actual receipt and tracking-bridge lifecycle', () => {
     mount(bridge);
     expect(events('purchase')).toHaveLength(0);
     expect(events('page_view')).toHaveLength(0);
+  });
+  it('does not initialize tracking from a consent event that contradicts the stored choice', () => {
+    document.cookie = 'apfel-consent=necessary';
+    mount(receipt);
+    mount(bridge);
+    window.dispatchEvent(new CustomEvent(CONSENT_EVENT_NAME, { detail: 'external' }));
+    expect(window.gtag).toBeUndefined();
+    expect(events('page_view')).toHaveLength(0);
+    expect(events('purchase')).toHaveLength(0);
   });
   it('preserves transaction identity and strips sensitive page/referrer parameters', () => {
     mount(bridge);
