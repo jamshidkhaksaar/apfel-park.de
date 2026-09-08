@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-import type { Locale } from "../../lib/i18n";
+import { facetPreviewCopy, type Locale } from "../../lib/i18n";
+import { buildFacetPreviewUrl, isCatalogFacetPreview, type CatalogFacetPreview } from '@/lib/catalog-facet-preview';
 import type { ProductCondition, StoreCatalogFacets, StoreCatalogFilters } from "../../lib/products";
 import StoreFilterPanels, { type StoreFilterMultiParam } from "./StoreFilterPanels";
 
@@ -62,6 +63,43 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   const displayedFilters = drawerOpen && draftParams
     ? parseDraftFilters(draftParams)
     : activeFilters;
+
+  const [preview, setPreview] = useState<{key:string;data?:CatalogFacetPreview;error?:true} | null>(null);
+  const scope = facets.scope;
+  const appliedKey = buildFacetPreviewUrl(lang, scope ?? {category:'all'}, new URLSearchParams(searchParams.toString()));
+  const draftKey = drawerOpen && draftParams ? buildFacetPreviewUrl(lang, scope ?? {category:'all'}, draftParams) : appliedKey;
+  const draftChanged = drawerOpen && draftKey !== appliedKey;
+  const currentPreview = preview?.key === draftKey ? preview : null;
+  const previewReady = draftChanged && Boolean(currentPreview?.data);
+  const countsCurrent = !draftChanged || previewReady;
+  const previewFailed = draftChanged && (!scope || Boolean(currentPreview?.error));
+  const effectiveFacets = previewReady ? currentPreview!.data!.facets : facets;
+  const effectiveCount = previewReady ? currentPreview!.data!.total : resultCount;
+  const copy = facetPreviewCopy[lang];
+
+  useEffect(() => {
+    if (!draftChanged || !scope) return;
+    let obsolete = false;
+    const controller = new AbortController();
+    const debounce = window.setTimeout(async () => {
+      const timeout = window.setTimeout(() => {
+        controller.abort();
+        if (!obsolete) setPreview({key:draftKey,error:true});
+      }, 10000);
+      try {
+        const response = await fetch(draftKey, {signal:controller.signal,cache:'no-store'});
+        if (!response.ok) throw new Error('Facet preview unavailable');
+        const data: unknown = await response.json();
+        if (!isCatalogFacetPreview(data)) throw new Error('Invalid facet preview');
+        if (!obsolete) setPreview({key:draftKey,data});
+      } catch {
+        if (!obsolete) setPreview({key:draftKey,error:true});
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    }, 250);
+    return () => { obsolete = true; window.clearTimeout(debounce); controller.abort(); };
+  }, [draftChanged, draftKey, scope]);
 
   const activeCount =
     displayedFilters.brands.length +
@@ -173,8 +211,9 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   const panels = (
     <StoreFilterPanels
       lang={lang}
-      facets={facets}
+      facets={effectiveFacets}
       activeFilters={displayedFilters}
+      countsCurrent={countsCurrent}
       activeCount={activeCount}
       onClearAll={clearAll}
       onToggleMulti={toggleMulti}
@@ -207,7 +246,8 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
               </svg>
             </button>
           </div>
-          {panels}
+          {draftChanged && !countsCurrent ? <p role="status" className="mb-3 text-xs text-muted">{previewFailed ? copy.error : copy.loading}</p> : null}
+          <div aria-busy={draftChanged && !countsCurrent && !previewFailed}>{panels}</div>
           <button
             type="button"
             onClick={() => {
@@ -218,7 +258,7 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
             }}
             className="btn-primary mt-5 w-full"
           >
-            {isGerman ? `Filter anwenden · aktuell ${resultCount}` : `Apply filters · currently ${resultCount}`}
+            {countsCurrent ? `${copy.show} · ${effectiveCount}` : copy.apply}
           </button>
         </div>
       </div>,

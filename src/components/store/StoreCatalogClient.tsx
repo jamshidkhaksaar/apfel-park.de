@@ -7,7 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { analyticsItem, withGa4Items } from "@/lib/analytics";
 import { subscribeConsentedTracking } from "@/lib/consented-tracking";
 import type { CatalogCardModel } from "@/lib/catalog-card";
-import type { Locale } from "@/lib/i18n";
+import { accessoryTypeLabels, type Locale } from "@/lib/i18n";
 import type { StoreCatalogCategory, StoreCatalogFacets, StoreCatalogFilters, StoreCatalogSort } from "@/lib/products";
 import StoreCatalogSearch from "./StoreCatalogSearch";
 import StoreFilters from "./StoreFilters";
@@ -140,7 +140,7 @@ export default function StoreCatalogClient({
   }
   for (const storage of activeFilters.storages) chips.push({ key: `storage-${storage}`, label: storage, remove: () => removeMulti("storage", storage) });
   for (const condition of activeFilters.conditions) chips.push({ key: `condition-${condition}`, label: conditionLabels[lang][condition], remove: () => removeMulti("condition", condition) });
-  for (const type of activeFilters.accessoryTypes) chips.push({ key: `type-${type}`, label: type, remove: () => removeMulti("atype", type) });
+  for (const type of activeFilters.accessoryTypes) chips.push({ key: `type-${type}`, label: accessoryTypeLabels[type]?.[lang] ?? type, remove: () => removeMulti("atype", type) });
   if (activeFilters.inStockOnly) chips.push({ key: "stock", label: isGerman ? "Sofort verfügbar" : "In stock", remove: () => pushParams((next) => next.delete("stock"), "stock", "all") });
   if (activeFilters.priceMin !== undefined || activeFilters.priceMax !== undefined) chips.push({
     key: "price",

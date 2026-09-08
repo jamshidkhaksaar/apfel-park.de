@@ -2,6 +2,23 @@ import { businessAddress, businessIdentity, legalIdentityText, legalProvider } f
 
 export type Locale = "de" | "en";
 
+export const accessoryTypeLabels: Record<string, {de:string;en:string}> = {
+  cases:{de:'Hüllen',en:'Cases'},
+  'screen-protectors':{de:'Displayschutz',en:'Screen Protectors'},
+  chargers:{de:'Ladegeräte',en:'Chargers'},
+  cables:{de:'Kabel',en:'Cables'},
+  headphones:{de:'Kopfhörer',en:'Headphones'},
+  bluetooth:{de:'Bluetooth',en:'Bluetooth'},
+  'power-banks':{de:'Powerbanks',en:'Power Banks'},
+  'sd-cards':{de:'SD-Karten',en:'SD Cards'},
+  'smart-home':{de:'Smart Home',en:'Smart Home'},
+};
+
+export const facetPreviewCopy = {
+  de:{loading:'Ergebnisse werden aktualisiert …',error:'Vorschau nicht verfügbar. Du kannst die Filter trotzdem anwenden.',apply:'Filter anwenden',show:'Produkte anzeigen'},
+  en:{loading:'Updating results …',error:'Preview unavailable. You can still apply the filters.',apply:'Apply filters',show:'Show products'},
+} as const;
+
 export const trendingAvailabilityCopy = {
   de: 'Ausgewählte Produkte aus unserem aktuellen Bestand – nur sofort verfügbare Artikel.',
   en: 'Selected products from our current stock — only items available now.',

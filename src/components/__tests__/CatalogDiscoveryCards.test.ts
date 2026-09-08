@@ -21,7 +21,7 @@ describe("catalog discovery cards", () => {
   });
 
   it.each(["de", "en"] as const)("renders four lightweight category images and working browse destinations in %s", (lang) => {
-    const html = renderToStaticMarkup(createElement(AccessoryCategoryCards, { lang }));
+    const html = renderToStaticMarkup(createElement(AccessoryCategoryCards, { lang, counts:{cases:1,audio:1,charging:1,protection:1} }));
     expect(html).toContain(`/${lang}/accessories?atype=cases#store`);
     expect(html).not.toContain(`/${lang}/accessories/hardcases`);
     for (const slug of ["kopfhoerer-audio", "ladegeraete-kabel", "displayschutz"]) {

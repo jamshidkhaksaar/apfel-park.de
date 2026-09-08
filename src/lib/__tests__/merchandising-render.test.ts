@@ -16,7 +16,7 @@ describe('merchandising server HTML', () => {
     expect(source).toMatch(/<section className="scroll-mt-32 [^"]*" id="store">/);
   });
   it.each(['de','en'] as const)('links the %s cases card to the broad live filter and the product section', lang => {
-    const html = renderToStaticMarkup(createElement(AccessoryCategoryCards, {lang}));
+    const html = renderToStaticMarkup(createElement(AccessoryCategoryCards, {lang,counts:{cases:1,audio:1,charging:1,protection:1}}));
     expect(html).toContain(`href="/${lang}/accessories?atype=cases#store"`);
     expect(html).not.toContain(`href="/${lang}/accessories/hardcases"`);
     for(const slug of ['kopfhoerer-audio','ladegeraete-kabel','displayschutz']) expect(html).toContain(`href="/${lang}/accessories/${slug}"`);

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/lib/i18n";
+import type { AccessoryDiscoveryCounts } from '@/lib/products';
 
 const categories = [
   { slug: "cases", query: "?atype=cases#store", image: "cases", de: "Hüllen & Cases", en: "Cases & covers", detailDe: "Dein Look. Dein Schutz.", detailEn: "Your style. Your protection.", altDe: "Frau mit Smartphone in einer schützenden Hülle", altEn: "Woman holding a smartphone in a protective case" },
@@ -9,7 +10,10 @@ const categories = [
   { slug: "displayschutz", image: "protection", de: "Displayschutz", en: "Screen protectors", detailDe: "Klare Sicht. Gut geschützt.", detailEn: "Clear view. Added protection.", altDe: "Hände richten ein Schutzglas über einem Smartphone aus", altEn: "Hands aligning a glass screen protector over a smartphone" },
 ];
 
-export default function AccessoryCategoryCards({ lang }: { lang: Locale }) {
+export default function AccessoryCategoryCards({ lang, counts }: { lang: Locale; counts: AccessoryDiscoveryCounts }) {
+  const visible = categories.filter(category => counts[category.image as keyof AccessoryDiscoveryCounts] > 0);
+  if (!visible.length) return null;
+  const desktopColumns = visible.length === 4 ? 'lg:grid-cols-4' : visible.length === 3 ? 'lg:grid-cols-3' : visible.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1';
   return (
     <section className="bg-surface/30 py-10 md:py-16" aria-labelledby="accessory-categories-heading">
       <div className="container-page">
@@ -20,8 +24,8 @@ export default function AccessoryCategoryCards({ lang }: { lang: Locale }) {
           </div>
           <p className="max-w-sm text-sm leading-6 text-muted">{lang === "de" ? "Schützen, hören, laden: Entdecke das passende Zubehör für dein Gerät." : "Protect, listen, recharge: discover the right accessories for your device."}</p>
         </div>
-        <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 lg:grid-cols-4 lg:gap-5">
-          {categories.map((category) => (
+        <div className={`grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 ${desktopColumns} lg:gap-5`}>
+          {visible.map((category) => (
             <Link key={category.slug} href={`/${lang}/accessories${category.query ?? `/${category.slug}`}`} data-accessory-category={category.slug}
               className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-background transition-colors hover:border-gold/60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold">
               <div className="relative aspect-[4/3] overflow-hidden bg-surface">

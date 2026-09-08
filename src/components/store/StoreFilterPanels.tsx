@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import type { Locale } from "../../lib/i18n";
-import type { AccessoryType, StoreCatalogFacets, StoreCatalogFilters } from "../../lib/products";
+import { accessoryTypeLabels, type Locale } from "../../lib/i18n";
+import type { StoreCatalogFacets, StoreCatalogFilters } from "../../lib/products";
 import { Checklist, FilterSection } from "./StoreFilterPrimitives";
 import StorePriceRange from "./StorePriceRange";
 
@@ -14,6 +14,7 @@ type StoreFilterPanelsProps = {
   facets: StoreCatalogFacets;
   activeFilters: StoreCatalogFilters;
   activeCount: number;
+  countsCurrent?: boolean;
   onClearAll: () => void;
   onToggleMulti: (param: StoreFilterMultiParam, value: string) => void;
   onToggleAvailability: () => void;
@@ -26,23 +27,12 @@ const CONDITION_LABELS: Record<string, { de: string; en: string }> = {
   used: { de: "Gebraucht", en: "Used" },
 };
 
-const ACCESSORY_TYPE_LABELS: Record<AccessoryType, { de: string; en: string }> = {
-  cases: { de: "Hüllen", en: "Cases" },
-  "screen-protectors": { de: "Displayschutz", en: "Screen Protectors" },
-  chargers: { de: "Ladegeräte", en: "Chargers" },
-  cables: { de: "Kabel", en: "Cables" },
-  headphones: { de: "Kopfhörer", en: "Headphones" },
-  bluetooth: { de: "Bluetooth", en: "Bluetooth" },
-  "power-banks": { de: "Powerbanks", en: "Power Banks" },
-  "sd-cards": { de: "SD-Karten", en: "SD Cards" },
-  "smart-home": { de: "Smart Home", en: "Smart Home" },
-};
-
 export default function StoreFilterPanels({
   lang,
   facets,
   activeFilters,
   activeCount,
+  countsCurrent = true,
   onClearAll,
   onToggleMulti,
   onToggleAvailability,
@@ -86,7 +76,7 @@ export default function StoreFilterPanels({
 
   const conditionLabel = (value: string) => CONDITION_LABELS[value]?.[lang] ?? value;
   const accessoryTypeLabel = (value: string) =>
-    ACCESSORY_TYPE_LABELS[value as AccessoryType]?.[lang] ?? value;
+    accessoryTypeLabels[value]?.[lang] ?? value;
 
   return (
     <div className="space-y-1" data-store-filters>
@@ -112,11 +102,12 @@ export default function StoreFilterPanels({
 
       <FilterSection
         title={isGerman ? "Verfügbarkeit" : "Availability"}
-        count={facets.inStock}
+        count={countsCurrent ? facets.inStock : undefined}
         active={activeFilters.inStockOnly}
         activeLabel={activeLabel}
       >
         <Checklist
+          countsCurrent={countsCurrent}
           options={[{ value: "available", count: facets.inStock }]}
           active={activeAvailabilitySet}
           renderLabel={() => isGerman ? "Sofort verfügbar" : "In stock now"}
@@ -127,6 +118,7 @@ export default function StoreFilterPanels({
       </FilterSection>
 
       <StorePriceRange
+        countsCurrent={countsCurrent}
         isGerman={isGerman}
         facets={facets}
         priceMin={priceMin}
@@ -141,11 +133,12 @@ export default function StoreFilterPanels({
       {facets.brands.length > 0 ? (
         <FilterSection
           title={isGerman ? "Marke" : "Brand"}
-          count={facets.brands.length}
+          count={countsCurrent ? facets.brands.length : undefined}
           active={activeFilters.brands.length > 0}
           activeLabel={activeLabel}
         >
           <Checklist
+            countsCurrent={countsCurrent}
             options={facets.brands}
             active={activeBrandSet}
             renderLabel={(value) => value}
@@ -158,14 +151,15 @@ export default function StoreFilterPanels({
         </FilterSection>
       ) : null}
 
-      {facets.conditions.length > 1 ? (
+      {facets.conditions.length > 1 || activeFilters.conditions.length > 0 ? (
         <FilterSection
           title={isGerman ? "Zustand" : "Condition"}
-          count={facets.conditions.length}
+          count={countsCurrent ? facets.conditions.length : undefined}
           active={activeFilters.conditions.length > 0}
           activeLabel={activeLabel}
         >
           <Checklist
+            countsCurrent={countsCurrent}
             options={facets.conditions}
             active={activeConditionSet}
             renderLabel={conditionLabel}
@@ -179,11 +173,12 @@ export default function StoreFilterPanels({
       {facets.storages.length > 0 ? (
         <FilterSection
           title={isGerman ? "Speicher" : "Storage"}
-          count={facets.storages.length}
+          count={countsCurrent ? facets.storages.length : undefined}
           active={activeFilters.storages.length > 0}
           activeLabel={activeLabel}
         >
           <Checklist
+            countsCurrent={countsCurrent}
             options={facets.storages}
             active={activeStorageSet}
             renderLabel={(value) => value}
@@ -197,12 +192,13 @@ export default function StoreFilterPanels({
       {facets.accessoryTypes.length > 0 ? (
         <FilterSection
           title={isGerman ? "Zubehör-Typ" : "Accessory type"}
-          count={facets.accessoryTypes.length}
+          count={countsCurrent ? facets.accessoryTypes.length : undefined}
           active={activeFilters.accessoryTypes.length > 0}
           activeLabel={activeLabel}
-          defaultOpen={facets.brands.length === 0}
+          defaultOpen={facets.brands.length === 0 || activeFilters.accessoryTypes.length > 0}
         >
           <Checklist
+            countsCurrent={countsCurrent}
             options={facets.accessoryTypes}
             active={activeAccessoryTypeSet}
             renderLabel={accessoryTypeLabel}

@@ -123,7 +123,7 @@ export default async function AccessoriesPage({
         </div>
       </section>
 
-      <AccessoryCategoryCards lang={lang} />
+      <AccessoryCategoryCards lang={lang} counts={catalog.accessoryDiscoveryCounts} />
 
       {/* Why Buy From Us */}
       <section className="section-pad">

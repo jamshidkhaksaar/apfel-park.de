@@ -8,6 +8,7 @@ import { FilterSection } from "./StoreFilterPrimitives";
 type StorePriceRangeProps = {
   isGerman: boolean;
   facets: StoreCatalogFacets;
+  countsCurrent?: boolean;
   priceMin: string;
   priceMax: string;
   active: boolean;
@@ -20,6 +21,7 @@ type StorePriceRangeProps = {
 export default function StorePriceRange({
   isGerman,
   facets,
+  countsCurrent = true,
   priceMin,
   priceMax,
   active,
@@ -29,7 +31,6 @@ export default function StorePriceRange({
   onApply,
 }: StorePriceRangeProps) {
   const descriptionId = useId();
-  const priceCeiling = Math.ceil(facets.priceMax) || undefined;
 
   return (
     <FilterSection
@@ -45,7 +46,7 @@ export default function StorePriceRange({
         }}
       >
         <p id={descriptionId} className="text-xs text-muted">
-          {isGerman ? "Preisspanne" : "Price range"}: {Math.floor(facets.priceMin)} € – {Math.ceil(facets.priceMax)} €
+          {isGerman ? "Preisspanne" : "Price range"}: {countsCurrent ? `${Math.floor(facets.priceMin)} € – ${Math.ceil(facets.priceMax)} €` : '…'}
         </p>
         <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
           <label className="min-w-0">
@@ -58,9 +59,8 @@ export default function StorePriceRange({
                 type="number"
                 inputMode="decimal"
                 min={0}
-                max={priceCeiling}
                 step="0.01"
-                placeholder={facets.priceMin > 0 ? String(Math.floor(facets.priceMin)) : "0"}
+                placeholder={countsCurrent ? String(Math.floor(facets.priceMin)) : undefined}
                 value={priceMin}
                 onChange={(event) => onMinChange(event.target.value)}
                 className="h-11 w-full rounded-xl border border-border/70 bg-background/55 py-2 pl-7 pr-2 text-base tabular-nums text-foreground lg:text-sm outline-none transition placeholder:text-muted/60 hover:border-gold/35 focus:border-gold/70 focus:ring-2 focus:ring-gold/15"
@@ -80,9 +80,8 @@ export default function StorePriceRange({
                 type="number"
                 inputMode="decimal"
                 min={0}
-                max={priceCeiling}
                 step="0.01"
-                placeholder={facets.priceMax > 0 ? String(Math.ceil(facets.priceMax)) : ""}
+                placeholder={countsCurrent && facets.priceMax > 0 ? String(Math.ceil(facets.priceMax)) : undefined}
                 value={priceMax}
                 onChange={(event) => onMaxChange(event.target.value)}
                 className="h-11 w-full rounded-xl border border-border/70 bg-background/55 py-2 pl-7 pr-2 text-base tabular-nums text-foreground lg:text-sm outline-none transition placeholder:text-muted/60 hover:border-gold/35 focus:border-gold/70 focus:ring-2 focus:ring-gold/15"
