@@ -76,7 +76,12 @@ export default function CheckoutSuccessClient({
   useEffect(() => {
     if (!paid) return;
 
-    clearStoredCart();
+    try {
+      clearStoredCart();
+    } catch {
+      // Payment is authoritative. Restricted browser storage must not crash a
+      // paid receipt or prevent consented tracking after optional cart cleanup.
+    }
     if (!orderId || typeof totalAmount !== "number" || purchaseSentRef.current) return;
 
     let cancelled = false;
