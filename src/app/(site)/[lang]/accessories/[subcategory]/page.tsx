@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import PageIntro from "@/components/PageIntro";
 import StoreGrid from "@/components/store/StoreGrid";
+import AccessoryCollectionNav from "@/components/store/AccessoryCollectionNav";
 import { requireLocale } from "@/lib/route-locale";
 import { createMetadata } from "@/lib/metadata";
 import {
@@ -126,6 +127,8 @@ export default async function AccessorySubcategoryPage({
         <span className="px-2">/</span>
         <span className="text-foreground">{copy.title}</span>
       </nav>
+
+      <AccessoryCollectionNav lang={lang} currentSlug={copy.slug} />
 
       <section className="border-b border-white/5 py-10">
         <div className="container-page">

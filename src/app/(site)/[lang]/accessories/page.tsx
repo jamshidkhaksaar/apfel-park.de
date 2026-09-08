@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AccessoryCategoryCards from "@/components/store/AccessoryCategoryCards";
+import AccessoryCollectionNav from "@/components/store/AccessoryCollectionNav";
 import { notFound } from "next/navigation";
 
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
@@ -100,6 +101,8 @@ export default async function AccessoriesPage({
         resultCount={catalog.total}
         breadcrumbs={[{ label: lang === "de" ? "Zubehör" : "Accessories" }]}
       />
+
+      <AccessoryCollectionNav lang={lang} />
 
       {/* Accessories Store with Filters & Sorting */}
       <section className="bg-store-ground py-6 md:py-8" id="store">
