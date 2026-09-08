@@ -107,9 +107,9 @@ const nextConfig: NextConfig = {
       { source: '/kontakt', destination: '/de/contact', permanent: true },
       { source: '/about-us', destination: '/de/about', permanent: true },
       { source: '/our-team', destination: '/de/about', permanent: true },
-      { source: '/impressum', destination: '/de/impressum', permanent: true },
+      { source: '/impressum', destination: '/de/impressum', statusCode: 301 },
       { source: '/privacy-policy', destination: '/de/privacy', permanent: true },
-      { source: '/datenschutz', destination: '/de/privacy', permanent: true },
+      { source: '/datenschutz', destination: '/de/privacy', statusCode: 301 },
       { source: '/cdn-cgi/l/:path*', destination: '/de/contact', permanent: false },
       ...localePrefixRedirects,
     ];

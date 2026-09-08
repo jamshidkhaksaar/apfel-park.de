@@ -30,10 +30,12 @@ export const siteInfo = {
   url: businessIdentity.website,
   // Customer-facing contact; the verification/legal phone has a separate role.
   phone: businessIdentity.phones.customerService.de,
+  phoneDisplay: businessIdentity.phones.customerService,
   phoneE164: businessIdentity.phones.customerService.e164,
   // The shop landline, shown alongside the primary number for people who
   // would rather call the counter.
   landline: businessIdentity.phones.store.de,
+  landlineDisplay: businessIdentity.phones.store,
   landlineE164: businessIdentity.phones.store.e164,
   whatsapp: businessIdentity.phones.customerService.e164.slice(1),
   email: businessIdentity.email,

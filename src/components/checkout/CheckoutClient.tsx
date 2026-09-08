@@ -718,7 +718,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 <li>{locale === "de" ? "24 Monate Gewährleistung" : "24-month warranty"}</li>
                 <li>
                   {locale === "de" ? "Fragen? " : "Questions? "}
-                  <a href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="text-muted underline underline-offset-2 transition hover:text-gold">
+                  <a href={`tel:${siteInfo.phoneE164}`} className="text-muted underline underline-offset-2 transition hover:text-gold">
                     {siteInfo.phone}
                   </a>
                 </li>

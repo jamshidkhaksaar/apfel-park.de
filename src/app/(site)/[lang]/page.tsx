@@ -595,7 +595,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               
               <div className="flex flex-wrap justify-center gap-4">
                 <Link
-                  href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
+                  href={`tel:${siteInfo.phoneE164}`}
                   className="btn-primary"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

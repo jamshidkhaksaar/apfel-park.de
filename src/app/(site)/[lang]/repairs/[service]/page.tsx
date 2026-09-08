@@ -90,7 +90,7 @@ export default async function RepairServicePage({
             <Link href={`/${locale}/repairs#repair-request`} className="btn-primary">
               {locale === 'de' ? 'Reparatur anfragen' : 'Request a repair'}
             </Link>
-            <Link href={`tel:${siteInfo.phone.replace(/\s/g, '')}`} className="btn-secondary">
+            <Link href={`tel:${siteInfo.phoneE164}`} className="btn-secondary">
               {siteInfo.phone}
             </Link>
           </div>
