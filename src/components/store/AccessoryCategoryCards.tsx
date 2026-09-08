@@ -14,6 +14,8 @@ export default function AccessoryCategoryCards({ lang, counts }: { lang: Locale;
   const visible = categories.filter(category => counts[category.image as keyof AccessoryDiscoveryCounts] > 0);
   if (!visible.length) return null;
   const desktopColumns = visible.length === 4 ? 'lg:grid-cols-4' : visible.length === 3 ? 'lg:grid-cols-3' : visible.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1';
+  const mobileColumns = visible.length === 1 ? 'min-[400px]:grid-cols-1' : 'min-[400px]:grid-cols-2';
+  const imageSizes = `(max-width: 399px) 100vw, (max-width: 1023px) ${visible.length === 1 ? 100 : 50}vw, ${Math.ceil(100 / visible.length)}vw`;
   return (
     <section className="bg-surface/30 py-10 md:py-16" aria-labelledby="accessory-categories-heading">
       <div className="container-page">
@@ -24,13 +26,13 @@ export default function AccessoryCategoryCards({ lang, counts }: { lang: Locale;
           </div>
           <p className="max-w-sm text-sm leading-6 text-muted">{lang === "de" ? "Schützen, hören, laden: Entdecke das passende Zubehör für dein Gerät." : "Protect, listen, recharge: discover the right accessories for your device."}</p>
         </div>
-        <div className={`grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 ${desktopColumns} lg:gap-5`}>
+        <div className={`grid grid-cols-1 gap-4 ${mobileColumns} ${desktopColumns} lg:gap-5`}>
           {visible.map((category) => (
             <Link key={category.slug} href={`/${lang}/accessories${category.query ?? `/${category.slug}`}`} data-accessory-category={category.slug}
               className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-background transition-colors hover:border-gold/60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold">
               <div className="relative aspect-[4/3] overflow-hidden bg-surface">
                 <Image src={`/images/categories/${category.image}-lifestyle-v1.webp`} alt={lang === "de" ? category.altDe : category.altEn}
-                  fill sizes="(max-width: 399px) 100vw, (max-width: 1023px) 50vw, 25vw" loading="lazy"
+                  fill sizes={imageSizes} loading="lazy"
                   className="object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-105" />
               </div>
               <div className="flex flex-1 flex-col p-4 sm:p-5">
