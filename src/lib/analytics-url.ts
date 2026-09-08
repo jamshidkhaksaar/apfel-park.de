@@ -4,7 +4,7 @@ export const isPrivateAnalyticsPath = (pathname: string): boolean => {
   try {
     const path = decodeURIComponent(pathname).replace(/\/{2,}/g, '/');
     return /^\/(?:admin|login|maintenance|api)(?:\/|$)/i.test(path)
-      || /^\/store\/preview(?:\/|$)/i.test(path);
+      || /^\/(?:(?:de|en)\/)?store\/preview(?:\/|$)/i.test(path);
   } catch {
     return true;
   }

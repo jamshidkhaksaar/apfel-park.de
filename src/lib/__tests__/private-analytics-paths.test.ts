@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { analyticsPageContext, analyticsPagePath, canBootstrapPublicAnalytics, isPrivateAnalyticsPath } from '../analytics-url';
 
 describe('private analytics boundaries', () => {
-  it.each(['/admin', '/admin/orders/id', '/login', '/maintenance', '/api/integrations/assets/private-token', '/store/preview/private-token', '/store/%70review/private-token', '/store//preview/private-token', '/%E0%A4', ''])('excludes %s and redacts its URL', path => {
+  it.each(['/admin', '/admin/orders/id', '/login', '/maintenance', '/api/integrations/assets/private-token', '/store/preview/private-token', '/de/store/preview/private-token', '/en/store/preview/private-token', '/store/%70review/private-token', '/store//preview/private-token', '/%E0%A4', ''])('excludes %s and redacts its URL', path => {
     expect(isPrivateAnalyticsPath(path)).toBe(true);
     expect(canBootstrapPublicAnalytics(path)).toBe(false);
     expect(analyticsPagePath(path, new URLSearchParams('token=private-token'))).toBe('/private');

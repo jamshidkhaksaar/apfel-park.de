@@ -16,7 +16,11 @@ const LOCALE_ROUTES = [
 
 const localePrefixRedirects = LOCALE_ROUTES.flatMap((route) => [
   { source: `/${route}`, destination: `/de/${route}`, permanent: true },
-  { source: `/${route}/:path*`, destination: `/de/${route}/:path*`, permanent: true },
+  // Public store pages have one child segment (product slug or catalog).
+  // Signed /store/preview/:token is a private root route, not a locale alias.
+  route === 'store'
+    ? { source: '/store/:path((?!preview(?:/|$))[^/]+)', destination: '/de/store/:path', permanent: true }
+    : { source: `/${route}/:path*`, destination: `/de/${route}/:path*`, permanent: true },
 ]);
 
 const contentSecurityPolicy = [
@@ -78,6 +82,7 @@ const nextConfig: NextConfig = {
   // the closest relevant page; never blanket-redirect everything to home).
   async redirects() {
     return [
+      { source: '/:lang(de|en)/store/preview/:token', destination: '/store/preview/:token', permanent: false },
       { source: '/urun/:slug*', destination: '/de/store', permanent: true },
       { source: '/product/:slug*', destination: '/de/store', permanent: true },
       { source: '/product-category/:path*', destination: '/de/store', permanent: true },
