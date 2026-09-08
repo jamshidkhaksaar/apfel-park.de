@@ -1,4 +1,5 @@
 import { createElement } from 'react';
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import AccessoryCategoryCards from '../../components/store/AccessoryCategoryCards';
@@ -10,6 +11,10 @@ const cards = (): CatalogCardModel[] => Array.from({length:8}, (_, i) => ({
 } as CatalogCardModel));
 
 describe('merchandising server HTML', () => {
+  it('reserves sticky-header space at the cases-card destination', () => {
+    const source=readFileSync('src/app/(site)/[lang]/accessories/page.tsx','utf8');
+    expect(source).toMatch(/<section className="scroll-mt-32 [^"]*" id="store">/);
+  });
   it.each(['de','en'] as const)('links the %s cases card to the broad live filter and the product section', lang => {
     const html = renderToStaticMarkup(createElement(AccessoryCategoryCards, {lang}));
     expect(html).toContain(`href="/${lang}/accessories?atype=cases#store"`);

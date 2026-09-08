@@ -105,7 +105,7 @@ export default async function AccessoriesPage({
       <AccessoryCollectionNav lang={lang} />
 
       {/* Accessories Store with Filters & Sorting */}
-      <section className="bg-store-ground py-6 md:py-8" id="store">
+      <section className="scroll-mt-32 bg-store-ground py-6 md:py-8" id="store">
         <div className="container-page">
           <StoreGrid
             products={catalog.products}
