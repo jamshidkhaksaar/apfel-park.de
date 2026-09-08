@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
-import { pushGtagCommand } from "@/lib/analytics";
+import { pushGtagCommand, TRACKING_READY_EVENT } from "@/lib/analytics";
 import { analyticsPageContext, analyticsPagePath } from "@/lib/analytics-url";
 
 type MarketingConsentScriptsProps = {
@@ -298,6 +298,9 @@ export default function MarketingConsentScripts({
       }
 
       trackPageView();
+      // A receipt may have subscribed to consent before this component. Notify
+      // it only after the consented queues and initial page context are ready.
+      window.dispatchEvent(new Event(TRACKING_READY_EVENT));
     };
 
     applyConsent(readConsentMode());
@@ -335,6 +338,10 @@ export default function MarketingConsentScripts({
         window.ttq.track(toTikTokEventName(eventName), payload, eventId ? { event_id: eventId } : undefined);
       }
     };
+
+    // Code splitting/hydration can install the bridge after a receipt has
+    // mounted. Readiness is an event, not a short polling deadline.
+    window.dispatchEvent(new Event(TRACKING_READY_EVENT));
 
     return () => {
       delete window.apfelTrack;

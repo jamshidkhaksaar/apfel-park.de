@@ -1,3 +1,6 @@
+/** Broadcast only by the local bridge after installation or consent setup. */
+export const TRACKING_READY_EVENT = 'apfel-tracking-ready';
+
 export type AnalyticsItem = {
   item_id: string;
   item_name: string;

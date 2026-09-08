@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { clearStoredCart } from "@/components/checkout/cart";
 import GoogleCustomerReviews from "@/components/checkout/GoogleCustomerReviews";
 import TrustpilotInvitation from "@/components/checkout/TrustpilotInvitation";
-import { analyticsItem, withGa4Items } from "@/lib/analytics";
-import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
+import { analyticsItem, TRACKING_READY_EVENT, withGa4Items } from "@/lib/analytics";
+import { readConsentMode } from "@/lib/consent";
 import { startCheckoutConfirmationPolling } from "@/lib/checkout-confirmation-polling";
 
 type Props = {
@@ -85,53 +85,40 @@ export default function CheckoutSuccessClient({
     if (!orderId || typeof totalAmount !== "number" || purchaseSentRef.current) return;
 
     let cancelled = false;
-    let retryTimer: number | undefined;
-    let attempts = 0;
-
     const sendPurchase = () => {
       if (cancelled || purchaseSentRef.current || readConsentMode() !== "external") return;
+      if (!window.apfelTrack) return;
 
-      // The success component and the consent script mount independently. Give
-      // the local tracking bridge a short window to become available.
-      if (!window.apfelTrack) {
-        if (attempts < 20) {
-          attempts += 1;
-          retryTimer = window.setTimeout(sendPurchase, 100);
-        }
-        return;
+      try {
+        window.apfelTrack("purchase", withGa4Items({
+          transaction_id: orderId,
+          value: totalAmount,
+          currency: currency || "EUR",
+        }, items.map((item) => analyticsItem({
+          item_id: item.productId || item.sku || item.title,
+          item_name: item.title,
+          item_category: item.category || undefined,
+          item_variant: [item.variantColor, item.variantStorage].filter(Boolean).join(" ") || undefined,
+          price: typeof item.unitAmount === "number"
+            ? item.unitAmount
+            : typeof item.lineAmount === "number" && item.quantity > 0
+              ? item.lineAmount / item.quantity
+              : undefined,
+          quantity: item.quantity,
+        }))), `purchase-${orderId}`);
+        purchaseSentRef.current = true;
+      } catch {
+        // Optional tracking must not crash a paid receipt. A later bridge-ready
+        // signal can retry with the same transaction/event identity.
       }
-
-      purchaseSentRef.current = true;
-      window.apfelTrack("purchase", withGa4Items({
-        transaction_id: orderId,
-        value: totalAmount,
-        currency: currency || "EUR",
-      }, items.map((item) => analyticsItem({
-        item_id: item.productId || item.sku || item.title,
-        item_name: item.title,
-        item_category: item.category || undefined,
-        item_variant: [item.variantColor, item.variantStorage].filter(Boolean).join(" ") || undefined,
-        price: typeof item.unitAmount === "number"
-          ? item.unitAmount
-          : typeof item.lineAmount === "number" && item.quantity > 0
-            ? item.lineAmount / item.quantity
-            : undefined,
-        quantity: item.quantity,
-      }))), `purchase-${orderId}`);
     };
 
-    const handleConsent = (event: Event) => {
-      const next = (event as CustomEvent<ConsentMode>).detail ?? readConsentMode();
-      if (next === "external") sendPurchase();
-    };
-
+    window.addEventListener(TRACKING_READY_EVENT, sendPurchase);
     sendPurchase();
-    window.addEventListener(CONSENT_EVENT_NAME, handleConsent as EventListener);
 
     return () => {
       cancelled = true;
-      if (retryTimer) window.clearTimeout(retryTimer);
-      window.removeEventListener(CONSENT_EVENT_NAME, handleConsent as EventListener);
+      window.removeEventListener(TRACKING_READY_EVENT, sendPurchase);
     };
   }, [currency, items, orderId, paid, totalAmount]);
 
