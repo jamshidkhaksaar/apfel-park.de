@@ -260,7 +260,7 @@ export default function StoreCatalogClient({
           ) : null}
 
           {/* Kept out of the result list — an interruption mid-grid breaks scanning. */}
-          {trendingProducts.length >= 5 ? <TrendingProductsCarousel products={trendingProducts} lang={lang} compact /> : null}
+          <TrendingProductsCarousel products={trendingProducts} lang={lang} compact />
 
         </div>
       </div>

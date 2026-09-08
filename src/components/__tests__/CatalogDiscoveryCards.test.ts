@@ -20,9 +20,11 @@ describe("catalog discovery cards", () => {
     expect(getBrandBrowsePath('Apple')).toBe('/smartphones?brand=Apple#store');
   });
 
-  it.each(["de", "en"] as const)("renders four lightweight category images and original routes in %s", (lang) => {
+  it.each(["de", "en"] as const)("renders four lightweight category images and working browse destinations in %s", (lang) => {
     const html = renderToStaticMarkup(createElement(AccessoryCategoryCards, { lang }));
-    for (const slug of ["hardcases", "kopfhoerer-audio", "ladegeraete-kabel", "displayschutz"]) {
+    expect(html).toContain(`/${lang}/accessories?atype=cases#store`);
+    expect(html).not.toContain(`/${lang}/accessories/hardcases`);
+    for (const slug of ["kopfhoerer-audio", "ladegeraete-kabel", "displayschutz"]) {
       expect(html).toContain(`/${lang}/accessories/${slug}`);
     }
     expect(html.match(/loading="lazy"/g)).toHaveLength(4);

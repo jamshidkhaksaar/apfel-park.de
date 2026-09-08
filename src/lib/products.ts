@@ -8,6 +8,7 @@ import type {
   ProductIdentifierStatus,
 } from "@/lib/product-channel-readiness";
 import { cache } from "react";
+import { selectTrendingProducts } from '@/lib/trending-products';
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
 
@@ -78,6 +79,8 @@ export type Product = {
   marketplaceCategoryMappings?: MarketplaceCategoryMappings;
   stock?: number;
   slug: string;
+  /** Server-side evidence: stock was resolved against active local ledger rows. */
+  inventoryVerified?: boolean;
   featureBullets: string[];
   specs: ProductSpec[];
   faq: ProductFaqEntry[];
@@ -565,9 +568,13 @@ const hydrateProductsWithInventory = async (products: Product[], failOnError = f
         ? variants.reduce((sum, variant) => sum + Math.max(0, variant.stock ?? 0), 0)
         : undefined;
       const directStock = product.sku && bySku.has(product.sku) ? bySku.get(product.sku) : undefined;
+      const inventoryVerified = variants.length > 0
+        ? variants.every(variant => Boolean(variant.sku && bySku.has(variant.sku)))
+        : product.sku ? bySku.has(product.sku) : byProduct.has(product.id);
       return {
         ...product,
         variants,
+        inventoryVerified,
         stock: variantStock ?? directStock ?? byProduct.get(product.id) ?? product.stock,
       };
     });
@@ -1188,47 +1195,23 @@ export async function getFeaturedProducts(locale: Locale = "de"): Promise<Produc
 }
 
 export async function getTrendingProducts(locale: Locale = "de", limit = 8): Promise<Product[]> {
-  const db = createDbClient();
-  const [{ data: settingRow }, products] = await Promise.all([
-    db
-      .from<{ value: unknown }>("store_settings")
-      .select("value")
-      .eq("key", "trending_products")
-      .maybeSingle(),
-    getProducts(undefined, undefined, locale),
-  ]);
-
-  const available = products.filter((product) => (product.stock ?? 0) > 0);
-  const setting = settingRow?.value && typeof settingRow.value === "object"
-    ? settingRow.value as TrendingProductsSetting
-    : null;
-  const configuredIds = Array.isArray(setting?.productIds)
-    ? setting.productIds.filter((id): id is string => typeof id === "string")
-    : [];
-  const byId = new Map(available.map((product) => [product.id, product] as const));
-  const configured = configuredIds
-    .map((id) => byId.get(id))
-    .filter((product): product is Product => Boolean(product));
-
-  const score = (product: Product) => {
-    const text = `${product.title} ${product.model ?? ""}`.toLowerCase();
-    let value = 0;
-    if (/iphone\s*17/.test(text)) value += 1_000;
-    else if (/iphone\s*16/.test(text)) value += 700;
-    else if (/iphone\s*15/.test(text)) value += 500;
-    if (/pro\s*max/.test(text)) value += 120;
-    else if (/\bpro\b/.test(text)) value += 90;
-    if (/\bair\b/.test(text)) value += 60;
-    if (product.hasDiscount) value += 40;
-    value += Math.min(product.stock ?? 0, 10);
-    return value;
-  };
-  const configuredSet = new Set(configured.map((product) => product.id));
-  const fallback = available
-    .filter((product) => !configuredSet.has(product.id))
-    .sort((a, b) => score(b) - score(a) || String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
-
-  return [...configured, ...fallback].slice(0, Math.max(1, limit));
+  try {
+    const db = createDbClient();
+    const [{ data: settingRow, error }, products] = await Promise.all([
+      db.from<{ value: unknown }>('store_settings').select('value').eq('key', 'trending_products').maybeSingle(),
+      getProducts(undefined, undefined, locale, { failOnError: true }),
+    ]);
+    if (error) throw error;
+    const setting = settingRow?.value && typeof settingRow.value === 'object'
+      ? settingRow.value as TrendingProductsSetting
+      : null;
+    return selectTrendingProducts(products.filter(product => product.inventoryVerified), setting?.productIds, limit);
+  } catch {
+    // Optional merchandising must never advertise guessed stock after a failed
+    // ledger/settings read. Keep the persisted last-known-good cache untouched.
+    console.warn('[store] Trending selection unavailable; carousel hidden.');
+    return [];
+  }
 }
 
 const getProductBySlugCached = cache(async (slug: string, locale: Locale): Promise<Product | null> => {

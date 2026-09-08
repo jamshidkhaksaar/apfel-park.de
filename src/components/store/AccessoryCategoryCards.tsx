@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Locale } from "@/lib/i18n";
 
 const categories = [
-  { slug: "hardcases", image: "cases", de: "Hüllen & Cases", en: "Cases & covers", detailDe: "Dein Look. Dein Schutz.", detailEn: "Your style. Your protection.", altDe: "Frau mit Smartphone in einer schützenden Hülle", altEn: "Woman holding a smartphone in a protective case" },
+  { slug: "cases", query: "?atype=cases#store", image: "cases", de: "Hüllen & Cases", en: "Cases & covers", detailDe: "Dein Look. Dein Schutz.", detailEn: "Your style. Your protection.", altDe: "Frau mit Smartphone in einer schützenden Hülle", altEn: "Woman holding a smartphone in a protective case" },
   { slug: "kopfhoerer-audio", image: "audio", de: "Kopfhörer & Audio", en: "Headphones & audio", detailDe: "Dein Sound für unterwegs.", detailEn: "Your soundtrack on the move.", altDe: "Mann mit kabellosen Over-Ear-Kopfhörern", altEn: "Man wearing wireless over-ear headphones" },
   { slug: "ladegeraete-kabel", image: "charging", de: "Ladegeräte & Kabel", en: "Chargers & cables", detailDe: "Energie für deinen Alltag.", detailEn: "Power for your everyday.", altDe: "Smartphone wird per USB-Kabel mit einer Powerbank verbunden", altEn: "Connecting a smartphone to a power bank with a USB cable" },
   { slug: "displayschutz", image: "protection", de: "Displayschutz", en: "Screen protectors", detailDe: "Klare Sicht. Gut geschützt.", detailEn: "Clear view. Added protection.", altDe: "Hände richten ein Schutzglas über einem Smartphone aus", altEn: "Hands aligning a glass screen protector over a smartphone" },
@@ -22,7 +22,7 @@ export default function AccessoryCategoryCards({ lang }: { lang: Locale }) {
         </div>
         <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 lg:grid-cols-4 lg:gap-5">
           {categories.map((category) => (
-            <Link key={category.slug} href={`/${lang}/accessories/${category.slug}`} data-accessory-category={category.slug}
+            <Link key={category.slug} href={`/${lang}/accessories${category.query ?? `/${category.slug}`}`} data-accessory-category={category.slug}
               className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-background transition-colors hover:border-gold/60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold">
               <div className="relative aspect-[4/3] overflow-hidden bg-surface">
                 <Image src={`/images/categories/${category.image}-lifestyle-v1.webp`} alt={lang === "de" ? category.altDe : category.altEn}

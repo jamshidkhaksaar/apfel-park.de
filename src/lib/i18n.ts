@@ -2,6 +2,11 @@ import { businessAddress, businessIdentity, legalIdentityText, legalProvider } f
 
 export type Locale = "de" | "en";
 
+export const trendingAvailabilityCopy = {
+  de: 'Ausgewählte Produkte aus unserem aktuellen Bestand – nur sofort verfügbare Artikel.',
+  en: 'Selected products from our current stock — only items available now.',
+} as const;
+
 export const locales: Locale[] = ["de", "en"];
 
 export const dictionary = {
