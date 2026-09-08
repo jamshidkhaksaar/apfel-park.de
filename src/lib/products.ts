@@ -882,15 +882,23 @@ export const productAccessoryTypes = (product: Product): AccessoryType[] => {
  * content. It is a COUNT rather than getStoreCatalog because that loads the
  * whole catalog into memory.
  */
-export async function countActiveSubcategoryProducts(subcategory: string): Promise<number> {
+export async function countActiveSubcategoryProducts(
+  subcategory: string,
+  options: { failOnError?: boolean } = {},
+): Promise<number> {
   try {
     const result = await query(
       `SELECT count(*)::int AS total FROM products
        WHERE is_active = true AND category = 'accessories' AND subcategory = $1`,
       [subcategory],
     );
-    return (result.rows[0] as { total?: number } | undefined)?.total ?? 0;
+    const total = (result.rows[0] as { total?: number } | undefined)?.total;
+    if (options.failOnError && (typeof total !== "number" || !Number.isInteger(total) || total < 0)) {
+      throw new Error("Subcategory count returned invalid data");
+    }
+    return total ?? 0;
   } catch (error) {
+    if (options.failOnError) throw error;
     console.error("countActiveSubcategoryProducts failed:", error);
     return 0;
   }
