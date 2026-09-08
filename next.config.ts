@@ -82,7 +82,8 @@ const nextConfig: NextConfig = {
   // the closest relevant page; never blanket-redirect everything to home).
   async redirects() {
     return [
-      { source: '/:lang(de|en)/store/preview/:token', destination: '/store/preview/:token', permanent: false },
+      // A distinct query also escapes a browser-cached old permanent locale hop.
+      { source: '/:lang(de|en)/store/preview/:token', destination: '/store/preview/:token?preview_route=1', permanent: false },
       { source: '/urun/:slug*', destination: '/de/store', permanent: true },
       { source: '/product/:slug*', destination: '/de/store', permanent: true },
       { source: '/product-category/:path*', destination: '/de/store', permanent: true },
