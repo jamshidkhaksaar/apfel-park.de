@@ -36,7 +36,6 @@ export default function CopyAddressButton({
         type="button"
         onClick={handleCopy}
         className="group relative text-left text-sm text-muted transition hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-        aria-label={`${fullAddress} – ${label}`}
         title={label}
       >
         <div className="flex items-start gap-2">
@@ -76,6 +75,7 @@ export default function CopyAddressButton({
             )}
           </div>
         </div>
+        <span className="sr-only"> – {label}</span>
       </button>
 
       {/* Feedback Tooltip */}

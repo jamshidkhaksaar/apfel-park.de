@@ -24,7 +24,11 @@ describe('copy address accessibility', () => {
     ['Copy address', 'Copied!'],
   ])('includes the visible address in the %s accessible name', (label, copiedLabel) => {
     const html = renderToStaticMarkup(createElement(CopyAddressButton, { address, label, copiedLabel }));
-    expect(html).toContain(`aria-label="Wilhelm-Strauß-Weg 2b, 21109 Hamburg – ${label}"`);
+    // Native naming uses the exact rendered address, avoiding punctuation and
+    // whitespace differences introduced by manually reconstructed aria-labels.
+    expect(html).not.toContain('aria-label=');
+    expect(html).toContain(`<p>${address.street}</p>`);
+    expect(html).toContain(`<span class="sr-only"> – ${label}</span>`);
     expect(html).toContain('type="button"');
     expect(html).toContain('role="status" aria-live="polite" aria-atomic="true"');
     expect(html.indexOf('role="status"')).toBeGreaterThan(html.indexOf('</button>'));
