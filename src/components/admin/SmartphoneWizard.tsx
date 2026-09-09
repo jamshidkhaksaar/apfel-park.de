@@ -22,6 +22,7 @@ import {
   phoneErrorText,
 } from '@/lib/smartphone-editor/i18n';
 import PhonePhotoSlots from './PhonePhotoSlots';
+import AiFillButton from './AiFillButton';
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-foreground';
@@ -84,7 +85,6 @@ export default function SmartphoneWizard({
   const [initializing, setInitializing] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
-  const [researchBusy, setResearchBusy] = useState(false);
   const [search, setSearch] = useState('');
   const [models, setModels] = useState<
     { id: string; brand: string; model: string; title: string }[]
@@ -467,18 +467,10 @@ export default function SmartphoneWizard({
           <section className="space-y-4 rounded-2xl border border-border p-5">
             <Field label={t.search} value={search} onChange={setSearch} />
             {researchEnabled ? (
-              <button
-                className="btn-secondary"
-                disabled={researchBusy || !search.trim()}
-                onClick={async () => {
-                  setResearchBusy(true);
-                  try {
-                    const response = await call(
-                      '/api/admin/products/research',
-                      'POST',
-                      { query: search },
-                    );
-                    const result = response.research;
+              <AiFillButton locale={locale} query={search}
+                condition={document.entries.every(entry => entry.condition === document.entries[0]?.condition) ? document.entries[0]?.condition : undefined}
+                onError={setError}
+                onResult={(result) => {
                     change((d) => ({
                       ...d,
                       pendingShared: {
@@ -492,21 +484,13 @@ export default function SmartphoneWizard({
                         manufacturer: result.manufacturer ?? d.shared.manufacturer,
                         euResponsiblePerson: result.euResponsiblePerson ?? d.shared.euResponsiblePerson,
                         safetyWarnings: result.safetyWarnings ?? d.shared.safetyWarnings,
+                        eprelId: result.eprelId ?? d.shared.eprelId,
+                        energyLabel: result.energyLabel ?? d.shared.energyLabel,
+                        featureBullets: result.features ?? d.shared.featureBullets,
+                        batteryDetails: result.batteryDetails ?? d.shared.batteryDetails,
                       },
                     }));
-                  } catch (e) {
-                    setError((e as Error).message);
-                  } finally {
-                    setResearchBusy(false);
-                  }
-                }}
-              >
-                {researchBusy
-                  ? t.loading
-                  : locale === 'de'
-                    ? 'KI-Vorschlag zur Prüfung anfordern'
-                    : 'Request AI suggestion for review'}
-              </button>
+                }}/>
             ) : null}
             {models.map((m) => (
               <button

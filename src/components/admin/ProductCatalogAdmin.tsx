@@ -17,6 +17,7 @@ import type {
 } from "@/lib/product-channel-readiness";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
+import { researchOfferPatch } from '@/lib/product-research-prefill';
 import { appliedResearchTextFields } from '@/lib/product-ai-fields';
 import type { ProductCondition } from "@/lib/products";
 import {
@@ -335,47 +336,6 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
 
   const applyResearch = (research: ProductResearchResult) => {
     setFormState((prev) => {
-      const mergedVariants = research.variants?.length
-        ? research.variants.map((researchVar, vIdx) => {
-            let existing = prev.variants.find(
-              (v) =>
-                v.color.trim().toLowerCase() === researchVar.color.trim().toLowerCase() &&
-                v.storage.trim().toLowerCase() === researchVar.storage.trim().toLowerCase(),
-            );
-            if (!existing) {
-              existing = prev.variants.find(
-                (v) =>
-                  (!v.color.trim() || v.color.trim().toLowerCase() === researchVar.color.trim().toLowerCase()) &&
-                  v.storage.trim().toLowerCase() === researchVar.storage.trim().toLowerCase(),
-              );
-            }
-            if (!existing && prev.variants.length === 1 && vIdx === 0) {
-              existing = prev.variants[0];
-            }
-
-            const fallbackPrice = prev.price && !Number.isNaN(Number(prev.price)) ? Number(prev.price) : undefined;
-            const fallbackCompareAt = prev.compareAtPrice && !Number.isNaN(Number(prev.compareAtPrice)) ? Number(prev.compareAtPrice) : undefined;
-            const fallbackStock = prev.stock && !Number.isNaN(Number(prev.stock)) ? Number(prev.stock) : undefined;
-
-            return {
-              color: researchVar.color,
-              storage: researchVar.storage,
-              price: existing?.price ?? fallbackPrice,
-              compareAtPrice: existing?.compareAtPrice ?? fallbackCompareAt,
-              stock: existing?.stock ?? fallbackStock,
-              sku: researchVar.sku || existing?.sku || prev.sku || "",
-              mpn: existing?.mpn || prev.mpn || "",
-              gtin: existing?.gtin || prev.gtin || "",
-              identifierStatus: existing?.identifierStatus || "unknown",
-              asin: existing?.asin || "",
-              ebayEpid: existing?.ebayEpid || "",
-              imageIndex: existing?.imageIndex,
-              images: researchVar.images?.length ? researchVar.images : existing?.images ?? [],
-              isDefault: existing?.isDefault ?? (vIdx === 0),
-            };
-          })
-        : prev.variants;
-
       return {
         ...prev,
         title: research.title || prev.title,
@@ -385,7 +345,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
         brand: research.brand || prev.brand,
         model: research.model || prev.model,
         category: (research.category as ProductFormState["category"]) || prev.category,
-        sku: research.skuSuggestion && (!prev.sku || aiJustFilled) ? research.skuSuggestion : (prev.sku || research.skuSuggestion || ""),
+        ...researchOfferPatch(prev, research),
         featureBulletsText: research.features?.length ? research.features.join("\n") : prev.featureBulletsText,
         specsText: research.specs?.length ? research.specs.map((item) => `${item.label}: ${item.value}`).join("\n") : prev.specsText,
         manufacturerName: research.manufacturer?.name || prev.manufacturerName,
@@ -395,8 +355,6 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
         euResponsibleAddress: research.euResponsiblePerson?.address || prev.euResponsibleAddress,
         euResponsibleEmail: research.euResponsiblePerson?.email || prev.euResponsibleEmail,
         safetyWarningsText: research.safetyWarnings?.length ? research.safetyWarnings.join("\n") : prev.safetyWarningsText,
-        gtin: research.gtinSuggestion && !prev.gtin ? research.gtinSuggestion : prev.gtin,
-        mpn: research.mpnSuggestion && !prev.mpn ? research.mpnSuggestion : prev.mpn,
         eprelId: research.eprelId || prev.eprelId,
         energyEfficiencyClass: research.energyLabel?.efficiencyClass || prev.energyEfficiencyClass,
         energyBatteryEndurance: research.energyLabel?.batteryEndurance || prev.energyBatteryEndurance,
@@ -407,10 +365,9 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
         energyLabelImage: research.energyLabel?.labelImage || prev.energyLabelImage,
         energyFicheDe: research.energyLabel?.ficheDe || prev.energyFicheDe,
         energyFicheEn: research.energyLabel?.ficheEn || prev.energyFicheEn,
-        images: research.gallery?.length
+        images: prev.condition === 'new' && research.gallery?.length
           ? Array.from(new Set([...prev.images, ...research.gallery]))
           : prev.images,
-        variants: mergedVariants,
         channelFields: research.countryOfOrigin
           ? { ...prev.channelFields, countryOfOrigin: research.countryOfOrigin }
           : prev.channelFields,
@@ -904,6 +861,8 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                 <div className="flex flex-wrap items-center gap-3">
                   {isDirty ? <span className="inline-flex items-center rounded-lg bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-600">{locale === "de" ? "Ungespeichert" : "Unsaved"}</span> : null}
                   <AiFillButton
+                    key={formState.id}
+                    condition={formState.condition}
                     locale={locale}
                     query={formState.model || formState.title || selectedProduct.model || selectedProduct.title || ""}
                     onResult={applyResearch}

@@ -16,17 +16,28 @@ from pytesseract import Output
 from identifiers import classify_numeric_identifier, ocr_gtin_candidates, valid_gtin, valid_imei
 
 ASSET_TYPES = {"barcode_label", "about_screen", "battery_health", "condition_photo", "packaging"}
-SENSITIVE_LABEL = re.compile(r"^(?:imei\d*|serial|serialnumber|serien|seriennummer|seriennr|s/?n|eid|meid)$", re.I)
-SENSITIVE_INLINE = re.compile(r"\b(?:IMEI\d*|SERIAL(?:\s+(?:NO|NUMBER))?|SERIEN\s*(?:NUMMER|NR\.?)|EID|MEID)\b", re.I)
-PART_PATTERN = re.compile(r"\b(?:MPN|PART(?:\s*(?:NO|NUMBER))?|MODEL\s*NUMBER)\s*[:#]?\s*([A-Z0-9][A-Z0-9./_-]{2,39})", re.I)
+SENSITIVE_LABEL = re.compile(r"^(?:imei\d*|serial|serialnumber|serien|seriennummer|seriennr|s/?n|eid|meid|iccid|imsi|seid|msisdn|bluetooth|wifiadresse|wlanadresse|macaddress|telefonnummer|rufnummer|devicename|gertename|ssid|password|passwort|pin|puk)$", re.I)
+SENSITIVE_INLINE = re.compile(r"\b(?:IMEI\d*|SERIAL(?:\s+(?:NO|NUMBER))?|SERIEN\s*(?:NUMMER|NR\.?)|EID|MEID|ICCID|IMSI|SEID|MSISDN|WI[ -]?FI[ -]?(?:ADDRESS|ADRESSE)|WLAN[ -]?ADRESSE|MAC[ -]?ADDRESS|PHONE\s*NUMBER|TELEFONNUMMER|RUFNUMMER|SSID|PASSWORD|PASSWORT|PIN|PUK)\b", re.I)
+MAC_ADDRESS = re.compile(r"\b(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b", re.I)
+NON_DEVICE_DOCUMENT = re.compile(r"\b(?:passport|personalausweis|aufenthaltstitel|residence\s*permit|geburtsdatum|date\s+of\s+birth|gewerbe[-\s]*anmeldung|rechnung(?:snummer|sadresse|sdatum)?|invoice|iban|kontoinhaber|bank\s*account|tax\s*identification|steuernummer|ship\s*to|shipping\s*address|lieferadresse|sendungsnummer|tracking\s*number)\b", re.I)
+PART_PATTERN = re.compile(r"\b(?:MPN|PART(?:[ \t]*(?:NO|NUMBER))?|MODEL[ \t]*NUMBER|MODELLNUMMER)[ \t]*[:#]?[ \t]*([A-Z0-9][A-Z0-9./_-]{2,39})", re.I)
 MODEL_PATTERN = re.compile(r"\b(A\d{4}|SM-[A-Z0-9]{4,20})\b", re.I)
-MODEL_NAME_PATTERN = re.compile(r"\bMODEL\s+NAME\s*[:#]?\s*([A-Z0-9][A-Z0-9 +._/-]{2,60})", re.I)
+MODEL_NAME_PATTERN = re.compile(r"\b(?:MODEL[ \t]+NAME|MODELLNAME)[ \t]*[:#]?[ \t]*([A-Z0-9][A-Z0-9 +._/-]{2,60})", re.I)
 STORAGE_PATTERN = re.compile(r"\b(\d{2,4})\s*(GB|TB)\b", re.I)
 COLOR_PATTERN = re.compile(r"\b(?:COLOU?R|FARBE)\s*[:#]?\s*([A-Z][A-Z -]{2,30})", re.I)
 OS_PATTERN = re.compile(r"\b(?:IOS|ANDROID|SOFTWARE\s*VERSION)\s*[:#]?\s*([A-Z0-9. -]{1,30})", re.I)
 BATTERY_PATTERN = re.compile(r"\b(?:MAXIMUM\s+CAPACITY|BATTERY\s+HEALTH|BATTERIEKAPAZIT[ÄA]T)\s*[:#]?\s*(\d{1,3})\s*%", re.I)
-SPACED_SENSITIVE_DIGITS = re.compile(r"(?<!\d)(?:\d[\s-]?){15}(?!\d)|(?<!\d)(?:\d[\s-]?){32}(?!\d)")
+SPACED_SENSITIVE_DIGITS = re.compile(r"(?<!\d)(?:\d[\s-]?){15}(?!\d)|(?<!\d)(?:\d[\s-]?){19,20}(?!\d)|(?<!\d)(?:\d[\s-]?){32}(?!\d)")
 BRANDS = ("Apple", "Samsung", "Google", "Xiaomi", "Motorola", "Huawei", "Honor", "Nokia", "Sony", "OnePlus", "Oppo", "Realme", "Asus", "Lenovo")
+
+
+class NonDeviceDocument(ValueError):
+    """Identity, financial and shipping documents must not enter device vision."""
+
+
+def assert_device_document(text: str) -> None:
+    if NON_DEVICE_DOCUMENT.search(text):
+        raise NonDeviceDocument("unsupported document type")
 
 
 def sha256(data: bytes) -> str:
@@ -91,6 +102,7 @@ def decode_barcodes(
                 gtin_symbology = any(name in format_name.upper() for name in ("EAN", "UPC", "ITF"))
                 key = (raw, format_name)
                 if classification == "gtin":
+                    safe_polygon = unrotate_polygon(barcode_polygon(item), rotation, width, height)
                     if key not in seen:
                         candidates.append({
                             "value": digits,
@@ -100,11 +112,15 @@ def decode_barcodes(
                             "confidence": 1.0,
                             "autoAccept": gtin_symbology,
                             "localDecoder": True,
+                            "_polygons": [safe_polygon],
                         })
-                        safe_polygon = unrotate_polygon(barcode_polygon(item), rotation, width, height)
-                        if gtin_symbology:
-                            gtin_polygons.append(safe_polygon)
                         seen.add(key)
+                    else:
+                        existing = next((candidate for candidate in candidates if candidate["value"] == digits and candidate["symbology"] == format_name), None)
+                        if existing is not None and safe_polygon not in existing.get("_polygons", []):
+                            existing.setdefault("_polygons", []).append(safe_polygon)
+                    if gtin_symbology and safe_polygon not in gtin_polygons:
+                        gtin_polygons.append(safe_polygon)
                     if gtin_symbology:
                         continue
                 if gtin_symbology and len(digits) in {8, 12, 13, 14} and not valid_gtin(digits) and key not in seen:
@@ -160,17 +176,54 @@ def ocr_text(tokens: list[OcrToken]) -> str:
     return "\n".join(" ".join(parts) for parts in lines.values())
 
 
+def text_recognition_image(image: Image.Image, polygons: list[list[tuple[int, int]]]) -> Image.Image:
+    """Barcode bars can cause block OCR to ignore labels below them.
+    Hide bars only in the OCR working copy, preserving original coordinates.
+    The publish/vision derivative is still built from the separate redacted image.
+    """
+    working = image.copy()
+    draw = ImageDraw.Draw(working)
+    for polygon in polygons:
+        draw.polygon(polygon, fill="white")
+    return working
+
+
+def sensitive_caption(value: str, tokens: list[OcrToken]) -> bool:
+    """A checksum does not turn a labelled serial number into a retail GTIN."""
+    lines = ocr_text(tokens).splitlines()
+    for index, line in enumerate(lines):
+        labels = list(SENSITIVE_INLINE.finditer(line))
+        if not labels:
+            continue
+        if re.sub(r"\D", "", line) == value:
+            return True
+        for label in labels:
+            tail = line[label.end():]
+            if not tail.strip(" :=#-.") and index + 1 < len(lines):
+                tail = lines[index + 1]
+            number = re.match(r"[\s:=#.-]*(\d[\d -]{5,})", tail)
+            if number and re.sub(r"\D", "", number.group(1)) == value:
+                return True
+    return False
+
+
 def redact_sensitive(image: Image.Image, tokens: list[OcrToken], barcode_masks: list[list[tuple[int, int]]]) -> Image.Image:
     redacted = image.copy()
     draw = ImageDraw.Draw(redacted)
     redact_indexes: set[int] = set()
     for index, token in enumerate(tokens):
         compact = re.sub(r"[^A-Za-z0-9]", "", token.text)
+        editable_name = compact.lower() == "name" and not (
+            index > 0 and tokens[index - 1].line == token.line
+            and tokens[index - 1].text.lower() in {"model", "modell"}
+        )
         sensitive = (
             bool(SENSITIVE_LABEL.match(compact))
             or bool(SENSITIVE_INLINE.search(token.text))
             or valid_imei(compact)
-            or (len(compact) == 32 and compact.isdigit())
+            or (len(compact) in {19, 20, 32} and compact.isdigit())
+            or bool(MAC_ADDRESS.search(token.text))
+            or editable_name
         )
         if sensitive:
             redact_indexes.add(index)
@@ -192,7 +245,7 @@ def redact_sensitive(image: Image.Image, tokens: list[OcrToken], barcode_masks: 
     for line in {token.line for token in tokens}:
         indexes = [index for index, token in enumerate(tokens) if token.line == line]
         digits = "".join(re.sub(r"\D", "", tokens[index].text) for index in indexes)
-        if len(digits) in {15, 32}:
+        if len(digits) in {15, 19, 20, 32}:
             redact_indexes.update(indexes)
     for index in redact_indexes:
         token = tokens[index]
@@ -201,6 +254,29 @@ def redact_sensitive(image: Image.Image, tokens: list[OcrToken], barcode_masks: 
     for polygon in barcode_masks:
         draw.polygon(polygon, fill="black")
     return redacted
+
+
+def minimize_device_screen(image: Image.Image, tokens: list[OcrToken]) -> Image.Image:
+    """About/battery screenshots expose only recognized public device rows.
+    Unknown rows, account names, status bars and notifications stay black.
+    Pixels are copied from the already-redacted image, never the original.
+    """
+    safe = Image.new("RGB", image.size, "black")
+    lines: dict[tuple[int, int, int], list[OcrToken]] = {}
+    for token in tokens:
+        lines.setdefault(token.line, []).append(token)
+    public_label = re.compile(r"\b(?:model\s*name|modellname|model\s*number|modellnummer|capacity|kapazit[äa]t|storage|speicher|ios\s*version|software\s*version|android\s*version|maximum\s*capacity|battery\s*health|batteriekapazit[äa]t)\b", re.I)
+    for row in lines.values():
+        text = " ".join(token.text for token in row)
+        label = public_label.search(text)
+        if not label or not text[label.end():].strip(" :=#-"):
+            continue
+        left = max(0, min(token.left for token in row) - 4)
+        top = max(0, min(token.top for token in row) - 4)
+        right = min(image.width, max(token.left + token.width for token in row) + 4)
+        bottom = min(image.height, max(token.top + token.height for token in row) + 4)
+        safe.paste(image.crop((left, top, right, bottom)), (left, top))
+    return safe
 
 
 def first(pattern: re.Pattern[str], text: str) -> str | None:
@@ -242,25 +318,40 @@ def extract(source: Path, asset_type: str, redacted_target: Path) -> dict[str, A
         raise ValueError(f"Unsupported asset type: {asset_type}")
     image = normalized_image(source)
     barcode_candidates, barcode_masks, gtin_polygons = decode_barcodes(image)
-    tokens = ocr_tokens(image)
+    tokens = ocr_tokens(text_recognition_image(image, barcode_masks + gtin_polygons))
     full_text = ocr_text(tokens)
-    ocr_candidates = ocr_gtin_candidates(full_text)
+    assert_device_document(full_text)
+    private_polygons = []
+    accepted_barcode_candidates = []
+    for candidate in barcode_candidates:
+        polygons = candidate.pop("_polygons", [])
+        if sensitive_caption(str(candidate["value"]), tokens):
+            barcode_masks.extend(polygons)
+            private_polygons.extend(polygons)
+            continue
+        accepted_barcode_candidates.append(candidate)
+    barcode_candidates = accepted_barcode_candidates
+    gtin_polygons = [polygon for polygon in gtin_polygons if polygon not in private_polygons]
+    ocr_candidates = [candidate for candidate in ocr_gtin_candidates(full_text) if not sensitive_caption(str(candidate["value"]), tokens)]
     gtin_candidates = barcode_candidates + [
         candidate for candidate in ocr_candidates
         if not any(existing["value"] == candidate["value"] and existing["extractionMethod"] == candidate["extractionMethod"] for existing in barcode_candidates)
     ]
     redacted = redact_sensitive(image, tokens, barcode_masks)
+    if asset_type in {"about_screen", "battery_health"}:
+        redacted = minimize_device_screen(redacted, tokens)
     redacted_target.parent.mkdir(parents=True, exist_ok=True)
     redacted.save(redacted_target, format="WEBP", quality=92, method=6)
     redacted_data = redacted_target.read_bytes()
-    redacted_tokens = ocr_tokens(redacted)
+    redacted_tokens = ocr_tokens(text_recognition_image(redacted, barcode_masks + gtin_polygons))
     redacted_text = ocr_text(redacted_tokens)
     privacy_scan_passed = (
         not SENSITIVE_INLINE.search(redacted_text)
         and not SPACED_SENSITIVE_DIGITS.search(redacted_text)
+        and not MAC_ADDRESS.search(redacted_text)
         and (asset_type not in {"barcode_label", "about_screen", "battery_health"} or len(redacted_tokens) >= 2)
     )
-    safe_fields = safe_ocr_fields(full_text)
+    safe_fields = safe_ocr_fields(redacted_text)
     requires_confirmation: list[str] = []
     conflicts: list[str] = []
     valid_values = {
