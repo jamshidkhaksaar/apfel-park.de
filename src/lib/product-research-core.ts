@@ -1,8 +1,13 @@
 import { validatedGtin } from "./product-identifiers";
+import { findSensitiveDataIssues } from './product-intake/redaction';
 
 // Structured result of AI research. GTIN/MPN are intentionally absent:
 // they are always entered manually and never set by AI.
 export type ProductResearchResult = {
+  researchSources?: Array<{ url: string; title: string; retrievedAt: string }>;
+  researchWarnings?: string[];
+  variantSuggestions?: Array<{ color: string; storage: string }>;
+  hardwareModelSuggestion?: string;
   title?: string;
   subtitle?: string;
   description?: string;
@@ -45,7 +50,8 @@ export type ProductResearchResult = {
   campaignSuggestion?: { badge: { de: string; en: string }; message: { de: string; en: string } };
 };
 
-const SENSITIVE = /(imei|serial|serien|eid|meid)/i;
+const SENSITIVE = /\b(?:imei\d?|serial\s*(?:number|no)|seriennummer|seriennr|eid|meid)\b/i;
+const sensitiveText = (value: string): boolean => SENSITIVE.test(value) || findSensitiveDataIssues(value).length > 0;
 
 export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
@@ -54,20 +60,20 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
     const entry = value[key];
     if (typeof entry !== "string") return undefined;
     const clean = entry.trim().slice(0, max);
-    if (!clean || SENSITIVE.test(clean)) return undefined;
+    if (!clean || sensitiveText(clean)) return undefined;
     return clean;
   };
   const strings = (key: string, max = 2000): string[] | undefined => {
     const entry = value[key];
     if (!Array.isArray(entry)) return undefined;
-    const clean = entry.filter((item): item is string => typeof item === "string").map((item) => item.trim().slice(0, max)).filter(Boolean);
+    const clean = entry.filter((item): item is string => typeof item === "string").map((item) => item.trim().slice(0, max)).filter(item => Boolean(item) && !sensitiveText(item));
     return clean.length ? clean : undefined;
   };
   const specs = Array.isArray(value.specs)
     ? value.specs
         .filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"))
         .map((entry) => ({ label: String(entry.label ?? "").trim().slice(0, 120), value: String(entry.value ?? "").trim().slice(0, 300) }))
-        .filter((entry) => entry.label && entry.value && !SENSITIVE.test(entry.label) && !SENSITIVE.test(entry.value))
+        .filter((entry) => entry.label && entry.value && !sensitiveText(entry.label) && !sensitiveText(entry.value))
         .slice(0, 40)
     : undefined;
   const variants = Array.isArray(value.variants)
@@ -119,7 +125,7 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
     variants,
     gallery,
     batteryDetails: value.batteryDetails && typeof value.batteryDetails === "object"
-      ? { included: Boolean((value.batteryDetails as Record<string, unknown>).included), wattHours: Number((value.batteryDetails as Record<string, unknown>).wattHours) || undefined }
+      ? { included: typeof (value.batteryDetails as Record<string, unknown>).included === 'boolean' ? (value.batteryDetails as { included: boolean }).included : undefined, wattHours: positiveNum((value.batteryDetails as Record<string, unknown>).wattHours) }
       : undefined,
     manufacturer: value.manufacturer && typeof value.manufacturer === "object"
       ? {

@@ -10,9 +10,10 @@ import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-prod
 import type { AdminProductRecord } from "@/lib/admin-product-types";
 import type { ProductChannelFacts } from "@/lib/product-channel-readiness";
 import { mergeCoverAndGallery, type WizardCondition, type WizardStep } from "@/lib/product-intake/safi-wizard";
-import { manufacturerPhotoFile } from "@/lib/product-intake/manufacturer-photos";
+import { getLicensedManufacturerImages } from "@/lib/product-intake/manufacturer-photos";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
+import { researchOfferPatch } from '@/lib/product-research-prefill';
 import { appliedResearchTextFields, type AiTextField } from '@/lib/product-ai-fields';
 
 type CatalogOption = {
@@ -118,24 +119,10 @@ export default function ProductIntakeWizard({
       brand: research.brand ?? current.brand,
       model: research.model ?? current.model,
       category: (research.category as typeof current.category) ?? current.category,
-      sku: research.skuSuggestion ?? current.sku,
+      ...researchOfferPatch(current, research),
       eprelId: research.eprelId ?? current.eprelId,
       featureBullets: research.features?.length ? research.features : current.featureBullets,
       specs: research.specs?.length ? research.specs : current.specs,
-      variants: research.variants?.length
-        ? research.variants.map((variant) => ({
-            color: variant.color,
-            storage: variant.storage,
-            sku: variant.sku ?? "",
-            mpn: "",
-            gtin: "",
-            identifierStatus: "unknown" as const,
-            asin: "",
-            ebayEpid: "",
-            images: variant.images ?? [],
-            isDefault: false,
-          }))
-        : current.variants,
       manufacturer: research.manufacturer
         ? {
             name: research.manufacturer.name ?? "",
@@ -151,11 +138,8 @@ export default function ProductIntakeWizard({
           }
         : current.euResponsiblePerson,
       safetyWarnings: research.safetyWarnings?.length ? research.safetyWarnings : current.safetyWarnings,
-      images: research.gallery?.length ? [...current.images, ...research.gallery] : current.images,
+      images: condition === 'new' && research.gallery?.length ? [...new Set([...current.images, ...research.gallery])] : current.images,
     }));
-    if (research.gtinSuggestion && !gtin) setGtin(research.gtinSuggestion);
-    if (research.mpnSuggestion && !mpn) setMpn(research.mpnSuggestion);
-    if (research.gallery?.[0] && !cover) setCover(research.gallery[0]);
     setAiError("");
   };
 
@@ -220,14 +204,14 @@ export default function ProductIntakeWizard({
   };
 
   const ensureGallery = async () => {
-    if (listing.images.length >= 4 || !listing.brand || !listing.model) return;
+    const color = listing.variants.length === 1 ? listing.variants[0].color : '';
+    if (condition !== 'new' || !color || listing.images.length >= 4 || !listing.brand || !listing.model) return;
     try {
-      const file = await manufacturerPhotoFile(listing.model, "black");
-      if (!file) return;
-      const url = await uploadImage(file);
+      const images = await getLicensedManufacturerImages(listing.brand, listing.model, color);
+      if (!images.length) return;
       setListing((current) => ({
         ...current,
-        images: current.images.includes(url) ? current.images : [...current.images, url],
+        images: [...new Set([...current.images, ...images])],
       }));
     } catch {
       // non-blocking: gallery stays as-is
@@ -362,7 +346,7 @@ export default function ProductIntakeWizard({
           <label className="block text-sm text-muted">
             <div className="flex items-center justify-between gap-2">
               <span>{mode === "existing" ? copy.pinProduct : copy.templateProduct}</span>
-              <AiFillButton locale={locale} query={listing.model || listing.title || selected?.model || selected?.title || ""} onResult={applyResearch} onError={setAiError} />
+              <AiFillButton locale={locale} condition={condition} query={listing.model || listing.title || selected?.model || selected?.title || ""} onResult={applyResearch} onError={setAiError} />
             </div>
             <select value={productId} onChange={(event) => {
               setProductId(event.target.value);
@@ -383,7 +367,7 @@ export default function ProductIntakeWizard({
             <label className="block text-sm text-muted">
               <div className="flex items-center justify-between gap-2">
                 <span>{isGerman ? "Neues Modell / Produktname" : "New model / product name"}</span>
-                <AiFillButton locale={locale} query={listing.title || listing.model} onResult={applyResearch} onError={setAiError} />
+                <AiFillButton locale={locale} condition={condition} query={listing.title || listing.model} onResult={applyResearch} onError={setAiError} />
               </div>
               <input
                 type="text"
@@ -450,7 +434,7 @@ export default function ProductIntakeWizard({
         <div className="mt-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-muted">{copy.autoFillHint}</p>
-            <AiFillButton locale={locale} query={listing.model || listing.title} onResult={applyResearch} onError={setAiError} />
+            <AiFillButton locale={locale} condition={condition} query={listing.model || listing.title} onResult={applyResearch} onError={setAiError} />
           </div>
           <input value={listing.title} onChange={(event) => setListing((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
           <textarea value={listing.description} onChange={(event) => setListing((current) => ({ ...current, description: event.target.value }))} rows={5} className="w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />

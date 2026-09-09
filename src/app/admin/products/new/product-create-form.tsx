@@ -8,6 +8,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
+import { researchOfferPatch, mergeResearchGallery } from '@/lib/product-research-prefill';
 import { appliedResearchTextFields, type AiTextField } from '@/lib/product-ai-fields';
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import EprelPicker, { type EprelMatch } from "@/components/admin/EprelPicker";
@@ -245,8 +246,8 @@ const WIZARD_STEPS: StepConfig[] = [
     labelDe: "Bilder",
     labelEn: "Images",
     icon: "🖼️",
-    descriptionDe: "4-Winkel Galerie & KI-Produktfotos",
-    descriptionEn: "4-angle gallery & AI product photos",
+    descriptionDe: "Eigene Produktfotos und freigegebene Zusatzbilder",
+    descriptionEn: "Your product photos & approved additional images",
   },
   {
     id: "publishing",
@@ -273,7 +274,6 @@ export default function ProductCreateForm() {
   const [error, setError] = useState<string | null>(null);
   const [stepError, setStepError] = useState<string | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [aiJustFilled, setAiJustFilled] = useState(false);
 
   const pendingImageNames = useMemo(
     () => imageFiles.filter((file): file is File => Boolean(file)).map((file) => file.name).join(", "),
@@ -322,7 +322,7 @@ export default function ProductCreateForm() {
       condition: state.condition,
       conditionNote: state.conditionNote,
       hasRealProductPhotos: state.hasRealProductPhotos,
-      imageCount: imageFiles.some(Boolean) || aiGallery.length > 0 ? 1 : 0,
+      imageCount: imageFiles.some(Boolean) ? 1 : 0,
       batteryHealth: state.batteryHealth,
       title: state.title,
       brand: state.brand,
@@ -344,7 +344,7 @@ export default function ProductCreateForm() {
       brand: research.brand ?? prev.brand,
       model: research.model ?? prev.model,
       category: (research.category as FormState["category"]) ?? prev.category,
-      sku: research.skuSuggestion && (!prev.sku || aiJustFilled) ? research.skuSuggestion : (prev.sku || research.skuSuggestion || ""),
+      ...researchOfferPatch(prev, research),
       featureBulletsText: research.features?.length ? research.features.join("\n") : prev.featureBulletsText,
       specsText: research.specs?.length ? research.specs.map((item) => `${item.label}: ${item.value}`).join("\n") : prev.specsText,
       manufacturerName: research.manufacturer?.name ?? prev.manufacturerName,
@@ -354,8 +354,6 @@ export default function ProductCreateForm() {
       euResponsibleAddress: research.euResponsiblePerson?.address ?? prev.euResponsibleAddress,
       euResponsibleEmail: research.euResponsiblePerson?.email ?? prev.euResponsibleEmail,
       safetyWarningsText: research.safetyWarnings?.length ? research.safetyWarnings.join("\n") : prev.safetyWarningsText,
-      gtin: research.gtinSuggestion && !prev.gtin ? research.gtinSuggestion : prev.gtin,
-      mpn: research.mpnSuggestion && !prev.mpn ? research.mpnSuggestion : prev.mpn,
       eprelId: research.eprelId || prev.eprelId,
       energyEfficiencyClass: research.energyLabel?.efficiencyClass ?? prev.energyEfficiencyClass,
       energyBatteryEndurance: research.energyLabel?.batteryEndurance ?? prev.energyBatteryEndurance,
@@ -367,28 +365,12 @@ export default function ProductCreateForm() {
       energyFicheDe: research.energyLabel?.ficheDe ?? prev.energyFicheDe,
       energyFicheEn: research.energyLabel?.ficheEn ?? prev.energyFicheEn,
       channelFields: research.countryOfOrigin ? { ...prev.channelFields, countryOfOrigin: research.countryOfOrigin } : prev.channelFields,
-      variants: research.variants?.length
-        ? research.variants.map((variant) => ({
-            color: variant.color,
-            storage: variant.storage,
-            sku: variant.sku ?? "",
-            mpn: "",
-            gtin: "",
-            identifierStatus: "unknown" as const,
-            asin: "",
-            ebayEpid: "",
-            images: variant.images ?? [],
-            isDefault: false,
-          }))
-        : prev.variants,
     }));
-    if (research.gallery && research.gallery.length > 0) {
+    if (state.condition === 'new' && research.gallery && research.gallery.length > 0) {
       setAiGallery(research.gallery);
     }
     setAiError("");
     setAiSuccess(true);
-    setAiJustFilled(true);
-    setTimeout(() => setAiJustFilled(false), 2800);
   };
 
   const patchVariant = (index: number, patch: Partial<FormState["variants"][number]>) => {
@@ -408,7 +390,7 @@ export default function ProductCreateForm() {
       condition: state.condition,
       conditionNote: state.conditionNote,
       hasRealProductPhotos: state.hasRealProductPhotos,
-      imageCount: imageFiles.some(Boolean) || aiGallery.length > 0 ? 1 : 0,
+      imageCount: imageFiles.some(Boolean) ? 1 : 0,
       batteryHealth: state.batteryHealth,
       title: state.title,
       brand: state.brand,
@@ -419,7 +401,7 @@ export default function ProductCreateForm() {
     const isContentValid = Boolean(state.description.trim() || state.featureBulletsText.trim() || state.specsText.trim());
     const isVariantsValid = true;
     const isChannelsValid = true;
-    const isImagesValid = state.condition === "new" || imageFiles.some(Boolean) || aiGallery.length > 0;
+    const isImagesValid = aiSuccess ? imageFiles.some(Boolean) : state.condition === "new" || imageFiles.some(Boolean);
     const isPublishingValid = isBasicsValid && isPricingValid && isConditionValid;
 
     return {
@@ -432,7 +414,7 @@ export default function ProductCreateForm() {
       images: isImagesValid,
       publishing: isPublishingValid,
     };
-  }, [state, imageFiles, aiGallery, isGerman]);
+  }, [state, imageFiles, aiSuccess, isGerman]);
 
   const currentStepIndex = WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -493,6 +475,12 @@ export default function ProductCreateForm() {
     setError(null);
     setStepError(null);
 
+    if (aiSuccess && !imageFiles.some(Boolean)) {
+      setError(isGerman ? 'Bitte ein eigenes Produktfoto als Titelbild hochladen. Recherchefotos und Herstellerbilder ersetzen es nicht.' : 'Upload your own product cover photo. Research photos and manufacturer images do not replace it.');
+      setCurrentStep('images');
+      setSubmitting(false);
+      return;
+    }
     const conditionValidationError = getConditionValidationError();
     if (conditionValidationError) {
       setError(conditionValidationError);
@@ -608,7 +596,7 @@ export default function ProductCreateForm() {
             ficheEn: state.energyFicheEn,
           },
           variants: variantsToSave,
-          images: [...aiGallery, ...imageUrls],
+          images: mergeResearchGallery(imageUrls, aiGallery, state.condition),
           featureBullets: parseFeatureBullets(state.featureBulletsText),
           specs: parseSpecs(state.specsText),
           isHomepageFeatured: state.isHomepageFeatured,
@@ -668,6 +656,7 @@ export default function ProductCreateForm() {
 
           <div className="flex items-center gap-2">
             <AiFillButton
+              condition={state.condition}
               locale={isGerman ? "de" : "en"}
               query={state.model || state.title}
               onResult={applyResearch}
@@ -1522,11 +1511,11 @@ export default function ProductCreateForm() {
             </p>
           ) : null}
 
-          {aiGallery.length > 0 && (
+          {state.condition === 'new' && aiGallery.length > 0 && (
             <div className="rounded-xl border border-gold/40 bg-surface-strong/60 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-gold flex items-center gap-2">
-                  ✨ {isGerman ? "KI-Produktfotos (automatisch recherchiert)" : "AI Product Photos (Auto-loaded)"}
+                  {isGerman ? "Freigegebene lizenzierte Zusatzbilder" : "Approved licensed additional images"}
                 </span>
                 <span className="text-xs text-muted">{aiGallery.length} {isGerman ? "Bilder" : "Images"}</span>
               </div>
@@ -1625,7 +1614,7 @@ export default function ProductCreateForm() {
               </div>
               <div className="text-xs text-muted space-y-1">
                 <p>Bilder hochgeladen: <span className="font-bold text-foreground">{imageFiles.filter(Boolean).length}</span></p>
-                <p>KI-Fotos: <span className="font-bold text-foreground">{aiGallery.length}</span></p>
+                <p>{isGerman ? 'Lizenzierte Zusatzbilder' : 'Licensed additional images'}: <span className="font-bold text-foreground">{state.condition === 'new' ? aiGallery.length : 0}</span></p>
                 <p>Varianten: <span className="font-bold text-foreground">{state.variants.length}</span></p>
                 <p>Highlights: <span className="font-bold text-foreground">{parseFeatureBullets(state.featureBulletsText).length}</span></p>
               </div>

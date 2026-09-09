@@ -1,402 +1,78 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
+import { canManageProducts } from '@/lib/admin-auth';
+import { rejectCrossSiteAdminMutation } from '@/lib/admin-csrf';
+import { readSessionUserFromRequest } from '@/lib/session';
+import { findSensitiveDataIssues } from '@/lib/product-intake/redaction';
+import { prepareResearchPhoto } from '@/lib/product-research-photo';
+import { researchProductFromOfficialPages } from '@/lib/product-research-service';
+import { researchExactEprel } from '@/lib/product-research-eprel';
+import { licensedResearchImages } from '@/lib/product-research-assets';
 
-import sharp from "sharp";
-import { canManageProducts } from "@/lib/admin-auth";
-import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
-import { readSessionUserFromRequest } from "@/lib/session";
-import { findSensitiveDataIssues } from "@/lib/product-intake/redaction";
-import { uploadProductImage } from "@/lib/blob";
-import { sanitizeResearchResult } from "@/lib/product-research";
-import { query as dbQuery } from "@/lib/db";
-import { eprelAssetRoutes, eprelCycles, eprelEndurance } from "@/lib/eprel";
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-export const dynamic = "force-dynamic";
+const messages: Record<string, [string, string]> = {
+  gemini_key_missing: ['Gemini API-Schlüssel ist nicht eingerichtet.', 'Gemini API key is not configured.'],
+  official_sources_unavailable: ['Keine passende offizielle Quelle konnte aktuell gelesen werden. Modell genauer angeben oder Angaben manuell ergänzen.', 'No matching official source could be read. Refine the model or complete the fields manually.'],
+  research_unverified_model: ['Das genaue Modell konnte nicht aus offiziellen Quellen bestätigt werden.', 'The exact model could not be confirmed from official sources.'],
+  research_not_german: ['Die Antwort war nicht auf Deutsch und wurde nicht übernommen. Bitte erneut versuchen.', 'The response was not in German and was not applied. Please retry.'],
+  research_rate_limited: ['Die Recherche ist vorübergehend ausgelastet. Bitte später erneut versuchen.', 'Research is temporarily rate-limited. Please retry later.'],
+  research_timeout: ['Die Recherche hat zu lange gedauert. Deine Eingaben bleiben unverändert.', 'Research timed out. Your entries remain unchanged.'],
+  photo_invalid: ['Bitte ein klares JPEG-, PNG- oder WebP-Foto bis 8 MB verwenden.', 'Use a clear JPEG, PNG or WebP photo up to 8 MB.'],
+  photo_privacy_unavailable: ['Die lokale Datenschutzprüfung ist nicht erreichbar. Das Foto wurde nicht an Gemini gesendet.', 'Local privacy checking is unavailable. The photo was not sent to Gemini.'],
+  photo_privacy_failed: ['Das Foto konnte nicht sicher vorbereitet werden. Bitte sensible Felder abdecken und ein klareres Foto senden.', 'The photo could not be prepared safely. Cover sensitive fields and send a clearer photo.'],
+  photo_identity_conflict: ['Die Fotoangaben sind widersprüchlich. Bitte Modell und Foto prüfen.', 'Photo evidence conflicts. Check the model and photo.'],
+  photo_wrong_document: ['Bitte hier keine Ausweise, Rechnungen oder Versanddokumente hochladen. Nutze nur das Produktetikett oder die Geräteinformationen.', 'Do not upload identity, invoice or shipping documents here. Use only the product label or device information.'],
+  photo_device_evidence_missing: ['Keine eindeutige Geräteangabe erkannt. Bitte ein klares Barcode-Etikett oder die Modellinformationen des Geräts fotografieren.', 'No clear device identity was detected. Use a clear barcode label or device model-information screenshot.'],
+  research_private_data: ['Die Antwort enthielt nicht zulässige Gerätekennungen und wurde verworfen.', 'The response contained prohibited device identifiers and was discarded.'],
+  research_invalid_json: ['Die Recherche lieferte keine verwendbare Antwort. Deine Eingaben bleiben unverändert.', 'Research returned an unusable response. Your entries remain unchanged.'],
+  research_incomplete: ['Die Recherche war unvollständig und wurde nicht übernommen.', 'Research was incomplete and was not applied.'],
+  research_provider_failed: ['Der Recherchedienst ist vorübergehend nicht verfügbar. Bitte erneut versuchen.', 'The research provider is temporarily unavailable. Please retry.'],
+  research_failed: ['Die Recherche konnte nicht abgeschlossen werden. Deine Eingaben bleiben unverändert.', 'Research could not be completed. Your entries remain unchanged.'],
+};
 
-
-function geminiKey(): string {
-  const key = process.env.GEMINI_API_KEY?.trim();
-  if (!key) throw new Error("GEMINI_API_KEY is not configured");
-  return key;
-}
-
-const SYSTEM_PROMPT = `You are an expert product intelligence assistant for Apfel Park, a premium smartphone and electronics store in Hamburg. The store language is German; all customer-facing text must be in professional German.
-
-You support ALL smartphone, tablet, and accessory brands worldwide, including Apple, Samsung, Google Pixel, Xiaomi, POCO, Redmi, Nothing, Fairphone, OnePlus, Honor, Sony, Motorola, Asus, and more.
-
-Given a query or device photo, research the REAL device using Google Search grounding and return STRICT JSON with ONLY these keys:
-- title: string (German: Brand + Marketing Model + Storage + German Color name, e.g. "Nothing Phone (2) 256 GB Dunkelgrau", "Xiaomi 14 Ultra 512 GB Schwarz", "Fairphone 5 256 GB Moosgrün", "Google Pixel 9 Pro 256 GB Hazel")
-- subtitle: string (German: short selling tagline)
-- description: string (German: 2-3 professional luxury paragraphs: Design & Materialien, Display & Performance, Kamera-System, Akkulaufzeit & Ladeleistung, Besondere Features)
-- brand: string (e.g. "Nothing", "Xiaomi", "POCO", "Fairphone", "Google", "OnePlus", "Sony", "Apple", "Samsung", "Honor")
-- model: string (e.g. "Phone (2)", "14 Ultra", "Pixel 9 Pro", "Fairphone 5", "iPhone 16 Pro Max", "Galaxy S24 Ultra")
-- category: one of "smartphones", "tablets", "accessories", "consoles", "laptops"
-- specs: array of {label, value} (German labels: Display, Prozessor / Chip, Arbeitsspeicher, Interner Speicher, Hauptkamera, Frontkamera, Akku & Laden, Betriebssystem, Konnektivität, Schutzklasse / IP-Zertifizierung, Abmessungen & Gewicht)
-- features: array of 4-6 strings (German key selling highlights)
-- variants: array of {color, storage} (German color names matching official releases, e.g. "Dunkelgrau", "Weiß", "Obsidian", "Porcelain", "Titan Schwarz", "Moosgrün")
-- manufacturer: {name, address, email} (Official legal manufacturer entity for EU GPSR compliance)
-  Reference Entities:
-  * Nothing: { name: "Nothing Technology Limited", address: "80 Cheapside, London EC2V 6EE, UK", email: "support@nothing.tech" }
-  * Fairphone: { name: "Fairphone B.V.", address: "Van Diemenstraat 200, 1013 CP Amsterdam, Netherlands", email: "support@fairphone.com" }
-  * Xiaomi / POCO / Redmi: { name: "Xiaomi Technology Netherlands B.V.", address: "Prinses Beatrixlaan 582, 2595BM The Hague, Netherlands", email: "service.de@xiaomi.com" }
-  * Google: { name: "Google Ireland Limited", address: "Gordon House, Barrow Street, Dublin 4, Ireland", email: "support-deutschland@google.com" }
-  * OnePlus: { name: "Reflection Investment B.V.", address: "Keizersgracht 482, 1017EG Amsterdam, Netherlands", email: "support.de@oneplus.com" }
-  * Sony: { name: "Sony Europe B.V.", address: "Da Vincilaan 7-D1, 1930 Zaventem, Belgium", email: "customersupport.de@sony.com" }
-  * Samsung: { name: "Samsung Electronics GmbH", address: "Am Kronberger Hang 6, 65824 Schwalbach am Taunus, Germany", email: "hotline@samsung.de" }
-  * Apple: { name: "Apple Distribution International Ltd", address: "Hollyhill Industrial Estate, Cork, Ireland", email: "contactus.de@euro.apple.com" }
-  * Honor: { name: "Honor Technologies Germany GmbH", address: "Toulouser Allee 27, 40211 Düsseldorf, Germany", email: "de.support@honor.com" }
-  * Motorola: { name: "Motorola Mobility Germany GmbH", address: "Meisenstraße 96, 33607 Bielefeld, Germany", email: "de-support@motorola.com" }
-- euResponsiblePerson: {name, address, email} (EU Importer or EU Representative)
-- eprelRegistrationNumber: string (EPREL EU registration number e.g. "2402623", "2247679" or model identifier like A3090, SM-S931B if known; else omit)
-- energyLabel: {efficiencyClass, batteryEndurance, batteryCycles, repairabilityClass, reliabilityClass, ipRating} (EU Energy label rating, e.g. efficiencyClass "A" or "B", batteryEndurance e.g. "41 h 0 min", batteryCycles e.g. 1000)
-- countryOfOrigin: two-letter ISO code (e.g. "CN", "VN", "IN", "TW")
-- batteryDetails: {included: boolean, wattHours: number}
-- safetyWarnings: array of strings (German safety instructions, e.g. "Vor Feuchtigkeit und extremen Temperaturen schützen. Nur mit zertifizierten Ladegeräten laden.")
-- gtin: string (GTIN/EAN only if factual; else omit)
-- mpn: string (Manufacturer Part Number / Model Identifier only if factual; else omit)
-- dimensions: {heightMm: number, widthMm: number, depthMm: number, weightG: number, screenInches: number} (Exact device physical dimensions in mm, weight in g, screen in inches)
-- packageContents: array of {label: {de: string, en: string}, included: boolean} (Official retail box contents and accessories e.g. Ladekabel included=true, Netzteil included=false)
-- refurbishmentSteps: array of 4-6 {title: {de: string, en: string}, description: {de: string, en: string}} (Certified inspection and refurbishment steps in German/English)
-- campaignSuggestion: {badge: {de: string, en: string}, message: {de: string, en: string}} (Short promotional badge and compelling 1-2 sentence tagline in German and English)
-
-Rules:
-- Search and return real facts for ANY brand worldwide.
-- Never invent specs.
-- Return ONLY valid JSON, no markdown.`;
-
-async function callGemini(payload: { prompt: string; image?: { mime: string; data: string } }): Promise<unknown> {
-  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: payload.prompt }];
-  if (payload.image) parts.push({ inlineData: { mimeType: payload.image.mime, data: payload.image.data } });
-
-  const tryModel = async (model: string, timeoutMs: number) => {
-    const isGemini37 = model.includes("3.7");
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey()}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ parts }],
-        generationConfig: {
-          temperature: 0.1,
-          ...(isGemini37 ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
-        },
-        tools: [{ google_search: {} }],
-      }),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    if (!response.ok) {
-      const detail = await response.text().catch(() => "");
-      throw new Error(`Gemini ${model} request failed (${response.status}) ${detail.slice(0, 200)}`);
-    }
-    const data = (await response.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-    const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("");
-    if (!text) throw new Error(`Gemini ${model} returned no content`);
-    const firstBrace = text.indexOf("{");
-    const lastBrace = text.lastIndexOf("}");
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-      throw new Error(`Gemini ${model} returned no valid JSON object`);
-    }
-    return JSON.parse(text.slice(firstBrace, lastBrace + 1));
-  };
-
-  try {
-    return await tryModel("gemini-3.7-flash", 60000);
-  } catch (err) {
-    console.warn("[product research] Primary model failed, attempting fallback:", err instanceof Error ? err.message : err);
-    return await tryModel("gemini-2.5-flash", 45000);
-  }
-}
-
-// Search for candidate official product images from search indexes
-async function searchProductOriginalImages(query: string): Promise<string[]> {
-  try {
-    const searchTerms = `${query} official packshot white background -case -cover -skin -hülle -hulle`;
-    const vqdRes = await fetch(`https://duckduckgo.com/?q=${encodeURIComponent(searchTerms)}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      },
-      signal: AbortSignal.timeout(1800),
-    });
-    const vqdHtml = await vqdRes.text();
-    const vqdMatch = vqdHtml.match(/vqd=([0-9-]+)/) || vqdHtml.match(/vqd="([^"]+)"/) || vqdHtml.match(/vqd=([^&]+)/);
-    if (!vqdMatch) return [];
-    const vqd = vqdMatch[1];
-    const imgRes = await fetch(`https://duckduckgo.com/i.js?l=de-de&o=json&q=${encodeURIComponent(searchTerms)}&vqd=${vqd}&f=,,,type:photo,`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      },
-      signal: AbortSignal.timeout(1800),
-    });
-    const data = (await imgRes.json().catch(() => ({}))) as { results?: Array<{ image?: string }> };
-    return (data.results || [])
-      .map((r) => r.image)
-      .filter((url): url is string => typeof url === "string" && url.startsWith("https://") && !url.includes("case") && !url.includes("cover") && !url.includes("hulle") && !url.includes("hülle"))
-      .slice(0, 3);
-  } catch {
-    return [];
-  }
-}
-
-// Inspect candidate packshots and pick the best image buffer
-async function pickBestPackshot(
-  candidates: string[],
-): Promise<Buffer | null> {
-  for (const url of candidates.slice(0, 2)) {
-    try {
-      const res = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        },
-        signal: AbortSignal.timeout(1500),
-      });
-      if (!res.ok) continue;
-      const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.length < 4000 || buf.length > 10 * 1024 * 1024) continue;
-
-      const meta = await sharp(buf).metadata().catch(() => null);
-      if (!meta?.width || meta.width < 250 || !meta?.height || meta.height < 250) continue;
-
-      return buf;
-    } catch {
-      // try next
-    }
-  }
-  return null;
-}
-
-// Google Merchant Center standard: 1500x1500px, 1:1 square, 88% scale, WebP
-async function standardizePackshotBuffer(inputBuffer: Buffer, targetSize = 1500): Promise<Buffer> {
-  try {
-    let pipeline = sharp(inputBuffer, { failOn: "warning" }).rotate();
-    try {
-      pipeline = pipeline.trim({ threshold: 12 });
-    } catch {
-      // trim is non-fatal
-    }
-    const productSize = Math.round(targetSize * 0.88);
-    const trimmedBuf = await pipeline.toBuffer();
-
-    return await sharp(trimmedBuf)
-      .resize({
-        width: productSize,
-        height: productSize,
-        fit: "contain",
-        background: { r: 255, g: 255, b: 255, alpha: 0 },
-      })
-      .extend({
-        top: Math.round((targetSize - productSize) / 2),
-        bottom: Math.round((targetSize - productSize) / 2),
-        left: Math.round((targetSize - productSize) / 2),
-        right: Math.round((targetSize - productSize) / 2),
-        background: { r: 255, g: 255, b: 255, alpha: 0 },
-      })
-      .webp({ quality: 85, effort: 2 })
-      .toBuffer();
-  } catch {
-    return inputBuffer;
-  }
-}
-
-// Convert standardized buffer to WebP and upload to blob storage
-async function uploadPackshotBuffer(buffer: Buffer): Promise<string | null> {
-  try {
-    const standardized = await standardizePackshotBuffer(buffer, 1500);
-    const file = new File([standardized as unknown as BlobPart], `research-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`, { type: "image/webp" });
-    const uploaded = await uploadProductImage(file);
-    return uploaded.url;
-  } catch {
-    return null;
-  }
-}
-
-function generateProductSku(brand: string, model: string, storage?: string): string {
-  const brandCode = brand.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) || "DEV";
-  const modelCode = model.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10) || "MODEL";
-  const storageCode = storage ? storage.trim().toUpperCase().replace(/[^A-Z0-9]/g, "") : "";
-  const randomExt = Math.floor(100 + Math.random() * 900);
-  return `AP-${brandCode}-${modelCode}${storageCode ? `-${storageCode}` : ""}-${randomExt}`;
-}
-
-function generateVariantSku(brand: string, model: string, color?: string, storage?: string): string {
-  const brandCode = brand.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) || "DEV";
-  const modelCode = model.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10) || "MODEL";
-  const storageCode = storage ? storage.trim().toUpperCase().replace(/[^A-Z0-9]/g, "") : "";
-  const colorCode = color ? color.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6) : "";
-  return `AP-${brandCode}-${modelCode}${storageCode ? `-${storageCode}` : ""}${colorCode ? `-${colorCode}` : ""}`;
-}
-
-async function matchEprelData(brand: string, model: string, mpn?: string | null, eprelInput?: string | null) {
-  try {
-    const cleanInput = (eprelInput || "").trim();
-    if (cleanInput) {
-      const res = await dbQuery(
-        `SELECT * FROM eprel_models WHERE registration_number = $1 OR model_identifier ILIKE $2 LIMIT 1`,
-        [cleanInput, `%${cleanInput}%`],
-      );
-      if (res.rows[0]) return res.rows[0];
-    }
-    const cleanMpn = (mpn || "").trim();
-    if (cleanMpn.length >= 3) {
-      const res = await dbQuery(
-        `SELECT * FROM eprel_models WHERE model_identifier ILIKE $1 LIMIT 1`,
-        [`%${cleanMpn}%`],
-      );
-      if (res.rows[0]) return res.rows[0];
-    }
-    if (brand && model) {
-      const cleanModel = model.replace(/^(iPhone|Galaxy|Phone|Xiaomi|Redmi|POCO|Google|Pixel|Nothing)\s*/i, "").trim();
-      const res = await dbQuery(
-        `SELECT * FROM eprel_models WHERE supplier ILIKE $1 AND (model_identifier ILIKE $2 OR model_identifier ILIKE $3) ORDER BY on_market_start DESC NULLS LAST LIMIT 1`,
-        [`%${brand.trim()}%`, `%${model.trim()}%`, `%${cleanModel}%`],
-      );
-      if (res.rows[0]) return res.rows[0];
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const user = await readSessionUserFromRequest(request);
-  if (!canManageProducts(user)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canManageProducts(user)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const csrf = rejectCrossSiteAdminMutation(request);
   if (csrf) return csrf;
-  if (process.env.LEGACY_PRODUCT_RESEARCH_ENABLED !== "true") {
-    return NextResponse.json(
-      { error: "Legacy product research is disabled; use Product Intake v2", code: "legacy_research_disabled" },
-      { status: 410 },
-    );
-  }
-
+  if (process.env.LEGACY_PRODUCT_RESEARCH_ENABLED !== 'true') return NextResponse.json({ error: 'Product research is disabled', code: 'legacy_research_disabled' }, { status: 410 });
   try {
-    const contentType = request.headers.get("content-type") ?? "";
-    let query = "";
-    let image: { mime: string; data: string } | undefined;
-
-    if (contentType.includes("multipart/form-data")) {
-      const form = await request.formData();
-      query = String(form.get("query") ?? "").trim().slice(0, 200);
-      const file = form.get("photo");
-      if (file instanceof File && file.size > 0 && file.size <= 8 * 1024 * 1024) {
-        const bytes = Buffer.from(await file.arrayBuffer());
-        const mime = file.type.startsWith("image/") ? file.type : "image/jpeg";
-        image = { mime, data: bytes.toString("base64") };
+    const form = (request.headers.get('content-type') ?? '').includes('multipart/form-data') ? await request.formData() : null;
+    const body = form ? Object.fromEntries(form.entries()) : await request.json() as Record<string, unknown>;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    const query = typeof body.query === 'string' ? body.query.trim() : '';
+    const condition = typeof body.condition === 'string' ? body.condition : undefined;
+    const hardwareModel = typeof body.hardwareModel === 'string' ? body.hardwareModel.trim() : '';
+    const eprelId = typeof body.eprelId === 'string' ? body.eprelId.trim() : '';
+    const color = typeof body.color === 'string' ? body.color.trim() : '';
+    const file = form?.get('photo');
+    if (query.length > 200 || hardwareModel.length > 100 || eprelId.length > 16 || color.length > 80
+        || (condition && !['new','open_box','used'].includes(condition)) || (!query && !(file instanceof File))) {
+      return NextResponse.json({ error: 'Provide a model name or photo; check input lengths and condition.', code: 'invalid_input' }, { status: 400 });
+    }
+    if (findSensitiveDataIssues({ query, hardwareModel, eprelId, color }).length) return NextResponse.json({ error: 'Query contains sensitive identifiers', code: 'private_input' }, { status: 400 });
+    const signal = AbortSignal.any([request.signal, AbortSignal.timeout(75000)]);
+    const photo = file instanceof File ? await prepareResearchPhoto(file, typeof body.assetType === 'string' ? body.assetType : 'barcode_label') : undefined;
+    const research = await researchProductFromOfficialPages({ query, condition, photo, hardwareModel }, signal);
+    research.skuSuggestion = `AP-${randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase()}`;
+    try {
+      const eprel = await researchExactEprel({ brand: research.brand!, model: research.model!, hardwareModel, eprelId }, signal);
+      if (eprel) {
+        const { source, ...fields } = eprel;
+        Object.assign(research, fields);
+        research.researchSources?.push(source);
       }
-    } else {
-      const body = (await request.json().catch(() => ({}))) as { query?: string };
-      query = String(body.query ?? "").trim().slice(0, 200);
-    }
-
-    if (!query && !image) return NextResponse.json({ error: "Provide a model name or photo" }, { status: 400 });
-    if (query && findSensitiveDataIssues({ query }).length > 0) {
-      return NextResponse.json({ error: "Query contains sensitive identifiers" }, { status: 400 });
-    }
-
-    const prompt = `Research this product and return the JSON. Model/query: ${query || "from photo"}`;
-    const raw = await callGemini({ prompt, image });
-    const research = sanitizeResearchResult(raw);
-
-    const brand = research.brand || "";
-    const model = research.model || query;
-
-    // 1. Auto-generate SKU based on phone model + extension
-    const firstStorage = research.variants?.[0]?.storage || "";
-    const productSku = generateProductSku(brand, model, firstStorage);
-    research.skuSuggestion = productSku;
-
-    if (research.variants && research.variants.length > 0) {
-      research.variants = research.variants.map((v) => ({
-        ...v,
-        sku: v.sku || generateVariantSku(brand, model, v.color, v.storage),
-      }));
-    }
-
-    // 2. Auto-match EPREL EU Energy Label (from local register or AI findings)
-    const eprelMatch = await matchEprelData(brand, model, research.mpnSuggestion, research.eprelId);
-    if (eprelMatch) {
-      const routes = eprelAssetRoutes(String(eprelMatch.registration_number));
-      research.eprelId = String(eprelMatch.registration_number);
-      research.energyLabel = {
-        efficiencyClass: eprelMatch.energy_class || research.energyLabel?.efficiencyClass || "A",
-        batteryEndurance: eprelEndurance(eprelMatch.battery_endurance_minutes) || research.energyLabel?.batteryEndurance || undefined,
-        batteryCycles: eprelCycles(eprelMatch.battery_endurance_cycles) || 1000,
-        repairabilityClass: eprelMatch.repairability_class || undefined,
-        reliabilityClass: eprelMatch.reliability_class || undefined,
-        ipRating: eprelMatch.ingress_protection || undefined,
-        labelImage: routes.labelImage,
-        ficheDe: routes.ficheDe,
-        ficheEn: routes.ficheEn,
-      };
-    }
-
-    // Fast bounded packshot discovery (capped at 4 seconds total to prevent timeouts)
-    const gallerySet = new Set<string>();
-
-    const enrichImages = async () => {
-      if (research.variants && research.variants.length > 0) {
-        const uniqueColors = Array.from(
-          new Set(research.variants.map((v) => v.color.trim()).filter(Boolean)),
-        ).slice(0, 2);
-
-        const colorImagesMap = new Map<string, string[]>();
-
-        await Promise.allSettled(
-          uniqueColors.map(async (color) => {
-            try {
-              const candidates = await searchProductOriginalImages(`${brand} ${model} ${color}`);
-              if (candidates.length === 0) return;
-
-              const winnerBuf = await pickBestPackshot(candidates);
-              if (!winnerBuf) return;
-
-              const uploadedUrl = await uploadPackshotBuffer(winnerBuf);
-              if (uploadedUrl) {
-                colorImagesMap.set(color, [uploadedUrl]);
-                gallerySet.add(uploadedUrl);
-              }
-            } catch {
-              // non-fatal
-            }
-          }),
-        );
-
-        research.variants = research.variants.map((variant) => {
-          const colorImages = colorImagesMap.get(variant.color.trim());
-          return {
-            ...variant,
-            images: colorImages && colorImages.length > 0 ? colorImages : variant.images ?? [],
-          };
-        });
-      }
-
-      if (gallerySet.size === 0) {
-        try {
-          const generalCandidates = await searchProductOriginalImages(`${brand} ${model} official packshot`);
-          if (generalCandidates.length > 0) {
-            const winnerBuf = await pickBestPackshot(generalCandidates);
-            if (winnerBuf) {
-              const uploaded = await uploadPackshotBuffer(winnerBuf);
-              if (uploaded) gallerySet.add(uploaded);
-            }
-          }
-        } catch {
-          // non-fatal
-        }
-      }
-    };
-
-    // Race image enrichment with a 4-second timeout so API response is never delayed
-    const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 4000));
-    await Promise.race([enrichImages(), timeoutPromise]);
-
-    research.gallery = Array.from(gallerySet).slice(0, 6);
-
+      else research.researchWarnings?.push('EPREL nicht automatisch bestätigt: exakte Hardware-Modellnummer mit dem Register abgleichen. Es wurde keine Energieklasse geraten.');
+    } catch { research.researchWarnings?.push('EPREL ist gerade nicht erreichbar. Energieangaben bitte später anhand des Registers ergänzen.'); }
+    research.gallery = await licensedResearchImages({ brand: research.brand!, model: research.model!, query, color, condition });
+    if (!research.gallery.length) research.researchWarnings?.push('Keine freigegebenen Herstellerbilder für dieses Modell und diese Farbe hinterlegt. Bitte eigene Produktfotos hochladen.');
     return NextResponse.json({ success: true, research });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Research failed";
-    console.error("[product research]", message);
-    const keyMissing = message.includes("GEMINI_API_KEY");
-    return NextResponse.json({ error: keyMissing ? "Gemini API key is not configured" : "Research failed", code: keyMissing ? "gemini_key_missing" : "research_failed" }, { status: keyMissing ? 503 : 500 });
+    const key = error instanceof Error && ['AbortError', 'TimeoutError'].includes(error.name) ? 'research_timeout' : error instanceof Error && messages[error.message] ? error.message : 'research_failed';
+    const [errorDe, errorEn] = messages[key];
+    console.warn('[product research]', { code: key });
+    return NextResponse.json({ error: errorDe, errorEn, code: key }, { status: key.startsWith('photo_') || key === 'research_private_data' ? 422 : key === 'research_rate_limited' ? 429 : 503 });
   }
 }
