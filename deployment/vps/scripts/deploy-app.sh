@@ -99,6 +99,14 @@ cp -r "$release/public/." "$release/.next/standalone/public/"
 # service starts -- Next resolves public/ at boot.
 ln -sfn "$APP_ROOT/shared/uploads" "$release/.next/standalone/public/uploads"
 
+# nginx now reads immutable assets from a shared archive. Preserve every
+# retained release here as well as in the newer release deployment helper.
+mkdir -p "$APP_ROOT/shared/next-static"
+for assets in "$RELEASES"/*/.next/static; do
+  [ -d "$assets" ] || continue
+  rsync -rt --ignore-existing --chmod=D755,F644 "$assets/" "$APP_ROOT/shared/next-static/"
+done
+
 previous="$(readlink -f "$CURRENT" 2>/dev/null || true)"
 
 log "activating"
