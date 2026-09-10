@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import BillboardPreviewLab from "@/components/billboards/BillboardPreviewLab";
-import { isLocale, type Locale } from "@/lib/i18n";
+import { isLocale } from "@/lib/i18n";
 import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
