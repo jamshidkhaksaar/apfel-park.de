@@ -14,12 +14,14 @@ export type DeviceModelInfo = {
   originalPrice: string;
   savings: string;
   theme: "burgundy" | "glacier" | "gold" | "violet" | "mint" | "obsidian";
-  image: string;
+  billboardImage: string;
+  productImage: string;
   imageAlt: string;
   youtubeId?: string;
   videoTitle?: string;
   specs: Array<{ label: { de: string; en: string }; value: { de: string; en: string } }>;
   features: Array<{ icon: string; title: { de: string; en: string }; desc: { de: string; en: string } }>;
+  hotspots: Array<{ x: number; y: number; title: { de: string; en: string }; desc: { de: string; en: string } }>;
   ctaPrimary: { de: string; en: string; href: string };
   ctaSecondary: { de: string; en: string; href: string };
 };
@@ -40,10 +42,11 @@ export const SHOWCASE_DEVICES: DeviceModelInfo[] = [
     priceTag: "ab 1.999 €",
     originalPrice: "UVP 2.199 €",
     savings: "Exklusiv vorbestellbar",
-    theme: "burgundy",
-    image: "/images/shop2.jpg",
-    imageAlt: "Apple iPhone Duo Foldable",
-    youtubeId: "dQw4w9WgXcQ", // Placeholder for official keynote video
+    theme: "gold",
+    billboardImage: "/images/billboards/iphone-duo-billboard.jpg",
+    productImage: "/images/billboards/iphone-duo-product.jpg",
+    imageAlt: "Apple iPhone Duo Foldable Smartphone Billboard",
+    youtubeId: "dQw4w9WgXcQ",
     videoTitle: "Apple iPhone Duo – Official Reveal & Feature Tour",
     specs: [
       { label: { de: "Hauptdisplay", en: "Main Display" }, value: { de: "7.6\" Foldable OLED, 120Hz ProMotion, 3.000 Nits", en: "7.6\" Foldable OLED, 120Hz ProMotion, 3,000 Nits" } },
@@ -59,6 +62,11 @@ export const SHOWCASE_DEVICES: DeviceModelInfo[] = [
       { icon: "⚡", title: { de: "A20 Pro (2nm) Power", en: "A20 Pro (2nm) Power" }, desc: { de: "Höchste Effizienz mit Dual-Akku-Architektur für 30h+ Laufzeit.", en: "Unmatched 2nm efficiency with dual-battery for 30h+ runtime." } },
       { icon: "🧠", title: { de: "Apple Intelligence Pro", en: "Apple Intelligence Pro" }, desc: { de: "Tief integrierte On-Device Siri AI und visuelle Live-Assistenz.", en: "Deep on-device Siri AI and live visual intelligence." } },
       { icon: "🛡️", title: { de: "12 Monate Garantie", en: "12-Month Warranty" }, desc: { de: "Volle Apfel Park Händlergarantie & Sofort-Service in Hamburg.", en: "Full Apfel Park dealer warranty & local service in Hamburg." } },
+    ],
+    hotspots: [
+      { x: 30, y: 35, title: { de: "Ultra Thin Glass (UTG)", en: "Ultra Thin Glass (UTG)" }, desc: { de: "Nahtloses 7.6\" Innen-Display ohne sichtbaren Knick.", en: "Seamless 7.6\" inner canvas with invisible hinge fold." } },
+      { x: 50, y: 25, title: { de: "Titan-Scharnier Grad 5", en: "Grade 5 Titanium Hinge" }, desc: { de: "Aerospace-Titanium für 400.000+ Faltzyklen getestet.", en: "Aerospace titanium tested for 400,000+ fold cycles." } },
+      { x: 45, y: 75, title: { de: "Apple A20 Pro 2nm", en: "Apple A20 Pro 2nm" }, desc: { de: "Weltweit erster 2nm Mobilprozessor mit Raytracing.", en: "World's first 2nm mobile SoC with raytracing." } },
     ],
     ctaPrimary: { de: "Jetzt vorbestellen", en: "Pre-order now", href: "#" },
     ctaSecondary: { de: "Technische Daten ansehen", en: "View full specs", href: "#specs" },
@@ -79,8 +87,9 @@ export const SHOWCASE_DEVICES: DeviceModelInfo[] = [
     originalPrice: "UVP 1.449 €",
     savings: "Jetzt bis zu 150 € sparen",
     theme: "burgundy",
-    image: "/images/shop2.jpg",
-    imageAlt: "Apple iPhone 18 Pro Max",
+    billboardImage: "/images/billboards/iphone-18-pro-max-billboard.jpg",
+    productImage: "/images/billboards/iphone-18-pro-max-product.jpg",
+    imageAlt: "Apple iPhone 18 Pro Max Smartphone Billboard",
     youtubeId: "dQw4w9WgXcQ",
     videoTitle: "Apple iPhone 18 Pro & Pro Max – Official Film",
     specs: [
@@ -97,602 +106,769 @@ export const SHOWCASE_DEVICES: DeviceModelInfo[] = [
       { icon: "🔋", title: { de: "Rekord-Akkulaufzeit", en: "Record Battery Life" }, desc: { de: "Größter Batteriesprung in der iPhone-Geschichte (33h+ Videowiedergabe).", en: "Largest battery increase in iPhone history (33h+ video playback)." } },
       { icon: "📍", title: { de: "Abholung in Hamburg", en: "Pickup in Hamburg" }, desc: { de: "Sofort im Ladenlokal in Wilhelmsburg abholbereit oder 24h DHL.", en: "Available immediately in Hamburg store or 24h insured DHL shipping." } },
     ],
+    hotspots: [
+      { x: 38, y: 22, title: { de: "Variable Blende f/1.5–f/4.0", en: "Variable Aperture f/1.5–f/4.0" }, desc: { de: "Echtes mechanisches Objektiv für professionelle Porträts.", en: "Real mechanical lens iris for studio-grade depth." } },
+      { x: 72, y: 38, title: { de: "Glacier Blue Titanium", en: "Glacier Blue Titanium" }, desc: { de: "Micro-blasted Titanoberfläche mit PVD-Farbveredelung.", en: "Micro-blasted titanium surface with PVD coating." } },
+      { x: 42, y: 70, title: { de: "Vapor Chamber Cooling", en: "Vapor Chamber Cooling" }, desc: { de: "Hält das Gerät bis zu 6°C kühler unter Dauerlast.", en: "Keeps SoC up to 6°C cooler under heavy compute loads." } },
+    ],
     ctaPrimary: { de: "iPhone 18 Pro Max ansehen", en: "Explore iPhone 18 Pro Max", href: "#" },
-    ctaSecondary: { de: "Modelle vergleichen", en: "Compare models", href: "#" },
+    ctaSecondary: { de: "Altgerät in Zahlung geben", en: "Trade-in current phone", href: "#trade-in" },
   },
   {
-    id: "samsung-z-fold",
+    id: "samsung-galaxy-z-fold",
     brand: "Samsung",
     name: "Samsung Galaxy Z Fold Series",
     badge: {
-      de: "🌌 Das Multitasking Kraftpaket",
-      en: "🌌 The Multitasking Powerhouse",
+      de: "⚡ Next-Gen Faltbares Kraftpaket",
+      en: "⚡ Next-Gen Foldable Powerhouse",
     },
     tagline: {
-      de: "7.6\" Dynamic AMOLED 2X 120Hz Falt-Display · Snapdragon 8 Gen for Galaxy · Galaxy AI 2.0 mit Dual-Screen Dolmetscher · S-Pen Unterstützung",
-      en: "7.6\" Dynamic AMOLED 2X 120Hz Foldable Display · Snapdragon 8 Gen for Galaxy · Galaxy AI 2.0 with Dual-Screen Interpreter · S-Pen Support",
+      de: "7.6\" Dynamic AMOLED 2X Hauptbildschirm · Snapdragon 8 Gen for Galaxy · Galaxy AI 2.0 Live-Dolmetscher · Armor Aluminum",
+      en: "7.6\" Dynamic AMOLED 2X Main Screen · Snapdragon 8 Gen for Galaxy · Galaxy AI 2.0 Live Interpreter · Armor Aluminum",
     },
     priceTag: "ab 1.499 €",
-    originalPrice: "UVP 1.999 €",
-    savings: "Spare 500 €",
-    theme: "violet",
-    image: "/images/shop2.jpg",
-    imageAlt: "Samsung Galaxy Z Fold",
+    originalPrice: "UVP 1.899 €",
+    savings: "Bis zu 400 € Rabatt als B-Ware / Neu",
+    theme: "gold",
+    billboardImage: "/images/billboards/samsung-z-fold-billboard.jpg",
+    productImage: "/images/billboards/samsung-z-fold-product.jpg",
+    imageAlt: "Samsung Galaxy Z Fold Billboard Showcase",
     youtubeId: "dQw4w9WgXcQ",
-    videoTitle: "Samsung Galaxy Z Fold – Official Unpacked Film",
+    videoTitle: "Samsung Galaxy Z Fold – Official Unpacked Highlights",
     specs: [
-      { label: { de: "Hauptdisplay", en: "Main Display" }, value: { de: "7.6\" Dynamic AMOLED 2X, 120Hz, 2.600 Nits", en: "7.6\" Dynamic AMOLED 2X, 120Hz, 2,600 Nits" } },
-      { label: { de: "Frontdisplay", en: "Cover Display" }, value: { de: "6.3\" Dynamic AMOLED 2X, 120Hz", en: "6.3\" Dynamic AMOLED 2X, 120Hz" } },
-      { label: { de: "Prozessor", en: "Processor" }, value: { de: "Snapdragon 8 Gen for Galaxy (Ray Tracing)", en: "Snapdragon 8 Gen for Galaxy (Ray Tracing)" } },
-      { label: { de: "Kamera", en: "Camera" }, value: { de: "50 MP ProVisual OIS + 12 MP Ultraweit + 10 MP 3x Tele", en: "50 MP ProVisual OIS + 12 MP Ultra-Wide + 10 MP 3x Tele" } },
-      { label: { de: "Robustheit", en: "Durability" }, value: { de: "Armor Aluminum, Gorilla Glass Victus 2, IP48 Schutz", en: "Armor Aluminum, Gorilla Glass Victus 2, IP48 Water Resistance" } },
-      { label: { de: "Farben", en: "Colors" }, value: { de: "Silver Shadow, Navy Blau, Crafted Black, Pink, White", en: "Silver Shadow, Navy Blue, Crafted Black, Pink, White" } },
+      { label: { de: "Hauptbildschirm", en: "Main Screen" }, value: { de: "7.6\" Dynamic AMOLED 2X, 120Hz, 2.600 Nits, HDR10+", en: "7.6\" Dynamic AMOLED 2X, 120Hz, 2,600 Nits, HDR10+" } },
+      { label: { de: "Frontbildschirm", en: "Cover Screen" }, value: { de: "6.3\" Dynamic AMOLED 2X (22:9 Format)", en: "6.3\" Dynamic AMOLED 2X (22:9 Ratio)" } },
+      { label: { de: "Prozessor", en: "Processor" }, value: { de: "Snapdragon 8 Gen 3 for Galaxy (4nm Octa-Core)", en: "Snapdragon 8 Gen 3 for Galaxy (4nm Octa-Core)" } },
+      { label: { de: "Galaxy AI", en: "Galaxy AI" }, value: { de: "Dual-Screen Live Translate, Circle to Search & AI Generative Edit", en: "Dual-Screen Live Translate, Circle to Search & AI Generative Edit" } },
+      { label: { de: "S Pen Support", en: "S Pen Support" }, value: { de: "Präzises Zeichnen & Notizen auf dem Hauptbildschirm", en: "Precision drawing & note-taking on main display" } },
+      { label: { de: "Gehäuse", en: "Build" }, value: { de: "Armor Aluminum Rahmen & Corning Gorilla Glass Victus 2", en: "Armor Aluminum Frame & Corning Gorilla Glass Victus 2" } },
     ],
     features: [
-      { icon: "🌐", title: { de: "Dual-Screen Dolmetscher", en: "Dual-Screen Interpreter" }, desc: { de: "Live-Übersetzung auf Innen- und Außendisplay für weltweite Gespräche.", en: "Real-time translations shown on inner and outer screens simultaneously." } },
-      { icon: "✍️", title: { de: "S-Pen & Note Assist", en: "S-Pen & Note Assist" }, desc: { de: "Notizen handschriftlich erfassen und per KI automatisch formatieren.", en: "Handwrite notes with precision and let AI summarize and organize." } },
-      { icon: "🔍", title: { de: "Circle to Search", en: "Circle to Search" }, desc: { de: "Jedes Bild oder Video auf dem riesigen 7.6\" Display einkreisen und sofort finden.", en: "Circle anything on the 7.6\" canvas to search instantly with Google." } },
-      { icon: "🛡️", title: { de: "Geprüfte Qualität & Garantie", en: "Certified Quality & Warranty" }, desc: { de: "Mit 12 Monaten Garantie und technischem Check bei Apfel Park.", en: "Includes 12 months warranty and complete hardware verification." } },
+      { icon: "🌐", title: { de: "Galaxy AI Dolmetscher", en: "Galaxy AI Live Interpreter" }, desc: { de: "Zwei Gesprächspartner sehen Übersetzungen simultan auf beiden Bildschirmen.", en: "Two speakers view real-time translations simultaneously on both screens." } },
+      { icon: "✍️", title: { de: "S Pen Produktivität", en: "S Pen Productivity" }, desc: { de: "Dokumente signieren, Skizzen anfertigen und Multi-Window Workflows.", en: "Sign documents, create precise sketches and multi-app multitasking." } },
+      { icon: "💧", title: { de: "IP48 Wasserresistent", en: "IP48 Water Resistant" }, desc: { de: "Robustes Scharnier mit doppeltem Schienensystem gegen Partikel.", en: "Rugged hinge with dual rail system protecting against water and dust." } },
+      { icon: "🔄", title: { de: "Inzahlungnahme Bonus", en: "Trade-In Bonus" }, desc: { de: "Altes Samsung oder iPhone abgeben und Sofortrabatt sichern.", en: "Trade in your older Samsung or iPhone for instant cash credit." } },
     ],
-    ctaPrimary: { de: "Galaxy Z Fold entdecken", en: "Discover Galaxy Z Fold", href: "#" },
-    ctaSecondary: { de: "Zubehör & Hüllen", en: "Accessories & Cases", href: "#" },
+    hotspots: [
+      { x: 62, y: 30, title: { de: "7.6\" Infinity Flex Display", en: "7.6\" Infinity Flex Display" }, desc: { de: "Brillantes 2.600 Nits AMOLED Display für Sonnenlicht.", en: "Ultra-bright 2,600 nits AMOLED under direct sunlight." } },
+      { x: 48, y: 60, title: { de: "Armor Aluminum Scharnier", en: "Armor Aluminum Hinge" }, desc: { de: "Ultra-schlankes Zero-Gap Faltdesign.", en: "Ultra-slim zero-gap folding design." } },
+      { x: 25, y: 50, title: { de: "FlexMode Standfuß", en: "FlexMode Free Stand" }, desc: { de: "Handfreies Aufstellen für Video-Calls und Nachtaufnahmen.", en: "Hands-free stand for video conferences and astrophotography." } },
+    ],
+    ctaPrimary: { de: "Samsung Z Fold Angebote", en: "Explore Samsung Z Fold Deals", href: "#" },
+    ctaSecondary: { de: "B-Ware Zustand prüfen", en: "Inspect B-Ware Condition", href: "#condition" },
   },
   {
-    id: "pixel-11-pro",
+    id: "google-pixel-11-pro",
     brand: "Google",
     name: "Google Pixel 11 Pro Series",
     badge: {
-      de: "🤖 Reine Google KI-Power",
-      en: "🤖 Pure Google AI Power",
+      de: "🤖 Maximale Google KI & Kamera-Power",
+      en: "🤖 Pure Google AI & Ultimate Camera",
     },
     tagline: {
-      de: "Google Tensor G Prozessor mit Gemini Nano On-Device KI · 6.8\" Super Actua Display mit 3.000 Nits · Triple Pro Kamera mit 30x Super-Res-Zoom",
-      en: "Google Tensor G Processor with Gemini Nano On-Device AI · 6.8\" Super Actua 3,000 Nits Display · Triple Pro Camera with 30x Super Res Zoom",
+      de: "Google Tensor G & Gemini Nano on-device · 6.8\" Super Actua 3.000 Nits · Triple 50 MP Kamera mit 5x Telezoom & 30x Super Res Zoom",
+      en: "Google Tensor G & Gemini Nano on-device · 6.8\" Super Actua 3,000 Nits · Triple 50 MP Camera with 5x Tele & 30x Super Res Zoom",
     },
-    priceTag: "ab 899 €",
+    priceTag: "ab 999 €",
     originalPrice: "UVP 1.199 €",
-    savings: "Top Deal",
+    savings: "Top Deal: 200 € Direktabzug",
     theme: "mint",
-    image: "/images/shop2.jpg",
-    imageAlt: "Google Pixel 11 Pro",
+    billboardImage: "/images/billboards/google-pixel-11-billboard.jpg",
+    productImage: "/images/billboards/google-pixel-11-product.jpg",
+    imageAlt: "Google Pixel 11 Pro Billboard Showcase",
     youtubeId: "dQw4w9WgXcQ",
-    videoTitle: "Google Pixel 11 Pro – Built for Gemini Era",
+    videoTitle: "Google Pixel 11 Pro – Built with Gemini AI",
     specs: [
-      { label: { de: "Display", en: "Display" }, value: { de: "6.8\" Super Actua LTPO OLED (1–120Hz, 3.000 Nits)", en: "6.8\" Super Actua LTPO OLED (1–120Hz, 3,000 Nits)" } },
-      { label: { de: "Prozessor", en: "Processor" }, value: { de: "Google Tensor G mit Titan M2 Sicherheits-Chip", en: "Google Tensor G with Titan M2 Security" } },
-      { label: { de: "Kamera", en: "Camera" }, value: { de: "50 MP Hauptsensor + 48 MP Makro + 48 MP 5x Periskop Tele", en: "50 MP Main + 48 MP Macro + 48 MP 5x Periscope Tele" } },
-      { label: { de: "Frontkamera", en: "Front Camera" }, value: { de: "42 MP Ultraweitwinkel mit 4K 60fps", en: "42 MP Ultra-Wide with 4K 60fps" } },
-      { label: { de: "Software", en: "Software" }, value: { de: "7 Jahre garantierte Android OS & Sicherheits-Updates", en: "7 Years guaranteed Android OS & security updates" } },
-      { label: { de: "Farben", en: "Colors" }, value: { de: "Obsidian Schwarz, Porcelain Weiß, Hazel Grau, Rose Quartz", en: "Obsidian, Porcelain, Hazel, Rose Quartz" } },
+      { label: { de: "Display", en: "Display" }, value: { de: "6.8\" Super Actua LTPO OLED (1–120Hz), bis zu 3.000 Nits", en: "6.8\" Super Actua LTPO OLED (1–120Hz), up to 3,000 Nits" } },
+      { label: { de: "Prozessor", en: "Processor" }, value: { de: "Google Tensor G mit On-Device Gemini Nano AI Engine", en: "Google Tensor G with On-Device Gemini Nano AI Engine" } },
+      { label: { de: "Kamera-Setup", en: "Camera Setup" }, value: { de: "50 MP Hauptsensor + 48 MP Ultraweit + 48 MP 5x Tele (30x Zoom)", en: "50 MP Main + 48 MP Ultra-Wide + 48 MP 5x Telephoto (30x Zoom)" } },
+      { label: { de: "Software-Support", en: "Software Support" }, value: { de: "7 Jahre garantierte Android OS- & Sicherheits-Updates", en: "7 Years guaranteed Android OS & Security Updates" } },
+      { label: { de: "Akku & Laden", en: "Battery & Fast Charge" }, value: { de: "5.060 mAh mit 45W Fast-Charging & Qi2 Wireless", en: "5,060 mAh with 45W Fast Charging & Qi2 Wireless" } },
+      { label: { de: "Materialien", en: "Materials" }, value: { de: "Mattiertes Glas, polierter Rahmen & 100% recyceltes Aluminium", en: "Matte glass, polished frame & 100% recycled aluminum" } },
     ],
     features: [
-      { icon: "✨", title: { de: "Gemini Nano Studio", en: "Gemini Nano Studio" }, desc: { de: "Bilder per Texteingabe generieren und Fotos nachträglich erweitern.", en: "Generate graphics and reimagine scenes right on your device." } },
-      { icon: "👥", title: { de: "Add Me & Best Take", en: "Add Me & Best Take" }, desc: { de: "Keiner fehlt auf dem Gruppenfoto – KI fügt den Fotografen nahtlos ein.", en: "Never miss a group photo; AI seamlessly blends the photographer in." } },
-      { icon: "🔭", title: { de: "30x Super-Res-Zoom", en: "30x Super Res Zoom" }, desc: { de: "Gestochen scharfe Teleaufnahmen auch aus weiter Entfernung.", en: "Crystal-clear telephoto shots even from extreme distances." } },
-      { icon: "🛡️", title: { de: "7 Jahre Software-Support", en: "7 Years Software Support" }, desc: { de: "Zukunftssicher mit monatlichen Feature Drops und Schutz.", en: "Future-proof investment with continuous Feature Drops." } },
+      { icon: "✨", title: { de: "Gemini Nano AI On-Device", en: "Gemini Nano AI On-Device" }, desc: { de: "Automatische Anrufzusammenfassung, intelligenter Magischer Editor und Audio-Radierer.", en: "Instant call summaries, generative Magic Editor and Audio Magic Eraser." } },
+      { icon: "🔭", title: { de: "5x Optischer / 30x Super-Zoom", en: "5x Optical / 30x Super Zoom" }, desc: { de: "Verlustfreie Tele-Schärfe auch bei schwachem Abendlicht.", en: "Lossless telephoto sharpness even in challenging night scenarios." } },
+      { icon: "🔒", title: { de: "7 Jahre Update-Garantie", en: "7 Years Update Guarantee" }, desc: { de: "Garantiert zukunftssicher bis mindestens 2033.", en: "Future-proof software reliability guaranteed through 2033." } },
+      { icon: "♻️", title: { de: "Nachhaltig & Hamburg Refurbished", en: "Refurbished in Hamburg" }, desc: { de: "Fachmännisch geprüft im Apfel Park Fachzentrum Wilhelmsburg.", en: "Expertly certified at the Apfel Park workshop in Wilhelmsburg." } },
     ],
-    ctaPrimary: { de: "Pixel 11 Pro ansehen", en: "View Pixel 11 Pro", href: "#" },
-    ctaSecondary: { de: "Alle Google Handys", en: "All Google Phones", href: "#" },
+    hotspots: [
+      { x: 38, y: 22, title: { de: "Kamera-Visor 50MP Triple", en: "50MP Triple Visor Array" }, desc: { de: "Ikonische Visor-Leiste mit 5x Tele und Macro-Focus.", en: "Iconic camera bar with 5x telephoto and macro focus." } },
+      { x: 42, y: 35, title: { de: "Gemini AI Ambient Halo", en: "Gemini AI Ambient Halo" }, desc: { de: "Echtzeit-Feedback bei Sprach- und Kamera-Assistenz.", en: "Real-time dynamic glow during live voice & camera AI." } },
+      { x: 70, y: 60, title: { de: "Super Actua 3000 Nits", en: "Super Actua 3,000 Nits" }, desc: { de: "Hellstes Display seiner Klasse mit 1-120Hz LTPO.", en: "Class-leading brightness with fluid 1-120Hz LTPO." } },
+    ],
+    ctaPrimary: { de: "Google Pixel 11 Pro bestellen", en: "Order Google Pixel 11 Pro", href: "#" },
+    ctaSecondary: { de: "Kamera-Vergleich ansehen", en: "View camera comparison", href: "#camera" },
   },
 ];
 
+type LayoutVariant = "cinematic-billboard" | "split-studio" | "store-ribbon" | "trust-bware";
+type ViewportSize = "desktop" | "tablet" | "mobile";
+
 export default function BillboardPreviewLab({ lang }: { lang: Locale }) {
-  const isDe = lang === "de";
-  const [selectedDevice, setSelectedDevice] = useState<string>("iphone-duo");
-  const [billboardVariation, setBillboardVariation] = useState<"cinematic" | "split" | "slim" | "trust">("cinematic");
-  const [previewDeviceMode, setPreviewDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const [activeTab, setActiveTab] = useState<"billboards" | "specs" | "video">("billboards");
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("iphone-duo");
+  const [activeLayout, setActiveLayout] = useState<LayoutVariant>("cinematic-billboard");
+  const [activeViewport, setActiveViewport] = useState<ViewportSize>("desktop");
+  const [activeHotspot, setActiveHotspot] = useState<number | null>(null);
+  const [showAdminSim, setShowAdminSim] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"billboard" | "specs" | "gallery" | "video">("billboard");
 
-  const currentDevice = SHOWCASE_DEVICES.find((d) => d.id === selectedDevice) || SHOWCASE_DEVICES[0];
+  // Admin Live Simulator State (for real-time testing)
+  const [customHeadline, setCustomHeadline] = useState("");
+  const [customBadge, setCustomBadge] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
+  const [customDiscountTag, setCustomDiscountTag] = useState("");
 
-  // Theme styling helpers
-  const getThemeClasses = (theme: DeviceModelInfo["theme"]) => {
-    switch (theme) {
-      case "burgundy":
-        return {
-          glow: "from-rose-600/25 via-amber-600/10 to-transparent",
-          badge: "bg-rose-500/15 border-rose-500/30 text-rose-300 dark:text-rose-200",
-          border: "border-rose-500/25",
-          accentText: "text-rose-400 dark:text-rose-300",
-          button: "bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-rose-900/30",
-        };
-      case "violet":
-        return {
-          glow: "from-purple-600/25 via-indigo-600/10 to-transparent",
-          badge: "bg-purple-500/15 border-purple-500/30 text-purple-300 dark:text-purple-200",
-          border: "border-purple-500/25",
-          accentText: "text-purple-400 dark:text-purple-300",
-          button: "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-900/30",
-        };
-      case "mint":
-        return {
-          glow: "from-emerald-600/25 via-teal-600/10 to-transparent",
-          badge: "bg-emerald-500/15 border-emerald-500/30 text-emerald-300 dark:text-emerald-200",
-          border: "border-emerald-500/25",
-          accentText: "text-emerald-400 dark:text-emerald-300",
-          button: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-900/30",
-        };
+  const currentDevice = SHOWCASE_DEVICES.find((d) => d.id === selectedDeviceId) || SHOWCASE_DEVICES[0];
+
+  const headline = customHeadline || currentDevice.name;
+  const badge = customBadge || currentDevice.badge[lang];
+  const price = customPrice || currentDevice.priceTag;
+  const discountTag = customDiscountTag || currentDevice.savings;
+
+  const getViewportMaxWidth = () => {
+    switch (activeViewport) {
+      case "mobile":
+        return "max-w-[390px]";
+      case "tablet":
+        return "max-w-[768px]";
+      case "desktop":
       default:
-        return {
-          glow: "from-amber-600/25 via-gold-600/10 to-transparent",
-          badge: "bg-amber-500/15 border-amber-500/30 text-amber-300 dark:text-amber-200",
-          border: "border-amber-500/25",
-          accentText: "text-amber-400 dark:text-amber-300",
-          button: "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-semibold shadow-amber-900/30",
-        };
+        return "max-w-7xl";
     }
   };
 
-  const themeStyle = getThemeClasses(currentDevice.theme);
+  const getThemeGlow = () => {
+    switch (currentDevice.theme) {
+      case "burgundy":
+        return "from-rose-950/40 via-purple-950/20 to-zinc-950 border-rose-500/30";
+      case "glacier":
+        return "from-sky-950/40 via-blue-950/20 to-zinc-950 border-sky-500/30";
+      case "gold":
+        return "from-amber-950/40 via-yellow-950/20 to-zinc-950 border-amber-500/30";
+      case "mint":
+        return "from-emerald-950/40 via-teal-950/20 to-zinc-950 border-emerald-500/30";
+      case "obsidian":
+      default:
+        return "from-zinc-900/60 via-zinc-950 to-black border-zinc-700/40";
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-24">
-      {/* Test Staging Header Bar */}
-      <div className="sticky top-0 z-40 bg-surface/90 backdrop-blur-md border-b border-border px-4 py-3">
+    <div className="min-h-screen bg-[#090a0f] text-zinc-100 font-sans selection:bg-amber-500/30 selection:text-amber-200">
+      {/* Studio Header Bar */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/80 border-b border-white/10 px-4 lg:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-              🛠️ Staging / Design Test Lab
-            </span>
-            <span className="text-xs text-muted hidden sm:inline">
-              {isDe ? "Interaktive Vorschau vor Veröffentlichung" : "Interactive preview before going live"}
-            </span>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 p-0.5 shadow-lg shadow-amber-500/20 flex items-center justify-center">
+              <span className="text-xl">✨</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-bold tracking-tight text-white">Apfel Park Billboard Design Studio</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Staging / Test Lab
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400">
+                {lang === "de"
+                  ? "Interaktive Vorschau der neuen Flaggschiff-Billboards vor Live-Schaltung auf apfel-park.de"
+                  : "Interactive flagship billboard staging lab prior to homepage & store deployment"}
+              </p>
+            </div>
           </div>
 
-          {/* Device & Responsive Viewport Switcher */}
+          {/* Quick Actions & Admin Toggle */}
           <div className="flex items-center gap-2">
-            <div className="bg-background-alt border border-border rounded-lg p-1 flex items-center gap-1 text-xs">
-              <button
-                type="button"
-                onClick={() => setPreviewDeviceMode("desktop")}
-                className={`px-2.5 py-1 rounded-md transition ${previewDeviceMode === "desktop" ? "bg-surface text-heading font-medium shadow-xs" : "text-muted hover:text-foreground"}`}
-              >
-                🖥️ Desktop
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewDeviceMode("tablet")}
-                className={`px-2.5 py-1 rounded-md transition ${previewDeviceMode === "tablet" ? "bg-surface text-heading font-medium shadow-xs" : "text-muted hover:text-foreground"}`}
-              >
-                📱 Tablet
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewDeviceMode("mobile")}
-                className={`px-2.5 py-1 rounded-md transition ${previewDeviceMode === "mobile" ? "bg-surface text-heading font-medium shadow-xs" : "text-muted hover:text-foreground"}`}
-              >
-                📲 Mobile
-              </button>
+            <button
+              onClick={() => setShowAdminSim(!showAdminSim)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border ${
+                showAdminSim
+                  ? "bg-amber-500 text-black border-amber-400 shadow-md shadow-amber-500/20"
+                  : "bg-white/5 text-zinc-300 hover:bg-white/10 border-white/10"
+              }`}
+            >
+              <span>⚙️</span>
+              {lang === "de" ? "Live-Anpassungen (Admin Simulator)" : "Live Edit (Admin Simulator)"}
+            </button>
+            <Link
+              href={`/${lang}/store`}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition"
+            >
+              ← {lang === "de" ? "Zum Live-Store" : "To Live Store"}
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Control Bar: Model Switcher & Layout Variations */}
+      <div className="border-b border-white/10 bg-zinc-950/60 backdrop-blur-md px-4 lg:px-8 py-3">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          {/* Device Model Selector Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider mr-1">Modell:</span>
+            {SHOWCASE_DEVICES.map((device) => {
+              const isSelected = device.id === selectedDeviceId;
+              return (
+                <button
+                  key={device.id}
+                  onClick={() => {
+                    setSelectedDeviceId(device.id);
+                    setActiveHotspot(null);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
+                    isSelected
+                      ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20 scale-[1.02]"
+                      : "bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5 hover:border-white/15"
+                  }`}
+                >
+                  <span>{device.brand === "Apple" ? "🍎" : device.brand === "Samsung" ? "🌌" : "🤖"}</span>
+                  {device.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Billboard Layout Variations & Viewport Simulator */}
+          <div className="flex items-center gap-3 overflow-x-auto">
+            <div className="flex items-center bg-black/40 rounded-lg p-1 border border-white/10">
+              {(
+                [
+                  { id: "cinematic-billboard", label: { de: "Billboard Großformat", en: "Grand Billboard" }, icon: "🎬" },
+                  { id: "split-studio", label: { de: "3D Split Studio", en: "3D Split Studio" }, icon: "💎" },
+                  { id: "store-ribbon", label: { de: "Storefront Ribbon", en: "Store Ribbon" }, icon: "🛍️" },
+                  { id: "trust-bware", label: { de: "B-Ware & Trust", en: "B-Ware Trust" }, icon: "🛡️" },
+                ] as const
+              ).map((variant) => (
+                <button
+                  key={variant.id}
+                  onClick={() => setActiveLayout(variant.id)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
+                    activeLayout === variant.id
+                      ? "bg-white/20 text-white font-semibold shadow-sm"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  <span>{variant.icon}</span>
+                  <span className="hidden sm:inline">{variant.label[lang]}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Viewport Width Toggle */}
+            <div className="flex items-center bg-black/40 rounded-lg p-1 border border-white/10">
+              {(
+                [
+                  { id: "desktop", label: "Desktop", icon: "🖥️" },
+                  { id: "tablet", label: "Tablet (768)", icon: "📱" },
+                  { id: "mobile", label: "Mobil (390)", icon: "📲" },
+                ] as const
+              ).map((vp) => (
+                <button
+                  key={vp.id}
+                  onClick={() => setActiveViewport(vp.id)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1 ${
+                    activeViewport === vp.id
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                  title={vp.label}
+                >
+                  <span>{vp.icon}</span>
+                  <span className="hidden lg:inline">{vp.label}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-10">
-        {/* Device Selection Bar */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-heading">
-              {isDe ? "Flagship Showcase & Billboard Studio" : "Flagship Showcase & Billboard Studio"}
-            </h1>
-            <span className="text-xs text-muted">
-              {isDe ? "4 Flagship Serien verfügbar" : "4 Flagship Series Available"}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {SHOWCASE_DEVICES.map((device) => {
-              const isSelected = device.id === selectedDevice;
-              return (
-                <button
-                  key={device.id}
-                  type="button"
-                  onClick={() => setSelectedDevice(device.id)}
-                  className={`p-3.5 rounded-xl text-left border transition-all duration-200 flex flex-col justify-between ${
-                    isSelected
-                      ? "bg-surface border-gold shadow-lg shadow-gold/10 ring-1 ring-gold"
-                      : "bg-surface/50 border-border hover:border-border/80 hover:bg-surface"
-                  }`}
-                >
-                  <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-muted">
-                      {device.brand}
-                    </span>
-                    <h2 className="font-semibold text-sm text-heading mt-0.5 line-clamp-1">
-                      {device.name}
-                    </h2>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-xs">
-                    <span className="font-bold text-gold">{device.priceTag}</span>
-                    <span className="text-[10px] text-muted line-through">{device.originalPrice}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* View Mode Navigation (Billboards / Full Specs / Video) */}
-        <div className="border-b border-border flex items-center gap-6 text-sm">
-          <button
-            type="button"
-            onClick={() => setActiveTab("billboards")}
-            className={`pb-3 border-b-2 font-medium transition ${
-              activeTab === "billboards"
-                ? "border-gold text-gold"
-                : "border-transparent text-muted hover:text-foreground"
-            }`}
-          >
-            🎨 {isDe ? "Billboard Design-Variationen" : "Billboard Design Variations"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("specs")}
-            className={`pb-3 border-b-2 font-medium transition ${
-              activeTab === "specs"
-                ? "border-gold text-gold"
-                : "border-transparent text-muted hover:text-foreground"
-            }`}
-          >
-            📋 {isDe ? "Technische Daten & Features" : "Technical Specs & Features"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("video")}
-            className={`pb-3 border-b-2 font-medium transition ${
-              activeTab === "video"
-                ? "border-gold text-gold"
-                : "border-transparent text-muted hover:text-foreground"
-            }`}
-          >
-            🎬 {isDe ? "Offizielle Video-Präsentation" : "Official Video Showcase"}
-          </button>
-        </div>
-
-        {/* TAB 1: BILLBOARDS VARIATIONS */}
-        {activeTab === "billboards" && (
-          <div className="space-y-8">
-            {/* Variation Selector */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-muted mr-2">
-                {isDe ? "Layout-Stil wählen:" : "Select Layout Style:"}
-              </span>
+      {/* Admin Simulator Drawer (Collapsible) */}
+      {showAdminSim && (
+        <div className="border-b border-amber-500/30 bg-amber-950/20 backdrop-blur-md px-4 lg:px-8 py-4 animate-in slide-in-from-top-2">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-400 font-bold text-sm">⚙️ Admin Live-Control Simulator</span>
+                <span className="text-xs text-zinc-400">
+                  {lang === "de"
+                    ? "Passen Sie Überschriften, Rabatt-Badges und Preise in Echtzeit an, um die Billboard-Wirkung zu testen."
+                    : "Simulate real-time edits for title, discount badge, and pricing before publishing to production."}
+                </span>
+              </div>
               <button
-                type="button"
-                onClick={() => setBillboardVariation("cinematic")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-                  billboardVariation === "cinematic"
-                    ? "bg-gold/15 border-gold text-gold"
-                    : "border-border text-muted hover:text-foreground"
-                }`}
+                onClick={() => {
+                  setCustomHeadline("");
+                  setCustomBadge("");
+                  setCustomPrice("");
+                  setCustomDiscountTag("");
+                }}
+                className="text-xs text-amber-400 hover:underline"
               >
-                1. 🌟 {isDe ? "Cinematic Hero (Homepage Oben)" : "Cinematic Hero (Home Top)"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillboardVariation("split")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-                  billboardVariation === "split"
-                    ? "bg-gold/15 border-gold text-gold"
-                    : "border-border text-muted hover:text-foreground"
-                }`}
-              >
-                2. ⚡ {isDe ? "Split-Feature (Homepage Mitte)" : "Split-Feature (Home Mid)"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillboardVariation("slim")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-                  billboardVariation === "slim"
-                    ? "bg-gold/15 border-gold text-gold"
-                    : "border-border text-muted hover:text-foreground"
-                }`}
-              >
-                3. 🛍️ {isDe ? "Slim Highlight (Store Oben)" : "Slim Highlight (Store Top)"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillboardVariation("trust")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-                  billboardVariation === "trust"
-                    ? "bg-gold/15 border-gold text-gold"
-                    : "border-border text-muted hover:text-foreground"
-                }`}
-              >
-                4. 🛡️ {isDe ? "Trust & B-Ware (Store Mitte)" : "Trust & Deals (Store Mid)"}
+                {lang === "de" ? "Auf Standard zurücksetzen" : "Reset to Default"}
               </button>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">
+                  Headline Text
+                </label>
+                <input
+                  type="text"
+                  value={customHeadline}
+                  placeholder={currentDevice.name}
+                  onChange={(e) => setCustomHeadline(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-black/60 border border-white/10 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">
+                  Badge Pill Text
+                </label>
+                <input
+                  type="text"
+                  value={customBadge}
+                  placeholder={currentDevice.badge[lang]}
+                  onChange={(e) => setCustomBadge(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-black/60 border border-white/10 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">
+                  Preis-Anzeige
+                </label>
+                <input
+                  type="text"
+                  value={customPrice}
+                  placeholder={currentDevice.priceTag}
+                  onChange={(e) => setCustomPrice(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-black/60 border border-white/10 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">
+                  Ersparnis / Promotion Tag
+                </label>
+                <input
+                  type="text"
+                  value={customDiscountTag}
+                  placeholder={currentDevice.savings}
+                  onChange={(e) => setCustomDiscountTag(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-black/60 border border-white/10 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-            {/* BILLBOARD RENDER CONTAINER (Simulating responsive viewports) */}
-            <div
-              className={`mx-auto transition-all duration-300 ${
-                previewDeviceMode === "mobile"
-                  ? "max-w-[420px] shadow-2xl rounded-3xl p-3 border border-border bg-background-alt"
-                  : previewDeviceMode === "tablet"
-                    ? "max-w-[768px] shadow-xl rounded-2xl p-4 border border-border bg-background-alt"
-                    : "w-full"
-              }`}
-            >
-              {/* VARIATION 1: CINEMATIC HERO BILLBOARD */}
-              {billboardVariation === "cinematic" && (
-                <div className={`relative overflow-hidden rounded-3xl border ${themeStyle.border} bg-surface/90 shadow-2xl`}>
-                  {/* Atmospheric background glow */}
-                  <div className={`absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br ${themeStyle.glow} rounded-full blur-3xl pointer-events-none`} />
-                  <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-gold/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Main Showcase Stage Area */}
+      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+        {/* Viewport Frame Container */}
+        <div className={`mx-auto transition-all duration-300 ${getViewportMaxWidth()}`}>
+          {activeViewport !== "desktop" && (
+            <div className="text-center mb-3">
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-mono bg-white/10 text-amber-300 border border-white/15">
+                Simulierte Ansicht: {activeViewport.toUpperCase()} ({activeViewport === "tablet" ? "768px" : "390px"})
+              </span>
+            </div>
+          )}
 
-                  <div className="relative p-6 sm:p-10 lg:p-14 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                    {/* Left Copy & CTAs */}
-                    <div className="lg:col-span-7 space-y-6">
-                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border backdrop-blur-md shadow-xs text-black dark:text-inherit bg-white/90 dark:bg-transparent">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-black dark:text-inherit">{isDe ? currentDevice.badge.de : currentDevice.badge.en}</span>
-                      </div>
+          {/* ========================================================================= */}
+          {/* VARIATION 1: GRAND CINEMATIC BILLBOARD WITH REAL HIGH-RES BANNER           */}
+          {/* ========================================================================= */}
+          {activeLayout === "cinematic-billboard" && (
+            <section className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-black group mb-12">
+              {/* Ultra High-Res Billboard Graphic Container */}
+              <div className="relative aspect-[16/9] w-full overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={currentDevice.billboardImage}
+                  alt={currentDevice.imageAlt}
+                  className="w-full h-full object-cover object-center transform group-hover:scale-[1.015] transition-transform duration-700 ease-out"
+                />
 
-                      <div className="space-y-2">
-                        <span className="text-xs uppercase font-bold tracking-widest text-muted block">
-                          {currentDevice.brand} Exklusiv
-                        </span>
-                        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-heading leading-tight">
-                          {currentDevice.name}
-                        </h2>
-                        <p className="text-sm sm:text-base text-muted leading-relaxed max-w-xl">
-                          {isDe ? currentDevice.tagline.de : currentDevice.tagline.en}
-                        </p>
-                      </div>
+                {/* Subtle Interactive Lighting Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
-                      {/* Pricing Tag & Savings */}
-                      <div className="flex flex-wrap items-baseline gap-3 pt-2">
-                        <span className="text-3xl sm:text-4xl font-black text-heading">
-                          {currentDevice.priceTag}
-                        </span>
-                        <span className="text-sm sm:text-base text-muted/60 line-through">
-                          {currentDevice.originalPrice}
-                        </span>
-                        <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                          {currentDevice.savings}
-                        </span>
-                      </div>
+                {/* Live Interactive Pre-order & Hamburg Guarantee Overlay Bar */}
+                <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 md:p-8 flex flex-wrap items-end justify-between gap-4 backdrop-blur-md bg-black/40 border-t border-white/10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        {badge}
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/10 text-zinc-300 border border-white/10">
+                        ⭐ Apfel Park Exklusiv
+                      </span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+                      {headline}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-zinc-300 max-w-xl line-clamp-2 mt-1">
+                      {currentDevice.tagline[lang]}
+                    </p>
+                  </div>
 
-                      {/* Key Feature Bullets */}
-                      <div className="grid grid-cols-2 gap-3 pt-2">
-                        {currentDevice.features.slice(0, 2).map((feat, idx) => (
-                          <div key={idx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-background/60 border border-border/50">
-                            <span className="text-lg">{feat.icon}</span>
-                            <div>
-                              <h4 className="text-xs font-bold text-heading">{isDe ? feat.title.de : feat.title.en}</h4>
-                              <p className="text-[11px] text-muted line-clamp-1">{isDe ? feat.desc.de : feat.desc.en}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap items-center gap-4 pt-4">
-                        <Link
-                          href={currentDevice.ctaPrimary.href}
-                          className={`px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg ${themeStyle.button}`}
-                        >
-                          🛍️ {isDe ? currentDevice.ctaPrimary.de : currentDevice.ctaPrimary.en}
-                        </Link>
-                        <Link
-                          href={currentDevice.ctaSecondary.href}
-                          className="px-5 py-3.5 rounded-xl text-sm font-medium border border-border bg-surface hover:bg-surface-strong text-heading transition"
-                        >
-                          🔍 {isDe ? currentDevice.ctaSecondary.de : currentDevice.ctaSecondary.en}
-                        </Link>
-                      </div>
+                  {/* Pricing and Action Hub */}
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-xs text-zinc-400 line-through">{currentDevice.originalPrice}</div>
+                      <div className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight">{price}</div>
+                      <div className="text-[10px] font-semibold text-emerald-400">{discountTag}</div>
                     </div>
 
-                    {/* Right Visual 3D Showcase Card */}
-                    <div className="lg:col-span-5 flex justify-center relative">
-                      <div className="relative w-full max-w-[340px] aspect-4/5 rounded-2xl overflow-hidden border border-border/80 bg-gradient-to-b from-background-alt to-surface shadow-2xl flex flex-col justify-between p-6">
-                        <div className="flex items-center justify-between text-xs text-muted">
-                          <span className="font-semibold text-heading">{currentDevice.brand} Flagship</span>
-                          <span className="px-2 py-0.5 rounded-full bg-surface-strong border border-border text-[10px]">
-                            Neuheit 2026
-                          </span>
-                        </div>
-
-                        {/* Centered Device Graphic Mockup / Image */}
-                        <div className="relative my-auto py-6 flex flex-col items-center text-center space-y-4">
-                          <div className="w-32 h-44 sm:w-40 sm:h-56 rounded-2xl border-2 border-gold/40 bg-gradient-to-tr from-surface to-background shadow-2xl relative flex items-center justify-center overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-br from-gold/10 via-transparent to-rose-500/10" />
-                            <span className="text-4xl sm:text-5xl drop-shadow-lg">📱</span>
-                            <div className="absolute bottom-2 inset-x-2 text-center py-1 bg-black/60 backdrop-blur-xs rounded-md text-[9px] text-gold font-bold">
-                              {currentDevice.name}
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <span className="text-xs font-semibold text-heading block">
-                              {isDe ? "Inklusive Apfel Park Schutz" : "Includes Apfel Park Protection"}
-                            </span>
-                            <span className="text-[11px] text-muted block">
-                              ✓ 12M Garantie · ✓ Werkstattgeprüft · ✓ Hamburg Support
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted">
-                          <span>📦 Sofort lieferbar</span>
-                          <span className="text-emerald-400 font-semibold">Auf Lager</span>
-                        </div>
-                      </div>
-                    </div>
+                    <button
+                      onClick={() => alert(`Vorbestellung für ${currentDevice.name} eingeleitet!`)}
+                      className="px-5 py-3 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-black shadow-lg shadow-amber-500/30 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>🛒</span>
+                      {currentDevice.ctaPrimary[lang]}
+                    </button>
                   </div>
                 </div>
-              )}
+              </div>
+            </section>
+          )}
 
-              {/* VARIATION 2: SPLIT-FEATURE INTERACTIVE BILLBOARD */}
-              {billboardVariation === "split" && (
-                <div className="rounded-3xl border border-border bg-surface p-6 sm:p-10 space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
-                    <div>
-                      <span className="text-xs font-bold text-gold uppercase tracking-wider">
-                        {isDe ? "Spotlight der Woche" : "Spotlight of the Week"}
-                      </span>
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-heading mt-1">
-                        {currentDevice.name}
-                      </h2>
+          {/* ========================================================================= */}
+          {/* VARIATION 2: 3D SPLIT STUDIO WITH PHOTOREALISTIC DEVICE RENDER & HOTSPOTS   */}
+          {/* ========================================================================= */}
+          {activeLayout === "split-studio" && (
+            <section className={`relative rounded-3xl overflow-hidden border p-6 sm:p-10 bg-gradient-to-br ${getThemeGlow()} shadow-2xl mb-12`}>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Left Column: Device Copy, Feature Grid & Buy Box */}
+                <div className="lg:col-span-6 space-y-6">
+                  <div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-white/10 text-amber-300 border border-white/15 mb-3">
+                      <span>{currentDevice.brand === "Apple" ? "🍎" : currentDevice.brand === "Samsung" ? "🌌" : "🤖"}</span>
+                      {badge}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl font-bold text-heading">{currentDevice.priceTag}</span>
-                      <Link
-                        href={currentDevice.ctaPrimary.href}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-bold ${themeStyle.button}`}
-                      >
-                        {isDe ? "Zum Angebot" : "View Deal"}
-                      </Link>
-                    </div>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+                      {headline}
+                    </h2>
+                    <p className="mt-3 text-sm sm:text-base text-zinc-300 leading-relaxed">
+                      {currentDevice.tagline[lang]}
+                    </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {currentDevice.features.map((feat, i) => (
-                      <div key={i} className="p-5 rounded-2xl bg-background/80 border border-border/60 space-y-2 hover:border-gold/40 transition">
-                        <span className="text-2xl">{feat.icon}</span>
-                        <h4 className="font-bold text-sm text-heading">{isDe ? feat.title.de : feat.title.en}</h4>
-                        <p className="text-xs text-muted leading-relaxed">{isDe ? feat.desc.de : feat.desc.en}</p>
+                  {/* 4 Breakthrough Features Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {currentDevice.features.map((feature, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition backdrop-blur-md"
+                      >
+                        <div className="text-xl mb-1.5">{feature.icon}</div>
+                        <h4 className="text-xs font-bold text-white mb-0.5">{feature.title[lang]}</h4>
+                        <p className="text-[11px] text-zinc-400 leading-snug">{feature.desc[lang]}</p>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
 
-              {/* VARIATION 3: SLIM CATALOG HIGHLIGHT (Store Top) */}
-              {billboardVariation === "slim" && (
-                <div className="rounded-2xl border border-gold/30 bg-gradient-to-r from-surface via-surface to-background p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-2xl shrink-0">
-                      ✨
+                  {/* Pricing and CTAs */}
+                  <div className="pt-2 flex flex-wrap items-center gap-4">
+                    <div className="p-3 rounded-xl bg-black/50 border border-white/10">
+                      <div className="text-xs text-zinc-400">{lang === "de" ? "Apfel Park Vorteilspreis" : "Apfel Park Offer"}</div>
+                      <div className="text-2xl font-black text-amber-400">{price}</div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300">
-                          {isDe ? "Neuheit" : "New Release"}
-                        </span>
-                        <h3 className="font-bold text-sm sm:text-base text-heading">
-                          {currentDevice.name}
-                        </h3>
-                      </div>
-                      <p className="text-xs text-muted mt-0.5 max-w-xl line-clamp-1">
-                        {isDe ? currentDevice.tagline.de : currentDevice.tagline.en}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
-                    <span className="text-lg font-bold text-heading">{currentDevice.priceTag}</span>
-                    <Link
-                      href={currentDevice.ctaPrimary.href}
-                      className="px-4 py-2 rounded-lg text-xs font-bold bg-gold text-black hover:bg-gold-soft transition"
+                    <button
+                      onClick={() => alert(`Vorbestellung für ${currentDevice.name} eingeleitet!`)}
+                      className="flex-1 min-w-[180px] px-6 py-3.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 text-center cursor-pointer"
                     >
-                      {isDe ? "Jetzt sichern" : "Get It Now"}
-                    </Link>
+                      {currentDevice.ctaPrimary[lang]} →
+                    </button>
                   </div>
                 </div>
-              )}
 
-              {/* VARIATION 4: TRUST & B-WARE BANNER (Store Mid) */}
-              {billboardVariation === "trust" && (
-                <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-surface via-surface to-emerald-950/20 p-6 sm:p-8 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
-                    <span>🛡️</span>
-                    <span>{isDe ? "Apfel Park Qualitätsversprechen" : "Apfel Park Quality Promise"}</span>
+                {/* Right Column: Ultra-Realistic Product Render with Interactive Hotspots */}
+                <div className="lg:col-span-6 relative">
+                  <div className="relative rounded-2xl overflow-hidden border border-white/15 bg-black/60 shadow-2xl group aspect-[4/3] flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentDevice.productImage}
+                      alt={currentDevice.imageAlt}
+                      className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-700 ease-out"
+                    />
+
+                    {/* Interactive Hotspots Overlaid on Phone Hardware */}
+                    {currentDevice.hotspots.map((spot, idx) => (
+                      <div
+                        key={idx}
+                        style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
+                        className="absolute -translate-x-1/2 -translate-y-1/2"
+                      >
+                        <button
+                          onClick={() => setActiveHotspot(activeHotspot === idx ? null : idx)}
+                          className="relative group/spot w-8 h-8 rounded-full bg-amber-500/80 hover:bg-amber-400 text-black font-black text-xs flex items-center justify-center shadow-lg shadow-amber-500/50 transition transform hover:scale-110 cursor-pointer"
+                        >
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                          <span className="relative">＋</span>
+                        </button>
+
+                        {/* Hotspot Tooltip Popup */}
+                        {activeHotspot === idx && (
+                          <div className="absolute left-10 top-0 z-30 w-56 p-3 rounded-xl bg-zinc-900/95 border border-amber-500/40 shadow-2xl backdrop-blur-xl text-left animate-in fade-in">
+                            <div className="text-xs font-bold text-amber-300">{spot.title[lang]}</div>
+                            <div className="text-[11px] text-zinc-300 mt-1">{spot.desc[lang]}</div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/70 text-[10px] text-zinc-400 border border-white/10">
+                      💡 {lang === "de" ? "Klicke auf ＋ für Hardware-Details" : "Click ＋ for hardware hotspots"}
+                    </div>
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-heading">
-                    {isDe ? "Geprüfte Smartphones & 12 Monate Garantie" : "Tested Smartphones & 12 Months Warranty"}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ========================================================================= */}
+          {/* VARIATION 3: STOREFRONT RIBBON (HIGH DENSITY CATALOG STRIP)               */}
+          {/* ========================================================================= */}
+          {activeLayout === "store-ribbon" && (
+            <section className="relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-r from-zinc-950 via-zinc-900 to-black p-4 sm:p-6 shadow-xl mb-12">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  {/* Miniature Product Thumbnail */}
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-black/80 border border-white/10 flex-shrink-0 flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentDevice.productImage}
+                      alt={currentDevice.imageAlt}
+                      className="w-full h-full object-contain p-1 hover:scale-110 transition"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500 text-black">
+                        Store Spotlight
+                      </span>
+                      <span className="text-xs text-zinc-400">{currentDevice.brand}</span>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-black text-white">{headline}</h3>
+                    <p className="text-xs text-zinc-400 max-w-md mt-0.5 line-clamp-1">
+                      {currentDevice.tagline[lang]}
+                    </p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-lg font-extrabold text-amber-400">{price}</span>
+                      <span className="text-xs text-zinc-400 line-through">{currentDevice.originalPrice}</span>
+                      <span className="text-xs font-semibold text-emerald-400">({discountTag})</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                  <button
+                    onClick={() => alert(`Vorbestellung für ${currentDevice.name} eingeleitet!`)}
+                    className="flex-1 md:flex-none px-6 py-3 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-black shadow-md shadow-amber-500/20 transition cursor-pointer"
+                  >
+                    {currentDevice.ctaPrimary[lang]}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("specs")}
+                    className="px-4 py-3 rounded-xl font-medium text-xs bg-white/10 hover:bg-white/15 text-white border border-white/10 transition cursor-pointer"
+                  >
+                    Specs
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ========================================================================= */}
+          {/* VARIATION 4: TRUST & HAMBURG B-WARE BILLBOARD                             */}
+          {/* ========================================================================= */}
+          {activeLayout === "trust-bware" && (
+            <section className="relative rounded-3xl overflow-hidden border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-zinc-950 to-black p-6 sm:p-10 shadow-2xl mb-12">
+              <div className="max-w-4xl mx-auto text-center space-y-6">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  <span>🛡️</span>
+                  {lang === "de" ? "100% Geprüfte Händler-Qualität · Apfel Park Hamburg" : "100% Certified Dealer Quality · Apfel Park Hamburg"}
+                </div>
+
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
+                  {headline} {lang === "de" ? "mit 12 Monaten Garantie" : "with 12-Month Warranty"}
+                </h2>
+
+                <p className="text-sm sm:text-base text-zinc-300 max-w-2xl mx-auto">
+                  {lang === "de"
+                    ? "Sichern Sie sich die neuesten Flaggschiffe sofort vor Ort in Hamburg-Wilhelmsburg oder bequem mit versichertem 24h DHL Expressversand. Fachmännisch geprüft mit Zertifikat."
+                    : "Get the latest flagships directly at our Hamburg-Wilhelmsburg store or via 24h insured DHL express shipping. Expertly tested with diagnostic certificate."}
+                </p>
+
+                {/* Trust Metrics Bar */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left pt-2">
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-white/10">
+                    <div className="text-xl mb-1">📍</div>
+                    <div className="text-xs font-bold text-white">{lang === "de" ? "Lokal in Hamburg" : "Hamburg Store"}</div>
+                    <div className="text-[10px] text-zinc-400">Wilhelmsburg Fachfiliale</div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-white/10">
+                    <div className="text-xl mb-1">⭐</div>
+                    <div className="text-xs font-bold text-white">4.8 / 5.0 Sterne</div>
+                    <div className="text-[10px] text-zinc-400">211+ Verifizierte Google Reviews</div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-white/10">
+                    <div className="text-xl mb-1">🛡️</div>
+                    <div className="text-xs font-bold text-white">12 Monate Garantie</div>
+                    <div className="text-[10px] text-zinc-400">Volle Händlerabsicherung</div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-white/10">
+                    <div className="text-xl mb-1">🔄</div>
+                    <div className="text-xs font-bold text-white">Altgerät Inzahlung</div>
+                    <div className="text-[10px] text-zinc-400">Sofortige Bar-/Kreditverrechnung</div>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
+                  <button
+                    onClick={() => alert(`Vorbestellung für ${currentDevice.name} eingeleitet!`)}
+                    className="px-8 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-400 to-teal-500 hover:brightness-110 text-black shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+                  >
+                    {currentDevice.ctaPrimary[lang]} ({price})
+                  </button>
+                  <Link
+                    href={`/${lang}/contact`}
+                    className="px-6 py-3.5 rounded-xl font-medium text-sm bg-white/10 hover:bg-white/15 text-white border border-white/10 transition"
+                  >
+                    {lang === "de" ? "Filiale in Hamburg besuchen" : "Visit Hamburg Store"}
+                  </Link>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ========================================================================= */}
+          {/* DEEP DIVE TABS: TECHNICAL SPECS, ASSET GALLERY & VIDEO TRAILERS            */}
+          {/* ========================================================================= */}
+          <section className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6 sm:p-8 backdrop-blur-xl mb-12">
+            <div className="flex items-center gap-2 border-b border-white/10 pb-4 mb-6">
+              {(
+                [
+                  { id: "billboard", label: { de: "Billboard Galerie (Alle 4 Modelle)", en: "Billboard Gallery (All 4)" }, icon: "🖼️" },
+                  { id: "specs", label: { de: "Technische Spezifikationen", en: "Technical Specs" }, icon: "📊" },
+                  { id: "video", label: { de: "Offizielle Video-Showcase", en: "Official Video Showcase" }, icon: "🎬" },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 cursor-pointer ${
+                    activeTab === tab.id
+                      ? "bg-amber-500 text-black shadow-md shadow-amber-500/20"
+                      : "text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <span>{tab.icon}</span>
+                  <span>{tab.label[lang]}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* TAB 1: ALL 4 BILLBOARD GRAPHICS IN HIGH RESOLUTION */}
+            {activeTab === "billboard" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-white">
+                    {lang === "de" ? "Verfügbare Flaggschiff-Billboards" : "Available Flagship Billboards"}
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed">
-                    {isDe
-                      ? "Jedes Gerät wird in unserer Hamburger Fachwerkstatt auf über 30 Funktionen geprüft (Akku, Display, Kameras, Sensoren). Spare bis zu 40% gegenüber Neupreis mit voller Sicherheit."
-                      : "Every device is tested across 30+ hardware checkpoints in our Hamburg workshop. Save up to 40% vs retail price with full buyer protection."}
-                  </p>
-                  <div className="pt-2 flex flex-wrap items-center gap-3">
-                    <span className="px-3 py-1 rounded-lg text-xs bg-surface-strong border border-border text-heading">
-                      ✓ 30 Tage Rückgaberecht
-                    </span>
-                    <span className="px-3 py-1 rounded-lg text-xs bg-surface-strong border border-border text-heading">
-                      ✓ Kostenlose Abholung in Hamburg
-                    </span>
-                    <span className="px-3 py-1 rounded-lg text-xs bg-surface-strong border border-border text-heading">
-                      ✓ DHL Expressversand in DE
-                    </span>
-                  </div>
+                  <span className="text-xs text-zinc-400">
+                    {lang === "de" ? "Klicke auf ein Billboard, um es als aktive Vorschau zu wählen." : "Click any billboard to make it the active preview."}
+                  </span>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
 
-        {/* TAB 2: TECHNICAL SPECIFICATIONS GRID */}
-        {activeTab === "specs" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs uppercase font-bold tracking-wider text-gold">
-                  {currentDevice.brand} Flagship
-                </span>
-                <h3 className="text-2xl font-bold text-heading mt-0.5">
-                  {currentDevice.name} – {isDe ? "Vollständige Spezifikationen" : "Full Technical Specifications"}
-                </h3>
-              </div>
-              <span className="text-xl font-extrabold text-gold">{currentDevice.priceTag}</span>
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-              <table className="w-full text-left text-sm divide-y divide-border">
-                <tbody className="divide-y divide-border">
-                  {currentDevice.specs.map((spec, i) => (
-                    <tr key={i} className="hover:bg-surface-strong/50 transition">
-                      <td className="py-3.5 px-4 sm:px-6 font-semibold text-muted text-xs sm:text-sm w-1/3">
-                        {isDe ? spec.label.de : spec.label.en}
-                      </td>
-                      <td className="py-3.5 px-4 sm:px-6 text-heading font-medium text-xs sm:text-sm">
-                        {isDe ? spec.value.de : spec.value.en}
-                      </td>
-                    </tr>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {SHOWCASE_DEVICES.map((device) => (
+                    <div
+                      key={device.id}
+                      onClick={() => {
+                        setSelectedDeviceId(device.id);
+                        window.scrollTo({ top: 120, behavior: "smooth" });
+                      }}
+                      className={`group cursor-pointer rounded-2xl overflow-hidden border transition-all duration-300 ${
+                        device.id === selectedDeviceId
+                          ? "border-amber-500 ring-2 ring-amber-500/30 shadow-2xl scale-[1.01]"
+                          : "border-white/10 hover:border-white/30"
+                      }`}
+                    >
+                      <div className="relative aspect-[16/9] bg-black">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={device.billboardImage}
+                          alt={device.imageAlt}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition" />
+                        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs">
+                          <div>
+                            <span className="font-bold text-white">{device.name}</span>
+                            <div className="text-[10px] text-amber-400">{device.priceTag} · {device.savings}</div>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-black font-bold text-[10px]">
+                            {device.id === selectedDeviceId ? "Aktiv" : "Auswählen →"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: OFFICIAL VIDEO SHOWCASE */}
-        {activeTab === "video" && (
-          <div className="space-y-6">
-            <div>
-              <span className="text-xs uppercase font-bold tracking-wider text-gold">
-                {currentDevice.brand} Video Showcase
-              </span>
-              <h3 className="text-2xl font-bold text-heading mt-0.5">
-                {currentDevice.videoTitle || currentDevice.name}
-              </h3>
-              <p className="text-xs text-muted mt-1">
-                {isDe
-                  ? "Offizielles Produktvideo & Keynote Feature Präsentation"
-                  : "Official product video and keynote feature presentation"}
-              </p>
-            </div>
-
-            {/* Video Player Container */}
-            <div className="relative w-full aspect-16/9 rounded-3xl overflow-hidden border border-border bg-black shadow-2xl flex items-center justify-center group">
-              <div className="text-center space-y-3 p-6">
-                <div className="w-16 h-16 rounded-full bg-red-600/90 text-white flex items-center justify-center text-2xl mx-auto shadow-lg group-hover:scale-110 transition">
-                  ▶
                 </div>
-                <h4 className="font-bold text-base text-white">
-                  {currentDevice.name} – Official Launch Film
-                </h4>
-                <span className="text-xs text-neutral-400 block max-w-md">
-                  {isDe
-                    ? "In der finalen Version binden wir hier das offizielle 4K YouTube Video des Herstellers ein."
-                    : "In the production release, the official 4K manufacturer YouTube video will be embedded here."}
-                </span>
               </div>
-            </div>
-          </div>
-        )}
+            )}
+
+            {/* TAB 2: TECHNICAL SPECS BREAKDOWN */}
+            {activeTab === "specs" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <span>{currentDevice.brand === "Apple" ? "🍎" : currentDevice.brand === "Samsung" ? "🌌" : "🤖"}</span>
+                    {currentDevice.name} – {lang === "de" ? "Hardware & Spezifikationen" : "Hardware & Specs"}
+                  </h3>
+                  <span className="text-xs text-amber-400 font-mono">{currentDevice.priceTag}</span>
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-white/10">
+                  <table className="w-full text-xs text-left">
+                    <tbody className="divide-y divide-white/5">
+                      {currentDevice.specs.map((spec, idx) => (
+                        <tr key={idx} className="hover:bg-white/5 transition">
+                          <td className="px-4 py-3.5 font-bold text-zinc-400 w-1/3 sm:w-1/4 bg-white/[0.02]">
+                            {spec.label[lang]}
+                          </td>
+                          <td className="px-4 py-3.5 text-zinc-200 font-medium">
+                            {spec.value[lang]}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: OFFICIAL VIDEO SHOWCASE */}
+            {activeTab === "video" && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span>🎬</span>
+                  {currentDevice.videoTitle}
+                </h3>
+                <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-black">
+                  <iframe
+                    className="w-full h-full"
+                    src={`https://www.youtube.com/embed/${currentDevice.youtubeId}?rel=0`}
+                    title={currentDevice.videoTitle}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
       </main>
     </div>
   );
