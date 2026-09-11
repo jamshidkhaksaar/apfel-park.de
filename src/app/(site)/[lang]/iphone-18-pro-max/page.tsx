@@ -24,8 +24,8 @@ export async function generateMetadata({
 
   const description =
     locale === "de"
-      ? "Apple iPhone 18 Pro Max mit 6.9 Zoll Super Retina XDR OLED, A20 Pro 2nm Chip, variabler 48MP Kamera & Riesen-Akku. Vorbestellung & Angebote bei Apfel Park Hamburg."
-      : "Apple iPhone 18 Pro Max featuring 6.9 inch Super Retina XDR OLED, 2nm A20 Pro, variable 48MP optics & massive battery. Pre-orders in Hamburg.";
+      ? "iPhone 18 Pro Max mit 6,9 Zoll Super Retina XDR OLED, A20 Pro 2nm Chip und variabler 48MP Kamera. Vorbestellung bei Apfel Park Hamburg."
+      : "iPhone 18 Pro Max with 6.9-inch Super Retina XDR OLED, 2nm A20 Pro chip and variable 48MP camera. Pre-order at Apfel Park Hamburg.";
 
   return createMetadata(locale, title, description, "/iphone-18-pro-max", "/images/apple/pro-front-back.webp");
 }

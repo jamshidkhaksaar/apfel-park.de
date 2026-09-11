@@ -7,6 +7,10 @@ describe("metadata title ownership", () => {
   it("lets the root template add the Apfel Park brand exactly once", () => {
     expect(normalizeMetadataTitle("Gerät verkaufen | Apfel Park")).toBe("Gerät verkaufen");
     expect(normalizeMetadataTitle("Kontakt & Anfahrt – Apfel Park Hamburg")).toBe("Kontakt & Anfahrt – Hamburg");
+    expect(normalizeMetadataTitle("iPhone 18 Pro kaufen | Apfel Park Hamburg")).toBe("iPhone 18 Pro kaufen");
+    expect(normalizeMetadataTitle("Galaxy Z Fold8 kaufen – 4,5 mm | Apfel Park Hamburg | Apfel Park")).toBe(
+      "Galaxy Z Fold8 kaufen – 4,5 mm",
+    );
     expect(normalizeMetadataTitle("Online Shop")).toBe("Online Shop");
   });
 });

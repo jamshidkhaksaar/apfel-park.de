@@ -21,7 +21,7 @@ export const normalizeMetadataTitle = (value: string): string =>
   value
     .trim()
     .replace(/\s*[–-]\s*Apfel Park Hamburg$/i, " – Hamburg")
-    .replace(/\s*\|\s*Apfel Park$/i, "")
+    .replace(/(?:\s*[|–-]\s*Apfel Park(?: Hamburg)?)+$/i, "")
     .trim();
 
 export type CreateMetadataOptions = {

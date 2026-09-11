@@ -24,8 +24,8 @@ export async function generateMetadata({
 
   const description =
     locale === "de"
-      ? "Apple iPhone Duo (Foldable) mit 7.6 Zoll Innen-Display & 5.4 Zoll Cover. A20 Pro 2nm Chip, Titan-Scharnier & 5.400 mAh Akku. Jetzt bei Apfel Park Hamburg reservieren."
-      : "Apple iPhone Duo foldable with 7.6 inch inner screen & 5.4 inch cover. 2nm A20 Pro silicon, Grade 5 titanium zero-gap hinge. Reserve at Apfel Park Hamburg.";
+      ? "Apple iPhone Duo (Foldable): 7,6 Zoll Innen-Display, 5,4 Zoll Cover, A20 Pro 2nm Chip und Titan-Scharnier. Bei Apfel Park Hamburg reservieren."
+      : "Apple iPhone Duo foldable: 7.6-inch inner screen, 5.4-inch cover, 2nm A20 Pro chip and titanium hinge. Reserve at Apfel Park Hamburg.";
 
   return createMetadata(locale, title, description, "/iphone-duo", "/images/apple/duo-night.webp");
 }

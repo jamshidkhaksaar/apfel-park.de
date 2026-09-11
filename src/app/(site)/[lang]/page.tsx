@@ -154,7 +154,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
       {/* Samsung Galaxy Z Fold8 & Z Fold8 Ultra Showcase Banner */}
       <div className="container-page py-6 md:py-8">
-        <GalaxyFoldBanner lang={lang} shopHref={`/${lang}/samsung-handys`} />
+        <GalaxyFoldBanner lang={lang} shopHref={`/${lang}/galaxy-z-fold-8`} />
       </div>
 
       {/* Repair Process - Visual Timeline */}
