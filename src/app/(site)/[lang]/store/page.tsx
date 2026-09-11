@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
+import IPhoneBanner from "@/components/banner/IPhoneBanner";
 import { createMetadata } from "../../../../lib/metadata";
 import { getProducts, getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
 import { requireLocale } from "@/lib/route-locale";
@@ -101,6 +102,10 @@ export default async function StorePage({ params, searchParams }: { params: Prom
       />
 
       <StoreCollectionLinks lang={locale} products={allProducts} />
+
+      <div className="container-page py-4">
+        <IPhoneBanner shopHref={`/${locale}/store`} />
+      </div>
 
       <section className="bg-store-ground py-6 md:py-8">
         <div className="container-page">

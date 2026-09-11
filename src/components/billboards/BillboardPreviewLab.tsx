@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { type Locale } from "@/lib/i18n";
+import IPhoneBanner from "@/components/banner/IPhoneBanner";
 
 export type DeviceModelInfo = {
   id: string;
@@ -202,7 +203,7 @@ export const SHOWCASE_DEVICES: DeviceModelInfo[] = [
   },
 ];
 
-type LayoutVariant = "cinematic-billboard" | "split-studio" | "store-ribbon" | "trust-bware";
+type LayoutVariant = "cinematic-billboard" | "split-studio" | "store-ribbon" | "trust-bware" | "compact-apple-hero";
 type ViewportSize = "desktop" | "tablet" | "mobile";
 
 export default function BillboardPreviewLab({ lang }: { lang: Locale }) {
@@ -334,6 +335,7 @@ export default function BillboardPreviewLab({ lang }: { lang: Locale }) {
             <div className="flex items-center bg-black/40 rounded-lg p-1 border border-white/10">
               {(
                 [
+                  { id: "compact-apple-hero", label: { de: "Storefront Compact Banner", en: "Store Compact Banner" }, icon: "🍏" },
                   { id: "cinematic-billboard", label: { de: "Billboard Großformat", en: "Grand Billboard" }, icon: "🎬" },
                   { id: "split-studio", label: { de: "3D Split Studio", en: "3D Split Studio" }, icon: "💎" },
                   { id: "store-ribbon", label: { de: "Storefront Ribbon", en: "Store Ribbon" }, icon: "🛍️" },
@@ -472,6 +474,15 @@ export default function BillboardPreviewLab({ lang }: { lang: Locale }) {
                 Simulierte Ansicht: {activeViewport.toUpperCase()} ({activeViewport === "tablet" ? "768px" : "390px"})
               </span>
             </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* VARIATION 0: COMPACT STOREFRONT HERO BANNER (WEBP ASSETS + GLASS STAGE)   */}
+          {/* ========================================================================= */}
+          {activeLayout === "compact-apple-hero" && (
+            <section className="mb-12">
+              <IPhoneBanner shopHref={`/${lang}/store`} />
+            </section>
           )}
 
           {/* ========================================================================= */}
