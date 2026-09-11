@@ -733,8 +733,12 @@
   .stage {
     gap: 8px;
   }
-  .bgVideo {
-    width: 55%;
+  /* Video is a desktop-only enhancement: hide it on phones and tablets. */
+  .bgVideo,
+  .vidUi,
+  .foldPlay,
+  .notice {
+    display: none;
   }
 }
 
@@ -813,11 +817,10 @@
     display: none;
   }
   .vidUi {
-    position: static;
-    width: fit-content;
-    margin: 14px auto 0;
-    right: auto;
-    bottom: auto;
+    display: none;
+  }
+  .foldPlay {
+    display: none;
   }
 }
 

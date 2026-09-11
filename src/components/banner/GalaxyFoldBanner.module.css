@@ -688,13 +688,37 @@
 
   .dualCarousel {
     max-width: 100%;
-    gap: 10px;
+    gap: 18px;
   }
 
   .carouselFold8,
   .carouselUltra {
     flex: 1 1 0;
     min-width: 0;
+  }
+
+  /* Keep the two phones still so they never drift into each other / the swatches. */
+  .carouselFold8 .phoneContainer,
+  .carouselUltra .phoneContainer {
+    animation: none;
+  }
+
+  .carouselUltra .slide {
+    transform: none;
+  }
+
+  .colorDots {
+    flex-wrap: wrap;
+    max-width: 100%;
+    row-gap: 6px;
+  }
+
+  .modelName {
+    font-size: 11px;
+  }
+
+  .colorLabel {
+    max-width: 100%;
   }
 
   .phoneContainer {
