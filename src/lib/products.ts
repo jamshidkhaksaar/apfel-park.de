@@ -890,6 +890,38 @@ export async function countActiveSubcategoryProducts(subcategory: string): Promi
   }
 }
 
+/**
+ * One representative in-stock product image per accessory subcategory.
+ *
+ * Used by category cards (for example the popular-categories grid) so the card
+ * shows a real product instead of a placeholder. Falls back to the first
+ * available subcategory when a preferred one has no active stock.
+ */
+export async function getAccessorySubcategoryImages(
+  subcategories: string[],
+): Promise<Record<string, string>> {
+  if (subcategories.length === 0) return {};
+  try {
+    const result = await query(
+      `SELECT DISTINCT ON (subcategory) subcategory, images
+       FROM products
+       WHERE is_active = true AND stock > 0 AND category = 'accessories' AND subcategory = ANY($1)
+       ORDER BY subcategory, has_real_product_photos DESC, created_at DESC`,
+      [subcategories],
+    );
+    const out: Record<string, string> = {};
+    for (const row of result.rows as Array<{ subcategory: string | null; images: string[] | null }>) {
+      if (!row.subcategory) continue;
+      const image = row.images?.find((value) => typeof value === "string" && value.trim().length > 0);
+      if (image) out[row.subcategory] = image;
+    }
+    return out;
+  } catch (error) {
+    console.error("getAccessorySubcategoryImages failed:", error);
+    return {};
+  }
+}
+
 const getStorefrontMerchandisingIds = async (): Promise<string[]> => {
   try {
     const db = createDbClient();

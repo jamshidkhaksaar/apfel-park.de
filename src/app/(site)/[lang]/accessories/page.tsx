@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
+import {
+  getAccessorySubcategoryImages,
+  getStoreCatalog,
+  parseStoreCatalogFilters,
+  parseStoreSort,
+} from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getAccessoriesContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
@@ -67,6 +73,21 @@ export default async function AccessoriesPage({
     filters: activeFilters,
   });
   if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
+
+  const categoryImages = await getAccessorySubcategoryImages([
+    "cases-hard",
+    "cases-silicone",
+    "cases-clear",
+    "cases-wallet",
+    "audio",
+    "charging",
+    "screen-protection",
+  ]);
+  const casesImage =
+    categoryImages["cases-hard"] ??
+    categoryImages["cases-silicone"] ??
+    categoryImages["cases-clear"] ??
+    categoryImages["cases-wallet"];
 
   const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${lang}/accessories`, indexing);
   const accessoriesName = dict.meta.accessories.title;
@@ -136,12 +157,22 @@ export default async function AccessoriesPage({
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {/* Cases */}
             <Link href={`/${lang}/accessories/hardcases`} className="tech-card-hover group block overflow-hidden rounded-2xl">
-              <div className="relative aspect-square bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10 p-8">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                  </svg>
-                </div>
+              <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10">
+                {casesImage ? (
+                  <Image
+                    src={casesImage}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-contain p-8 transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                    </svg>
+                  </div>
+                )}
               </div>
               <div className="p-6">
                 <h3 className="text-lg font-bold text-foreground">
@@ -161,14 +192,24 @@ export default async function AccessoriesPage({
 
             {/* Headphones */}
             <Link href={`/${lang}/accessories/kopfhoerer-audio`} className="tech-card-hover group block overflow-hidden rounded-2xl">
-              <div className="relative aspect-square bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10 p-8">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.5}>
-                    <path d="M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM21 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
-                    <path d="M9 19V8a3 3 0 013-3h0a3 3 0 013 3v11" />
-                    <path d="M3 12V8a9 9 0 0118 0v4" />
-                  </svg>
-                </div>
+              <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10">
+                {categoryImages["audio"] ? (
+                  <Image
+                    src={categoryImages["audio"]}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-contain p-8 transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.5}>
+                      <path d="M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM21 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                      <path d="M9 19V8a3 3 0 013-3h0a3 3 0 013 3v11" />
+                      <path d="M3 12V8a9 9 0 0118 0v4" />
+                    </svg>
+                  </div>
+                )}
               </div>
               <div className="p-6">
                 <h3 className="text-lg font-bold text-foreground">
@@ -188,12 +229,22 @@ export default async function AccessoriesPage({
 
             {/* Chargers */}
             <Link href={`/${lang}/accessories/ladegeraete-kabel`} className="tech-card-hover group block overflow-hidden rounded-2xl">
-              <div className="relative aspect-square bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10 p-8">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                  </svg>
-                </div>
+              <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10">
+                {categoryImages["charging"] ? (
+                  <Image
+                    src={categoryImages["charging"]}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-contain p-8 transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                    </svg>
+                  </div>
+                )}
               </div>
               <div className="p-6">
                 <h3 className="text-lg font-bold text-foreground">
@@ -213,12 +264,22 @@ export default async function AccessoriesPage({
 
             {/* Screen Protectors */}
             <Link href={`/${lang}/accessories/displayschutz`} className="tech-card-hover group block overflow-hidden rounded-2xl">
-              <div className="relative aspect-square bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10 p-8">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                  </svg>
-                </div>
+              <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gold/10 via-amber/10 to-bronze/10">
+                {categoryImages["screen-protection"] ? (
+                  <Image
+                    src={categoryImages["screen-protection"]}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-contain p-8 transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg className="h-24 w-24 text-gold/20 transition group-hover:text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                    </svg>
+                  </div>
+                )}
               </div>
               <div className="p-6">
                 <h3 className="text-lg font-bold text-foreground">
