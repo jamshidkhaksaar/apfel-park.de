@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Locale } from "@/lib/i18n";
@@ -24,7 +24,7 @@ type Finish = {
   badgeEn: string;
 };
 
-type ViewMode = "unfolded" | "colors" | "profile" | "video";
+type ViewMode = "360" | "unfolded" | "profile" | "video";
 
 const PIXEL11_FINISHES: Finish[] = [
   {
@@ -96,6 +96,14 @@ const VIDEO_TRACKS = [
 /* Clean SVG Icons (Zero Emojis)                                             */
 /* -------------------------------------------------------------------------- */
 
+function RotateIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19" />
+    </svg>
+  );
+}
+
 function WhatsAppIcon({ className = "size-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -117,6 +125,15 @@ function PlayIcon({ className = "size-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <polygon points="6 3 20 12 6 21 6 3" />
+    </svg>
+  );
+}
+
+function PauseIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="4" width="4" height="16" />
+      <rect x="14" y="4" width="4" height="16" />
     </svg>
   );
 }
@@ -175,10 +192,9 @@ function ZoomOutIcon({ className = "size-4" }: { className?: string }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Custom Hardware Architecture SVGs (Zero Emojis)                            */
+/* Hardware Architecture SVGs                                                 */
 /* -------------------------------------------------------------------------- */
 
-// 1. Google Tensor G5 (3nm TSMC Silicon Die & TPU)
 function GoogleTensorCpuSvg({ className = "size-16" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 120 120" fill="none" aria-hidden="true">
@@ -193,14 +209,11 @@ function GoogleTensorCpuSvg({ className = "size-16" }: { className?: string }) {
           <stop offset="100%" stopColor="#0f131a" />
         </linearGradient>
       </defs>
-      {/* Outer Ceramic Carrier */}
       <rect x="8" y="8" width="104" height="104" rx="10" fill="#13171e" stroke="url(#tensorBlueGrad)" strokeWidth="1.5" />
-      {/* 4 Google Brand Dots in Corners */}
       <circle cx="16" cy="16" r="2.5" fill="#4285f4" />
       <circle cx="104" cy="16" r="2.5" fill="#ea4335" />
       <circle cx="104" cy="104" r="2.5" fill="#34a853" />
       <circle cx="16" cy="104" r="2.5" fill="#fbbc05" />
-      {/* Perimeter BGA Pin Traces */}
       <g stroke="#4285f4" strokeWidth="1.2" opacity="0.65">
         <line x1="30" y1="4" x2="30" y2="8" /><line x1="44" y1="4" x2="44" y2="8" />
         <line x1="58" y1="4" x2="58" y2="8" /><line x1="72" y1="4" x2="72" y2="8" />
@@ -215,26 +228,20 @@ function GoogleTensorCpuSvg({ className = "size-16" }: { className?: string }) {
         <line x1="112" y1="58" x2="116" y2="58" /><line x1="112" y1="72" x2="116" y2="72" />
         <line x1="112" y1="86" x2="116" y2="86" />
       </g>
-      {/* Central 3nm TSMC Die */}
       <rect x="24" y="24" width="72" height="72" rx="6" fill="url(#tensorDie)" stroke="rgba(66, 133, 244, 0.4)" strokeWidth="1" />
-      {/* Google TPU (Tensor Processing Unit) */}
       <rect x="30" y="30" width="34" height="24" rx="2" fill="rgba(66, 133, 244, 0.22)" stroke="#4285f4" strokeWidth="0.8" />
       <text x="47" y="42" fill="#7fa2d6" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">Google TPU</text>
       <text x="47" y="49" fill="#93c5fd" fontSize="5.5" textAnchor="middle" fontFamily="sans-serif">Gemini Nano</text>
-      {/* Titan M3 Security Enclave */}
       <rect x="68" y="30" width="22" height="24" rx="2" fill="rgba(52, 168, 83, 0.18)" stroke="#34a853" strokeWidth="0.8" />
       <text x="79" y="42" fill="#86efac" fontSize="5.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">Titan M3</text>
       <text x="79" y="49" fill="#86efac" fontSize="5" textAnchor="middle" fontFamily="sans-serif">Security</text>
-      {/* Cortex CPU Core Cluster */}
       <rect x="30" y="58" width="60" height="18" rx="2" fill="rgba(251, 188, 5, 0.15)" stroke="#fbbc05" strokeWidth="0.8" />
       <text x="60" y="70" fill="#fde047" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1+3+4 ARMv9.2 CPU Cores</text>
-      {/* Process Indicator */}
       <text x="60" y="87" fill="#ffffff" fontSize="6" fontWeight="bold" letterSpacing="0.8" textAnchor="middle" fontFamily="sans-serif">3nm TSMC N3P · LPDDR5X</text>
     </svg>
   );
 }
 
-// 2. Pro Pixel Camera & Periscope Telephoto Optics
 function PixelPeriscopeCameraSvg({ className = "size-16" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 120 120" fill="none" aria-hidden="true">
@@ -249,28 +256,21 @@ function PixelPeriscopeCameraSvg({ className = "size-16" }: { className?: string
           <stop offset="100%" stopColor="transparent" />
         </radialGradient>
       </defs>
-      {/* Camera Visor Housing */}
       <rect x="8" y="24" width="104" height="72" rx="14" fill="url(#cameraVisorGrad)" stroke="#4285f4" strokeWidth="1.2" />
-      {/* Glass Pill Visor Outer Layer */}
       <rect x="14" y="32" width="92" height="56" rx="10" fill="#000000" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="1" />
-      {/* Main 50MP Wide Lens */}
       <circle cx="36" cy="60" r="18" fill="#15171c" stroke="#4285f4" strokeWidth="1.2" />
       <circle cx="36" cy="60" r="12" fill="url(#lensReflect)" stroke="#7fa2d6" strokeWidth="0.8" />
       <circle cx="36" cy="60" r="5" fill="#000" />
       <text x="36" y="85" fill="#7fa2d6" fontSize="5.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">50MP Quad PD</text>
-      {/* Folded Periscope Prism (Telephoto) */}
       <rect x="68" y="44" width="28" height="28" rx="4" fill="#15171c" stroke="#fbbc05" strokeWidth="1.2" />
-      {/* 45-degree Periscope Mirror */}
       <line x1="72" y1="48" x2="92" y2="68" stroke="#fbbc05" strokeWidth="1.5" strokeLinecap="round" />
       <text x="82" y="85" fill="#fde047" fontSize="5.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">5X OPTICAL</text>
-      {/* Laser AF & Microphone Sensor */}
       <circle cx="60" cy="54" r="2.5" fill="#ea4335" />
       <circle cx="60" cy="66" r="1.5" fill="#34a853" />
     </svg>
   );
 }
 
-// 3. Fluid Frictionless Gear Hinge (Zero-Gap 180° Fold)
 function PixelFrictionHingeSvg({ className = "size-16" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 120 120" fill="none" aria-hidden="true">
@@ -281,32 +281,24 @@ function PixelFrictionHingeSvg({ className = "size-16" }: { className?: string }
           <stop offset="100%" stopColor="#475569" />
         </linearGradient>
       </defs>
-      {/* Blueprint Grid Ground */}
       <rect x="10" y="10" width="100" height="100" rx="12" fill="#10141a" stroke="rgba(66, 133, 244, 0.3)" strokeWidth="1.2" />
-      {/* Grid cross lines */}
       <g stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8">
         <line x1="10" y1="35" x2="110" y2="35" /><line x1="10" y1="60" x2="110" y2="60" /><line x1="10" y1="85" x2="110" y2="85" />
         <line x1="35" y1="10" x2="35" y2="110" /><line x1="60" y1="10" x2="60" y2="110" /><line x1="85" y1="10" x2="85" y2="110" />
       </g>
-      {/* Left Chassis Arm */}
       <path d="M22 46 L50 46 L50 74 L22 74 Z" fill="#1e2430" stroke="url(#steelGrad)" strokeWidth="1.2" />
-      {/* Right Chassis Arm */}
       <path d="M70 46 L98 46 L98 74 L70 74 Z" fill="#1e2430" stroke="url(#steelGrad)" strokeWidth="1.2" />
-      {/* Multi-Cam Friction Gears */}
       <circle cx="55" cy="60" r="7" fill="#2d3748" stroke="#4285f4" strokeWidth="1.2" />
       <circle cx="55" cy="60" r="2.5" fill="#4285f4" />
       <circle cx="65" cy="60" r="7" fill="#2d3748" stroke="#4285f4" strokeWidth="1.2" />
       <circle cx="65" cy="60" r="2.5" fill="#4285f4" />
-      {/* 0.0mm Gap Indicator Arrow */}
       <path d="M52 30 L68 30 M60 25 L60 35" stroke="#34a853" strokeWidth="1.5" strokeLinecap="round" />
       <text x="60" y="22" fill="#34a853" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">0.0 mm FLAT FOLD</text>
-      {/* Water resistance indicator */}
       <text x="60" y="98" fill="#7fa2d6" fontSize="5.5" fontWeight="bold" letterSpacing="0.8" textAnchor="middle" fontFamily="sans-serif">AEROSPACE STEEL · IPX8</text>
     </svg>
   );
 }
 
-// 4. Super Actua OLED 1-120Hz LTPO Canvas
 function SuperActuaDisplaySvg({ className = "size-16" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 120 120" fill="none" aria-hidden="true">
@@ -318,9 +310,7 @@ function SuperActuaDisplaySvg({ className = "size-16" }: { className?: string })
           <stop offset="100%" stopColor="#34a853" />
         </linearGradient>
       </defs>
-      {/* Display Frame */}
       <rect x="12" y="12" width="96" height="96" rx="10" fill="#0c1017" stroke="url(#actuaGlow)" strokeWidth="1.5" />
-      {/* 1Hz to 120Hz dynamic frequency waveform */}
       <path
         d="M20 54 Q28 30 36 54 T52 54 T68 54 T84 54 T100 54"
         fill="none"
@@ -328,14 +318,12 @@ function SuperActuaDisplaySvg({ className = "size-16" }: { className?: string })
         strokeWidth="1.8"
         strokeLinecap="round"
       />
-      {/* Anti-reflective subpixel array representation */}
       <g stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.8">
         <rect x="22" y="68" width="76" height="24" rx="3" fill="rgba(255, 255, 255, 0.02)" />
         <line x1="32" y1="68" x2="32" y2="92" /><line x1="44" y1="68" x2="44" y2="92" />
         <line x1="56" y1="68" x2="56" y2="92" /><line x1="68" y1="68" x2="68" y2="92" />
         <line x1="80" y1="68" x2="80" y2="92" />
       </g>
-      {/* Display Spec Annotations */}
       <text x="60" y="30" fill="#93c5fd" fontSize="6.5" fontWeight="bold" letterSpacing="0.5" textAnchor="middle" fontFamily="sans-serif">1-120 Hz LTPO · 3,000 NITS</text>
       <text x="60" y="103" fill="#60a5fa" fontSize="5.5" fontWeight="bold" letterSpacing="0.6" textAnchor="middle" fontFamily="sans-serif">SUPER ACTUA FLEX · UTG</text>
     </svg>
@@ -354,13 +342,21 @@ export default function PixelShowcase({
   const [, startTransition] = useTransition();
 
   const [selectedModel, setSelectedModel] = useState<PixelModelId>(initialModel);
-  const [viewMode, setViewMode] = useState<ViewMode>("unfolded");
+  const [viewMode, setViewMode] = useState<ViewMode>("360");
   const [selectedFinishIndex, setSelectedFinishIndex] = useState(0);
   const [activeVideoIdx, setActiveVideoIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isFullscreenNative, setIsFullscreenNative] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<1 | 1.5 | 2>(1);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  // 360-Degree Interactive Rotation State
+  const [rotationAngle, setRotationAngle] = useState(0); // 0 to 360
+  const tiltAngle = -3; // subtle natural perspective tilt
+  const [isDragging, setIsDragging] = useState(false);
+  const [isAutoSpinning, setIsAutoSpinning] = useState(false);
+  const dragStartX = useRef<number>(0);
+  const dragStartAngle = useRef<number>(0);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -373,10 +369,42 @@ export default function PixelShowcase({
     startTransition(() => {
       setSelectedModel(model);
       setSelectedFinishIndex(0);
-      setViewMode("unfolded");
+      setRotationAngle(0);
+      setViewMode("360");
     });
   };
 
+  // 360 Auto-Rotation Engine
+  useEffect(() => {
+    if (!isAutoSpinning || isDragging || viewMode !== "360") return;
+    const interval = setInterval(() => {
+      setRotationAngle((prev) => (prev + 1) % 360);
+    }, 30);
+    return () => clearInterval(interval);
+  }, [isAutoSpinning, isDragging, viewMode]);
+
+  // Touch & Mouse Drag Handlers for 360-Degree Interaction
+  const handleStartDrag = (clientX: number) => {
+    setIsDragging(true);
+    setIsAutoSpinning(false);
+    dragStartX.current = clientX;
+    dragStartAngle.current = rotationAngle;
+  };
+
+  const handleMoveDrag = useCallback((clientX: number) => {
+    if (!isDragging) return;
+    const deltaX = clientX - dragStartX.current;
+    // 1px drag = ~0.75 degree rotation for fluid tactile response
+    let newAngle = Math.round(dragStartAngle.current + deltaX * 0.75) % 360;
+    if (newAngle < 0) newAngle += 360;
+    setRotationAngle(newAngle);
+  }, [isDragging]);
+
+  const handleEndDrag = () => {
+    setIsDragging(false);
+  };
+
+  // Fullscreen change listener
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreenNative(!!document.fullscreenElement);
@@ -385,6 +413,20 @@ export default function PixelShowcase({
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  // Global mousemove/mouseup listener for smooth drag even outside element
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMouseMove = (e: MouseEvent) => handleMoveDrag(e.clientX);
+    const onMouseUp = () => handleEndDrag();
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [isDragging, handleMoveDrag]);
+
+  // Keyboard navigation & body lock during lightbox
   useEffect(() => {
     if (!lightboxOpen) return;
     const prevOverflow = document.body.style.overflow;
@@ -396,10 +438,18 @@ export default function PixelShowcase({
         setZoomLevel(1);
       }
       if (e.key === "ArrowRight") {
-        setSelectedFinishIndex((prev) => (prev + 1) % activeFinishes.length);
+        if (viewMode === "360") {
+          setRotationAngle((prev) => (prev + 15) % 360);
+        } else {
+          setSelectedFinishIndex((prev) => (prev + 1) % activeFinishes.length);
+        }
       }
       if (e.key === "ArrowLeft") {
-        setSelectedFinishIndex((prev) => (prev - 1 + activeFinishes.length) % activeFinishes.length);
+        if (viewMode === "360") {
+          setRotationAngle((prev) => (prev - 15 + 360) % 360);
+        } else {
+          setSelectedFinishIndex((prev) => (prev - 1 + activeFinishes.length) % activeFinishes.length);
+        }
       }
     };
 
@@ -408,7 +458,7 @@ export default function PixelShowcase({
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKey);
     };
-  }, [lightboxOpen, activeFinishes.length]);
+  }, [lightboxOpen, activeFinishes.length, viewMode]);
 
   const handleToggleNativeFullscreen = async () => {
     try {
@@ -426,66 +476,27 @@ export default function PixelShowcase({
     }
   };
 
-  // Active visual asset
-  const getActiveAsset = () => {
-    if (viewMode === "video") {
-      return { type: "video" as const, src: currentVideo.src };
-    }
-    if (viewMode === "profile") {
-      return {
-        type: "image" as const,
-        src: selectedModel === "proFold" ? "/images/google/pixel11/fold-obsidian.webp" : "/images/google/pixel11/pixel-obsidian.webp",
-        alt: isDe
-          ? "Google Pixel 11 Serie Seitenprofil & Gehäusefinish"
-          : "Google Pixel 11 Series side profile and chassis build",
-        labelDe: selectedModel === "proFold" ? "Pro Fold · 5,1 mm Slim Profil & Scharnier" : "Pixel 11 · 8,5 mm Unibody Profil",
-        labelEn: selectedModel === "proFold" ? "Pro Fold · 5.1mm Slim Profile & Hinge" : "Pixel 11 · 8.5mm Unibody Profile",
-      };
-    }
-    if (viewMode === "unfolded") {
-      if (selectedModel === "proFold") {
-        return {
-          type: "image" as const,
-          src: "/images/google/pixel11/fold-olive.webp",
-          alt: isDe
-            ? "Google Pixel 11 Pro Fold – 8,0 Zoll Super Actua Flex Display entfaltet"
-            : "Google Pixel 11 Pro Fold – 8.0-inch Super Actua Flex Canvas Unfolded",
-          labelDe: "Pixel 11 Pro Fold · 8,0\" Super Actua Flex (1-120 Hz)",
-          labelEn: "Pixel 11 Pro Fold · 8.0\" Super Actua Flex (1-120 Hz)",
-        };
-      }
-      return {
-        type: "image" as const,
-        src: "/images/google/pixel11/pixel-frost.webp",
-        alt: isDe
-          ? "Google Pixel 11 – 6,3 Zoll Actua OLED Display"
-          : "Google Pixel 11 – 6.3-inch Actua OLED Display",
-        labelDe: "Pixel 11 · 6,3\" Actua OLED (120 Hz, 2.700 Nits)",
-        labelEn: "Pixel 11 · 6.3\" Actua OLED (120 Hz, 2,700 Nits)",
-      };
-    }
-    // "colors" mode
-    return {
-      type: "image" as const,
-      src: currentFinish.src,
-      alt: `Google ${selectedModel === "pixel11" ? "Pixel 11" : "Pixel 11 Pro Fold"} — ${
-        isDe ? currentFinish.nameDe : currentFinish.nameEn
-      }`,
-      labelDe: currentFinish.nameDe,
-      labelEn: currentFinish.nameEn,
-    };
+  // Readable angle description
+  const getAngleLabel = (deg: number) => {
+    const d = (deg % 360 + 360) % 360;
+    if (d >= 340 || d <= 20) return isDe ? "0° · Frontalansicht (Display)" : "0° · Front View (Display)";
+    if (d > 20 && d < 70) return isDe ? `${d}° · 3D Perspektive (Rechts)` : `${d}° · 3D Perspective (Right)`;
+    if (d >= 70 && d <= 110) return isDe ? `${d}° · Seitenprofil (${selectedModel === "proFold" ? "5,1 mm" : "8,5 mm"})` : `${d}° · Side Profile (${selectedModel === "proFold" ? "5.1mm" : "8.5mm"})`;
+    if (d > 110 && d < 160) return isDe ? `${d}° · Rückseite (Schrägansicht)` : `${d}° · Back Quarter`;
+    if (d >= 160 && d <= 200) return isDe ? `${d}° · Rückseite (Camera Visor)` : `${d}° · Rear Visor & Finish`;
+    if (d > 200 && d < 250) return isDe ? `${d}° · Rückseite (Links)` : `${d}° · Rear Left Angle`;
+    if (d >= 250 && d <= 290) return isDe ? `${d}° · Seitenprofil (Tasten & Antenne)` : `${d}° · Edge Profile (Buttons)`;
+    return isDe ? `${d}° · 3D Perspektive (Links)` : `${d}° · 3D Perspective (Left)`;
   };
 
-  const activeAsset = getActiveAsset();
-
-  // Consultation WhatsApp link
+  // WhatsApp link
   const waText = encodeURIComponent(
     isDe
       ? `Guten Tag Apfel Park Team, ich interessiere mich für das Google ${
           selectedModel === "pixel11"
             ? "Pixel 11 (Tensor G5 3nm)"
             : "Pixel 11 Pro Fold (8 Zoll Super Actua Flex)"
-        } in der Farbe ${isDe ? currentFinish.nameDe : currentFinish.nameEn}. Bitte senden Sie mir ein Angebot und Infos zur Verfügbarkeit in Hamburg.`
+        } in der Farbe ${currentFinish.nameDe}. Bitte senden Sie mir ein Angebot und Infos zur Verfügbarkeit in Hamburg.`
       : `Hello Apfel Park Team, I am inquiring about the Google ${
           selectedModel === "pixel11"
             ? "Pixel 11 (Tensor G5 3nm)"
@@ -494,7 +505,7 @@ export default function PixelShowcase({
   );
   const whatsappUrl = `https://wa.me/${siteInfo.whatsapp}?text=${waText}`;
 
-  // Consultation Email link
+  // Email link
   const emailSubject = encodeURIComponent(
     isDe
       ? `Anfrage: Google ${selectedModel === "pixel11" ? "Pixel 11" : "Pixel 11 Pro Fold"}`
@@ -561,10 +572,10 @@ export default function PixelShowcase({
       aEn: "Tensor G5 is manufactured on TSMC's cutting-edge 3nm process. It delivers significant thermal efficiency gains and powers on-device Gemini Nano AI for instantaneous computational photography and translation.",
     },
     {
-      qDe: "Wie dünn ist das Google Pixel 11 Pro Fold?",
-      qEn: "How thin is the Google Pixel 11 Pro Fold?",
-      aDe: "Das Pixel 11 Pro Fold misst entfaltet nur 5,1 mm und gefaltet 10,5 mm. Dank des reibungslosen Zahnradscharniers aus hochfestem Stahl schließt das Gerät völlig flach ab.",
-      aEn: "Pixel 11 Pro Fold measures just 5.1mm unfolded and 10.5mm folded. Its fluid gear hinge made of high-strength steel ensures a completely flush, zero-gap closure.",
+      qDe: "Wie funktioniert die interaktive 360° Ansicht?",
+      qEn: "How does the interactive 360° rotation viewer work?",
+      aDe: "Sie können das Smartphone direkt mit der Maus oder per Wischbewegung auf dem Smartphone um 360 Grad drehen. Nutzen Sie den Grad-Schieberegler oder die Schnellwahltasten, um das Gerät aus jedem Blickwinkel – inklusive Seitenprofil und Kameravisor – in Originalfarben zu betrachten.",
+      aEn: "You can drag or swipe directly across the device to spin it 360 degrees. Use the degree scrubber or quick angle presets to inspect the chassis, side profile, and camera visor in authentic store finishes.",
     },
     {
       qDe: "Wie lange garantiert Google Software- und Sicherheitsupdates?",
@@ -598,7 +609,7 @@ export default function PixelShowcase({
           </nav>
 
           <div className="flex items-center gap-2 text-muted">
-            <span className="size-1.5 rounded-full bg-gold" />
+            <span className="size-1.5 rounded-full bg-blue" />
             <span>{isDe ? "Hamburg Boutique & bundesweiter Expressversand" : "Hamburg Boutique & Nationwide Express Shipping"}</span>
           </div>
         </div>
@@ -704,7 +715,7 @@ export default function PixelShowcase({
         </div>
       </section>
 
-      {/* Interactive Media & Design Showcase Gallery */}
+      {/* Interactive Media & Design Showcase Gallery with Genuine Working 360-Degree Rotation */}
       <section className="py-10 md:py-16" ref={stageRef}>
         <div className="container-page">
           {/* Header Controls & View Selector */}
@@ -715,18 +726,32 @@ export default function PixelShowcase({
                   {selectedModel === "pixel11" ? "Google Pixel 11" : "Google Pixel 11 Pro Fold"}
                 </h2>
                 <span className="rounded-full bg-blue/15 px-2.5 py-0.5 text-[11px] font-semibold text-blue">
-                  {selectedModel === "pixel11" ? "Tensor G5 3nm" : "8,0\" Super Actua Flex"}
+                  {selectedModel === "pixel11" ? "360° Studio" : "360° Fold Studio"}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-muted mt-0.5">
                 {isDe
-                  ? "Offizielle Google Store Renderings, Farbvarianten und interaktive Videopräsentation"
-                  : "Official Google Store renders, color finishes, and interactive video showcase"}
+                  ? "Interaktive 360°-Drehung mit Maus & Touch, Farbvarianten und Videopräsentation"
+                  : "Interactive 360° rotation with touch & mouse drag, color finishes, and video showcase"}
               </p>
             </div>
 
             {/* View Selector Pills */}
             <div className={`flex items-center gap-1.5 overflow-x-auto rounded-xl border border-border bg-surface p-1 text-xs ${s.noScrollbar}`}>
+              {/* Active 360 Studio Mode */}
+              <button
+                type="button"
+                onClick={() => setViewMode("360")}
+                className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 font-semibold transition-all whitespace-nowrap min-h-[36px] ${
+                  viewMode === "360"
+                    ? "bg-blue text-white shadow-md shadow-blue/30"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                <RotateIcon className="size-3.5" />
+                <span>{isDe ? "360° Drehung & Farben" : "360° Interactive & Colors"}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setViewMode("unfolded")}
@@ -735,16 +760,6 @@ export default function PixelShowcase({
                 }`}
               >
                 {selectedModel === "proFold" ? (isDe ? "8,0\" Display entfaltet" : "8.0\" Canvas Unfolded") : (isDe ? "Frontalansicht" : "Front View")}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setViewMode("colors")}
-                className={`rounded-lg px-3 py-1.5 font-medium transition-all whitespace-nowrap min-h-[36px] ${
-                  viewMode === "colors" ? "bg-foreground text-background shadow-sm" : "text-muted hover:text-foreground"
-                }`}
-              >
-                {isDe ? "Farben (360°)" : "Color Finishes"}
               </button>
 
               <button
@@ -771,13 +786,13 @@ export default function PixelShowcase({
           </div>
 
           {/* Main Visual Stage */}
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-surface-strong/50 p-4 sm:p-8 flex flex-col items-center justify-center min-h-[460px] sm:min-h-[580px] md:min-h-[660px] lg:min-h-[720px]">
-            {/* Dynamic Ambient Glow Sphere */}
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-surface-strong/50 p-4 sm:p-8 flex flex-col items-center justify-center min-h-[520px] sm:min-h-[620px] md:min-h-[680px] lg:min-h-[740px]">
+            {/* Dynamic Ambient Glow Sphere matching current finish color */}
             <div
               className={s.ambientBackdrop}
               style={{
                 backgroundColor:
-                  viewMode === "colors"
+                  viewMode === "360"
                     ? currentFinish.colorHex
                     : selectedModel === "proFold"
                     ? "#8a8a5c"
@@ -786,12 +801,290 @@ export default function PixelShowcase({
               aria-hidden="true"
             />
 
-            {/* Stage Content */}
-            {activeAsset.type === "video" ? (
+            {/* TAB 1: Real Interactive 360-Degree 3D Studio Viewer */}
+            {viewMode === "360" ? (
+              <div className="relative z-10 w-full flex flex-col items-center justify-center space-y-6">
+                {/* 360 Interaction Prompt Badge */}
+                <div className="flex items-center gap-2 rounded-full border border-blue/40 bg-blue/10 px-3.5 py-1 text-xs font-semibold text-blue backdrop-blur-md">
+                  <RotateIcon className={`size-3.5 ${isAutoSpinning ? "animate-spin" : ""}`} />
+                  <span>
+                    {isDragging
+                      ? (isDe ? "Drehe um die eigene Achse..." : "Spinning device...")
+                      : (isDe ? "Ziehen oder Schieberegler nutzen für 360°-Ansicht" : "Drag or use slider for 360° view")}
+                  </span>
+                </div>
+
+                {/* 3D Turntable Scene with Touch & Mouse Drag */}
+                <div
+                  className={s.scene3D}
+                  onMouseDown={(e) => handleStartDrag(e.clientX)}
+                  onTouchStart={(e) => handleStartDrag(e.touches[0].clientX)}
+                  onTouchMove={(e) => handleMoveDrag(e.touches[0].clientX)}
+                  onTouchEnd={handleEndDrag}
+                  style={{ height: "420px", minHeight: "420px" }}
+                >
+                  <div
+                    className={s.phone3DWrapper}
+                    style={{
+                      transform: `rotateY(${rotationAngle}deg) rotateX(${tiltAngle}deg)`,
+                      transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                    }}
+                  >
+                    {/* The 3D Phone Chassis */}
+                    <div
+                      className={s.phoneBody}
+                      style={{
+                        width: selectedModel === "proFold" ? "320px" : "260px",
+                        height: "440px",
+                      }}
+                    >
+                      {/* FRONT FACE: OLED Display */}
+                      <div className={s.phoneFaceFront}>
+                        {/* Status Bar */}
+                        <div className="flex items-center justify-between text-[11px] text-white/80 px-2 pt-1 font-mono">
+                          <span>09:30</span>
+                          <div className="size-2 rounded-full bg-black border border-white/20" />
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px]">5G</span>
+                            <span className="size-1.5 rounded-full bg-green" />
+                          </div>
+                        </div>
+
+                        {/* Center Screen: Pixel Minimalist Clock & Weather */}
+                        <div className="text-center space-y-1 my-auto">
+                          <span className="text-4xl sm:text-5xl font-sans font-bold text-white tracking-tight">09:30</span>
+                          <p className="text-xs text-blue-200">
+                            {isDe ? "Hamburg · 21°C Sonnig" : "Hamburg · 21°C Sunny"}
+                          </p>
+                          <div className="pt-4 flex justify-center">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[10px] text-white/90">
+                              <span>Google Gemini</span>
+                              <span className="size-1.5 rounded-full bg-blue" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Search Pill Bottom */}
+                        <div className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2 flex items-center justify-between text-xs text-white/60 mb-2">
+                          <span>{isDe ? "Frag Gemini alles..." : "Ask Gemini anything..."}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="size-1.5 rounded-full bg-blue" />
+                            <span className="size-1.5 rounded-full bg-red" />
+                            <span className="size-1.5 rounded-full bg-amber" />
+                            <span className="size-1.5 rounded-full bg-green" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* BACK FACE: Selected Finish Color & Iconic Camera Bar Visor */}
+                      <div
+                        className={s.phoneFaceBack}
+                        style={{ backgroundColor: currentFinish.colorHex }}
+                      >
+                        {/* Camera Visor Bar */}
+                        <div className={s.cameraVisor3D}>
+                          {/* Main 50MP Lens */}
+                          <div className={s.lensRing3D} style={{ width: "38px", height: "38px" }}>
+                            <div className={s.lensGlass3D} />
+                          </div>
+
+                          {/* Ultra-Wide Lens */}
+                          <div className={s.lensRing3D} style={{ width: "32px", height: "32px" }}>
+                            <div className={s.lensGlass3D} />
+                          </div>
+
+                          {/* Fold Periscope Lens (for Pro Fold) */}
+                          {selectedModel === "proFold" && (
+                            <div className={s.periscopeSlot3D} title="5x Optical Periscope" />
+                          )}
+
+                          {/* Flash & Laser AF */}
+                          <div className="flex flex-col items-center gap-1.5">
+                            <span className="size-2 rounded-full bg-amber-200 shadow-sm shadow-amber-300" />
+                            <span className="size-1 rounded-full bg-red-400" />
+                          </div>
+                        </div>
+
+                        {/* Center: Google "G" Logo */}
+                        <div className="my-auto">
+                          <svg className={s.googleGLogo} viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                              fill="#ffffff"
+                              opacity="0.8"
+                              d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                            />
+                          </svg>
+                        </div>
+
+                        {/* Bottom Branding & Regulatory details */}
+                        <div className="text-center text-[10px] text-black/50 font-semibold tracking-wider uppercase">
+                          Google · Designed in California
+                        </div>
+                      </div>
+
+                      {/* Left Chassis Metal Rail */}
+                      <div className={s.sideRailLeft} />
+
+                      {/* Right Chassis Metal Rail with Buttons */}
+                      <div className={s.sideRailRight}>
+                        <div className={s.buttonPower} />
+                        <div className={s.buttonVolume} />
+                      </div>
+
+                      {/* Moving Specular Glare Reflection */}
+                      <div
+                        className={s.specularOverlay}
+                        style={{
+                          transform: `translateX(${((rotationAngle % 360) / 360) * 120 - 60}%)`,
+                          opacity: Math.abs(Math.sin((rotationAngle * Math.PI) / 180)) * 0.4 + 0.1,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dynamic Studio Turntable Ground Shadow */}
+                  <div
+                    className={s.studioShadow}
+                    style={{
+                      transform: `scaleX(${Math.abs(Math.cos((rotationAngle * Math.PI) / 180)) * 0.5 + 0.5})`,
+                    }}
+                  />
+                </div>
+
+                {/* 360 Degree Scrubber & Angle Controls */}
+                <div className="w-full max-w-md space-y-3 z-10 px-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-foreground">
+                      {getAngleLabel(rotationAngle)}
+                    </span>
+                    <span className="font-mono text-muted text-[11px]">
+                      {rotationAngle}° / 360°
+                    </span>
+                  </div>
+
+                  {/* Range Slider for scrubbing 0° to 360° */}
+                  <input
+                    type="range"
+                    min="0"
+                    max="360"
+                    value={rotationAngle}
+                    onChange={(e) => {
+                      setRotationAngle(parseInt(e.target.value, 10));
+                      setIsAutoSpinning(false);
+                    }}
+                    className={s.slider360}
+                    aria-label={isDe ? "360-Grad Drehwinkel" : "360-Degree Rotation Angle"}
+                  />
+
+                  {/* Preset Angle Buttons & Auto-Spin Toggle */}
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRotationAngle(0);
+                        setIsAutoSpinning(false);
+                      }}
+                      className={`px-3 py-1 rounded-full border transition ${
+                        rotationAngle === 0 ? "border-blue bg-blue/15 text-blue font-semibold" : "border-border text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {isDe ? "0° Front" : "0° Front"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRotationAngle(45);
+                        setIsAutoSpinning(false);
+                      }}
+                      className={`px-3 py-1 rounded-full border transition ${
+                        rotationAngle === 45 ? "border-blue bg-blue/15 text-blue font-semibold" : "border-border text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {isDe ? "45° 3D" : "45° 3D"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRotationAngle(90);
+                        setIsAutoSpinning(false);
+                      }}
+                      className={`px-3 py-1 rounded-full border transition ${
+                        rotationAngle === 90 ? "border-blue bg-blue/15 text-blue font-semibold" : "border-border text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {isDe ? "90° Profil" : "90° Profile"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRotationAngle(180);
+                        setIsAutoSpinning(false);
+                      }}
+                      className={`px-3 py-1 rounded-full border transition ${
+                        rotationAngle === 180 ? "border-blue bg-blue/15 text-blue font-semibold" : "border-border text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {isDe ? "180° Visor" : "180° Rear"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsAutoSpinning((prev) => !prev)}
+                      className={`flex items-center gap-1.5 px-3.5 py-1 rounded-full border font-medium transition ${
+                        isAutoSpinning
+                          ? "border-blue bg-blue text-white shadow-sm"
+                          : "border-blue/40 bg-blue/10 text-blue hover:bg-blue/20"
+                      }`}
+                    >
+                      {isAutoSpinning ? <PauseIcon className="size-3" /> : <PlayIcon className="size-3" />}
+                      <span>{isAutoSpinning ? (isDe ? "Stoppen" : "Pause") : (isDe ? "Auto-Drehung" : "Auto-Spin")}</span>
+                    </button>
+                  </div>
+
+                  {/* Real-time Color Switcher for 360 view */}
+                  <div className="pt-2 text-center space-y-2">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-foreground">
+                      <span className="size-2.5 rounded-full" style={{ backgroundColor: currentFinish.colorHex }} />
+                      <span>{currentFinish.nameDe}</span>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-3" role="group" aria-label="Color Selection in 360">
+                      {activeFinishes.map((finish, idx) => {
+                        const isActive = idx === selectedFinishIndex;
+                        return (
+                          <button
+                            key={finish.id}
+                            type="button"
+                            onClick={() => setSelectedFinishIndex(idx)}
+                            className={`size-9 rounded-full transition-all duration-300 relative flex items-center justify-center min-h-[40px] min-w-[40px] ${
+                              isActive
+                                ? "scale-110 ring-2 ring-blue ring-offset-2 ring-offset-background shadow-md shadow-blue/30"
+                                : "opacity-80 hover:opacity-100 hover:scale-105"
+                            }`}
+                            style={{ backgroundColor: finish.colorHex }}
+                            title={finish.nameDe}
+                            aria-label={`Farbe ${finish.nameDe}`}
+                            aria-pressed={isActive}
+                          >
+                            {isActive && <span className="size-2 rounded-full bg-white/90 shadow-sm" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* TAB 2: Design Video Player */}
+            {viewMode === "video" && (
               <div className="relative z-10 w-full max-w-4xl aspect-[16/9] overflow-hidden rounded-2xl bg-black border border-border shadow-2xl flex flex-col justify-between">
                 <video
                   ref={videoRef}
-                  src={activeAsset.src}
+                  src={currentVideo.src}
                   autoPlay
                   muted
                   loop
@@ -800,7 +1093,6 @@ export default function PixelShowcase({
                   className="w-full h-full object-cover"
                 />
 
-                {/* Playlist selector bar below video */}
                 <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-md rounded-full p-1 border border-white/20 text-xs">
                   {VIDEO_TRACKS.map((track, idx) => (
                     <button
@@ -816,16 +1108,26 @@ export default function PixelShowcase({
                   ))}
                 </div>
               </div>
-            ) : (
+            )}
+
+            {/* TAB 3: Unfolded / Profile 2D View Renders */}
+            {(viewMode === "unfolded" || viewMode === "profile") && (
               <div className="relative z-10 w-full flex flex-col items-center justify-center space-y-6">
-                {/* Large Product Render Container */}
                 <div
                   className={`relative w-full max-w-3xl h-[360px] sm:h-[480px] md:h-[560px] lg:h-[620px] flex items-center justify-center ${s.stageImageAnimated}`}
-                  key={`${selectedModel}-${viewMode}-${selectedFinishIndex}`}
+                  key={`${selectedModel}-${viewMode}`}
                 >
                   <Image
-                    src={activeAsset.src}
-                    alt={activeAsset.alt}
+                    src={
+                      viewMode === "unfolded"
+                        ? selectedModel === "proFold"
+                          ? "/images/google/pixel11/fold-olive.webp"
+                          : "/images/google/pixel11/pixel-frost.webp"
+                        : selectedModel === "proFold"
+                        ? "/images/google/pixel11/fold-obsidian.webp"
+                        : "/images/google/pixel11/pixel-obsidian.webp"
+                    }
+                    alt="Google Pixel 11 Showcase"
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
                     className="object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.45)] transition-all duration-500"
@@ -833,52 +1135,16 @@ export default function PixelShowcase({
                   />
                 </div>
 
-                {/* Subtitle / Asset Title */}
-                <div className="text-center space-y-3 z-10">
+                <div className="text-center z-10">
                   <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/90 px-4 py-1.5 text-xs font-semibold text-foreground backdrop-blur-md shadow-sm">
-                    {viewMode === "colors" && (
-                      <span
-                        className="size-2.5 rounded-full transition-colors duration-500"
-                        style={{ backgroundColor: currentFinish.colorHex }}
-                      />
-                    )}
-                    <span>{isDe ? activeAsset.labelDe : activeAsset.labelEn}</span>
+                    <span>
+                      {viewMode === "unfolded"
+                        ? selectedModel === "proFold"
+                          ? (isDe ? "8,0\" Super Actua Flex Display entfaltet" : "8.0\" Super Actua Flex Canvas Unfolded")
+                          : (isDe ? "6,3\" Actua OLED Display" : "6.3\" Actua OLED Display")
+                        : (isDe ? "Ultra-dünnes Profil & Scharnier" : "Ultra-slim Profile & Hinge")}
+                    </span>
                   </div>
-
-                  {/* Interactive Color Switcher */}
-                  {viewMode === "colors" && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-center gap-3 sm:gap-4" role="group" aria-label="Color Selection">
-                        {activeFinishes.map((finish, idx) => {
-                          const isActive = idx === selectedFinishIndex;
-                          return (
-                            <button
-                              key={finish.id}
-                              type="button"
-                              onClick={() => setSelectedFinishIndex(idx)}
-                              className={`size-10 sm:size-11 rounded-full transition-all duration-300 relative flex items-center justify-center min-h-[44px] min-w-[44px] ${
-                                isActive
-                                  ? "scale-110 ring-2 ring-gold ring-offset-2 ring-offset-background shadow-lg shadow-gold/25"
-                                  : "opacity-80 hover:opacity-100 hover:scale-105"
-                              }`}
-                              style={{ backgroundColor: finish.colorHex }}
-                              title={isDe ? finish.nameDe : finish.nameEn}
-                              aria-label={isDe ? finish.nameDe : finish.nameEn}
-                              aria-pressed={isActive}
-                            >
-                              {isActive && (
-                                <span className="size-2 rounded-full bg-white/90 shadow-sm" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <p className="text-[11px] text-muted">
-                        {isDe ? currentFinish.badgeDe : currentFinish.badgeEn}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -899,11 +1165,11 @@ export default function PixelShowcase({
               <button
                 type="button"
                 onClick={() => setLightboxOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-surface px-4 py-2 text-xs font-semibold text-gold backdrop-blur-md transition hover:bg-gold hover:text-black shadow-md min-h-[38px]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-blue/40 bg-surface px-4 py-2 text-xs font-semibold text-blue backdrop-blur-md transition hover:bg-blue hover:text-white shadow-md min-h-[38px]"
                 aria-label={isDe ? "Theater-Vollbild öffnen" : "Open Theater Fullscreen Modal"}
               >
                 <ExpandIcon className="size-3.5" />
-                <span>{isDe ? "Vollbild-Galerie" : "Fullscreen Theater"}</span>
+                <span>{isDe ? "Vollbild-Theater" : "Fullscreen Theater"}</span>
               </button>
             </div>
           </div>
@@ -914,7 +1180,7 @@ export default function PixelShowcase({
       <section className="border-t border-border/80 bg-surface/20 py-16">
         <div className="container-page">
           <div className="mb-12 text-center max-w-3xl mx-auto space-y-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gold">
+            <span className="text-xs font-semibold uppercase tracking-wider text-blue">
               {isDe ? "Google Ingenieurskunst & Siliziumarchitektur" : "Google Engineering & Silicon Architecture"}
             </span>
             <h2 className="text-2xl font-bold tracking-tight sm:text-4xl text-foreground font-sans">
@@ -1071,7 +1337,7 @@ export default function PixelShowcase({
       <section className="border-t border-border/80 bg-surface/30 py-16">
         <div className="container-page">
           <div className="mb-10 text-center">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gold">
+            <span className="text-xs font-semibold uppercase tracking-wider text-blue">
               {isDe ? "Direkter Vergleich" : "Direct Comparison"}
             </span>
             <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl text-foreground">
@@ -1089,10 +1355,10 @@ export default function PixelShowcase({
                   <th className="p-4 font-semibold text-muted w-1/3">
                     {isDe ? "Kategorie" : "Specification"}
                   </th>
-                  <th className={`p-4 font-bold w-1/3 ${selectedModel === "pixel11" ? "text-gold bg-gold/5" : "text-foreground"}`}>
+                  <th className={`p-4 font-bold w-1/3 ${selectedModel === "pixel11" ? "text-blue bg-blue/5" : "text-foreground"}`}>
                     Google Pixel 11 (6,3&quot;)
                   </th>
-                  <th className={`p-4 font-bold w-1/3 ${selectedModel === "proFold" ? "text-gold bg-gold/5" : "text-foreground"}`}>
+                  <th className={`p-4 font-bold w-1/3 ${selectedModel === "proFold" ? "text-blue bg-blue/5" : "text-foreground"}`}>
                     Pixel 11 Pro Fold (8,0&quot;)
                   </th>
                 </tr>
@@ -1101,10 +1367,10 @@ export default function PixelShowcase({
                 {specRows.map((row) => (
                   <tr key={row.category} className="transition-colors hover:bg-surface/50">
                     <td className="p-4 font-medium text-muted">{row.category}</td>
-                    <td className={`p-4 leading-relaxed ${selectedModel === "pixel11" ? "bg-gold/5 font-medium text-foreground" : "text-muted"}`}>
+                    <td className={`p-4 leading-relaxed ${selectedModel === "pixel11" ? "bg-blue/5 font-medium text-foreground" : "text-muted"}`}>
                       {row.pixel11}
                     </td>
-                    <td className={`p-4 leading-relaxed ${selectedModel === "proFold" ? "bg-gold/5 font-medium text-foreground" : "text-muted"}`}>
+                    <td className={`p-4 leading-relaxed ${selectedModel === "proFold" ? "bg-blue/5 font-medium text-foreground" : "text-muted"}`}>
                       {row.proFold}
                     </td>
                   </tr>
@@ -1120,7 +1386,7 @@ export default function PixelShowcase({
         <div className="container-page">
           <div className="grid gap-8 md:grid-cols-3">
             <div className="rounded-2xl border border-border bg-background p-6 space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-gold">
+              <div className="text-xs font-bold uppercase tracking-wider text-blue">
                 {isDe ? "Vertragsfrei" : "Unlocked"}
               </div>
               <h3 className="text-base font-bold text-foreground">
@@ -1134,7 +1400,7 @@ export default function PixelShowcase({
             </div>
 
             <div className="rounded-2xl border border-border bg-background p-6 space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-gold">
+              <div className="text-xs font-bold uppercase tracking-wider text-blue">
                 {isDe ? "Sicherheit" : "Warranty"}
               </div>
               <h3 className="text-base font-bold text-foreground">
@@ -1148,7 +1414,7 @@ export default function PixelShowcase({
             </div>
 
             <div className="rounded-2xl border border-border bg-background p-6 space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-gold">
+              <div className="text-xs font-bold uppercase tracking-wider text-blue">
                 {isDe ? "Inzahlungnahme" : "Trade-In"}
               </div>
               <h3 className="text-base font-bold text-foreground">
@@ -1181,12 +1447,12 @@ export default function PixelShowcase({
                   <button
                     type="button"
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between p-4 text-left text-sm font-semibold text-foreground hover:text-gold transition-colors"
+                    className="w-full flex items-center justify-between p-4 text-left text-sm font-semibold text-foreground hover:text-blue transition-colors"
                     aria-expanded={isOpen}
                   >
                     <span>{isDe ? faq.qDe : faq.qEn}</span>
                     <ChevronDownIcon
-                      className={`size-4 text-muted transition-transform duration-200 ${isOpen ? "rotate-180 text-gold" : ""}`}
+                      className={`size-4 text-muted transition-transform duration-200 ${isOpen ? "rotate-180 text-blue" : ""}`}
                     />
                   </button>
                   {isOpen && (
@@ -1201,7 +1467,7 @@ export default function PixelShowcase({
         </div>
       </section>
 
-      {/* Fullscreen Lightbox Modal */}
+      {/* Fullscreen Lightbox Modal (with 360 rotation included) */}
       {lightboxOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between p-4 sm:p-6"
@@ -1216,7 +1482,7 @@ export default function PixelShowcase({
                 Google {selectedModel === "pixel11" ? "Pixel 11" : "Pixel 11 Pro Fold"}
               </span>
               <span className="text-xs text-white/60 hidden sm:inline">
-                {isDe ? activeAsset.labelDe : activeAsset.labelEn}
+                {viewMode === "360" ? `360° Studio (${rotationAngle}°)` : "Theater Mode"}
               </span>
             </div>
 
@@ -1245,16 +1511,76 @@ export default function PixelShowcase({
             </div>
           </div>
 
-          {/* Center Stage */}
+          {/* Center Stage in Modal */}
           <div className="relative flex-1 flex items-center justify-center overflow-auto w-full my-auto">
-            {activeAsset.type === "video" ? (
+            {viewMode === "video" ? (
               <div className="relative w-full max-w-5xl aspect-[16/9] max-h-[80vh]">
                 <video
-                  src={activeAsset.src}
+                  src={currentVideo.src}
                   autoPlay
                   controls
                   className="w-full h-full object-contain rounded-xl shadow-2xl"
                 />
+              </div>
+            ) : viewMode === "360" ? (
+              <div
+                className="relative w-full max-w-2xl h-[65vh] flex items-center justify-center"
+                onMouseDown={(e) => handleStartDrag(e.clientX)}
+                onTouchStart={(e) => handleStartDrag(e.touches[0].clientX)}
+                onTouchMove={(e) => handleMoveDrag(e.touches[0].clientX)}
+                onTouchEnd={handleEndDrag}
+                style={{ cursor: isDragging ? "grabbing" : "grab" }}
+              >
+                <div
+                  className={s.phone3DWrapper}
+                  style={{
+                    transform: `scale(${zoomLevel * 1.1}) rotateY(${rotationAngle}deg) rotateX(${tiltAngle}deg)`,
+                    transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                  }}
+                >
+                  <div
+                    className={s.phoneBody}
+                    style={{
+                      width: selectedModel === "proFold" ? "340px" : "280px",
+                      height: "480px",
+                    }}
+                  >
+                    <div className={s.phoneFaceFront}>
+                      <div className="text-center my-auto space-y-2">
+                        <span className="text-5xl font-bold text-white">09:30</span>
+                        <p className="text-xs text-blue-300">Google Gemini AI</p>
+                      </div>
+                    </div>
+                    <div
+                      className={s.phoneFaceBack}
+                      style={{ backgroundColor: currentFinish.colorHex }}
+                    >
+                      <div className={s.cameraVisor3D}>
+                        <div className={s.lensRing3D} style={{ width: "40px", height: "40px" }}>
+                          <div className={s.lensGlass3D} />
+                        </div>
+                        <div className={s.lensRing3D} style={{ width: "34px", height: "34px" }}>
+                          <div className={s.lensGlass3D} />
+                        </div>
+                        {selectedModel === "proFold" && <div className={s.periscopeSlot3D} />}
+                      </div>
+                      <div className="my-auto">
+                        <svg className={s.googleGLogo} viewBox="0 0 24 24" fill="currentColor">
+                          <path
+                            fill="#ffffff"
+                            opacity="0.8"
+                            d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className={s.sideRailLeft} />
+                    <div className={s.sideRailRight}>
+                      <div className={s.buttonPower} />
+                      <div className={s.buttonVolume} />
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <div
@@ -1262,8 +1588,16 @@ export default function PixelShowcase({
                 style={{ transform: `scale(${zoomLevel})` }}
               >
                 <Image
-                  src={activeAsset.src}
-                  alt={activeAsset.alt}
+                  src={
+                    viewMode === "unfolded"
+                      ? selectedModel === "proFold"
+                        ? "/images/google/pixel11/fold-olive.webp"
+                        : "/images/google/pixel11/pixel-frost.webp"
+                      : selectedModel === "proFold"
+                      ? "/images/google/pixel11/fold-obsidian.webp"
+                      : "/images/google/pixel11/pixel-obsidian.webp"
+                  }
+                  alt="Google Pixel 11"
                   fill
                   sizes="100vw"
                   className="object-contain"
@@ -1278,21 +1612,22 @@ export default function PixelShowcase({
             <div className="flex items-center gap-1.5 overflow-x-auto text-xs max-w-full">
               <button
                 type="button"
+                onClick={() => setViewMode("360")}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
+                  viewMode === "360" ? "bg-blue text-white" : "text-white/70 hover:text-white bg-white/10"
+                }`}
+              >
+                <RotateIcon className="size-3.5" />
+                <span>360° Studio</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setViewMode("unfolded")}
                 className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
                   viewMode === "unfolded" ? "bg-white text-black" : "text-white/70 hover:text-white bg-white/10"
                 }`}
               >
                 {selectedModel === "proFold" ? (isDe ? "8,0\" Entfaltet" : "8.0\" Unfolded") : (isDe ? "Frontansicht" : "Front View")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("colors")}
-                className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
-                  viewMode === "colors" ? "bg-white text-black" : "text-white/70 hover:text-white bg-white/10"
-                }`}
-              >
-                {isDe ? "Farben" : "Colors"}
               </button>
               <button
                 type="button"
@@ -1310,18 +1645,15 @@ export default function PixelShowcase({
                 <button
                   key={finish.id}
                   type="button"
-                  onClick={() => {
-                    setSelectedFinishIndex(idx);
-                    setViewMode("colors");
-                  }}
+                  onClick={() => setSelectedFinishIndex(idx)}
                   className={`size-8 rounded-full border-2 transition-all min-h-[36px] min-w-[36px] ${
-                    idx === selectedFinishIndex && viewMode === "colors"
+                    idx === selectedFinishIndex
                       ? "border-white scale-125 shadow-lg"
                       : "border-transparent opacity-75 hover:opacity-100"
                   }`}
                   style={{ backgroundColor: finish.colorHex }}
-                  title={isDe ? finish.nameDe : finish.nameEn}
-                  aria-label={isDe ? finish.nameDe : finish.nameEn}
+                  title={finish.nameDe}
+                  aria-label={finish.nameDe}
                 />
               ))}
             </div>
