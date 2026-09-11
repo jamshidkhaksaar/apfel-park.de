@@ -277,7 +277,9 @@ export default function IPhoneBanner({
                 {proSrc ? (
                   <>
                     <div className={s.fullscreenBadge}>
-                      <span>⤢</span>
+                      <svg className="size-3 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                      </svg>
                       <span>{isEn ? "Fullscreen" : "Vollbild"}</span>
                     </div>
                     <span className={s.art}>
@@ -294,7 +296,12 @@ export default function IPhoneBanner({
                   </>
                 ) : (
                   <div className={s.placeholderSlot} onClick={() => togglePin("pro")}>
-                    <div className={s.placeholderIcon}>📱</div>
+                    <div className={s.placeholderIcon}>
+                      <svg className="size-6 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect width="14" height="20" x="5" y="2" rx="2" />
+                        <path d="M12 18h.01" />
+                      </svg>
+                    </div>
                     <div className={s.placeholderLabel}>iPhone 18 Pro / Pro Max</div>
                     <div className={s.placeholderHint}>{isEn ? "Ready for upload" : "Bereit für Bild-Upload"}</div>
                   </div>
@@ -336,7 +343,9 @@ export default function IPhoneBanner({
                 onClick={openDuoTheater}
               >
                 <div className={s.fullscreenBadge}>
-                  <span>⤢</span>
+                  <svg className="size-3 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                  </svg>
                   <span>{isEn ? "Fullscreen" : "Vollbild"}</span>
                 </div>
                 <span className={s.art}>
@@ -365,7 +374,7 @@ export default function IPhoneBanner({
                   aria-pressed={film}
                   onClick={activateFilm}
                 >
-                  🎬 4K Film
+                  {isEn ? "Film (4K)" : "4K Film"}
                 </button>
                 <button
                   className={s.variant}
@@ -448,7 +457,14 @@ export default function IPhoneBanner({
                 title={isFullscreen ? (isEn ? "Exit fullscreen" : "Vollbild beenden") : (isEn ? "Activate fullscreen" : "Vollbildschirm aktivieren")}
                 type="button"
               >
-                {isFullscreen ? (isEn ? "🗗 Exit" : "🗗 Beenden") : (isEn ? "⛶ Fullscreen" : "⛶ Vollbild")}
+                <svg className="size-3.5 inline-block mr-1 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  {isFullscreen ? (
+                    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                  ) : (
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                  )}
+                </svg>
+                {isFullscreen ? (isEn ? "Exit" : "Beenden") : (isEn ? "Fullscreen" : "Vollbild")}
               </button>
               <button
                 className={s.theaterClose}
@@ -456,7 +472,9 @@ export default function IPhoneBanner({
                 aria-label={isEn ? "Close fullscreen" : "Vollbild schließen"}
                 type="button"
               >
-                ✕
+                <svg className="size-4 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </header>
@@ -547,7 +565,7 @@ export default function IPhoneBanner({
                 aria-pressed={theaterTab === "duo-video"}
                 onClick={() => setTheaterTab("duo-video")}
               >
-                🎬 Duo: 4K Film
+                {isEn ? "Duo: Film (4K)" : "Duo: 4K Film"}
               </button>
             </div>
 
