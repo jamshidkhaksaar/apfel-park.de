@@ -310,7 +310,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                 <>
                   iPhone 18 Pro
                   <span className="block text-2xl sm:text-4xl lg:text-5xl font-medium text-muted mt-2">
-                    {isDe ? "Pro Max & das neue iPhone Duo" : "Pro Max & The New iPhone Duo"}
+                    {isDe ? "Pro Max und das neue iPhone Duo" : "Pro Max and The New iPhone Duo"}
                   </span>
                 </>
               )}
