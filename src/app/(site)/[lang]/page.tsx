@@ -18,6 +18,7 @@ import { siteInfo } from "../../../lib/site";
 import HeroSlider from "../../../components/HeroSlider";
 import FeaturedStore from "../../../components/FeaturedStore";
 import IPhoneBanner from "@/components/banner/IPhoneBanner";
+import GalaxyFoldBanner from "@/components/banner/GalaxyFoldBanner";
 
 import { getFeaturedProducts } from "../../../lib/products";
 import AnimatedSection from "../../../components/AnimatedSection";
@@ -149,6 +150,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
       {/* Featured Store */}
       <FeaturedStore products={featuredProducts} lang={lang} featured={dict.featuredStore} />
+
+      {/* Samsung Galaxy Z Fold8 & Z Fold8 Ultra Showcase Banner */}
+      <div className="container-page py-6 md:py-8">
+        <GalaxyFoldBanner lang={lang} shopHref={`/${lang}/samsung-handys`} />
+      </div>
 
       {/* Repair Process - Visual Timeline */}
       <AnimatedSection as="section" animation="fade-up" className="section-pad bg-surface-strong">

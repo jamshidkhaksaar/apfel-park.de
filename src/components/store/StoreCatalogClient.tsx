@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { analyticsItem, withGa4Items } from "@/lib/analytics";
 import type { CatalogCardModel } from "@/lib/catalog-card";
 import type { Locale } from "@/lib/i18n";
 import type { StoreCatalogCategory, StoreCatalogFacets, StoreCatalogFilters, StoreCatalogSort } from "@/lib/products";
+import GalaxyFoldBanner from "@/components/banner/GalaxyFoldBanner";
 import StoreCatalogSearch from "./StoreCatalogSearch";
 import StoreFilters from "./StoreFilters";
 import StoreProductCard from "./StoreProductCard";
@@ -225,15 +226,35 @@ export default function StoreCatalogClient({
           {products.length > 0 ? (
             view === "list" ? (
               <div className="flex flex-col gap-3">
-                {products.map((product, index) => (
-                  <StoreProductRow key={product.id} product={product} locale={lang} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 3} />
-                ))}
+                {products.map((product, index) => {
+                  const showBanner = page === 1 && index === (products.length >= 6 ? 5 : (products.length >= 3 ? 2 : -1));
+                  return (
+                    <Fragment key={product.id}>
+                      <StoreProductRow key={product.id} product={product} locale={lang} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 3} />
+                      {showBanner ? (
+                        <div className="my-4">
+                          <GalaxyFoldBanner lang={lang} variant="compact" />
+                        </div>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                {products.map((product, index) => (
-                  <StoreProductCard key={product.id} product={product} locale={lang} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 4} />
-                ))}
+                {products.map((product, index) => {
+                  const showBanner = page === 1 && index === (products.length >= 8 ? 7 : (products.length >= 4 ? 3 : -1));
+                  return (
+                    <Fragment key={product.id}>
+                      <StoreProductCard key={product.id} product={product} locale={lang} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 4} />
+                      {showBanner ? (
+                        <div className="col-span-full my-4">
+                          <GalaxyFoldBanner lang={lang} variant="compact" />
+                        </div>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
               </div>
             )
           ) : (
