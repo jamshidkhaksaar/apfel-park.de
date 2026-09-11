@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Locale } from "@/lib/i18n";
@@ -19,47 +19,63 @@ type Finish = {
   nameDe: string;
   nameEn: string;
   colorHex: string;
-  src: string;
+  /** Primary official product render. */
+  primary: string;
+  /** Secondary official render (back / detail / lifestyle). */
+  detail: string;
   badgeDe: string;
   badgeEn: string;
 };
 
+type VideoTrack = {
+  src: string;
+  nameDe: string;
+  nameEn: string;
+};
+
 type ViewMode = "colors" | "unfolded" | "profile" | "video";
+
+const OFFICIAL = "/images/google/pixel11/official";
+const VIDEOS = "/images/google/pixel11/videos";
 
 const PIXEL11_FINISHES: Finish[] = [
   {
     id: "frost",
-    nameDe: "Frost White",
-    nameEn: "Frost White",
+    nameDe: "Frost",
+    nameEn: "Frost",
     colorHex: "#e9e6df",
-    src: "/images/google/pixel11/pixel-frost.webp",
-    badgeDe: "Sanftes Mattweiß",
-    badgeEn: "Soft Matte White",
+    primary: `${OFFICIAL}/pixel11-frost-back.jpg`,
+    detail: `${OFFICIAL}/pixel11-frost-person.jpg`,
+    badgeDe: "Kühles Mattweiß",
+    badgeEn: "Cool Matte White",
   },
   {
     id: "hibiscus",
-    nameDe: "Hibiscus Pink",
-    nameEn: "Hibiscus Pink",
+    nameDe: "Hibiscus",
+    nameEn: "Hibiscus",
     colorHex: "#e5a3b5",
-    src: "/images/google/pixel11/pixel-hibiscus.webp",
-    badgeDe: "Lebendiger Farbton 2026",
-    badgeEn: "Vibrant Tone 2026",
+    primary: `${OFFICIAL}/pixel11-hibiscus-back.jpg`,
+    detail: `${OFFICIAL}/pixel11-hibiscus-person.jpg`,
+    badgeDe: "Kräftiges Pink 2026",
+    badgeEn: "Vivid Pink 2026",
   },
   {
     id: "pistachio",
-    nameDe: "Pistachio Green",
-    nameEn: "Pistachio Green",
+    nameDe: "Pistachio",
+    nameEn: "Pistachio",
     colorHex: "#b9d9a8",
-    src: "/images/google/pixel11/pixel-pistachio.webp",
-    badgeDe: "Natürliche Eleganz",
-    badgeEn: "Natural Elegance",
+    primary: `${OFFICIAL}/pixel11-pistachio-back.jpg`,
+    detail: `${OFFICIAL}/pixel11-pistachio-person.jpg`,
+    badgeDe: "Frisches Grün",
+    badgeEn: "Fresh Green",
   },
   {
     id: "obsidian",
-    nameDe: "Obsidian Black",
-    nameEn: "Obsidian Black",
+    nameDe: "Obsidian",
+    nameEn: "Obsidian",
     colorHex: "#2b2c2e",
-    src: "/images/google/pixel11/pixel-obsidian.webp",
+    primary: `${OFFICIAL}/pixel11-obsidian-back.jpg`,
+    detail: `${OFFICIAL}/pixel11-obsidian-person.jpg`,
     badgeDe: "Tiefes Vulkanglas-Schwarz",
     badgeEn: "Deep Volcanic Black",
   },
@@ -68,29 +84,49 @@ const PIXEL11_FINISHES: Finish[] = [
 const FOLD_FINISHES: Finish[] = [
   {
     id: "olive",
-    nameDe: "Olive Haze",
-    nameEn: "Olive Haze",
-    colorHex: "#8a8a5c",
-    src: "/images/google/pixel11/fold-olive.webp",
+    nameDe: "Olive",
+    nameEn: "Olive",
+    colorHex: "#9a9a6e",
+    primary: `${OFFICIAL}/fold-olive-back.jpg`,
+    detail: `${OFFICIAL}/fold-olive-open.jpg`,
     badgeDe: "Signature Edition",
     badgeEn: "Signature Edition",
   },
   {
     id: "obsidian",
-    nameDe: "Obsidian Black",
-    nameEn: "Obsidian Black",
+    nameDe: "Obsidian",
+    nameEn: "Obsidian",
     colorHex: "#2b2c2e",
-    src: "/images/google/pixel11/fold-obsidian.webp",
+    primary: `${OFFICIAL}/fold-obsidian-back.jpg`,
+    detail: `${OFFICIAL}/fold-obsidian-open.jpg`,
     badgeDe: "Satiniertes Glas & Stahl",
     badgeEn: "Satin Glass & Steel",
   },
 ];
 
-const VIDEO_TRACKS = [
-  { src: "/images/google/pixel11/pixel-hero.mp4", nameDe: "Pixel 11 Offizieller Spot", nameEn: "Pixel 11 Official Spot" },
-  { src: "/images/google/pixel11/pixel-magic.mp4", nameDe: "Magic Capture & AI", nameEn: "Magic Capture & AI" },
-  { src: "/images/google/pixel11/fold-video.mp4", nameDe: "Pro Fold Design & Scharnier", nameEn: "Pro Fold Design & Hinge" },
+const PIXEL11_VIDEOS: VideoTrack[] = [
+  { src: `${VIDEOS}/pixel11-hero.mp4`, nameDe: "Pixel 11 Design-Film", nameEn: "Pixel 11 Design Film" },
+  { src: `${VIDEOS}/pixel11-colors.mp4`, nameDe: "Alle Farben", nameEn: "All Finishes" },
+  { src: `${VIDEOS}/pixel11-gemini.mp4`, nameDe: "Gemini AI", nameEn: "Gemini AI" },
 ];
+
+const FOLD_VIDEOS: VideoTrack[] = [
+  { src: `${VIDEOS}/fold-hero.mp4`, nameDe: "Pro Fold Design-Film", nameEn: "Pro Fold Design Film" },
+  { src: `${VIDEOS}/fold-colors.mp4`, nameDe: "Alle Farben", nameEn: "All Finishes" },
+];
+
+const GALLERY: Record<PixelModelId, { src: string; altDe: string; altEn: string }[]> = {
+  pixel11: [
+    { src: `${OFFICIAL}/pixel11-camera.jpg`, altDe: "Nahaufnahme der Google Pixel 11 Kameraleiste.", altEn: "Close-up of the Google Pixel 11 camera bar." },
+    { src: `${OFFICIAL}/pixel11-display.jpg`, altDe: "Das brillante Actua OLED Display des Pixel 11.", altEn: "The brilliant Actua OLED display of Pixel 11." },
+    { src: `${OFFICIAL}/pixel11-duo.jpg`, altDe: "Google Pixel 11 in mehreren Farben nebeneinander.", altEn: "Google Pixel 11 in multiple finishes side by side." },
+  ],
+  proFold: [
+    { src: `${OFFICIAL}/fold-side.jpg`, altDe: "Seitenansicht des zusammengeklappten Pixel 11 Pro Fold.", altEn: "Side view of the folded Pixel 11 Pro Fold." },
+    { src: `${OFFICIAL}/fold-olive-open.jpg`, altDe: "Aufgeklapptes Pixel 11 Pro Fold in Olive.", altEn: "Unfolded Pixel 11 Pro Fold in Olive." },
+    { src: `${OFFICIAL}/fold-olive-edge.jpg`, altDe: "Mattes, platinfarbenes Metallgehäuse des Pro Fold.", altEn: "Matte platinum metal frame of the Pro Fold." },
+  ],
+};
 
 /* -------------------------------------------------------------------------- */
 /* Clean SVG Icons (Zero Emojis)                                             */
@@ -125,55 +161,10 @@ function PlayIcon({ className = "size-4" }: { className?: string }) {
 
 
 
-function ExpandIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-    </svg>
-  );
-}
-
-function MinimizeIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-    </svg>
-  );
-}
-
-function CloseIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
 function ChevronDownIcon({ className = "size-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function ZoomInIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      <line x1="11" y1="8" x2="11" y2="14" />
-      <line x1="8" y1="11" x2="14" y2="11" />
-    </svg>
-  );
-}
-
-function ZoomOutIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      <line x1="8" y1="11" x2="14" y2="11" />
     </svg>
   );
 }
@@ -332,75 +323,22 @@ export default function PixelShowcase({
   const [viewMode, setViewMode] = useState<ViewMode>("colors");
   const [selectedFinishIndex, setSelectedFinishIndex] = useState(0);
   const [activeVideoIdx, setActiveVideoIdx] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [isFullscreenNative, setIsFullscreenNative] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState<1 | 1.5 | 2>(1);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const stageRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const activeFinishes = selectedModel === "pixel11" ? PIXEL11_FINISHES : FOLD_FINISHES;
   const currentFinish = activeFinishes[selectedFinishIndex] || activeFinishes[0];
-  const currentVideo = VIDEO_TRACKS[activeVideoIdx];
+  const modelVideos = selectedModel === "pixel11" ? PIXEL11_VIDEOS : FOLD_VIDEOS;
+  const currentVideo = modelVideos[Math.min(activeVideoIdx, modelVideos.length - 1)];
 
   const handleSelectModel = (model: PixelModelId) => {
     startTransition(() => {
       setSelectedModel(model);
       setSelectedFinishIndex(0);
+      setActiveVideoIdx(0);
       setViewMode("colors");
     });
-  };
-
-  // Fullscreen change listener
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreenNative(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
-
-  // Keyboard navigation & body lock during lightbox
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setLightboxOpen(false);
-        setZoomLevel(1);
-      }
-      if (e.key === "ArrowRight") {
-        setSelectedFinishIndex((prev) => (prev + 1) % activeFinishes.length);
-      }
-      if (e.key === "ArrowLeft") {
-        setSelectedFinishIndex((prev) => (prev - 1 + activeFinishes.length) % activeFinishes.length);
-      }
-    };
-
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [lightboxOpen, activeFinishes.length]);
-
-  const handleToggleNativeFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement) {
-        if (stageRef.current) {
-          await stageRef.current.requestFullscreen();
-        } else {
-          await document.documentElement.requestFullscreen();
-        }
-      } else {
-        await document.exitFullscreen();
-      }
-    } catch {
-      setLightboxOpen(true);
-    }
   };
 
   const getActiveAsset = () => {
@@ -414,52 +352,47 @@ export default function PixelShowcase({
       };
     }
     if (viewMode === "unfolded") {
+      // Lifestyle / in-hand official render.
       return {
         type: "image" as const,
-        src:
-          selectedModel === "proFold"
-            ? "/images/google/pixel11/fold-olive.webp"
-            : "/images/google/pixel11/pixel-frost.webp",
+        src: selectedModel === "proFold" ? currentFinish.primary : currentFinish.detail,
         alt:
           selectedModel === "proFold"
             ? isDe
               ? "Google Pixel 11 Pro Fold – 8,0 Zoll Super Actua Flex Display entfaltet"
               : "Google Pixel 11 Pro Fold – 8.0-inch Super Actua Flex Canvas Unfolded"
             : isDe
-            ? "Google Pixel 11 – 6,3 Zoll Actua OLED Display"
-            : "Google Pixel 11 – 6.3-inch Actua OLED Display",
+              ? "Google Pixel 11 – 6,3 Zoll Actua OLED in der Hand"
+              : "Google Pixel 11 – 6.3-inch Actua OLED in hand",
         labelDe:
           selectedModel === "proFold"
-            ? "8,0\" Super Actua Flex Display entfaltet"
-            : "6,3\" Actua OLED Display",
+            ? "8,0\" Super Actua Flex entfaltet"
+            : "6,3\" Actua OLED · in der Hand",
         labelEn:
           selectedModel === "proFold"
-            ? "8.0\" Super Actua Flex Canvas Unfolded"
-            : "6.3\" Actua OLED Display",
+            ? "8.0\" Super Actua Flex Unfolded"
+            : "6.3\" Actua OLED · in hand",
       };
     }
     if (viewMode === "profile") {
       return {
         type: "image" as const,
-        src:
-          selectedModel === "proFold"
-            ? "/images/google/pixel11/fold-obsidian.webp"
-            : "/images/google/pixel11/pixel-obsidian.webp",
-        alt: isDe ? "Google Pixel 11 ultra-dünnes Profil" : "Google Pixel 11 ultra-slim profile",
+        src: selectedModel === "proFold" ? `${OFFICIAL}/fold-side.jpg` : `${OFFICIAL}/pixel11-camera.jpg`,
+        alt: isDe ? "Google Pixel 11 Detail- und Profilansicht" : "Google Pixel 11 detail and profile view",
         labelDe:
           selectedModel === "proFold"
             ? "5,1 mm Schlankprofil & Zahnradscharnier"
-            : "8,5 mm Aluminium-Präzisionsprofil",
+            : "Kameraleiste & Aluminium-Präzisionsprofil",
         labelEn:
           selectedModel === "proFold"
             ? "5.1mm Slim Profile & Gear Hinge"
-            : "8.5mm Aluminum Precision Profile",
+            : "Camera Bar & Aluminum Precision Profile",
       };
     }
-    // "colors" mode
+    // "colors" mode — official studio render of the selected finish.
     return {
       type: "image" as const,
-      src: currentFinish.src,
+      src: currentFinish.primary,
       alt: `Google ${selectedModel === "pixel11" ? "Pixel 11" : "Pixel 11 Pro Fold"} — ${
         isDe ? currentFinish.nameDe : currentFinish.nameEn
       }`,
@@ -697,7 +630,7 @@ export default function PixelShowcase({
       </section>
 
       {/* Interactive Media & Design Showcase Gallery */}
-      <section className="py-10 md:py-16" ref={stageRef}>
+      <section className="py-10 md:py-16">
         <div className="container-page">
           {/* Header Controls & View Selector */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
@@ -796,7 +729,7 @@ export default function PixelShowcase({
                 />
 
                 <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-md rounded-full p-1 border border-white/20 text-xs">
-                  {VIDEO_TRACKS.map((track, idx) => (
+                  {modelVideos.map((track, idx) => (
                     <button
                       key={track.src}
                       type="button"
@@ -805,7 +738,7 @@ export default function PixelShowcase({
                         idx === activeVideoIdx ? "bg-white text-black font-semibold" : "text-white/70 hover:text-white"
                       }`}
                     >
-                      {idx === 0 ? "Pixel 11" : idx === 1 ? "Magic AI" : "Pro Fold"}
+                      {isDe ? track.nameDe : track.nameEn}
                     </button>
                   ))}
                 </div>
@@ -866,30 +799,42 @@ export default function PixelShowcase({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      </section>
 
-            {/* Stage Quick Controls */}
-            <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleToggleNativeFullscreen}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 py-2 text-xs font-medium text-foreground backdrop-blur-md transition hover:border-gold hover:text-gold shadow-sm min-h-[38px]"
-                title={isDe ? "Im Vollbildmodus ansehen (Native API)" : "View in native browser fullscreen"}
-                aria-label={isDe ? "Vollbildmodus aktivieren" : "Activate native fullscreen"}
+      {/* Official Google imagery gallery */}
+      <section className="border-t border-border/80 bg-surface/20 py-14 md:py-20">
+        <div className="container-page">
+          <div className="mb-10 max-w-2xl">
+            <span className="text-xs font-semibold uppercase tracking-wider text-blue">
+              {isDe ? "Offizielle Google Motive" : "Official Google Imagery"}
+            </span>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl text-foreground">
+              {selectedModel === "pixel11"
+                ? isDe
+                  ? "Pixel 11 in herausragenden Details"
+                  : "Pixel 11 in extraordinary detail"
+                : isDe
+                  ? "Pixel 11 Pro Fold in herausragenden Details"
+                  : "Pixel 11 Pro Fold in extraordinary detail"}
+            </h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {GALLERY[selectedModel].map((item) => (
+              <figure
+                key={item.src}
+                className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-surface-strong/40"
               >
-                {isFullscreenNative ? <MinimizeIcon className="size-3.5" /> : <ExpandIcon className="size-3.5" />}
-                <span>{isFullscreenNative ? (isDe ? "Beenden" : "Exit Fullscreen") : (isDe ? "Display-Vollbild" : "Native Fullscreen")}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setLightboxOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-blue/40 bg-surface px-4 py-2 text-xs font-semibold text-blue backdrop-blur-md transition hover:bg-blue hover:text-white shadow-md min-h-[38px]"
-                aria-label={isDe ? "Theater-Vollbild öffnen" : "Open Theater Fullscreen Modal"}
-              >
-                <ExpandIcon className="size-3.5" />
-                <span>{isDe ? "Vollbild-Theater" : "Fullscreen Theater"}</span>
-              </button>
-            </div>
+                <Image
+                  src={item.src}
+                  alt={isDe ? item.altDe : item.altEn}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-700 hover:scale-105"
+                />
+              </figure>
+            ))}
           </div>
         </div>
       </section>
@@ -1185,133 +1130,6 @@ export default function PixelShowcase({
         </div>
       </section>
 
-      {/* Fullscreen Lightbox Modal */}
-      {lightboxOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between p-4 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-          aria-label={isDe ? "Vollbildansicht" : "Fullscreen Theater View"}
-        >
-          {/* Top Bar */}
-          <div className="flex items-center justify-between z-20 pb-2">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-white">
-                Google {selectedModel === "pixel11" ? "Pixel 11" : "Pixel 11 Pro Fold"}
-              </span>
-              <span className="text-xs text-white/60 hidden sm:inline">
-                {isDe ? "Theater-Modus" : "Theater Mode"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setZoomLevel((z) => (z === 1 ? 1.5 : z === 1.5 ? 2 : 1))}
-                className="size-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition min-h-[44px] min-w-[44px]"
-                title={isDe ? "Zoom umschalten (1x / 1.5x / 2x)" : "Toggle Zoom (1x / 1.5x / 2x)"}
-                aria-label={isDe ? "Zoom vergrößern" : "Zoom in"}
-              >
-                {zoomLevel > 1 ? <ZoomOutIcon className="size-4" /> : <ZoomInIcon className="size-4" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setLightboxOpen(false);
-                  setZoomLevel(1);
-                }}
-                className="size-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-red-500/80 transition min-h-[44px] min-w-[44px]"
-                aria-label={isDe ? "Schließen" : "Close"}
-              >
-                <CloseIcon className="size-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Center Stage in Modal */}
-          <div className="relative flex-1 flex items-center justify-center overflow-auto w-full my-auto">
-            {viewMode === "video" ? (
-              <div className="relative w-full max-w-5xl aspect-[16/9] max-h-[80vh]">
-                <video
-                  src={currentVideo.src}
-                  autoPlay
-                  controls
-                  className="w-full h-full object-contain rounded-xl shadow-2xl"
-                />
-              </div>
-            ) : (
-              <div
-                className="relative w-full max-w-5xl h-[70vh] sm:h-[80vh] flex items-center justify-center transition-transform duration-300"
-                style={{ transform: `scale(${zoomLevel})` }}
-              >
-                <Image
-                  src={activeAsset.src}
-                  alt={activeAsset.alt}
-                  fill
-                  sizes="100vw"
-                  className="object-contain"
-                  priority
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Bar Controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/10 z-20">
-            <div className="flex items-center gap-1.5 overflow-x-auto text-xs max-w-full">
-              <button
-                type="button"
-                onClick={() => setViewMode("colors")}
-                className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
-                  viewMode === "colors" ? "bg-blue text-white font-bold" : "text-white/70 hover:text-white bg-white/10"
-                }`}
-              >
-                <span>{isDe ? "Farben" : "Colors"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("unfolded")}
-                className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
-                  viewMode === "unfolded" ? "bg-white text-black" : "text-white/70 hover:text-white bg-white/10"
-                }`}
-              >
-                {selectedModel === "proFold" ? (isDe ? "8,0\" Entfaltet" : "8.0\" Unfolded") : (isDe ? "Frontansicht" : "Front View")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("profile")}
-                className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
-                  viewMode === "profile" ? "bg-white text-black" : "text-white/70 hover:text-white bg-white/10"
-                }`}
-              >
-                {isDe ? "Profil" : "Profile"}
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {activeFinishes.map((finish, idx) => (
-                <button
-                  key={finish.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedFinishIndex(idx);
-                    setViewMode("colors");
-                  }}
-                  className={`size-8 rounded-full border-2 transition-all min-h-[36px] min-w-[36px] ${
-                    idx === selectedFinishIndex && viewMode === "colors"
-                      ? "border-white scale-125 shadow-lg"
-                      : "border-transparent opacity-75 hover:opacity-100"
-                  }`}
-                  style={{ backgroundColor: finish.colorHex }}
-                  title={finish.nameDe}
-                  aria-label={finish.nameDe}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
