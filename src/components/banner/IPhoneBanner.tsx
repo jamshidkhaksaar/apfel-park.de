@@ -11,6 +11,7 @@ type Media = { [K in keyof typeof APPLE_MEDIA]: string };
 
 export type IPhoneBannerProps = {
   id?: string;
+  lang?: "de" | "en";
   shopHref?: string;
   className?: string;
   headingLevel?: "h1" | "h2";
@@ -55,15 +56,18 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
 
 export default function IPhoneBanner({
   id,
+  lang = "de",
   shopHref = "/de/iphone-18-pro",
   className = "",
   headingLevel: Heading = "h2",
-  ctaLabel = "Jetzt entdecken",
+  ctaLabel,
   primaryTitle = "iPhone 18",
   secondaryTitle = "iPhone Duo",
   animated = true,
   media: overrides,
 }: IPhoneBannerProps) {
+  const isEn = lang === "en";
+  const resolvedCtaLabel = ctaLabel ?? (isEn ? "Explore now" : "Jetzt entdecken");
   const uniqueId = useId();
   const headingId = `${id ?? uniqueId}-title`;
   const media: Media = { ...APPLE_MEDIA, ...overrides };
@@ -220,7 +224,7 @@ export default function IPhoneBanner({
       <section
         ref={root}
         id={id}
-        lang="de"
+        lang={lang}
         className={`${s.hero} ${className}`}
         data-paused={String(stopped)}
         data-reduced={String(reduced)}
@@ -241,9 +245,9 @@ export default function IPhoneBanner({
               <span>{primaryTitle}</span>
               <span>{secondaryTitle}</span>
             </Heading>
-            <p className={s.tagline}>Eine neue Ära. In deiner Hand.</p>
+            <p className={s.tagline}>{isEn ? "A new era. In your hands." : "Eine neue Ära. In deiner Hand."}</p>
             <Link className={s.cta} href={shopHref}>
-              <span>{ctaLabel}</span>
+              <span>{resolvedCtaLabel}</span>
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path
                   d="M4 12h15m-6-6 6 6-6 6"
@@ -256,7 +260,7 @@ export default function IPhoneBanner({
             </Link>
           </div>
 
-          <div className={s.products} aria-label="iPhone Modelle">
+          <div className={s.products} aria-label={isEn ? "iPhone Models" : "iPhone Modelle"}>
             {/* Slot 1: iPhone 18 Pro Family */}
             <figure
               className={s.model}
@@ -267,14 +271,14 @@ export default function IPhoneBanner({
               <button
                 className={s.zoom}
                 type="button"
-                aria-label="iPhone 18 Pro Vollbildansicht öffnen"
+                aria-label={isEn ? "Open iPhone 18 Pro fullscreen view" : "iPhone 18 Pro Vollbildansicht öffnen"}
                 onClick={openProTheater}
               >
                 {proSrc ? (
                   <>
                     <div className={s.fullscreenBadge}>
                       <span>⤢</span>
-                      <span>Vollbild</span>
+                      <span>{isEn ? "Fullscreen" : "Vollbild"}</span>
                     </div>
                     <span className={s.art}>
                       <ProductImage
@@ -282,8 +286,8 @@ export default function IPhoneBanner({
                         src={proSrc}
                         alt={
                           proView
-                            ? "iPhone 18 Pro und Pro Max in Burgunder, Vorder- und Rückseite"
-                            : "iPhone 18 Pro – Farbübersicht"
+                            ? (isEn ? "iPhone 18 Pro and Pro Max in Burgundy, Front and Back" : "iPhone 18 Pro und Pro Max in Burgunder, Vorder- und Rückseite")
+                            : (isEn ? "iPhone 18 Pro – Color Lineup" : "iPhone 18 Pro – Farbübersicht")
                         }
                       />
                     </span>
@@ -292,19 +296,19 @@ export default function IPhoneBanner({
                   <div className={s.placeholderSlot} onClick={() => togglePin("pro")}>
                     <div className={s.placeholderIcon}>📱</div>
                     <div className={s.placeholderLabel}>iPhone 18 Pro / Pro Max</div>
-                    <div className={s.placeholderHint}>Bereit für Bild-Upload</div>
+                    <div className={s.placeholderHint}>{isEn ? "Ready for upload" : "Bereit für Bild-Upload"}</div>
                   </div>
                 )}
               </button>
               <figcaption className={s.name}>iPhone 18 Pro / Pro Max</figcaption>
-              <div className={s.variants} role="group" aria-label="Pro Ansicht">
+              <div className={s.variants} role="group" aria-label={isEn ? "Pro view selection" : "Pro Ansicht"}>
                 <button
                   className={s.variant}
                   type="button"
                   aria-pressed={proView === 0}
                   onClick={() => setProView(0)}
                 >
-                  Farbübersicht
+                  {isEn ? "Colors" : "Farbübersicht"}
                 </button>
                 <button
                   className={s.variant}
@@ -312,7 +316,7 @@ export default function IPhoneBanner({
                   aria-pressed={proView === 1}
                   onClick={() => setProView(1)}
                 >
-                  Vorn &amp; hinten
+                  {isEn ? "Front & back" : "Vorn & hinten"}
                 </button>
               </div>
             </figure>
@@ -328,16 +332,16 @@ export default function IPhoneBanner({
               <button
                 className={s.zoom}
                 type="button"
-                aria-label="iPhone Duo Vollbildansicht öffnen"
+                aria-label={isEn ? "Open iPhone Duo fullscreen view" : "iPhone Duo Vollbildansicht öffnen"}
                 onClick={openDuoTheater}
               >
                 <div className={s.fullscreenBadge}>
                   <span>⤢</span>
-                  <span>Vollbild</span>
+                  <span>{isEn ? "Fullscreen" : "Vollbild"}</span>
                 </div>
                 <span className={s.art}>
                   {duoSrc && !film ? (
-                    <ProductImage key={duoSrc} src={duoSrc} alt="iPhone Duo – Designansicht" />
+                    <ProductImage key={duoSrc} src={duoSrc} alt={isEn ? "iPhone Duo – Design View" : "iPhone Duo – Designansicht"} />
                   ) : null}
                   <video
                     ref={video}
@@ -354,7 +358,7 @@ export default function IPhoneBanner({
                 </span>
               </button>
               <figcaption className={s.name}>iPhone Duo (Foldable)</figcaption>
-              <div className={s.variants} role="group" aria-label="Duo Ansicht">
+              <div className={s.variants} role="group" aria-label={isEn ? "Duo view selection" : "Duo Ansicht"}>
                 <button
                   className={s.variant}
                   type="button"
@@ -369,7 +373,7 @@ export default function IPhoneBanner({
                   aria-pressed={!film && duoView === 0}
                   onClick={() => setDuo(0)}
                 >
-                  Dunkel
+                  {isEn ? "Dark" : "Dunkel"}
                 </button>
                 <button
                   className={s.variant}
@@ -377,18 +381,20 @@ export default function IPhoneBanner({
                   aria-pressed={!film && duoView === 1}
                   onClick={() => setDuo(1)}
                 >
-                  Hell
+                  {isEn ? "Light" : "Hell"}
                 </button>
               </div>
             </figure>
           </div>
         </div>
 
-        <p className={s.hint}>Klicke auf ein Modell für die hochauflösende Vollbildansicht</p>
+        <p className={s.hint}>
+          {isEn ? "Click any model for high-resolution fullscreen preview" : "Klicke auf ein Modell für die hochauflösende Vollbildansicht"}
+        </p>
         <button
           className={s.pause}
           type="button"
-          aria-label={stopped ? "Animation fortsetzen" : "Animation pausieren"}
+          aria-label={stopped ? (isEn ? "Resume animation" : "Animation fortsetzen") : (isEn ? "Pause animation" : "Animation pausieren")}
           aria-pressed={stopped}
           onClick={() => setPaused((old) => !old)}
           disabled={!animated}
@@ -408,7 +414,7 @@ export default function IPhoneBanner({
           className={s.theaterOverlay}
           role="dialog"
           aria-modal="true"
-          aria-label="Vollbild-Vorschau"
+          aria-label={isEn ? "Fullscreen Preview" : "Vollbild-Vorschau"}
           onClick={(e) => {
             if (e.target === e.currentTarget) setTheaterOpen(false);
           }}
@@ -425,11 +431,11 @@ export default function IPhoneBanner({
                     : "Apple iPhone Duo (Foldable)"}
                 </h3>
                 <span style={{ fontSize: "12px", color: "#e7c779" }}>
-                  {theaterTab === "pro-0" && "Titanium Lineup – Farbübersicht"}
-                  {theaterTab === "pro-1" && "Vorder- und Rückseite mit variabler Optik"}
-                  {theaterTab === "duo-0" && "Titan Dunkel – 7.6\" Foldable Display"}
-                  {theaterTab === "duo-1" && "Titan Hell – Ultradünnes Scharnier"}
-                  {theaterTab === "duo-video" && "Offizieller Apple Reveal Film (4K)"}
+                  {theaterTab === "pro-0" && (isEn ? "Titanium Lineup – Color Overview" : "Titanium Lineup – Farbübersicht")}
+                  {theaterTab === "pro-1" && (isEn ? "Front and back with variable optics" : "Vorder- und Rückseite mit variabler Optik")}
+                  {theaterTab === "duo-0" && (isEn ? "Titanium Dark – 7.6\" Foldable Display" : "Titan Dunkel – 7.6\" Foldable Display")}
+                  {theaterTab === "duo-1" && (isEn ? "Titanium Light – Ultra-thin Hinge" : "Titan Hell – Ultradünnes Scharnier")}
+                  {theaterTab === "duo-video" && (isEn ? "Official Apple Reveal Film (4K)" : "Offizieller Apple Reveal Film (4K)")}
                 </span>
               </div>
             </div>
@@ -438,16 +444,16 @@ export default function IPhoneBanner({
               <button
                 className={s.theaterFullscreenBtn}
                 onClick={toggleNativeFullscreen}
-                aria-label={isFullscreen ? "Vollbild beenden" : "Vollbildschirm aktivieren"}
-                title={isFullscreen ? "Vollbild beenden" : "Vollbildschirm aktivieren"}
+                aria-label={isFullscreen ? (isEn ? "Exit fullscreen" : "Vollbild beenden") : (isEn ? "Activate fullscreen" : "Vollbildschirm aktivieren")}
+                title={isFullscreen ? (isEn ? "Exit fullscreen" : "Vollbild beenden") : (isEn ? "Activate fullscreen" : "Vollbildschirm aktivieren")}
                 type="button"
               >
-                {isFullscreen ? "🗗 Beenden" : "⛶ Vollbild"}
+                {isFullscreen ? (isEn ? "🗗 Exit" : "🗗 Beenden") : (isEn ? "⛶ Fullscreen" : "⛶ Vollbild")}
               </button>
               <button
                 className={s.theaterClose}
                 onClick={() => setTheaterOpen(false)}
-                aria-label="Vollbild schließen"
+                aria-label={isEn ? "Close fullscreen" : "Vollbild schließen"}
                 type="button"
               >
                 ✕
@@ -461,7 +467,7 @@ export default function IPhoneBanner({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={media.proLineup}
-                  alt="iPhone 18 Pro Farbübersicht"
+                  alt={isEn ? "iPhone 18 Pro Color Overview" : "iPhone 18 Pro Farbübersicht"}
                   className={s.theaterImage}
                 />
               )}
@@ -469,7 +475,7 @@ export default function IPhoneBanner({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={media.proFrontBack}
-                  alt="iPhone 18 Pro Vorder- und Rückseite"
+                  alt={isEn ? "iPhone 18 Pro Front and Back" : "iPhone 18 Pro Vorder- und Rückseite"}
                   className={s.theaterImage}
                 />
               )}
@@ -477,7 +483,7 @@ export default function IPhoneBanner({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={media.duoNight}
-                  alt="iPhone Duo Dunkel"
+                  alt={isEn ? "iPhone Duo Dark" : "iPhone Duo Dunkel"}
                   className={s.theaterImage}
                 />
               )}
@@ -485,7 +491,7 @@ export default function IPhoneBanner({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={media.duoWhite}
-                  alt="iPhone Duo Hell"
+                  alt={isEn ? "iPhone Duo Light" : "iPhone Duo Hell"}
                   className={s.theaterImage}
                 />
               )}
@@ -509,7 +515,7 @@ export default function IPhoneBanner({
                 aria-pressed={theaterTab === "pro-0"}
                 onClick={() => setTheaterTab("pro-0")}
               >
-                18 Pro: Farbübersicht
+                {isEn ? "18 Pro: Colors" : "18 Pro: Farbübersicht"}
               </button>
               <button
                 className={s.theaterTab}
@@ -517,7 +523,7 @@ export default function IPhoneBanner({
                 aria-pressed={theaterTab === "pro-1"}
                 onClick={() => setTheaterTab("pro-1")}
               >
-                18 Pro: Vorn &amp; hinten
+                {isEn ? "18 Pro: Front & back" : "18 Pro: Vorn & hinten"}
               </button>
               <button
                 className={s.theaterTab}
@@ -525,7 +531,7 @@ export default function IPhoneBanner({
                 aria-pressed={theaterTab === "duo-0"}
                 onClick={() => setTheaterTab("duo-0")}
               >
-                Duo: Dunkel
+                {isEn ? "Duo: Dark" : "Duo: Dunkel"}
               </button>
               <button
                 className={s.theaterTab}
@@ -533,7 +539,7 @@ export default function IPhoneBanner({
                 aria-pressed={theaterTab === "duo-1"}
                 onClick={() => setTheaterTab("duo-1")}
               >
-                Duo: Hell
+                {isEn ? "Duo: Light" : "Duo: Hell"}
               </button>
               <button
                 className={s.theaterTab}
@@ -550,7 +556,7 @@ export default function IPhoneBanner({
               className={s.cta}
               onClick={() => setTheaterOpen(false)}
             >
-              <span>{ctaLabel}</span>
+              <span>{resolvedCtaLabel}</span>
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path
                   d="M4 12h15m-6-6 6 6-6 6"

@@ -17,6 +17,7 @@ import { getHomeContent } from "../../../lib/content";
 import { siteInfo } from "../../../lib/site";
 import HeroSlider from "../../../components/HeroSlider";
 import FeaturedStore from "../../../components/FeaturedStore";
+import IPhoneBanner from "@/components/banner/IPhoneBanner";
 
 import { getFeaturedProducts } from "../../../lib/products";
 import AnimatedSection from "../../../components/AnimatedSection";
@@ -140,6 +141,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
         </div>
       </section>
+
+      {/* iPhone 18 Showcase Banner */}
+      <div className="container-page py-6 md:py-8">
+        <IPhoneBanner lang={lang} shopHref={`/${lang}/iphone-18-pro`} />
+      </div>
 
       {/* Featured Store */}
       <FeaturedStore products={featuredProducts} lang={lang} featured={dict.featuredStore} />
