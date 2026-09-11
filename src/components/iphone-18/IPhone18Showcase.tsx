@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { APPLE_MEDIA } from "@/components/banner/apple-media";
 import { siteInfo } from "@/lib/site";
 import type { Locale } from "@/lib/i18n";
@@ -483,36 +484,44 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
 
                 {/* Media Container */}
                 <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full flex items-center justify-center">
+                  <div
+                    className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold/10 blur-3xl"
+                    aria-hidden="true"
+                  />
                   {activeMediaTab === "lineup" && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={APPLE_MEDIA.proLineup}
                       alt="Apple iPhone 18 Pro Lineup Finishes"
-                      className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-102"
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 58vw"
+                      className="object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-[1.02]"
                     />
                   )}
                   {activeMediaTab === "frontback" && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={APPLE_MEDIA.proFrontBack}
                       alt="Apple iPhone 18 Pro Front and Back Perspective"
-                      className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-102"
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 58vw"
+                      className="object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-[1.02]"
                     />
                   )}
                   {activeMediaTab === "duoNight" && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={APPLE_MEDIA.duoNight}
                       alt="Apple iPhone Duo Foldable Night Finish"
-                      className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-102"
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 58vw"
+                      className="object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-[1.02]"
                     />
                   )}
                   {activeMediaTab === "duoWhite" && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={APPLE_MEDIA.duoWhite}
                       alt="Apple iPhone Duo Foldable Light Finish"
-                      className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-102"
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 58vw"
+                      className="object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-[1.02]"
                     />
                   )}
                   {activeMediaTab === "video" && (
