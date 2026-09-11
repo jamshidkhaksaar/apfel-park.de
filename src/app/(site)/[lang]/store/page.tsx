@@ -104,7 +104,7 @@ export default async function StorePage({ params, searchParams }: { params: Prom
       <StoreCollectionLinks lang={locale} products={allProducts} />
 
       <div className="container-page py-4">
-        <IPhoneBanner shopHref={`/${locale}/store`} />
+        <IPhoneBanner shopHref={`/${locale}/iphone-18-pro`} />
       </div>
 
       <section className="bg-store-ground py-6 md:py-8">

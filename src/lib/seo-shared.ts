@@ -6,6 +6,7 @@ export type SeoRouteId =
   | "repairs"
   | "smartphones"
   | "hamburgStore"
+  | "iphone18Pro"
   | "iphone17"
   | "iphone16ProMax"
   | "samsungPhones"
@@ -196,6 +197,25 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     defaultKeywords: {
       de: "Handy Reparatur Wilhelmsburg, Handy Reparatur Hamburg, iPhone Reparatur Wilhelmsburg, Handy Shop Wilhelmsburg",
       en: "phone store Hamburg, phone store Wilhelmsburg, buy smartphone Hamburg, buy iPhone Hamburg",
+    },
+  },
+  {
+    id: "iphone18Pro",
+    path: "/iphone-18-pro",
+    labels: { de: "iPhone 18 Pro & Duo", en: "iPhone 18 Pro & Duo" },
+    priority: 0.96,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "iPhone 18 Pro, Pro Max & iPhone Duo kaufen | Apfel Park Hamburg",
+      en: "Buy iPhone 18 Pro, Pro Max & iPhone Duo | Apfel Park Hamburg",
+    },
+    defaultDescription: {
+      de: "Apple iPhone 18 Pro, 18 Pro Max und iPhone Duo (Foldable) bei Apfel Park. 2nm A20 Pro Chip, 48MP Pro Fusion Kamera, technische Daten, Vorbestellung & Angebote in Hamburg.",
+      en: "Apple iPhone 18 Pro, 18 Pro Max and iPhone Duo (Foldable) at Apfel Park. 2nm A20 Pro silicon, 48MP variable camera, full specs, pre-orders & quotes in Hamburg.",
+    },
+    defaultKeywords: {
+      de: "iPhone 18 Pro kaufen, iPhone 18 Pro Max Preis, iPhone Duo, iPhone Foldable, Apple iPhone 18 Hamburg, iPhone Vorbestellung Hamburg",
+      en: "buy iPhone 18 Pro, iPhone 18 Pro Max specs, iPhone Duo foldable, Apple iPhone 18 Germany, iPhone 18 pre-order Hamburg",
     },
   },
   {

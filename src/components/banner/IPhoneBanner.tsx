@@ -55,7 +55,7 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
 
 export default function IPhoneBanner({
   id,
-  shopHref = "/de/store",
+  shopHref = "/de/iphone-18-pro",
   className = "",
   headingLevel: Heading = "h2",
   ctaLabel = "Jetzt entdecken",
