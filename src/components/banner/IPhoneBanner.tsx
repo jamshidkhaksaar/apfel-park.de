@@ -79,7 +79,9 @@ export default function IPhoneBanner({
   const [film, setFilm] = useState(true);
 
   // Fullscreen Theater Modal State
+  type TheaterTab = "pro-0" | "pro-1" | "duo-0" | "duo-1" | "duo-video";
   const [theaterOpen, setTheaterOpen] = useState(false);
+  const [theaterTab, setTheaterTab] = useState<TheaterTab>("duo-video");
 
   const active = hovered ?? pinned;
   const stopped = paused || !animated;
@@ -168,6 +170,20 @@ export default function IPhoneBanner({
     }
   }
 
+  function openProTheater() {
+    setTheaterTab(proView === 0 ? "pro-0" : "pro-1");
+    setTheaterOpen(true);
+  }
+
+  function openDuoTheater() {
+    if (film) {
+      setTheaterTab("duo-video");
+    } else {
+      setTheaterTab(duoView === 0 ? "duo-0" : "duo-1");
+    }
+    setTheaterOpen(true);
+  }
+
   return (
     <>
       <section
@@ -220,11 +236,8 @@ export default function IPhoneBanner({
               <button
                 className={s.zoom}
                 type="button"
-                aria-label="iPhone 18 Pro Slot"
-                onClick={() => {
-                  if (proSrc) setTheaterOpen(true);
-                  else togglePin("pro");
-                }}
+                aria-label="iPhone 18 Pro Vollbildansicht öffnen"
+                onClick={openProTheater}
               >
                 {proSrc ? (
                   <>
@@ -284,8 +297,8 @@ export default function IPhoneBanner({
               <button
                 className={s.zoom}
                 type="button"
-                aria-label="iPhone Duo Video in Vollbild öffnen"
-                onClick={() => setTheaterOpen(true)}
+                aria-label="iPhone Duo Vollbildansicht öffnen"
+                onClick={openDuoTheater}
               >
                 <div className={s.fullscreenBadge}>
                   <span>⤢</span>
@@ -305,7 +318,7 @@ export default function IPhoneBanner({
                     playsInline
                     preload="auto"
                     aria-hidden="true"
-                    style={{ visibility: "visible" }}
+                    style={{ visibility: film ? "visible" : "hidden" }}
                   />
                 </span>
               </button>
@@ -340,7 +353,7 @@ export default function IPhoneBanner({
           </div>
         </div>
 
-        <p className={s.hint}>Klicke auf das Video für die hochauflösende Vollbildansicht</p>
+        <p className={s.hint}>Klicke auf ein Modell für die hochauflösende Vollbildansicht</p>
         <button
           className={s.pause}
           type="button"
@@ -373,10 +386,16 @@ export default function IPhoneBanner({
               </svg>
               <div>
                 <h3 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, color: "#fff" }}>
-                  Apple iPhone Duo (Foldable) – Official Reveal Film
+                  {theaterTab.startsWith("pro")
+                    ? "Apple iPhone 18 Pro & Pro Max"
+                    : "Apple iPhone Duo (Foldable)"}
                 </h3>
                 <span style={{ fontSize: "12px", color: "#e7c779" }}>
-                  4K Cinematic Keynote Showcase
+                  {theaterTab === "pro-0" && "Titanium Lineup – Farbübersicht"}
+                  {theaterTab === "pro-1" && "Vorder- und Rückseite mit variabler Optik"}
+                  {theaterTab === "duo-0" && "Titan Dunkel – 7.6\" Foldable Display"}
+                  {theaterTab === "duo-1" && "Titan Hell – Ultradünnes Scharnier"}
+                  {theaterTab === "duo-video" && "Offizieller Apple Reveal Film (4K)"}
                 </span>
               </div>
             </div>
@@ -391,21 +410,92 @@ export default function IPhoneBanner({
 
           <main className={s.theaterBody}>
             <div className={s.theaterMediaWrapper}>
-              <video
-                className={s.theaterVideo}
-                src={media.duoVideo}
-                controls
-                autoPlay
-                playsInline
-              />
+              {theaterTab === "pro-0" && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={media.proLineup}
+                  alt="iPhone 18 Pro Farbübersicht"
+                  className={s.theaterImage}
+                />
+              )}
+              {theaterTab === "pro-1" && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={media.proFrontBack}
+                  alt="iPhone 18 Pro Vorder- und Rückseite"
+                  className={s.theaterImage}
+                />
+              )}
+              {theaterTab === "duo-0" && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={media.duoNight}
+                  alt="iPhone Duo Dunkel"
+                  className={s.theaterImage}
+                />
+              )}
+              {theaterTab === "duo-1" && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={media.duoWhite}
+                  alt="iPhone Duo Hell"
+                  className={s.theaterImage}
+                />
+              )}
+              {theaterTab === "duo-video" && (
+                <video
+                  className={s.theaterVideo}
+                  src={media.duoVideo}
+                  controls
+                  autoPlay
+                  playsInline
+                />
+              )}
             </div>
           </main>
 
           <footer className={s.theaterFooter}>
             <div className={s.theaterTabs}>
-              <span style={{ fontSize: "13px", color: "#e7c779", fontWeight: 600 }}>
-                ✨ iPhone Duo: 5.4&quot; geschlossen · 7.6&quot; entfaltet
-              </span>
+              <button
+                className={s.theaterTab}
+                type="button"
+                aria-pressed={theaterTab === "pro-0"}
+                onClick={() => setTheaterTab("pro-0")}
+              >
+                18 Pro: Farbübersicht
+              </button>
+              <button
+                className={s.theaterTab}
+                type="button"
+                aria-pressed={theaterTab === "pro-1"}
+                onClick={() => setTheaterTab("pro-1")}
+              >
+                18 Pro: Vorn &amp; hinten
+              </button>
+              <button
+                className={s.theaterTab}
+                type="button"
+                aria-pressed={theaterTab === "duo-0"}
+                onClick={() => setTheaterTab("duo-0")}
+              >
+                Duo: Dunkel
+              </button>
+              <button
+                className={s.theaterTab}
+                type="button"
+                aria-pressed={theaterTab === "duo-1"}
+                onClick={() => setTheaterTab("duo-1")}
+              >
+                Duo: Hell
+              </button>
+              <button
+                className={s.theaterTab}
+                type="button"
+                aria-pressed={theaterTab === "duo-video"}
+                onClick={() => setTheaterTab("duo-video")}
+              >
+                🎬 Duo: 4K Film
+              </button>
             </div>
 
             <Link
@@ -430,3 +520,4 @@ export default function IPhoneBanner({
     </>
   );
 }
+
