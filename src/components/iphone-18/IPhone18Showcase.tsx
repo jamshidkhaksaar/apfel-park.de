@@ -261,7 +261,13 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
               {isDe ? "Store" : "Store"}
             </Link>
             <span className="text-border">/</span>
-            <span className="font-medium text-foreground">iPhone 18 Pro & Duo</span>
+            <span className="font-medium text-foreground">
+              {selectedModel === "duo"
+                ? "iPhone Duo"
+                : selectedModel === "promax"
+                ? "iPhone 18 Pro Max"
+                : "iPhone 18 Pro"}
+            </span>
           </nav>
 
           <div className="flex items-center gap-2 text-muted">
@@ -276,20 +282,52 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
         <div className="container-page relative">
           <div className="mx-auto max-w-4xl text-center space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1 text-[11px] font-semibold tracking-wider uppercase text-gold">
-              <span>{isDe ? "Apple Flaggschiff-Generation 2026" : "Apple Flagship Generation 2026"}</span>
+              <span>
+                {selectedModel === "duo"
+                  ? (isDe ? "Apple Foldable Premiere • 2026" : "Apple Foldable Premiere • 2026")
+                  : selectedModel === "promax"
+                  ? (isDe ? "Apple Max Flaggschiff • 2026" : "Apple Max Flagship • 2026")
+                  : (isDe ? "Apple Flaggschiff-Generation 2026" : "Apple Flagship Generation 2026")}
+              </span>
             </div>
 
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl text-balance">
-              iPhone 18 Pro
-              <span className="block text-2xl sm:text-4xl lg:text-5xl font-medium text-muted mt-2">
-                {isDe ? "Pro Max & das neue iPhone Duo" : "Pro Max & The New iPhone Duo"}
-              </span>
+              {selectedModel === "duo" ? (
+                <>
+                  iPhone Duo
+                  <span className="block text-2xl sm:text-4xl lg:text-5xl font-medium text-muted mt-2">
+                    {isDe ? "Apples erstes Foldable aus Titan" : "Apple's First Titanium Foldable"}
+                  </span>
+                </>
+              ) : selectedModel === "promax" ? (
+                <>
+                  iPhone 18 Pro Max
+                  <span className="block text-2xl sm:text-4xl lg:text-5xl font-medium text-muted mt-2">
+                    {isDe ? "6,9\" Super Retina XDR Flaggschiff" : "6.9\" Super Retina XDR Flagship"}
+                  </span>
+                </>
+              ) : (
+                <>
+                  iPhone 18 Pro
+                  <span className="block text-2xl sm:text-4xl lg:text-5xl font-medium text-muted mt-2">
+                    {isDe ? "Pro Max & das neue iPhone Duo" : "Pro Max & The New iPhone Duo"}
+                  </span>
+                </>
+              )}
             </h1>
 
             <p className="mx-auto max-w-2xl text-base sm:text-lg text-muted leading-relaxed text-balance">
-              {isDe
-                ? "Entwickelt für kompromisslose Leistung. Der A20 Pro Prozessor in 2-Nanometer-Architektur, eine 48 MP Pro Fusion Optik mit variabler Blende von f/1.48 bis f/4.0 und Apples erstes faltbares Meisterwerk aus Titan."
-                : "Engineered without compromise. Powered by the 2nm Apple A20 Pro architecture, a 48MP Pro Fusion system with variable f/1.48–f/4.0 aperture, and Apple's inaugural Grade 5 titanium foldable."}
+              {selectedModel === "duo"
+                ? (isDe
+                  ? "Apples erstes faltbares Smartphone mit nahtlosem 7,6-Zoll-OLED-Canvas, 5,4-Zoll-Cover-Display, Zero-Gap Grade 5 Titanscharnier und der vollen Power des A20 Pro 2nm-Chips."
+                  : "Apple's first foldable smartphone featuring a seamless 7.6-inch inner OLED canvas, 5.4-inch outer cover screen, zero-gap Grade 5 titanium hinge, and 2nm A20 Pro silicon.")
+                : selectedModel === "promax"
+                ? (isDe
+                  ? "Das ultimative Flaggschiff mit großem 6,9-Zoll-Display, 5.567 mAh Riesen-Akku für bis zu 35 Stunden Videowiedergabe, 10x verlustfreiem Zoom und 2nm A20 Pro Prozessor."
+                  : "The definitive flagship featuring an expansive 6.9-inch display, massive 5,567 mAh battery for up to 35 hours video playback, 10x lossless zoom, and 2nm A20 Pro silicon.")
+                : (isDe
+                  ? "Entwickelt für kompromisslose Leistung. Der A20 Pro Prozessor in 2-Nanometer-Architektur, eine 48 MP Pro Fusion Optik mit variabler Blende von f/1.48 bis f/4.0 und Apples erstes faltbares Meisterwerk aus Titan."
+                  : "Engineered without compromise. Powered by the 2nm Apple A20 Pro architecture, a 48MP Pro Fusion system with variable f/1.48–f/4.0 aperture, and Apple's inaugural Grade 5 titanium foldable.")}
             </p>
 
             {/* Restrained Luxury CTA Actions */}
@@ -328,8 +366,8 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
       <section className="sticky top-14 z-20 border-b border-border/80 bg-background/90 backdrop-blur-md py-3">
         <div className="container-page flex items-center justify-center">
           <div className="inline-flex p-1 rounded-full border border-border bg-surface/80">
-            <button
-              type="button"
+            <Link
+              href={`/${locale}/iphone-18-pro`}
               onClick={() => selectModel("pro")}
               className={`rounded-full px-4 sm:px-6 py-1.5 text-xs sm:text-sm font-medium transition-all ${
                 selectedModel === "pro"
@@ -338,9 +376,9 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
               }`}
             >
               iPhone 18 Pro
-            </button>
-            <button
-              type="button"
+            </Link>
+            <Link
+              href={`/${locale}/iphone-18-pro-max`}
               onClick={() => selectModel("promax")}
               className={`rounded-full px-4 sm:px-6 py-1.5 text-xs sm:text-sm font-medium transition-all ${
                 selectedModel === "promax"
@@ -349,9 +387,9 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
               }`}
             >
               iPhone 18 Pro Max
-            </button>
-            <button
-              type="button"
+            </Link>
+            <Link
+              href={`/${locale}/iphone-duo`}
               onClick={() => selectModel("duo")}
               className={`rounded-full px-4 sm:px-6 py-1.5 text-xs sm:text-sm font-medium transition-all ${
                 selectedModel === "duo"
@@ -360,7 +398,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
               }`}
             >
               iPhone Duo (Foldable)
-            </button>
+            </Link>
           </div>
         </div>
       </section>

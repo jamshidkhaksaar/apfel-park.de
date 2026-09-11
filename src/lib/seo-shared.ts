@@ -7,6 +7,8 @@ export type SeoRouteId =
   | "smartphones"
   | "hamburgStore"
   | "iphone18Pro"
+  | "iphone18ProMax"
+  | "iphoneDuo"
   | "iphone17"
   | "iphone16ProMax"
   | "samsungPhones"
@@ -202,20 +204,58 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
   {
     id: "iphone18Pro",
     path: "/iphone-18-pro",
-    labels: { de: "iPhone 18 Pro & Duo", en: "iPhone 18 Pro & Duo" },
+    labels: { de: "iPhone 18 Pro", en: "iPhone 18 Pro" },
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "iPhone 18 Pro, Pro Max & iPhone Duo kaufen | Apfel Park Hamburg",
-      en: "Buy iPhone 18 Pro, Pro Max & iPhone Duo | Apfel Park Hamburg",
+      de: "iPhone 18 Pro kaufen | Apfel Park Hamburg",
+      en: "Buy iPhone 18 Pro | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "Apple iPhone 18 Pro, 18 Pro Max und iPhone Duo (Foldable) bei Apfel Park. 2nm A20 Pro Chip, 48MP Pro Fusion Kamera, technische Daten, Vorbestellung & Angebote in Hamburg.",
-      en: "Apple iPhone 18 Pro, 18 Pro Max and iPhone Duo (Foldable) at Apfel Park. 2nm A20 Pro silicon, 48MP variable camera, full specs, pre-orders & quotes in Hamburg.",
+      de: "Apple iPhone 18 Pro mit 6.3 Zoll OLED, A20 Pro 2nm Chip, variabler 48MP Pro Fusion Blende (f/1.48–f/4.0). Vorbestellung & Angebote bei Apfel Park Hamburg.",
+      en: "Apple iPhone 18 Pro with 6.3 inch OLED, 2nm A20 Pro silicon, variable 48MP Pro Fusion aperture (f/1.48–f/4.0). Pre-orders at Apfel Park Hamburg.",
     },
     defaultKeywords: {
-      de: "iPhone 18 Pro kaufen, iPhone 18 Pro Max Preis, iPhone Duo, iPhone Foldable, Apple iPhone 18 Hamburg, iPhone Vorbestellung Hamburg",
-      en: "buy iPhone 18 Pro, iPhone 18 Pro Max specs, iPhone Duo foldable, Apple iPhone 18 Germany, iPhone 18 pre-order Hamburg",
+      de: "iPhone 18 Pro kaufen, iPhone 18 Pro Preis, Apple iPhone 18 Pro Hamburg, iPhone 18 Pro Vorbestellung",
+      en: "buy iPhone 18 Pro, iPhone 18 Pro price, Apple iPhone 18 Pro Germany, iPhone 18 Pro specs",
+    },
+  },
+  {
+    id: "iphone18ProMax",
+    path: "/iphone-18-pro-max",
+    labels: { de: "iPhone 18 Pro Max", en: "iPhone 18 Pro Max" },
+    priority: 0.96,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "iPhone 18 Pro Max kaufen – 6.9 Zoll Flaggschiff | Apfel Park Hamburg",
+      en: "Buy iPhone 18 Pro Max – 6.9 Inch Flagship | Apfel Park Hamburg",
+    },
+    defaultDescription: {
+      de: "Apple iPhone 18 Pro Max mit 6.9 Zoll Super Retina XDR OLED, A20 Pro 2nm Chip, variabler 48MP Kamera & Riesen-Akku. Vorbestellung & Angebote bei Apfel Park Hamburg.",
+      en: "Apple iPhone 18 Pro Max featuring 6.9 inch Super Retina XDR OLED, 2nm A20 Pro, variable 48MP optics & massive battery. Pre-orders in Hamburg.",
+    },
+    defaultKeywords: {
+      de: "iPhone 18 Pro Max kaufen, iPhone 18 Pro Max Preis, iPhone 18 Pro Max ohne Vertrag, Apple iPhone 18 Pro Max Hamburg, iPhone 18 Pro Max 256GB",
+      en: "buy iPhone 18 Pro Max, iPhone 18 Pro Max specs, iPhone 18 Pro Max price, Apple iPhone 18 Pro Max Germany, iPhone 18 Pro Max pre-order",
+    },
+  },
+  {
+    id: "iphoneDuo",
+    path: "/iphone-duo",
+    labels: { de: "iPhone Duo (Foldable)", en: "iPhone Duo (Foldable)" },
+    priority: 0.96,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "iPhone Duo kaufen – Apples erstes Foldable | Apfel Park Hamburg",
+      en: "Buy iPhone Duo – Apple's First Foldable | Apfel Park Hamburg",
+    },
+    defaultDescription: {
+      de: "Apple iPhone Duo (Foldable) mit 7.6 Zoll Innen-Display & 5.4 Zoll Cover. A20 Pro 2nm Chip, Titan-Scharnier & 5.400 mAh Akku. Jetzt bei Apfel Park Hamburg reservieren.",
+      en: "Apple iPhone Duo foldable with 7.6 inch inner screen & 5.4 inch cover. 2nm A20 Pro silicon, Grade 5 titanium zero-gap hinge. Reserve at Apfel Park Hamburg.",
+    },
+    defaultKeywords: {
+      de: "iPhone Duo kaufen, iPhone Duo Preis, iPhone Foldable, Apple iPhone Duo, iPhone Klapphandy, iPhone Duo Hamburg Vorbestellung",
+      en: "buy iPhone Duo, iPhone Duo price, iPhone Foldable, Apple iPhone Duo specs, foldable iPhone Germany",
     },
   },
   {
