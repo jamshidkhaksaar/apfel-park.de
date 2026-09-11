@@ -33,8 +33,6 @@ type VideoTrack = {
   nameEn: string;
 };
 
-type ViewMode = "colors" | "unfolded" | "profile" | "video";
-
 const OFFICIAL = "/images/google/pixel11/official";
 const VIDEOS = "/images/google/pixel11/videos";
 
@@ -150,16 +148,6 @@ function MailIcon({ className = "size-4" }: { className?: string }) {
     </svg>
   );
 }
-
-function PlayIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <polygon points="6 3 20 12 6 21 6 3" />
-    </svg>
-  );
-}
-
-
 
 function ChevronDownIcon({ className = "size-4" }: { className?: string }) {
   return (
@@ -320,7 +308,6 @@ export default function PixelShowcase({
   const [, startTransition] = useTransition();
 
   const [selectedModel, setSelectedModel] = useState<PixelModelId>(initialModel);
-  const [viewMode, setViewMode] = useState<ViewMode>("colors");
   const [selectedFinishIndex, setSelectedFinishIndex] = useState(0);
   const [activeVideoIdx, setActiveVideoIdx] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -337,71 +324,8 @@ export default function PixelShowcase({
       setSelectedModel(model);
       setSelectedFinishIndex(0);
       setActiveVideoIdx(0);
-      setViewMode("colors");
     });
   };
-
-  const getActiveAsset = () => {
-    if (viewMode === "video") {
-      return {
-        type: "video" as const,
-        src: currentVideo.src,
-        alt: isDe ? currentVideo.nameDe : currentVideo.nameEn,
-        labelDe: currentVideo.nameDe,
-        labelEn: currentVideo.nameEn,
-      };
-    }
-    if (viewMode === "unfolded") {
-      // Lifestyle / in-hand official render.
-      return {
-        type: "image" as const,
-        src: selectedModel === "proFold" ? currentFinish.primary : currentFinish.detail,
-        alt:
-          selectedModel === "proFold"
-            ? isDe
-              ? "Google Pixel 11 Pro Fold – 8,0 Zoll Super Actua Flex Display entfaltet"
-              : "Google Pixel 11 Pro Fold – 8.0-inch Super Actua Flex Canvas Unfolded"
-            : isDe
-              ? "Google Pixel 11 – 6,3 Zoll Actua OLED in der Hand"
-              : "Google Pixel 11 – 6.3-inch Actua OLED in hand",
-        labelDe:
-          selectedModel === "proFold"
-            ? "8,0\" Super Actua Flex entfaltet"
-            : "6,3\" Actua OLED · in der Hand",
-        labelEn:
-          selectedModel === "proFold"
-            ? "8.0\" Super Actua Flex Unfolded"
-            : "6.3\" Actua OLED · in hand",
-      };
-    }
-    if (viewMode === "profile") {
-      return {
-        type: "image" as const,
-        src: selectedModel === "proFold" ? `${OFFICIAL}/fold-side.jpg` : `${OFFICIAL}/pixel11-camera.jpg`,
-        alt: isDe ? "Google Pixel 11 Detail- und Profilansicht" : "Google Pixel 11 detail and profile view",
-        labelDe:
-          selectedModel === "proFold"
-            ? "5,1 mm Schlankprofil & Zahnradscharnier"
-            : "Kameraleiste & Aluminium-Präzisionsprofil",
-        labelEn:
-          selectedModel === "proFold"
-            ? "5.1mm Slim Profile & Gear Hinge"
-            : "Camera Bar & Aluminum Precision Profile",
-      };
-    }
-    // "colors" mode — official studio render of the selected finish.
-    return {
-      type: "image" as const,
-      src: currentFinish.primary,
-      alt: `Google ${selectedModel === "pixel11" ? "Pixel 11" : "Pixel 11 Pro Fold"} — ${
-        isDe ? currentFinish.nameDe : currentFinish.nameEn
-      }`,
-      labelDe: `${currentFinish.nameDe} · ${isDe ? currentFinish.badgeDe : currentFinish.badgeEn}`,
-      labelEn: `${currentFinish.nameEn} · ${isDe ? currentFinish.badgeDe : currentFinish.badgeEn}`,
-    };
-  };
-
-  const activeAsset = getActiveAsset();
 
   // WhatsApp link
   const waText = encodeURIComponent(
@@ -629,176 +553,155 @@ export default function PixelShowcase({
         </div>
       </section>
 
-      {/* Interactive Media & Design Showcase Gallery */}
-      <section className="py-10 md:py-16">
+      {/* Finish Studio */}
+      <section className="py-14 md:py-20">
         <div className="container-page">
-          {/* Header Controls & View Selector */}
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight sm:text-2xl text-foreground">
-                  {selectedModel === "pixel11" ? "Google Pixel 11" : "Google Pixel 11 Pro Fold"}
-                </h2>
-                <span className="rounded-full bg-blue/15 px-2.5 py-0.5 text-[11px] font-semibold text-blue">
-                  {selectedModel === "pixel11" ? "Tensor G5 3nm" : "Tensor G5 Pro Fold"}
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-muted mt-0.5">
-                {isDe
-                  ? "Originale Farbvarianten, hochauflösende Galerie und 4K-Videopräsentation"
-                  : "Authentic color finishes, high-resolution gallery, and 4K video showcase"}
-              </p>
-            </div>
-
-            {/* View Selector Pills */}
-            <div className={`flex items-center gap-1.5 overflow-x-auto rounded-xl border border-border bg-surface p-1 text-xs ${s.noScrollbar}`}>
-              {/* Color Variants / Design */}
-              <button
-                type="button"
-                onClick={() => setViewMode("colors")}
-                className={`rounded-lg px-3.5 py-1.5 font-semibold transition-all whitespace-nowrap min-h-[36px] ${
-                  viewMode === "colors"
-                    ? "bg-blue text-white shadow-md shadow-blue/30"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                <span>{isDe ? "Farben & Design" : "Colors & Design"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setViewMode("unfolded")}
-                className={`rounded-lg px-3 py-1.5 font-medium transition-all whitespace-nowrap min-h-[36px] ${
-                  viewMode === "unfolded" ? "bg-foreground text-background shadow-sm" : "text-muted hover:text-foreground"
-                }`}
-              >
-                {selectedModel === "proFold" ? (isDe ? "8,0\" Display entfaltet" : "8.0\" Canvas Unfolded") : (isDe ? "Frontalansicht" : "Front View")}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setViewMode("profile")}
-                className={`rounded-lg px-3 py-1.5 font-medium transition-all whitespace-nowrap min-h-[36px] ${
-                  viewMode === "profile" ? "bg-foreground text-background shadow-sm" : "text-muted hover:text-foreground"
-                }`}
-              >
-                {isDe ? "Profil & Scharnier" : "Profile & Hinge"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setViewMode("video")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition-all whitespace-nowrap min-h-[36px] ${
-                  viewMode === "video" ? "bg-foreground text-background shadow-sm" : "text-muted hover:text-foreground"
-                }`}
-              >
-                <PlayIcon className="size-3.5" />
-                <span>{isDe ? "Design-Video" : "Design Video"}</span>
-              </button>
-            </div>
+          <div className="mb-10 max-w-2xl">
+            <span className="text-xs font-semibold uppercase tracking-wider text-blue">
+              {isDe ? "Design & Farben" : "Design & Finishes"}
+            </span>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-4xl text-foreground">
+              {selectedModel === "pixel11"
+                ? isDe ? "Vier Farben. Ein Statement." : "Four finishes. One statement."
+                : isDe ? "Gefaltet wie nie zuvor." : "Folding like never before."}
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-muted leading-relaxed">
+              {selectedModel === "pixel11"
+                ? isDe
+                  ? "Von Frost über Hibiscus und Pistachio bis Obsidian – jede Variante mit satiniertem Finish und polierten Aluminiumkanten."
+                  : "From Frost to Hibiscus, Pistachio and Obsidian – each finish with a satin back and polished aluminium edges."
+                : isDe
+                  ? "Olive und Obsidian mit mattem Metallrahmen, 5,1 mm Schlankprofil und reibungsfreiem Zahnradscharnier."
+                  : "Olive and Obsidian with a matte metal frame, 5.1 mm slim profile and fluid gear hinge."}
+            </p>
           </div>
 
-          {/* Main Visual Stage */}
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-surface-strong/50 p-4 sm:p-8 flex flex-col items-center justify-center min-h-[520px] sm:min-h-[620px] md:min-h-[680px] lg:min-h-[740px]">
-            {/* Dynamic Ambient Glow Sphere matching current finish color */}
-            <div
-              className={s.ambientBackdrop}
-              style={{
-                backgroundColor:
-                  viewMode === "colors"
-                    ? currentFinish.colorHex
-                    : selectedModel === "proFold"
-                    ? "#8a8a5c"
-                    : "#4285f4",
-              }}
-              aria-hidden="true"
-            />
-
-            {/* Design Video Player */}
-            {viewMode === "video" ? (
-              <div className="relative z-10 w-full max-w-4xl aspect-[16/9] overflow-hidden rounded-2xl bg-black border border-border shadow-2xl flex flex-col justify-between">
-                <video
-                  ref={videoRef}
-                  src={currentVideo.src}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  controls
-                  className="w-full h-full object-cover"
-                />
-
-                <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-md rounded-full p-1 border border-white/20 text-xs">
-                  {modelVideos.map((track, idx) => (
-                    <button
-                      key={track.src}
-                      type="button"
-                      onClick={() => setActiveVideoIdx(idx)}
-                      className={`px-3 py-1 rounded-full font-medium transition ${
-                        idx === activeVideoIdx ? "bg-white text-black font-semibold" : "text-white/70 hover:text-white"
-                      }`}
-                    >
-                      {isDe ? track.nameDe : track.nameEn}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="relative z-10 w-full flex flex-col items-center justify-center space-y-6">
+          <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
+            <div className="lg:col-span-7">
+              <div className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-surface-strong/80 via-surface to-background p-6 sm:p-10">
                 <div
-                  className={`relative w-full max-w-3xl h-[360px] sm:h-[480px] md:h-[560px] lg:h-[620px] flex items-center justify-center ${s.stageImageAnimated}`}
-                  key={`${selectedModel}-${viewMode}-${selectedFinishIndex}`}
-                >
+                  className={s.ambientBackdrop}
+                  style={{ backgroundColor: currentFinish.colorHex }}
+                  aria-hidden="true"
+                />
+                <div className="relative z-10 mx-auto h-[360px] sm:h-[500px]">
                   <Image
-                    src={activeAsset.src}
-                    alt={activeAsset.alt}
+                    key={`${selectedModel}-${currentFinish.id}`}
+                    src={currentFinish.primary}
+                    alt={`Google ${selectedModel === "pixel11" ? "Pixel 11" : "Pixel 11 Pro Fold"} – ${isDe ? currentFinish.nameDe : currentFinish.nameEn}`}
                     fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-                    className="object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.45)] transition-all duration-500"
+                    sizes="(max-width: 1024px) 100vw, 58vw"
+                    className="object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.35)] transition-all duration-500"
                     priority
                   />
                 </div>
-
-                <div className="text-center space-y-3 z-10">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/90 px-4 py-1.5 text-xs font-semibold text-foreground backdrop-blur-md shadow-sm">
-                    <span>{isDe ? activeAsset.labelDe : activeAsset.labelEn}</span>
-                  </div>
-
-                  {viewMode === "colors" && (
-                    <div className="space-y-2 pt-2">
-                      <div className="flex items-center justify-center gap-3 sm:gap-4" role="group" aria-label="Color Selection">
-                        {activeFinishes.map((finish, idx) => {
-                          const isActive = idx === selectedFinishIndex;
-                          return (
-                            <button
-                              key={finish.id}
-                              type="button"
-                              onClick={() => setSelectedFinishIndex(idx)}
-                              className={`size-10 sm:size-11 rounded-full transition-all duration-300 relative flex items-center justify-center min-h-[44px] min-w-[44px] ${
-                                isActive
-                                  ? "scale-110 ring-2 ring-blue ring-offset-2 ring-offset-background shadow-lg shadow-blue/25"
-                                  : "opacity-80 hover:opacity-100 hover:scale-105"
-                              }`}
-                              style={{ backgroundColor: finish.colorHex }}
-                              title={finish.nameDe}
-                              aria-label={`Farbe ${finish.nameDe}`}
-                              aria-pressed={isActive}
-                            >
-                              {isActive && (
-                                <span className="size-2 rounded-full bg-white/90 shadow-sm" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-center text-[11px] text-muted">
-                        {isDe ? currentFinish.nameDe : currentFinish.nameEn} · {isDe ? currentFinish.badgeDe : currentFinish.badgeEn}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                <span className="absolute left-6 top-6 z-20 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-xs font-semibold text-foreground backdrop-blur-md">
+                  <span className="size-3 rounded-full ring-1 ring-black/10" style={{ backgroundColor: currentFinish.colorHex }} />
+                  {isDe ? currentFinish.nameDe : currentFinish.nameEn}
+                </span>
               </div>
-            )}
+            </div>
+
+            <div className="lg:col-span-5 space-y-6">
+              <div className="space-y-2.5" role="radiogroup" aria-label={isDe ? "Farbe wählen" : "Choose finish"}>
+                {activeFinishes.map((finish, idx) => {
+                  const isActive = idx === selectedFinishIndex;
+                  return (
+                    <button
+                      key={finish.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isActive}
+                      onClick={() => setSelectedFinishIndex(idx)}
+                      className={`flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition-all ${
+                        isActive ? "border-blue bg-blue/5 shadow-sm" : "border-border hover:border-blue/50 hover:bg-surface/60"
+                      }`}
+                    >
+                      <span className="size-9 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: finish.colorHex }} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold text-foreground">{isDe ? finish.nameDe : finish.nameEn}</span>
+                        <span className="block text-xs text-muted">{isDe ? finish.badgeDe : finish.badgeEn}</span>
+                      </span>
+                      {isActive && (
+                        <span className="inline-flex size-5 items-center justify-center rounded-full bg-blue text-white">
+                          <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden="true">
+                            <path fillRule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0L3.3 9.7a1 1 0 1 1 1.4-1.4l3.8 3.8 6.8-6.8a1 1 0 0 1 1.4 0Z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-1">
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-3 text-xs sm:text-sm font-semibold text-background transition-all hover:bg-gold hover:text-black shadow-md min-h-[44px]"
+                >
+                  <WhatsAppIcon className="size-4" />
+                  <span>{isDe ? "Angebot anfragen" : "Request a quote"}</span>
+                </a>
+                <a
+                  href={emailUrl}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-5 py-3 text-xs sm:text-sm font-semibold text-foreground transition-all hover:border-gold hover:text-gold min-h-[44px]"
+                >
+                  <MailIcon className="size-4" />
+                  <span>{isDe ? "Per E-Mail" : "By email"}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Official design films */}
+      <section className="border-t border-border/70 bg-surface/20 py-14 md:py-20">
+        <div className="container-page">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-wider text-blue">
+                {isDe ? "Offizielle Design-Filme" : "Official Design Films"}
+              </span>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-4xl text-foreground">
+                {isDe ? "Bewegt. In voller Auflösung." : "In motion. In full resolution."}
+              </h2>
+            </div>
+            <div className="flex flex-wrap gap-1.5 rounded-xl border border-border bg-background p-1 text-xs">
+              {modelVideos.map((track, idx) => (
+                <button
+                  key={track.src}
+                  type="button"
+                  onClick={() => setActiveVideoIdx(idx)}
+                  className={`rounded-lg px-3 py-1.5 font-medium transition-all min-h-[36px] ${
+                    idx === activeVideoIdx ? "bg-blue text-white shadow-sm" : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  {isDe ? track.nameDe : track.nameEn}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-black shadow-2xl">
+            <video
+              ref={videoRef}
+              key={currentVideo.src}
+              src={currentVideo.src}
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              className="aspect-video w-full object-cover"
+            />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/75 via-black/20 to-transparent p-5 sm:p-6">
+              <span className="text-sm font-semibold text-white sm:text-base">
+                {isDe ? currentVideo.nameDe : currentVideo.nameEn}
+              </span>
+            </div>
           </div>
         </div>
       </section>
