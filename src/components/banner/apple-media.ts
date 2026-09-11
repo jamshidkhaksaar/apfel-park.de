@@ -1,8 +1,8 @@
-/** High-performance local WebP assets with direct video reference */
+/** Media paths for the iPhone banner. Photos are ready for new custom uploads. */
 export const APPLE_MEDIA = {
-  "proLineup": "/images/apple/pro-lineup.webp",
-  "proFrontBack": "/images/apple/pro-front-back.webp",
-  "duoNight": "/images/apple/duo-night.webp",
-  "duoWhite": "/images/apple/duo-white.webp",
+  "proLineup": "",
+  "proFrontBack": "",
+  "duoNight": "",
+  "duoWhite": "",
   "duoVideo": "/images/apple/duo-video.mp4"
 } as const;
