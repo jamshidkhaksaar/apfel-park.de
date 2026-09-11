@@ -100,7 +100,7 @@ export default function GalaxyFoldBanner({
   const bannerId = id ?? uniqueId;
   const rootRef = useRef<HTMLElement>(null);
 
-  const defaultShopHref = `/${lang}/samsung-handys`;
+  const defaultShopHref = `/${lang}/galaxy-z-fold-8`;
   const targetHref = shopHref || defaultShopHref;
 
   // Carousel Active Indexes

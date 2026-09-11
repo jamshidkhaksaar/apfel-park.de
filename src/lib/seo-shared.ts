@@ -9,6 +9,8 @@ export type SeoRouteId =
   | "iphone18Pro"
   | "iphone18ProMax"
   | "iphoneDuo"
+  | "galaxyZFold8"
+  | "galaxyZFold8Ultra"
   | "iphone17"
   | "iphone16ProMax"
   | "samsungPhones"
@@ -256,6 +258,44 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     defaultKeywords: {
       de: "iPhone Duo kaufen, iPhone Duo Preis, iPhone Foldable, Apple iPhone Duo, iPhone Klapphandy, iPhone Duo Hamburg Vorbestellung",
       en: "buy iPhone Duo, iPhone Duo price, iPhone Foldable, Apple iPhone Duo specs, foldable iPhone Germany",
+    },
+  },
+  {
+    id: "galaxyZFold8",
+    path: "/galaxy-z-fold-8",
+    labels: { de: "Galaxy Z Fold8", en: "Galaxy Z Fold8" },
+    priority: 0.96,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "Samsung Galaxy Z Fold8 kaufen – 4,5 mm Ultra-Slim | Apfel Park Hamburg",
+      en: "Buy Samsung Galaxy Z Fold8 – 4.5mm Ultra-Slim | Apfel Park Hamburg",
+    },
+    defaultDescription: {
+      de: "Samsung Galaxy Z Fold8 mit 7,6 Zoll Dynamic AMOLED 2X, Snapdragon 8 Elite Gen 5 und neuem 4,5 mm Slim-Design. Jetzt bei Apfel Park Hamburg anfragen.",
+      en: "Samsung Galaxy Z Fold8 featuring 7.6 inch Dynamic AMOLED 2X, Snapdragon 8 Elite Gen 5 and record 4.5mm slim build. Inquire at Apfel Park Hamburg.",
+    },
+    defaultKeywords: {
+      de: "Samsung Galaxy Z Fold 8 kaufen, Galaxy Z Fold 8 Preis, Samsung Z Fold 8 ohne Vertrag, Galaxy Z Fold 8 Hamburg, Samsung Foldable",
+      en: "buy Samsung Galaxy Z Fold 8, Galaxy Z Fold 8 price, Samsung Z Fold 8 specs, Galaxy Z Fold 8 Germany",
+    },
+  },
+  {
+    id: "galaxyZFold8Ultra",
+    path: "/galaxy-z-fold-8-ultra",
+    labels: { de: "Galaxy Z Fold8 Ultra", en: "Galaxy Z Fold8 Ultra" },
+    priority: 0.96,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "Samsung Galaxy Z Fold8 Ultra kaufen – 8 Zoll 200MP | Apfel Park Hamburg",
+      en: "Buy Samsung Galaxy Z Fold8 Ultra – 8-Inch 200MP | Apfel Park Hamburg",
+    },
+    defaultDescription: {
+      de: "Samsung Galaxy Z Fold8 Ultra Flaggschiff mit 8,0 Zoll Display, 200 MP ISOCELL Kamera, Titan-Gehäuse und 5.000 mAh Akku. Verfügbarkeit & Angebote in Hamburg.",
+      en: "Samsung Galaxy Z Fold8 Ultra flagship with 8.0 inch screen, 200MP ISOCELL optics, titanium chassis and 5,000 mAh battery. Pre-orders at Apfel Park Hamburg.",
+    },
+    defaultKeywords: {
+      de: "Samsung Galaxy Z Fold 8 Ultra kaufen, Galaxy Z Fold 8 Ultra Preis, Samsung Fold 8 Ultra 512GB, Galaxy Z Fold Ultra Hamburg",
+      en: "buy Galaxy Z Fold 8 Ultra, Samsung Z Fold 8 Ultra price, Galaxy Z Fold 8 Ultra specs Germany",
     },
   },
   {
