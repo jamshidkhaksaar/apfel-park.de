@@ -1,0 +1,1072 @@
+{
+  "galaxy-z-fold8-ultra": {
+    "name": "Galaxy Z Fold8 Ultra",
+    "statustoggle": "fold",
+    "releaseDate": "2026-07-00",
+    "scale": 45,
+    "output-rendering": "sRGB",
+    "color": [
+      {
+        "key": "graphite",
+        "text": "Graphite(Galaxy Z Fold8 Ultra)",
+        "color": "#5F6367",
+        "default": false,
+        "compression": true,
+        "glb": "galaxy-z-fold8-ultra-cp.glb",
+        "arGLB": "galaxy-z-fold8-sample.glb",
+        "arUSDZ": "galaxy-z-fold8-sample.usdz",
+        "envtype": "cameraDisplayZ8",
+        "envCustom": [
+          {
+            "type": "metalFold8Ultra",
+            "target": [
+              "Rearcase",
+              "Rearcase_hole",
+              "Rearcase_button",
+              "Antenna_Plastic",
+              "Flash_tex"
+            ]
+          },
+          {
+            "type": "hingeFold8Ultra",
+            "target": [
+              "Hinge"
+            ]
+          },
+          {
+            "type": "panelFold8Ultra",
+            "target": [
+              "Back_Cam_Rear_side",
+              "Back_Cam_Case",
+              "Back_Cam_Case_in",
+              "Back_Cover_Glass",
+              "Back_Cam_Rear"
+            ]
+          },
+          {
+            "type": "cameraFold8Ultra",
+            "target": [
+              "Back_Cam_Case_side",
+              "Back_Cam_Case_edge"
+            ]
+          },
+          {
+            "type": "logoFold8Ultra",
+            "target": [
+              "SAMSUNG_LOGO"
+            ]
+          }
+        ],
+        "custumMaterial": [
+          {
+            "target": [
+              "Display_ActiveArea",
+              "Display_ActiveArea_Front",
+              "Flash_tex",
+              "Right_Cam_Lens",
+              "Left_Cam_Lens"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Display_ActiveArea"
+            ],
+            "options": {
+              "emissiveMap": "galaxy-z-fold8-ultra-main-graphite.jpg",
+              "toneMapped": false,
+              "emissive": "#ffffff"
+            }
+          },
+          {
+            "target": [
+              "Display_ActiveArea_Front"
+            ],
+            "options": {
+              "emissiveMap": "galaxy-z-fold8-ultra-front-graphite.jpg",
+              "toneMapped": false,
+              "emissive": "#ffffff"
+            }
+          },
+          {
+            "target": [
+              "Flash_tex"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Right_Cam_Lens"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Hinge"
+            ],
+            "options": {
+              "emissive": "#141414",
+              "color": "#65666c",
+              "roughness": 0.35,
+              "toneMapped": true,
+              "emissiveIntensity": 0,
+              "metalness": 1
+            }
+          },
+          {
+            "target": [
+              "Back_Cover_Glass"
+            ],
+            "options": {
+              "emissive": "#2b2c31",
+              "map": "galaxy-z-fold8-ultra-gradient.jpg",
+              "color": "#58595f",
+              "metalness": 0.9,
+              "roughness": 0.45,
+              "emissiveIntensity": 0.85,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase"
+            ],
+            "options": {
+              "color": "#57575c",
+              "emissive": "#000000",
+              "emissiveIntensity": 1,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase_button"
+            ],
+            "options": {
+              "color": "#525257",
+              "emissive": "#000000",
+              "roughness": 0.3
+            }
+          },
+          {
+            "target": [
+              "SAMSUNG_LOGO"
+            ],
+            "options": {
+              "color": "#65666c",
+              "roughness": 0.1,
+              "emissive": "#3b3b3b",
+              "metalness": 1,
+              "emissiveIntensity": 0.37,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Antenna_Plastic"
+            ],
+            "options": {
+              "color": "#424348",
+              "metalness": 0.800000011920929,
+              "emissive": "rgb(0, 0, 0)",
+              "roughness": 0.30000001192092896,
+              "emissiveIntensity": 1
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case"
+            ],
+            "options": {
+              "color": "#505158",
+              "roughness": 0.45,
+              "metalness": 0.9,
+              "opacity": 0.7,
+              "emissive": "#2b2c31",
+              "emissiveIntensity": 0.62,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_side"
+            ],
+            "options": {
+              "color": "#5e5e64",
+              "roughness": 0.45,
+              "metalness": 0.83,
+              "opacity": 0.800000011920929,
+              "emissive": "#0a0a0a",
+              "emissiveIntensity": 1,
+              "toneMapped": true,
+              "visible": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_in"
+            ],
+            "options": {
+              "color": "#56565d",
+              "roughness": 0.45,
+              "emissive": "#2d3039",
+              "emissiveIntensity": 0.3,
+              "metalness": 0.6,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase_hole"
+            ],
+            "options": {
+              "map": "galaxy-z-fold8-ultra-gradient.jpg",
+              "color": "#3e3f47",
+              "emissive": "rgb(0, 0, 0)",
+              "emissiveIntensity": 1,
+              "visible": true,
+              "roughness": 0.65
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_edge"
+            ],
+            "options": {
+              "color": "#515158",
+              "emissive": "#2d3039",
+              "toneMapped": true,
+              "opacity": 0.8,
+              "metalness": 0.7,
+              "roughness": 0.3,
+              "transparent": true,
+              "emissiveIntensity": 0.3,
+              "visible": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Rear_side"
+            ],
+            "options": {
+              "color": "#616161",
+              "roughness": 0.35,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Rear"
+            ],
+            "options": {
+              "toneMapped": true
+            }
+          }
+        ]
+      },
+      {
+        "key": "cream",
+        "text": "Cream(Galaxy Z Fold8 Ultra)",
+        "color": "#F1F1EE",
+        "default": false,
+        "compression": true,
+        "glb": "galaxy-z-fold8-ultra-cp.glb",
+        "arGLB": "galaxy-z-fold8-sample.glb",
+        "arUSDZ": "galaxy-z-fold8-sample.usdz",
+        "envtype": "cameraDisplayZ8",
+        "envCustom": [
+          {
+            "type": "metalFold8Ultra",
+            "target": [
+              "Rearcase",
+              "Rearcase_hole",
+              "Rearcase_button",
+              "Antenna_Plastic",
+              "Flash_tex"
+            ]
+          },
+          {
+            "type": "hingeFold8Ultra",
+            "target": [
+              "Hinge"
+            ]
+          },
+          {
+            "type": "panelFold8Ultra",
+            "target": [
+              "Back_Cam_Rear_side",
+              "Back_Cam_Case",
+              "Back_Cam_Case_in",
+              "Back_Cover_Glass",
+              "Back_Cam_Rear"
+            ]
+          },
+          {
+            "type": "cameraFold8Ultra",
+            "target": [
+              "Back_Cam_Case_side",
+              "Back_Cam_Case_edge"
+            ]
+          },
+          {
+            "type": "logoFold8Ultra",
+            "target": [
+              "SAMSUNG_LOGO"
+            ]
+          }
+        ],
+        "custumMaterial": [
+          {
+            "target": [
+              "Display_ActiveArea",
+              "Display_ActiveArea_Front",
+              "Flash_tex",
+              "Right_Cam_Lens",
+              "Left_Cam_Lens"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Display_ActiveArea"
+            ],
+            "options": {
+              "emissiveMap": "galaxy-z-fold8-ultra-main-cream.jpg",
+              "toneMapped": false,
+              "emissive": "#ffffff"
+            }
+          },
+          {
+            "target": [
+              "Display_ActiveArea_Front"
+            ],
+            "options": {
+              "emissiveMap": "galaxy-z-fold8-ultra-front-cream.jpg",
+              "toneMapped": false,
+              "emissive": "#ffffff"
+            }
+          },
+          {
+            "target": [
+              "Hinge"
+            ],
+            "options": {
+              "emissive": "#3a3936",
+              "color": "#fffdf5",
+              "roughness": 0.4,
+              "toneMapped": true,
+              "emissiveIntensity": 1,
+              "metalness": 1
+            }
+          },
+          {
+            "target": [
+              "Back_Cover_Glass"
+            ],
+            "options": {
+              "emissive": "#b5b3b0",
+              "map": null,
+              "color": "#d3d1ca",
+              "metalness": 0.6,
+              "roughness": 0.6,
+              "emissiveIntensity": 0.8,
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Rearcase"
+            ],
+            "options": {
+              "color": "#fdf8e7",
+              "emissive": "#4a4a4a",
+              "emissiveIntensity": 0.2,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase_button"
+            ],
+            "options": {
+              "color": "#fdf8e7",
+              "emissive": "#4a4a4a",
+              "roughness": 0.30000001192092896
+            }
+          },
+          {
+            "target": [
+              "SAMSUNG_LOGO"
+            ],
+            "options": {
+              "color": "#ffffff",
+              "roughness": 0.12,
+              "emissive": "#a9a7a7",
+              "metalness": 0.82,
+              "emissiveIntensity": 0.64,
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Flash_tex"
+            ],
+            "options": {
+              "toneMapped": false,
+              "metalness": 1,
+              "color": "#a3a3a3"
+            }
+          },
+          {
+            "target": [
+              "Right_Cam_Lens"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Antenna_Plastic"
+            ],
+            "options": {
+              "color": "#e3dfce",
+              "metalness": 0.800000011920929,
+              "emissive": "#454545",
+              "roughness": 0.4,
+              "emissiveIntensity": 1
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case"
+            ],
+            "options": {
+              "color": "#fffefa",
+              "roughness": 0.6,
+              "metalness": 0.6,
+              "opacity": 1,
+              "emissive": "#d8d5cf",
+              "emissiveIntensity": 0.8,
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_side"
+            ],
+            "options": {
+              "color": "#d2d0c6",
+              "roughness": 0.4,
+              "metalness": 1,
+              "opacity": 0.8,
+              "emissive": "#e4e3dd",
+              "emissiveIntensity": 0.56,
+              "toneMapped": false,
+              "visible": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_in"
+            ],
+            "options": {
+              "color": "#e9e7e2",
+              "roughness": 1,
+              "emissive": "#d2cfcb",
+              "emissiveIntensity": 1.56,
+              "metalness": 1,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase_hole"
+            ],
+            "options": {
+              "color": "#b6b4a5",
+              "map": "galaxy-z-fold8-ultra-gradient.jpg",
+              "emissive": "#000000",
+              "emissiveIntensity": 0,
+              "visible": true,
+              "roughness": 0.75
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_edge"
+            ],
+            "options": {
+              "color": "#d3d0c5",
+              "emissive": "#d5d0c8",
+              "toneMapped": true,
+              "opacity": 0.9,
+              "metalness": 1,
+              "roughness": 0.4,
+              "transparent": true,
+              "emissiveIntensity": 0.68,
+              "visible": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Rear_side"
+            ],
+            "options": {
+              "color": "#6e7072",
+              "toneMapped": true,
+              "roughness": 0.3499999940395355
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Rear"
+            ],
+            "options": {
+              "toneMapped": true
+            }
+          }
+        ]
+      },
+      {
+        "key": "violet-shadow",
+        "text": "Violet Shadow(Galaxy Z Fold8 Ultra)",
+        "color": "#686884",
+        "default": true,
+        "compression": true,
+        "glb": "galaxy-z-fold8-ultra-cp.glb",
+        "arGLB": "galaxy-z-fold8-sample.glb",
+        "arUSDZ": "galaxy-z-fold8-sample.usdz",
+        "envtype": "cameraDisplayZ8",
+        "envCustom": [
+          {
+            "type": "metalFold8Ultra",
+            "target": [
+              "Back_Cam_Rear_side",
+              "Rearcase",
+              "Rearcase_hole",
+              "Rearcase_button",
+              "Antenna_Plastic",
+              "Flash_tex"
+            ]
+          },
+          {
+            "type": "hingeFold8Ultra",
+            "target": [
+              "Hinge"
+            ]
+          },
+          {
+            "type": "panelFold8Ultra",
+            "target": [
+              "Back_Cam_Rear_side",
+              "Back_Cam_Case",
+              "Back_Cam_Case_in",
+              "Back_Cover_Glass",
+              "Back_Cam_Rear"
+            ]
+          },
+          {
+            "type": "cameraFold8Ultra",
+            "target": [
+              "Back_Cam_Case_side",
+              "Back_Cam_Case_edge"
+            ]
+          },
+          {
+            "type": "logoFold8Ultra",
+            "target": [
+              "SAMSUNG_LOGO"
+            ]
+          }
+        ],
+        "custumMaterial": [
+          {
+            "target": [
+              "Display_ActiveArea",
+              "Display_ActiveArea_Front",
+              "Flash_tex",
+              "Right_Cam_Lens",
+              "Left_Cam_Lens"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Display_ActiveArea"
+            ],
+            "options": {
+              "emissiveMap": "galaxy-z-fold8-ultra-main-violet-shadow.jpg",
+              "toneMapped": false,
+              "emissive": "#ffffff"
+            }
+          },
+          {
+            "target": [
+              "Display_ActiveArea_Front"
+            ],
+            "options": {
+              "emissiveMap": "galaxy-z-fold8-ultra-front-violet-shadow.jpg",
+              "toneMapped": false,
+              "emissive": "#ffffff"
+            }
+          },
+          {
+            "target": [
+              "Hinge"
+            ],
+            "options": {
+              "emissive": "#000000",
+              "color": "#504851",
+              "roughness": 0.35,
+              "toneMapped": true,
+              "emissiveIntensity": 0.2,
+              "metalness": 1
+            }
+          },
+          {
+            "target": [
+              "Back_Cover_Glass"
+            ],
+            "options": {
+              "emissive": "#1e1320",
+              "map": "galaxy-z-fold8-ultra-gradient.jpg",
+              "color": "#4f454d",
+              "metalness": 0.9,
+              "roughness": 0.4,
+              "emissiveIntensity": 0.4,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase"
+            ],
+            "options": {
+              "color": "#4a424c",
+              "emissive": "rgb(0, 0, 0)",
+              "emissiveIntensity": 1,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase_button"
+            ],
+            "options": {
+              "color": "#5e555e",
+              "emissive": "rgb(0, 0, 0)",
+              "roughness": 0.30000001192092896
+            }
+          },
+          {
+            "target": [
+              "Flash_tex"
+            ],
+            "options": {
+              "toneMapped": false,
+              "color": "#000000"
+            }
+          },
+          {
+            "target": [
+              "Right_Cam_Lens"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "SAMSUNG_LOGO"
+            ],
+            "options": {
+              "color": "#4f4950",
+              "roughness": 0.1,
+              "emissive": "#221c22",
+              "metalness": 1,
+              "emissiveIntensity": 0.77,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Antenna_Plastic"
+            ],
+            "options": {
+              "color": "#453b45",
+              "metalness": 1,
+              "emissive": "rgb(0, 0, 0)",
+              "roughness": 0.35,
+              "emissiveIntensity": 1
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case"
+            ],
+            "options": {
+              "color": "#433842",
+              "roughness": 0.48,
+              "metalness": 0.85,
+              "opacity": 0.7,
+              "emissive": "#21121f",
+              "emissiveIntensity": 0.4,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_side"
+            ],
+            "options": {
+              "color": "#453f46",
+              "roughness": 0.45,
+              "metalness": 1,
+              "opacity": 0.8,
+              "emissive": "#1b161d",
+              "emissiveIntensity": 0.83,
+              "toneMapped": true,
+              "visible": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_in"
+            ],
+            "options": {
+              "color": "#4f454d",
+              "roughness": 0.4,
+              "emissive": "#1e1320",
+              "emissiveIntensity": 0.4,
+              "metalness": 0.85,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase_hole"
+            ],
+            "options": {
+              "map": "galaxy-z-fold8-ultra-gradient.jpg",
+              "color": "#3c343d",
+              "emissive": "#000000",
+              "emissiveIntensity": 0.7,
+              "visible": true,
+              "roughness": 0.65
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_edge"
+            ],
+            "options": {
+              "color": "#463f46",
+              "emissive": "#332932",
+              "toneMapped": true,
+              "opacity": 0.9,
+              "metalness": 0.9,
+              "roughness": 0.35,
+              "transparent": true,
+              "emissiveIntensity": 0.4,
+              "visible": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Rear_side"
+            ],
+            "options": {
+              "color": "#616161",
+              "roughness": 0.3499999940395355,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Rear"
+            ],
+            "options": {
+              "toneMapped": true
+            }
+          }
+        ]
+      },
+      {
+        "key": "green-shadow",
+        "text": "Green Shadow(Galaxy Z Fold8 Ultra)",
+        "color": "#ABC4C0",
+        "default": false,
+        "compression": true,
+        "glb": "galaxy-z-fold8-ultra-cp.glb",
+        "arGLB": "galaxy-z-fold8-sample.glb",
+        "arUSDZ": "galaxy-z-fold8-sample.usdz",
+        "envtype": "cameraDisplayZ8",
+        "envCustom": [
+          {
+            "type": "metalFold8Ultra",
+            "target": [
+              "Back_Cam_Rear_side",
+              "Rearcase",
+              "Rearcase_hole",
+              "Rearcase_button",
+              "Antenna_Plastic",
+              "Flash_tex"
+            ]
+          },
+          {
+            "type": "hingeFold8Ultra",
+            "target": [
+              "Hinge"
+            ]
+          },
+          {
+            "type": "panelFold8Ultra",
+            "target": [
+              "Back_Cam_Rear_side",
+              "Back_Cam_Case",
+              "Back_Cam_Case_in",
+              "Back_Cover_Glass",
+              "Back_Cam_Rear"
+            ]
+          },
+          {
+            "type": "cameraFold8Ultra",
+            "target": [
+              "Back_Cam_Case_side",
+              "Back_Cam_Case_edge"
+            ]
+          },
+          {
+            "type": "logoFold8Ultra",
+            "target": [
+              "SAMSUNG_LOGO"
+            ]
+          }
+        ],
+        "custumMaterial": [
+          {
+            "target": [
+              "Display_ActiveArea",
+              "Display_ActiveArea_Front",
+              "Flash_tex",
+              "Right_Cam_Lens",
+              "Left_Cam_Lens"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Display_ActiveArea"
+            ],
+            "options": {
+              "emissiveMap": "galaxy-z-fold8-ultra-main-green-shadow.jpg",
+              "toneMapped": false,
+              "emissive": "#ffffff"
+            }
+          },
+          {
+            "target": [
+              "Display_ActiveArea_Front"
+            ],
+            "options": {
+              "emissiveMap": "galaxy-z-fold8-ultra-front-green-shadow.jpg",
+              "toneMapped": false,
+              "emissive": "#ffffff"
+            }
+          },
+          {
+            "target": [
+              "Flash_tex"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Right_Cam_Lens"
+            ],
+            "options": {
+              "toneMapped": false
+            }
+          },
+          {
+            "target": [
+              "Hinge"
+            ],
+            "options": {
+              "emissive": "#0e0d0c",
+              "color": "#505853",
+              "roughness": 0.35,
+              "toneMapped": true,
+              "emissiveIntensity": 0.22,
+              "metalness": 1
+            }
+          },
+          {
+            "target": [
+              "Back_Cover_Glass"
+            ],
+            "options": {
+              "emissive": "#3c4139",
+              "map": "galaxy-z-fold8-ultra-gradient.jpg",
+              "color": "#48514d",
+              "metalness": 0.95,
+              "roughness": 0.45,
+              "emissiveIntensity": 0.2,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase"
+            ],
+            "options": {
+              "color": "#49504c",
+              "emissive": "rgb(0, 0, 0)",
+              "emissiveIntensity": 1,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase_button"
+            ],
+            "options": {
+              "color": "#626a65",
+              "emissive": "rgb(0, 0, 0)",
+              "roughness": 0.30000001192092896
+            }
+          },
+          {
+            "target": [
+              "SAMSUNG_LOGO"
+            ],
+            "options": {
+              "color": "#515851",
+              "roughness": 0.1,
+              "emissive": "#262b29",
+              "metalness": 1,
+              "emissiveIntensity": 0.59,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Antenna_Plastic"
+            ],
+            "options": {
+              "color": "#373e3b",
+              "metalness": 0.800000011920929,
+              "emissive": "#000000",
+              "roughness": 0.30000001192092896,
+              "emissiveIntensity": 1
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case"
+            ],
+            "options": {
+              "color": "#424842",
+              "roughness": 0.5,
+              "metalness": 0.86,
+              "opacity": 0.7,
+              "emissive": "#2f3d33",
+              "emissiveIntensity": 0.2,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_side"
+            ],
+            "options": {
+              "color": "#3e4742",
+              "roughness": 0.4,
+              "metalness": 0.8,
+              "opacity": 0.800000011920929,
+              "emissive": "#000000",
+              "emissiveIntensity": 1,
+              "toneMapped": true,
+              "visible": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_in"
+            ],
+            "options": {
+              "color": "#48514d",
+              "roughness": 0.45,
+              "emissive": "#3c4139",
+              "emissiveIntensity": 0.2,
+              "metalness": 0.95,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Rearcase_hole"
+            ],
+            "options": {
+              "map": "galaxy-z-fold8-ultra-gradient.jpg",
+              "color": "#363a38",
+              "emissive": "#000000",
+              "emissiveIntensity": 1,
+              "visible": true,
+              "roughness": 0.65
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Case_edge"
+            ],
+            "options": {
+              "color": "#48514d",
+              "emissive": "#293328",
+              "toneMapped": true,
+              "opacity": 0.8,
+              "metalness": 0.8,
+              "roughness": 0.4,
+              "transparent": true,
+              "emissiveIntensity": 0.2,
+              "visible": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Rear_side"
+            ],
+            "options": {
+              "color": "#616161",
+              "roughness": 0.3499999940395355,
+              "toneMapped": true
+            }
+          },
+          {
+            "target": [
+              "Back_Cam_Rear"
+            ],
+            "options": {
+              "toneMapped": true
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

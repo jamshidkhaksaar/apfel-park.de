@@ -38,7 +38,8 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "0.35.4",
-    "simple-icons": "16.29.0"
+    "simple-icons": "16.29.0",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
@@ -50,6 +51,7 @@
     "@types/pg": "8.23.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
+    "@types/three": "^0.185.4",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.3",
     "tailwindcss": "4.3.3",

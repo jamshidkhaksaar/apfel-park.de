@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "vps-backups/**",
     "next-env.d.ts",
+    // Vendored Samsung 3D viewer assets (Draco decoder) and binary models.
+    "public/images/samsung/zfold8/viewer/**",
   ]),
 ]);
 

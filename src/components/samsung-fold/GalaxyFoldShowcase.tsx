@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import dynamic from "next/dynamic";
 import type { Locale } from "@/lib/i18n";
 import { siteInfo } from "@/lib/site";
+import { SAMSUNG_FINISHES, type SamsungFinish } from "@/lib/samsung-fold3d";
 import s from "./GalaxyFoldShowcase.module.css";
+
+const Fold3DViewer = dynamic(() => import("./Fold3DViewer"), {
+  ssr: false,
+  loading: () => <div className="aspect-square w-full animate-pulse rounded-2xl bg-surface-strong/40 sm:aspect-[4/3]" />,
+});
 
 export type SamsungModelId = "fold8" | "ultra";
 
@@ -14,95 +20,12 @@ export type GalaxyFoldShowcaseProps = {
   initialModel?: SamsungModelId;
 };
 
-type Finish = {
-  id: string;
-  nameDe: string;
-  nameEn: string;
-  colorHex: string;
-  src: string;
-  badgeDe: string;
-  badgeEn: string;
-};
+type Finish = SamsungFinish;
 
 type ViewMode = "unfolded" | "colors" | "profile" | "lineup" | "video";
 
-const FOLD8_FINISHES: Finish[] = [
-  {
-    id: "pistachio",
-    nameDe: "Pistachio",
-    nameEn: "Pistachio",
-    colorHex: "#8fb96a",
-    src: "/images/samsung/zfold8/phone-pistachio.webp",
-    badgeDe: "Exklusiv-Farbe 2026",
-    badgeEn: "Exclusive Edition 2026",
-  },
-  {
-    id: "lavender",
-    nameDe: "Lavender",
-    nameEn: "Lavender",
-    colorHex: "#b8a9d4",
-    src: "/images/samsung/zfold8/phone-lavender.webp",
-    badgeDe: "Sanfte Eleganz",
-    badgeEn: "Soft Elegance",
-  },
-  {
-    id: "cream",
-    nameDe: "Cream",
-    nameEn: "Cream",
-    colorHex: "#e8e2d8",
-    src: "/images/samsung/zfold8/phone-cream.webp",
-    badgeDe: "Klassisches Warmweiß",
-    badgeEn: "Classic Warm White",
-  },
-  {
-    id: "graphite",
-    nameDe: "Graphite",
-    nameEn: "Graphite",
-    colorHex: "#3a3a3c",
-    src: "/images/samsung/zfold8/phone-graphite.webp",
-    badgeDe: "Mattes Tiefschwarz",
-    badgeEn: "Matte Deep Black",
-  },
-];
-
-const ULTRA_FINISHES: Finish[] = [
-  {
-    id: "violet",
-    nameDe: "Violet Shadow Titanium",
-    nameEn: "Violet Shadow Titanium",
-    colorHex: "#9b8ec4",
-    src: "/images/samsung/zfold8/ultra-violet.webp",
-    badgeDe: "Flaggschiff-Finish",
-    badgeEn: "Flagship Finish",
-  },
-  {
-    id: "graphite",
-    nameDe: "Graphite Titanium",
-    nameEn: "Graphite Titanium",
-    colorHex: "#3a3a3c",
-    src: "/images/samsung/zfold8/ultra-graphite.webp",
-    badgeDe: "Grade 5 Titan",
-    badgeEn: "Grade 5 Titanium",
-  },
-  {
-    id: "cream",
-    nameDe: "Cream Titanium",
-    nameEn: "Cream Titanium",
-    colorHex: "#e8e2d8",
-    src: "/images/samsung/zfold8/ultra-cream.webp",
-    badgeDe: "Reflexionsarm",
-    badgeEn: "Anti-Reflective",
-  },
-  {
-    id: "green",
-    nameDe: "Green Shadow Titanium",
-    nameEn: "Green Shadow Titanium",
-    colorHex: "#6b9e6b",
-    src: "/images/samsung/zfold8/ultra-green.webp",
-    badgeDe: "Boutique Edition",
-    badgeEn: "Boutique Edition",
-  },
-];
+const FOLD8_FINISHES: Finish[] = SAMSUNG_FINISHES.fold8;
+const ULTRA_FINISHES: Finish[] = SAMSUNG_FINISHES.ultra;
 
 /* -------------------------------------------------------------------------- */
 /* Clean Vector Icons & Architecture SVGs (Zero Emojis)                      */
@@ -133,55 +56,10 @@ function PlayIcon({ className = "size-4" }: { className?: string }) {
   );
 }
 
-function ExpandIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-    </svg>
-  );
-}
-
-function MinimizeIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-    </svg>
-  );
-}
-
-function CloseIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
 function ChevronDownIcon({ className = "size-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function ZoomInIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      <line x1="11" y1="8" x2="11" y2="14" />
-      <line x1="8" y1="11" x2="14" y2="11" />
-    </svg>
-  );
-}
-
-function ZoomOutIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      <line x1="8" y1="11" x2="14" y2="11" />
     </svg>
   );
 }
@@ -376,12 +254,8 @@ export default function GalaxyFoldShowcase({
   const [selectedModel, setSelectedModel] = useState<SamsungModelId>(initialModel);
   const [viewMode, setViewMode] = useState<ViewMode>(initialModel === "ultra" ? "unfolded" : "unfolded");
   const [selectedFinishIndex, setSelectedFinishIndex] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [isFullscreenNative, setIsFullscreenNative] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState<1 | 1.5 | 2>(1);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const stageRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Switch finishes based on active model
@@ -396,82 +270,26 @@ export default function GalaxyFoldShowcase({
     });
   };
 
-  // Synchronize native fullscreen state changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreenNative(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
-
-  // Keyboard navigation & lock body scroll during lightbox
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setLightboxOpen(false);
-        setZoomLevel(1);
-      }
-      if (e.key === "ArrowRight") {
-        setSelectedFinishIndex((prev) => (prev + 1) % activeFinishes.length);
-      }
-      if (e.key === "ArrowLeft") {
-        setSelectedFinishIndex((prev) => (prev - 1 + activeFinishes.length) % activeFinishes.length);
-      }
-    };
-
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [lightboxOpen, activeFinishes.length]);
-
-  // Toggle true native fullscreen API
-  const handleToggleNativeFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement) {
-        if (stageRef.current) {
-          await stageRef.current.requestFullscreen();
-        } else {
-          await document.documentElement.requestFullscreen();
-        }
-      } else {
-        await document.exitFullscreen();
-      }
-    } catch {
-      // Fallback to in-page lightbox modal
-      setLightboxOpen(true);
-    }
-  };
-
   // Determine current active visual asset based on model and view mode
   const getActiveAsset = () => {
     if (viewMode === "video") {
-      return { type: "video" as const, src: "/images/samsung/zfold8/galaxy-z-fold8-design.mp4" };
+      return {
+        type: "video" as const,
+        src: "/images/samsung/zfold8/galaxy-z-fold8-design.mp4",
+        labelDe: "Design-Video",
+        labelEn: "Design Video",
+      };
     }
     if (viewMode === "lineup") {
       return {
-        type: "image" as const,
-        src: "/images/samsung/zfold8/banner-dual-desktop.webp",
-        alt: isDe
-          ? "Samsung Galaxy Z Fold8 & Z Fold8 Ultra Flaggschiff Lineup"
-          : "Samsung Galaxy Z Fold8 & Z Fold8 Ultra Flagship Lineup",
+        type: "3d" as const,
         labelDe: "Lineup: Fold8 (4,5 mm) vs. Fold8 Ultra (8,0 Zoll)",
         labelEn: "Lineup: Fold8 (4.5mm) vs. Fold8 Ultra (8.0-inch)",
       };
     }
     if (viewMode === "profile") {
       return {
-        type: "image" as const,
-        src: "/images/samsung/zfold8/phone-fold.webp",
-        alt: isDe
-          ? "Samsung Galaxy Z Fold8 gefaltetes Profil mit Zero-Gap Scharnier"
-          : "Samsung Galaxy Z Fold8 folded slim profile with zero-gap hinge",
+        type: "3d" as const,
         labelDe: "Gefaltetes Ultra-Slim Profil (Zero-Gap Scharnier)",
         labelEn: "Folded Ultra-Slim Profile (Zero-Gap Hinge)",
       };
@@ -479,32 +297,20 @@ export default function GalaxyFoldShowcase({
     if (viewMode === "unfolded") {
       if (selectedModel === "ultra") {
         return {
-          type: "image" as const,
-          src: "/images/samsung/zfold8/phone-ultra.webp",
-          alt: isDe
-            ? "Samsung Galaxy Z Fold8 Ultra – 8,0 Zoll Display entfaltet"
-            : "Samsung Galaxy Z Fold8 Ultra – 8.0-inch Canvas Unfolded",
+          type: "3d" as const,
           labelDe: "Galaxy Z Fold8 Ultra – 8,0\" Dynamic LTPO AMOLED 2X entfaltet",
           labelEn: "Galaxy Z Fold8 Ultra – 8.0\" Dynamic LTPO AMOLED 2X Unfolded",
         };
       }
       return {
-        type: "image" as const,
-        src: "/images/samsung/zfold8/preview.webp",
-        alt: isDe
-          ? "Samsung Galaxy Z Fold8 – 7,6 Zoll Display entfaltet"
-          : "Samsung Galaxy Z Fold8 – 7.6-inch Canvas Unfolded",
+        type: "3d" as const,
         labelDe: "Galaxy Z Fold8 – 7,6\" Dynamic LTPO AMOLED 2X entfaltet",
         labelEn: "Galaxy Z Fold8 – 7.6\" Dynamic LTPO AMOLED 2X Unfolded",
       };
     }
     // "colors" mode
     return {
-      type: "image" as const,
-      src: currentFinish.src,
-      alt: `Samsung Galaxy ${selectedModel === "fold8" ? "Z Fold8" : "Z Fold8 Ultra"} — ${
-        isDe ? currentFinish.nameDe : currentFinish.nameEn
-      }`,
+      type: "3d" as const,
       labelDe: currentFinish.nameDe,
       labelEn: currentFinish.nameEn,
     };
@@ -739,7 +545,7 @@ export default function GalaxyFoldShowcase({
       </section>
 
       {/* Interactive Media & Design Showcase Gallery */}
-      <section className="py-10 md:py-16" ref={stageRef}>
+      <section className="py-10 md:py-16">
         <div className="container-page">
           {/* Header Controls & View Selector */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
@@ -754,8 +560,8 @@ export default function GalaxyFoldShowcase({
               </div>
               <p className="text-xs sm:text-sm text-muted mt-0.5">
                 {isDe
-                  ? "Interaktive Galerie mit hochauflösenden Ansichten, Farbwechsel und Vollbildmodus"
-                  : "Interactive high-resolution showcase with fluid color transitions and fullscreen inspection"}
+                  ? "Interaktive Galerie mit hochauflösenden Ansichten und fließenden Farbwechseln"
+                  : "Interactive high-resolution showcase with fluid color transitions"}
               </p>
             </div>
 
@@ -851,15 +657,13 @@ export default function GalaxyFoldShowcase({
               </div>
             ) : (
               <div className="relative z-10 w-full flex flex-col items-center justify-center space-y-6">
-                {/* Large Product Render Container */}
-                <div className={`relative w-full max-w-3xl h-[360px] sm:h-[480px] md:h-[560px] lg:h-[620px] flex items-center justify-center ${s.stageImageAnimated}`} key={`${selectedModel}-${viewMode}-${selectedFinishIndex}`}>
-                  <Image
-                    src={activeAsset.src}
-                    alt={activeAsset.alt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-                    className="object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.6)] transition-all duration-500"
-                    priority
+                {/* Genuine official Samsung 3D model: 360 drag, live finishes and fold pose. */}
+                <div className="relative w-full max-w-3xl drop-shadow-[0_25px_35px_rgba(0,0,0,0.45)]">
+                  <Fold3DViewer
+                    key={viewMode === "lineup" ? "lineup" : selectedModel}
+                    model={viewMode === "lineup" ? "lineup" : selectedModel}
+                    finish={currentFinish.id}
+                    folded={viewMode === "profile"}
                   />
                 </div>
 
@@ -904,30 +708,6 @@ export default function GalaxyFoldShowcase({
                 </div>
               </div>
             )}
-
-            {/* Stage Quick Controls: Fullscreen Lightbox & Native Fullscreen Toggle */}
-            <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleToggleNativeFullscreen}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 py-2 text-xs font-medium text-foreground backdrop-blur-md transition hover:border-gold hover:text-gold shadow-sm min-h-[38px]"
-                title={isDe ? "Im Vollbildmodus ansehen (Native API)" : "View in native browser fullscreen"}
-                aria-label={isDe ? "Vollbildmodus aktivieren" : "Activate native fullscreen"}
-              >
-                {isFullscreenNative ? <MinimizeIcon className="size-3.5" /> : <ExpandIcon className="size-3.5" />}
-                <span>{isFullscreenNative ? (isDe ? "Beenden" : "Exit Fullscreen") : (isDe ? "Display-Vollbild" : "Native Fullscreen")}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setLightboxOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-surface px-4 py-2 text-xs font-semibold text-gold backdrop-blur-md transition hover:bg-gold hover:text-black shadow-md min-h-[38px]"
-                aria-label={isDe ? "Theater-Vollbild öffnen" : "Open Theater Fullscreen Modal"}
-              >
-                <ExpandIcon className="size-3.5" />
-                <span>{isDe ? "Vollbild-Galerie" : "Fullscreen Theater"}</span>
-              </button>
-            </div>
           </div>
         </div>
       </section>
@@ -1223,146 +1003,6 @@ export default function GalaxyFoldShowcase({
         </div>
       </section>
 
-      {/* High-Resolution Fullscreen Lightbox Modal */}
-      {lightboxOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between p-4 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-          aria-label={isDe ? "Vollbildansicht" : "Fullscreen Theater View"}
-        >
-          {/* Top Bar Controls */}
-          <div className="flex items-center justify-between z-20 pb-2">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-white">
-                Samsung Galaxy {selectedModel === "fold8" ? "Z Fold8" : "Z Fold8 Ultra"}
-              </span>
-              <span className="text-xs text-white/60 hidden sm:inline">
-                {isDe ? activeAsset.labelDe : activeAsset.labelEn}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Zoom Buttons */}
-              <button
-                type="button"
-                onClick={() => setZoomLevel((z) => (z === 1 ? 1.5 : z === 1.5 ? 2 : 1))}
-                className="size-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition min-h-[44px] min-w-[44px]"
-                title={isDe ? "Zoom umschalten (1x / 1.5x / 2x)" : "Toggle Zoom (1x / 1.5x / 2x)"}
-                aria-label={isDe ? "Zoom vergrößern" : "Zoom in"}
-              >
-                {zoomLevel > 1 ? <ZoomOutIcon className="size-4" /> : <ZoomInIcon className="size-4" />}
-              </button>
-
-              {/* Close Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setLightboxOpen(false);
-                  setZoomLevel(1);
-                }}
-                className="size-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-red-500/80 transition min-h-[44px] min-w-[44px]"
-                aria-label={isDe ? "Schließen" : "Close"}
-              >
-                <CloseIcon className="size-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Central Expansive Stage */}
-          <div className="relative flex-1 flex items-center justify-center overflow-auto w-full my-auto">
-            {activeAsset.type === "video" ? (
-              <div className="relative w-full max-w-5xl aspect-[16/9] max-h-[80vh]">
-                <video
-                  src={activeAsset.src}
-                  autoPlay
-                  controls
-                  className="w-full h-full object-contain rounded-xl shadow-2xl"
-                />
-              </div>
-            ) : (
-              <div
-                className="relative w-full max-w-5xl h-[70vh] sm:h-[80vh] flex items-center justify-center transition-transform duration-300"
-                style={{ transform: `scale(${zoomLevel})` }}
-              >
-                <Image
-                  src={activeAsset.src}
-                  alt={activeAsset.alt}
-                  fill
-                  sizes="100vw"
-                  className="object-contain"
-                  priority
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Bar: Quick Finishes & View Swapping */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/10 z-20">
-            {/* View Switcher in Modal */}
-            <div className="flex items-center gap-1.5 overflow-x-auto text-xs max-w-full">
-              <button
-                type="button"
-                onClick={() => setViewMode("colors")}
-                className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
-                  viewMode === "colors" ? "bg-gold text-black font-bold" : "text-white/70 hover:text-white bg-white/10"
-                }`}
-              >
-                <span>{isDe ? "Farben" : "Colors"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("unfolded")}
-                className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
-                  viewMode === "unfolded" ? "bg-white text-black" : "text-white/70 hover:text-white bg-white/10"
-                }`}
-              >
-                {selectedModel === "ultra" ? (isDe ? "8,0\" Entfaltet" : "8.0\" Unfolded") : (isDe ? "7,6\" Entfaltet" : "7.6\" Unfolded")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("profile")}
-                className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
-                  viewMode === "profile" ? "bg-white text-black" : "text-white/70 hover:text-white bg-white/10"
-                }`}
-              >
-                {isDe ? "Profil" : "Profile"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("lineup")}
-                className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
-                  viewMode === "lineup" ? "bg-white text-black" : "text-white/70 hover:text-white bg-white/10"
-                }`}
-              >
-                Lineup
-              </button>
-            </div>
-
-            {/* Swatch Switcher in Modal */}
-            <div className="flex items-center gap-3">
-              {activeFinishes.map((finish, idx) => (
-                <button
-                  key={finish.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedFinishIndex(idx);
-                    setViewMode("colors");
-                  }}
-                  className={`size-8 rounded-full border-2 transition-all min-h-[36px] min-w-[36px] ${
-                    idx === selectedFinishIndex && viewMode === "colors"
-                      ? "border-white scale-125 shadow-lg"
-                      : "border-transparent opacity-75 hover:opacity-100"
-                  }`}
-                  style={{ backgroundColor: finish.colorHex }}
-                  title={isDe ? finish.nameDe : finish.nameEn}
-                  aria-label={isDe ? finish.nameDe : finish.nameEn}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
