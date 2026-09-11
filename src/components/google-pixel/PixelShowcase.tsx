@@ -161,137 +161,58 @@ function ChevronDownIcon({ className = "size-4" }: { className?: string }) {
 /* Hardware Architecture SVGs                                                 */
 /* -------------------------------------------------------------------------- */
 
-function GoogleTensorCpuSvg({ className = "size-16" }: { className?: string }) {
+function GoogleTensorCpuSvg({ className = "size-8" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 120 120" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="tensorBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#4285f4" />
-          <stop offset="50%" stopColor="#2866d7" />
-          <stop offset="100%" stopColor="#1a4fb0" />
-        </linearGradient>
-        <linearGradient id="tensorDie" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#1e2229" />
-          <stop offset="100%" stopColor="#0f131a" />
-        </linearGradient>
-      </defs>
-      <rect x="8" y="8" width="104" height="104" rx="10" fill="#13171e" stroke="url(#tensorBlueGrad)" strokeWidth="1.5" />
-      <circle cx="16" cy="16" r="2.5" fill="#4285f4" />
-      <circle cx="104" cy="16" r="2.5" fill="#ea4335" />
-      <circle cx="104" cy="104" r="2.5" fill="#34a853" />
-      <circle cx="16" cy="104" r="2.5" fill="#fbbc05" />
-      <g stroke="#4285f4" strokeWidth="1.2" opacity="0.65">
-        <line x1="30" y1="4" x2="30" y2="8" /><line x1="44" y1="4" x2="44" y2="8" />
-        <line x1="58" y1="4" x2="58" y2="8" /><line x1="72" y1="4" x2="72" y2="8" />
-        <line x1="86" y1="4" x2="86" y2="8" />
-        <line x1="30" y1="112" x2="30" y2="116" /><line x1="44" y1="112" x2="44" y2="116" />
-        <line x1="58" y1="112" x2="58" y2="116" /><line x1="72" y1="112" x2="72" y2="116" />
-        <line x1="86" y1="112" x2="86" y2="116" />
-        <line x1="4" y1="30" x2="8" y2="30" /><line x1="4" y1="44" x2="8" y2="44" />
-        <line x1="4" y1="58" x2="8" y2="58" /><line x1="4" y1="72" x2="8" y2="72" />
-        <line x1="4" y1="86" x2="8" y2="86" />
-        <line x1="112" y1="30" x2="116" y2="30" /><line x1="112" y1="44" x2="116" y2="44" />
-        <line x1="112" y1="58" x2="116" y2="58" /><line x1="112" y1="72" x2="116" y2="72" />
-        <line x1="112" y1="86" x2="116" y2="86" />
-      </g>
-      <rect x="24" y="24" width="72" height="72" rx="6" fill="url(#tensorDie)" stroke="rgba(66, 133, 244, 0.4)" strokeWidth="1" />
-      <rect x="30" y="30" width="34" height="24" rx="2" fill="rgba(66, 133, 244, 0.22)" stroke="#4285f4" strokeWidth="0.8" />
-      <text x="47" y="42" fill="#7fa2d6" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">Google TPU</text>
-      <text x="47" y="49" fill="#93c5fd" fontSize="5.5" textAnchor="middle" fontFamily="sans-serif">Gemini Nano</text>
-      <rect x="68" y="30" width="22" height="24" rx="2" fill="rgba(52, 168, 83, 0.18)" stroke="#34a853" strokeWidth="0.8" />
-      <text x="79" y="42" fill="#86efac" fontSize="5.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">Titan M3</text>
-      <text x="79" y="49" fill="#86efac" fontSize="5" textAnchor="middle" fontFamily="sans-serif">Security</text>
-      <rect x="30" y="58" width="60" height="18" rx="2" fill="rgba(251, 188, 5, 0.15)" stroke="#fbbc05" strokeWidth="0.8" />
-      <text x="60" y="70" fill="#fde047" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1+3+4 ARMv9.2 CPU Cores</text>
-      <text x="60" y="87" fill="#ffffff" fontSize="6" fontWeight="bold" letterSpacing="0.8" textAnchor="middle" fontFamily="sans-serif">3nm TSMC N3P · LPDDR5X</text>
+    <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <rect x="12" y="12" width="24" height="24" rx="6" stroke="currentColor" strokeWidth="2" />
+      <rect x="19" y="19" width="10" height="10" rx="2.5" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeWidth="1.5" />
+      {[16, 22, 28, 34].map((v) => (
+        <g key={v} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.7">
+          <line x1={v} y1="6" x2={v} y2="12" />
+          <line x1={v} y1="36" x2={v} y2="42" />
+          <line x1="6" y1={v} x2="12" y2={v} />
+          <line x1="36" y1={v} x2="42" y2={v} />
+        </g>
+      ))}
     </svg>
   );
 }
 
-function PixelPeriscopeCameraSvg({ className = "size-16" }: { className?: string }) {
+function PixelPeriscopeCameraSvg({ className = "size-8" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 120 120" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="cameraVisorGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#252427" />
-          <stop offset="100%" stopColor="#121214" />
-        </linearGradient>
-        <radialGradient id="lensReflect" cx="40%" cy="40%" r="60%">
-          <stop offset="0%" stopColor="rgba(66, 133, 244, 0.5)" />
-          <stop offset="60%" stopColor="rgba(52, 168, 83, 0.2)" />
-          <stop offset="100%" stopColor="transparent" />
-        </radialGradient>
-      </defs>
-      <rect x="8" y="24" width="104" height="72" rx="14" fill="url(#cameraVisorGrad)" stroke="#4285f4" strokeWidth="1.2" />
-      <rect x="14" y="32" width="92" height="56" rx="10" fill="#000000" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="1" />
-      <circle cx="36" cy="60" r="18" fill="#15171c" stroke="#4285f4" strokeWidth="1.2" />
-      <circle cx="36" cy="60" r="12" fill="url(#lensReflect)" stroke="#7fa2d6" strokeWidth="0.8" />
-      <circle cx="36" cy="60" r="5" fill="#000" />
-      <text x="36" y="85" fill="#7fa2d6" fontSize="5.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">50MP Quad PD</text>
-      <rect x="68" y="44" width="28" height="28" rx="4" fill="#15171c" stroke="#fbbc05" strokeWidth="1.2" />
-      <line x1="72" y1="48" x2="92" y2="68" stroke="#fbbc05" strokeWidth="1.5" strokeLinecap="round" />
-      <text x="82" y="85" fill="#fde047" fontSize="5.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">5X OPTICAL</text>
-      <circle cx="60" cy="54" r="2.5" fill="#ea4335" />
-      <circle cx="60" cy="66" r="1.5" fill="#34a853" />
+    <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <rect x="5" y="16" width="26" height="16" rx="8" stroke="currentColor" strokeWidth="2" />
+      <circle cx="16" cy="24" r="5.5" stroke="currentColor" strokeWidth="2" />
+      <circle cx="16" cy="24" r="1.8" fill="currentColor" />
+      <path d="M35 20.5 L43 18.5 L43 29.5 L35 27.5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M35 24 L39.5 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
     </svg>
   );
 }
 
-function PixelFrictionHingeSvg({ className = "size-16" }: { className?: string }) {
+function PixelFrictionHingeSvg({ className = "size-8" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 120 120" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="steelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#e2e8f0" />
-          <stop offset="50%" stopColor="#94a3b8" />
-          <stop offset="100%" stopColor="#475569" />
-        </linearGradient>
-      </defs>
-      <rect x="10" y="10" width="100" height="100" rx="12" fill="#10141a" stroke="rgba(66, 133, 244, 0.3)" strokeWidth="1.2" />
-      <g stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8">
-        <line x1="10" y1="35" x2="110" y2="35" /><line x1="10" y1="60" x2="110" y2="60" /><line x1="10" y1="85" x2="110" y2="85" />
-        <line x1="35" y1="10" x2="35" y2="110" /><line x1="60" y1="10" x2="60" y2="110" /><line x1="85" y1="10" x2="85" y2="110" />
-      </g>
-      <path d="M22 46 L50 46 L50 74 L22 74 Z" fill="#1e2430" stroke="url(#steelGrad)" strokeWidth="1.2" />
-      <path d="M70 46 L98 46 L98 74 L70 74 Z" fill="#1e2430" stroke="url(#steelGrad)" strokeWidth="1.2" />
-      <circle cx="55" cy="60" r="7" fill="#2d3748" stroke="#4285f4" strokeWidth="1.2" />
-      <circle cx="55" cy="60" r="2.5" fill="#4285f4" />
-      <circle cx="65" cy="60" r="7" fill="#2d3748" stroke="#4285f4" strokeWidth="1.2" />
-      <circle cx="65" cy="60" r="2.5" fill="#4285f4" />
-      <path d="M52 30 L68 30 M60 25 L60 35" stroke="#34a853" strokeWidth="1.5" strokeLinecap="round" />
-      <text x="60" y="22" fill="#34a853" fontSize="6.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">0.0 mm FLAT FOLD</text>
-      <text x="60" y="98" fill="#7fa2d6" fontSize="5.5" fontWeight="bold" letterSpacing="0.8" textAnchor="middle" fontFamily="sans-serif">AEROSPACE STEEL · IPX8</text>
+    <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <rect x="6" y="9" width="17" height="30" rx="4" stroke="currentColor" strokeWidth="2" />
+      <rect x="25" y="9" width="17" height="30" rx="4" stroke="currentColor" strokeWidth="2" opacity="0.55" />
+      <circle cx="24" cy="24" r="5" stroke="currentColor" strokeWidth="2" />
+      <circle cx="24" cy="24" r="1.7" fill="currentColor" />
     </svg>
   );
 }
 
-function SuperActuaDisplaySvg({ className = "size-16" }: { className?: string }) {
+function SuperActuaDisplaySvg({ className = "size-8" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 120 120" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="actuaGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#4285f4" />
-          <stop offset="33%" stopColor="#ea4335" />
-          <stop offset="66%" stopColor="#fbbc05" />
-          <stop offset="100%" stopColor="#34a853" />
-        </linearGradient>
-      </defs>
-      <rect x="12" y="12" width="96" height="96" rx="10" fill="#0c1017" stroke="url(#actuaGlow)" strokeWidth="1.5" />
+    <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <rect x="12" y="6" width="24" height="36" rx="6" stroke="currentColor" strokeWidth="2" />
+      <circle cx="24" cy="24" r="5.5" stroke="currentColor" strokeWidth="1.6" opacity="0.75" />
       <path
-        d="M20 54 Q28 30 36 54 T52 54 T68 54 T84 54 T100 54"
-        fill="none"
-        stroke="#4285f4"
-        strokeWidth="1.8"
+        d="M24 14.5v2M24 31.5v2M14.5 24h2M31.5 24h2M17.3 17.3l1.4 1.4M29.3 29.3l1.4 1.4M30.7 17.3l-1.4 1.4M18.7 29.3l-1.4 1.4"
+        stroke="currentColor"
+        strokeWidth="1.6"
         strokeLinecap="round"
+        opacity="0.75"
       />
-      <g stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.8">
-        <rect x="22" y="68" width="76" height="24" rx="3" fill="rgba(255, 255, 255, 0.02)" />
-        <line x1="32" y1="68" x2="32" y2="92" /><line x1="44" y1="68" x2="44" y2="92" />
-        <line x1="56" y1="68" x2="56" y2="92" /><line x1="68" y1="68" x2="68" y2="92" />
-        <line x1="80" y1="68" x2="80" y2="92" />
-      </g>
-      <text x="60" y="30" fill="#93c5fd" fontSize="6.5" fontWeight="bold" letterSpacing="0.5" textAnchor="middle" fontFamily="sans-serif">1-120 Hz LTPO · 3,000 NITS</text>
-      <text x="60" y="103" fill="#60a5fa" fontSize="5.5" fontWeight="bold" letterSpacing="0.6" textAnchor="middle" fontFamily="sans-serif">SUPER ACTUA FLEX · UTG</text>
     </svg>
   );
 }
@@ -299,6 +220,30 @@ function SuperActuaDisplaySvg({ className = "size-16" }: { className?: string })
 /* -------------------------------------------------------------------------- */
 /* PixelShowcase Component                                                    */
 /* -------------------------------------------------------------------------- */
+
+const ARCH_ACCENTS = {
+  blue: {
+    icon: "bg-blue/10 text-blue ring-blue/20",
+    tag: "border-blue/25 bg-blue/10 text-blue",
+    text: "text-blue",
+    hover: "hover:border-blue/40",
+    glow: "bg-blue/20",
+  },
+  gold: {
+    icon: "bg-gold/10 text-gold ring-gold/20",
+    tag: "border-gold/25 bg-gold/10 text-gold",
+    text: "text-gold",
+    hover: "hover:border-gold/40",
+    glow: "bg-gold/20",
+  },
+  green: {
+    icon: "bg-green/10 text-green ring-green/20",
+    tag: "border-green/25 bg-green/10 text-green",
+    text: "text-green",
+    hover: "hover:border-green/40",
+    glow: "bg-green/20",
+  },
+} as const;
 
 export default function PixelShowcase({
   locale,
@@ -420,6 +365,61 @@ export default function PixelShowcase({
       qEn: "How long does Google guarantee software and security updates?",
       aDe: "Google bietet für die Pixel 11 Serie volle 7 Jahre garantierte Android-Betriebssystem-Updates, Sicherheitspatches und regelmäßige Pixel Feature Drops.",
       aEn: "Google guarantees 7 full years of Android operating system upgrades, security patches, and regular Pixel Feature Drops for the Pixel 11 lineup.",
+    },
+  ];
+
+  const architectureCards = [
+    {
+      key: "tensor",
+      accent: ARCH_ACCENTS.blue,
+      Icon: GoogleTensorCpuSvg,
+      tag: "3nm TSMC N3P",
+      title: "Google Tensor G5",
+      highlight: "Custom TPU · Titan M3 Enclave",
+      body: isDe
+        ? "Erstmals von TSMC im 3nm-Verfahren gefertigt. Treibt Googles On-Device Gemini Nano Modelle an, verbessert die Akkulaufzeit und ermöglicht Echtzeit-KI ohne Cloud-Latenz."
+        : "Fabricated by TSMC on a breakthrough 3nm node. Powers on-device Gemini Nano multimodal intelligence, boosting battery endurance and zero-latency local processing.",
+      statLabel: isDe ? "KI-Engine" : "AI Engine",
+      statValue: "Gemini Live On-Device",
+    },
+    {
+      key: "camera",
+      accent: ARCH_ACCENTS.gold,
+      Icon: PixelPeriscopeCameraSvg,
+      tag: "50 MP · 5x Periskop",
+      title: isDe ? "Pro Pixel Kamerasystem" : "Pro Pixel Camera Suite",
+      highlight: "Quad PD · 20x Super Res Zoom",
+      body: isDe
+        ? "Der 50 MP Quad PD Sensor kombiniert mit 5x optischem Periskop-Telezoom fängt selbst bei minimalem Licht brillante Details ein. Gestützt von Google HDR+ und Magic Editor."
+        : "The 50MP Quad PD sensor paired with a 5x folded periscope lens captures razor-sharp details in low light. Powered by Google HDR+ and next-gen Magic Editor.",
+      statLabel: isDe ? "Optischer Zoom" : "Optical Zoom",
+      statValue: "5x Periskop + OIS",
+    },
+    {
+      key: "hinge",
+      accent: ARCH_ACCENTS.green,
+      Icon: PixelFrictionHingeSvg,
+      tag: isDe ? "0,0 mm spaltfrei" : "0.0 mm Flat Fold",
+      title: isDe ? "Reibungsloses Zahnradscharnier" : "Fluid Frictionless Gear Hinge",
+      highlight: isDe ? "Hochfester Stahl · IPX8" : "High-strength Steel · IPX8",
+      body: isDe
+        ? "Präzisionsmechanik aus hochfestem Flugzeugstahl. Schließt völlig plan ohne Zwischenraum und hält das Display in jedem Winkel stabil im Tisch- oder Zeltmodus."
+        : "Precision multi-cam assembly crafted from aerospace high-strength steel. Folds completely flat with zero gap and supports stable positioning in tabletop or tent modes.",
+      statLabel: isDe ? "Wasserfestigkeit" : "Water Resistance",
+      statValue: "IPX8 Standard",
+    },
+    {
+      key: "display",
+      accent: ARCH_ACCENTS.blue,
+      Icon: SuperActuaDisplaySvg,
+      tag: "3.000 Nits · LTPO",
+      title: "Super Actua Flex OLED",
+      highlight: isDe ? "1-120 Hz variabel · UTG Glas" : "1-120 Hz variable · UTG glass",
+      body: isDe
+        ? "Kristallklares OLED-Display mit adaptiver Bildwiederholrate von 1 Hz bis 120 Hz und reflexionsarmer Beschichtung. Liefert selbst unter direkter Sommersonne perfekte Lesbarkeit."
+        : "Ultra-bright OLED canvas featuring dynamic refresh scaling from 1Hz to 120Hz and anti-reflective polarization. Ensures effortless readability even in direct summer sunlight.",
+      statLabel: isDe ? "Spitzenhelligkeit" : "Peak Brightness",
+      statValue: "3.000 Nits",
     },
   ];
 
@@ -742,159 +742,58 @@ export default function PixelShowcase({
         </div>
       </section>
 
-      {/* Silicon & Engineering Hardware Architecture Section with Custom SVGs */}
-      <section className="border-t border-border/80 bg-surface/20 py-16">
+      {/* Silicon & Engineering Hardware Architecture */}
+      <section className="relative overflow-hidden border-t border-border/80 bg-surface/20 py-16 md:py-24">
         <div className="container-page">
-          <div className="mb-12 text-center max-w-3xl mx-auto space-y-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-blue">
+          <div className="mx-auto mb-14 max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue/25 bg-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue">
               {isDe ? "Google Ingenieurskunst & Siliziumarchitektur" : "Google Engineering & Silicon Architecture"}
             </span>
-            <h2 className="text-2xl font-bold tracking-tight sm:text-4xl text-foreground font-sans">
+            <h2 className="mt-4 text-2xl font-bold tracking-tight sm:text-4xl text-foreground">
               {isDe ? "Die 4 Schlüssel-Innovationen der Pixel 11 Serie" : "The 4 Core Innovations of the Pixel 11 Series"}
             </h2>
-            <p className="text-xs sm:text-sm text-muted leading-relaxed">
+            <p className="mt-4 text-sm sm:text-base text-muted leading-relaxed">
               {isDe
                 ? "Detaillierte Einblicke in Google Tensor G5, optische Periskop-Telezoomtechnik, reibungsloses Zahnradscharnier und Super Actua OLED."
                 : "Deep architectural insights into Google Tensor G5, periscope telephoto optics, fluid gear hinge mechanics, and Super Actua OLED."}
             </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Architecture Card 1: Google Tensor G5 */}
-            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all hover:border-blue/50 ${s.glassCard}`}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="p-2 rounded-xl bg-blue/10 border border-blue/20">
-                    <GoogleTensorCpuSvg className="size-14" />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {architectureCards.map((card) => {
+              const { Icon } = card;
+              const accent = card.accent;
+              return (
+                <article
+                  key={card.key}
+                  className={`group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-background/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${accent.hover}`}
+                >
+                  <div
+                    className={`pointer-events-none absolute -right-10 -top-10 size-36 rounded-full opacity-70 blur-3xl transition-opacity duration-500 group-hover:opacity-100 ${accent.glow}`}
+                    aria-hidden="true"
+                  />
+                  <div className="relative flex items-start justify-between gap-3">
+                    <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ring-1 ring-inset ${accent.icon}`}>
+                      <Icon className="size-7" />
+                    </span>
+                    <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${accent.tag}`}>
+                      {card.tag}
+                    </span>
                   </div>
-                  <span className="text-[11px] font-bold text-blue border border-blue/30 bg-blue/10 px-2.5 py-1 rounded-full">
-                    3nm TSMC N3P
-                  </span>
-                </div>
 
-                <div className="space-y-1.5">
-                  <h3 className="text-base font-bold text-foreground">
-                    Google Tensor G5
+                  <h3 className="relative mt-5 text-lg font-bold leading-snug tracking-tight text-foreground">
+                    {card.title}
                   </h3>
-                  <p className="text-xs font-medium text-blue">
-                    Custom TPU · Titan M3 Enclave
-                  </p>
-                </div>
+                  <p className={`relative mt-1 text-sm font-semibold ${accent.text}`}>{card.highlight}</p>
+                  <p className="relative mt-3 flex-1 text-sm leading-relaxed text-muted">{card.body}</p>
 
-                <p className="text-xs text-muted leading-relaxed">
-                  {isDe
-                    ? "Erstmals von TSMC im modernen 3nm-Verfahren gefertigt. Treibt Googles On-Device Gemini Nano Modelle an, verbessert die Akkulaufzeit und ermöglicht Echtzeit-KI ohne Cloud-Latenz."
-                    : "Fabricated by TSMC on a breakthrough 3nm node. Powers on-device Gemini Nano multimodal intelligence, boosting battery endurance and zero-latency local processing."}
-                </p>
-              </div>
-
-              <div className="mt-5 pt-3 border-t border-border/50 text-[11px] text-muted flex items-center justify-between">
-                <span>{isDe ? "KI-Engine" : "AI Engine"}</span>
-                <span className="font-semibold text-foreground">Gemini Live On-Device</span>
-              </div>
-            </div>
-
-            {/* Architecture Card 2: Pro Pixel Camera & Periscope Telephoto */}
-            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all hover:border-gold/50 ${s.glassCard}`}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="p-2 rounded-xl bg-gold/10 border border-gold/20">
-                    <PixelPeriscopeCameraSvg className="size-14" />
+                  <div className="relative mt-5 flex items-center justify-between gap-3 border-t border-border/60 pt-4 text-xs">
+                    <span className="text-muted">{card.statLabel}</span>
+                    <span className="text-right font-semibold text-foreground">{card.statValue}</span>
                   </div>
-                  <span className="text-[11px] font-bold text-gold border border-gold/30 bg-gold/10 px-2.5 py-1 rounded-full">
-                    50 MP · 5X PERISCOPE
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <h3 className="text-base font-bold text-foreground">
-                    {isDe ? "Pro Pixel Kamerasystem" : "Pro Pixel Camera Suite"}
-                  </h3>
-                  <p className="text-xs font-medium text-gold">
-                    Quad PD · 20x Super Res Zoom
-                  </p>
-                </div>
-
-                <p className="text-xs text-muted leading-relaxed">
-                  {isDe
-                    ? "Der 50 MP Quad PD Sensor kombiniert mit 5x optischem Periskop-Telezoom fängt selbst bei minimalem Licht brillante Details ein. Gestützt von Googles HDR+ und Magic Editor."
-                    : "The 50MP Quad PD sensor paired with a 5x folded periscope lens captures razor-sharp details in low light. Powered by Google HDR+ and next-gen Magic Editor."}
-                </p>
-              </div>
-
-              <div className="mt-5 pt-3 border-t border-border/50 text-[11px] text-muted flex items-center justify-between">
-                <span>{isDe ? "Optischer Zoom" : "Optical Zoom"}</span>
-                <span className="font-semibold text-foreground">5x Periskop + OIS</span>
-              </div>
-            </div>
-
-            {/* Architecture Card 3: Fluid Frictionless Gear Hinge */}
-            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all hover:border-green/50 ${s.glassCard}`}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="p-2 rounded-xl bg-green/10 border border-green/20">
-                    <PixelFrictionHingeSvg className="size-14" />
-                  </div>
-                  <span className="text-[11px] font-bold text-green border border-green/30 bg-green/10 px-2.5 py-1 rounded-full">
-                    0.0 mm FLAT FOLD
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <h3 className="text-base font-bold text-foreground">
-                    {isDe ? "Reibungsloses Zahnradscharnier" : "Fluid Frictionless Gear Hinge"}
-                  </h3>
-                  <p className="text-xs font-medium text-green">
-                    Hochfester Stahl · IPX8
-                  </p>
-                </div>
-
-                <p className="text-xs text-muted leading-relaxed">
-                  {isDe
-                    ? "Präzisionsmechanik aus hochfestem Flugzeugstahl. Schließt völlig plan ohne Zwischenraum und hält das 8,0-Zoll-Display in jedem Winkel stabil im Tisch- oder Zeltmodus."
-                    : "Precision multi-cam assembly crafted from aerospace high-strength steel. Folds completely flat with zero gap and supports stable positioning in tabletop or tent modes."}
-                </p>
-              </div>
-
-              <div className="mt-5 pt-3 border-t border-border/50 text-[11px] text-muted flex items-center justify-between">
-                <span>{isDe ? "Wasserfestigkeit" : "Water Resistance"}</span>
-                <span className="font-semibold text-foreground">IPX8 Standard</span>
-              </div>
-            </div>
-
-            {/* Architecture Card 4: Super Actua OLED Display */}
-            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all hover:border-blue/50 ${s.glassCard}`}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="p-2 rounded-xl bg-blue/10 border border-blue/20">
-                    <SuperActuaDisplaySvg className="size-14" />
-                  </div>
-                  <span className="text-[11px] font-bold text-blue border border-blue/30 bg-blue/10 px-2.5 py-1 rounded-full">
-                    3.000 Nits · LTPO
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <h3 className="text-base font-bold text-foreground">
-                    Super Actua Flex OLED
-                  </h3>
-                  <p className="text-xs font-medium text-blue">
-                    1-120 Hz variabel · UTG Glas
-                  </p>
-                </div>
-
-                <p className="text-xs text-muted leading-relaxed">
-                  {isDe
-                    ? "Kristallklares OLED-Display mit adaptiver Bildwiederholrate von 1 Hz bis 120 Hz und reflexionsarmer Beschichtung. Liefert selbst unter direkter Sommersonne perfekte Lesbarkeit."
-                    : "Ultra-bright OLED canvas featuring dynamic refresh scaling from 1Hz to 120Hz and anti-reflective polarization. Ensures effortless readability even in direct summer sunlight."}
-                </p>
-              </div>
-
-              <div className="mt-5 pt-3 border-t border-border/50 text-[11px] text-muted flex items-center justify-between">
-                <span>{isDe ? "Spitzenhelligkeit" : "Peak Brightness"}</span>
-                <span className="font-semibold text-foreground">3.000 Nits</span>
-              </div>
-            </div>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
