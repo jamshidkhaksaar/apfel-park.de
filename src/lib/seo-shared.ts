@@ -235,8 +235,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy iPhone 18 Pro Max – 6.9 Inch Flagship | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "Apple iPhone 18 Pro Max mit 6.9 Zoll Super Retina XDR OLED, A20 Pro 2nm Chip, variabler 48MP Kamera & Riesen-Akku. Vorbestellung & Angebote bei Apfel Park Hamburg.",
-      en: "Apple iPhone 18 Pro Max featuring 6.9 inch Super Retina XDR OLED, 2nm A20 Pro, variable 48MP optics & massive battery. Pre-orders in Hamburg.",
+      de: "iPhone 18 Pro Max mit 6,9 Zoll Super Retina XDR OLED, A20 Pro 2nm Chip und variabler 48MP Kamera. Vorbestellung bei Apfel Park Hamburg.",
+      en: "iPhone 18 Pro Max with 6.9-inch Super Retina XDR OLED, 2nm A20 Pro chip and variable 48MP camera. Pre-order at Apfel Park Hamburg.",
     },
     defaultKeywords: {
       de: "iPhone 18 Pro Max kaufen, iPhone 18 Pro Max Preis, iPhone 18 Pro Max ohne Vertrag, Apple iPhone 18 Pro Max Hamburg, iPhone 18 Pro Max 256GB",
@@ -254,8 +254,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy iPhone Duo – Apple's First Foldable | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "Apple iPhone Duo (Foldable) mit 7.6 Zoll Innen-Display & 5.4 Zoll Cover. A20 Pro 2nm Chip, Titan-Scharnier & 5.400 mAh Akku. Jetzt bei Apfel Park Hamburg reservieren.",
-      en: "Apple iPhone Duo foldable with 7.6 inch inner screen & 5.4 inch cover. 2nm A20 Pro silicon, Grade 5 titanium zero-gap hinge. Reserve at Apfel Park Hamburg.",
+      de: "Apple iPhone Duo (Foldable): 7,6 Zoll Innen-Display, 5,4 Zoll Cover, A20 Pro 2nm Chip und Titan-Scharnier. Bei Apfel Park Hamburg reservieren.",
+      en: "Apple iPhone Duo foldable: 7.6-inch inner screen, 5.4-inch cover, 2nm A20 Pro chip and titanium hinge. Reserve at Apfel Park Hamburg.",
     },
     defaultKeywords: {
       de: "iPhone Duo kaufen, iPhone Duo Preis, iPhone Foldable, Apple iPhone Duo, iPhone Klapphandy, iPhone Duo Hamburg Vorbestellung",
