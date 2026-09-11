@@ -19,6 +19,7 @@ import HeroSlider from "../../../components/HeroSlider";
 import FeaturedStore from "../../../components/FeaturedStore";
 import IPhoneBanner from "@/components/banner/IPhoneBanner";
 import GalaxyFoldBanner from "@/components/banner/GalaxyFoldBanner";
+import PixelBanner from "@/components/banner/PixelBanner";
 
 import { getFeaturedProducts } from "../../../lib/products";
 import AnimatedSection from "../../../components/AnimatedSection";
@@ -429,6 +430,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
         </div>
       </AnimatedSection>
+
+      {/* Google Pixel 11 & Pixel 11 Pro Fold Showcase Banner */}
+      <div className="container-page py-6 md:py-8">
+        <PixelBanner lang={lang} shopHref={`/${lang}/pixel-11`} />
+      </div>
 
       {/* Support Section - Redesigned with Illustration */}
       <AnimatedSection as="section" animation="fade-up" delay={100} className="section-pad relative overflow-hidden bg-surface-strong">

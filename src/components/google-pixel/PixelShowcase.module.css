@@ -1,0 +1,65 @@
+/* Scoped CSS for Pixel 11 & Pixel 11 Pro Fold Showcase */
+
+@keyframes pixelFadeScale {
+  0% {
+    opacity: 0.25;
+    transform: scale(0.97) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.06);
+  }
+}
+
+.stageImageAnimated {
+  animation: pixelFadeScale 380ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.ambientBackdrop {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 520px;
+  height: 520px;
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  transition: background-color 650ms cubic-bezier(0.16, 1, 0.3, 1), opacity 650ms ease;
+  animation: glowPulse 8s ease-in-out infinite;
+  z-index: 0;
+}
+
+.noScrollbar::-webkit-scrollbar {
+  display: none;
+}
+.noScrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.glassCard {
+  background: rgba(26, 26, 29, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+:global([data-theme="mono"]) .glassCard {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}

@@ -9,6 +9,7 @@ import type { CatalogCardModel } from "@/lib/catalog-card";
 import type { Locale } from "@/lib/i18n";
 import type { StoreCatalogCategory, StoreCatalogFacets, StoreCatalogFilters, StoreCatalogSort } from "@/lib/products";
 import GalaxyFoldBanner from "@/components/banner/GalaxyFoldBanner";
+import PixelBanner from "@/components/banner/PixelBanner";
 import StoreCatalogSearch from "./StoreCatalogSearch";
 import StoreFilters from "./StoreFilters";
 import StoreProductCard from "./StoreProductCard";
@@ -227,13 +228,19 @@ export default function StoreCatalogClient({
             view === "list" ? (
               <div className="flex flex-col gap-3">
                 {products.map((product, index) => {
-                  const showBanner = page === 1 && index === (products.length >= 6 ? 5 : (products.length >= 3 ? 2 : -1));
+                  const showFoldBanner = page === 1 && index === (products.length >= 6 ? 5 : (products.length >= 3 ? 2 : -1));
+                  const showPixelBanner = page === 1 && products.length >= 12 && index === 11;
                   return (
                     <Fragment key={product.id}>
                       <StoreProductRow key={product.id} product={product} locale={lang} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 3} />
-                      {showBanner ? (
+                      {showFoldBanner ? (
                         <div className="my-4">
                           <GalaxyFoldBanner lang={lang} variant="compact" />
+                        </div>
+                      ) : null}
+                      {showPixelBanner ? (
+                        <div className="my-4">
+                          <PixelBanner lang={lang} variant="compact" />
                         </div>
                       ) : null}
                     </Fragment>
@@ -243,13 +250,19 @@ export default function StoreCatalogClient({
             ) : (
               <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {products.map((product, index) => {
-                  const showBanner = page === 1 && index === (products.length >= 8 ? 7 : (products.length >= 4 ? 3 : -1));
+                  const showFoldBanner = page === 1 && index === (products.length >= 8 ? 7 : (products.length >= 4 ? 3 : -1));
+                  const showPixelBanner = page === 1 && products.length >= 16 && index === 15;
                   return (
                     <Fragment key={product.id}>
                       <StoreProductCard key={product.id} product={product} locale={lang} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 4} />
-                      {showBanner ? (
+                      {showFoldBanner ? (
                         <div className="col-span-full my-4">
                           <GalaxyFoldBanner lang={lang} variant="compact" />
+                        </div>
+                      ) : null}
+                      {showPixelBanner ? (
+                        <div className="col-span-full my-4">
+                          <PixelBanner lang={lang} variant="compact" />
                         </div>
                       ) : null}
                     </Fragment>

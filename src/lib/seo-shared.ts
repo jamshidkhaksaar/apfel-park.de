@@ -11,6 +11,8 @@ export type SeoRouteId =
   | "iphoneDuo"
   | "galaxyZFold8"
   | "galaxyZFold8Ultra"
+  | "pixel11"
+  | "pixel11ProFold"
   | "iphone17"
   | "iphone16ProMax"
   | "samsungPhones"
@@ -296,6 +298,44 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     defaultKeywords: {
       de: "Samsung Galaxy Z Fold 8 Ultra kaufen, Galaxy Z Fold 8 Ultra Preis, Samsung Fold 8 Ultra 512GB, Galaxy Z Fold Ultra Hamburg",
       en: "buy Galaxy Z Fold 8 Ultra, Samsung Z Fold 8 Ultra price, Galaxy Z Fold 8 Ultra specs Germany",
+    },
+  },
+  {
+    id: "pixel11",
+    path: "/pixel-11",
+    labels: { de: "Google Pixel 11", en: "Google Pixel 11" },
+    priority: 0.96,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "Google Pixel 11 kaufen – Tensor G5 3nm & Actua OLED | Apfel Park Hamburg",
+      en: "Buy Google Pixel 11 – Tensor G5 3nm & Actua OLED | Apfel Park Hamburg",
+    },
+    defaultDescription: {
+      de: "Google Pixel 11 mit 3nm Tensor G5 Chip, 6,3 Zoll Actua OLED Display, 50 MP Quad PD Kamera und Gemini AI. Jetzt bei Apfel Park Hamburg unverbindlich anfragen.",
+      en: "Google Pixel 11 featuring 3nm Tensor G5 silicon, 6.3-inch Actua OLED, 50MP Quad PD camera suite and Gemini AI. Inquire at Apfel Park Hamburg.",
+    },
+    defaultKeywords: {
+      de: "Google Pixel 11 kaufen, Pixel 11 Preis, Google Pixel 11 ohne Vertrag, Pixel 11 Hamburg, Google Handy kaufen",
+      en: "buy Google Pixel 11, Google Pixel 11 price, Pixel 11 specs, Google Pixel 11 Germany",
+    },
+  },
+  {
+    id: "pixel11ProFold",
+    path: "/pixel-11-pro-fold",
+    labels: { de: "Pixel 11 Pro Fold", en: "Pixel 11 Pro Fold" },
+    priority: 0.96,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "Google Pixel 11 Pro Fold kaufen – 8 Zoll Super Actua Flex | Apfel Park Hamburg",
+      en: "Buy Google Pixel 11 Pro Fold – 8-Inch Super Actua Flex | Apfel Park Hamburg",
+    },
+    defaultDescription: {
+      de: "Google Pixel 11 Pro Fold mit 8,0 Zoll Super Actua Flex Display, 5,1 mm Slim-Design, 5x Periskop-Telezoom und Tensor G5. Jetzt bei Apfel Park anfragen.",
+      en: "Google Pixel 11 Pro Fold featuring 8.0-inch Super Actua Flex display, 5.1mm slim profile, 5x periscope telephoto and Tensor G5. Inquire at Apfel Park.",
+    },
+    defaultKeywords: {
+      de: "Google Pixel 11 Pro Fold kaufen, Pixel 11 Pro Fold Preis, Google Foldable kaufen Hamburg, Pixel Fold 2026",
+      en: "buy Google Pixel 11 Pro Fold, Pixel 11 Pro Fold price, Google foldable Germany, Pixel Pro Fold specs",
     },
   },
   {
