@@ -224,6 +224,15 @@
   background: #251707;
 }
 
+.zoom .art,
+.zoom .photo,
+.zoom .video,
+.zoom .fullscreenBadge,
+.zoom .placeholderSlot,
+.zoom .placeholderSlot * {
+  pointer-events: none;
+}
+
 .art {
   position: relative;
   display: block;
@@ -353,17 +362,23 @@
 /* ========================================================================= */
 .theaterOverlay {
   position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: rgba(0, 0, 0, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2147483647;
+  background: rgba(0, 0, 0, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 20px clamp(16px, 4vw, 48px);
-  animation: theaterFadeIn 0.3s ease-out;
+  padding: 24px clamp(16px, 4vw, 48px);
+  animation: theaterFadeIn 0.25s ease-out;
   color: #fff;
+  box-sizing: border-box;
 }
 
 .theaterHeader {
@@ -373,6 +388,7 @@
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
+  gap: 16px;
 }
 
 .theaterTitle {
@@ -381,12 +397,37 @@
   gap: 12px;
 }
 
+.theaterActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.theaterFullscreenBtn {
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.theaterFullscreenBtn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.04);
+}
+
 .theaterClose {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: #fff;
   font-size: 18px;
   display: grid;
@@ -395,47 +436,51 @@
   transition: all 0.2s ease;
 }
 .theaterClose:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.3);
   transform: scale(1.08);
 }
 
 .theaterBody {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  max-width: 1300px;
+  max-width: 1400px;
   width: 100%;
-  margin: 16px auto;
+  margin: auto;
   position: relative;
-  min-height: 0;
+  min-height: 250px;
+  padding: 16px 0;
 }
 
 .theaterMediaWrapper {
   position: relative;
   width: 100%;
   height: 100%;
-  max-height: 75vh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .theaterImage {
-  max-width: 100%;
-  max-height: 75vh;
+  max-width: 90vw;
+  max-height: 70vh;
+  width: auto;
+  height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.8));
-  animation: mediaPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.85));
+  animation: mediaPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .theaterVideo {
-  max-width: 100%;
-  max-height: 75vh;
+  max-width: 90vw;
+  max-height: 70vh;
+  width: auto;
+  height: auto;
   border-radius: 16px;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.2);
   background: #000;
-  animation: mediaPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: mediaPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .theaterFooter {

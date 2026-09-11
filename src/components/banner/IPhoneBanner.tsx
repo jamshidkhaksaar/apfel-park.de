@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { APPLE_MEDIA } from "./apple-media";
 import s from "./IPhoneBanner.module.css";
@@ -82,6 +83,36 @@ export default function IPhoneBanner({
   type TheaterTab = "pro-0" | "pro-1" | "duo-0" | "duo-1" | "duo-video";
   const [theaterOpen, setTheaterOpen] = useState(false);
   const [theaterTab, setTheaterTab] = useState<TheaterTab>("duo-video");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Lock body scroll when theater is open
+  useEffect(() => {
+    if (!theaterOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [theaterOpen]);
+
+  // Track native fullscreen state
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleNativeFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // Ignore fullscreen API restrictions
+    }
+  };
 
   const active = hovered ?? pinned;
   const stopped = paused || !animated;
@@ -258,7 +289,7 @@ export default function IPhoneBanner({
                     </span>
                   </>
                 ) : (
-                  <div className={s.placeholderSlot}>
+                  <div className={s.placeholderSlot} onClick={() => togglePin("pro")}>
                     <div className={s.placeholderIcon}>📱</div>
                     <div className={s.placeholderLabel}>iPhone 18 Pro / Pro Max</div>
                     <div className={s.placeholderHint}>Bereit für Bild-Upload</div>
@@ -371,10 +402,13 @@ export default function IPhoneBanner({
         </button>
       </section>
 
-      {/* Fullscreen Theater Lightbox Modal */}
-      {theaterOpen && (
+      {/* Fullscreen Theater Lightbox Modal via React Portal to Document Body */}
+      {typeof document !== "undefined" && theaterOpen && createPortal(
         <div
           className={s.theaterOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Vollbild-Vorschau"
           onClick={(e) => {
             if (e.target === e.currentTarget) setTheaterOpen(false);
           }}
@@ -399,13 +433,26 @@ export default function IPhoneBanner({
                 </span>
               </div>
             </div>
-            <button
-              className={s.theaterClose}
-              onClick={() => setTheaterOpen(false)}
-              aria-label="Vollbild schließen"
-            >
-              ✕
-            </button>
+
+            <div className={s.theaterActions}>
+              <button
+                className={s.theaterFullscreenBtn}
+                onClick={toggleNativeFullscreen}
+                aria-label={isFullscreen ? "Vollbild beenden" : "Vollbildschirm aktivieren"}
+                title={isFullscreen ? "Vollbild beenden" : "Vollbildschirm aktivieren"}
+                type="button"
+              >
+                {isFullscreen ? "🗗 Beenden" : "⛶ Vollbild"}
+              </button>
+              <button
+                className={s.theaterClose}
+                onClick={() => setTheaterOpen(false)}
+                aria-label="Vollbild schließen"
+                type="button"
+              >
+                ✕
+              </button>
+            </div>
           </header>
 
           <main className={s.theaterBody}>
@@ -515,7 +562,8 @@ export default function IPhoneBanner({
               </svg>
             </Link>
           </footer>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
