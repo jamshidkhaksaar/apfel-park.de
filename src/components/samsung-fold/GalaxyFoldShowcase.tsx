@@ -133,23 +133,6 @@ function PlayIcon({ className = "size-4" }: { className?: string }) {
   );
 }
 
-function RotateIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-    </svg>
-  );
-}
-
-function PauseIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <rect x="6" y="4" width="4" height="16" rx="1" />
-      <rect x="14" y="4" width="4" height="16" rx="1" />
-    </svg>
-  );
-}
-
 function ExpandIcon({ className = "size-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -405,61 +388,11 @@ export default function GalaxyFoldShowcase({
   const activeFinishes = selectedModel === "fold8" ? FOLD8_FINISHES : ULTRA_FINISHES;
   const currentFinish = activeFinishes[selectedFinishIndex] || activeFinishes[0];
 
-  // 360-Degree Interactive Rotation State
-  const [rotationAngle, setRotationAngle] = useState(0); // 0 to 360
-  const tiltAngle = -3; // subtle natural perspective tilt
-  const [isDragging, setIsDragging] = useState(false);
-  const [isAutoSpinning, setIsAutoSpinning] = useState(false);
-  const dragStartX = useRef<number>(0);
-  const dragStartAngle = useRef<number>(0);
-
-  // 360 Auto-Rotation Engine
-  useEffect(() => {
-    if (!isAutoSpinning || isDragging || viewMode !== "colors") return;
-    const timer = setInterval(() => {
-      setRotationAngle((prev) => (prev + 1) % 360);
-    }, 35);
-    return () => clearInterval(timer);
-  }, [isAutoSpinning, isDragging, viewMode]);
-
-  // Touch & Mouse Drag Handlers for 360-Degree Interaction
-  const handleStartDrag = (clientX: number) => {
-    setIsDragging(true);
-    setIsAutoSpinning(false);
-    dragStartX.current = clientX;
-    dragStartAngle.current = rotationAngle;
-  };
-
-  const handleMoveDrag = (clientX: number) => {
-    if (!isDragging) return;
-    const deltaX = clientX - dragStartX.current;
-    let newAngle = Math.round(dragStartAngle.current + deltaX * 0.75) % 360;
-    if (newAngle < 0) newAngle += 360;
-    setRotationAngle(newAngle);
-  };
-
-  const handleEndDrag = () => {
-    setIsDragging(false);
-  };
-
-  const getAngleLabel = (deg: number): string => {
-    const d = ((deg % 360) + 360) % 360;
-    if (d >= 340 || d <= 20) return isDe ? "0° Cover Display" : "0° Cover Screen";
-    if (d > 20 && d <= 70) return isDe ? "45° 3D Flex Perspektive" : "45° 3D Flex View";
-    if (d > 70 && d <= 110) return isDe ? "90° Ultra-Schlankes Profil" : "90° Slim Profile";
-    if (d > 110 && d <= 160) return isDe ? "135° Titan Armor Kante" : "135° Titanium Armor Edge";
-    if (d > 160 && d <= 200) return isDe ? "180° Rückseite & Triple Kamera" : "180° Rear & Triple Camera";
-    if (d > 200 && d <= 250) return isDe ? "225° Armor Kantenansicht" : "225° Armor Edge View";
-    if (d > 250 && d <= 290) return isDe ? "270° Zero-Gap Flex Scharnier" : "270° Zero-Gap Hinge";
-    return isDe ? "315° Cover Gehäuseprofil" : "315° Front Case Profile";
-  };
-
   const handleSelectModel = (model: SamsungModelId) => {
     startTransition(() => {
       setSelectedModel(model);
       setSelectedFinishIndex(0);
       setViewMode("unfolded");
-      setRotationAngle(0);
     });
   };
 
@@ -483,20 +416,11 @@ export default function GalaxyFoldShowcase({
         setLightboxOpen(false);
         setZoomLevel(1);
       }
-      if (viewMode === "colors") {
-        if (e.key === "ArrowRight") {
-          setRotationAngle((prev) => (prev + 15) % 360);
-        }
-        if (e.key === "ArrowLeft") {
-          setRotationAngle((prev) => (prev - 15 + 360) % 360);
-        }
-      } else {
-        if (e.key === "ArrowRight") {
-          setSelectedFinishIndex((prev) => (prev + 1) % activeFinishes.length);
-        }
-        if (e.key === "ArrowLeft") {
-          setSelectedFinishIndex((prev) => (prev - 1 + activeFinishes.length) % activeFinishes.length);
-        }
+      if (e.key === "ArrowRight") {
+        setSelectedFinishIndex((prev) => (prev + 1) % activeFinishes.length);
+      }
+      if (e.key === "ArrowLeft") {
+        setSelectedFinishIndex((prev) => (prev - 1 + activeFinishes.length) % activeFinishes.length);
       }
     };
 
@@ -505,7 +429,7 @@ export default function GalaxyFoldShowcase({
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKey);
     };
-  }, [lightboxOpen, activeFinishes.length, viewMode]);
+  }, [lightboxOpen, activeFinishes.length]);
 
   // Toggle true native fullscreen API
   const handleToggleNativeFullscreen = async () => {
@@ -658,12 +582,6 @@ export default function GalaxyFoldShowcase({
 
   // FAQ entries
   const faqs = [
-    {
-      qDe: "Wie funktioniert die interaktive 360° Studio-Ansicht?",
-      qEn: "How does the interactive 360° rotation studio work?",
-      aDe: "Sie können das Smartphone per Touch-Geste auf dem Handy oder mit der Maus stufenlos um 360 Grad drehen. Über den Schieberegler oder die Schnellwahltasten betrachten Sie Cover-Display, Ultra-Schlankprofil, Scharnier und 200MP Triple-Kameramodul in allen Originalfarben.",
-      aEn: "You can drag or swipe directly across the device to spin it 360 degrees. Use the angle slider or preset buttons to inspect the cover screen, ultra-slim profile, zero-gap hinge, and triple camera system in authentic store finishes.",
-    },
     {
       qDe: "Wann ist das Samsung Galaxy Z Fold8 in Deutschland erhältlich?",
       qEn: "When is the Samsung Galaxy Z Fold8 available in Germany?",
@@ -854,16 +772,15 @@ export default function GalaxyFoldShowcase({
                 {selectedModel === "ultra" ? (isDe ? "8,0\" Display entfaltet" : "8.0\" Canvas Unfolded") : (isDe ? "7,6\" Display entfaltet" : "7.6\" Canvas Unfolded")}
               </button>
 
-              {/* 2. Color Variants / 360 Studio */}
+              {/* 2. Color Variants / Finishes */}
               <button
                 type="button"
                 onClick={() => setViewMode("colors")}
-                className={`flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium transition-all whitespace-nowrap min-h-[36px] ${
+                className={`rounded-lg px-3 py-1.5 font-medium transition-all whitespace-nowrap min-h-[36px] ${
                   viewMode === "colors" ? "bg-foreground text-background shadow-sm" : "text-muted hover:text-foreground"
                 }`}
               >
-                <RotateIcon className="size-3.5" />
-                <span>{isDe ? "360° Studio & Farben" : "360° Studio & Colors"}</span>
+                <span>{isDe ? "Farben & Finishes" : "Colors & Finishes"}</span>
               </button>
 
               {/* 3. Slim Folded Profile */}
@@ -932,245 +849,6 @@ export default function GalaxyFoldShowcase({
                   className="w-full h-full object-cover"
                 />
               </div>
-            ) : viewMode === "colors" ? (
-              <div className="relative z-10 w-full flex flex-col items-center justify-center space-y-6">
-                {/* 360 Drag Interaction Badge */}
-                <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-black/60 px-3.5 py-1 text-xs font-semibold text-gold backdrop-blur-md shadow-md animate-pulse">
-                  <RotateIcon className="size-3.5" />
-                  <span>
-                    {isDragging
-                      ? (isDe ? "Drehung aktiv..." : "Spinning...")
-                      : (isDe ? "Maus ziehen oder Schieberegler für 360°-Drehung" : "Drag or use slider for 360° view")}
-                  </span>
-                </div>
-
-                {/* 3D Scene Container */}
-                <div
-                  className={s.scene3D}
-                  style={{ minHeight: "420px", height: "52vh", maxHeight: "560px" }}
-                  onMouseDown={(e) => handleStartDrag(e.clientX)}
-                  onTouchStart={(e) => handleStartDrag(e.touches[0].clientX)}
-                  onTouchMove={(e) => handleMoveDrag(e.touches[0].clientX)}
-                  onTouchEnd={handleEndDrag}
-                  role="region"
-                  aria-label={isDe ? "Interaktive 360 Grad Drehung" : "Interactive 360 Degree Turntable"}
-                >
-                  <div
-                    className={s.phone3DWrapper}
-                    style={{
-                      transform: `rotateY(${rotationAngle}deg) rotateX(${tiltAngle}deg)`,
-                      transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                    }}
-                  >
-                    <div
-                      className={s.phoneBody}
-                      style={{
-                        width: selectedModel === "ultra" ? "320px" : "280px",
-                        height: selectedModel === "ultra" ? "490px" : "460px",
-                      }}
-                    >
-                      {/* Front Face: Cover Screen One UI */}
-                      <div className={s.phoneFaceFront}>
-                        {/* Top Bar: Front punch hole & status */}
-                        <div className="flex items-center justify-between text-[11px] text-white/70 px-1">
-                          <span className="font-semibold tracking-tight">12:45</span>
-                          <div className="size-3.5 rounded-full bg-black border border-white/20 shadow-inner" title="12MP Cover Camera" />
-                          <div className="flex items-center gap-1 text-[10px]">
-                            <span>5G</span>
-                            <div className="w-4 h-2 border border-white/60 rounded-sm p-0.5 flex items-center">
-                              <div className="h-full w-3/4 bg-white/90 rounded-2xs" />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Middle: Samsung Galaxy AI Brand Element */}
-                        <div className="text-center my-auto space-y-2">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-md">
-                            <svg className="size-3.5 text-gold" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 0l2.5 7.5L22 10l-7.5 2.5L12 20l-2.5-7.5L2 10l7.5-2.5L12 0z" />
-                            </svg>
-                            <span className="text-xs font-semibold tracking-wide text-white">Galaxy AI</span>
-                          </div>
-                          <p className="text-[11px] text-white/50 tracking-wider uppercase font-medium">
-                            {selectedModel === "ultra" ? "Titanium Armor 8,0\"" : "Flex Zero-Gap 7,6\""}
-                          </p>
-                        </div>
-
-                        {/* Bottom: App Dock & Gestures */}
-                        <div className="space-y-3 pt-2">
-                          <div className="flex justify-around items-center px-4">
-                            <div className="size-8 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-400 flex items-center justify-center shadow-md">
-                              <WhatsAppIcon className="size-4 text-white" />
-                            </div>
-                            <div className="size-8 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center shadow-md">
-                              <svg className="size-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="12" r="10" />
-                              </svg>
-                            </div>
-                            <div className="size-8 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center shadow-md">
-                              <MailIcon className="size-4 text-white" />
-                            </div>
-                            <div className="size-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-400 flex items-center justify-center shadow-md">
-                              <svg className="size-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-                                <rect x="4" y="4" width="16" height="16" rx="3" />
-                              </svg>
-                            </div>
-                          </div>
-                          <div className="w-24 h-1 bg-white/40 rounded-full mx-auto" />
-                        </div>
-                      </div>
-
-                      {/* Back Face: Finish Color & Armor Camera Island */}
-                      <div
-                        className={s.phoneFaceBack}
-                        style={{ backgroundColor: currentFinish.colorHex }}
-                      >
-                        {/* Samsung Triple Camera Island */}
-                        <div className={s.cameraIsland3D}>
-                          <div className={s.lensRing3D}>
-                            <div className={s.lensGlass3D} />
-                          </div>
-                          <div className={s.lensRing3D}>
-                            <div className={s.lensGlass3D} />
-                          </div>
-                          <div className={s.lensRing3D}>
-                            <div className={s.lensGlass3D} />
-                          </div>
-                          <div className={s.flashRing3D} />
-                        </div>
-
-                        {/* Samsung Laser Engraved Wordmark */}
-                        <span className={s.samsungLogoText}>SAMSUNG</span>
-                      </div>
-
-                      {/* Left Spine: Zero-Gap Precision Hinge */}
-                      <div className={s.hingeSpineLeft}>
-                        <span className={s.hingeEngraving}>SAMSUNG</span>
-                      </div>
-
-                      {/* Right Rail: Metal Buttons */}
-                      <div className={s.sideRailRight}>
-                        <div className={s.buttonVolume} />
-                        <div className={s.buttonPower} />
-                      </div>
-
-                      {/* Specular Light Sweep */}
-                      <div className={s.specularOverlay} />
-                    </div>
-
-                    {/* Dynamic Studio Turntable Shadow */}
-                    <div
-                      className={s.studioShadow}
-                      style={{
-                        transform: `translateX(${(((rotationAngle % 360) / 360) * 120 - 60)}%) scale(${Math.abs(Math.cos((rotationAngle * Math.PI) / 180)) * 0.35 + 0.65})`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* 360 Degree Scrubber & Angle Controls */}
-                <div className="w-full max-w-md space-y-3 z-10 px-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-foreground flex items-center gap-1.5">
-                      <RotateIcon className="size-3.5 text-gold" />
-                      <span>{getAngleLabel(rotationAngle)}</span>
-                    </span>
-                    <span className="text-muted font-mono font-bold text-[11px]">
-                      {rotationAngle}° / 360°
-                    </span>
-                  </div>
-
-                  {/* Range Slider for scrubbing 0° to 360° */}
-                  <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    value={rotationAngle}
-                    onChange={(e) => {
-                      setIsAutoSpinning(false);
-                      setRotationAngle(Number(e.target.value));
-                    }}
-                    className={s.slider360}
-                    aria-label={isDe ? "360-Grad-Drehwinkel einstellen" : "Adjust 360-degree rotation angle"}
-                  />
-
-                  {/* Quick Angle Presets & Auto-Spin Toggle */}
-                  <div className="flex items-center justify-between gap-1 pt-1">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {[
-                        { angle: 0, label: "0° Front" },
-                        { angle: 45, label: "45° 3D" },
-                        { angle: 90, label: "90° Profil" },
-                        { angle: 180, label: "180° Rückseite" },
-                        { angle: 270, label: "270° Scharnier" },
-                      ].map((preset) => (
-                        <button
-                          key={preset.angle}
-                          type="button"
-                          onClick={() => {
-                            setIsAutoSpinning(false);
-                            setRotationAngle(preset.angle);
-                          }}
-                          className={`px-2 py-1 rounded-md text-[11px] font-medium transition min-h-[30px] ${
-                            Math.abs((rotationAngle % 360) - preset.angle) < 15
-                              ? "bg-gold text-black font-bold shadow-sm"
-                              : "bg-surface text-muted hover:text-foreground border border-border"
-                          }`}
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Auto-Spin Button */}
-                    <button
-                      type="button"
-                      onClick={() => setIsAutoSpinning((prev) => !prev)}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition border min-h-[30px] ${
-                        isAutoSpinning
-                          ? "bg-gold text-black border-gold shadow-sm"
-                          : "bg-surface text-muted hover:text-foreground border-border"
-                      }`}
-                      title={isAutoSpinning ? (isDe ? "Drehung anhalten" : "Pause rotation") : (isDe ? "Automatisch drehen" : "Auto spin")}
-                    >
-                      {isAutoSpinning ? <PauseIcon className="size-3" /> : <PlayIcon className="size-3" />}
-                      <span>{isAutoSpinning ? (isDe ? "Pause" : "Pause") : (isDe ? "Auto-Spin" : "Auto-Spin")}</span>
-                    </button>
-                  </div>
-
-                  {/* Interactive Color Swatches */}
-                  <div className="space-y-2 pt-2 border-t border-border/60">
-                    <div className="flex items-center justify-center gap-3 sm:gap-4" role="group" aria-label="Color Selection">
-                      {activeFinishes.map((finish, idx) => {
-                        const isActive = idx === selectedFinishIndex;
-                        return (
-                          <button
-                            key={finish.id}
-                            type="button"
-                            onClick={() => setSelectedFinishIndex(idx)}
-                            className={`size-10 sm:size-11 rounded-full transition-all duration-300 relative flex items-center justify-center min-h-[44px] min-w-[44px] ${
-                              isActive
-                                ? "scale-110 ring-2 ring-gold ring-offset-2 ring-offset-background shadow-lg shadow-gold/25"
-                                : "opacity-80 hover:opacity-100 hover:scale-105"
-                            }`}
-                            style={{ backgroundColor: finish.colorHex }}
-                            title={isDe ? finish.nameDe : finish.nameEn}
-                            aria-label={isDe ? finish.nameDe : finish.nameEn}
-                            aria-pressed={isActive}
-                          >
-                            {isActive && (
-                              <span className="size-2 rounded-full bg-white/90 shadow-sm" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p className="text-center text-[11px] text-muted">
-                      {isDe ? currentFinish.nameDe : currentFinish.nameEn} · {isDe ? currentFinish.badgeDe : currentFinish.badgeEn}
-                    </p>
-                  </div>
-                </div>
-              </div>
             ) : (
               <div className="relative z-10 w-full flex flex-col items-center justify-center space-y-6">
                 {/* Large Product Render Container */}
@@ -1185,11 +863,44 @@ export default function GalaxyFoldShowcase({
                   />
                 </div>
 
-                {/* Subtitle / Asset Title */}
+                {/* Subtitle / Asset Title & Interactive Color Swatches */}
                 <div className="text-center space-y-3 z-10">
                   <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/90 px-4 py-1.5 text-xs font-semibold text-foreground backdrop-blur-md shadow-sm">
                     <span>{isDe ? activeAsset.labelDe : activeAsset.labelEn}</span>
                   </div>
+
+                  {viewMode === "colors" && (
+                    <div className="space-y-2 pt-2">
+                      <div className="flex items-center justify-center gap-3 sm:gap-4" role="group" aria-label="Color Selection">
+                        {activeFinishes.map((finish, idx) => {
+                          const isActive = idx === selectedFinishIndex;
+                          return (
+                            <button
+                              key={finish.id}
+                              type="button"
+                              onClick={() => setSelectedFinishIndex(idx)}
+                              className={`size-10 sm:size-11 rounded-full transition-all duration-300 relative flex items-center justify-center min-h-[44px] min-w-[44px] ${
+                                isActive
+                                  ? "scale-110 ring-2 ring-gold ring-offset-2 ring-offset-background shadow-lg shadow-gold/25"
+                                  : "opacity-80 hover:opacity-100 hover:scale-105"
+                              }`}
+                              style={{ backgroundColor: finish.colorHex }}
+                              title={isDe ? finish.nameDe : finish.nameEn}
+                              aria-label={isDe ? finish.nameDe : finish.nameEn}
+                              aria-pressed={isActive}
+                            >
+                              {isActive && (
+                                <span className="size-2 rounded-full bg-white/90 shadow-sm" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-center text-[11px] text-muted">
+                        {isDe ? currentFinish.nameDe : currentFinish.nameEn} · {isDe ? currentFinish.badgeDe : currentFinish.badgeEn}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1569,74 +1280,6 @@ export default function GalaxyFoldShowcase({
                   className="w-full h-full object-contain rounded-xl shadow-2xl"
                 />
               </div>
-            ) : viewMode === "colors" ? (
-              <div
-                className="relative w-full max-w-2xl h-[65vh] flex items-center justify-center"
-                onMouseDown={(e) => handleStartDrag(e.clientX)}
-                onTouchStart={(e) => handleStartDrag(e.touches[0].clientX)}
-                onTouchMove={(e) => handleMoveDrag(e.touches[0].clientX)}
-                onTouchEnd={handleEndDrag}
-                style={{ cursor: isDragging ? "grabbing" : "grab" }}
-              >
-                <div
-                  className={s.phone3DWrapper}
-                  style={{
-                    transform: `scale(${zoomLevel * 1.1}) rotateY(${rotationAngle}deg) rotateX(${tiltAngle}deg)`,
-                    transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                  }}
-                >
-                  <div
-                    className={s.phoneBody}
-                    style={{
-                      width: selectedModel === "ultra" ? "340px" : "290px",
-                      height: selectedModel === "ultra" ? "510px" : "480px",
-                    }}
-                  >
-                    <div className={s.phoneFaceFront}>
-                      <div className="flex items-center justify-between text-[11px] text-white/70 px-1">
-                        <span className="font-semibold tracking-tight">12:45</span>
-                        <div className="size-3.5 rounded-full bg-black border border-white/20 shadow-inner" />
-                        <div className="flex items-center gap-1 text-[10px]">
-                          <span>5G</span>
-                          <div className="w-4 h-2 border border-white/60 rounded-sm p-0.5 flex items-center">
-                            <div className="h-full w-3/4 bg-white/90 rounded-2xs" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-center my-auto space-y-2">
-                        <span className="text-4xl font-bold text-white tracking-wide">12:45</span>
-                        <p className="text-xs text-amber-300 font-medium">Galaxy AI</p>
-                      </div>
-                      <div className="w-24 h-1 bg-white/40 rounded-full mx-auto" />
-                    </div>
-                    <div
-                      className={s.phoneFaceBack}
-                      style={{ backgroundColor: currentFinish.colorHex }}
-                    >
-                      <div className={s.cameraIsland3D}>
-                        <div className={s.lensRing3D}>
-                          <div className={s.lensGlass3D} />
-                        </div>
-                        <div className={s.lensRing3D}>
-                          <div className={s.lensGlass3D} />
-                        </div>
-                        <div className={s.lensRing3D}>
-                          <div className={s.lensGlass3D} />
-                        </div>
-                        <div className={s.flashRing3D} />
-                      </div>
-                      <span className={s.samsungLogoText}>SAMSUNG</span>
-                    </div>
-                    <div className={s.hingeSpineLeft}>
-                      <span className={s.hingeEngraving}>SAMSUNG</span>
-                    </div>
-                    <div className={s.sideRailRight}>
-                      <div className={s.buttonVolume} />
-                      <div className={s.buttonPower} />
-                    </div>
-                  </div>
-                </div>
-              </div>
             ) : (
               <div
                 className="relative w-full max-w-5xl h-[70vh] sm:h-[80vh] flex items-center justify-center transition-transform duration-300"
@@ -1661,12 +1304,11 @@ export default function GalaxyFoldShowcase({
               <button
                 type="button"
                 onClick={() => setViewMode("colors")}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
+                className={`px-3 py-1.5 rounded-lg font-medium transition min-h-[36px] ${
                   viewMode === "colors" ? "bg-gold text-black font-bold" : "text-white/70 hover:text-white bg-white/10"
                 }`}
               >
-                <RotateIcon className="size-3.5" />
-                <span>360° Studio</span>
+                <span>{isDe ? "Farben" : "Colors"}</span>
               </button>
               <button
                 type="button"
