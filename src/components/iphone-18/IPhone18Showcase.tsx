@@ -261,12 +261,12 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
               {isDe ? "Store" : "Store"}
             </Link>
             <span className="text-border">/</span>
-            <span className="font-medium text-foreground">iPhone 18 Pro &amp; Duo</span>
+            <span className="font-medium text-foreground">iPhone 18 Pro & Duo</span>
           </nav>
 
           <div className="flex items-center gap-2 text-muted">
             <span className="size-1.5 rounded-full bg-gold" />
-            <span>{isDe ? "Hamburg Boutique &amp; Bundesweiter Versand" : "Hamburg Boutique &amp; Nationwide Shipping"}</span>
+            <span>{isDe ? "Hamburg Boutique & Bundesweiter Versand" : "Hamburg Boutique & Nationwide Shipping"}</span>
           </div>
         </div>
       </div>
@@ -282,7 +282,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl text-balance">
               iPhone 18 Pro
               <span className="block text-2xl sm:text-4xl lg:text-5xl font-medium text-muted mt-2">
-                {isDe ? "Pro Max &amp; das neue iPhone Duo" : "Pro Max &amp; The New iPhone Duo"}
+                {isDe ? "Pro Max & das neue iPhone Duo" : "Pro Max & The New iPhone Duo"}
               </span>
             </h1>
 
@@ -530,7 +530,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                 <div className="rounded-xl border border-border/80 bg-surface/50 p-3.5">
                   <div className="text-xs text-muted uppercase tracking-wider">{isDe ? "Architektur" : "Architecture"}</div>
                   <div className="text-lg font-bold text-foreground mt-0.5">2 nm A20 Pro</div>
-                  <div className="text-[11px] text-muted">6-Core CPU &amp; GPU</div>
+                  <div className="text-[11px] text-muted">6-Core CPU & GPU</div>
                 </div>
                 <div className="rounded-xl border border-border/80 bg-surface/50 p-3.5">
                   <div className="text-xs text-muted uppercase tracking-wider">{isDe ? "Optik" : "Optics"}</div>
@@ -545,7 +545,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                 <div className="rounded-xl border border-border/80 bg-surface/50 p-3.5">
                   <div className="text-xs text-muted uppercase tracking-wider">{isDe ? "Laden" : "Charging"}</div>
                   <div className="text-lg font-bold text-foreground mt-0.5">45W / 25W</div>
-                  <div className="text-[11px] text-muted">USB-PD &amp; Qi2 MagSafe</div>
+                  <div className="text-[11px] text-muted">USB-PD & Qi2 MagSafe</div>
                 </div>
               </div>
 
