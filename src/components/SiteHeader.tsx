@@ -28,9 +28,27 @@ export default function SiteHeader({
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const cartCount = useSyncExternalStore(subscribeStoredCart, getStoredCartCount, () => 0);
   const cartBadge = cartCount > 9 ? "9+" : String(cartCount);
+
+  // Expose the live header height so sticky sub-navigations can sit right
+  // below it on every breakpoint (the header shrinks on scroll).
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const apply = () => {
+      document.documentElement.style.setProperty("--site-header-h", `${Math.round(el.offsetHeight)}px`);
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--site-header-h");
+    };
+  }, []);
 
   useEffect(() => {
     let ticking = false;
@@ -76,6 +94,7 @@ export default function SiteHeader({
 
   return (
     <header
+      ref={headerRef}
       className={`site-header sticky top-0 z-50 transition-all duration-300 ${isScrolled ? "is-scrolled" : ""}`}
       translate="no"
     >

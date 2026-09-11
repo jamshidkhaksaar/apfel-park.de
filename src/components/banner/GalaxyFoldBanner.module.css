@@ -678,3 +678,45 @@
     height: 8px;
   }
 }
+
+/* Mobile: shrink the dual stage so both foldables + swatches fit cleanly */
+@media (max-width: 640px) {
+  .stage {
+    min-height: auto;
+    padding: 10px 14px 26px;
+  }
+
+  .dualCarousel {
+    max-width: 100%;
+    gap: 10px;
+  }
+
+  .carouselFold8,
+  .carouselUltra {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .phoneContainer {
+    height: 168px;
+  }
+
+  .banner.compact .phoneContainer {
+    height: 150px;
+  }
+
+  .banner.compact .stage {
+    min-height: auto;
+  }
+
+  .orbit1,
+  .orbit2 {
+    display: none;
+  }
+
+  .phoneGlow {
+    width: 120px;
+    height: 120px;
+    filter: blur(16px);
+  }
+}
