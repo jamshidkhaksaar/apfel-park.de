@@ -68,7 +68,6 @@ export default function IPhoneBanner({
   const media: Media = { ...APPLE_MEDIA, ...overrides };
   const root = useRef<HTMLElement>(null);
   const video = useRef<HTMLVideoElement>(null);
-  const theaterVideoRef = useRef<HTMLVideoElement>(null);
 
   const [hovered, setHovered] = useState<Model | null>(null);
   const [pinned, setPinned] = useState<Model | null>(null);
@@ -78,7 +77,7 @@ export default function IPhoneBanner({
   const [reduced, setReduced] = useState(false);
   const [offscreen, setOffscreen] = useState(false);
   const [film, setFilm] = useState(true);
-  const [videoReady, setVideoReady] = useState(false);
+  const [videoReady, setVideoReady] = useState(true);
   const [videoFailed, setVideoFailed] = useState(false);
 
   // Fullscreen Theater Modal State
@@ -106,28 +105,38 @@ export default function IPhoneBanner({
     };
   }, []);
 
+  // Robust video playback management
   useEffect(() => {
     const element = video.current;
     if (!element) return;
-    let disposed = false;
-    const update = () => {
-      const play = film && !stopped && !reduced && !offscreen && !document.hidden;
-      if (play) {
-        if (element.getAttribute("src") !== media.duoVideo) element.src = media.duoVideo;
+    element.muted = true;
+    element.defaultMuted = true;
+    element.playsInline = true;
+
+    const playVideo = () => {
+      if (film && !stopped && !reduced && !offscreen && !document.hidden) {
         element.muted = true;
-        element.play().catch(() => {
-          if (!disposed) setVideoReady(false);
-        });
+        const playPromise = element.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setVideoReady(true);
+              setVideoFailed(false);
+            })
+            .catch(() => {
+              // Silently handle autoplay restrictions
+            });
+        }
       } else {
         element.pause();
       }
     };
-    update();
-    document.addEventListener("visibilitychange", update);
+
+    playVideo();
+    document.addEventListener("visibilitychange", playVideo);
     return () => {
-      disposed = true;
       element.pause();
-      document.removeEventListener("visibilitychange", update);
+      document.removeEventListener("visibilitychange", playVideo);
     };
   }, [film, stopped, reduced, offscreen, media.duoVideo]);
 
@@ -152,7 +161,15 @@ export default function IPhoneBanner({
   function setDuo(view: 0 | 1) {
     setDuoView(view);
     setFilm(false);
-    setVideoReady(false);
+  }
+
+  function activateFilm() {
+    setFilm(true);
+    setVideoReady(true);
+    if (video.current) {
+      video.current.muted = true;
+      video.current.play().catch(() => {});
+    }
   }
 
   function enter(model: Model, pointerType: string) {
@@ -278,11 +295,17 @@ export default function IPhoneBanner({
                   <video
                     ref={video}
                     className={s.video}
+                    src={media.duoVideo}
+                    autoPlay
                     muted
                     loop
                     playsInline
-                    preload="none"
+                    preload="auto"
                     aria-hidden="true"
+                    onLoadedData={() => {
+                      setVideoReady(true);
+                      setVideoFailed(false);
+                    }}
                     onPlaying={() => {
                       setVideoReady(true);
                       setVideoFailed(false);
@@ -290,7 +313,6 @@ export default function IPhoneBanner({
                     onError={() => {
                       setVideoReady(false);
                       setVideoFailed(true);
-                      setFilm(false);
                     }}
                   />
                 </span>
@@ -317,10 +339,7 @@ export default function IPhoneBanner({
                   className={s.variant}
                   type="button"
                   aria-pressed={film}
-                  onClick={() => {
-                    setFilm((old) => !old);
-                    setVideoReady(false);
-                  }}
+                  onClick={activateFilm}
                 >
                   {videoFailed ? "Film nicht ladbar" : "Film"}
                 </button>
@@ -418,7 +437,6 @@ export default function IPhoneBanner({
               )}
               {theaterTab === "duo-video" && (
                 <video
-                  ref={theaterVideoRef}
                   className={s.theaterVideo}
                   src={media.duoVideo}
                   controls

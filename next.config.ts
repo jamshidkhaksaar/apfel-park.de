@@ -31,7 +31,7 @@ const contentSecurityPolicy = [
   "connect-src 'self' https://api.stripe.com https://r.stripe.com https://m.stripe.network https://*.paypal.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://www.google.com https://*.google.com https://connect.facebook.net https://www.facebook.com https://analytics.tiktok.com https://*.tiktok.com https://analytics.ahrefs.com https://cloudflareinsights.com",
   "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://www.google.com https://*.paypal.com https://widget.trustpilot.com",
   "worker-src 'self' blob:",
-  "media-src 'self' blob:",
+  "media-src 'self' blob: data: https://www.apple.com https://*.apple.com",
   "manifest-src 'self'",
 ].join("; ");
 
