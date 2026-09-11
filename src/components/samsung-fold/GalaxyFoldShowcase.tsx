@@ -275,9 +275,12 @@ export default function GalaxyFoldShowcase({
     if (viewMode === "video") {
       return {
         type: "video" as const,
-        src: "/images/samsung/zfold8/galaxy-z-fold8-design.mp4",
-        labelDe: "Design-Video",
-        labelEn: "Design Video",
+        src:
+          selectedModel === "ultra"
+            ? "/images/samsung/zfold8/galaxy-z-fold8-ultra-design.mp4"
+            : "/images/samsung/zfold8/galaxy-z-fold8-design.mp4",
+        labelDe: selectedModel === "ultra" ? "Design-Video (Z Fold8 Ultra)" : "Design-Video (Z Fold8)",
+        labelEn: selectedModel === "ultra" ? "Design Video (Z Fold8 Ultra)" : "Design Video (Z Fold8)",
       };
     }
     if (viewMode === "lineup") {

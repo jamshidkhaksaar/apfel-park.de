@@ -59,6 +59,11 @@ const VIEWER_CONFIGS = [
 
 const files = [
   ...VIEWER_CONFIGS.map(({ url, name }) => ({ url, dest: path.join(DEST, "config", name) })),
+  {
+    // Official "design intro" film per model (used by the Design Video tab).
+    url: `${DE_ULTRA}/videos/galaxy-z-fold8-ultra-features-design-intro.mp4`,
+    dest: path.resolve(DEST, "..", "galaxy-z-fold8-ultra-design.mp4"),
+  },
 ];
 
 for (const { dir, url } of MODELS) files.push({ url, dest: path.join(DEST, "models", `${dir}.glb`) });

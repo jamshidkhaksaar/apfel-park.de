@@ -12,6 +12,7 @@ import {
   type Material,
   type Mesh,
   MeshStandardMaterial,
+  LoopOnce,
   type Object3D,
   PerspectiveCamera,
   PMREMGenerator,
@@ -55,6 +56,8 @@ type LoadedModel = {
   originals: Map<Material, MaterialSnapshot>;
   mixer: AnimationMixer;
   clipDuration: number;
+  poseTime: number;
+  poseTarget: number;
 };
 
 type MaterialSnapshot = {
@@ -69,6 +72,10 @@ type MaterialSnapshot = {
   envMap: Texture | null;
   emissiveMap: Texture | null;
 };
+
+// The official status_toggle clip opens, holds, then closes; the fully unfolded
+// pose is held around 80% of the clip.
+const FOLD_UNFOLDED_FRACTION = 0.8;
 
 const EMPTY_SNAPSHOT: MaterialSnapshot = {
   color: new Color(0xffffff),
@@ -195,7 +202,7 @@ class FoldScene {
     if (this.disposed) return;
 
     this.layout();
-    this.applyPose();
+    this.applyPose(true);
     this.observe();
     this.resize();
     this.lastTime = performance.now();
@@ -243,11 +250,26 @@ class FoldScene {
     let clipDuration = 0;
     for (const clip of gltf.animations) {
       const action = mixer.clipAction(clip);
+      // Hold the final pose instead of looping back to folded.
+      action.setLoop(LoopOnce, 1);
+      action.clampWhenFinished = true;
       action.play();
       clipDuration = Math.max(clipDuration, clip.duration);
     }
+    // Clip runs folded (t=0) -> open -> hold -> close; start at the held open pose.
+    const initialPose = clipDuration * FOLD_UNFOLDED_FRACTION;
+    if (clipDuration > 0) mixer.setTime(initialPose);
 
-    this.models.push({ id, group, materials, originals, mixer, clipDuration });
+    this.models.push({
+      id,
+      group,
+      materials,
+      originals,
+      mixer,
+      clipDuration,
+      poseTime: initialPose,
+      poseTarget: initialPose,
+    });
     this.scene.add(group);
   }
 
@@ -289,13 +311,17 @@ class FoldScene {
     this.controls.update();
   }
 
-  private applyPose(): void {
-    if (this.profileTarget !== null) {
-      for (const model of this.models) model.group.rotation.y = this.profileTarget;
-    }
+  private applyPose(immediate = false): void {
+    const folded = this.profileTarget !== null;
     for (const model of this.models) {
-      if (model.clipDuration > 0) {
-        model.mixer.setTime(this.profileTarget !== null ? model.clipDuration : 0);
+      // The status_toggle clip runs folded -> open -> hold -> close.
+      model.poseTarget = folded ? 0 : model.clipDuration * FOLD_UNFOLDED_FRACTION;
+      model.group.rotation.y = this.profileTarget ?? 0;
+      if (immediate) {
+        model.poseTime = model.poseTarget;
+        if (model.clipDuration > 0) model.mixer.setTime(model.poseTarget);
+      } else if (model.clipDuration === 0) {
+        model.mixer.setTime(0);
       }
     }
   }
@@ -494,7 +520,15 @@ class FoldScene {
     this.lastTime = now;
 
     if (this.visible) {
-      for (const model of this.models) model.mixer.update(delta);
+      for (const model of this.models) {
+        if (model.poseTime !== model.poseTarget) {
+          const span = model.clipDuration || 1;
+          const step = Math.max((delta * span) / 0.7, 1e-4);
+          const remaining = model.poseTarget - model.poseTime;
+          model.poseTime += Math.sign(remaining) * Math.min(step, Math.abs(remaining));
+          model.mixer.setTime(model.poseTime);
+        }
+      }
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
     }
