@@ -69,11 +69,13 @@ export const finalizeResearchedProduct = (
   const hardware = context.hardwareModel?.trim();
   const regionalEvidence = hardware && citedSources('regionalSpecifications').some(source => sourceHas(source, hardware));
   if (!regionalEvidence) {
-    const regionalClaim = /\b(?:e-?sim|nano.?sim|sim.?karte|sim.?card|\d+(?:[,.]\d+)?\s*(?:stunden|hours|gramm|grams|mAh|Wh))\b/i;
-    research.specs = research.specs?.filter(spec => !/\b(?:sim|gewicht|weight|videowiedergabe|video playback|akkulaufzeit|battery endurance|mobilfunkband|cellular bands)\b/i.test(spec.label)
+    const regionalClaim = /\b(?:e-?sim|nano.?sim|sim.?karte|sim.?card|\d+(?:[,.]\d+)?\s*(?:stunden|std|hours?|hrs?|h|gramm|grams?|g|mAh|Wh))\b/i;
+    research.specs = research.specs?.filter(spec => !/\b(?:sim|gewicht|weight|videowiedergabe|video playback|akkulaufzeit|batterielaufzeit|battery\s*(?:endurance|runtime|life)|mobilfunkband|cellular bands)\b/i.test(spec.label)
       && !regionalClaim.test(spec.value)
       && !(research.brand?.toLowerCase() === 'samsung' && /prozessor|processor|chip|soc\b/i.test(spec.label)));
     research.features = research.features?.filter(feature => !regionalClaim.test(feature));
+    if (research.subtitle && regionalClaim.test(research.subtitle)) research.subtitle = undefined;
+    if (regionalClaim.test(research.title)) research.title = `${research.brand} ${research.model}`;
     research.description = research.description.split(/(?<=[.!?])\s+/).filter(sentence => !regionalClaim.test(sentence)
       && !(research.brand?.toLowerCase() === 'samsung' && /exynos|snapdragon/i.test(sentence))).join(' ');
     if (!research.description) throw new Error('research_incomplete');

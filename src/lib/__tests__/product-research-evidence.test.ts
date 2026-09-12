@@ -24,6 +24,18 @@ describe('official research evidence gates', () => {
     expect(germanManufacturerUrl('https://support.apple.com/en-us/125135')).toBe('https://support.apple.com/de-de/125135');
     expect(germanManufacturerUrl('https://www.samsung.com/us/model-us/')).toBe('https://www.samsung.com/us/model-us/');
   });
+  it.each(['37 Std.', '37 h', '37 hrs', '233 g'])('withholds abbreviated regional claims (%s) without removing ordinary display/charging specs', value => {
+    const draft = finalizeResearchedProduct({ ...raw(), subtitle: `Modell mit ${value}`, title: `iPhone 17 Pro Max ${value}`, specs: [{ label: 'Batterielaufzeit', value }, { label: 'Leistung', value }, { label: 'Display', value: '120 Hz' }, { label: 'Laden', value: '25 W' }], features: [`Bis zu ${value}`] }, [source], {});
+    expect(draft.specs).toEqual([{ label: 'Display', value: '120 Hz' }, { label: 'Laden', value: '25 W' }]);
+    expect(draft.subtitle).toBeUndefined();
+    expect(draft.title).not.toContain(value);
+    expect(draft.features).toEqual([]);
+  });
+  it('retains regional claims when the supplied hardware model has explicit cited evidence', () => {
+    const proven = { ...source, text: source.text + ' Hardware A3525: 37 Std. Videowiedergabe.' };
+    const draft = finalizeResearchedProduct({ ...raw(), specs: [{ label: 'Batterielaufzeit', value: '37 Std.' }], evidence: [{ field: 'regionalSpecifications', sourceUrl: proven.url }] }, [proven], { hardwareModel: 'A3525' });
+    expect(draft.specs).toEqual([{ label: 'Batterielaufzeit', value: '37 Std.' }]);
+  });
   it('normalizes category values and withholds region-dependent claims without hardware evidence', () => {
     const draft = finalizeResearchedProduct({ ...raw(), category: 'Smartphones', description: 'Das iPhone hat ein OLED-Display. Es bietet bis zu 39 Stunden Videowiedergabe.', specs: [{ label: 'SIM-Karte', value: 'Dual eSIM' }, { label: 'Display', value: 'OLED' }], dimensions: { heightMm: 163.4, weightG: 233 } }, [source], {});
     expect(draft.category).toBe('smartphones');
