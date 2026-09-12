@@ -169,6 +169,7 @@ export default function ProductIntakeWizard({
     setQuantity(nextCondition === product.condition ? String(Math.max(1, product.stock || 1)) : "1");
     setCover(product.images[0] ?? null);
     setExactPhotos([]);
+    setHasRealPhotos(false);
     if (nextCondition === "new") {
       setConditionNote("");
       setHasRealPhotos(false);
@@ -185,6 +186,7 @@ export default function ProductIntakeWizard({
       setQuantity("1");
       setCover(null);
       setExactPhotos([]);
+      setHasRealPhotos(false);
       return true;
     }
     if (!productId) return false;
@@ -393,10 +395,6 @@ export default function ProductIntakeWizard({
               {isUsedIphone ? (
                 <input value={batteryHealth} onChange={(event) => setBatteryHealth(event.target.value)} placeholder={copy.batteryPlaceholder} className="rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
               ) : null}
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={hasRealPhotos} onChange={(event) => setHasRealPhotos(event.target.checked)} />
-                {copy.exactPhotosConfirm}
-              </label>
             </div>
           ) : null}
         </div>
@@ -414,7 +412,7 @@ export default function ProductIntakeWizard({
               const file = event.target.files?.[0];
               if (!file) return;
               setBusy(true);
-              void uploadImage(file).then((url) => { setCover(url); setHasRealPhotos(true); }).catch((error) => setMessage(error instanceof Error ? error.message : copy.uploadFailed)).finally(() => setBusy(false));
+              void uploadImage(file).then((url) => { setCover(url); setHasRealPhotos(false); }).catch((error) => setMessage(error instanceof Error ? error.message : copy.uploadFailed)).finally(() => setBusy(false));
             }} />
             {cover ? <span className="relative mt-3 block h-40 w-32 overflow-hidden rounded-xl border border-border/60 bg-white"><Image src={cover} alt="" fill className="object-contain" unoptimized={cover.startsWith("/uploads/")} /></span> : null}
           </label>
@@ -423,9 +421,16 @@ export default function ProductIntakeWizard({
               {copy.exactPhotos}
               <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="mt-2 block w-full text-sm" onChange={(event) => {
                 const files = Array.from(event.target.files ?? []).slice(0, 3);
+                if (!files.length) return;
                 setBusy(true);
-                void Promise.all(files.map(uploadImage)).then((urls) => setExactPhotos(urls)).catch((error) => setMessage(error instanceof Error ? error.message : copy.uploadFailed)).finally(() => setBusy(false));
+                void Promise.all(files.map(uploadImage)).then((urls) => { setExactPhotos(urls); setHasRealPhotos(false); }).catch((error) => setMessage(error instanceof Error ? error.message : copy.uploadFailed)).finally(() => setBusy(false));
               }} />
+            </label>
+          ) : null}
+          {condition !== 'new' ? (
+            <label className="md:col-span-2 flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={hasRealPhotos} disabled={busy} onChange={(event) => setHasRealPhotos(event.target.checked)} />
+              {copy.exactPhotosConfirm}
             </label>
           ) : null}
         </div>

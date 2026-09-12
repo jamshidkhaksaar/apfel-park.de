@@ -1460,6 +1460,8 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                               accept="image/png,image/jpeg,image/webp,image/svg+xml"
                               onChange={(event) => {
                                 const nextFile = event.target.files?.[0] ?? null;
+                                if (!nextFile) return;
+                                setFormState((prev) => ({ ...prev, hasRealProductPhotos: false }));
                                 setImageFiles((current) => current.map((file, fileIndex) => (fileIndex === index ? nextFile : file)));
                                 event.currentTarget.value = "";
                               }}
@@ -1500,7 +1502,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setFormState((prev) => ({ ...prev, images: prev.images.filter((item) => item !== image) }))}
+                                  onClick={() => setFormState((prev) => ({ ...prev, hasRealProductPhotos: false, images: prev.images.filter((item) => item !== image) }))}
                                   className="font-semibold text-red-400 hover:underline"
                                 >
                                   {locale === "de" ? "Löschen" : "Remove"}

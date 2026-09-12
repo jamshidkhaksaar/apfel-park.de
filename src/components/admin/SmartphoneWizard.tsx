@@ -1,6 +1,7 @@
 'use client';
 
 import { appliedResearchTextFields, normalizeAiTextFields } from '@/lib/product-ai-fields';
+import { photoMembershipChanged } from '@/lib/product-photo-confirmation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -674,10 +675,26 @@ export default function SmartphoneWizard({
                     coverId={e.coverId}
                     disabled={uploading}
                     onBusy={setUploading}
-                    onChange={(photos, coverId) =>
-                      updateEntry(e.id, { photos, coverId })
-                    }
+                    onChange={(photos, coverId) => {
+                      if (e.condition !== 'new' && photoMembershipChanged(e.photos.map(photo => photo.url), photos.map(photo => photo.url))) {
+                        // Confirmation is shared by sibling variants, but their
+                        // photos are not: keep these two updates separate.
+                        updateEntry(e.id, { hasRealProductPhotos: false });
+                      }
+                      updateEntry(e.id, { photos, coverId });
+                    }}
                   />
+                  {e.condition !== 'new' ? (
+                    <label className="mt-4 flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={e.hasRealProductPhotos}
+                        disabled={uploading}
+                        onChange={(event) => updateEntry(e.id, { hasRealProductPhotos: event.target.checked })}
+                      />
+                      {t.hasRealProductPhotos}
+                    </label>
+                  ) : null}
                   {e.condition === 'new' ? (
                     <div className="mt-4 space-y-3">
                       <label className="text-sm">

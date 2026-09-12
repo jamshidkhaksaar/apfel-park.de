@@ -1504,6 +1504,8 @@ export default function ProductCreateForm() {
                     accept="image/png,image/jpeg,image/webp,image/svg+xml"
                     onChange={(event) => {
                       const nextFile = event.target.files?.[0] ?? null;
+                      if (!nextFile) return;
+                      setState((prev) => ({ ...prev, hasRealProductPhotos: false }));
                       setImageFiles((current) => current.map((file, fileIndex) => (fileIndex === index ? nextFile : file)));
                       event.currentTarget.value = "";
                     }}
