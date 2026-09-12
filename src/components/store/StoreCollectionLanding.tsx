@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import DeviceQuoteForm from "@/components/DeviceQuoteForm";
 import StoreCommerceHeader from "@/components/store/StoreCommerceHeader";
 import StoreGrid from "@/components/store/StoreGrid";
+import CollectionBuyingGuide from './CollectionBuyingGuide';
 import type { Locale } from "@/lib/i18n";
 import {
   getStoreCatalog,
@@ -14,6 +15,7 @@ import {
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import { getRelatedStoreCollectionLinks, getStoreCollectionCopy } from "@/lib/store-collections";
+import { getCollectionAnalyticsList } from '@/lib/store-collection-analytics';
 import { buildCollectionPageSchema, buildListingBreadcrumbSchema } from "@/lib/store-schema";
 import {
   buildStoreCanonicalUrl,
@@ -91,6 +93,7 @@ export default async function StoreCollectionLanding({
             facets={catalog.facets}
             activeFilters={activeFilters}
             showSearch={false}
+            analyticsList={getCollectionAnalyticsList(collection, locale)}
           />
           {catalog.total === 0 ? (
             <div className="mt-8 rounded-2xl border border-border bg-store-card p-6 text-center text-muted">
@@ -120,6 +123,7 @@ export default async function StoreCollectionLanding({
               </div>
             ))}
           </div>
+          {copy.comparison ? <CollectionBuyingGuide guide={copy.comparison} locale={locale} /> : null}
         </div>
       </section>
 

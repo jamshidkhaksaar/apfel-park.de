@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { addStoredCartItem } from "@/components/checkout/cart";
 import { MINI_CART_OPEN_EVENT } from "@/components/checkout/MiniCart";
 import { analyticsItem, withGa4Items } from "@/lib/analytics";
+import { catalogListFields } from '@/lib/store-collection-analytics';
 import { sellableCatalogVariants, type CatalogCardModel, type CatalogCardVariant } from "@/lib/catalog-card";
 import type { Locale } from "@/lib/i18n";
 
@@ -20,11 +21,13 @@ export function useCatalogAddToCart({
   product,
   locale,
   listName,
+  listId = 'store-catalog',
   position,
 }: {
   product: CatalogCardModel;
   locale: Locale;
   listName: string;
+  listId?: string;
   position: number;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -45,8 +48,7 @@ export function useCatalogAddToCart({
     window.apfelTrack?.(name, withGa4Items({
       currency: "EUR",
       value: price,
-      item_list_name: listName,
-      item_list_id: "store-catalog",
+      ...catalogListFields(listName, listId),
       content_condition: product.condition,
       content_ids: [product.id],
       content_type: "product",
@@ -56,11 +58,12 @@ export function useCatalogAddToCart({
       item_name: product.title,
       item_category: product.category,
       item_variant: itemVariant,
+      ...catalogListFields(listName, listId),
       price,
       quantity: 1,
       index: position,
     })]), id);
-  }, [listName, position, product]);
+  }, [listId, listName, position, product]);
 
   const add = useCallback((variant?: CatalogCardVariant) => {
     if (isOutOfStock) return;

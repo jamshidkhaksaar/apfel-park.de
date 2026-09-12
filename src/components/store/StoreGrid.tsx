@@ -1,5 +1,6 @@
 import { toCatalogCardModel } from "@/lib/catalog-card";
 import type { Locale } from "@/lib/i18n";
+import type { CatalogAnalyticsList } from '@/lib/store-collection-analytics';
 import { getRatingSummaries } from "@/lib/product-reviews";
 import type {
   Product,
@@ -24,6 +25,7 @@ type StoreGridProps = {
   facets?: StoreCatalogFacets;
   activeFilters?: StoreCatalogFilters;
   showSearch?: boolean;
+  analyticsList?: CatalogAnalyticsList;
 };
 
 const emptyFilters: StoreCatalogFilters = {
@@ -59,6 +61,7 @@ export default async function StoreGrid({
   facets = emptyFacets,
   activeFilters = emptyFilters,
   showSearch = true,
+  analyticsList,
 }: StoreGridProps) {
   const uniqueProducts = new Map([...products, ...trendingProducts].map((product) => [product.id, product] as const));
   const ratings = await getRatingSummaries(Array.from(uniqueProducts.keys()));
@@ -80,6 +83,7 @@ export default async function StoreGrid({
 
   return (
     <StoreCatalogClient
+      analyticsList={analyticsList}
       products={products.map((product) => cardsById.get(product.id)!)}
       trendingProducts={trendingProducts.map((product) => cardsById.get(product.id)!).filter(Boolean)}
       lang={lang}

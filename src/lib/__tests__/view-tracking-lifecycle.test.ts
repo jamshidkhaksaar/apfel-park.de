@@ -20,10 +20,12 @@ import StoreCatalogClient from '@/components/store/StoreCatalogClient';
 import MarketingConsentScripts from '@/components/MarketingConsentScripts';
 import { CONSENT_EVENT_NAME } from '../consent';
 import { TRACKING_READY_EVENT } from '../analytics';
+import { getCollectionAnalyticsList, type CatalogAnalyticsList } from '../store-collection-analytics';
 
 const product: CatalogCardModel = { id: '11111111-1111-4111-8111-111111111111', title: 'QA Product', slug: 'qa-product', image: '/images/qa.webp', price: 10, category: 'smartphones', condition: 'new', stock: 1, facts: [], colors: [], storages: [], variants: [] };
 const productView = () => ProductViewTracker({ productId: product.id, title: product.title, category: product.category, price: product.price, locale: 'de', slug: product.slug });
-const catalogView = () => StoreCatalogClient({
+const catalogView = (analyticsList?: CatalogAnalyticsList) => StoreCatalogClient({
+  analyticsList,
   products: [product], lang: 'de', total: 1, page: 2, pages: 2,
   counts: { all: 1, smartphones: 1, tablets: 0, accessories: 0, laptops: 0, consoles: 0, 'open-box-smartphones-tablets': 0 },
   facets: { brands: [], storages: [], conditions: [], accessoryTypes: [], inStock: 1, priceMin: 10, priceMax: 10 },
@@ -53,6 +55,18 @@ beforeEach(() => {
 afterEach(() => { for (const cleanup of harness.cleanups) cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe('current-page view tracking', () => {
+  it.each(['samsung-phones', 'used-iphones', 'phones-without-contract'] as const)('keeps %s identity through the real consent bridge', async id => {
+    harness.pathname = '/de/samsung-handys'; document.cookie = 'apfel-consent=necessary';
+    mount(bridge); mount(() => catalogView(getCollectionAnalyticsList(id, 'de')));
+    expect(events('view_item_list')).toHaveLength(0);
+    grant(); await vi.advanceTimersByTimeAsync(0);
+    window.dispatchEvent(new Event(TRACKING_READY_EVENT));
+    expect(events('view_item_list')).toHaveLength(1);
+    const payload = events('view_item_list')[0][2] as { item_list_id: string; item_list_name: string; items: Array<{ item_list_id: string; item_list_name: string }> };
+    expect(payload.item_list_id).toBe(id);
+    expect(payload.items[0].item_list_id).toBe(id);
+    expect(payload.items[0].item_list_name).toBe(payload.item_list_name);
+  });
   it('records a product after late bridge installation with one shared browser/server event ID', async () => {
     mount(productView); await vi.advanceTimersByTimeAsync(2_000); mount(bridge);
     expect(events('view_item')).toHaveLength(1);

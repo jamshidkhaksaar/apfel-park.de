@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { analyticsItem, withGa4Items } from "@/lib/analytics";
 import { subscribeConsentedTracking } from "@/lib/consented-tracking";
+import { catalogListFields, type CatalogAnalyticsList } from '@/lib/store-collection-analytics';
 import type { CatalogCardModel } from "@/lib/catalog-card";
 import { accessoryTypeLabels, type Locale } from "@/lib/i18n";
 import { parseStorageFilterValues } from '@/lib/product-storage';
@@ -34,6 +35,7 @@ type Props = {
   facets: StoreCatalogFacets;
   activeFilters: StoreCatalogFilters;
   showSearch?: boolean;
+  analyticsList?: CatalogAnalyticsList;
 };
 
 const categoryOrder: StoreCatalogCategory[] = ["all", "smartphones", "tablets", "open-box-smartphones-tablets", "accessories", "laptops", "consoles"];
@@ -70,6 +72,7 @@ export default function StoreCatalogClient({
   facets,
   activeFilters,
   showSearch = true,
+  analyticsList,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -77,9 +80,10 @@ export default function StoreCatalogClient({
   const lastListImpression = useRef('');
   const isGerman = lang === "de";
   const view: StoreView = searchParams.get("view") === "list" ? "list" : "grid";
-  const listName = lockedCategory && lockedCategory !== "all"
+  const listId = analyticsList?.id ?? 'store-catalog';
+  const listName = analyticsList?.name ?? (lockedCategory && lockedCategory !== "all"
     ? categoryLabels[lang][lockedCategory]
-    : categoryLabels[lang][activeCategory];
+    : categoryLabels[lang][activeCategory]);
 
   const buildHref = (updates: { category?: StoreCatalogCategory; sort?: StoreCatalogSort; page?: number; view?: StoreView }) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -106,24 +110,22 @@ export default function StoreCatalogClient({
 
   useEffect(() => {
     if (products.length === 0) return;
-    const key = JSON.stringify([pathname, listName, page, products.map(product => product.id)]);
+    const key = JSON.stringify([pathname, listId, listName, page, products.map(product => product.id)]);
     return subscribeConsentedTracking(track => {
       if (lastListImpression.current === key) return;
       const queued = track("view_item_list", withGa4Items({
-        item_list_id: "store-catalog",
-        item_list_name: listName,
+        ...catalogListFields(listName, listId),
       }, products.map((product, index) => analyticsItem({
         item_id: product.id,
         item_name: product.title,
         item_category: product.category,
         price: product.price,
         index: (page - 1) * 24 + index + 1,
-        item_list_id: "store-catalog",
-        item_list_name: listName,
+        ...catalogListFields(listName, listId),
       }))));
       if (queued !== false) lastListImpression.current = key;
     });
-  }, [listName, page, pathname, products]);
+  }, [listId, listName, page, pathname, products]);
 
   const removeMulti = (param: "brand" | "storage" | "condition" | "atype", value: string) => pushParams((next) => {
     const values = param === 'storage' ? parseStorageFilterValues(next.get(param) ?? '') : (next.get(param) ?? "").split(",").map((entry) => entry.trim()).filter(Boolean);
@@ -240,7 +242,7 @@ export default function StoreCatalogClient({
                   const showPixelBanner = page === 1 && products.length >= 12 && index === 11;
                   return (
                     <Fragment key={product.id}>
-                      <StoreProductRow key={product.id} product={product} locale={lang} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 3} />
+                      <StoreProductRow key={product.id} product={product} locale={lang} listId={listId} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 3} />
                       {showFoldBanner ? (
                         <div className="my-4">
                           <GalaxyFoldBanner lang={lang} variant="compact" />
@@ -262,7 +264,7 @@ export default function StoreCatalogClient({
                   const showPixelBanner = page === 1 && products.length >= 16 && index === 15;
                   return (
                     <Fragment key={product.id}>
-                      <StoreProductCard key={product.id} product={product} locale={lang} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 4} />
+                      <StoreProductCard key={product.id} product={product} locale={lang} listId={listId} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 4} />
                       {showFoldBanner ? (
                         <div className="col-span-full my-4">
                           <GalaxyFoldBanner lang={lang} variant="compact" />

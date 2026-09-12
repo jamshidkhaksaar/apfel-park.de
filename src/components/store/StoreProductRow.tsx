@@ -22,18 +22,20 @@ export default function StoreProductRow({
   product,
   locale,
   listName,
+  listId,
   position,
   priority = false,
 }: {
   product: CatalogCardModel;
   locale: Locale;
   listName: string;
+  listId?: string;
   position: number;
   priority?: boolean;
 }) {
   const isGerman = locale === "de";
   const { added, add, onQuickAdd, drawerOpen, setDrawerOpen, isOutOfStock, trackItem } =
-    useCatalogAddToCart({ product, locale, listName, position });
+    useCatalogAddToCart({ product, locale, listName, listId, position });
   const discount = discountPercentage(product.price, product.compareAtPrice);
   const tone = stockTone(product.stock, isOutOfStock);
   const href = `/${locale}/store/${product.slug}`;

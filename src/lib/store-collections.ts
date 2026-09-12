@@ -3,6 +3,15 @@ import type { StoreCatalogCollection } from "@/lib/products";
 
 export type StoreCollectionId = StoreCatalogCollection;
 
+export type CollectionComparison = {
+  heading: string;
+  columns: string[];
+  rows: string[][];
+  note: string;
+  sources?: Array<{ label: string; href: string }>;
+  links: Array<{ label: string; href: string }>;
+};
+
 type CollectionCopy = {
   path: string;
   title: string;
@@ -14,6 +23,7 @@ type CollectionCopy = {
   benefits: Array<{ title: string; text: string }>;
   faq: Array<{ question: string; answer: string }>;
   sources?: Array<{ label: string; href: string }>;
+  comparison?: CollectionComparison;
 };
 
 const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
@@ -180,8 +190,30 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       intro: [
         "Hier findest du die aktuell verfügbaren Samsung Galaxy Smartphones von Apfel Park. Vergleiche Modelle der Galaxy-S-, A- und M-Serie nach Speicher, Preis und Gerätezustand.",
         "Alle Geräte werden ohne Mobilfunkvertrag angeboten. Der tatsächliche Zustand steht direkt am Produkt, und verfügbare Smartphones können deutschlandweit versendet oder in Hamburg abgeholt werden.",
-        "Lege zuerst dein Budget und den benötigten Speicher fest. Vergleiche dann Display, Kamera, Mobilfunkstandard und Akkuangaben am konkreten Galaxy-Modell. Ein Zusatz wie FE, Plus oder Ultra bezeichnet eine andere Variante; eine passende Hülle muss genau zu dieser Variante passen.",
+        "Lege zuerst dein Budget und den benötigten Speicher fest. Ein größeres Display kann beim Lesen und bei Videos helfen; ein kleineres Gerät kann angenehmer in der Hand liegen. Ob sich ein Galaxy der A- oder S-Serie für dich lohnt, hängt vom konkreten Modell und Angebot ab – nicht allein vom Seriennamen.",
+        "Vergleiche anschließend Kamera, Mobilfunkstandard und Akkuangaben. FE, Plus und Ultra sind eigene Varianten: Die Angaben zum Galaxy S24 unten gelten für das Basismodell, nicht automatisch für S24 FE, S24+ oder Ultra.",
       ],
+      comparison: {
+        heading: "Galaxy A oder S? A55 und S24 im Vergleich",
+        columns: ["Darauf kommt es an", "Galaxy A55 5G", "Galaxy S24"],
+        rows: [
+          ["Display", "6,6 Zoll Super AMOLED: mehr Bildschirmfläche zum Lesen und für Videos.", "6,2 Zoll Dynamic AMOLED 2X: kleinerer Bildschirm, wenn du ein kompakteres Gerät suchst."],
+          ["Kamera", "50-MP-Hauptkamera mit optischer Bildstabilisierung; Zoom erfolgt digital.", "50-MP-Hauptkamera mit optischer Bildstabilisierung und separate 10-MP-Telekamera mit 3-fach optischem Zoom."],
+          ["Auswahl im Alltag", "Prüfe, ob dir Bildschirmgröße, Kamera und Speicher für Nachrichten, Navigation und Medien genügen.", "Vergleiche den Aufpreis beim konkreten Angebot, wenn dir ein kleineres Gerät oder optischer Zoom wichtig ist."],
+        ],
+        note: "Technische Modellbeispiele, keine Bestandszusage. Bildschirmdiagonalen beziehen sich auf das volle Rechteck; die sichtbare Fläche ist kleiner. Preis, Speicher, Zustand und Lieferumfang stehen am einzelnen Angebot. Aus Megapixeln allein lässt sich keine Bildqualität ableiten.",
+        sources: [
+          { label: "Samsung: Galaxy A55 – Display", href: "https://news.samsung.com/de/samsung-galaxy-a55-5g-und-galaxy-a35-5g-spannende-neuheiten-und-verbesserte-sicherheit" },
+          { label: "Samsung: Galaxy A55 – technische Daten (Englisch)", href: "https://www.samsung.com/uk/smartphones/galaxy-a/galaxy-a55-5g-awesome-navy-256gb-sm-a556bzkceub/" },
+          { label: "Samsung: Galaxy S24 – Display und Kameras (Englisch)", href: "https://news.samsung.com/us/enter-new-era-of-mobile-ai-samsung-galaxy-s24-series/" },
+        ],
+        links: [
+          { label: "Nach Galaxy-A55-Angeboten suchen", href: "/samsung-handys?q=Galaxy%20A55#angebote" },
+          { label: "Nach Galaxy-S24-Angeboten suchen", href: "/samsung-handys?q=Galaxy%20S24#angebote" },
+          { label: "Andere Marken: Handys ohne Vertrag vergleichen", href: "/handys-ohne-vertrag" },
+          { label: "Apple als Alternative: gebrauchte iPhones", href: "/gebrauchte-iphones" },
+        ],
+      },
       benefits: [
         { title: "Ohne Vertrag", text: "Samsung Smartphones als reinen Gerätekauf bestellen." },
         { title: "Galaxy Auswahl", text: "S-, A- und M-Serie nach Preis und Speicher vergleichen." },
@@ -205,8 +237,30 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       intro: [
         "Find the Samsung Galaxy smartphones currently available from Apfel Park. Compare Galaxy S, A and M models by storage, price and device condition.",
         "Every device is sold without a mobile contract. The actual condition appears on each product, with Germany-wide delivery or collection in Hamburg.",
-        "Set your budget and storage needs first, then compare the display, camera, connectivity and battery information for the exact Galaxy model. FE, Plus and Ultra identify different variants; a case must fit that exact variant.",
+        "Set your budget and storage needs first. A larger screen can help with reading and video; a smaller device may be more comfortable to hold. Whether Galaxy A or S suits you depends on the exact model and offer, not just the series name.",
+        "Then compare camera, connectivity and battery information. FE, Plus and Ultra are separate variants: the Galaxy S24 specifications below refer to the base model, not automatically to S24 FE, S24+ or Ultra.",
       ],
+      comparison: {
+        heading: "Galaxy A or S? Comparing A55 and S24",
+        columns: ["What to consider", "Galaxy A55 5G", "Galaxy S24"],
+        rows: [
+          ["Display", "6.6-inch Super AMOLED: more screen space for reading and video.", "6.2-inch Dynamic AMOLED 2X: a smaller screen if you prefer a more compact device."],
+          ["Camera", "50 MP main camera with optical image stabilisation; zoom is digital.", "50 MP main camera with optical image stabilisation and a separate 10 MP telephoto camera with 3x optical zoom."],
+          ["Everyday choice", "Check whether the screen size, camera and storage meet your messaging, navigation and media needs.", "Compare the price difference for the actual offer if a smaller device or optical zoom matters to you."],
+        ],
+        note: "Technical model examples, not a stock promise. Screen diagonals refer to the full rectangle; the viewable area is smaller. Each offer specifies its price, storage, condition and contents. Megapixels alone do not determine image quality.",
+        sources: [
+          { label: "Samsung: Galaxy A55 display (German)", href: "https://news.samsung.com/de/samsung-galaxy-a55-5g-und-galaxy-a35-5g-spannende-neuheiten-und-verbesserte-sicherheit" },
+          { label: "Samsung: Galaxy A55 specifications", href: "https://www.samsung.com/uk/smartphones/galaxy-a/galaxy-a55-5g-awesome-navy-256gb-sm-a556bzkceub/" },
+          { label: "Samsung: Galaxy S24 display and cameras", href: "https://news.samsung.com/us/enter-new-era-of-mobile-ai-samsung-galaxy-s24-series/" },
+        ],
+        links: [
+          { label: "Search for Galaxy A55 offers", href: "/samsung-handys?q=Galaxy%20A55#angebote" },
+          { label: "Search for Galaxy S24 offers", href: "/samsung-handys?q=Galaxy%20S24#angebote" },
+          { label: "Other brands: compare contract-free phones", href: "/handys-ohne-vertrag" },
+          { label: "An Apple alternative: used iPhones", href: "/gebrauchte-iphones" },
+        ],
+      },
       benefits: [
         { title: "No contract", text: "Buy Samsung smartphones as standalone devices." },
         { title: "Galaxy selection", text: "Compare S, A and M models by price and storage." },
@@ -230,11 +284,30 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       eyebrow: "Smartphones ohne Vertrag",
       introTitle: "Flexibel bleiben und nur das Gerät kaufen",
       intro: [
-        "Alle Smartphones in dieser Auswahl werden ohne Mobilfunkvertrag verkauft. Du bezahlst nur das Gerät und kannst deine bestehende SIM-Karte oder einen Tarif deiner Wahl verwenden.",
+        "Alle Smartphones in dieser Auswahl werden ohne Mobilfunkvertrag verkauft. Du kaufst das Gerät separat vom Tarif. Ob deine vorhandene SIM oder eSIM funktioniert, hängt vom genauen Gerät, einer möglichen Netzbetreibersperre und deinem Anbieter ab.",
         "Vergleiche iPhones und Android-Smartphones nach Marke, Speicher, Preis und Zustand. Neu, Open Box und Gebraucht werden transparent am Produkt ausgewiesen.",
+        "Rechne für den Gerätekauf Angebotspreis, Versandkosten und eventuell benötigtes Zubehör zusammen. Die Kosten deines Mobilfunktarifs kommen separat hinzu. Ein günstigerer Gerätepreis ist nur sinnvoll vergleichbar, wenn Speicher, Zustand und Lieferumfang berücksichtigt werden.",
       ],
+      comparison: {
+        heading: "Ohne Vertrag kaufen: Was passt zu dir?",
+        columns: ["Kaufentscheidung", "Vor der Bestellung prüfen"],
+        rows: [
+          ["Neu & versiegelt", "Wähle diese Zustandsangabe, wenn du ein originalversiegeltes Gerät suchst. Ein Netzteil oder anderes Zubehör ist dadurch nicht automatisch enthalten."],
+          ["Open Box", "Die Verpackung wurde geöffnet. Lies die konkrete Zustandsbeschreibung und den Lieferumfang; Open Box allein sagt nichts über Aktivierung oder Akkuzustand aus."],
+          ["Gebraucht", "Vergleiche die Fotos des Geräts, Gebrauchsspuren, Akkuinformationen und bekannte Einschränkungen mit dem Preis."],
+          ["SIM oder eSIM", "Prüfe die genaue Modell- und Ländervariante, SIM-Format, eSIM-Unterstützung, Netzkompatibilität und eine mögliche Anbietersperre. Für eine eSIM muss auch dein Tarif geeignet sein."],
+          ["Gesamtkosten", "Vergleiche Gerätepreis plus Versand und benötigtes Zubehör. Tarifkosten sind nicht im reinen Gerätekauf enthalten."],
+        ],
+        note: "Ohne Vertrag ist keine pauschale Zusage für SIM-Lock-Freiheit oder eSIM-Unterstützung. Fehlt eine Angabe zum konkreten Gerät, kläre sie vor dem Kauf.",
+        links: [
+          { label: "Android vergleichen: Samsung Handys", href: "/samsung-handys" },
+          { label: "Apple vergleichen: gebrauchte iPhones", href: "/gebrauchte-iphones" },
+          { label: "Gerätezustände im Detail", href: "/device-conditions" },
+          { label: "Versandkosten und Rückgabe prüfen", href: "/delivery-returns" },
+        ],
+      },
       benefits: [
-        { title: "Keine Vertragsbindung", text: "Nur das Smartphone kaufen und den eigenen Tarif behalten." },
+        { title: "Separater Gerätekauf", text: "Kein neuer Mobilfunktarif beim Gerätekauf. Bestehenden Tarif auf Kompatibilität prüfen." },
         { title: "Viele Marken", text: "Apple, Samsung, Google, Xiaomi und weitere Hersteller vergleichen." },
         { title: "Zustand & Preis klar", text: "Neu, Open Box oder Gebraucht steht direkt am Angebot." },
       ],
@@ -252,11 +325,30 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       eyebrow: "Phones without a contract",
       introTitle: "Stay flexible and buy the device only",
       intro: [
-        "Every smartphone in this selection is sold without a mobile contract. Pay only for the device and keep your existing SIM or choose your own mobile plan.",
+        "Every smartphone in this selection is sold without a mobile contract. You buy the device separately from a tariff. Whether your existing SIM or eSIM works depends on the exact device, any carrier lock and your network provider.",
         "Compare iPhones and Android phones by brand, storage, price and condition. New, Open Box and Used are shown clearly on each product.",
+        "For the device purchase, add the offer price, delivery charges and any accessories you need. Your mobile tariff is a separate cost. A lower device price is only meaningfully comparable when storage, condition and included accessories are considered.",
       ],
+      comparison: {
+        heading: "Buying without a contract: what suits you?",
+        columns: ["Buying decision", "Check before ordering"],
+        rows: [
+          ["New & sealed", "Choose this condition if you want an originally sealed device. This does not automatically mean a charger or other accessories are included."],
+          ["Open Box", "The packaging has been opened. Read the specific condition and contents; Open Box alone does not establish activation status or battery health."],
+          ["Used", "Compare the actual device photos, wear, battery information and known limitations against the price."],
+          ["SIM or eSIM", "Check the exact model and regional variant, SIM format, eSIM support, network compatibility and any carrier lock. Your mobile tariff must also support eSIM."],
+          ["Total cost", "Compare device price plus delivery and any accessories needed. Tariff costs are not included in a device-only purchase."],
+        ],
+        note: "Contract-free is not a blanket promise of SIM-unlocked status or eSIM support. Ask about missing device details before buying.",
+        links: [
+          { label: "Compare Android options: Samsung phones", href: "/samsung-handys" },
+          { label: "Compare Apple options: used iPhones", href: "/gebrauchte-iphones" },
+          { label: "Device conditions in detail", href: "/device-conditions" },
+          { label: "Check delivery costs and returns", href: "/delivery-returns" },
+        ],
+      },
       benefits: [
-        { title: "No contract commitment", text: "Buy only the phone and keep your preferred mobile plan." },
+        { title: "Separate device purchase", text: "No new mobile tariff with the device purchase. Check compatibility with your existing plan." },
         { title: "Multiple brands", text: "Compare Apple, Samsung, Google, Xiaomi and more." },
         { title: "Clear price and condition", text: "New, Open Box or Used appears directly on the offer." },
       ],
@@ -324,8 +416,26 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       intro: [
         "Auf dieser Seite findest du die aktuell verfügbaren gebrauchten und Open-Box-iPhones von Apfel Park. Vergleiche Modelle, Speichergrößen, Preise und den individuell beschriebenen Gerätezustand, ohne dich durch neue Angebote suchen zu müssen.",
         "Wir kennzeichnen Gebraucht und Open Box getrennt direkt am Produkt und bezeichnen ein Gerät nicht automatisch als generalüberholt. Bestellungen sind mit Versand innerhalb Deutschlands oder zur Abholung in Hamburg-Wilhelmsburg möglich.",
-        "Achte neben dem Speicher auf Gebrauchsspuren, Akkuangaben und den Lieferumfang. Ein gebrauchtes iPhone hat nicht automatisch einen neuen Akku oder Originalzubehör. Lass offene Fragen vor der Bestellung klären; ein einzelner Zustandsbegriff ersetzt die Angaben zum konkreten Gerät nicht.",
+        "Prüfe zuerst, wie viel Speicher deine Fotos, Videos und Apps heute belegen, und plane Platz für die weitere Nutzung ein. Vergleiche danach Geräte mit ähnlichem Speicher und Zustand. Ein niedrigerer Preis kann mit mehr Gebrauchsspuren oder einem anderen Lieferumfang verbunden sein.",
       ],
+      comparison: {
+        heading: "Checkliste vor dem Kauf eines gebrauchten iPhone",
+        columns: ["Prüfpunkt", "Was du wissen solltest"],
+        rows: [
+          ["Zustand & Fotos", "Gebraucht bedeutet zuvor genutzt, Open Box bedeutet geöffnet. Refurbished beziehungsweise generalüberholt ist eine zusätzliche Aufbereitungsangabe, die ausdrücklich beschrieben sein muss. Prüfe Display, Rahmen und Rückseite anhand der Fotos und Zustandsnotiz."],
+          ["Batterie", "Vergleiche die angegebene maximale Kapazität und Hinweise auf Servicebedarf. Ein fehlender Wert ist kein Nachweis für einen guten Akku. Ein neuer Akku oder Mindestwert gilt nur bei ausdrücklicher Zusage im Angebot."],
+          ["Aktivierungssperre", "Das Gerät muss sich ohne den Apple Account des Vorbesitzers einrichten lassen. Kaufe kein iPhone mit aktiver Aktivierungssperre; lass Unklarheiten vor der Bestellung klären."],
+          ["Teile- und Serviceprotokoll", "Je nach Modell, iOS-Version und Reparaturhistorie gibt es unter Einstellungen > Allgemein > Info Teilehinweise. Frage nach bekannten Reparaturen und Meldungen zu unbekannten Bauteilen. Ein fehlender Eintrag belegt nicht allein, dass nie repariert wurde."],
+          ["Funktionen & Lieferumfang", "Kläre bekannte Einschränkungen bei Kamera, Mikrofon, Lautsprechern, Tasten und Anschlüssen. Kabel, Netzteil, Originalverpackung und weiteres Zubehör sind nur enthalten, wenn sie im Angebot genannt werden."],
+        ],
+        note: "Die Checkliste hilft beim Vergleich und ist keine zusätzliche Prüf-, Garantie- oder Akkuzusage für jedes Gerät. Maßgeblich sind die Angaben zum konkreten Angebot; fehlende Informationen bitte vor dem Kauf erfragen.",
+        links: [
+          { label: "Zustandsangaben genauer verstehen", href: "/device-conditions" },
+          { label: "Neu und gebraucht vergleichen: Handys ohne Vertrag", href: "/handys-ohne-vertrag" },
+          { label: "Android als Alternative: Samsung Handys", href: "/samsung-handys" },
+          { label: "Versand und Rückgabe nachlesen", href: "/delivery-returns" },
+        ],
+      },
       benefits: [
         { title: "Gebraucht & Open Box", text: "Die Auswahl enthält Apple Geräte beider Zustände – eindeutig gekennzeichnet." },
         { title: "Modell & Speicher vergleichen", text: "Finde schnell das iPhone, das zu Budget und Nutzung passt." },
@@ -350,8 +460,26 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       intro: [
         "This page lists the used and open-box iPhones currently available from Apfel Park. Compare models, storage, prices and individually described condition without searching through new offers.",
         "Used and Open Box are labeled separately on every product, and a device is not automatically described as refurbished. Order for delivery in Germany or collect from Hamburg-Wilhelmsburg.",
-        "Alongside storage, compare wear, battery information and supplied accessories. A used iPhone does not automatically include a new battery or original accessories. Ask about missing details before ordering; a condition label alone does not replace the individual device information.",
+        "Start with the space your photos, videos and apps use today, allowing room for continued use. Then compare devices with similar storage and condition. A lower price may come with more wear or different included accessories.",
       ],
+      comparison: {
+        heading: "Checklist before buying a used iPhone",
+        columns: ["Check", "What you need to know"],
+        rows: [
+          ["Condition & photos", "Used means previously used; Open Box means opened. Refurbished is a separate reconditioning claim that must be explicitly described. Check the display, frame and back in the photos and condition note."],
+          ["Battery", "Compare the stated maximum capacity and service warnings. A missing value is not evidence of a healthy battery. A replacement battery or minimum value is only promised when explicitly stated in the offer."],
+          ["Activation Lock", "You must be able to set up the device without the previous owner's Apple Account. Do not buy an iPhone with Activation Lock enabled; resolve uncertainty before ordering."],
+          ["Parts and service history", "Depending on model, iOS version and repair history, parts information may appear in Settings > General > About. Ask about known repairs and unknown-part notices. No entry alone does not prove the device has never been repaired."],
+          ["Functions & contents", "Clarify known limitations involving cameras, microphones, speakers, buttons and ports. Cables, chargers, original packaging and other accessories are only included when listed in the offer."],
+        ],
+        note: "This checklist supports comparison; it is not an additional inspection, warranty or battery promise for every device. The individual offer governs. Ask about missing details before buying.",
+        links: [
+          { label: "Understand condition descriptions", href: "/device-conditions" },
+          { label: "Compare new and used: contract-free phones", href: "/handys-ohne-vertrag" },
+          { label: "An Android alternative: Samsung phones", href: "/samsung-handys" },
+          { label: "Read about delivery and returns", href: "/delivery-returns" },
+        ],
+      },
       benefits: [
         { title: "Used & Open Box", text: "The selection contains both conditions, clearly labeled on each offer." },
         { title: "Compare model and storage", text: "Quickly find an iPhone suited to your needs and budget." },
