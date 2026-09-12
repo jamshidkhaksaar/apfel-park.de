@@ -5,6 +5,18 @@ import type { ResearchPhoto } from '@/lib/product-research-photo';
 import { deviceModelNeedles } from '@/lib/device-model';
 
 const modelToken = (value: string): string => value.toLowerCase().replace(/^galaxy\s*/i, '').replace(/[^a-z0-9]/g, '').replace('iphone17air', 'iphoneair');
+export const modelSpecificResearchSource = (source: ResearchSource, model: string, brand = ''): boolean => {
+  const brandToken = modelToken(brand);
+  const fullModel = modelToken(model);
+  const needle = brandToken && fullModel.startsWith(brandToken) ? modelToken(fullModel.slice(brandToken.length)) : fullModel;
+  return needle.length >= 3 && modelToken(source.title).includes(needle) && !knownResearchModelConflict(model, source.title);
+};
+
+/** Verified source URLs only; no product facts are supplied from this registry. */
+export const preferredResearchUrls = (brand: string, model: string): string[] =>
+  brand.toLowerCase() === 'apple' && modelToken(model).replace(/^apple/, '') === 'iphone17promax'
+    ? ['https://support.apple.com/de-de/125091']
+    : [];
 export const knownResearchModelConflict = (requested: string, actual: string): boolean => {
   const expected = deviceModelNeedles(requested).map(modelToken);
   const found = deviceModelNeedles(actual).map(modelToken);
@@ -61,9 +73,9 @@ export const researchProductFromOfficialPages = async (
   if (typeof photographedModel === 'string' && knownResearchModelConflict(photographedModel, model)) throw new Error('photo_identity_conflict');
   const rawUrls = Array.isArray(discovery.value.urls) ? discovery.value.urls : [];
   const groundingUrls = discovery.candidate.groundingMetadata?.groundingChunks?.map(chunk => chunk.web?.uri).filter(Boolean) ?? [];
-  const urls = [...new Set([...rawUrls, ...groundingUrls].filter((url): url is string => Boolean(approvedResearchUrl(url, true))))].slice(0, 6);
+  const urls = [...new Set([...preferredResearchUrls(brand, model), ...rawUrls, ...groundingUrls].filter((url): url is string => Boolean(approvedResearchUrl(url, true))))].slice(0, 6);
   const fetched = await Promise.all(urls.map(url => fetchOfficialResearchSource(url, model)));
-  const sources = [...new Map(fetched.filter((source): source is ResearchSource => Boolean(source)).map(source => [source.url, source])).values()].slice(0, 3);
+  const sources = [...new Map(fetched.filter((source): source is ResearchSource => Boolean(source) && modelSpecificResearchSource(source!, model, brand)).map(source => [source.url, source])).values()].slice(0, 3);
   if (!sources.length) throw new Error('official_sources_unavailable');
   if (signal.aborted) throw new Error('research_timeout');
   // Discovery output is never applied. Final facts are generated from fresh HTTP content.
@@ -73,6 +85,7 @@ export const researchProductFromOfficialPages = async (
   if (typeof draft.value.brand !== 'string' || modelToken(draft.value.brand) !== modelToken(brand)
       || typeof draft.value.model !== 'string' || knownResearchModelConflict(model, draft.value.model)) throw new Error('research_unverified_model');
   const result = finalizeResearchedProduct(draft.value, sources, { condition: input.condition, hints: input.photo?.hints, hardwareModel: input.hardwareModel });
+  if (!result.specs?.length && !result.features?.length) throw new Error('research_incomplete');
   if (/\b(case|cover|hülle|schutzhuelle|schutzhülle|kabel|cable|powerbank|earbuds|earpods|kopfhörer|ladegerät)\b/i.test(input.query)
       && result.category === 'smartphones') throw new Error('research_unverified_model');
   return result;

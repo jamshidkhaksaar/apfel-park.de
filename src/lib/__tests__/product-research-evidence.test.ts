@@ -5,7 +5,7 @@ import { eprelResearchFields, selectExactEprelMatch } from '../product-research-
 import { selectLicensedResearchAssets } from '../product-research-assets';
 import { researchOfferPatch, mergeResearchGallery } from '../product-research-prefill';
 import { sanitizeResearchResult } from '../product-research-core';
-import { knownResearchModelConflict, researchProductFromOfficialPages } from '../product-research-service';
+import { knownResearchModelConflict, researchProductFromOfficialPages, modelSpecificResearchSource, preferredResearchUrls } from '../product-research-service';
 
 const source = { url: 'https://www.apple.com/de/iphone-17-pro/specs/', title: 'Apple technical specifications', retrievedAt: '2026-09-08T12:00:00Z', text: 'Apple iPhone 17 Pro Max. '.repeat(20) };
 const raw = () => ({ title: 'Apple iPhone 17 Pro Max', description: 'Das iPhone bietet ein Display und eine Kamera für den Alltag.', brand: 'Apple', model: 'iPhone 17 Pro Max', category: 'smartphones' });
@@ -13,6 +13,15 @@ const raw = () => ({ title: 'Apple iPhone 17 Pro Max', description: 'Das iPhone 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe('official research evidence gates', () => {
+  it('requires model-specific source titles rather than catalog or identification pages', () => {
+    expect(modelSpecificResearchSource({ ...source, title: 'iPhone - Apple (DE)' }, 'iPhone 17 Pro Max')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, title: 'iPhone-Modell bestimmen' }, 'iPhone 17 Pro Max')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, title: 'iPhone 17 Pro Max - Technische Daten' }, 'iPhone 17 Pro Max')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: 'iPhone 17 Pro Max - Technische Daten' }, 'Apple iPhone 17 Pro Max', 'Apple')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: 'iPhone 17 Pro Max - Technische Daten' }, 'iPhone 17 Pro')).toBe(false);
+    expect(preferredResearchUrls('Apple', 'iPhone 17 Pro Max')).toEqual(['https://support.apple.com/de-de/125091']);
+    expect(preferredResearchUrls('Apple', 'iPhone 18 Pro Max')).toEqual([]);
+  });
   it('retains an optical-quality qualification backed by the source', () => {
     const optics = { ...source, text: '8x Tele-Zoom in optischer Qualität. 4x optischer Zoom.' };
     expect(retainZoomQualifier('Mit bis zu 8x optischem Zoom.', [optics])).toBe('Mit bis zu 8x Zoom in optischer Qualität.');
@@ -155,19 +164,20 @@ describe('fresh source generation pipeline', () => {
       requests.push({ url: String(url), body: typeof options?.body === 'string' ? options.body : undefined });
       if (String(url).startsWith('https://generativelanguage.googleapis.com/')) {
         generations += 1;
-        const value = generations === 1 ? { brand: 'Apple', model: 'iPhone 17 Pro Max', urls: [source.url], description: 'Discard invented discovery facts' } : raw();
+        const value = generations === 1 ? { brand: 'Apple', model: 'iPhone 17 Pro Max', urls: [source.url], description: 'Discard invented discovery facts' } : { ...raw(), specs: [{ label: 'Display', value: 'OLED' }] };
         return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(value) }] } }] });
       }
-      return new Response(`<main>${source.text}</main>`, { headers: { 'content-type': 'text/html' } });
+      return new Response(`<title>iPhone 17 Pro Max - Technische Daten</title><main>${source.text}</main>`, { headers: { 'content-type': 'text/html' } });
     }));
     const result = await researchProductFromOfficialPages({ query: 'iPhone 17 Pro Max', condition: 'new' });
     expect(generations).toBe(2);
-    expect(requests[1].url).toBe(source.url);
-    expect(requests[2].body).toContain('sourcePages');
-    expect(requests[2].body).not.toContain('Discard invented discovery facts');
-    expect(JSON.parse(requests[2].body!).tools).toBeUndefined();
+    expect(requests[1].url).toBe('https://support.apple.com/de-de/125091');
+    const finalRequest = requests.filter(request => request.body).at(-1)!;
+    expect(finalRequest.body).toContain('sourcePages');
+    expect(finalRequest.body).not.toContain('Discard invented discovery facts');
+    expect(JSON.parse(finalRequest.body!).tools).toBeUndefined();
     expect(result.description).toBe(raw().description);
-    expect(result.researchSources?.[0].url).toBe(source.url);
+    expect(result.researchSources?.[0].url).toBe('https://support.apple.com/de-de/125091');
     expect(requests.every(request => !request.url.includes('synthetic-test-key'))).toBe(true);
   });
   it('fails closed without generating a final draft if official pages cannot be read', async () => {
@@ -177,6 +187,7 @@ describe('fresh source generation pipeline', () => {
       : new Response('', { status: 404 }));
     vi.stubGlobal('fetch', fetcher);
     await expect(researchProductFromOfficialPages({ query: 'iPhone 17 Pro Max' })).rejects.toThrow('official_sources_unavailable');
-    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls.filter(([url]) => String(url).includes('generativelanguage.googleapis.com'))).toHaveLength(1);
   });
 });
