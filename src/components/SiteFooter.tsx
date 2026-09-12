@@ -15,6 +15,7 @@ import ExternalMapEmbed from "./ExternalMapEmbed";
 import Logo from "./Logo";
 import OfferSubscription from "./OfferSubscription";
 import PaymentBrandIcons from "./PaymentBrandIcons";
+import { isPayPalConfigured } from '@/lib/payment-availability.server';
 import SafeEmailLink from "./SafeEmailLink";
 import TrackedLink from "./TrackedLink";
 
@@ -294,7 +295,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             <p className="text-sm font-medium text-muted">
               {lang === "de" ? "Sicher bezahlen mit" : "Pay securely with"}
             </p>
-            <PaymentBrandIcons iconClassName="h-8 w-auto" />
+            <PaymentBrandIcons iconClassName="h-8 w-auto" includePayPal={isPayPalConfigured()} />
           </div>
 
           <OfferSubscription lang={lang} />

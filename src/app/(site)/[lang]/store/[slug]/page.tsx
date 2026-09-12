@@ -21,6 +21,7 @@ import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import ProductDetailExperience from "@/components/ProductDetailExperience";
+import { isPayPalConfigured } from '@/lib/payment-availability.server';
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import ProductProfessionalExperience from "@/components/ProductProfessionalExperience";
 import { requireLocale } from "@/lib/route-locale";
@@ -355,6 +356,7 @@ export default async function ProductDetailPage({
 
           <ProductDetailExperience
             locale={locale}
+            paypalEnabled={isPayPalConfigured()}
             product={{ ...product, faq: displayFaq }}
             ratingSummary={ratingSummary}
             initialVariantToken={typeof invitation.variant === "string" ? invitation.variant : undefined}

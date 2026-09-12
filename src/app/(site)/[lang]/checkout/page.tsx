@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import CheckoutClient from "@/components/checkout/CheckoutClient";
+import { isPayPalConfigured } from '@/lib/payment-availability.server';
 import { normalizeShippingMethod } from "@/lib/checkout";
 import { createMetadata } from "@/lib/metadata";
 import { requireLocale } from "@/lib/route-locale";
@@ -49,7 +50,7 @@ export default async function CheckoutPage({
           // Offering a payment method that cannot complete loses the sale at
           // the last step: PayPal returned "PayPal is not configured" after the
           // customer had filled in the whole form.
-          paypalEnabled={Boolean(process.env.PAYPAL_CLIENT_ID?.trim() && process.env.PAYPAL_CLIENT_SECRET?.trim())}
+          paypalEnabled={isPayPalConfigured()}
           couponEnabled={couponEnabled}
         />
       </div>

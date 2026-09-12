@@ -38,6 +38,7 @@ type Props = {
   ratingSummary?: ProductRatingSummary | null;
   initialVariantToken?: string;
   experience?: ProductExperienceView;
+  paypalEnabled?: boolean;
 };
 
 const formatMoney = formatPrice;
@@ -50,7 +51,7 @@ const getDiscount = (price: number, compareAtPrice?: number) => {
 const getDefaultVariant = (variants: ProductVariant[]) =>
   variants.find((variant) => variant.isDefault) ?? variants[0] ?? null;
 
-export default function ProductDetailExperience({ locale, product, ratingSummary, initialVariantToken, experience }: Props) {
+export default function ProductDetailExperience({ locale, product, ratingSummary, initialVariantToken, experience, paypalEnabled = false }: Props) {
   const router = useRouter();
   const requestedVariant = initialVariantToken
     ? product.variants.find((variant) =>
@@ -431,7 +432,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           ) : null}
 
           <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 text-xs text-muted">
-            <PaymentBrandIcons iconClassName="h-5 w-auto" />
+            <PaymentBrandIcons iconClassName="h-5 w-auto" includePayPal={paypalEnabled} />
             <span>{locale === "de" ? "Preise inkl. MwSt." : "Prices incl. VAT"}</span>
             <span>{locale === "de" ? "14 Tage Rückgaberecht" : "14-day returns"}</span>
           </div>
@@ -646,7 +647,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           </p>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p>{locale === "de" ? "Die für Ihre Bestellung verfügbaren Zahlungsarten werden im Checkout angezeigt." : "The payment methods available for your order are shown during checkout."}</p>
-            <PaymentBrandIcons iconClassName="h-5 w-auto" />
+            <PaymentBrandIcons iconClassName="h-5 w-auto" includePayPal={paypalEnabled} />
           </div>
         </div>
 
