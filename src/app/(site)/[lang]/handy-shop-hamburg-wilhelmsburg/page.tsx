@@ -200,6 +200,18 @@ export default async function HamburgWilhelmsburgStorePage({
 
       <PageIntro title={content.title} subtitle={content.description} eyebrow={content.eyebrow} />
 
+      <nav aria-label={locale === 'de' ? 'Kaufen oder reparieren' : 'Buy or repair'} className="container-page flex flex-wrap gap-3 pb-8">
+        <Link href="#angebote" className="btn-primary min-h-11 justify-center">
+          {locale === 'de' ? 'Smartphones vergleichen' : 'Compare smartphones'}
+        </Link>
+        <Link href={`/${locale}/samsung-handys`} className="btn-secondary min-h-11 justify-center">
+          {locale === 'de' ? 'Samsung-Handys ansehen' : 'Browse Samsung phones'}
+        </Link>
+        <Link href={`/${locale}/repairs`} className="btn-secondary min-h-11 justify-center">
+          {locale === 'de' ? 'Reparaturpreise ansehen' : 'View repair prices'}
+        </Link>
+      </nav>
+
       <section className="border-b border-white/5 bg-surface/30 py-12">
         <div className="container-page grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
           <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/20">
