@@ -2,6 +2,7 @@ import { isValidInputLength, sanitizeInput } from '@/lib/security';
 import { classifySubcategory } from '@/lib/product-subcategory';
 import { validatedGtin } from '@/lib/product-identifiers';
 import { eprelAssetRoutes } from '@/lib/eprel';
+import { energyLabelError } from '@/lib/energy-label-validation';
 import { normalizeAiTextFields, type AiTextField } from '@/lib/product-ai-fields';
 import type {
   BatteryDetails,
@@ -407,6 +408,8 @@ const parsePrice = (value: unknown) => {
 };
 
 export const getMessages = (isEnglish: boolean) => ({
+  energyFormatInvalid: isEnglish ? 'Invalid energy-label data. Use a numeric EPREL ID, valid A–G/A–E classes, a duration such as 47 h 0 min, and positive whole cycle counts.' : 'Ungültige Energielabel-Daten. Numerische EPREL-ID, gültige Klassen A–G/A–E, eine Dauer wie 47 h 0 min und positive ganze Zyklenzahlen verwenden.',
+  energyReferenceRequired: isEnglish ? 'Add the matching EPREL registration before publishing energy-label claims, or save an inactive draft.' : 'Vor Veröffentlichung der Energielabel-Angaben die passende EPREL-Registrierung ergänzen oder als inaktiven Entwurf speichern.',
   unauthorized: isEnglish ? 'Unauthorized' : 'Nicht autorisiert',
   titleRequired: isEnglish ? 'Title is required' : 'Titel ist erforderlich',
   categoryRequired: isEnglish
@@ -526,7 +529,7 @@ export const buildPayload = (payload: ProductPayload, slug?: string) => {
   const euResponsiblePerson = gpsrParty(payload.euResponsiblePerson);
   const safetyWarnings = sanitizeStringArray(payload.safetyWarnings, 500);
   const safetyDocuments = sanitizeStringArray(payload.safetyDocuments, 1000);
-  const eprelId = payload.eprelId
+  const eprelId = typeof payload.eprelId === 'string' && payload.eprelId
     ? sanitizeInput(payload.eprelId).slice(0, 32)
     : null;
   const sanitizeFaqList = (
@@ -653,6 +656,7 @@ export const buildPayload = (payload: ProductPayload, slug?: string) => {
     safetyWarnings,
     safetyDocuments,
     eprelId,
+    energyInputError: energyLabelError(payload.energyLabel, payload.eprelId, Boolean(payload.isActive)),
     energyLabel,
     faq,
     category,
@@ -681,6 +685,8 @@ export const validatePayload = (
   messages: ReturnType<typeof getMessages>,
 ) => {
   if (!data.title) return messages.titleRequired;
+  if (data.energyInputError === 'format') return messages.energyFormatInvalid;
+  if (data.energyInputError === 'reference') return messages.energyReferenceRequired;
   if (!data.category) return messages.categoryRequired;
   if (data.price === null || Number.isNaN(data.price) || data.price < 0)
     return messages.priceRequired;

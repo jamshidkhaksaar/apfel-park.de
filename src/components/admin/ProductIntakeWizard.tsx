@@ -89,6 +89,7 @@ export default function ProductIntakeWizard({
   );
 
   const readinessFacts: ProductChannelFacts = {
+    eprelId: listing.eprelId,
     title: listing.title,
     description: listing.description,
     category: listing.category,

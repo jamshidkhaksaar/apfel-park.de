@@ -1,4 +1,5 @@
 import { validatedGtin } from "@/lib/product-identifiers";
+import { energyLabelError } from './energy-label-validation';
 
 export type ProductIdentifierStatus = "unknown" | "assigned" | "not_applicable";
 export type ChannelKey = "store" | "google" | "ebay" | "amazon";
@@ -42,6 +43,7 @@ export type ChannelVariantFacts = {
 };
 
 export type ProductChannelFacts = {
+  energyLabel?: unknown;
   energyReviewRequired?: boolean;
   title: string;
   description?: string;
@@ -111,6 +113,9 @@ const unitLabel = (unit: ChannelVariantFacts, index: number, total: number): str
 };
 
 const addCoreErrors = (input: ProductChannelFacts, target: ChannelReadiness): void => {
+  const energyError = energyLabelError(input.energyLabel, input.eprelId, true);
+  if (energyError === 'format') target.errors.push('Correct invalid energy-label values: use a numeric EPREL ID, valid classes, hours/minutes and whole cycle counts.');
+  if (energyError === 'reference') target.errors.push('Verify the matching EPREL registration before publishing energy-label claims.');
   if (!nonEmpty(input.title)) target.errors.push("Add a product title.");
   if (!nonEmpty(input.description)) target.errors.push("Add an accurate product description.");
   if (!nonEmpty(input.category)) target.errors.push("Choose a product category.");

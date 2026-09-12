@@ -274,6 +274,15 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const isUsedIphone = formState.condition === "used" && isIphoneProduct(formState);
   const channelPayload = productChannelPayload(formState.channelFields);
   const readinessFacts: ProductChannelFacts = {
+    eprelId: formState.eprelId,
+    energyLabel: {
+      efficiencyClass: formState.energyEfficiencyClass,
+      batteryEndurance: formState.energyBatteryEndurance,
+      batteryCycles: formState.energyBatteryCycles ? Number(formState.energyBatteryCycles) : undefined,
+      reliabilityClass: formState.energyReliabilityClass,
+      repairabilityClass: formState.energyRepairabilityClass,
+      ipRating: formState.energyIpRating,
+    },
     title: formState.title,
     description: formState.description,
     category: formState.category,

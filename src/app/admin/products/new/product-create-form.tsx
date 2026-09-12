@@ -285,6 +285,15 @@ export default function ProductCreateForm() {
   const channelPayload = productChannelPayload(state.channelFields);
 
   const readinessFacts: ProductChannelFacts = {
+    eprelId: state.eprelId,
+    energyLabel: {
+      efficiencyClass: state.energyEfficiencyClass,
+      batteryEndurance: state.energyBatteryEndurance,
+      batteryCycles: state.energyBatteryCycles ? Number(state.energyBatteryCycles) : undefined,
+      reliabilityClass: state.energyReliabilityClass,
+      repairabilityClass: state.energyRepairabilityClass,
+      ipRating: state.energyIpRating,
+    },
     title: state.title,
     description: state.description,
     category: state.category,
