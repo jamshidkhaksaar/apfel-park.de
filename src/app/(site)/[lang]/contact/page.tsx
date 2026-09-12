@@ -101,7 +101,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                 <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
                   {lang === "de" ? "Telefon & WhatsApp" : "Phone & WhatsApp"}
                 </span>
-                <a href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="font-semibold text-foreground transition hover:text-gold">
+                <a href={`tel:${siteInfo.phoneE164}`} className="font-semibold text-foreground transition hover:text-gold">
                   {siteInfo.phone}
                 </a>
               </div>
@@ -109,7 +109,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                 <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
                   {lang === "de" ? "Ladengeschäft" : "Store landline"}
                 </span>
-                <a href={`tel:${siteInfo.landline.replace(/\s/g, "")}`} className="font-semibold text-foreground transition hover:text-gold">
+                <a href={`tel:${siteInfo.landlineE164}`} className="font-semibold text-foreground transition hover:text-gold">
                   {siteInfo.landline}
                 </a>
               </div>
@@ -124,7 +124,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
 
             <div className="grid gap-3 sm:grid-cols-2">
               <TrackedLink
-                href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
+                href={`tel:${siteInfo.phoneE164}`}
                 className="btn-secondary justify-center"
                 eventName="contact_click"
                 eventPayload={{ type: "phone", source: "contact_page" }}

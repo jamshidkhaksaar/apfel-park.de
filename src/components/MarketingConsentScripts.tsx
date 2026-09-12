@@ -4,8 +4,8 @@ import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
-import { pushGtagCommand } from "@/lib/analytics";
-import { analyticsPagePath } from "@/lib/analytics-url";
+import { pushGtagCommand, TRACKING_READY_EVENT } from "@/lib/analytics";
+import { analyticsPageContext, analyticsPagePath, isPrivateAnalyticsPath } from "@/lib/analytics-url";
 
 type MarketingConsentScriptsProps = {
   metaPixelEnabled: boolean;
@@ -24,7 +24,7 @@ declare global {
     TiktokAnalyticsObject?: string;
     gtag?: (...args: unknown[]) => void;
     dataLayer?: unknown[];
-    apfelTrack?: (eventName: string, payload?: Record<string, unknown>, eventId?: string) => void;
+    apfelTrack?: (eventName: string, payload?: Record<string, unknown>, eventId?: string) => boolean | void;
   }
 }
 
@@ -56,7 +56,7 @@ type TikTokQueue = Array<unknown[]> & {
   track?: (eventName: string, payload?: Record<string, unknown>, options?: Record<string, unknown>) => void;
 } & Partial<Record<TikTokMethod, (...args: unknown[]) => void>>;
 
-const setupGoogleAnalytics = (gaId: string) => {
+const setupGoogleAnalytics = (gaId: string, pageContext: Record<string, string>) => {
   if (!gaId || window.gtag) return;
   window.dataLayer = window.dataLayer || [];
   window.gtag = (...args: unknown[]) => {
@@ -69,7 +69,7 @@ const setupGoogleAnalytics = (gaId: string) => {
     ad_personalization: "denied",
   });
   window.gtag("js", new Date());
-  window.gtag("config", gaId, { send_page_view: false });
+  window.gtag("config", gaId, { send_page_view: false, ...pageContext });
   loadScript("ga-script", `https://www.googletagmanager.com/gtag/js?id=${gaId}`);
 };
 
@@ -229,12 +229,7 @@ const toTikTokEventName = (eventName: string) => {
  * further limited to conversion pages so third-party pixels are not loaded
  * across general content or category pages.
  */
-const isExcludedPath = (pathname: string): boolean => {
-  if (pathname === "/login" || pathname.startsWith("/login/")) return true;
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
-  if (pathname === "/maintenance" || pathname.startsWith("/maintenance/")) return true;
-  return false;
-};
+const isExcludedPath = isPrivateAnalyticsPath;
 
 const isConversionPath = (pathname: string): boolean =>
   /^\/(?:de|en)\/(?:store\/[^/]+|cart(?:\/|$)|checkout(?:\/|$)|campaigns?(?:\/|$))/.test(pathname);
@@ -249,8 +244,12 @@ export default function MarketingConsentScripts({
 }: MarketingConsentScriptsProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const initializedRef = useRef(false);
   const lastPageViewRef = useRef("");
+  const readyContextRef = useRef<string | null>(null);
+  const trackingContext = JSON.stringify([
+    analyticsPagePath(pathname, searchParams), metaPixelEnabled, metaPixelId,
+    tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId,
+  ]);
 
   useEffect(() => {
     const trackPageView = () => {
@@ -268,18 +267,18 @@ export default function MarketingConsentScripts({
 
       if (googleAnalyticsEnabled && googleAnalyticsId && window.gtag) {
         window.gtag("event", "page_view", {
-          page_path: path,
+          ...analyticsPageContext(pathname, searchParams, window.location.origin, document.referrer),
         });
       }
     };
 
     const applyConsent = (mode: ConsentMode) => {
-      if (mode !== "external" || isExcludedPath(pathname)) {
+      readyContextRef.current = null;
+      if (mode !== "external" || isExcludedPath(pathname) || isExcludedPath(window.location.pathname ?? pathname)) {
         if (googleAnalyticsEnabled && googleAnalyticsId) {
           updateGoogleAnalyticsConsent(googleAnalyticsId, false);
         }
         updateMarketingConsent(false);
-        initializedRef.current = false;
         lastPageViewRef.current = "";
         return;
       }
@@ -296,64 +295,70 @@ export default function MarketingConsentScripts({
 
       if (googleAnalyticsEnabled && googleAnalyticsId) {
         updateGoogleAnalyticsConsent(googleAnalyticsId, true);
-        setupGoogleAnalytics(googleAnalyticsId);
+        setupGoogleAnalytics(googleAnalyticsId, analyticsPageContext(pathname, searchParams, window.location.origin, document.referrer));
       }
 
-      initializedRef.current = true;
       trackPageView();
+      readyContextRef.current = trackingContext;
+      // A receipt may have subscribed to consent before this component. Notify
+      // it only after the consented queues and initial page context are ready.
+      window.dispatchEvent(new Event(TRACKING_READY_EVENT));
     };
 
     applyConsent(readConsentMode());
 
-    const handleChange = (event: Event) => {
-      const next = (event as CustomEvent<ConsentMode>).detail ?? readConsentMode();
-      applyConsent(next);
-    };
+    // The event is a notification, not authorization. Persisted consent is
+    // authoritative even if a stale event or failed storage write says otherwise.
+    const handleChange = () => applyConsent(readConsentMode());
 
     window.addEventListener(CONSENT_EVENT_NAME, handleChange as EventListener);
     return () => {
       window.removeEventListener(CONSENT_EVENT_NAME, handleChange as EventListener);
+      if (readyContextRef.current === trackingContext) readyContextRef.current = null;
     };
-  }, [pathname, searchParams, metaPixelEnabled, metaPixelId, tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId]);
+  }, [pathname, searchParams, metaPixelEnabled, metaPixelId, tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId, trackingContext]);
 
   useEffect(() => {
-    window.apfelTrack = (eventName, payload = {}, eventId) => {
-      if (readConsentMode() !== "external") return;
+    const track: NonNullable<Window['apfelTrack']> = (eventName, payload = {}, eventId) => {
+      const currentPath = window.location.pathname ?? pathname;
+      const currentSearch = new URLSearchParams(window.location.search ?? searchParams.toString());
+      if (readyContextRef.current !== trackingContext || readConsentMode() !== "external"
+        || isExcludedPath(pathname) || isExcludedPath(currentPath)
+        || analyticsPagePath(currentPath, currentSearch) !== analyticsPagePath(pathname, searchParams)) return false;
+      let queued = false;
 
       if (googleAnalyticsEnabled && googleAnalyticsId && window.gtag) {
         window.gtag("event", eventName, {
           ...payload,
           event_id: eventId,
+          ...analyticsPageContext(pathname, searchParams, window.location.origin, document.referrer),
         });
+        queued = true;
       }
 
       if (isConversionPath(pathname) && metaPixelEnabled && metaPixelId && window.fbq) {
         const metaEvent = toMetaEventName(eventName);
-        const method = ["contact_click", "whatsapp_click"].includes(eventName) ? "trackCustom" : "track";
+        const method = ["contact_click", "whatsapp_click", "inquiry_start", "device_quote_request"].includes(eventName) ? "trackCustom" : "track";
         window.fbq(method, metaEvent, payload, eventId ? { eventID: eventId } : undefined);
+        queued = true;
       }
 
       if (isConversionPath(pathname) && tiktokPixelEnabled && tiktokPixelId && window.ttq?.track) {
         window.ttq.track(toTikTokEventName(eventName), payload, eventId ? { event_id: eventId } : undefined);
+        queued = true;
       }
+      return queued;
     };
+    window.apfelTrack = track;
+
+    // Code splitting/hydration can install the bridge after a receipt has
+    // mounted. Readiness is an event, not a short polling deadline.
+    window.dispatchEvent(new Event(TRACKING_READY_EVENT));
 
     return () => {
-      delete window.apfelTrack;
+      if (window.apfelTrack === track) delete window.apfelTrack;
     };
-  }, [pathname, metaPixelEnabled, metaPixelId, tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId]);
-
-  useEffect(() => {
-    if (!initializedRef.current) return;
-    if (readConsentMode() !== "external") return;
-
-    const path = pathname + (searchParams?.toString() ? `?${searchParams}` : "");
-    if (lastPageViewRef.current === path) return;
-    lastPageViewRef.current = path;
-    window.apfelTrack?.("page_view", {
-      page_path: path,
-    });
-  }, [pathname, searchParams, metaPixelEnabled, metaPixelId, tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId]);
+  }, [pathname, searchParams, metaPixelEnabled, metaPixelId, tiktokPixelEnabled, tiktokPixelId, googleAnalyticsEnabled, googleAnalyticsId, trackingContext]);
 
   return null;
 }

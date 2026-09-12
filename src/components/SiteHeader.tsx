@@ -8,6 +8,8 @@ import { type HeaderLabels, type Locale, type NavItems } from "../lib/i18n";
 import { getStoredCartCount, subscribeStoredCart } from "./checkout/cart";
 import { siteInfo } from "../lib/site";
 import LocaleSwitcher from "./LocaleSwitcher";
+import DeviceQuoteForm from "./DeviceQuoteForm";
+import { headerLogoSizes } from '@/lib/store-image-sizes';
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import TrackedLink from "./TrackedLink";
@@ -100,7 +102,7 @@ export default function SiteHeader({
     >
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-md focus:bg-white focus:text-black focus:dark:bg-zinc-900 focus:dark:text-white focus:ring-2 focus:ring-gold shadow-lg"
+        className="skip-link sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-md focus:bg-white focus:text-black focus:dark:bg-zinc-900 focus:dark:text-white focus:ring-2 focus:ring-gold shadow-lg"
       >
         {labels.skipToContent}
       </a>
@@ -119,7 +121,7 @@ export default function SiteHeader({
           </div>
           <div className="hidden items-center gap-4 text-muted/80 md:flex">
             <TrackedLink
-              href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
+              href={`tel:${siteInfo.phoneE164}`}
               className="flex items-center gap-1.5 transition hover:text-gold"
               eventName="contact_click"
               eventPayload={{ type: "phone", source: "header" }}
@@ -127,11 +129,11 @@ export default function SiteHeader({
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              {siteInfo.phone}
+              {siteInfo.phoneDisplay[lang]}
             </TrackedLink>
             <span className="text-white/10">|</span>
             <TrackedLink
-              href={`tel:${siteInfo.landline.replace(/\s/g, "")}`}
+              href={`tel:${siteInfo.landlineE164}`}
               className="flex items-center gap-1.5 transition hover:text-gold"
               eventName="contact_click"
               eventPayload={{ type: "landline", source: "header" }}
@@ -139,7 +141,7 @@ export default function SiteHeader({
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              {siteInfo.landline}
+              {siteInfo.landlineDisplay[lang]}
             </TrackedLink>
             <span className="text-white/10">|</span>
             <span className="flex items-center gap-1.5">
@@ -155,11 +157,11 @@ export default function SiteHeader({
       {/* Main Navigation */}
       <div className="container-page relative z-10 flex items-start">
         <div className="relative flex flex-1 items-center navbar-border navbar-shell bg-black/40 backdrop-blur-xl backdrop-saturate-150 shadow-lg">
-          <div className="navbar-logo-slot flex items-center justify-center pl-1" suppressHydrationWarning>
-            <Logo href={`/${lang}`} size="xl" className="navbar-logo" priority />
+          <div className="navbar-logo-slot flex shrink-0 items-center justify-center pl-1" suppressHydrationWarning>
+            <Logo href={`/${lang}`} size="xl" className="navbar-logo" sizes={headerLogoSizes} priority />
           </div>
           {/* Desktop Navigation */}
-          <nav className="hidden h-full flex-1 items-center justify-center gap-0.5 lg:flex">
+          <nav className="hidden h-full flex-1 items-center justify-center gap-0.5 xl:flex">
             {navItems.map((item) => {
               const fullPath = `/${lang}${item.path}`;
               const isActive = item.path === ""
@@ -171,7 +173,7 @@ export default function SiteHeader({
                 <Link
                   key={item.path}
                   href={fullPath}
-                  className={`group relative whitespace-nowrap px-3 py-2 text-sm font-medium transition hover:text-foreground ${
+                  className={`group relative whitespace-nowrap px-2 py-2 text-xs font-medium transition hover:text-foreground 2xl:px-3 2xl:text-sm ${
                     isActive ? "text-foreground" : "text-muted"
                   }`}
                   aria-current={isExactMatch ? "page" : undefined}
@@ -188,8 +190,9 @@ export default function SiteHeader({
           </nav>
 
           {/* Actions */}
-          <div className="ml-auto flex h-full items-center gap-1 pr-2 sm:gap-3 sm:pr-4 lg:ml-0">
-            <div className="hidden items-center gap-3 lg:flex">
+          <div className="ml-auto flex h-full shrink-0 items-center gap-1 pr-2 sm:gap-3 sm:pr-4 xl:ml-0">
+            <DeviceQuoteForm locale={lang} variant="header" />
+            <div className="hidden items-center gap-3 xl:flex">
               <LocaleSwitcher />
               <ThemeToggle />
               
@@ -224,7 +227,7 @@ export default function SiteHeader({
             </div>
             <Link
               href={`/${lang}/cart`}
-              className="relative flex h-11 w-11 items-center justify-center rounded-xl text-gold lg:hidden"
+              className="relative flex h-11 w-11 items-center justify-center rounded-xl text-gold xl:hidden"
               aria-label={
                 lang === "de"
                   ? `Warenkorb öffnen${cartCount > 0 ? ` (${cartCount} Artikel)` : ""}`
@@ -245,7 +248,7 @@ export default function SiteHeader({
             <button 
               ref={mobileMenuButtonRef}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold lg:hidden"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold xl:hidden"
               aria-label={mobileMenuOpen ? labels.closeMenu : labels.openMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu-nav"
@@ -266,7 +269,7 @@ export default function SiteHeader({
       <div
         id="mobile-menu-nav"
         aria-hidden={!mobileMenuOpen}
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out border-t border-border bg-background/95 backdrop-blur-xl lg:hidden ${
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out border-t border-border bg-background/95 backdrop-blur-xl xl:hidden ${
           mobileMenuOpen
             ? "grid-rows-[1fr] opacity-100"
             : "grid-rows-[0fr] opacity-0 pointer-events-none invisible"

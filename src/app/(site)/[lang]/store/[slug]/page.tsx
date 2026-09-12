@@ -25,7 +25,9 @@ import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import ProductProfessionalExperience from "@/components/ProductProfessionalExperience";
 import { requireLocale } from "@/lib/route-locale";
 import { validatedGtin } from "@/lib/product-identifiers";
+import { productVariantIdentifiers } from "@/lib/product-variant-identifiers";
 import { PRODUCT_PAGE_CONTAINER_CLASS } from "@/lib/product-page-layout";
+import { getProductModelCollectionLink } from "@/lib/product-model-collection";
 import { getProductExperienceView } from "@/lib/product-experience-repository";
 
 export const dynamic = "force-dynamic";
@@ -169,6 +171,11 @@ export default async function ProductDetailPage({
     getProductExperienceView(product.id, locale),
   ]);
   const isOutOfStock = (product.stock ?? 0) <= 0;
+  const modelCollection = getProductModelCollectionLink(
+    `${product.title} ${product.model ?? ""}`,
+    product.category,
+    locale,
+  );
   const fulfillmentFaqPattern = /abhol|versand|liefer|pickup|shipping|deliver/i;
   const displayFaq = isOutOfStock
     ? product.faq.map((entry) =>
@@ -239,6 +246,7 @@ export default async function ProductDetailPage({
             ? ["https://schema.org/color"]
             : undefined,
           hasVariant: product.variants.map((variant, index) => {
+            const identifiers = productVariantIdentifiers(product, variant);
             const variantToken = variant.sku || `${variant.color} ${variant.storage}`.trim();
             const price = variant.price ?? product.price;
             const stock = variant.stock ?? product.stock;
@@ -250,9 +258,9 @@ export default async function ProductDetailPage({
               "@id": `${siteInfo.url}/${locale}/store/${product.slug}#variant-${index + 1}`,
               name: [product.title, variant.color, variant.storage].filter(Boolean).join(" "),
               description: [product.description || product.subtitle, variant.color, variant.storage].filter(Boolean).join(" · "),
-              sku: variant.sku,
-              mpn: variant.mpn,
-              ...gtinProperties(variant.gtin),
+              sku: identifiers.sku,
+              mpn: identifiers.mpn,
+              ...gtinProperties(identifiers.gtin),
               color: variant.color,
               additionalProperty: variant.storage
                 ? [{ "@type": "PropertyValue", name: "storage", value: variant.storage }]
@@ -297,7 +305,10 @@ export default async function ProductDetailPage({
     itemListElement: [
       { "@type": "ListItem", position: 1, name: locale === "de" ? "Shop" : "Store", item: `${siteInfo.url}/${locale}/store` },
       { "@type": "ListItem", position: 2, name: productCategoryLabel(locale, product.category), item: `${siteInfo.url}/${locale}/${categoryPath}` },
-      { "@type": "ListItem", position: 3, name: product.title, item: `${siteInfo.url}/${locale}/store/${product.slug}` },
+      ...(modelCollection
+        ? [{ "@type": "ListItem", position: 3, name: modelCollection.label, item: `${siteInfo.url}/${locale}${modelCollection.href}` }]
+        : []),
+      { "@type": "ListItem", position: modelCollection ? 4 : 3, name: product.title, item: `${siteInfo.url}/${locale}/store/${product.slug}` },
     ],
   };
   return (
@@ -330,6 +341,14 @@ export default async function ProductDetailPage({
             <Link href={`/${locale}/${categoryPath}`} className="transition hover:text-gold">
               {productCategoryLabel(locale, product.category)}
             </Link>
+            {modelCollection ? (
+              <>
+                <span>/</span>
+                <Link href={`/${locale}${modelCollection.href}`} className="transition hover:text-gold">
+                  {modelCollection.label}
+                </Link>
+              </>
+            ) : null}
             <span className="hidden md:inline">/</span>
             <span className="hidden text-foreground md:inline">{product.title}</span>
           </div>

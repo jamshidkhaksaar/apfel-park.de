@@ -1,4 +1,6 @@
+import { showcasePages, showcaseDescription } from './showcase-pages';
 import { dictionary, type Locale } from "@/lib/i18n";
+import { businessIdentity } from '@/lib/business-identity';
 
 export type SeoRouteId =
   | "home"
@@ -16,6 +18,7 @@ export type SeoRouteId =
   | "iphone17"
   | "iphone16ProMax"
   | "samsungPhones"
+  | "xiaomiRedmiPhones"
   | "phonesWithoutContract"
   | "usedPhones"
   | "usedIphones"
@@ -193,7 +196,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.93,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Handy Reparatur Wilhelmsburg | Apfel Park Hamburg",
+      de: "Handy-Reparatur Wilhelmsburg – Hamburg",
       en: "Phone Store Hamburg-Wilhelmsburg",
     },
     defaultDescription: {
@@ -212,12 +215,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "iPhone 18 Pro kaufen | Apfel Park Hamburg",
-      en: "Buy iPhone 18 Pro | Apfel Park Hamburg",
+      de: showcasePages["iphone-18-pro"].name + " entdecken | Apfel Park Hamburg",
+      en: showcasePages["iphone-18-pro"].name + " overview | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "Apple iPhone 18 Pro mit 6.3 Zoll OLED, A20 Pro 2nm Chip, variabler 48MP Pro Fusion Blende (f/1.48–f/4.0). Vorbestellung & Angebote bei Apfel Park Hamburg.",
-      en: "Apple iPhone 18 Pro with 6.3 inch OLED, 2nm A20 Pro silicon, variable 48MP Pro Fusion aperture (f/1.48–f/4.0). Pre-orders at Apfel Park Hamburg.",
+      de: showcaseDescription("iphone-18-pro", "de"),
+      en: showcaseDescription("iphone-18-pro", "en"),
     },
     defaultKeywords: {
       de: "iPhone 18 Pro kaufen, iPhone 18 Pro Preis, Apple iPhone 18 Pro Hamburg, iPhone 18 Pro Vorbestellung",
@@ -231,12 +234,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "iPhone 18 Pro Max kaufen – 6.9 Zoll Flaggschiff | Apfel Park Hamburg",
-      en: "Buy iPhone 18 Pro Max – 6.9 Inch Flagship | Apfel Park Hamburg",
+      de: showcasePages["iphone-18-pro-max"].name + " entdecken | Apfel Park Hamburg",
+      en: showcasePages["iphone-18-pro-max"].name + " overview | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "iPhone 18 Pro Max mit 6,9 Zoll Super Retina XDR OLED, A20 Pro 2nm Chip und variabler 48MP Kamera. Vorbestellung bei Apfel Park Hamburg.",
-      en: "iPhone 18 Pro Max with 6.9-inch Super Retina XDR OLED, 2nm A20 Pro chip and variable 48MP camera. Pre-order at Apfel Park Hamburg.",
+      de: showcaseDescription("iphone-18-pro-max", "de"),
+      en: showcaseDescription("iphone-18-pro-max", "en"),
     },
     defaultKeywords: {
       de: "iPhone 18 Pro Max kaufen, iPhone 18 Pro Max Preis, iPhone 18 Pro Max ohne Vertrag, Apple iPhone 18 Pro Max Hamburg, iPhone 18 Pro Max 256GB",
@@ -250,12 +253,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "iPhone Duo kaufen – Apples erstes Foldable | Apfel Park Hamburg",
-      en: "Buy iPhone Duo – Apple's First Foldable | Apfel Park Hamburg",
+      de: showcasePages["iphone-duo"].name + " entdecken | Apfel Park Hamburg",
+      en: showcasePages["iphone-duo"].name + " overview | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "Apple iPhone Duo (Foldable): 7,6 Zoll Innen-Display, 5,4 Zoll Cover, A20 Pro 2nm Chip und Titan-Scharnier. Bei Apfel Park Hamburg reservieren.",
-      en: "Apple iPhone Duo foldable: 7.6-inch inner screen, 5.4-inch cover, 2nm A20 Pro chip and titanium hinge. Reserve at Apfel Park Hamburg.",
+      de: showcaseDescription("iphone-duo", "de"),
+      en: showcaseDescription("iphone-duo", "en"),
     },
     defaultKeywords: {
       de: "iPhone Duo kaufen, iPhone Duo Preis, iPhone Foldable, Apple iPhone Duo, iPhone Klapphandy, iPhone Duo Hamburg Vorbestellung",
@@ -269,12 +272,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Samsung Galaxy Z Fold8 kaufen – 4,5 mm Ultra-Slim | Apfel Park Hamburg",
-      en: "Buy Samsung Galaxy Z Fold8 – 4.5mm Ultra-Slim | Apfel Park Hamburg",
+      de: showcasePages["galaxy-z-fold-8"].name + " entdecken | Apfel Park Hamburg",
+      en: showcasePages["galaxy-z-fold-8"].name + " overview | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "Samsung Galaxy Z Fold8 mit 7,6 Zoll Dynamic AMOLED 2X, Snapdragon 8 Elite Gen 5 und neuem 4,5 mm Slim-Design. Jetzt bei Apfel Park Hamburg anfragen.",
-      en: "Samsung Galaxy Z Fold8 featuring 7.6 inch Dynamic AMOLED 2X, Snapdragon 8 Elite Gen 5 and record 4.5mm slim build. Inquire at Apfel Park Hamburg.",
+      de: showcaseDescription("galaxy-z-fold-8", "de"),
+      en: showcaseDescription("galaxy-z-fold-8", "en"),
     },
     defaultKeywords: {
       de: "Samsung Galaxy Z Fold 8 kaufen, Galaxy Z Fold 8 Preis, Samsung Z Fold 8 ohne Vertrag, Galaxy Z Fold 8 Hamburg, Samsung Foldable",
@@ -288,12 +291,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Samsung Galaxy Z Fold8 Ultra kaufen – 8 Zoll 200MP | Apfel Park Hamburg",
-      en: "Buy Samsung Galaxy Z Fold8 Ultra – 8-Inch 200MP | Apfel Park Hamburg",
+      de: showcasePages["galaxy-z-fold-8-ultra"].name + " entdecken | Apfel Park Hamburg",
+      en: showcasePages["galaxy-z-fold-8-ultra"].name + " overview | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "Samsung Galaxy Z Fold8 Ultra Flaggschiff mit 8,0 Zoll Display, 200 MP ISOCELL Kamera, Titan-Gehäuse und 5.000 mAh Akku. Verfügbarkeit & Angebote in Hamburg.",
-      en: "Samsung Galaxy Z Fold8 Ultra flagship with 8.0 inch screen, 200MP ISOCELL optics, titanium chassis and 5,000 mAh battery. Pre-orders at Apfel Park Hamburg.",
+      de: showcaseDescription("galaxy-z-fold-8-ultra", "de"),
+      en: showcaseDescription("galaxy-z-fold-8-ultra", "en"),
     },
     defaultKeywords: {
       de: "Samsung Galaxy Z Fold 8 Ultra kaufen, Galaxy Z Fold 8 Ultra Preis, Samsung Fold 8 Ultra 512GB, Galaxy Z Fold Ultra Hamburg",
@@ -307,12 +310,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Google Pixel 11 kaufen – Tensor G5 3nm & Actua OLED | Apfel Park Hamburg",
-      en: "Buy Google Pixel 11 – Tensor G5 3nm & Actua OLED | Apfel Park Hamburg",
+      de: showcasePages["pixel-11"].name + " entdecken | Apfel Park Hamburg",
+      en: showcasePages["pixel-11"].name + " overview | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "Google Pixel 11 mit 3nm Tensor G5 Chip, 6,3 Zoll Actua OLED Display, 50 MP Quad PD Kamera und Gemini AI. Jetzt bei Apfel Park Hamburg unverbindlich anfragen.",
-      en: "Google Pixel 11 featuring 3nm Tensor G5 silicon, 6.3-inch Actua OLED, 50MP Quad PD camera suite and Gemini AI. Inquire at Apfel Park Hamburg.",
+      de: showcaseDescription("pixel-11", "de"),
+      en: showcaseDescription("pixel-11", "en"),
     },
     defaultKeywords: {
       de: "Google Pixel 11 kaufen, Pixel 11 Preis, Google Pixel 11 ohne Vertrag, Pixel 11 Hamburg, Google Handy kaufen",
@@ -326,12 +329,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Google Pixel 11 Pro Fold kaufen – 8 Zoll Super Actua Flex | Apfel Park Hamburg",
-      en: "Buy Google Pixel 11 Pro Fold – 8-Inch Super Actua Flex | Apfel Park Hamburg",
+      de: showcasePages["pixel-11-pro-fold"].name + " entdecken | Apfel Park Hamburg",
+      en: showcasePages["pixel-11-pro-fold"].name + " overview | Apfel Park Hamburg",
     },
     defaultDescription: {
-      de: "Google Pixel 11 Pro Fold mit 8,0 Zoll Super Actua Flex Display, 5,1 mm Slim-Design, 5x Periskop-Telezoom und Tensor G5. Jetzt bei Apfel Park anfragen.",
-      en: "Google Pixel 11 Pro Fold featuring 8.0-inch Super Actua Flex display, 5.1mm slim profile, 5x periscope telephoto and Tensor G5. Inquire at Apfel Park.",
+      de: showcaseDescription("pixel-11-pro-fold", "de"),
+      en: showcaseDescription("pixel-11-pro-fold", "en"),
     },
     defaultKeywords: {
       de: "Google Pixel 11 Pro Fold kaufen, Pixel 11 Pro Fold Preis, Google Foldable kaufen Hamburg, Pixel Fold 2026",
@@ -346,11 +349,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     changeFrequency: "daily",
     defaultTitle: {
       de: "iPhone 17 kaufen – Pro, Pro Max & Air",
-      en: "Buy iPhone 17 – Pro, Pro Max & Air",
+      en: "Buy iPhone 17 in Germany – Prices & Stock",
     },
     defaultDescription: {
-      de: "iPhone 17, 17 Air, 17 Pro und 17 Pro Max bei Apfel Park kaufen. Zustand, Preis und Verfügbarkeit klar ausgewiesen; Versand oder Abholung in Hamburg.",
-      en: "Buy iPhone 17, 17 Air, 17 Pro and 17 Pro Max at Apfel Park. Condition, price and availability are clearly stated, with delivery or collection in Hamburg.",
+      de: "iPhone 17, Pro, Pro Max und iPhone Air vergleichen: Speicher, Zustand, Preis und Verfügbarkeit. Versand in Deutschland oder Abholung in Hamburg.",
+      en: "Buy iPhone 17, Air, Pro or Pro Max in Germany. Compare current prices, storage and condition, with delivery across Germany or Hamburg pickup.",
     },
     defaultKeywords: {
       de: "iPhone 17 kaufen, iPhone 17 Pro kaufen, iPhone 17 Pro Max kaufen, iPhone 17 Air kaufen",
@@ -365,11 +368,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     changeFrequency: "daily",
     defaultTitle: {
       de: "iPhone 16 Pro Max kaufen – Angebote",
-      en: "Buy iPhone 16 Pro Max – Compare Offers",
+      en: "Buy iPhone 16 Pro Max in Germany – Prices",
     },
     defaultDescription: {
       de: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in Deutschland oder Abholung in Hamburg.",
-      en: "Compare iPhone 16 Pro Max offers by condition, storage, price and availability, with delivery in Germany or collection from our Hamburg store.",
+      en: "Buy an iPhone 16 Pro Max in Germany. Compare current prices, storage, condition and availability, with delivery across Germany or Hamburg pickup.",
     },
     defaultKeywords: {
       de: "iPhone 16 Pro Max, iPhone 16 Pro Max kaufen, iPhone 16 Pro Max gebraucht",
@@ -396,6 +399,25 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     },
   },
   {
+    id: "xiaomiRedmiPhones",
+    path: "/xiaomi-redmi-handys",
+    labels: { de: "Xiaomi, Redmi & Poco Handys", en: "Xiaomi, Redmi & Poco Phones" },
+    priority: 0.9,
+    changeFrequency: "daily",
+    defaultTitle: {
+      de: "Xiaomi & Redmi Handys ohne Vertrag kaufen",
+      en: "Buy Xiaomi, Redmi & Poco Phones in Germany",
+    },
+    defaultDescription: {
+      de: "Xiaomi, Redmi und Poco Smartphones ohne Vertrag vergleichen: Preis, Speicher, Zustand und Verfügbarkeit; Versand oder Abholung in Hamburg.",
+      en: "Compare Xiaomi, Redmi and Poco phones without a contract by price, storage, condition and availability, with Germany delivery or Hamburg pickup.",
+    },
+    defaultKeywords: {
+      de: "Xiaomi Handy kaufen, Xiaomi Handy ohne Vertrag, Redmi Handy kaufen, Poco Handy kaufen",
+      en: "buy Xiaomi phone Germany, buy Redmi phone, Xiaomi phone without contract, buy Poco phone",
+    },
+  },
+  {
     id: "phonesWithoutContract",
     path: "/handys-ohne-vertrag",
     labels: { de: "Handys ohne Vertrag", en: "Phones Without Contract" },
@@ -406,8 +428,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy Phones Without a Contract in Germany",
     },
     defaultDescription: {
-      de: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr kaufen. Neu, Open Box oder gebraucht mit klarer Zustandsangabe und Versand in Deutschland.",
-      en: "Buy phones without a mobile contract from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
+      de: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr. Neu, Open Box oder gebraucht mit klarer Zustandsangabe und Versand in Deutschland.",
+      en: "Buy contract-free phones from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
     },
     defaultKeywords: {
       de: "Handy ohne Vertrag, Handy günstig ohne Vertrag, Smartphone ohne Vertrag",
@@ -440,11 +462,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.93,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Gebrauchte iPhones kaufen – Open Box & geprüft",
-      en: "Buy Used iPhones – Open Box & Tested",
+      de: "Gebrauchte iPhones kaufen in Hamburg",
+      en: "Buy Used iPhones in Hamburg",
     },
     defaultDescription: {
-      de: "Gebrauchte und Open-Box-iPhones nach Zustand, Speicher, Preis und Verfügbarkeit vergleichen; Versand aus Hamburg.",
+      de: "Gebrauchte und Open-Box-iPhones: Zustand, Speicher und Preis vergleichen. Abholung in Hamburg-Wilhelmsburg oder Versand innerhalb Deutschlands.",
       en: "Buy used and open-box iPhones. Compare condition, storage, price and availability with delivery from Hamburg across Germany.",
     },
     defaultKeywords: {
@@ -584,8 +606,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: dictionary.en.meta.contact.description,
     },
     defaultKeywords: {
-      de: "Kontakt Apfel Park, Handy Laden Hamburg Kontakt, Wilhelm-Strauß-Weg 2b Hamburg",
-      en: "contact Apfel Park, phone store Hamburg contact, Wilhelm-Strauß-Weg 2b Hamburg",
+      de: `Kontakt Apfel Park, Handy Laden Hamburg Kontakt, ${businessIdentity.address.street} Hamburg`,
+      en: `contact Apfel Park, phone store Hamburg contact, ${businessIdentity.address.street} Hamburg`,
     },
   },
   {
@@ -656,7 +678,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Right of Withdrawal",
     },
     defaultDescription: {
-      de: "Widerrufsbelehrung und Muster-Widerrufsformular für Bestellungen bei Apfel Park.",
+      de: "Informationen zum Widerruf Ihrer Bestellung bei Apfel Park: Fristen, Rücksendung, Erstattung und das Online-Formular zur Erklärung Ihres Widerrufs.",
       en: "Right of withdrawal, deadlines and model cancellation form for orders placed with Apfel Park in Germany.",
     },
     defaultKeywords: {
@@ -675,8 +697,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Legal Notice",
     },
     defaultDescription: {
-      de: "Impressum und Anbieterkennzeichnung von Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg.",
-      en: "Legal notice and provider identification of Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg.",
+      de: dictionary.de.business.noticeDescription,
+      en: dictionary.en.business.noticeDescription,
     },
     defaultKeywords: {
       de: "Impressum Apfel Park",

@@ -140,7 +140,7 @@ export default function CookieBanner({ lang }: Props) {
       aria-modal="true"
       aria-labelledby="cookie-consent-title"
     >
-      <div ref={bannerRef} className="w-full border-t border-border/70 bg-surface/95 backdrop-blur">
+      <div ref={bannerRef} className="max-h-[100dvh] w-full overflow-y-auto overscroll-contain border-t border-border/70 bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
         <div className="container-page flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-3xl">
             <p id="cookie-consent-title" className="text-sm font-semibold text-foreground">{text.title}</p>

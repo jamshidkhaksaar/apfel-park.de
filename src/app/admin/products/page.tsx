@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import tableStyles from "@/components/admin/ProductCatalogTable.module.css";
+import ProductDeactivateButton from "@/components/admin/ProductDeactivateButton";
 import AdminFilterForm from "@/components/admin/AdminFilterForm";
 import ProductTipsBadge from "@/components/admin/ProductTipsBadge";
 import { productMissingData } from "@/lib/product-missing-data";
@@ -93,7 +95,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   // numbers show what picking that option would actually return rather than
   // what the current page already shows.
   const buildWhere = (exclude?: "brand" | "subcategory") => {
-    const clauses: string[] = [];
+    const clauses: string[] = ["catalog_enabled = true"];
     const values: unknown[] = [];
     const p = (value: unknown) => {
       values.push(value);
@@ -243,20 +245,20 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   return (
     <AdminShell title={dict.productsPage.title}>
       <ProductsWorkspaceTabs locale={locale} view={view} query={filterQuery}>
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold tracking-[0.16em] text-muted">{locale === "de" ? "PRODUKTKATALOG" : "PRODUCT CATALOG"}</p>
             <h1 className="mt-1 text-2xl font-semibold text-foreground">{locale === "de" ? "Produkte verwalten" : "Manage products"}</h1>
             <p className="mt-1 text-sm text-muted">{total} {locale === "de" ? "Produkte" : "products"}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link href="/admin/products/promotions" className="rounded-xl border border-border/60 px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-gold/40 hover:text-gold">{locale === "de" ? "Popup-Aktion" : "Promotion"}</Link>
             <Link href="/admin/products/new" className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-gold-deep">{locale === "de" ? "Neues Produkt" : "New product"}</Link>
           </div>
         </header>
 
-        {view === "catalog" ? (<AdminFilterForm className="glass-panel grid gap-3 rounded-2xl p-4 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_repeat(6,minmax(125px,auto))_auto]" action="/admin/products">
+        {view === "catalog" ? (<AdminFilterForm className="glass-panel grid gap-3 rounded-2xl p-4 min-w-0 sm:grid-cols-2 xl:grid-cols-4 [&>input]:min-w-0 [&>select]:min-w-0 [&>select]:w-full" action="/admin/products">
           <input name="q" defaultValue={q} placeholder={locale === "de" ? "Produkt, Modell oder SKU suchen" : "Search product, model, or SKU"} className="rounded-xl border border-border/60 bg-surface/70 px-3.5 py-2.5 text-sm text-foreground" />
           <select name="brand" defaultValue={brand} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Marken" : "All brands"}</option>{brandOptions.map((item) => (<option key={item.value} value={item.value}>{item.label} ({item.n})</option>))}</select>
           <select name="category" defaultValue={category} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Kategorien" : "All categories"}</option><option value="smartphones">Smartphones</option><option value="tablets">Tablets</option><option value="accessories">Accessories</option><option value="laptops">Laptops</option><option value="consoles">Consoles</option></select>
@@ -283,27 +285,32 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
         ) : view === "history" ? (
           <ProductsHistoryPanel locale={locale} isOwner={isOwner} runs={intakeRuns} revisions={revisions} />
         ) : (
-        <section className="glass-panel overflow-hidden rounded-2xl">
+        <section className={`${tableStyles.catalog} glass-panel overflow-hidden rounded-2xl`}>
           {products.length === 0 ? (
             <div className="px-6 py-16 text-center"><h2 className="text-lg font-semibold">{locale === "de" ? "Keine Produkte gefunden" : "No products found"}</h2><p className="mt-2 text-sm text-muted">{locale === "de" ? "Ändere die Suche oder Filter." : "Adjust the search or filters."}</p></div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] border-collapse text-left">
+              <table className={`${tableStyles.table} border-collapse text-left`}>
                 <thead className="border-b border-border/60 bg-surface/50 text-xs text-muted"><tr><th className="px-4 py-3 font-medium">{locale === "de" ? "Produkt" : "Product"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Kategorie" : "Category"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Zustand" : "Condition"}</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Tipps" : "Tips"}</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.aiStatus}</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.latestCode}</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Preis" : "Price"}</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Lager" : "Stock"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Geändert" : "Updated"}</th><th className="w-16" /></tr></thead>
                 <tbody className="divide-y divide-border/50">
                   {products.map((product) => {
                     const justEdited = Boolean(product.is_active) && wasJustEdited(product.edited_minutes_ago);
                     return (
                     <tr key={product.id} className={`group transition hover:bg-gold/[0.04] ${justEdited ? "bg-gold/[0.05]" : ""}`}>
-                      <td className="px-4 py-3"><Link href={`/admin/products/${product.id}`} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex items-center gap-2"><span className="truncate text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block truncate text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span></span></Link></td>
-                      <td className="px-4 py-3 text-sm text-muted">{product.category}{product.subcategory && product.subcategory !== product.category ? <span className="mt-0.5 block text-xs text-muted/70">{subcategoryLabel(product.subcategory, locale)}</span> : null}</td><td className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? (locale === "de" ? "Gebraucht" : "Used") : (locale === "de" ? "Neu" : "New")}</td>
-                      <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ${product.is_active ? "bg-emerald-500/10 text-emerald-600" : "bg-surface text-muted"}`}>{product.is_active ? (locale === "de" ? "Aktiv" : "Active") : (locale === "de" ? "Entwurf" : "Draft")}</span></td>
-                      <td className="px-4 py-3"><ProductTipsBadge tips={tipsByProduct.get(product.id)!} locale={locale} /></td>
-                      <td className="px-4 py-3 text-sm text-muted">{statusLabel(summaries.get(product.id)?.status ?? "none")}<span className="mt-0.5 block text-xs">{summaries.get(product.id)?.intakeCode ?? "—"}</span></td>
-                      <td className="px-4 py-3"><Link href={`/admin/products/${product.id}#ai-intake`} prefetch={false} className="text-sm font-semibold text-gold">{dict.productsWorkspace.aiUpdate}</Link></td>
-                      <td className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{money(locale, product.price)}</td><td className={`px-4 py-3 text-right text-sm tabular-nums ${(product.stock ?? 0) <= 0 ? "font-medium text-red-500" : "text-muted"}`}>{product.stock ?? 0}</td>
-                      <td className="px-4 py-3 text-sm text-muted">{product.updated_at ? (justEdited ? <span title={editedAt(locale, product.updated_at)} className="inline-flex items-center gap-1.5 rounded-md bg-gold/15 px-2 py-1 text-xs font-medium text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}<span className="font-normal opacity-70">{sinceEdit(locale, product.edited_minutes_ago ?? 0)}</span></span> : editedAt(locale, product.updated_at)) : "—"}</td>
-                      <td className="px-4 py-3"><Link href={`/admin/products/${product.id}`} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link></td>
+                      <td className={`${tableStyles.titleCell} px-4 py-3`}><Link href={`/admin/products/${product.id}`} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><span className="break-words text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block break-words text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span></span></Link></td>
+                      <td data-label={locale === "de" ? "Kategorie" : "Category"} className="px-4 py-3 text-sm text-muted">{product.category}{product.subcategory && product.subcategory !== product.category ? <span className="mt-0.5 block text-xs text-muted/70">{subcategoryLabel(product.subcategory, locale)}</span> : null}</td><td data-label={locale === "de" ? "Zustand" : "Condition"} className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? (locale === "de" ? "Gebraucht" : "Used") : (locale === "de" ? "Neu" : "New")}</td>
+                      <td data-label="Status" className="px-4 py-3"><ProductDeactivateButton id={product.id} title={product.title} isActive={Boolean(product.is_active)} locale={locale} /></td>
+                      <td data-label={locale === "de" ? "Tipps" : "Tips"} className="px-4 py-3"><ProductTipsBadge tips={tipsByProduct.get(product.id)!} locale={locale} /></td>
+                      <td data-label={dict.productsWorkspace.aiStatus} className="px-4 py-3 text-sm text-muted">{statusLabel(summaries.get(product.id)?.status ?? "none")}<span className="mt-0.5 block text-xs">{summaries.get(product.id)?.intakeCode ?? "—"}</span></td>
+                      <td data-label={dict.productsWorkspace.latestCode} className="px-4 py-3"><Link href={`/admin/products/${product.id}#ai-intake`} prefetch={false} className="text-sm font-semibold text-gold">{dict.productsWorkspace.aiUpdate}</Link></td>
+                      <td data-label={locale === "de" ? "Preis" : "Price"} className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{money(locale, product.price)}</td><td data-label={locale === "de" ? "Lager" : "Stock"} className={`px-4 py-3 text-right text-sm tabular-nums ${(product.stock ?? 0) <= 0 ? "font-medium text-red-500" : "text-muted"}`}>{product.stock ?? 0}</td>
+                      <td data-label={locale === "de" ? "Geändert" : "Updated"} className={`${tableStyles.updatedCell} px-4 py-3 text-sm text-muted`}>
+                        {product.updated_at ? <div className="space-y-1.5">
+                          <time dateTime={new Date(product.updated_at).toISOString()} className="block whitespace-nowrap text-xs tabular-nums">{editedAt(locale, product.updated_at)}</time>
+                          {justEdited ? <span className="inline-flex flex-wrap items-center gap-1.5 rounded-md bg-gold/15 px-2 py-1 text-xs font-medium text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}<span className="font-normal opacity-70">{sinceEdit(locale, product.edited_minutes_ago ?? 0)}</span></span> : null}
+                        </div> : "—"}
+                      </td>
+                      <td className={`${tableStyles.editCell} px-4 py-3`}><Link href={`/admin/products/${product.id}`} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link></td>
                     </tr>
                     );
                   })}
@@ -311,7 +318,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
               </table>
             </div>
           )}
-          <footer className="flex items-center justify-between border-t border-border/60 px-4 py-3 text-sm text-muted"><span>{locale === "de" ? "Seite" : "Page"} {page} / {pages}</span><div className="flex gap-2"><Link aria-disabled={page <= 1} href={buildHref(Math.max(1, page - 1))} className={`rounded-lg border border-border/60 px-3 py-1.5 ${page <= 1 ? "pointer-events-none opacity-40" : "hover:border-gold/40 hover:text-gold"}`}>{locale === "de" ? "Zurück" : "Previous"}</Link><Link aria-disabled={page >= pages} href={buildHref(Math.min(pages, page + 1))} className={`rounded-lg border border-border/60 px-3 py-1.5 ${page >= pages ? "pointer-events-none opacity-40" : "hover:border-gold/40 hover:text-gold"}`}>{locale === "de" ? "Weiter" : "Next"}</Link></div></footer>
+          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-4 py-3 text-sm text-muted"><span>{locale === "de" ? "Seite" : "Page"} {page} / {pages}</span><div className="flex gap-2"><Link aria-disabled={page <= 1} href={buildHref(Math.max(1, page - 1))} className={`rounded-lg border border-border/60 px-3 py-1.5 ${page <= 1 ? "pointer-events-none opacity-40" : "hover:border-gold/40 hover:text-gold"}`}>{locale === "de" ? "Zurück" : "Previous"}</Link><Link aria-disabled={page >= pages} href={buildHref(Math.min(pages, page + 1))} className={`rounded-lg border border-border/60 px-3 py-1.5 ${page >= pages ? "pointer-events-none opacity-40" : "hover:border-gold/40 hover:text-gold"}`}>{locale === "de" ? "Weiter" : "Next"}</Link></div></footer>
         </section>
         )}
       </div>

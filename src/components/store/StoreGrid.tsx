@@ -64,7 +64,7 @@ export default async function StoreGrid({
   const ratings = await getRatingSummaries(Array.from(uniqueProducts.keys()));
   const cardsById = new Map(Array.from(uniqueProducts.values()).map((product) => [
     product.id,
-    toCatalogCardModel(product, lang, ratings[product.id]),
+    toCatalogCardModel(product, ratings[product.id]),
   ] as const));
   const localCounts: Record<StoreCatalogCategory, number> = counts ?? {
     all: products.length,

@@ -3,6 +3,7 @@
 import { useState, FormEvent, useId, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useReCaptcha } from "./ReCaptcha";
+import { trackSuccessfulLead } from "@/lib/lead-analytics";
 
 type ContactFormProps = {
   lang: string;
@@ -91,7 +92,8 @@ function ContactFormContent({ lang }: ContactFormProps) {
 
       const result = await response.json();
 
-      if (result.success) {
+      if (response.ok && result.success) {
+        trackSuccessfulLead("contact", lang);
         setStatus({
           type: "success",
           message: result.message,

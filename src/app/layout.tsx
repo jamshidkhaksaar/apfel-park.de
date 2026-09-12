@@ -9,6 +9,8 @@ import { safeJsonStringify } from "@/lib/security";
 import { merchantReturnPolicy, organizationShippingService } from "@/lib/schema";
 import { getSeoSettings, splitKeywords } from "@/lib/seo";
 import { siteInfo } from "@/lib/site";
+import { businessSchemaIdentity } from '@/lib/business-identity';
+import { canBootstrapPublicAnalytics, isPrivateAnalyticsPath } from "@/lib/analytics-url";
 import { getMarketingIntegrations, getSiteSocialLinks, getWhatsAppWidgetSettings } from "@/lib/site-settings-server";
 
 import "./globals.css";
@@ -34,7 +36,8 @@ const normalizeImageUrl = (value: string) => {
 };
 
 export const generateMetadata = async (): Promise<Metadata> => {
-  const seo = await getSeoSettings();
+  const [seo, requestHeaders] = await Promise.all([getSeoSettings(), headers()]);
+  const requestPath = requestHeaders.get("x-apfel-pathname");
   const ogImage = normalizeImageUrl(seo.global.defaultOgImage);
 
   const defaultTitle = "Apfel Park – iPhone & Smartphones kaufen in Hamburg";
@@ -43,6 +46,7 @@ export const generateMetadata = async (): Promise<Metadata> => {
 
   return {
     metadataBase: new URL("https://apfel-park.de"),
+    referrer: !requestPath || isPrivateAnalyticsPath(requestPath) ? "no-referrer" : undefined,
     title: {
       default: defaultTitle,
       template: "%s | Apfel Park",
@@ -94,6 +98,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const [cookieStore, requestHeaders] = await Promise.all([cookies(), headers()]);
+  const requestPath = requestHeaders.get("x-apfel-pathname");
+  const publicAnalyticsDocument = canBootstrapPublicAnalytics(requestPath);
   const langCookie = cookieStore.get("apfel-lang");
   const pathLocale = requestHeaders.get("x-apfel-pathname")?.match(/^\/(de|en)(?:\/|$)/)?.[1];
   const lang = pathLocale === "en" || pathLocale === "de"
@@ -118,48 +124,12 @@ export default async function RootLayout({
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": ["Store", "LocalBusiness"],
-        "@id": `${siteInfo.url}/#store`,
-        name: siteInfo.name,
-        legalName: siteInfo.legalName,
-        url: siteInfo.url,
-        // E.164 so Google can match this against the Business Profile
-        // without guessing the country code.
-        telephone: siteInfo.phoneE164,
-        email: siteInfo.email,
-        contactPoint: [
-          {
-            "@type": "ContactPoint",
-            telephone: siteInfo.phoneE164,
-            contactType: "customer service",
-            areaServed: "DE",
-            availableLanguage: ["de", "en"],
-          },
-          {
-            "@type": "ContactPoint",
-            telephone: siteInfo.landlineE164,
-            contactType: "customer service",
-            areaServed: "DE",
-            availableLanguage: ["de", "en"],
-          },
-        ],
+        ...businessSchemaIdentity,
         image: normalizeImageUrl(branding?.ogImage ?? ""),
         logo: normalizeImageUrl(branding?.logo ?? ""),
-        founder: {
-          "@type": "Person",
-          name: siteInfo.owner.name,
-        },
-        vatID: siteInfo.vatId,
         currenciesAccepted: "EUR",
         hasMerchantReturnPolicy: merchantReturnPolicy(),
         hasShippingService: organizationShippingService(),
-        address: {
-          "@type": "PostalAddress",
-          streetAddress: siteInfo.address.street,
-          addressLocality: siteInfo.address.city,
-          postalCode: siteInfo.address.postalCode,
-          addressCountry: "DE",
-        },
         openingHoursSpecification: [{
           "@type": "OpeningHoursSpecification",
           dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
@@ -197,12 +167,12 @@ export default async function RootLayout({
       <head>
         <meta id="apfel-theme-color" name="theme-color" content={theme === "dark" ? "#0b0b0c" : "#ffffff"} />
         <ThemeScript />
-        <script
+        {publicAnalyticsDocument ? <script
           id="ahrefs-web-analytics"
           src="https://analytics.ahrefs.com/analytics.js"
           data-key="LaVNM6b1mT7pRZ+y3FqQEw"
           async
-        />
+        /> : null}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonStringify(organizationJsonLd) }}

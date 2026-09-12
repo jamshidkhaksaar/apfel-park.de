@@ -1,12 +1,19 @@
-"use client";
+
 
 import AdminShell from "../../../../components/admin/AdminShell";
-import { useAdmin } from "@/lib/admin-context";
+import { getAdminLocale } from "@/lib/admin-i18n-server";
+import { adminDictionary } from "@/lib/admin-i18n";
+import SmartphoneWizard from "@/components/admin/SmartphoneWizard";
+import { phoneEditorEnabled } from "@/lib/smartphone-editor/http";
+import Link from "next/link";
 
 import ProductCreateForm from "./product-create-form";
 
-export default function NewProductPage() {
-  const { dict } = useAdmin();
+export default async function NewProductPage({searchParams}:{searchParams:Promise<{legacy?:string}>}) {
+  const locale=await getAdminLocale();
+  const dict=adminDictionary[locale];
+  const legacy=(await searchParams).legacy === "1";
+  if(phoneEditorEnabled()&&!legacy)return <AdminShell title={dict.newProductPage.title}><SmartphoneWizard researchEnabled={process.env.LEGACY_PRODUCT_RESEARCH_ENABLED === "true"} locale={locale}/><Link className="text-gold" href="/admin/products/new?legacy=1">{locale==="de"?"Andere Produktkategorien":"Other product categories"}</Link></AdminShell>;
 
   return (
     <AdminShell title={dict.newProductPage.title}>

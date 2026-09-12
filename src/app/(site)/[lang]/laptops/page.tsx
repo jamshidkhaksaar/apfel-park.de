@@ -137,7 +137,7 @@ export default async function LaptopsPage({
               </div>
 
               <div className="flex flex-wrap items-center gap-4">
-                <Link href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="btn-primary shrink-0">
+                <Link href={`tel:${siteInfo.phoneE164}`} className="btn-primary shrink-0">
                   <span>{siteInfo.phone}</span>
                 </Link>
                 <Link href={`/${lang}/contact`} className="btn-secondary shrink-0">

@@ -8,6 +8,7 @@ import PageIntro from "@/components/PageIntro";
 import StoreGrid from "@/components/store/StoreGrid";
 import TrackedLink from "@/components/TrackedLink";
 import type { Locale } from "@/lib/i18n";
+import { businessAddress } from '@/lib/business-identity';
 import { createMetadata } from "@/lib/metadata";
 import {
   getStoreCatalog,
@@ -29,7 +30,7 @@ const path = "/handy-shop-hamburg-wilhelmsburg";
 
 const copy = {
   de: {
-    metaTitle: "Handy Reparatur Wilhelmsburg | Apfel Park Hamburg",
+    metaTitle: "Handy-Reparatur Wilhelmsburg – Hamburg",
     title: "Handy-Reparatur & Smartphone-Shop in Hamburg-Wilhelmsburg",
     description:
       "Handy-Reparatur für iPhone, Samsung und weitere Smartphones bei Apfel Park in Hamburg-Wilhelmsburg. Dazu Smartphones, Zubehör, Abholung und Versand.",
@@ -47,7 +48,7 @@ const copy = {
     inventoryTitle: "Aktuell verfügbare Smartphones",
     inventoryText: "Vergleiche verfügbare iPhones, Samsung Galaxy Modelle und weitere Smartphones direkt aus unserem Shop – oder frage zuerst eine Reparatur an.",
     visitTitle: "So findest du Apfel Park im LunaCenter",
-    visitText: "Unser Ladengeschäft befindet sich am Wilhelm-Strauß-Weg 2b in 21109 Hamburg. Der Eingang und Parkmöglichkeiten am LunaCenter sind barrierefrei zugänglich.",
+    visitText: `Unser Ladengeschäft befindet sich am ${businessAddress('de', false)}. Der Eingang und Parkmöglichkeiten am LunaCenter sind barrierefrei zugänglich.`,
     route: "Route planen",
     call: "Jetzt anrufen",
     whatsapp: "Per WhatsApp fragen",
@@ -79,7 +80,7 @@ const copy = {
     inventoryTitle: "Smartphones currently available",
     inventoryText: "Compare available iPhones, Samsung Galaxy models and other smartphones directly from our store.",
     visitTitle: "Find Apfel Park in the LunaCenter",
-    visitText: "Our store is located at Wilhelm-Strauß-Weg 2b, 21109 Hamburg. The LunaCenter entrance and parking facilities are wheelchair accessible.",
+    visitText: `Our store is located at ${businessAddress('en')}. The LunaCenter entrance and parking facilities are wheelchair accessible.`,
     route: "Get directions",
     call: "Call now",
     whatsapp: "Ask on WhatsApp",
@@ -183,7 +184,10 @@ export default async function HamburgWilhelmsburgStorePage({
     name: content.metaTitle,
     description: content.description,
     about: { "@id": `${siteInfo.url}/#store` },
-    primaryImageOfPage: `${siteInfo.url}/images/shop1.jpg`,
+    primaryImageOfPage: {
+      "@type": "ImageObject",
+      url: `${siteInfo.url}/images/shop1.jpg`,
+    },
     inLanguage: locale === "de" ? "de-DE" : "en-DE",
   };
 

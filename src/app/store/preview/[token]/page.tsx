@@ -9,6 +9,7 @@ import { getProductIntakeRunDetail } from "@/lib/product-intake/repository";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Produktvorschau | Apfel Park",
+  referrer: "no-referrer",
   robots: { index: false, follow: false, nocache: true },
 };
 

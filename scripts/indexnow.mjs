@@ -43,16 +43,21 @@ const findKey = () => {
 };
 
 const sitemapUrls = async () => {
-  const res = await fetch(`${ORIGIN}/sitemap.xml`);
+  const res = await fetch(`${ORIGIN}/sitemap.xml`, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`sitemap.xml returned ${res.status}`);
   const xml = await res.text();
-  return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
+  const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
     .map((m) => m[1].trim())
     .filter((u) => u.startsWith(ORIGIN));
+  // Last-modified changes matter even when the set of product URLs is stable.
+  const revisions = [...xml.matchAll(/<(loc|lastmod)>([^<]+)<\/(?:loc|lastmod)>/g)]
+    .map((m) => `${m[1]}:${m[2]}`).join("\n");
+  return { urls, revisions };
 };
 
 const key = findKey();
-const urls = explicitUrls.length ? explicitUrls : [...new Set(await sitemapUrls())];
+const sitemap = explicitUrls.length ? null : await sitemapUrls();
+const urls = explicitUrls.length ? explicitUrls : [...new Set(sitemap.urls)];
 
 if (urls.length === 0) {
   console.error("no URLs to submit");
@@ -63,9 +68,14 @@ if (urls.length > MAX_URLS) {
   process.exit(1);
 }
 
-// Resubmitting an unchanged sitemap on every deploy is pointless noise, so
-// fingerprint it and skip when nothing moved.
-const fingerprint = createHash("sha256").update(urls.slice().sort().join("\n")).digest("hex");
+// Include the release as static-page copy can change without a sitemap lastmod.
+const releaseFile = join(ROOT, ".deployed-sha");
+const release = existsSync(releaseFile) ? readFileSync(releaseFile, "utf8").trim() : "";
+const fingerprint = createHash("sha256")
+  .update(urls.slice().sort().join("\n"))
+  .update(sitemap?.revisions ?? "")
+  .update(release)
+  .digest("hex");
 if (!explicitUrls.length && !force && existsSync(STATE)) {
   try {
     const previous = JSON.parse(readFileSync(STATE, "utf8"));
@@ -97,6 +107,7 @@ const res = await fetch(ENDPOINT, {
   method: "POST",
   headers: { "Content-Type": "application/json; charset=utf-8" },
   body: JSON.stringify(payload),
+  signal: AbortSignal.timeout(15000),
 });
 const body = await res.text().catch(() => "");
 

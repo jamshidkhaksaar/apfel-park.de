@@ -199,8 +199,8 @@ export default function GalaxyFoldBanner({
 
           <p className={s.tagline}>
             {isDe
-              ? "Galaxy Z Fold8 und Z Fold8 Ultra — High-End Produktivität mit 200 MP Optik, Snapdragon 8 Gen 5 und Armor Aluminum Gehäuse in 8 edlen Finishes."
-              : "Galaxy Z Fold8 & Z Fold8 Ultra — flagship foldables featuring 200MP optics, Snapdragon 8 Gen 5 silicon and Armor Aluminum build in 8 refined finishes."}
+              ? "Galaxy Z Fold8 und Z Fold8 Ultra — faltbare Displays und Snapdragon 8 Elite Gen 5 for Galaxy. Das Ultra bietet eine 200-MP-Hauptkamera. Preis und Verfügbarkeit auf Anfrage."
+              : "Galaxy Z Fold8 & Z Fold8 Ultra — folding displays and Snapdragon 8 Elite Gen 5 for Galaxy. Ultra features a 200 MP main camera. Ask about price and availability."}
           </p>
 
           <div className={s.specRow} aria-label={isDe ? "Technische Highlights" : "Key Specifications"}>
@@ -210,7 +210,7 @@ export default function GalaxyFoldBanner({
             </span>
             <span className={s.specBadge}>
               <span className={s.specBadgeDot} />
-              Snapdragon 8 Gen 5
+              Snapdragon 8 Elite Gen 5
             </span>
             <span className={s.specBadge}>
               <span className={s.specBadgeDot} />

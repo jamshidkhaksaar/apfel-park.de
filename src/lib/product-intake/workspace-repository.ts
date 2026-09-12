@@ -13,7 +13,6 @@ import type {
 import {
   catalogConditionToIntake,
   catalogStatusForRun,
-  defaultAcceptedPathsForScopes,
   dispatchStatusForRun,
   parseProductIntakeScopes,
   snapshotCatalogProduct,
@@ -229,24 +228,6 @@ export const listRecentProductRevisions = async (limit = 50): Promise<ProductRev
   return (result.rows as Record<string, unknown>[]).map(mapRevision);
 };
 
-export const markOpenIntakeRunsStale = async (
-  productId: string,
-  reason: string,
-): Promise<number> => {
-  const result = await query(
-    `UPDATE product_intake_runs
-        SET stale_at = now(),
-            stale_reason = $2,
-            dispatch_status = 'stale'
-      WHERE (origin_product_id = $1::uuid OR target_product_id = $1::uuid)
-        AND status NOT IN ('applied', 'rejected', 'cancelled')
-        AND stale_at IS NULL
-      RETURNING id`,
-    [productId, reason.slice(0, 300)],
-  );
-  return result.rowCount ?? result.rows.length;
-};
-
 export const rebaseProductIntakeRun = async (
   runId: string,
   actor: ProductIntakeActor,
@@ -334,6 +315,3 @@ export const catalogSummariesForProducts = async (
   }
   return summaries;
 };
-
-export const defaultPathsForRun = (run: ProductIntakeRun): ProductIntakeAcceptedPath[] =>
-  defaultAcceptedPathsForScopes(parseProductIntakeScopes(run.requestedScopes));

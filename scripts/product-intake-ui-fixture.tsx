@@ -1,7 +1,6 @@
 import { createServer } from "node:http";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import AdminProductIntakeQueue from "../src/components/admin/AdminProductIntakeQueue";

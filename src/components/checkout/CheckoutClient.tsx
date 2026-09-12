@@ -17,6 +17,7 @@ import {
 import PaymentBrandIcons, { PaymentBrandMark } from "@/components/PaymentBrandIcons";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import { siteInfo } from "@/lib/site";
+import LegalBusinessIdentity from '@/components/LegalBusinessIdentity';
 import { buildStripePaymentReturnUrl } from "@/lib/stripe";
 import { fulfillmentCopy } from "@/lib/fulfillment-copy";
 
@@ -558,7 +559,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 ))}
               </ul>
 
-              {couponEnabled?<div className="mt-5 rounded-xl border border-border/60 bg-surface/40 p-4"><label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{locale==="de"?"Gutscheincode":"Coupon code"}</label><div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><input value={couponInput} onChange={event=>setCouponInput(event.target.value.toUpperCase())} disabled={Boolean(couponCode)} className="min-h-11 w-full min-w-0 rounded-xl border border-border bg-background px-3 text-sm text-foreground"/><button type="button" onClick={couponCode?removeCoupon:()=>void applyCoupon()} className="btn-secondary min-h-11 w-full justify-center px-4 sm:w-auto">{couponCode?(locale==="de"?"Entfernen":"Remove"):(locale==="de"?"Anwenden":"Apply")}</button></div>{couponMessage?<p role="status" className={`mt-2 text-xs ${couponPreview?"text-green":"text-red"}`}>{couponMessage}</p>:null}</div>:null}
+              {couponEnabled?<div className="mt-5 rounded-xl border border-border/60 bg-surface/40 p-4"><label htmlFor="checkout-coupon" className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{locale==="de"?"Gutscheincode":"Coupon code"}</label><div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><input id="checkout-coupon" aria-describedby={couponMessage ? "checkout-coupon-feedback" : undefined} value={couponInput} onChange={event=>setCouponInput(event.target.value.toUpperCase())} disabled={Boolean(couponCode)} className="min-h-11 w-full min-w-0 rounded-xl border border-border bg-background px-3 text-sm text-foreground"/><button type="button" onClick={couponCode?removeCoupon:()=>void applyCoupon()} className="btn-secondary min-h-11 w-full justify-center px-4 sm:w-auto">{couponCode?(locale==="de"?"Entfernen":"Remove"):(locale==="de"?"Anwenden":"Apply")}</button></div>{couponMessage?<p id="checkout-coupon-feedback" role="status" className={`mt-2 text-xs ${couponPreview?"text-green":"text-red"}`}>{couponMessage}</p>:null}</div>:null}
 
               <dl className="mt-6 space-y-2.5 border-t border-border/60 pt-5 text-sm">
                 <div className="flex justify-between text-muted">
@@ -605,6 +606,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 </label>
               ) : null}
 
+              <LegalBusinessIdentity lang={locale} />
               <label className="mt-4 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted">
                 <input type="checkbox" data-checkout-field="termsConsent" aria-invalid={invalidField === "termsConsent"} aria-describedby={invalidField === "termsConsent" ? "checkout-error-summary" : undefined} checked={termsConsent} onChange={(event) => { setTermsConsent(event.target.checked); if (invalidField === "termsConsent") setInvalidField(null); }} className="mt-0.5 accent-[color:var(--gold)]" required />
                 <span>
@@ -716,7 +718,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 <li>{locale === "de" ? "24 Monate Gewährleistung" : "24-month warranty"}</li>
                 <li>
                   {locale === "de" ? "Fragen? " : "Questions? "}
-                  <a href={`tel:${siteInfo.phone.replace(/\s/g, "")}`} className="text-muted underline underline-offset-2 transition hover:text-gold">
+                  <a href={`tel:${siteInfo.phoneE164}`} className="text-muted underline underline-offset-2 transition hover:text-gold">
                     {siteInfo.phone}
                   </a>
                 </li>

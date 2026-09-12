@@ -4,7 +4,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-import type { Locale } from "../../lib/i18n";
+import { facetPreviewCopy, type Locale } from "../../lib/i18n";
+import { buildFacetPreviewUrl, isCatalogFacetPreview, type CatalogFacetPreview } from '@/lib/catalog-facet-preview';
+import { normalizeStorageValue, parseStorageFilterValues } from '@/lib/product-storage';
 import type { ProductCondition, StoreCatalogFacets, StoreCatalogFilters } from "../../lib/products";
 import StoreFilterPanels, { type StoreFilterMultiParam } from "./StoreFilterPanels";
 
@@ -41,7 +43,7 @@ const parseDraftFilters = (params: URLSearchParams): StoreCatalogFilters => {
   return {
     query: (params.get("q") ?? "").trim().slice(0, 80),
     brands: parseList(params.get("brand")),
-    storages: parseList(params.get("storage")),
+    storages: parseStorageFilterValues(params.get('storage') ?? ''),
     conditions: parseList(params.get("condition")).filter((value): value is ProductCondition => value === "new" || value === "open_box" || value === "used"),
     accessoryTypes: parseList(params.get("atype")),
     inStockOnly: params.get("stock") === "available",
@@ -62,6 +64,43 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   const displayedFilters = drawerOpen && draftParams
     ? parseDraftFilters(draftParams)
     : activeFilters;
+
+  const [preview, setPreview] = useState<{key:string;data?:CatalogFacetPreview;error?:true} | null>(null);
+  const scope = facets.scope;
+  const appliedKey = buildFacetPreviewUrl(lang, scope ?? {category:'all'}, new URLSearchParams(searchParams.toString()));
+  const draftKey = drawerOpen && draftParams ? buildFacetPreviewUrl(lang, scope ?? {category:'all'}, draftParams) : appliedKey;
+  const draftChanged = drawerOpen && draftKey !== appliedKey;
+  const currentPreview = preview?.key === draftKey ? preview : null;
+  const previewReady = draftChanged && Boolean(currentPreview?.data);
+  const countsCurrent = !draftChanged || previewReady;
+  const previewFailed = draftChanged && (!scope || Boolean(currentPreview?.error));
+  const effectiveFacets = previewReady ? currentPreview!.data!.facets : facets;
+  const effectiveCount = previewReady ? currentPreview!.data!.total : resultCount;
+  const copy = facetPreviewCopy[lang];
+
+  useEffect(() => {
+    if (!draftChanged || !scope) return;
+    let obsolete = false;
+    const controller = new AbortController();
+    const debounce = window.setTimeout(async () => {
+      const timeout = window.setTimeout(() => {
+        controller.abort();
+        if (!obsolete) setPreview({key:draftKey,error:true});
+      }, 10000);
+      try {
+        const response = await fetch(draftKey, {signal:controller.signal,cache:'no-store'});
+        if (!response.ok) throw new Error('Facet preview unavailable');
+        const data: unknown = await response.json();
+        if (!isCatalogFacetPreview(data)) throw new Error('Invalid facet preview');
+        if (!obsolete) setPreview({key:draftKey,data});
+      } catch {
+        if (!obsolete) setPreview({key:draftKey,error:true});
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    }, 250);
+    return () => { obsolete = true; window.clearTimeout(debounce); controller.abort(); };
+  }, [draftChanged, draftKey, scope]);
 
   const activeCount =
     displayedFilters.brands.length +
@@ -86,9 +125,9 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   const toggleMulti = (param: StoreFilterMultiParam, value: string) => {
     pushParams((next) => {
       const current = new Set(
-        parseList(next.get(param)).map((entry) => param === "brand" ? entry.toLowerCase() : entry),
+        (param === 'storage' ? parseStorageFilterValues(next.get(param) ?? '') : parseList(next.get(param))).map((entry) => param === 'brand' ? entry.toLowerCase() : entry),
       );
-      const key = param === "brand" ? value.toLowerCase() : value;
+      const key = param === 'brand' ? value.toLowerCase() : param === 'storage' ? normalizeStorageValue(value)?.label ?? value : value;
       if (current.has(key)) current.delete(key);
       else current.add(key);
       if (current.size === 0) next.delete(param);
@@ -126,6 +165,14 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
     if (!drawerOpen) return;
     const previousOverflow = document.body.style.overflow;
     const triggerButton = triggerButtonRef.current;
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeOnDesktop = () => {
+      if (!desktop.matches) return;
+      setDrawerOpen(false);
+      setDraftParams(null);
+    };
+    desktop.addEventListener("change", closeOnDesktop);
+    closeOnDesktop();
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDrawerOpen(false);
       if (event.key !== "Tab" || !drawerRef.current) return;
@@ -147,15 +194,27 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
-      window.requestAnimationFrame(() => triggerButton?.focus());
+      desktop.removeEventListener("change", closeOnDesktop);
+      // Restore synchronously so an obsolete close cannot outlive a reopen.
+      if (!triggerButton?.isConnected) return;
+      if (triggerButton.getClientRects().length) {
+        triggerButton.focus();
+        return;
+      }
+      // The connected mobile trigger is hidden at lg; focus the visible sidebar instead.
+      const sidebar = Array.from(document.querySelectorAll<HTMLElement>('[data-store-desktop-filters]'))
+        .find((element) => element.getClientRects().length > 0);
+      const target = sidebar ?? document.getElementById("main-content");
+      target?.focus({ preventScroll: true });
     };
   }, [drawerOpen]);
 
   const panels = (
     <StoreFilterPanels
       lang={lang}
-      facets={facets}
+      facets={effectiveFacets}
       activeFilters={displayedFilters}
+      countsCurrent={countsCurrent}
       activeCount={activeCount}
       onClearAll={clearAll}
       onToggleMulti={toggleMulti}
@@ -188,7 +247,8 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
               </svg>
             </button>
           </div>
-          {panels}
+          {draftChanged && !countsCurrent ? <p role="status" className="mb-3 text-xs text-muted">{previewFailed ? copy.error : copy.loading}</p> : null}
+          <div aria-busy={draftChanged && !countsCurrent && !previewFailed}>{panels}</div>
           <button
             type="button"
             onClick={() => {
@@ -199,7 +259,7 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
             }}
             className="btn-primary mt-5 w-full"
           >
-            {isGerman ? `Filter anwenden · aktuell ${resultCount}` : `Apply filters · currently ${resultCount}`}
+            {countsCurrent ? `${copy.show} · ${effectiveCount}` : copy.apply}
           </button>
         </div>
       </div>,
@@ -234,7 +294,7 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-store-card p-4">
+    <div data-store-desktop-filters tabIndex={-1} className="rounded-2xl border border-border bg-store-card p-4 focus:outline-2 focus:outline-gold focus:outline-offset-2">
       {panels}
     </div>
   );

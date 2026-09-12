@@ -1,7 +1,9 @@
+import { eligibleGoogleFeedProducts } from '@/lib/google-feed-eligibility';
 import { getProducts, type Product } from '@/lib/products';
 import { validatedGtin } from '@/lib/product-identifiers';
 import { germanyShippingAmount } from '@/lib/schema';
 import { siteInfo } from '@/lib/site';
+import { isAiGeneratedDescription } from '@/lib/product-text-provenance';
 
 const categoryMap: Record<Product['category'], string> = {
   smartphones: 'Electronics > Communications > Telephony > Mobile Phones',
@@ -21,6 +23,27 @@ const xmlEscape = (value: string | number): string =>
 
 const cleanText = (value: string, maxLength: number): string =>
   value.replace(/\s+/g, ' ').trim().slice(0, maxLength);
+
+const titleIncludes = (title: string, detail: string): boolean =>
+  cleanText(title, 1000).toLocaleLowerCase('de-DE').includes(
+    cleanText(detail, 1000).toLocaleLowerCase('de-DE'),
+  );
+
+export const googleMerchantTitle = (
+  product: Product,
+  variant: Product["variants"][number] | undefined,
+): string => {
+  const condition = product.condition === 'used'
+    ? 'Gebraucht'
+    : product.condition === 'open_box'
+      ? 'Open Box'
+      : '';
+  const variantDetails = [variant?.color, variant?.storage]
+    .filter((detail): detail is string => Boolean(detail?.trim()))
+    .filter((detail) => !titleIncludes(product.title, detail));
+
+  return cleanText([product.title, condition, ...variantDetails].filter(Boolean).join(' '), 150);
+};
 
 const stableSuffix = (value: string): string => {
   let hash = 2166136261;
@@ -55,12 +78,27 @@ const descriptionFor = (product: Product): string =>
     product.description ||
       product.subtitle ||
       product.featureBullets.join(' ') ||
-      `${product.title} bei ${siteInfo.name} in Hamburg.`,
+      product.title,
     5000,
   );
 
 const conditionFor = (product: Product): 'new' | 'used' =>
   product.condition === 'new' ? 'new' : 'used';
+
+export const googleMerchantDescriptionXml = (product: Product): string => {
+  const description = descriptionFor(product);
+  if (!isAiGeneratedDescription(description, product.descriptionAiHashes)) {
+    return `      <g:description>${xmlEscape(description)}</g:description>`;
+  }
+  // Google ignores structured_description if ordinary description is also sent.
+  // Emit exactly one representation and preserve the same landing-page wording.
+  return [
+    '      <g:structured_description>',
+    '        <g:digital_source_type>trained_algorithmic_media</g:digital_source_type>',
+    `        <g:content>${xmlEscape(description)}</g:content>`,
+    '      </g:structured_description>',
+  ].join('\n');
+};
 
 const itemXml = (product: Product, variant: Product["variants"][number] | undefined, index: number): string => {
   const price = variant?.price ?? product.price;
@@ -89,10 +127,15 @@ const itemXml = (product: Product, variant: Product["variants"][number] | undefi
     .slice(0, 10)
     .map((image) => `      <g:additional_image_link>${xmlEscape(absoluteUrl(image))}</g:additional_image_link>`)
     .join('\n');
-  const titleSuffix = [color, storage].filter(Boolean).join(" ");
-  const title = titleSuffix && !product.title.toLowerCase().includes(titleSuffix.toLowerCase())
-    ? `${product.title} ${titleSuffix}`
-    : product.title;
+  const title = googleMerchantTitle(product, variant);
+  const titleXml = isAiGeneratedDescription(product.title, product.titleAiHashes)
+    ? [
+        '      <g:structured_title>',
+        '        <g:digital_source_type>trained_algorithmic_media</g:digital_source_type>',
+        `        <g:content>${xmlEscape(title)}</g:content>`,
+        '      </g:structured_title>',
+      ].join('\n')
+    : `      <g:title>${xmlEscape(title)}</g:title>`;
   const googleCategory = product.marketplaceCategoryMappings?.google?.category || categoryMap[product.category];
   const variantOptions = variant
     ? [
@@ -127,8 +170,8 @@ const itemXml = (product: Product, variant: Product["variants"][number] | undefi
   return [
     '    <item>',
     `      <g:id>${xmlEscape(itemId)}</g:id>`,
-    `      <g:title>${xmlEscape(cleanText(title, 150))}</g:title>`,
-    `      <g:description>${xmlEscape(descriptionFor(product))}</g:description>`,
+    titleXml,
+    googleMerchantDescriptionXml(product),
     `      <g:link>${xmlEscape(link)}</g:link>`,
     `      <g:image_link>${xmlEscape(absoluteUrl(primaryImage))}</g:image_link>`,
     additionalImages,
@@ -169,7 +212,7 @@ export const buildGoogleMerchantFeedForProducts = (products: Product[]): string 
     `    <title>${xmlEscape(siteInfo.name)} Produktfeed</title>`,
     `    <link>${xmlEscape(siteInfo.url)}</link>`,
     `    <description>${xmlEscape('Smartphones, Tablets und Zubehör von Apfel Park.')}</description>`,
-    ...products.flatMap((product) =>
+    ...eligibleGoogleFeedProducts(products).flatMap((product) =>
       product.variants.length > 0
         ? product.variants.map((variant, index) => itemXml(product, variant, index))
         : [itemXml(product, undefined, 0)],

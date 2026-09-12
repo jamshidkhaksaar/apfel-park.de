@@ -8,6 +8,10 @@ import type {
   ProductIdentifierStatus,
 } from "@/lib/product-channel-readiness";
 import { cache } from "react";
+import { normalizeStorageValue, parseStorageFilterValues, productStorages } from '@/lib/product-storage';
+import { classifyAccessoryTypes, hasExplicitBluetoothEvidence } from '@/lib/product-accessory-types';
+import { selectTrendingProducts } from '@/lib/trending-products';
+import { readDescriptionAiHashes } from '@/lib/product-text-provenance';
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
 
@@ -39,10 +43,14 @@ export type ProductVariant = {
 };
 
 export type Product = {
+  googleFeedEnabled?: boolean;
   id: string;
   title: string;
   subtitle: string;
   description: string;
+  /** Known AI-created description fingerprints, including independently marked translations. */
+  descriptionAiHashes?: string[];
+  titleAiHashes?: string[];
   price: number;
   compareAtPrice?: number;
   category: ProductCategory;
@@ -77,6 +85,10 @@ export type Product = {
   marketplaceCategoryMappings?: MarketplaceCategoryMappings;
   stock?: number;
   slug: string;
+  /** Server-side evidence: stock was resolved against active local ledger rows. */
+  inventoryVerified?: boolean;
+  /** Shared capability evidence, independent of which translation is displayed. */
+  bluetoothEvidence?: boolean;
   featureBullets: string[];
   specs: ProductSpec[];
   faq: ProductFaqEntry[];
@@ -208,7 +220,7 @@ type DbProduct = {
   battery_health?: number | string | null;
   has_real_product_photos?: boolean | null;
   condition_note?: string | null;
-  import_metadata?: { conditionNoteI18n?: LocalizedText | null } | null;
+  import_metadata?: { smartphoneEditor?: {googleSelected?:boolean}; conditionNoteI18n?: LocalizedText | null; contentProvenance?: { descriptionAiHashes?: unknown; titleAiHashes?: unknown } } | null;
   brand: string | null;
   model: string | null;
   sku: string | null;
@@ -461,6 +473,8 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     title: localizedText(row.title_i18n, locale, row.title),
     subtitle: localizedText(row.subtitle_i18n, locale, row.subtitle),
     description: localizedText(row.description_i18n, locale, row.description),
+    descriptionAiHashes: readDescriptionAiHashes(row.import_metadata?.contentProvenance?.descriptionAiHashes),
+    titleAiHashes: readDescriptionAiHashes(row.import_metadata?.contentProvenance?.titleAiHashes),
     price,
     compareAtPrice,
     category,
@@ -468,6 +482,16 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     isOpenBox: condition !== "new",
     batteryHealth: batteryHealth !== undefined ? Math.max(1, Math.min(100, Math.round(batteryHealth))) : undefined,
     hasRealProductPhotos: Boolean(row.has_real_product_photos),
+    bluetoothEvidence: category === 'accessories' ? hasExplicitBluetoothEvidence([
+      row.title ?? '', row.description ?? '', ...(row.feature_bullets ?? []),
+      ...(['de','en'] as const).flatMap(language => [
+        localizedText(row.title_i18n,language,row.title),
+        localizedText(row.description_i18n,language,row.description),
+        ...localizedStringArray(row.feature_bullets_i18n,language,row.feature_bullets),
+        ...toLocalizedSpecs(row.specs_i18n,language,row.specs).map(spec=>`${spec.label}: ${spec.value}`),
+      ]),
+    ]) : undefined,
+    googleFeedEnabled: row.import_metadata?.smartphoneEditor?.googleSelected !== false,
     conditionNote: resolveProductConditionNote(row.import_metadata?.conditionNoteI18n, locale, row.condition_note) || undefined,
     image,
     images: images.length > 0 ? images : [image],
@@ -563,9 +587,13 @@ const hydrateProductsWithInventory = async (products: Product[], failOnError = f
         ? variants.reduce((sum, variant) => sum + Math.max(0, variant.stock ?? 0), 0)
         : undefined;
       const directStock = product.sku && bySku.has(product.sku) ? bySku.get(product.sku) : undefined;
+      const inventoryVerified = variants.length > 0
+        ? variants.every(variant => Boolean(variant.sku && bySku.has(variant.sku)))
+        : product.sku ? bySku.has(product.sku) : byProduct.has(product.id);
       return {
         ...product,
         variants,
+        inventoryVerified,
         stock: variantStock ?? directStock ?? byProduct.get(product.id) ?? product.stock,
       };
     });
@@ -628,6 +656,7 @@ export type StoreCatalogCollection =
   | "used-phones"
   | "used-iphones"
   | "samsung-phones"
+  | "xiaomi-redmi-phones"
   | "phones-without-contract";
 export type StoreCatalogSort = "featured" | "price-asc" | "price-desc" | "newest";
 
@@ -644,7 +673,14 @@ export type StoreCatalogFilters = {
 
 export type FacetOption = { value: string; count: number };
 
+export type StoreCatalogScope = {
+  category: StoreCatalogCategory;
+  subcategory?: string;
+  collection?: StoreCatalogCollection;
+};
+
 export type StoreCatalogFacets = {
+  scope?: StoreCatalogScope;
   brands: FacetOption[];
   storages: FacetOption[];
   conditions: FacetOption[];
@@ -655,12 +691,28 @@ export type StoreCatalogFacets = {
 };
 
 export type StoreCatalogResult = {
+  accessoryDiscoveryCounts: AccessoryDiscoveryCounts;
   products: Product[];
   total: number;
   page: number;
   pages: number;
   counts: Record<StoreCatalogCategory, number>;
   facets: StoreCatalogFacets;
+};
+
+export type AccessoryDiscoveryCounts = { cases:number; audio:number; charging:number; protection:number };
+
+export const accessoryDiscoveryCounts = (products: readonly Product[]): AccessoryDiscoveryCounts => {
+  const counts: AccessoryDiscoveryCounts = {cases:0,audio:0,charging:0,protection:0};
+  for (const product of products) {
+    if (product.category !== 'accessories' || (product.stock ?? 0) <= 0) continue;
+    const isCase = productAccessoryTypes(product).includes('cases');
+    if (isCase) counts.cases += 1;
+    if (product.subcategory === 'audio') counts.audio += 1;
+    if (product.subcategory === 'charging') counts.charging += 1;
+    if (product.subcategory === 'screen-protection' && !isCase) counts.protection += 1;
+  }
+  return counts;
 };
 
 /**
@@ -684,6 +736,12 @@ export const normalizeProductBrand = (brand?: string): string | null => {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 };
 
+export const isXiaomiRedmiPhone = (product: Product): boolean => {
+  const brand = normalizeProductBrand(product.brand);
+  return product.category === "smartphones"
+    && (brand === "Xiaomi" || brand === "Poco");
+};
+
 const BRAND_PRIORITY = ["Apple", "Samsung", "Google", "Xiaomi", "Motorola", "Huawei", "Nokia"];
 
 const compareProductBrands = (left: string, right: string): number => {
@@ -703,26 +761,6 @@ const bestBrandDisplay = (current: string | undefined, next: string): string => 
   return current;
 };
 
-const normalizeStorageValue = (storage?: string): { label: string; gb: number } | null => {
-  if (!storage) return null;
-  const match = storage.trim().match(/(\d+(?:\.\d+)?)\s*(gb|tb)/i);
-  if (!match) return null;
-  const num = parseFloat(match[1]);
-  if (!Number.isFinite(num) || num <= 0) return null;
-  const isTb = /tb/i.test(match[2]);
-  const gb = isTb ? num * 1024 : num;
-  const clean = num % 1 === 0 ? String(num) : String(num).replace(/0+$/, "").replace(/\.$/, "");
-  return { label: `${clean}${isTb ? "TB" : "GB"}`, gb };
-};
-
-const productStorages = (product: Product): string[] => {
-  const seen = new Set<string>();
-  for (const variant of product.variants ?? []) {
-    const normalized = normalizeStorageValue(variant.storage);
-    if (normalized) seen.add(normalized.label);
-  }
-  return Array.from(seen);
-};
 
 export const normalizeCatalogSearchText = (value: string): string =>
   value
@@ -805,7 +843,7 @@ export const parseStoreCatalogFilters = (
   return {
     query: get("q").trim().slice(0, 80),
     brands: list("brand"),
-    storages: list("storage"),
+    storages: parseStorageFilterValues(get('storage')),
     conditions: list("condition").filter((v): v is ProductCondition =>
       CONDITION_VALUES.includes(v as ProductCondition),
     ),
@@ -821,9 +859,6 @@ export const parseStoreCatalogFilters = (
 const STORE_SORT_SET = new Set<StoreCatalogSort>(["featured", "newest", "price-asc", "price-desc"]);
 const valueOfParam = (value: string | string[] | undefined): string =>
   Array.isArray(value) ? value[0] ?? "" : value ?? "";
-
-export const hasCatalogSearchQuery = (query: Record<string, string | string[] | undefined>): boolean =>
-  valueOfParam(query.q).trim().length > 0;
 
 export const parseStoreSort = (value: string | string[] | undefined): StoreCatalogSort => {
   const str = valueOfParam(value) as StoreCatalogSort;
@@ -843,29 +878,7 @@ export const ACCESSORY_TYPES = [
 ] as const;
 export type AccessoryType = (typeof ACCESSORY_TYPES)[number];
 
-const accessorySearchText = (product: Product): string =>
-  [product.title, product.subtitle, product.description, product.brand, product.model, ...product.featureBullets]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-/** All accessory-type buckets a product matches (a product can match several). */
-export const productAccessoryTypes = (product: Product): AccessoryType[] => {
-  if (product.category !== "accessories") return [];
-  const text = accessorySearchText(product);
-  const types: AccessoryType[] = [];
-  if (/\bcase\b|cover|hülle|schutzhülle|handytasche|crossbody/.test(text)) types.push("cases");
-  if (/screen protector|displayschutz|panzerglas|schutzfolie|tempered glass/.test(text)) types.push("screen-protectors");
-  if (/charger|ladegerät|netzteil|charging adapter|wall adapter/.test(text)) types.push("chargers");
-  if (/\bcable\b|\bkabel\b|usb-c kabel|lightning kabel/.test(text)) types.push("cables");
-  if (/headphone|kopfhörer|earbud|headset|airpods|over-ear|in-ear/.test(text)) types.push("headphones");
-  if (/bluetooth|true wireless|\btws\b/.test(text)) types.push("bluetooth");
-  else if (/wireless|kabellos|kabellose/.test(text) && /headphone|kopfhörer|earbud|headset|airpods|speaker|lautsprecher|over-ear|in-ear/.test(text)) types.push("bluetooth");
-  if (/powerbank|power bank|externer akku|external battery/.test(text)) types.push("power-banks");
-  if (/sd card|sd-karte|microsd|memory card|speicherkarte/.test(text)) types.push("sd-cards");
-  if (/smart home|smarthome|homekit|smart plug|smart light|wifi camera/.test(text)) types.push("smart-home");
-  return types;
-};
+export const productAccessoryTypes = (product: Product): AccessoryType[] => classifyAccessoryTypes(product);
 
 /**
  * Counts sellable products in an accessory subcategory.
@@ -876,15 +889,23 @@ export const productAccessoryTypes = (product: Product): AccessoryType[] => {
  * content. It is a COUNT rather than getStoreCatalog because that loads the
  * whole catalog into memory.
  */
-export async function countActiveSubcategoryProducts(subcategory: string): Promise<number> {
+export async function countActiveSubcategoryProducts(
+  subcategory: string,
+  options: { failOnError?: boolean } = {},
+): Promise<number> {
   try {
     const result = await query(
       `SELECT count(*)::int AS total FROM products
        WHERE is_active = true AND category = 'accessories' AND subcategory = $1`,
       [subcategory],
     );
-    return (result.rows[0] as { total?: number } | undefined)?.total ?? 0;
+    const total = (result.rows[0] as { total?: number } | undefined)?.total;
+    if (options.failOnError && (typeof total !== "number" || !Number.isInteger(total) || total < 0)) {
+      throw new Error("Subcategory count returned invalid data");
+    }
+    return total ?? 0;
   } catch (error) {
+    if (options.failOnError) throw error;
     console.error("countActiveSubcategoryProducts failed:", error);
     return 0;
   }
@@ -939,6 +960,87 @@ const getStorefrontMerchandisingIds = async (): Promise<string[]> => {
   }
 };
 
+/** Disjunctive facets: each group respects every other active filter group. */
+export const filterCatalogWithFacets = (
+  scoped: readonly Product[],
+  filters?: StoreCatalogFilters,
+): { filtered: Product[]; facets: StoreCatalogFacets } => {
+  type Group = 'brand' | 'storage' | 'condition' | 'type' | 'stock' | 'price';
+  const activeBrands = new Set((filters?.brands ?? []).map(value => value.toLowerCase()));
+  const activeStorages = new Set((filters?.storages ?? []).map(value=>normalizeStorageValue(value)?.label).filter((value):value is string=>Boolean(value)));
+  const activeConditions = new Set(filters?.conditions ?? []);
+  const activeTypes = new Set(filters?.accessoryTypes ?? []);
+  const brandCounts = new Map<string, number>();
+  const brandDisplay = new Map<string, string>();
+  const storageCounts = new Map<string, { count: number; gb: number }>();
+  const conditionCounts = new Map<ProductCondition, number>();
+  const typeCounts = new Map<AccessoryType, number>();
+  const filtered: Product[] = [];
+  let inStock = 0;
+  let priceMin = Number.POSITIVE_INFINITY;
+  let priceMax = 0;
+
+  for (const product of scoped) {
+    const brand = normalizeProductBrand(product.brand);
+    const key = brand?.toLowerCase();
+    if (brand && key) brandDisplay.set(key, bestBrandDisplay(brandDisplay.get(key), brand));
+    const storages = productStorages(product);
+    const availableStorages = productStorages(product, true);
+    const storageAvailable = activeStorages.size
+      ? availableStorages.some(value=>activeStorages.has(value))
+      : (product.stock ?? 0) > 0;
+    const types = productAccessoryTypes(product);
+    const failed: Group[] = [];
+    if (activeBrands.size && (!key || !activeBrands.has(key))) failed.push('brand');
+    if (activeStorages.size && !storages.some(value => activeStorages.has(value))) failed.push('storage');
+    if (activeConditions.size && !activeConditions.has(product.condition)) failed.push('condition');
+    if (activeTypes.size && !types.some(value => activeTypes.has(value))) failed.push('type');
+    if (filters?.inStockOnly && !storageAvailable) failed.push('stock');
+    if ((filters?.priceMin !== undefined && product.price < filters.priceMin)
+      || (filters?.priceMax !== undefined && product.price > filters.priceMax)) failed.push('price');
+    if (!failed.length) filtered.push(product);
+    const eligible = (group: Group): boolean => failed.every(value => value === group);
+
+    if (key && eligible('brand')) brandCounts.set(key, (brandCounts.get(key) ?? 0) + 1);
+    // When counting storage alternatives, ignore the selected capacity as well
+    // as its stock failure; show other capacities that are actually available.
+    const storageFacetEligible = failed.every(value=>value==='storage'||value==='stock')
+      && (!filters?.inStockOnly || (product.stock ?? 0)>0);
+    if (storageFacetEligible) for (const value of filters?.inStockOnly ? availableStorages : storages) {
+      const storage = normalizeStorageValue(value);
+      if (storage) storageCounts.set(storage.label, {count:(storageCounts.get(storage.label)?.count ?? 0) + 1,gb:storage.gb});
+    }
+    if (eligible('condition')) conditionCounts.set(product.condition, (conditionCounts.get(product.condition) ?? 0) + 1);
+    if (eligible('type')) for (const type of types) typeCounts.set(type, (typeCounts.get(type) ?? 0) + 1);
+    if (eligible('stock') && storageAvailable) inStock += 1;
+    if (eligible('price')) {
+      priceMin = Math.min(priceMin, product.price);
+      priceMax = Math.max(priceMax, product.price);
+    }
+  }
+
+  // A selected zero-match value must stay visible so the customer can remove it.
+  for (const value of filters?.brands ?? []) {
+    const key = value.toLowerCase();
+    if (!brandCounts.has(key)) brandCounts.set(key, 0);
+    if (!brandDisplay.has(key)) brandDisplay.set(key, normalizeProductBrand(value) ?? value);
+  }
+  for (const value of activeStorages) {
+    const storage = normalizeStorageValue(value);
+    if (storage && !storageCounts.has(storage.label)) storageCounts.set(storage.label,{count:0,gb:storage.gb});
+  }
+  const facets: StoreCatalogFacets = {
+    brands: [...brandCounts].map(([key,count]) => ({value:brandDisplay.get(key) ?? key,count})).sort((a,b) => compareProductBrands(a.value,b.value)),
+    storages: [...storageCounts].sort((a,b) => a[1].gb-b[1].gb).map(([value,meta]) => ({value,count:meta.count})),
+    conditions: (['new','open_box','used'] as ProductCondition[]).filter(value => conditionCounts.has(value) || activeConditions.has(value)).map(value => ({value,count:conditionCounts.get(value) ?? 0})),
+    accessoryTypes: ACCESSORY_TYPES.filter(value => typeCounts.has(value) || activeTypes.has(value)).map(value => ({value,count:typeCounts.get(value) ?? 0})),
+    inStock,
+    priceMin: Number.isFinite(priceMin) ? priceMin : 0,
+    priceMax,
+  };
+  return {filtered,facets};
+};
+
 export async function getStoreCatalog({
   category = "all",
   subcategory,
@@ -949,6 +1051,7 @@ export async function getStoreCatalog({
   locale = "de",
   filters,
   merchandising = "default",
+  failOnError = false,
 }: {
   category?: StoreCatalogCategory;
   /** Narrows an accessory category to one subcategory landing page. */
@@ -960,6 +1063,7 @@ export async function getStoreCatalog({
   locale?: Locale;
   filters?: StoreCatalogFilters;
   merchandising?: "default" | "storefront";
+  failOnError?: boolean;
 } = {}): Promise<StoreCatalogResult> {
   const normalizedPageSize = Math.min(48, Math.max(1, Math.floor(pageSize)));
 
@@ -967,7 +1071,7 @@ export async function getStoreCatalog({
   // and do faceting, filtering, sorting and pagination in JS. This gives
   // accurate facet counts and keeps the logic in one place.
   const [all, merchandisingIds] = await Promise.all([
-    getProducts(undefined, undefined, locale),
+    getProducts(undefined, undefined, locale, { failOnError }),
     merchandising === "storefront" ? getStorefrontMerchandisingIds() : Promise.resolve([]),
   ]);
 
@@ -1020,6 +1124,9 @@ export async function getStoreCatalog({
       return product.category === "smartphones"
         && normalizeProductBrand(product.brand) === "Samsung";
     }
+    if (collection === "xiaomi-redmi-phones") {
+      return isXiaomiRedmiPhone(product);
+    }
     if (collection === "phones-without-contract") {
       return product.category === "smartphones";
     }
@@ -1037,90 +1144,8 @@ export async function getStoreCatalog({
     ? collectionScoped.filter((product) => catalogSearchScore(product, searchQuery) > 0)
     : collectionScoped;
 
-  // Build facets from the scoped set (before user filters) so the sidebar
-  // always shows every available option for the current category.
-  const brandCounts = new Map<string, number>();
-  const brandDisplay = new Map<string, string>();
-  const storageCounts = new Map<string, { count: number; gb: number }>();
-  const conditionCounts = new Map<ProductCondition, number>();
-  const accessoryTypeCounts = new Map<AccessoryType, number>();
-  let inStock = 0;
-  let priceMin = Number.POSITIVE_INFINITY;
-  let priceMax = 0;
-
-  for (const product of scoped) {
-    const brand = normalizeProductBrand(product.brand);
-    if (brand) {
-      const key = brand.toLowerCase();
-      brandCounts.set(key, (brandCounts.get(key) ?? 0) + 1);
-      brandDisplay.set(key, bestBrandDisplay(brandDisplay.get(key), brand));
-    }
-    for (const storage of productStorages(product)) {
-      const normalized = normalizeStorageValue(storage);
-      if (!normalized) continue;
-      const existing = storageCounts.get(normalized.label);
-      storageCounts.set(normalized.label, { count: (existing?.count ?? 0) + 1, gb: normalized.gb });
-    }
-    conditionCounts.set(product.condition, (conditionCounts.get(product.condition) ?? 0) + 1);
-    for (const type of productAccessoryTypes(product)) {
-      accessoryTypeCounts.set(type, (accessoryTypeCounts.get(type) ?? 0) + 1);
-    }
-    if ((product.stock ?? 0) > 0) inStock += 1;
-    priceMin = Math.min(priceMin, product.price);
-    priceMax = Math.max(priceMax, product.price);
-  }
-
-  if (!Number.isFinite(priceMin)) priceMin = 0;
-
-  const toOptions = (countsMap: Map<string, number>, display: Map<string, string>, sorter: (a: string, b: string) => number): FacetOption[] =>
-    Array.from(countsMap.entries())
-      .map(([key, count]) => ({ value: display.get(key) ?? key, count }))
-      .sort((a, b) => sorter(a.value, b.value));
-
-  const facets: StoreCatalogFacets = {
-    brands: toOptions(brandCounts, brandDisplay, compareProductBrands),
-    storages: Array.from(storageCounts.entries())
-      .map(([label, meta]) => ({ value: label, count: meta.count, gb: meta.gb }))
-      .sort((a, b) => a.gb - b.gb)
-      .map(({ value, count }) => ({ value, count })),
-    conditions: (["new", "open_box", "used"] as ProductCondition[])
-      .filter((condition) => (conditionCounts.get(condition) ?? 0) > 0)
-      .map((condition) => ({ value: condition, count: conditionCounts.get(condition) ?? 0 })),
-    accessoryTypes: ACCESSORY_TYPES
-      .filter((type) => (accessoryTypeCounts.get(type) ?? 0) > 0)
-      .map((type) => ({ value: type, count: accessoryTypeCounts.get(type) ?? 0 })),
-    inStock,
-    priceMin,
-    priceMax,
-  };
-
-  // Apply user filters.
-  const activeBrands = new Set((filters?.brands ?? []).map((b) => b.toLowerCase()));
-  const activeStorages = new Set(filters?.storages ?? []);
-  const activeConditions = new Set(filters?.conditions ?? []);
-  const activeAccessoryTypes = new Set(filters?.accessoryTypes ?? []);
-  const minPrice = typeof filters?.priceMin === "number" ? filters.priceMin : undefined;
-  const maxPrice = typeof filters?.priceMax === "number" ? filters.priceMax : undefined;
-
-  const filtered = scoped.filter((product) => {
-    if (activeBrands.size > 0) {
-      const brand = normalizeProductBrand(product.brand);
-      if (!brand || !activeBrands.has(brand.toLowerCase())) return false;
-    }
-    if (filters?.inStockOnly && (product.stock ?? 0) <= 0) return false;
-    if (activeStorages.size > 0) {
-      const storages = productStorages(product);
-      if (!storages.some((s) => activeStorages.has(s))) return false;
-    }
-    if (activeConditions.size > 0 && !activeConditions.has(product.condition)) return false;
-    if (activeAccessoryTypes.size > 0) {
-      const types = productAccessoryTypes(product);
-      if (!types.some((t) => activeAccessoryTypes.has(t))) return false;
-    }
-    if (minPrice !== undefined && product.price < minPrice) return false;
-    if (maxPrice !== undefined && product.price > maxPrice) return false;
-    return true;
-  });
+  const { filtered, facets } = filterCatalogWithFacets(scoped, filters);
+  facets.scope = { category, ...(subcategory ? { subcategory } : {}), ...(collection ? { collection } : {}) };
 
   // Sort.
   const sorted = [...filtered];
@@ -1173,7 +1198,7 @@ export async function getStoreCatalog({
   const from = (normalizedPage - 1) * normalizedPageSize;
   const products = sorted.slice(from, from + normalizedPageSize);
 
-  return { products, total, page: normalizedPage, pages, counts, facets };
+  return { products, total, page: normalizedPage, pages, counts, facets, accessoryDiscoveryCounts: accessoryDiscoveryCounts(collectionScoped) };
 }
 
 export async function getFeaturedProducts(locale: Locale = "de"): Promise<Product[]> {
@@ -1203,47 +1228,23 @@ export async function getFeaturedProducts(locale: Locale = "de"): Promise<Produc
 }
 
 export async function getTrendingProducts(locale: Locale = "de", limit = 8): Promise<Product[]> {
-  const db = createDbClient();
-  const [{ data: settingRow }, products] = await Promise.all([
-    db
-      .from<{ value: unknown }>("store_settings")
-      .select("value")
-      .eq("key", "trending_products")
-      .maybeSingle(),
-    getProducts(undefined, undefined, locale),
-  ]);
-
-  const available = products.filter((product) => (product.stock ?? 0) > 0);
-  const setting = settingRow?.value && typeof settingRow.value === "object"
-    ? settingRow.value as TrendingProductsSetting
-    : null;
-  const configuredIds = Array.isArray(setting?.productIds)
-    ? setting.productIds.filter((id): id is string => typeof id === "string")
-    : [];
-  const byId = new Map(available.map((product) => [product.id, product] as const));
-  const configured = configuredIds
-    .map((id) => byId.get(id))
-    .filter((product): product is Product => Boolean(product));
-
-  const score = (product: Product) => {
-    const text = `${product.title} ${product.model ?? ""}`.toLowerCase();
-    let value = 0;
-    if (/iphone\s*17/.test(text)) value += 1_000;
-    else if (/iphone\s*16/.test(text)) value += 700;
-    else if (/iphone\s*15/.test(text)) value += 500;
-    if (/pro\s*max/.test(text)) value += 120;
-    else if (/\bpro\b/.test(text)) value += 90;
-    if (/\bair\b/.test(text)) value += 60;
-    if (product.hasDiscount) value += 40;
-    value += Math.min(product.stock ?? 0, 10);
-    return value;
-  };
-  const configuredSet = new Set(configured.map((product) => product.id));
-  const fallback = available
-    .filter((product) => !configuredSet.has(product.id))
-    .sort((a, b) => score(b) - score(a) || String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
-
-  return [...configured, ...fallback].slice(0, Math.max(1, limit));
+  try {
+    const db = createDbClient();
+    const [{ data: settingRow, error }, products] = await Promise.all([
+      db.from<{ value: unknown }>('store_settings').select('value').eq('key', 'trending_products').maybeSingle(),
+      getProducts(undefined, undefined, locale, { failOnError: true }),
+    ]);
+    if (error) throw error;
+    const setting = settingRow?.value && typeof settingRow.value === 'object'
+      ? settingRow.value as TrendingProductsSetting
+      : null;
+    return selectTrendingProducts(products.filter(product => product.inventoryVerified), setting?.productIds, limit);
+  } catch {
+    // Optional merchandising must never advertise guessed stock after a failed
+    // ledger/settings read. Keep the persisted last-known-good cache untouched.
+    console.warn('[store] Trending selection unavailable; carousel hidden.');
+    return [];
+  }
 }
 
 const getProductBySlugCached = cache(async (slug: string, locale: Locale): Promise<Product | null> => {
@@ -1407,17 +1408,6 @@ export async function getRelatedProducts(product: Product, limit = 4, locale: Lo
   }
 
   return hydrateProductsWithInventory(collected.slice(0, limit));
-}
-
-export async function getDiscountedProducts(limit = 6, locale: Locale = "de"): Promise<Product[]> {
-  const products = await getProducts(undefined, undefined, locale);
-  return products.filter((product) => product.hasDiscount).slice(0, limit);
-}
-
-export async function getOpenBoxProducts(limit?: number, locale: Locale = "de"): Promise<Product[]> {
-  const products = await getProducts(undefined, undefined, locale);
-  const openBox = products.filter((product) => product.isOpenBox);
-  return limit ? openBox.slice(0, limit) : openBox;
 }
 
 export async function getPromoProducts(pinnedIds?: string[], locale: Locale = "de"): Promise<Product[]> {

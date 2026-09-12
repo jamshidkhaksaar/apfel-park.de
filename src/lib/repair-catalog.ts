@@ -403,23 +403,8 @@ const sanitizeBrand = (value: unknown): RepairCatalogBrand | null => {
   };
 };
 
-export const normalizeRepairCatalog = (value: unknown): RepairCatalog => {
-  if (!value || typeof value !== "object") return defaultRepairCatalog;
-  const record = value as Record<string, unknown>;
-  const brands = Array.isArray(record.brands)
-    ? (record.brands.map(sanitizeBrand).filter(Boolean) as RepairCatalogBrand[])
-    : [];
-
-  if (brands.length === 0) {
-    return defaultRepairCatalog;
-  }
-
-  return { brands };
-};
-
 /**
- * Like normalizeRepairCatalog but intended for the admin save path:
- * it sanitizes input without ever falling back to the hard-coded default,
+ * Sanitizes input for the admin save path without falling back to the default,
  * so the admin can actually delete brands and persist an empty (or reduced) catalog.
  */
 export const sanitizeCatalogForSave = (value: unknown): RepairCatalog => {

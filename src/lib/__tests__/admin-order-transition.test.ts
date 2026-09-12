@@ -8,9 +8,22 @@ describe("admin order transitions", () => {
   });
 
   it("allows only unpaid pending orders to use the cancellation path", () => {
-    expect(validateAdminOrderTransition({ currentStatus: "pending", paymentStatus: "unpaid", nextStatus: "cancelled", providerStatus: "payment_failed", providerOrderId: "pi_failed", providerSessionId: "cs_failed" })).toEqual({ allowed: true, mode: "cancel" });
+    expect(validateAdminOrderTransition({ currentStatus: "pending", paymentStatus: "unpaid", nextStatus: "cancelled", providerStatus: "canceled", providerOrderId: "pi_cancelled" })).toEqual({ allowed: true, mode: "cancel" });
     expect(validateAdminOrderTransition({ currentStatus: "paid", paymentStatus: "paid", nextStatus: "cancelled" })).toEqual({ allowed: false, reason: "refund_required" });
   });
+
+  it.each(["payment_failed", "failed", " PAYMENT_FAILED "])(
+    "blocks local cancellation for retryable or ambiguous provider failure %s",
+    (providerStatus) => {
+      expect(validateAdminOrderTransition({
+        currentStatus: "pending",
+        paymentStatus: "unpaid",
+        nextStatus: "cancelled",
+        providerOrderId: "pi_retryable",
+        providerStatus,
+      })).toEqual({ allowed: false, reason: "provider_active" });
+    },
+  );
 
   it("rejects local cancellation while a provider payment is active or uncertain", () => {
     expect(validateAdminOrderTransition({ currentStatus: "pending", paymentStatus: "unpaid", nextStatus: "cancelled", providerOrderId: "pi_1", providerStatus: "requires_payment_method" })).toEqual({ allowed: false, reason: "provider_active" });

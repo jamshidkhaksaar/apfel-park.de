@@ -277,12 +277,12 @@ export default function PixelShowcase({
     isDe
       ? `Guten Tag Apfel Park Team, ich interessiere mich für das Google ${
           selectedModel === "pixel11"
-            ? "Pixel 11 (Tensor G5 3nm)"
+            ? "Pixel 11 (Tensor G6)"
             : "Pixel 11 Pro Fold (8 Zoll Super Actua Flex)"
         } in der Farbe ${currentFinish.nameDe}. Bitte senden Sie mir ein Angebot und Infos zur Verfügbarkeit in Hamburg.`
       : `Hello Apfel Park Team, I am inquiring about the Google ${
           selectedModel === "pixel11"
-            ? "Pixel 11 (Tensor G5 3nm)"
+            ? "Pixel 11 (Tensor G6)"
             : "Pixel 11 Pro Fold (8-Inch Super Actua Flex)"
         } in ${currentFinish.nameEn}. Please share price, availability, and collection details in Hamburg.`
   );
@@ -298,73 +298,40 @@ export default function PixelShowcase({
 
   // Tech Specs comparison table
   const specRows = [
-    {
-      category: isDe ? "Formfaktor & Abmessungen" : "Form Factor & Dimensions",
-      pixel11: isDe ? "152,8 x 72,0 x 8,5 mm · 198g Gewicht · 100% recyceltes Aluminium" : "152.8 x 72.0 x 8.5 mm · 198g weight · 100% recycled aluminum",
-      proFold: isDe ? "5,1 mm entfaltet · 10,5 mm gefaltet · 257g · Hochfester Stahl & Titan" : "5.1 mm unfolded · 10.5 mm folded · 257g · High-strength steel & titanium",
-    },
-    {
-      category: isDe ? "Hauptdisplay" : "Main Canvas",
-      pixel11: isDe ? "6,3\" Actua OLED · 60-120 Hz · Bis zu 2.700 Nits Spitzenhelligkeit · 1080 x 2424" : "6.3\" Actua OLED · 60-120 Hz · Up to 2,700 nits peak · 1080 x 2424",
-      proFold: isDe ? "8,0\" Super Actua Flex LTPO OLED · 1-120 Hz · Bis zu 3.000 Nits · Ultra Thin Glass" : "8.0\" Super Actua Flex LTPO OLED · 1-120 Hz · Up to 3,000 nits · Ultra Thin Glass",
-    },
-    {
-      category: isDe ? "Cover-Display (Außen)" : "Cover Display (Outer)",
-      pixel11: isDe ? "Integriertes 6,3\" Display" : "Integrated 6.3\" display",
-      proFold: isDe ? "6,3\" Actua OLED · 120 Hz · 2.700 Nits · 20:9 klassisches Seitenverhältnis" : "6.3\" Actua OLED · 120 Hz · 2,700 nits · 20:9 standard aspect ratio",
-    },
-    {
-      category: isDe ? "Prozessor & KI-Silizium" : "Processor & AI Silicon",
-      pixel11: "Google Tensor G5 (3nm TSMC N3P) · Titan M3 Sicherheits-Chip · Gemini Nano",
-      proFold: "Google Tensor G5 (3nm TSMC N3P) · Titan M3 Chip · Gemini Live Multi-Modal",
-    },
-    {
-      category: isDe ? "Kamerasystem" : "Camera Suite",
-      pixel11: isDe ? "Duales System: 50 MP Quad PD Weitwinkel (f/1.68, OIS) + 48 MP Ultraweit mit Makro-Fokus" : "Dual Suite: 50MP Quad PD Wide (f/1.68, OIS) + 48MP Ultra-Wide with Macro Focus",
-      proFold: isDe ? "Triple Pro System: 48 MP Quad PD Weitwinkel (f/1.7, OIS) + 10,5 MP Ultraweit + 10,8 MP 5x Periskop-Tele (20x Super Res Zoom)" : "Triple Pro Suite: 48MP Quad PD Wide (f/1.7, OIS) + 10.5MP Ultra-Wide + 10.8MP 5x Periscope Telephoto (20x Super Res Zoom)",
-    },
-    {
-      category: isDe ? "Arbeitsspeicher & Speicher" : "Memory & Storage",
-      pixel11: "12 GB LPDDR5X · 128 GB / 256 GB UFS 3.1",
-      proFold: "16 GB LPDDR5X · 256 GB / 512 GB UFS 4.0",
-    },
-    {
-      category: isDe ? "Akku & Schnellladung" : "Battery & Charging",
-      pixel11: isDe ? "4.700 mAh · 30W Schnellladung · Qi2 Wireless Charging · Bis zu 100 Std. Extrem-Energiesparmodus" : "4,700 mAh · 30W fast charging · Qi2 wireless charging · Up to 100h Extreme Battery Saver",
-      proFold: isDe ? "4.650 mAh Split-Akku · 30W Schnellladung · Kabelloses Laden" : "4,650 mAh split dual-battery · 30W fast charging · Wireless charging",
-    },
-    {
-      category: isDe ? "Updates & Schutzklasse" : "Support & Durability",
-      pixel11: isDe ? "7 Jahre OS-, Sicherheits- & Feature Drop-Updates · IP68 staub- & wasserdicht" : "7 years OS, security & Feature Drop updates · IP68 water & dust resistant",
-      proFold: isDe ? "7 Jahre OS- & Sicherheits-Updates · IPX8 wasserbeständig · Reibungsfreies Zahnradscharnier" : "7 years OS & security updates · IPX8 water resistant · Fluid frictionless gear hinge",
-    },
+    { category: isDe ? "Maße & Gewicht" : "Dimensions & weight", pixel11: isDe ? "152,8 × 72 × 8,6 mm · 197 g" : "152.8 × 72 × 8.6 mm · 197 g", proFold: isDe ? "5,0 mm geöffnet · 10,1 mm geschlossen · 239 g" : "5.0 mm open · 10.1 mm closed · 239 g" },
+    { category: isDe ? "Hauptdisplay" : "Main display", pixel11: isDe ? "6,3\" OLED · 60–120 Hz · bis 3.000 Nits" : "6.3\" OLED · 60–120 Hz · up to 3,000 nits", proFold: isDe ? "8\" Super Actua Flex OLED · 1–120 Hz · bis 3.600 Nits" : "8\" Super Actua Flex OLED · 1–120 Hz · up to 3,600 nits" },
+    { category: isDe ? "Außendisplay" : "Outer display", pixel11: isDe ? "6,3\" Hauptdisplay" : "6.3\" main display", proFold: isDe ? "6,5\" Super Actua OLED · 1–120 Hz" : "6.5\" Super Actua OLED · 1–120 Hz" },
+    { category: isDe ? "Prozessor" : "Processor", pixel11: isDe ? "Google Tensor G6 · Titan M3" : "Google Tensor G6 · Titan M3", proFold: isDe ? "Google Tensor G6 · Titan M3" : "Google Tensor G6 · Titan M3" },
+    { category: isDe ? "Rückkameras" : "Rear cameras", pixel11: isDe ? "48 MP Weitwinkel · 13 MP Ultraweitwinkel · 10,8 MP Tele (5x)" : "48 MP wide · 13 MP ultrawide · 10.8 MP telephoto (5x)", proFold: isDe ? "48 MP Weitwinkel · 10,5 MP Ultraweitwinkel · 10,8 MP Tele (5x)" : "48 MP wide · 10.5 MP ultrawide · 10.8 MP telephoto (5x)" },
+    { category: isDe ? "Arbeitsspeicher & Kapazitäten" : "Memory & capacities", pixel11: isDe ? "12 GB RAM · 256 / 512 GB" : "12 GB RAM · 256 / 512 GB", proFold: isDe ? "16 GB RAM · 256 / 512 GB / 1 TB" : "16 GB RAM · 256 / 512 GB / 1 TB" },
+    { category: isDe ? "Akku" : "Battery", pixel11: isDe ? "4.985 mAh typisch · Ladezubehör separat" : "4,985 mAh typical · charging accessories separate", proFold: isDe ? "4.806 mAh typisch · Ladezubehör separat" : "4,806 mAh typical · charging accessories separate" },
+    { category: isDe ? "Updates & Schutz" : "Updates & protection", pixel11: isDe ? "7 Jahre Updates ab Markteinführung · IP68 ab Werk" : "7 years of updates from launch · IP68 when new", proFold: isDe ? "7 Jahre Updates ab Markteinführung · IP68 ab Werk" : "7 years of updates from launch · IP68 when new" },
   ];
-
   // FAQ list
   const faqs = [
     {
       qDe: "Wann sind Google Pixel 11 und Pixel 11 Pro Fold in Deutschland erhältlich?",
       qEn: "When are Google Pixel 11 and Pixel 11 Pro Fold available in Germany?",
-      aDe: "Die Google Pixel 11 Generation ist offiziell bei Apfel Park Hamburg bestellbar. Alle Geräte sind vertragsfrei, ohne SIM-Lock und sofort mit allen Anbietern einsatzbereit.",
-      aEn: "The Google Pixel 11 generation is available for purchase at Apfel Park Hamburg. All devices are factory unlocked without SIM-lock for immediate worldwide carrier compatibility.",
+      aDe: "Bitte frage die gewünschte Ausführung unverbindlich an. Wir bestätigen Preis, Gerätezustand, Bestand und Liefertermin individuell. Diese Modellvorstellung ist keine Bestandszusage.",
+      aEn: "Ask about your preferred configuration without obligation. We confirm price, condition, stock and delivery date individually. This showcase is not a stock guarantee.",
     },
     {
-      qDe: "Was zeichnet den neuen Google Tensor G5 Prozessor aus?",
-      qEn: "What makes the new Google Tensor G5 processor special?",
-      aDe: "Der Tensor G5 wird erstmals im modernen 3nm-Verfahren von TSMC gefertigt. Er bietet dramatisch gesteigerte Energieeffizienz und treibt Googles modernste On-Device Gemini Nano Modelle für Echtzeit-Fotobearbeitung und Übersetzung an.",
-      aEn: "Tensor G5 is manufactured on TSMC's cutting-edge 3nm process. It delivers significant thermal efficiency gains and powers on-device Gemini Nano AI for instantaneous computational photography and translation.",
+      qDe: "Was zeichnet den neuen Google Tensor G6 Prozessor aus?",
+      qEn: "What makes the new Google Tensor G6 processor special?",
+      aDe: "Google nennt für beide Modelle Tensor G6 und den Sicherheitschip Titan M3. KI-Funktionen hängen von Sprache, Region, Konto und Verbindung ab.",
+      aEn: "Google lists Tensor G6 and the Titan M3 security chip for both models. AI features depend on language, region, account and connectivity.",
     },
     {
       qDe: "Welche Farbvarianten sind für Google Pixel 11 erhältlich?",
       qEn: "Which color finishes are available for Google Pixel 11?",
-      aDe: "Das Pixel 11 ist in Frost White, Hibiscus Pink, Pistachio Green und Obsidian Black erhältlich. Das Pixel 11 Pro Fold bietet die Signature-Farben Olive Haze und Obsidian Black.",
-      aEn: "Pixel 11 is available in Frost White, Hibiscus Pink, Pistachio Green, and Obsidian Black. Pixel 11 Pro Fold features signature Olive Haze and Obsidian Black finishes.",
+      aDe: "Google nennt Frost, Hibiscus, Pistachio und Obsidian für Pixel 11 sowie Olive und Obsidian für Pro Fold. Die Verfügbarkeit bei Apfel Park bitte anfragen.",
+      aEn: "Google lists Frost, Hibiscus, Pistachio and Obsidian for Pixel 11, and Olive and Obsidian for Pro Fold. Ask about availability at Apfel Park.",
     },
     {
       qDe: "Wie lange garantiert Google Software- und Sicherheitsupdates?",
       qEn: "How long does Google guarantee software and security updates?",
-      aDe: "Google bietet für die Pixel 11 Serie volle 7 Jahre garantierte Android-Betriebssystem-Updates, Sicherheitspatches und regelmäßige Pixel Feature Drops.",
-      aEn: "Google guarantees 7 full years of Android operating system upgrades, security patches, and regular Pixel Feature Drops for the Pixel 11 lineup.",
+      aDe: "Google nennt sieben Jahre Betriebssystem-, Sicherheits- und Pixel-Drop-Updates ab der ersten Verfügbarkeit im Google Store in den USA, nicht ab deinem Kaufdatum.",
+      aEn: "Google lists seven years of OS, security and Pixel Drop updates from first availability in the US Google Store, not from your purchase date.",
     },
   ];
 
@@ -373,25 +340,25 @@ export default function PixelShowcase({
       key: "tensor",
       accent: ARCH_ACCENTS.blue,
       Icon: GoogleTensorCpuSvg,
-      tag: "3nm TSMC N3P",
-      title: "Google Tensor G5",
+      tag: "Tensor & Titan",
+      title: "Google Tensor G6",
       highlight: "Custom TPU · Titan M3 Enclave",
       body: isDe
-        ? "Erstmals von TSMC im 3nm-Verfahren gefertigt. Treibt Googles On-Device Gemini Nano Modelle an, verbessert die Akkulaufzeit und ermöglicht Echtzeit-KI ohne Cloud-Latenz."
-        : "Fabricated by TSMC on a breakthrough 3nm node. Powers on-device Gemini Nano multimodal intelligence, boosting battery endurance and zero-latency local processing.",
+        ? "Tensor G6 und Titan M3 bilden die Rechen- und Sicherheitsplattform. Einzelne KI-Funktionen benötigen eine Internetverbindung und ein passendes Konto."
+        : "Tensor G6 and Titan M3 provide processing and security. Some AI features require an internet connection and a compatible account.",
       statLabel: isDe ? "KI-Engine" : "AI Engine",
-      statValue: "Gemini Live On-Device",
+      statValue: "Gemini",
     },
     {
       key: "camera",
       accent: ARCH_ACCENTS.gold,
       Icon: PixelPeriscopeCameraSvg,
-      tag: "50 MP · 5x Periskop",
+      tag: "48 MP · 5x Tele",
       title: isDe ? "Pro Pixel Kamerasystem" : "Pro Pixel Camera Suite",
-      highlight: "Quad PD · 20x Super Res Zoom",
+      highlight: "Quad PD · 5x Tele",
       body: isDe
-        ? "Der 50 MP Quad PD Sensor kombiniert mit 5x optischem Periskop-Telezoom fängt selbst bei minimalem Licht brillante Details ein. Gestützt von Google HDR+ und Magic Editor."
-        : "The 50MP Quad PD sensor paired with a 5x folded periscope lens captures razor-sharp details in low light. Powered by Google HDR+ and next-gen Magic Editor.",
+        ? "Beide Modelle kombinieren eine 48-MP-Hauptkamera mit Ultraweitwinkel und 5-fachem Teleobjektiv. Die Ultraweitwinkelauflösung unterscheidet sich je nach Modell."
+        : "Both models combine a 48 MP main camera, ultrawide camera and 5x telephoto. Ultrawide resolution differs between models.",
       statLabel: isDe ? "Optischer Zoom" : "Optical Zoom",
       statValue: "5x Periskop + OIS",
     },
@@ -399,27 +366,27 @@ export default function PixelShowcase({
       key: "hinge",
       accent: ARCH_ACCENTS.green,
       Icon: PixelFrictionHingeSvg,
-      tag: isDe ? "0,0 mm spaltfrei" : "0.0 mm Flat Fold",
-      title: isDe ? "Reibungsloses Zahnradscharnier" : "Fluid Frictionless Gear Hinge",
-      highlight: isDe ? "Hochfester Stahl · IPX8" : "High-strength Steel · IPX8",
+      tag: isDe ? "Pro Fold" : "Pro Fold",
+      title: isDe ? "Faltbares Design" : "Foldable design",
+      highlight: isDe ? "Stahllegierung · IP68 ab Werk" : "Steel alloy · IP68 when new",
       body: isDe
-        ? "Präzisionsmechanik aus hochfestem Flugzeugstahl. Schließt völlig plan ohne Zwischenraum und hält das Display in jedem Winkel stabil im Tisch- oder Zeltmodus."
-        : "Precision multi-cam assembly crafted from aerospace high-strength steel. Folds completely flat with zero gap and supports stable positioning in tabletop or tent modes.",
+        ? "Das Pro Fold nutzt ein Scharnier aus mehreren Stahllegierungen mit einer Aluminiumabdeckung. Der Schutz vor Wasser und Staub ist nicht dauerhaft."
+        : "Pro Fold uses a multi-alloy steel hinge with an aluminium alloy cover. Water and dust resistance are not permanent.",
       statLabel: isDe ? "Wasserfestigkeit" : "Water Resistance",
-      statValue: "IPX8 Standard",
+      statValue: "IP68",
     },
     {
       key: "display",
       accent: ARCH_ACCENTS.blue,
       Icon: SuperActuaDisplaySvg,
-      tag: "3.000 Nits · LTPO",
-      title: "Super Actua Flex OLED",
+      tag: "Pro Fold · LTPO",
+      title: "Pro Fold: Super Actua Flex OLED",
       highlight: isDe ? "1-120 Hz variabel · UTG Glas" : "1-120 Hz variable · UTG glass",
       body: isDe
-        ? "Kristallklares OLED-Display mit adaptiver Bildwiederholrate von 1 Hz bis 120 Hz und reflexionsarmer Beschichtung. Liefert selbst unter direkter Sommersonne perfekte Lesbarkeit."
-        : "Ultra-bright OLED canvas featuring dynamic refresh scaling from 1Hz to 120Hz and anti-reflective polarization. Ensures effortless readability even in direct summer sunlight.",
+        ? "Kristallklares OLED-Display mit adaptiver Bildwiederholrate von 1 Hz bis 120 Hz und reflexionsarmer Beschichtung. Die Helligkeitswerte sind Hersteller-Laborwerte."
+        : "Ultra-bright OLED canvas featuring dynamic refresh scaling from 1Hz to 120Hz and anti-reflective polarization. Brightness figures are manufacturer laboratory measurements.",
       statLabel: isDe ? "Spitzenhelligkeit" : "Peak Brightness",
-      statValue: "3.000 Nits",
+      statValue: "bis / up to 3.600 Nits",
     },
   ];
 
@@ -448,7 +415,7 @@ export default function PixelShowcase({
 
           <div className="flex items-center gap-2 text-muted">
             <span className="size-1.5 rounded-full bg-blue" />
-            <span>{isDe ? "Hamburg Boutique & bundesweiter Expressversand" : "Hamburg Boutique & Nationwide Express Shipping"}</span>
+            <span>{isDe ? "Hamburg Boutique & bundesweiter Versand" : "Hamburg Boutique & Nationwide Shipping"}</span>
           </div>
         </div>
       </div>
@@ -466,14 +433,14 @@ export default function PixelShowcase({
                 <>
                   Google Pixel 11
                   <span className="block text-xl sm:text-3xl lg:text-4xl font-medium text-muted mt-2">
-                    {isDe ? "Dein Alltag. Neu gedacht mit Tensor G5." : "Everyday Magic. Reimagined with Tensor G5."}
+                    {isDe ? "Dein Alltag. Neu gedacht mit Tensor G6." : "Everyday Magic. Reimagined with Tensor G6."}
                   </span>
                 </>
               ) : (
                 <>
                   Pixel 11 Pro Fold
                   <span className="block text-xl sm:text-3xl lg:text-4xl font-medium text-muted mt-2">
-                    {isDe ? "8,0-Zoll Super Actua Flex & 5,1 mm Slim." : "8.0-Inch Super Actua Flex & Record 5.1mm Slim."}
+                    {isDe ? "8,0-Zoll Super Actua Flex & 5,0 mm Slim." : "8.0-Inch Super Actua Flex & Record 5.0mm Slim."}
                   </span>
                 </>
               )}
@@ -482,11 +449,11 @@ export default function PixelShowcase({
             <p className="mx-auto max-w-2xl text-sm sm:text-base md:text-lg text-muted leading-relaxed text-balance">
               {selectedModel === "pixel11"
                 ? (isDe
-                  ? "Googles neuestes Smartphone mit 3nm Tensor G5 Silizium, 6,3-Zoll Actua OLED mit 2.700 Nits, 50 MP Quad PD Dual-Kamera und 7 Jahren garantierten Updates."
-                  : "Google's latest smartphone featuring 3nm TSMC Tensor G5 silicon, 6.3-inch 2,700-nit Actua OLED, 50MP Quad PD camera system, and 7 years of full OS updates.")
+                  ? "Google Pixel 11 mit Tensor G6, 6,3-Zoll-OLED und drei Rückkameras. Konfiguration und Verfügbarkeit bei Apfel Park bitte anfragen."
+                  : "Google Pixel 11 with Tensor G6, a 6.3-inch OLED and three rear cameras. Ask Apfel Park to confirm configuration and availability.")
                 : (isDe
-                  ? "Faszinierendes Falterlebnis: Riesenhaftes 8,0-Zoll Super Actua Flex Innendisplay, 6,3-Zoll Cover, Triple Pro Kamerasystem mit 5x Periskop-Tele und reibungsfreies Zahnradscharnier."
-                  : "Unrivaled folding innovation: expansive 8.0-inch Super Actua Flex inner canvas, 6.3-inch cover screen, Triple Pro optics with 5x periscope telephoto, and fluid gear hinge.")}
+                  ? "Pixel 11 Pro Fold mit 8-Zoll-Innendisplay, 6,5-Zoll-Außendisplay, Tensor G6 und drei Rückkameras. Preis und Verfügbarkeit bitte anfragen."
+                  : "Pixel 11 Pro Fold with an 8-inch inner display, 6.5-inch cover display, Tensor G6 and three rear cameras. Ask about price and availability.")}
             </p>
 
             {/* Direct Consultation CTAs */}
@@ -571,8 +538,8 @@ export default function PixelShowcase({
                   ? "Von Frost über Hibiscus und Pistachio bis Obsidian – jede Variante mit satiniertem Finish und polierten Aluminiumkanten."
                   : "From Frost to Hibiscus, Pistachio and Obsidian – each finish with a satin back and polished aluminium edges."
                 : isDe
-                  ? "Olive und Obsidian mit mattem Metallrahmen, 5,1 mm Schlankprofil und reibungsfreiem Zahnradscharnier."
-                  : "Olive and Obsidian with a matte metal frame, 5.1 mm slim profile and fluid gear hinge."}
+                  ? "Olive und Obsidian, 5,0 mm geöffnet und 10,1 mm geschlossen. Die Verfügbarkeit der Ausführung bitte anfragen."
+                  : "Olive and Obsidian, 5.0 mm open and 10.1 mm closed. Ask about availability of your preferred configuration."}
             </p>
           </div>
 
@@ -754,8 +721,8 @@ export default function PixelShowcase({
             </h2>
             <p className="mt-4 text-sm sm:text-base text-muted leading-relaxed">
               {isDe
-                ? "Detaillierte Einblicke in Google Tensor G5, optische Periskop-Telezoomtechnik, reibungsloses Zahnradscharnier und Super Actua OLED."
-                : "Deep architectural insights into Google Tensor G5, periscope telephoto optics, fluid gear hinge mechanics, and Super Actua OLED."}
+                ? "Detaillierte Einblicke in Google Tensor G6, optische Periskop-Telezoomtechnik, reibungsloses Zahnradscharnier und Super Actua OLED."
+                : "Deep architectural insights into Google Tensor G6, periscope telephoto optics, fluid gear hinge mechanics, and Super Actua OLED."}
             </p>
           </div>
 

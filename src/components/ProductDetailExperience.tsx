@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import ProductDesktopPurchaseBar from "@/components/ProductDesktopPurchaseBar";
 import ProductGallery from "@/components/ProductGallery";
+import { productGalleryImages } from "@/lib/product-gallery";
 import { ProductFamilyConfigurator, ProductWishlistButton } from "@/components/ProductProfessionalExperience";
 import ProductMobilePurchaseBar from "@/components/ProductMobilePurchaseBar";
 import ProductPurchaseFacts from "@/components/ProductPurchaseFacts";
@@ -99,23 +100,11 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
   const activeDiscount = getDiscount(activePrice, activeComparePrice);
   const activeStock = selectedVariant?.stock ?? product.stock;
   const activeSku = selectedVariant?.sku || product.sku;
-  const activeImage = selectedVariant?.images?.length
-    ? selectedVariant.images[0]
-    : (selectedVariant?.imageIndex !== undefined && product.images[selectedVariant.imageIndex]
-      ? product.images[selectedVariant.imageIndex]
-      : product.image);
-  const galleryImages = useMemo(() => {
-    const variantImgs = selectedVariant?.images?.length
-      ? selectedVariant.images
-      : (selectedVariant?.imageIndex !== undefined && product.images[selectedVariant.imageIndex]
-        ? [product.images[selectedVariant.imageIndex]]
-        : (product.image ? [product.image] : []));
-    const combined = [
-      ...variantImgs,
-      ...product.images.filter((image) => !variantImgs.includes(image)),
-    ];
-    return combined.length > 0 ? combined : (product.images.length > 0 ? product.images : (product.image ? [product.image] : []));
-  }, [selectedVariant, product.images, product.image]);
+  const galleryImages = useMemo(
+    () => productGalleryImages(product, selectedVariant),
+    [selectedVariant, product],
+  );
+  const activeImage = galleryImages[0] ?? product.image;
   const [quantity, setQuantity] = useState(1);
   const maxQuantity = Math.max(1, Math.min(10, activeStock ?? 10));
   const cartItem = {
@@ -207,7 +196,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
       {/* No order swap: the gallery is first in the DOM so a phone shows the
           product before the purchase panel, and desktop still puts it left. */}
       <div className="min-w-0 space-y-6">
-        <ProductGallery key={`${selectedColor}-${selectedStorage}-${activeImage}`} title={product.title} images={galleryImages} />
+        <ProductGallery key={`${selectedColor}-${selectedStorage}-${activeImage}`} title={product.title} images={galleryImages} locale={locale} />
 
       </div>
 
@@ -666,7 +655,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             type="button"
             className="underline underline-offset-4 transition hover:text-gold"
             onClick={() => {
-              window.apfelTrack?.("generate_lead", {
+              window.apfelTrack?.("inquiry_start", {
                 item_id: product.id,
                 item_name: product.title,
                 source: "product_detail",

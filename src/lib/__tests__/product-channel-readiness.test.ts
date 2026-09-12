@@ -37,6 +37,35 @@ const complete: ProductChannelFacts = {
 };
 
 describe("evaluateProductChannelReadiness", () => {
+  it("rejects a hardware model number used as an EPREL registration", () => {
+    expect(evaluateProductChannelReadiness({ ...complete, eprelId: "A3102" }).google.errors).toContain("Use a numeric EPREL registration ID, not a hardware model number.");
+    expect(evaluateProductChannelReadiness({ ...complete, eprelId: "123456" }).google.ready).toBe(true);
+  });
+  it.each([
+    { gtin: "4006381333931", mpn: "" },
+    { gtin: "", mpn: "MANUFACTURER-PART-123" },
+  ])("accepts saved manufacturer identifiers when the legacy status field is unknown", (identifiers) => {
+    const result = evaluateProductChannelReadiness({ ...complete, ...identifiers, identifierStatus: "unknown" });
+    expect(result.google.ready).toBe(true);
+  });
+
+  it("does not turn a missing or invalid identifier into an exemption", () => {
+    expect(evaluateProductChannelReadiness({ ...complete, gtin: "", mpn: "", identifierStatus: "unknown" }).google.ready).toBe(false);
+    expect(evaluateProductChannelReadiness({ ...complete, gtin: "4006381333932", identifierStatus: "unknown" }).google.errors).toContain("Product: correct the invalid GTIN/EAN checksum.");
+  });
+
+  it("blocks contradictory no-identifier declarations", () => {
+    const result = evaluateProductChannelReadiness({ ...complete, identifierStatus: "not_applicable" });
+    expect(result.google.ready).toBe(false);
+    expect(result.google.errors).toContain("Product: identifiers are supplied but marked not applicable.");
+  });
+
+  it("keeps non-new photo confirmation mandatory even with identifiers", () => {
+    const result = evaluateProductChannelReadiness({ ...complete, condition: "used", conditionNote: "Scratches on frame", hasRealProductPhotos: false, identifierStatus: "unknown" });
+    expect(result.google.ready).toBe(false);
+    expect(result.google.errors).toContain("Confirm that the photos show the exact non-new item.");
+  });
+
   it("marks an evidence-complete new product ready for all channels", () => {
     const result = evaluateProductChannelReadiness(complete);
     expect(result.store.ready).toBe(true);

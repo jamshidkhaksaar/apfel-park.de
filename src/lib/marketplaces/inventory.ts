@@ -68,15 +68,6 @@ export const reserveInventoryBatch = async (
   }
 };
 
-export const reserveInventory = async (
-  sku: string,
-  quantity: number,
-  referenceType: string,
-  referenceId: string,
-  actor = "system",
-  executor: SqlExecutor = defaultExecutor,
-): Promise<void> => reserveInventoryBatch([{ sku, quantity }], referenceType, referenceId, actor, executor);
-
 export const releaseInventoryReservation = async (
   referenceType: string,
   referenceId: string,
@@ -120,9 +111,4 @@ export const adjustInventory = async (
     available: Number(row.available),
     version: Number(row.version),
   };
-};
-
-export const queueAvailabilityForSku = async (sku: string, executor: SqlExecutor = defaultExecutor): Promise<string[]> => {
-  const result = await executor.query("SELECT queue_inventory_sync($1) AS channels", [sku]);
-  return Array.isArray(result.rows[0]?.channels) ? result.rows[0].channels.map(String) : [];
 };

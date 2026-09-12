@@ -1,5 +1,6 @@
 "use client";
 
+import LegacyPhonePhotos from "@/components/admin/LegacyPhonePhotos";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -7,19 +8,21 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
 import AiFillButton from "@/components/admin/AiFillButton";
 import type { ProductResearchResult } from "@/lib/product-research";
+import { appliedResearchTextFields, type AiTextField } from '@/lib/product-ai-fields';
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import EprelPicker, { type EprelMatch } from "@/components/admin/EprelPicker";
 import {
-  createEmptyProductChannelFields,
   ProductChannelFields,
   ProductChannelReadinessPanel,
-  productChannelPayload,
-  type ProductChannelFieldState,
 } from "@/components/admin/ProductChannelFields";
 import { eprelCycles, eprelEndurance } from "@/lib/eprel";
 import type { ProductChannelFacts, ProductIdentifierStatus } from "@/lib/product-channel-readiness";
 
+import { createEmptyProductChannelFields, productChannelPayload, type ProductChannelFieldState } from '@/lib/product-channel-form';
+import { parseFeatureBullets } from '@/lib/admin-product-form';
+
 export type FormState = {
+  aiGeneratedFields?: AiTextField[];
   title: string;
   subtitle: string;
   description: string;
@@ -140,12 +143,6 @@ const createEmptyVariant = () => ({
   imageIndex: undefined,
   isDefault: false,
 });
-
-const parseFeatureBullets = (value: string) =>
-  value
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean);
 
 const parseSpecs = (value: string) =>
   value
@@ -270,6 +267,7 @@ export default function ProductCreateForm() {
   const [currentStep, setCurrentStep] = useState<StepId>("basics");
   const [state, setState] = useState<FormState>(initialState);
   const [imageFiles, setImageFiles] = useState<Array<File | null>>([null, null, null, null]);
+  const [photoUploadBusy, setPhotoUploadBusy] = useState(false);
   const [variantImageFiles, setVariantImageFiles] = useState<Array<File | null>>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -342,6 +340,7 @@ export default function ProductCreateForm() {
       title: research.title ?? prev.title,
       subtitle: research.subtitle ?? prev.subtitle,
       description: research.description ?? prev.description,
+      aiGeneratedFields: appliedResearchTextFields(prev.aiGeneratedFields, research),
       brand: research.brand ?? prev.brand,
       model: research.model ?? prev.model,
       category: (research.category as FormState["category"]) ?? prev.category,
@@ -489,6 +488,7 @@ export default function ProductCreateForm() {
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (photoUploadBusy) return;
     setSubmitting(true);
     setError(null);
     setStepError(null);
@@ -576,6 +576,7 @@ export default function ProductCreateForm() {
           title: state.title,
           subtitle: state.subtitle,
           description: state.description,
+          aiGeneratedFields: state.aiGeneratedFields,
           category: state.category,
           condition: state.condition,
           batteryHealth: state.batteryHealth ? Number(state.batteryHealth) : null,
@@ -1302,7 +1303,7 @@ export default function ProductCreateForm() {
               </div>
             ) : (
               state.variants.map((variant, index) => (
-                <div key={`${variant.color}-${variant.storage}-${index}`} className="rounded-2xl border border-border/80 bg-surface-strong/70 p-5 space-y-4 shadow-lg">
+                <div key={index} className="rounded-2xl border border-border/80 bg-surface-strong/70 p-5 space-y-4 shadow-lg">
                   <div className="flex items-center justify-between border-b border-border/60 pb-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-gold">
                       {isGerman ? `Variante #${index + 1}` : `Variant #${index + 1}`} {variant.color ? `· ${variant.color}` : ""} {variant.storage ? `· ${variant.storage}` : ""}
@@ -1419,6 +1420,7 @@ export default function ProductCreateForm() {
                       <span className="text-xs font-semibold text-foreground">{isGerman ? "Standard-Variante" : "Default Variant"}</span>
                     </label>
                   </div>
+<LegacyPhonePhotos locale={isGerman ? "de" : "en"} images={variant.images ?? []} onChange={images => patchVariant(index, { images })} onBusy={setPhotoUploadBusy} />
                 </div>
               ))
             )}

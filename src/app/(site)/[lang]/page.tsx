@@ -252,7 +252,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                       alt={lang === "de" ? "Beschädigte Geräte zur Reparatur" : "Damaged devices for repair"}
                       fill
                       className="ipad-default object-contain p-4 drop-shadow-2xl"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      // Portrait is height-constrained inside the 4:3 / square stage.
+                      // Keep its original pixels and object-contain; request for painted width.
+                      sizes="(max-width: 1023px) calc(64vw - 64px), (max-width: 1727px) calc(43vw - 76px), 668px"
                     />
                   </div>
 
@@ -611,7 +613,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               
               <div className="flex flex-wrap justify-center gap-4">
                 <Link
-                  href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
+                  href={`tel:${siteInfo.phoneE164}`}
                   className="btn-primary"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

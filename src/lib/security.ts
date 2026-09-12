@@ -1,23 +1,72 @@
 import he from "he";
 
+// Deliberately accept only a small static SVG language, not arbitrary XML that
+// a denylist attempts to sanitize. Unknown syntax/namespaces fail closed. Logos
+// using paths, shapes and local gradients remain vectors; CSS, links, entities,
+// animation, foreign content and external resources must be exported as raster.
+const staticSvgElements = new Set([
+  "svg", "g", "defs", "path", "rect", "circle", "ellipse", "line", "polyline",
+  "polygon", "title", "desc", "text", "tspan", "linearGradient", "radialGradient",
+  "stop", "clipPath", "mask",
+]);
+const staticSvgAttributes = new Set([
+  "id", "viewBox", "width", "height", "x", "y", "x1", "x2", "y1", "y2",
+  "cx", "cy", "r", "rx", "ry", "dx", "dy", "d", "points", "transform",
+  "fill", "fill-rule", "fill-opacity", "stroke", "stroke-width", "stroke-linecap",
+  "stroke-linejoin", "stroke-miterlimit", "stroke-dasharray", "stroke-dashoffset",
+  "stroke-opacity", "opacity", "clip-path", "clip-rule", "mask", "offset",
+  "stop-color", "stop-opacity", "gradientUnits", "gradientTransform", "spreadMethod",
+  "fx", "fy", "fr", "clipPathUnits", "maskUnits", "maskContentUnits",
+  "preserveAspectRatio", "font-family", "font-size", "font-weight", "text-anchor",
+  "dominant-baseline", "vector-effect",
+]);
+
 export const isSecureSvg = (content: string): boolean => {
-  const decodedContent = he.decode(content);
-
-  // Prevent bypass via encoding (e.g. UTF-16) that leaves null bytes
-  if (decodedContent.includes("\0")) return false;
-
-  if (/<script/i.test(decodedContent)) return false;
-  if (/javascript:/i.test(decodedContent)) return false;
-  if (/on\w+\s*=/i.test(decodedContent)) return false;
-  if (/<foreignObject/i.test(decodedContent)) return false;
-
-  // Block SMIL animation tags and external references
-  if (/<(?:set|animate|animateMotion|animateTransform|use)/i.test(decodedContent)) return false;
-
-  // Block dangerous data: URIs
-  if (/data:(?:image\/svg\+xml|text\/html)/i.test(decodedContent)) return false;
-
-  return true;
+  if (content.length > 1_000_000 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F&]/.test(content)) return false;
+  const input = content.trim().replace(/^<\?xml\s+version=["']1\.0["'](?:\s+encoding=["']UTF-8["'])?\s*\?>\s*/i, "");
+  const stack: string[] = [];
+  let rootSeen = false;
+  let position = 0;
+  while (position < input.length) {
+    if (input[position] !== "<") {
+      const next = input.indexOf("<", position);
+      const end = next === -1 ? input.length : next;
+      const text = input.slice(position, end);
+      if (text.trim() && !["title", "desc", "text", "tspan"].includes(stack.at(-1) || "")) return false;
+      position = end;
+      continue;
+    }
+    const token = /^<(\/)?([A-Za-z]+)((?:\s+[A-Za-z][A-Za-z0-9-]*\s*=\s*(?:"[^"<>]*"|'[^'<>]*'))*)\s*(\/?)>/.exec(input.slice(position));
+    if (!token) return false;
+    const [, closing, name, attributes, selfClosing] = token;
+    if (!staticSvgElements.has(name)) return false;
+    if (closing) {
+      if (attributes || selfClosing || stack.pop() !== name) return false;
+    } else {
+      if (!stack.length) {
+        if (rootSeen || name !== "svg") return false;
+        rootSeen = true;
+      }
+      const seen = new Set<string>();
+      for (const attribute of attributes.matchAll(/([A-Za-z][A-Za-z0-9-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+        const key = attribute[1];
+        const value = attribute[2] ?? attribute[3];
+        if (seen.has(key)) return false;
+        seen.add(key);
+        if (key === "xmlns") {
+          if (name !== "svg" || stack.length || value !== "http://www.w3.org/2000/svg") return false;
+          continue;
+        }
+        if (!staticSvgAttributes.has(key) || !/^[a-zA-Z0-9\s#.,%()+-]*$/.test(value)) return false;
+        if (/url\s*\(/i.test(value) && !/^(?:fill|stroke|clip-path|mask)$/.test(key)) return false;
+        if (/url\s*\(/i.test(value) && !/^url\(#[a-zA-Z0-9_-]+\)$/.test(value)) return false;
+      }
+      if (!selfClosing) stack.push(name);
+      if (stack.length > 100) return false;
+    }
+    position += token[0].length;
+  }
+  return rootSeen && stack.length === 0;
 };
 
 export const escapeHtml = (str: string): string => {
@@ -29,8 +78,15 @@ export const isSafeRedirect = (value: string | null | undefined): boolean => {
   if (!value) return false;
   if (!value.startsWith("/")) return false;
   if (value.startsWith("//")) return false;
-  if (/[\u0000-\u001F\u007F]/.test(value)) return false;
-  return true;
+  if (/[\\\u0000-\u001F\u007F]/.test(value)) return false;
+  // Reject encoded structural characters, including nested percent encodings.
+  if (/%(?:25|2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value)) return false;
+  try {
+    const origin = "https://apfel-park.de";
+    return new URL(value, origin).origin === origin;
+  } catch {
+    return false;
+  }
 };
 
 /**

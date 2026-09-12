@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-import { formatPrice } from "@/lib/format";
 import type { DashboardTrend } from "@/lib/admin-dashboard";
 import type { Locale } from "@/lib/i18n";
 
@@ -141,5 +140,3 @@ export function StockComposition({
     </div>
   );
 }
-
-export const formatMoneyCompact = (locale: Locale, value: number): string => formatPrice(locale, value);

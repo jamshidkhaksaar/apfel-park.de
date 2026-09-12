@@ -1,6 +1,6 @@
-import type { Locale } from "@/lib/i18n";
 import type { Product, ProductCategory, ProductCondition } from "@/lib/products";
 import type { ProductRatingSummary } from "@/lib/product-reviews";
+import { productStorages } from '@/lib/product-storage';
 
 export type CatalogCardVariant = {
   color: string;
@@ -50,7 +50,7 @@ const factLabelPriority = (category: ProductCategory): RegExp[] => category === 
 
 export const catalogCardFacts = (product: Product): string[] => {
   const facts: string[] = [];
-  const storages = uniqueValues(product.variants.map((variant) => variant.storage));
+  const storages = productStorages(product).map(value=>value.replace(/(GB|TB)$/,' $1'));
   if (storages.length > 0) facts.push(storages.slice(0, 3).join(" · "));
 
   for (const pattern of factLabelPriority(product.category)) {
@@ -75,7 +75,6 @@ export const catalogCardFacts = (product: Product): string[] => {
 
 export const toCatalogCardModel = (
   product: Product,
-  locale: Locale,
   rating?: ProductRatingSummary,
 ): CatalogCardModel => ({
   id: product.id,
@@ -92,7 +91,9 @@ export const toCatalogCardModel = (
   energyClass: product.energyLabel?.efficiencyClass,
   facts: catalogCardFacts(product),
   colors: uniqueValues(product.variants.map((variant) => variant.color)),
-  storages: uniqueValues(product.variants.map((variant) => variant.storage)),
+  // This list describes actual variant choices. Non-variant capacity is already
+  // included in facts; duplicating it here would repeat the same label in cards.
+  storages: uniqueValues(product.variants.map(variant=>variant.storage)),
   variants: product.variants.map((variant) => ({
     color: variant.color,
     storage: variant.storage,

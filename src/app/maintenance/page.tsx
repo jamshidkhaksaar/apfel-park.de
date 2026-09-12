@@ -1,3 +1,5 @@
+import { businessIdentity, legalIdentityText } from '@/lib/business-identity';
+
 type MaintenancePageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -114,22 +116,22 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
           <p className="text-sm text-muted">Brauchst du Hilfe? Wir sind erreichbar:</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <a
-              href="tel:+494058978787"
+              href={`tel:${businessIdentity.phones.store.e164}`}
               className="btn-primary inline-flex items-center gap-2 !px-6 !py-3 text-sm"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              040 58978787
+              {businessIdentity.phones.store.de}
             </a>
             <a
-              href="mailto:info@apfel-park.de"
+              href={`mailto:${businessIdentity.email}`}
               className="btn-secondary inline-flex items-center gap-2 !px-6 !py-3 text-sm"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              info@apfel-park.de
+              {businessIdentity.email}
             </a>
           </div>
         </div>
@@ -137,7 +139,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
         {/* Address footer */}
         <div className="mt-8 border-t border-border pt-6 text-xs text-muted">
           <p className="font-semibold uppercase tracking-[0.2em] text-muted-strong">Apfel Park</p>
-          <p className="mt-1">Wilhelm-Strauß-Weg 2b · 21109 Hamburg</p>
+          <p className="mt-1">{legalIdentityText('de')}</p>
         </div>
       </div>
     </main>

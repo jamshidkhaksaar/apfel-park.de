@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { useReCaptcha } from "@/components/ReCaptcha";
-import type { Locale } from "@/lib/i18n";
+import { getDictionary, type Locale } from "@/lib/i18n";
 
 type Props = {
   lang: Locale;
@@ -92,9 +92,7 @@ export default function WithdrawalForm({ lang }: Props) {
             : `Your withdrawal was received on ${timestamp}. You will shortly receive a receipt confirmation by email at ${email}.`}
         </p>
         <p className="mt-3 text-sm text-muted">
-          {isGerman
-            ? "Bitte senden Sie die Ware innerhalb von 14 Tagen an: Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg."
-            : "Please return the goods within 14 days to: Apfel Park, Wilhelm-Strauß-Weg 2b, 21109 Hamburg, Germany."}
+          {getDictionary(lang).business.returnInstruction}
         </p>
       </div>
     );

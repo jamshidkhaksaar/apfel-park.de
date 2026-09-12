@@ -20,6 +20,11 @@ export function FilterSection({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const [previousActive, setPreviousActive] = useState(active);
+  if (previousActive !== active) {
+    setPreviousActive(active);
+    if (active) setOpen(true);
+  }
 
   return (
     <section className="border-b border-border/60 py-4 last:border-b-0">
@@ -65,6 +70,7 @@ export function Checklist({
   initialVisible = 8,
   showMoreLabel,
   showLessLabel,
+  countsCurrent = true,
 }: {
   options: FacetOption[];
   active: Set<string>;
@@ -74,9 +80,11 @@ export function Checklist({
   initialVisible?: number;
   showMoreLabel: string;
   showLessLabel: string;
+  countsCurrent?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? options : options.slice(0, initialVisible);
+  const ordered = [...options].sort((a,b) => Number(active.has(normalizeValue(b.value))) - Number(active.has(normalizeValue(a.value))));
+  const visible = expanded ? ordered : ordered.slice(0, initialVisible);
 
   return (
     <>
@@ -120,7 +128,7 @@ export function Checklist({
               {renderLabel(option.value)}
             </span>
             <span className={`rounded-full px-2 py-0.5 text-[11px] tabular-nums ${checked ? "bg-gold/15 text-gold" : "bg-surface-strong/60 text-muted"}`}>
-              {option.count}
+              {countsCurrent ? option.count : '…'}
             </span>
           </label>
         );

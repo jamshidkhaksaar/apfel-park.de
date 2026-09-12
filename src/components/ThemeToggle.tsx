@@ -12,14 +12,14 @@ export default function ThemeToggle() {
       role="radiogroup"
       aria-label="Darstellung / Theme"
       onKeyDown={(event) => {
-        if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-          event.preventDefault();
-          setTheme("dark");
-        }
-        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-          event.preventDefault();
-          setTheme("mono");
-        }
+        if (!["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"].includes(event.key)) return;
+        event.preventDefault();
+        const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+        const currentIndex = radios.indexOf(document.activeElement as HTMLButtonElement);
+        const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
+        const next = radios[(currentIndex + direction + radios.length) % radios.length];
+        next?.focus();
+        next?.click();
       }}
       className="relative flex h-9 items-center gap-1 rounded-full border border-white/10 bg-surface/80 px-1 backdrop-blur-sm transition-all hover:border-accent/30 hover:bg-surface-strong/80 focus-within:ring-2 focus-within:ring-gold focus-within:ring-offset-2 focus-within:ring-offset-background"
     >

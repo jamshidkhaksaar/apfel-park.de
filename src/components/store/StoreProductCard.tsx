@@ -7,6 +7,7 @@ import { discountPercentage, type CatalogCardModel } from "@/lib/catalog-card";
 import { EnergyClassArrow } from "@/components/EuEnergyLabelSection";
 import type { Locale } from "@/lib/i18n";
 import { shouldBypassImageOptimization } from "@/lib/image";
+import { catalogCardImageSizes } from '@/lib/store-image-sizes';
 import AddToCartButton from "./AddToCartButton";
 import PriceBlock from "./PriceBlock";
 import StoreQuickAddDrawer from "./StoreQuickAddDrawer";
@@ -58,7 +59,7 @@ export default function StoreProductCard({
           alt={product.title}
           fill
           priority={priority}
-          sizes="(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 23vw"
+          sizes={catalogCardImageSizes}
           className={`object-contain p-4 ${isOutOfStock ? "opacity-55 grayscale-[0.15]" : ""}`}
           unoptimized={shouldBypassImageOptimization(product.image)}
         />
@@ -114,7 +115,10 @@ export default function StoreProductCard({
         </span>
       </div>
 
-      <StoreQuickAddDrawer product={product} locale={locale} open={drawerOpen} onClose={() => setDrawerOpen(false)} onConfirm={add} />
+      {/* Skip closed-drawer hooks without an asynchronous gap before modal setup. */}
+      {drawerOpen ? (
+        <StoreQuickAddDrawer product={product} locale={locale} open onClose={() => setDrawerOpen(false)} onConfirm={add} />
+      ) : null}
     </article>
   );
 }

@@ -222,12 +222,12 @@ export default function GalaxyFoldShowcase({
       ? `Guten Tag Apfel Park Team, ich interessiere mich für das Samsung ${
           selectedModel === "fold8"
             ? "Galaxy Z Fold8 (4,5 mm Ultra-Slim)"
-            : "Galaxy Z Fold8 Ultra (8 Zoll 200MP Titanium)"
+            : "Galaxy Z Fold8 Ultra (8 Zoll 200 MP)"
         } in der Farbe ${isDe ? currentFinish.nameDe : currentFinish.nameEn}. Bitte senden Sie mir ein unverbindliches Angebot sowie Infos zu Verfügbarkeit und Abholung in Hamburg.`
       : `Hello Apfel Park Team, I am inquiring about the Samsung ${
           selectedModel === "fold8"
             ? "Galaxy Z Fold8 (4.5mm Ultra-Slim)"
-            : "Galaxy Z Fold8 Ultra (8-Inch 200MP Titanium)"
+            : "Galaxy Z Fold8 Ultra (8-Inch 200 MP)"
         } in ${currentFinish.nameEn}. Please provide pricing, stock availability, and collection details in Hamburg.`
   );
   const whatsappUrl = `https://wa.me/${siteInfo.whatsapp}?text=${waText}`;
@@ -242,131 +242,57 @@ export default function GalaxyFoldShowcase({
 
   // Tech Specs comparison table data
   const specRows = [
-    {
-      category: isDe ? "Formfaktor & Abmessungen" : "Form Factor & Dimensions",
-      fold8: isDe ? "4,5 mm entfaltet · 10,4 mm gefaltet · 201g Gewicht (Ultra-Slim)" : "4.5 mm unfolded · 10.4 mm folded · 201g weight (Ultra-Slim)",
-      ultra: isDe ? "5,4 mm entfaltet · 11,8 mm gefaltet · 235g Gewicht (Grade 5 Titan)" : "5.4 mm unfolded · 11.8 mm folded · 235g weight (Grade 5 Titanium)",
-    },
-    {
-      category: isDe ? "Hauptdisplay (Innen)" : "Main Canvas (Inner)",
-      fold8: isDe ? "7,6\" Dynamic LTPO AMOLED 2X · 1-120 Hz · 3.000 Nits Spitzenhelligkeit · 1828 x 2448" : "7.6\" Dynamic LTPO AMOLED 2X · 1-120 Hz · 3,000 nits peak · 1828 x 2448",
-      ultra: isDe ? "8,0\" Dynamic LTPO AMOLED 2X · 1-120 Hz · 3.200 Nits · Wacom S-Pen Digitizer · 2184 x 1968" : "8.0\" Dynamic LTPO AMOLED 2X · 1-120 Hz · 3,200 nits · Wacom S-Pen Digitizer · 2184 x 1968",
-    },
-    {
-      category: isDe ? "Cover-Display (Außen)" : "Cover Screen (Outer)",
-      fold8: isDe ? "5,5\" Dynamic LTPO AMOLED 2X · 120 Hz · 2.600 Nits" : "5.5\" Dynamic LTPO AMOLED 2X · 120 Hz · 2,600 nits",
-      ultra: isDe ? "6,5\" Dynamic LTPO AMOLED 2X · 120 Hz · 3.000 Nits (Gorilla Glass Armor 2)" : "6.5\" Dynamic LTPO AMOLED 2X · 120 Hz · 3,000 nits (Gorilla Glass Armor 2)",
-    },
-    {
-      category: isDe ? "Prozessor & Silicon" : "Processor & Silicon",
-      fold8: "Qualcomm Snapdragon 8 Elite Gen 5 (3nm) · NPU 45 TOPS · Galaxy AI",
-      ultra: "Qualcomm Snapdragon 8 Elite Gen 5 for Galaxy (3nm Overclocked) · Galaxy AI",
-    },
-    {
-      category: isDe ? "Kamerasystem" : "Camera Optics",
-      fold8: isDe ? "Duales 50 MP System: 50 MP Weitwinkel (f/1.8, OIS) + 50 MP Ultraweitwinkel (f/1.9)" : "Dual 50MP System: 50MP Wide (f/1.8, OIS) + 50MP Ultra-Wide (f/1.9)",
-      ultra: isDe ? "Triple Pro System: 200 MP Hauptsensor (f/1.7, OIS) + 50 MP Ultraweit + 50 MP Periskop-Tele (5x optisch, 100x Space Zoom)" : "Triple Pro System: 200MP Main (f/1.7, OIS) + 50MP Ultra-Wide + 50MP Periscope (5x optical, 100x Space Zoom)",
-    },
-    {
-      category: isDe ? "Arbeitsspeicher & Speicher" : "Memory & Storage",
-      fold8: "12 GB / 16 GB LPDDR5X · 256 GB / 512 GB / 1 TB UFS 4.0",
-      ultra: "16 GB LPDDR5X · 512 GB / 1 TB UFS 4.0",
-    },
-    {
-      category: isDe ? "Akku & Schnellladung" : "Battery & Charging",
-      fold8: isDe ? "4.800 mAh · 45W kabelgebunden · 20W Fast Wireless · Wireless PowerShare" : "4,800 mAh · 45W wired · 20W Fast Wireless · Wireless PowerShare",
-      ultra: isDe ? "5.000 mAh Dual-Zelle · 45W kabelgebunden · 25W Fast Wireless · PowerShare" : "5,000 mAh Dual-Cell · 45W wired · 25W Fast Wireless · PowerShare",
-    },
-    {
-      category: isDe ? "Gehäuse & Schutzklasse" : "Chassis & Durability",
-      fold8: isDe ? "Verstärktes Armor Aluminum · Flex Teardrop Zero-Gap Scharnier · IP48" : "Reinforced Armor Aluminum · Flex Teardrop Zero-Gap Hinge · IP48",
-      ultra: isDe ? "Grade 5 Titanrahmen · Reflexionsarmes Armor 2 Glas · Zero-Gap Scharnier · IP48" : "Grade 5 Titanium frame · Anti-reflective Armor 2 glass · Zero-Gap Hinge · IP48",
-    },
+    { category: isDe ? "Maße & Gewicht" : "Dimensions & weight", fold8: isDe ? "4,5 mm geöffnet · 9,7 mm geschlossen · 201 g" : "4.5 mm open · 9.7 mm closed · 201 g", ultra: isDe ? "4,1 mm geöffnet · 8,9 mm geschlossen · 215 g" : "4.1 mm open · 8.9 mm closed · 215 g" },
+    { category: isDe ? "Hauptdisplay" : "Main display", fold8: isDe ? "7,6\" AMOLED · 1–120 Hz · 1.848 × 2.448" : "7.6\" AMOLED · 1–120 Hz · 1,848 × 2,448", ultra: isDe ? "8\" AMOLED · 1–120 Hz · 2.504 × 2.256" : "8\" AMOLED · 1–120 Hz · 2,504 × 2,256" },
+    { category: isDe ? "Außendisplay" : "Cover display", fold8: isDe ? "5,5\" AMOLED · 1–120 Hz" : "5.5\" AMOLED · 1–120 Hz", ultra: isDe ? "6,5\" AMOLED · 1–120 Hz" : "6.5\" AMOLED · 1–120 Hz" },
+    { category: isDe ? "Prozessor" : "Processor", fold8: isDe ? "Snapdragon 8 Elite Gen 5 for Galaxy" : "Snapdragon 8 Elite Gen 5 for Galaxy", ultra: isDe ? "Snapdragon 8 Elite Gen 5 for Galaxy" : "Snapdragon 8 Elite Gen 5 for Galaxy" },
+    { category: isDe ? "Rückkameras" : "Rear cameras", fold8: isDe ? "50 MP Weitwinkel + 50 MP Ultraweitwinkel" : "50 MP wide + 50 MP ultrawide", ultra: isDe ? "200 MP Weitwinkel + 50 MP Ultraweitwinkel + 10 MP 3x Tele" : "200 MP wide + 50 MP ultrawide + 10 MP 3x telephoto" },
+    { category: isDe ? "Kapazitäten" : "Capacities", fold8: isDe ? "256 / 512 GB: 12 GB RAM · 1 TB: 16 GB RAM" : "256 / 512 GB: 12 GB RAM · 1 TB: 16 GB RAM", ultra: isDe ? "256 / 512 GB: 12 GB RAM · 1 TB: 16 GB RAM" : "256 / 512 GB: 12 GB RAM · 1 TB: 16 GB RAM" },
+    { category: isDe ? "Akku & Laden" : "Battery & charging", fold8: isDe ? "4.800 mAh typisch · 45-W-Ladezubehör separat · kabellos bis 20 W" : "4,800 mAh typical · 45 W charger separate · wireless up to 20 W", ultra: isDe ? "5.000 mAh typisch · 45-W-Ladezubehör separat · kabellos bis 20 W" : "5,000 mAh typical · 45 W charger separate · wireless up to 20 W" },
+    { category: isDe ? "Schutz & Software" : "Protection & software", fold8: isDe ? "IP48 unter Laborbedingungen · Android 17 / One UI 9" : "IP48 under laboratory conditions · Android 17 / One UI 9", ultra: isDe ? "IP48 unter Laborbedingungen · Android 17 / One UI 9" : "IP48 under laboratory conditions · Android 17 / One UI 9" },
   ];
-
   // FAQ entries
   const faqs = [
     {
       qDe: "Wann ist das Samsung Galaxy Z Fold8 in Deutschland erhältlich?",
       qEn: "When is the Samsung Galaxy Z Fold8 available in Germany?",
-      aDe: "Das Samsung Galaxy Z Fold8 sowie das Z Fold8 Ultra wurden offiziell vorgestellt und sind bei Apfel Park Hamburg ab sofort lieferbar. Alle Geräte sind vertragsfrei und für alle Mobilfunknetze freigeschaltet.",
-      aEn: "The Samsung Galaxy Z Fold8 and Z Fold8 Ultra have launched and are available at Apfel Park Hamburg. All units are factory unlocked for all carriers.",
+      aDe: "Bitte frage dein Wunschmodell unverbindlich an. Preis, Bestand, Gerätezustand und Liefertermin bestätigen wir individuell; die Modellvorstellung ist keine Bestandszusage.",
+      aEn: "Ask about your preferred model without obligation. We confirm price, stock, condition and delivery individually; this showcase is not a stock guarantee.",
     },
     {
       qDe: "Wie unterscheidet sich das Galaxy Z Fold8 vom Z Fold8 Ultra?",
       qEn: "How does the Galaxy Z Fold8 differ from the Z Fold8 Ultra?",
-      aDe: "Das Galaxy Z Fold8 setzt mit nur 4,5 mm Dicke und 201g auf maximale Leichtigkeit und Handlichkeit. Das Z Fold8 Ultra bietet ein größeres 8-Zoll-Display, einen 200 MP ISOCELL Kamerasensor mit 5x Periskop-Telezoom, S-Pen Digitizer-Unterstützung und ein Gehäuse aus Grade 5 Titan.",
-      aEn: "The Galaxy Z Fold8 focuses on extreme thinness (4.5mm) and portability at just 201g. The Z Fold8 Ultra provides an expansive 8-inch canvas, a 200MP ISOCELL camera with 5x periscope telephoto zoom, S-Pen digitizer support, and Grade 5 titanium construction.",
+      aDe: "Das Fold8 hat ein 7,6-Zoll-Innendisplay und zwei 50-MP-Rückkameras. Das Ultra bietet ein 8-Zoll-Innendisplay, eine 200-MP-Hauptkamera und ein 3-faches Teleobjektiv.",
+      aEn: "Fold8 has a 7.6-inch inner display and two 50 MP rear cameras. Ultra offers an 8-inch inner display, a 200 MP main camera and 3x telephoto.",
     },
     {
       qDe: "Hat das Galaxy Z Fold8 einen störenden Falz im Innendisplay?",
       qEn: "Does the Galaxy Z Fold8 have a noticeable screen crease?",
-      aDe: "Samsung verwendet bei beiden Modellen die neueste Generation des Flex Teardrop Zero-Gap Scharniers. Der Displayfalz wurde im Vergleich zu früheren Generationen drastisch minimiert und schließt völlig bündig ab.",
-      aEn: "Samsung equips both models with its latest Flex Teardrop Zero-Gap hinge. The inner display crease has been substantially minimized and closes completely flush.",
+      aDe: "Die Flex-Titanium-Displaystruktur soll den Falz reduzieren. Wahrnehmung und Sichtbarkeit hängen von Blickwinkel, Beleuchtung und Nutzung ab.",
+      aEn: "The Flex Titanium display structure is designed to reduce the crease. Visibility depends on viewing angle, lighting and use.",
     },
     {
       qDe: "Sind die Geräte ohne Vertrag und für alle SIM-Karten geeignet?",
       qEn: "Are the devices unlocked without contract for all carriers?",
-      aDe: "Ja, alle bei Apfel Park verkauften Smartphones sind zu 100% vertragsfrei (ohne SIM-Lock) und unterstützen Dual-SIM sowie eSIM für alle deutschen und internationalen Mobilfunkanbieter.",
-      aEn: "Yes, all smartphones sold at Apfel Park are 100% factory unlocked without SIM-lock, supporting Dual-SIM and eSIM across all German and global carriers.",
+      aDe: "Netz- und SIM-Kompatibilität hängen vom konkreten Modell und Anbieter ab. Wir klären die gewünschte Ausführung vor einem Kauf.",
+      aEn: "Network and SIM compatibility depend on the specific model and carrier. We confirm the configuration before purchase.",
     },
   ];
 
   const architectureCards = [
-    {
-      key: "snapdragon",
-      accent: ARCH_ACCENTS.gold,
-      Icon: SnapdragonCpuSvg,
-      tag: "3nm TSMC N3E",
-      title: "Snapdragon 8 Elite Gen 5",
-      highlight: "4,32 GHz Oryon CPU · 45 TOPS NPU",
-      body: isDe
-        ? "Maßgeschneiderter 3nm-Halbleiter mit dediziertem Hexagon Tensor-Prozessor. Ermöglicht Live-Dolmetschen, Galaxy AI Echtzeit-Transkription und bis zu 40% mehr Grafikleistung."
-        : "Custom 3nm silicon fabricated with dual 4.32GHz Oryon Prime cores and a dedicated Hexagon NPU. Powers on-device Galaxy AI translation and desktop-grade gaming.",
-      statLabel: isDe ? "Architektur" : "Architecture",
-      statValue: "Oryon + Adreno 830",
-    },
-    {
-      key: "camera",
-      accent: ARCH_ACCENTS.gold,
-      Icon: IsocellCameraSvg,
-      tag: "200 MP · 1/1.3\"",
-      title: isDe ? "200 MP ISOCELL ProVisual" : "200MP ISOCELL ProVisual",
-      highlight: "Tetra2pixel · 5x Periskop Zoom",
-      body: isDe
-        ? "Erstmals in einem Foldable: Der 200 MP Hauptsensor mit f/1.7 Blende fängt bis zu 60% mehr Licht ein. Gekoppelt mit 5x optischem Periskop-Telezoom für Aufnahmen bis 100x Space Zoom."
-        : "First time in a foldable: a 200MP sensor with f/1.7 aperture and Tetra2pixel binning captures 60% more light. Paired with a 5x optical periscope lens for up to 100x Space Zoom.",
-      statLabel: isDe ? "Optische Stabilisierung" : "Optical Stabilization",
-      statValue: isDe ? "4-Achsen OIS Gyro" : "4-axis OIS gyro",
-    },
-    {
-      key: "hinge",
-      accent: ARCH_ACCENTS.green,
-      Icon: FlexHingeSvg,
-      tag: isDe ? "0,0 mm Falz" : "0.0 mm crease",
-      title: isDe ? "Flex Zero-Gap Scharnier" : "Flex Zero-Gap Hinge",
-      highlight: isDe ? "Grade 5 Titan · IP48 Wasserfest" : "Grade 5 titanium · IP48 water resistant",
-      body: isDe
-        ? "Doppelspuren-Planetengetriebe mit patentiertem Wassertropfen-Radius. Schließt absolut bündig ohne Zwischenraum und minimiert die Displayfalte auf ein kaum wahrnehmbares Niveau."
-        : "Dual-rail planetary gear assembly with waterdrop teardrop geometry. Closes perfectly flush with zero gap, reducing the inner screen crease to an imperceptible level.",
-      statLabel: isDe ? "Dauerhaltbarkeit" : "Durability Test",
-      statValue: isDe ? "300.000 Faltungen" : "300,000 folds",
-    },
-    {
-      key: "display",
-      accent: ARCH_ACCENTS.gold,
-      Icon: AmoledDisplaySvg,
-      tag: "3.200 Nits · LTPO",
-      title: "Dynamic LTPO AMOLED 2X",
-      highlight: "1-120 Hz variabel · Wacom EMR",
-      body: isDe
-        ? "Brillantes Display mit Ultra-Thin-Glass (UTG) und flexibler Bildwiederholrate von 1 Hz bis 120 Hz. Beim Fold8 Ultra mit integriertem Wacom-Digitizer für reflexionsfreie S-Pen Handschrift."
-        : "Stunning canvas featuring Ultra-Thin Glass (UTG) and variable refresh rates from 1Hz to 120Hz. Fold8 Ultra includes an integrated Wacom digitizer for natural S-Pen handwriting.",
-      statLabel: isDe ? "Farbraumabdeckung" : "Color Space",
-      statValue: "100% DCI-P3",
-    },
+    { key: "snapdragon", accent: ARCH_ACCENTS.gold, Icon: SnapdragonCpuSvg, tag: "for Galaxy", title: "Snapdragon 8 Elite Gen 5", highlight: "Galaxy AI",
+      body: isDe ? "Beide Modelle nutzen die Snapdragon-Plattform für Galaxy. KI-Funktionen können ein Konto oder eine Internetverbindung erfordern." : "Both models use the Snapdragon platform for Galaxy. AI features may require an account or internet connection.",
+      statLabel: isDe ? "Plattform" : "Platform", statValue: "Snapdragon for Galaxy" },
+    { key: "camera", accent: ARCH_ACCENTS.gold, Icon: IsocellCameraSvg, tag: "Ultra · 200 MP", title: isDe ? "Ultra-Kamerasystem" : "Ultra camera system", highlight: "200 MP + 50 MP + 10 MP",
+      body: isDe ? "Das Ultra kombiniert eine 200-MP-Hauptkamera mit Ultraweitwinkel und einem 3-fachen Teleobjektiv. Das Fold8 besitzt zwei 50-MP-Rückkameras." : "Ultra combines a 200 MP main camera, ultrawide and 3x telephoto. Fold8 has two 50 MP rear cameras.",
+      statLabel: isDe ? "Ultra Teleobjektiv" : "Ultra telephoto", statValue: "3x · OIS" },
+    { key: "hinge", accent: ARCH_ACCENTS.green, Icon: FlexHingeSvg, tag: "Flex Titanium", title: isDe ? "Faltbare Displaystruktur" : "Foldable display structure", highlight: isDe ? "IP48 ab Werk" : "IP48 when new",
+      body: isDe ? "Die Displaystruktur nutzt Samsungs Flex-Titanium-Technik. Wasserbeständigkeit ist nicht dauerhaft; Verschleiß und Schäden können den Schutz mindern." : "The display structure uses Samsung Flex Titanium technology. Water resistance is not permanent; wear and damage can reduce protection.",
+      statLabel: isDe ? "Schutzklasse" : "Rating", statValue: "IP48" },
+    { key: "display", accent: ARCH_ACCENTS.gold, Icon: AmoledDisplaySvg, tag: "AMOLED", title: "Dynamic AMOLED 2X", highlight: "1–120 Hz",
+      body: isDe ? "Das Fold8 hat ein 7,6-Zoll-Innendisplay, das Ultra ein 8-Zoll-Innendisplay. Die adaptive Bildwiederholrate hängt von Inhalt und Nutzung ab." : "Fold8 has a 7.6-inch inner display; Ultra has an 8-inch inner display. Adaptive refresh depends on content and use.",
+      statLabel: isDe ? "Bildwiederholrate" : "Refresh rate", statValue: "1–120 Hz" },
   ];
-
   return (
     <div className="min-h-screen bg-background text-foreground antialiased selection:bg-gold selection:text-black">
       {/* Editorial Sub-Navigation & Breadcrumbs */}
@@ -392,7 +318,7 @@ export default function GalaxyFoldShowcase({
 
           <div className="flex items-center gap-2 text-muted">
             <span className="size-1.5 rounded-full bg-gold" />
-            <span>{isDe ? "Hamburg Boutique & bundesweiter Expressversand" : "Hamburg Boutique & Nationwide Express Shipping"}</span>
+            <span>{isDe ? "Hamburg Boutique & bundesweiter Versand" : "Hamburg Boutique & Nationwide Shipping"}</span>
           </div>
         </div>
       </div>
@@ -417,7 +343,7 @@ export default function GalaxyFoldShowcase({
                 <>
                   Galaxy Z Fold8 Ultra
                   <span className="block text-xl sm:text-3xl lg:text-4xl font-medium text-muted mt-2">
-                    {isDe ? "Das 8,0-Zoll Flaggschiff mit 200 MP Optik & Titan." : "The 8.0-Inch Powerhouse with 200MP Optics & Titanium."}
+                    {isDe ? "8-Zoll-Innendisplay und 200-MP-Hauptkamera." : "8-inch inner display and 200 MP main camera."}
                   </span>
                 </>
               )}
@@ -429,8 +355,8 @@ export default function GalaxyFoldShowcase({
                   ? "Samsungs dünnstes und leichtestes Foldable aller Zeiten. 7,6-Zoll Dynamic LTPO AMOLED 2X, 5,5-Zoll Cover, Snapdragon 8 Elite Gen 5 und robustes Armor Aluminum bei nur 201g."
                   : "Samsung's thinnest and lightest foldable to date. 7.6-inch Dynamic LTPO AMOLED 2X, 5.5-inch cover screen, Snapdragon 8 Elite Gen 5 silicon and Armor Aluminum build at just 201g.")
                 : (isDe
-                  ? "Kompromisslose Produktivität. 8,0-Zoll Riesen-Canvas mit S-Pen Digitizer, 200 MP ISOCELL Hauptkamera mit 5x Periskop-Telezoom, Grade 5 Titanrahmen und 5.000 mAh Akku."
-                  : "Uncompromising powerhouse. Expansive 8.0-inch canvas with S-Pen digitizer, 200MP ISOCELL main camera with 5x periscope telephoto, Grade 5 titanium chassis and 5,000 mAh battery.")}
+                  ? "Galaxy Z Fold8 Ultra mit 8-Zoll-Innendisplay, 200-MP-Hauptkamera und 5.000-mAh-Akku (typisch). Preis und Verfügbarkeit bei Apfel Park bitte anfragen."
+                  : "Galaxy Z Fold8 Ultra with an 8-inch inner display, 200 MP main camera and typical 5,000 mAh battery. Ask Apfel Park to confirm price and availability.")}
             </p>
 
             {/* Direct Consultation CTAs */}
@@ -508,7 +434,7 @@ export default function GalaxyFoldShowcase({
                   {selectedModel === "fold8" ? "Galaxy Z Fold8" : "Galaxy Z Fold8 Ultra"}
                 </h2>
                 <span className="rounded-full bg-gold/15 px-2.5 py-0.5 text-[11px] font-semibold text-gold">
-                  {selectedModel === "fold8" ? "4,5 mm Slim" : "Titanium 200MP"}
+                  {selectedModel === "fold8" ? "4,5 mm Slim" : "Ultra · 200 MP"}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-muted mt-0.5">
@@ -678,7 +604,7 @@ export default function GalaxyFoldShowcase({
             <p className="mt-4 text-sm sm:text-base text-muted leading-relaxed">
               {isDe
                 ? "Detaillierte Einblicke in Prozessor-Halbleiter, optische Sensortechnik, Scharnier-Mechanik und LTPO-Displaymatrix."
-                : "Deep architectural breakdown of 3nm silicon, periscope optical sensor suite, zero-gap hinge dynamics, and LTPO display physics."}
+                : "Explore the processor, cameras, folding mechanism and adaptive display technology."}
             </p>
           </div>
 

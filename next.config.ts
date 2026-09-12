@@ -9,13 +9,18 @@ import type { NextConfig } from "next";
 const LOCALE_ROUTES = [
   'about', 'accessories', 'cart', 'checkout', 'contact', 'delivery-returns',
   'device-conditions', 'faq', 'gaming', 'gebrauchte-handys', 'gebrauchte-iphones',
-  'iphone-17', 'laptops', 'open-box', 'privacy', 'repairs', 'smartphones',
+  'iphone-17', 'iphone-16-pro-max', 'samsung-handys', 'xiaomi-redmi-handys',
+  'handys-ohne-vertrag', 'trade-in', 'laptops', 'open-box', 'privacy', 'repairs', 'smartphones',
   'store', 'tablets', 'terms', 'withdrawal', 'ratgeber/smartphone-laenger-nutzen',
 ] as const;
 
 const localePrefixRedirects = LOCALE_ROUTES.flatMap((route) => [
   { source: `/${route}`, destination: `/de/${route}`, permanent: true },
-  { source: `/${route}/:path*`, destination: `/de/${route}/:path*`, permanent: true },
+  // Public store pages have one child segment (product slug or catalog).
+  // Signed /store/preview/:token is a private root route, not a locale alias.
+  route === 'store'
+    ? { source: '/store/:path((?!preview(?:/|$))[^/]+)', destination: '/de/store/:path', permanent: true }
+    : { source: `/${route}/:path*`, destination: `/de/${route}/:path*`, permanent: true },
 ]);
 
 const contentSecurityPolicy = [
@@ -37,6 +42,7 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  deploymentId: process.env.DEPLOYMENT_VERSION,
   experimental: {
     proxyClientMaxBodySize: '25mb',
   },
@@ -67,7 +73,7 @@ const nextConfig: NextConfig = {
     // Device sizes for responsive images
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     // Image sizes for next/image
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    imageSizes: [16, 32, 48, 64, 96, 128, 160, 192, 256, 320, 384, 512],
     // Minimum cache TTL for optimized images (1 year)
     minimumCacheTTL: 31536000,
   },
@@ -76,11 +82,17 @@ const nextConfig: NextConfig = {
   // the closest relevant page; never blanket-redirect everything to home).
   async redirects() {
     return [
+      // Preserve the old portrait URL; new markup uses the correct spelling.
+      { source: '/images/owner/bismiallah-safi.webp', destination: '/images/owner/bismaillah-safi.webp', statusCode: 301 },
+      // A distinct query also escapes a browser-cached old permanent locale hop.
+      { source: '/:lang(de|en)/store/preview/:token', destination: '/store/preview/:token?preview_route=1', permanent: false },
       { source: '/urun/:slug*', destination: '/de/store', permanent: true },
       { source: '/product/:slug*', destination: '/de/store', permanent: true },
       { source: '/product-category/:path*', destination: '/de/store', permanent: true },
       { source: '/shop', destination: '/de/store', permanent: true },
       { source: '/shop/:path*', destination: '/de/store', permanent: true },
+      { source: '/:lang(de|en)/shop', destination: '/:lang/store', permanent: true },
+      { source: '/:lang(de|en)/shop/:path*', destination: '/:lang/store', permanent: true },
       { source: '/tech-help', destination: '/de/repairs', permanent: true },
       { source: '/tech-help/:path*', destination: '/de/repairs', permanent: true },
       { source: '/service/smartphone-reparatur', destination: '/de/repairs', permanent: true },
@@ -95,9 +107,9 @@ const nextConfig: NextConfig = {
       { source: '/kontakt', destination: '/de/contact', permanent: true },
       { source: '/about-us', destination: '/de/about', permanent: true },
       { source: '/our-team', destination: '/de/about', permanent: true },
-      { source: '/impressum', destination: '/de/impressum', permanent: true },
+      { source: '/impressum', destination: '/de/impressum', statusCode: 301 },
       { source: '/privacy-policy', destination: '/de/privacy', permanent: true },
-      { source: '/datenschutz', destination: '/de/privacy', permanent: true },
+      { source: '/datenschutz', destination: '/de/privacy', statusCode: 301 },
       { source: '/cdn-cgi/l/:path*', destination: '/de/contact', permanent: false },
       ...localePrefixRedirects,
     ];

@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import StoreBrandCards from "@/components/store/StoreBrandCards";
 import { notFound } from "next/navigation";
-import { siApple, siGoogle, siHuawei, siSamsung, siXiaomi } from "simple-icons";
 
+import DeviceQuoteForm from "@/components/DeviceQuoteForm";
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
+import { getProducts, getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getSmartphonesContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
@@ -19,14 +20,6 @@ import {
   isStorePaginationOutOfRange,
   resolveStoreIndexing,
 } from "@/lib/store-indexing";
-
-const featuredBrands = [
-  { name: "Apple", line: "iPhone", color: `#${siApple.hex}`, path: siApple.path },
-  { name: "Samsung", line: "Galaxy", color: `#${siSamsung.hex}`, path: siSamsung.path },
-  { name: "Google", line: "Pixel", color: `#${siGoogle.hex}`, path: siGoogle.path },
-  { name: "Xiaomi", line: "Mi & Redmi", color: `#${siXiaomi.hex}`, path: siXiaomi.path },
-  { name: "Huawei", line: "Mate & Pura", color: `#${siHuawei.hex}`, path: siHuawei.path },
-];
 
 export const dynamic = "force-dynamic";
 
@@ -67,14 +60,18 @@ export default async function SmartphonesPage({
   const sort = parseStoreSort(query.sort);
   const page = indexing.page;
   const activeFilters = parseStoreCatalogFilters(query);
-  const catalog = await getStoreCatalog({
-    category: "smartphones",
-    sort,
-    page,
-    pageSize: 24,
-    locale: lang,
-    filters: activeFilters,
-  });
+  const [catalog, collectionProducts] = await Promise.all([
+    getStoreCatalog({
+      category: "smartphones",
+      sort,
+      page,
+      pageSize: 24,
+      locale: lang,
+      filters: activeFilters,
+    }),
+    // Same primitive arguments as getStoreCatalog: request-memoized DB read.
+    getProducts(undefined, undefined, lang),
+  ]);
   if (isStorePaginationOutOfRange(indexing.page, catalog.pages)) notFound();
 
   const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${lang}/smartphones`, indexing);
@@ -109,7 +106,9 @@ export default async function SmartphonesPage({
         breadcrumbs={[{ label: "Smartphones" }]}
       />
 
-      <StoreCollectionLinks lang={lang} products={catalog.products} />
+      <DeviceQuoteForm locale={lang} initialBrand={activeFilters.brands.length === 1 ? activeFilters.brands[0] : undefined} />
+
+      <StoreCollectionLinks lang={lang} products={collectionProducts} />
 
       {/* Smartphone Store Grid with Filters */}
       <section className="bg-store-ground py-6 md:py-8" id="store">
@@ -130,38 +129,7 @@ export default async function SmartphonesPage({
         </div>
       </section>
 
-      {/* Featured Brands */}
-      <section className="section-pad">
-        <div className="container-page">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-foreground md:text-4xl">
-              {lang === "de" ? "Top Marken" : "Top Brands"}
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-muted">
-              {lang === "de"
-                ? "Wir führen alle führenden Smartphone-Marken"
-                : "We carry all leading smartphone brands"}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
-            {featuredBrands.map((brand) => (
-              <div
-                key={brand.name}
-                className="tech-card-hover group flex flex-col items-center justify-center rounded-2xl p-8 text-center"
-              >
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition group-hover:ring-gold/40">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8" style={{ color: brand.color }} aria-hidden="true">
-                    <path d={brand.path} />
-                  </svg>
-                </div>
-                <p className="font-semibold text-foreground">{brand.name}</p>
-                <p className="mt-1 text-xs text-muted">{brand.line}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <StoreBrandCards lang={lang} />
 
       {/* Services */}
       <section className="section-pad bg-surface/30">
@@ -209,18 +177,18 @@ export default async function SmartphonesPage({
               </p>
             </div>
 
-            {/* Financing */}
+            {/* Payment information */}
             <div className="tech-card-hover group rounded-2xl p-8">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-amber/20 text-gold">
                 <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-foreground">{lang === "de" ? "Finanzierung" : "Financing"}</h3>
+              <h3 className="text-xl font-bold text-foreground">{lang === "de" ? "Zahlungsarten im Checkout" : "Payment options at checkout"}</h3>
               <p className="mt-3 text-muted">
                 {lang === "de"
-                  ? "Flexible Ratenzahlung für dein Wunsch-Smartphone. Frag uns nach den Möglichkeiten."
-                  : "Flexible installment payments for your dream smartphone. Ask us about options."}
+                  ? "Die für deine Bestellung verfügbaren Zahlungsarten werden dir vor Abschluss im Checkout angezeigt."
+                  : "The payment methods available for your order are shown at checkout before you complete your purchase."}
               </p>
             </div>
           </div>
@@ -247,7 +215,7 @@ export default async function SmartphonesPage({
               
               <div className="flex flex-wrap items-center gap-4">
                 <Link
-                  href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
+                  href={`tel:${siteInfo.phoneE164}`}
                   className="btn-primary shrink-0"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -5,6 +5,7 @@ import PageIntro from "../../../../components/PageIntro";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
 import { requireLocale } from "@/lib/route-locale";
+import { legalIdentityText } from '@/lib/business-identity';
 
 export const dynamic = "force-dynamic";
 
@@ -92,7 +93,7 @@ export default async function DeliveryReturnsPage({ params }: { params: Promise<
         {
           title: "Muster-Widerruf",
           body: [
-            `An: ${siteInfo.email.replace("@", " [at] ").replaceAll(".", " [dot] ")} — Hiermit widerrufe ich den von mir abgeschlossenen Vertrag über den Kauf der folgenden Waren: [Artikel], bestellt am: [Datum], erhalten am: [Datum], Name/Anschrift: [Ihre Angaben], Datum/Unterschrift (nur bei Mitteilung auf Papier).`,
+            `An: ${legalIdentityText('de')}, ${siteInfo.email} — Hiermit widerrufe ich den von mir abgeschlossenen Vertrag über den Kauf der folgenden Waren: [Artikel], bestellt am: [Datum], erhalten am: [Datum], Name/Anschrift: [Ihre Angaben], Datum/Unterschrift (nur bei Mitteilung auf Papier).`,
           ],
         },
       ]
@@ -169,7 +170,7 @@ export default async function DeliveryReturnsPage({ params }: { params: Promise<
         {
           title: "Model withdrawal notice",
           body: [
-            `To: ${siteInfo.email.replace("@", " [at] ").replaceAll(".", " [dot] ")} — I hereby withdraw from the contract concluded by me for the purchase of the following goods: [items], ordered on: [date], received on: [date], name/address: [your details], date/signature (only for paper notice).`,
+            `To: ${legalIdentityText('en')}, ${siteInfo.email} — I hereby withdraw from the contract concluded by me for the purchase of the following goods: [items], ordered on: [date], received on: [date], name/address: [your details], date/signature (only for paper notice).`,
           ],
         },
       ];

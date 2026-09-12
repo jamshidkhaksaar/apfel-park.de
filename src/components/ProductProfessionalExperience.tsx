@@ -40,11 +40,22 @@ export function ProductWishlistButton({ productId, title, locale }: { productId:
 }
 
 export function ProductFamilyConfigurator({ family, locale }: { family: ProductFamilyView; locale: Locale }) {
-  const axes = family.optionAxes.filter((axis) => family.members.some((member) => member.optionValues[axis]));
+  const axes = family.optionAxes.filter(axis => axis !== 'device' && family.members.some(member => member.optionValues[axis]));
+  const current = family.members.find(member => member.selected);
+  const devices = family.members.filter(member => axes.every(axis => member.optionValues[axis] === current?.optionValues[axis]));
+  const labels: Record<string,string> = locale === 'de' ? {color:'Farbe',storage:'Speicher',condition:'Zustand',new:'Neu',used:'Gebraucht',open_box:'Open-Box'} : {color:'Color',storage:'Storage',condition:'Condition',new:'New',used:'Used',open_box:'Open-box'};
   if (axes.length === 0 || family.members.length < 2) return null;
-  return <section className="mt-5 rounded-2xl border border-border/60 bg-surface/50 p-4" aria-label={locale === "de" ? "Produktvarianten" : "Product variants"}>
-    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{family.name}</p>
-    <div className="mt-4 space-y-4">{axes.map((axis) => <div key={axis}><p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{axis}</p><div className="mt-2 flex flex-wrap gap-2">{Array.from(new Set(family.members.map(member=>member.optionValues[axis]).filter(Boolean))).map(value=>{const member=getFamilyOptionTarget(family,axis,value);const classes=`min-h-11 rounded-xl border px-4 py-2.5 text-sm font-medium ${member?.selected?"border-gold bg-gold/10 text-foreground ring-1 ring-gold/30":member&&member.stock>0?"border-border bg-background/50 text-foreground hover:border-gold/50":"border-border text-muted opacity-55"}`;return member?<Link key={value} href={`/${locale}/store/${member.slug}`} aria-current={member.selected?"page":undefined} className={classes}>{value}{member.stock<=0?<span className="ml-2 text-[10px] uppercase">{locale==="de"?"nicht verfügbar":"unavailable"}</span>:null}</Link>:<span key={value} aria-disabled="true" className={classes}>{value}<span className="ml-2 text-[10px] uppercase">{locale==="de"?"Kombination fehlt":"combination unavailable"}</span></span>})}</div></div>)}</div>
+  return <section className="mt-5 rounded-2xl border border-border/60 bg-surface/50 p-4" aria-label={locale === 'de' ? 'Produktvarianten' : 'Product variants'}>
+    <p className="text-sm font-semibold text-foreground">{family.name}</p>
+    <div className="mt-4 space-y-4">{axes.map(axis => <div key={axis}><p className="text-xs font-semibold text-muted">{labels[axis] ?? axis}</p><div className="mt-2 flex flex-wrap gap-2">{Array.from(new Set(family.members.map(member => member.optionValues[axis]).filter(Boolean))).map(value => {
+      const member = getFamilyOptionTarget(family, axis, value);
+      const classes = `min-h-11 rounded-xl border px-4 py-2.5 text-sm ${member?.selected ? 'border-gold bg-gold/10 text-foreground' : 'border-border text-muted'}`;
+      return member ? <Link key={value} href={`/${locale}/store/${member.slug}`} aria-current={member.selected ? 'page' : undefined} className={classes}>{labels[value] ?? value}{member.stock <= 0 ? ` · ${locale === 'de' ? 'nicht verfügbar' : 'unavailable'}` : ''}</Link> : <span key={value} aria-disabled="true" className={classes}>{labels[value] ?? value}</span>;
+    })}</div></div>)}</div>
+    {devices.length > 1 ? <div className="mt-5 grid gap-3 sm:grid-cols-2">{devices.map(device => <Link key={device.productId} href={`/${locale}/store/${device.slug}`} aria-current={device.selected ? 'page' : undefined} className={`flex gap-3 rounded-xl border p-3 ${device.selected ? 'border-gold' : 'border-border'}`}>
+      {device.image ? <Image src={device.image} alt={device.title} width={80} height={100} unoptimized className="h-24 w-20 object-contain" /> : null}
+      <div className="text-sm text-foreground"><p>{formatPrice(locale, device.price)}</p>{device.batteryHealth ? <p>{locale === 'de' ? 'Akku' : 'Battery'}: {device.batteryHealth}%</p> : null}<p>{device.conditionNote}</p>{device.stock <= 0 ? <p>{locale === 'de' ? 'Nicht verfügbar' : 'Unavailable'}</p> : null}</div>
+    </Link>)}</div> : null}
   </section>;
 }
 

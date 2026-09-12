@@ -1,4 +1,5 @@
 "use client";
+import { trackSuccessfulLead } from "@/lib/lead-analytics";
 
 import { FormEvent, useId, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -241,6 +242,7 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
         return;
       }
 
+      trackSuccessfulLead("repair", lang);
       setStatus({
         type: "success",
         message: result.message || text.success,

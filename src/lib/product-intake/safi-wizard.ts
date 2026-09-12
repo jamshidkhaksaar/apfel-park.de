@@ -3,8 +3,6 @@ export type WizardStep = (typeof wizardSteps)[number];
 
 export type WizardCondition = "new" | "open_box" | "used";
 
-export const catalogConditionFromWizard = (condition: WizardCondition): WizardCondition => condition;
-
 export const extraGalleryImages = (images: string[], cover?: string | null): string[] =>
   images.filter((url) => Boolean(url) && url !== cover);
 

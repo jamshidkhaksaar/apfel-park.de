@@ -178,76 +178,16 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
   );
   const emailUrl = `mailto:${siteInfo.email}?subject=${emailSubject}`;
 
-  // GSMArena Specifications Matrix
+  // Concise manufacturer-confirmed specifications; see linked Apple sources.
   const specs = [
-    {
-      category: isDe ? "Display & Panel" : "Display & Panel",
-      pro: isDe
-        ? "6,3\" Super Retina XDR OLED (2622 × 1206, 460 ppi), 1–120Hz ProMotion, Always-On, 3.000 Nits Spitzenhelligkeit"
-        : "6.3\" Super Retina XDR OLED (2622 × 1206, 460 ppi), 1–120Hz ProMotion, Always-On, 3,000 nits peak",
-      promax: isDe
-        ? "6,9\" Super Retina XDR OLED (2868 × 1320, 460 ppi), 1–120Hz ProMotion, Always-On, 3.000 Nits Spitzenhelligkeit"
-        : "6.9\" Super Retina XDR OLED (2868 × 1320, 460 ppi), 1–120Hz ProMotion, Always-On, 3,000 nits peak",
-      duo: isDe
-        ? "7,6\" Faltbares LTPO OLED (Innen, 120Hz, Nano-Texture) + 5,4\" Cover Display (Außen, 120Hz)"
-        : "7.6\" Foldable LTPO OLED (Inner, 120Hz, Anti-Crease) + 5.4\" Cover Display (Outer, 120Hz)",
-    },
-    {
-      category: isDe ? "Prozessor & Neural Engine" : "Processor & Neural Engine",
-      pro: isDe ? "Apple A20 Pro (TSMC 2nm Architektur), 6-Core CPU, 6-Core GPU, 16-Core Neural Engine" : "Apple A20 Pro (TSMC 2nm architecture), 6-Core CPU, 6-Core GPU, 16-Core Neural Engine",
-      promax: isDe ? "Apple A20 Pro (TSMC 2nm Architektur), 6-Core CPU, 6-Core GPU, 16-Core Neural Engine" : "Apple A20 Pro (TSMC 2nm architecture), 6-Core CPU, 6-Core GPU, 16-Core Neural Engine",
-      duo: isDe ? "Apple A20 Pro (TSMC 2nm) mit dedizierter Dual-Screen Multitasking Engine" : "Apple A20 Pro (TSMC 2nm) with dedicated Dual-Screen Multitasking Engine",
-    },
-    {
-      category: isDe ? "Arbeitsspeicher & Kapazitäten" : "Unified Memory & Storage",
-      pro: "12 GB LPDDR5X · 256 GB / 512 GB / 1 TB / 2 TB NVMe",
-      promax: "12 GB LPDDR5X · 256 GB / 512 GB / 1 TB / 2 TB NVMe",
-      duo: "12 GB LPDDR5X · 256 GB / 512 GB / 1 TB / 2 TB NVMe",
-    },
-    {
-      category: isDe ? "Kamerasystem & Optik" : "Camera System & Optics",
-      pro: isDe
-        ? "48 MP Pro Fusion (f/1.48–f/4.0 variable mechanische Blende, Sensor-Shift OIS) + 48 MP Ultraweit + 48 MP 5x Tetraprism Tele"
-        : "48 MP Pro Fusion (f/1.48–f/4.0 variable mechanical aperture, Sensor-Shift OIS) + 48 MP Ultra-Wide + 48 MP 5x Tetraprism Tele",
-      promax: isDe
-        ? "48 MP Pro Fusion (f/1.48–f/4.0 variable Blende) + 48 MP Ultraweit + 48 MP 5x Tetraprism Tele (10x verlustfreier Sensor-Zoom)"
-        : "48 MP Pro Fusion (f/1.48–f/4.0 variable aperture) + 48 MP Ultra-Wide + 48 MP 5x Tetraprism Tele (10x lossless sensor zoom)",
-      duo: isDe
-        ? "Duales 48 MP Kamerasystem (48 MP Weitwinkel + 48 MP Ultraweit) + 12 MP Under-Display Frontkamera"
-        : "Dual 48 MP System (48 MP Wide + 48 MP Ultra-Wide) + 12 MP Under-Display Front Camera",
-    },
-    {
-      category: isDe ? "Akku & Ladeleistung" : "Battery & Charging",
-      pro: isDe
-        ? "4.288 mAh, 45W USB-PD Schnellladung (50% in ca. 20 Min.), 25W MagSafe / Qi2"
-        : "4,288 mAh, 45W USB-PD wired fast charging (50% in ~20 min), 25W MagSafe / Qi2",
-      promax: isDe
-        ? "5.567 mAh (bis zu 35 Std. Videowiedergabe), 45W Schnellladung, 25W MagSafe / Qi2"
-        : "5,567 mAh (up to 35 hrs video playback), 45W fast charging, 25W MagSafe / Qi2",
-      duo: isDe
-        ? "5.400 mAh Dual-Zellen-Architektur, 45W kabelgebunden, 25W MagSafe Wireless"
-        : "5,400 mAh Dual-Cell Architecture, 45W wired, 25W MagSafe wireless",
-    },
-    {
-      category: isDe ? "Gehäuse & Material" : "Build & Materials",
-      pro: isDe
-        ? "Grade 5 Titanrahmen mit Mikro-Strahloberfläche, Ceramic Shield 2 Front, IP68"
-        : "Grade 5 Titanium frame micro-blasted, Ceramic Shield 2 front glass, IP68",
-      promax: isDe
-        ? "Grade 5 Titanrahmen mit Mikro-Strahloberfläche, Ceramic Shield 2 Front, IP68"
-        : "Grade 5 Titanium frame micro-blasted, Ceramic Shield 2 front glass, IP68",
-      duo: isDe
-        ? "Grade 5 Titan Scharnier (Zero-Gap Hinge), 5,2 mm entfaltet / 11,3 mm geschlossen, IP68"
-        : "Grade 5 Titanium Zero-Gap Hinge, 5.2 mm unfolded / 11.3 mm folded, IP68",
-    },
-    {
-      category: isDe ? "Konnektivität & Sicherheit" : "Connectivity & Security",
-      pro: "Wi-Fi 7, Bluetooth 6.0, Apple 5G C2 Modem, Ultra-Wideband 2, Face ID",
-      promax: "Wi-Fi 7, Bluetooth 6.0, Apple 5G C2 Modem, Ultra-Wideband 2, Face ID",
-      duo: "Wi-Fi 7, Bluetooth 6.0, Apple 5G C2 Modem, Thread, Touch ID im Einschalter",
-    },
+    { category: isDe ? "Display" : "Display", pro: isDe ? "6,3\" Super Retina XDR OLED · ProMotion" : "6.3\" Super Retina XDR OLED · ProMotion", promax: isDe ? "6,9\" Super Retina XDR OLED · ProMotion" : "6.9\" Super Retina XDR OLED · ProMotion", duo: isDe ? "7,6\" innen + 5,4\" außen · OLED" : "7.6\" inner + 5.4\" outer · OLED" },
+    { category: isDe ? "Prozessor" : "Processor", pro: isDe ? "A20 Pro · 6-Core CPU · 7-Core GPU" : "A20 Pro · 6-core CPU · 7-core GPU", promax: isDe ? "A20 Pro · 6-Core CPU · 7-Core GPU" : "A20 Pro · 6-core CPU · 7-core GPU", duo: isDe ? "A20 Pro" : "A20 Pro" },
+    { category: isDe ? "Kapazitäten" : "Capacities", pro: isDe ? "256 / 512 GB / 1 / 2 TB" : "256 / 512 GB / 1 / 2 TB", promax: isDe ? "256 / 512 GB / 1 / 2 TB" : "256 / 512 GB / 1 / 2 TB", duo: isDe ? "256 / 512 GB / 1 / 2 TB" : "256 / 512 GB / 1 / 2 TB" },
+    { category: isDe ? "Kameras" : "Cameras", pro: isDe ? "48-MP-Triple-System · variable Hauptblende · 4x Tele" : "48 MP triple system · variable main aperture · 4x telephoto", promax: isDe ? "48-MP-Triple-System · 8x in optischer Qualität" : "48 MP triple system · 8x optical-quality telephoto", duo: isDe ? "48 MP Hauptkamera + 48 MP Ultraweitwinkel" : "48 MP main + 48 MP ultrawide" },
+    { category: isDe ? "Videowiedergabe (Hersteller-Laborwerte)" : "Video playback (manufacturer lab figures)", pro: isDe ? "Bis zu 34 Std.; tatsächliche Laufzeit variiert" : "Up to 34 hours; actual runtime varies", promax: isDe ? "Bis zu 43 Std.; tatsächliche Laufzeit variiert" : "Up to 43 hours; actual runtime varies", duo: isDe ? "Bis zu 44 Std. außen / 31 Std. innen" : "Up to 44 hours outer / 31 hours inner" },
+    { category: isDe ? "Gehäuse" : "Body", pro: isDe ? "Aluminium-Unibody · Ceramic Shield" : "Aluminium unibody · Ceramic Shield", promax: isDe ? "Aluminium-Unibody · Ceramic Shield" : "Aluminium unibody · Ceramic Shield", duo: isDe ? "Faltbares Titandesign · 5,2 mm geöffnet / 11,3 mm geschlossen" : "Foldable titanium design · 5.2 mm open / 11.3 mm closed" },
+    { category: isDe ? "Biometrie" : "Biometrics", pro: isDe ? "Face ID" : "Face ID", promax: isDe ? "Face ID" : "Face ID", duo: isDe ? "Touch ID in der Seitentaste" : "Touch ID in the side button" },
   ];
-
   return (
     <div className="min-h-screen bg-background text-foreground antialiased selection:bg-gold selection:text-black">
       {/* Editorial Sub-Navigation & Breadcrumb Bar */}
@@ -320,15 +260,15 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
             <p className="mx-auto max-w-2xl text-base sm:text-lg text-muted leading-relaxed text-balance">
               {selectedModel === "duo"
                 ? (isDe
-                  ? "Apples erstes faltbares Smartphone mit nahtlosem 7,6-Zoll-OLED-Canvas, 5,4-Zoll-Cover-Display, Zero-Gap Grade 5 Titanscharnier und der vollen Power des A20 Pro 2nm-Chips."
-                  : "Apple's first foldable smartphone featuring a seamless 7.6-inch inner OLED canvas, 5.4-inch outer cover screen, zero-gap Grade 5 titanium hinge, and 2nm A20 Pro silicon.")
+                  ? "Apples erstes faltbares Smartphone mit nahtlosem 7,6-Zoll-OLED-Canvas, 5,4-Zoll-Cover-Display, Titanscharnier und der vollen Power des A20 Pro 2nm-Chips."
+                  : "Apple's first foldable smartphone featuring a seamless 7.6-inch inner OLED canvas, 5.4-inch outer cover screen, titanium folding hinge, and 2nm A20 Pro silicon.")
                 : selectedModel === "promax"
                 ? (isDe
-                  ? "Das ultimative Flaggschiff mit großem 6,9-Zoll-Display, 5.567 mAh Riesen-Akku für bis zu 35 Stunden Videowiedergabe, 10x verlustfreiem Zoom und 2nm A20 Pro Prozessor."
-                  : "The definitive flagship featuring an expansive 6.9-inch display, massive 5,567 mAh battery for up to 35 hours video playback, 10x lossless zoom, and 2nm A20 Pro silicon.")
+                  ? "iPhone 18 Pro Max mit 6,9-Zoll-Display, A20 Pro und 48-MP-Pro-Fusion-Kamerasystem. Apple nennt bis zu 43 Stunden Videowiedergabe unter Testbedingungen."
+                  : "iPhone 18 Pro Max with a 6.9-inch display, A20 Pro and 48 MP Pro Fusion camera system. Apple lists up to 43 hours of video playback under test conditions.")
                 : (isDe
                   ? "Entwickelt für kompromisslose Leistung. Der A20 Pro Prozessor in 2-Nanometer-Architektur, eine 48 MP Pro Fusion Optik mit variabler Blende von f/1.48 bis f/4.0 und Apples erstes faltbares Meisterwerk aus Titan."
-                  : "Engineered without compromise. Powered by the 2nm Apple A20 Pro architecture, a 48MP Pro Fusion system with variable f/1.48–f/4.0 aperture, and Apple's inaugural Grade 5 titanium foldable.")}
+                  : "Engineered without compromise. Powered by the 2nm Apple A20 Pro architecture, a 48MP Pro Fusion system with variable f/1.48–f/4.0 aperture, and Apple's inaugural titanium foldable.")}
             </p>
 
             {/* Restrained Luxury CTA Actions */}
@@ -423,7 +363,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                           : "bg-surface border border-border text-muted hover:text-foreground"
                       }`}
                     >
-                      {isDe ? "Titan Finishes" : "Titanium Finishes"}
+                      {isDe ? "Farbauswahl" : "Colour selection"}
                     </button>
                     <button
                       type="button"
@@ -540,8 +480,8 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                 <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between text-xs text-muted">
                   <span>
                     {selectedModel === "duo"
-                      ? isDe ? "iPhone Duo mit Zero-Gap Titanscharnier" : "iPhone Duo with zero-gap titanium hinge"
-                      : isDe ? "Grade 5 Titanrahmen mit Mikro-Strahloberfläche" : "Grade 5 titanium frame with micro-blasted finish"}
+                      ? isDe ? "iPhone Duo mit Titanscharnier" : "iPhone Duo with titanium folding hinge"
+                      : isDe ? "Aluminium-Unibody" : "Aluminium unibody"}
                   </span>
                   <span className="font-mono text-[11px]">APFEL PARK • HAMBURG</span>
                 </div>
@@ -564,11 +504,11 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                 <p className="text-sm sm:text-base text-muted leading-relaxed">
                   {selectedModel === "duo"
                     ? isDe
-                      ? "Apples erstes faltbares Meisterwerk. Ein nahtloses 7,6-Zoll-OLED-Innendisplay trifft auf ein kompaktes 5,4-Zoll-Außendisplay, geschützt von einem neuartigen Grade-5-Titanscharnier ohne sichtbaren Knick."
-                      : "Apple's first foldable masterpiece. A seamless 7.6-inch inner OLED canvas meets a compact 5.4-inch outer cover screen, engineered with a zero-gap titanium hinge."
+                      ? "Apples erstes faltbares Meisterwerk. Ein nahtloses 7,6-Zoll-OLED-Innendisplay trifft auf ein kompaktes 5,4-Zoll-Außendisplay, geschützt von einem neuartigen Titanscharnier mit faltbarem Innendisplay."
+                      : "Apple's first foldable masterpiece. A seamless 7.6-inch inner OLED canvas meets a compact 5.4-inch outer cover screen, engineered with a titanium folding hinge."
                     : isDe
-                    ? "Der neue Maßstab in der mobilen Bild- und Videoverarbeitung. Mechanisch variable Blende (f/1.48 bis f/4.0), 12 GB LPDDR5X Arbeitsspeicher und unübertroffene Effizienz durch TSMCs 2nm-Verfahren."
-                    : "The definitive creative instrument. Physical mechanical variable aperture (f/1.48 to f/4.0), 12GB LPDDR5X unified memory, and unmatched efficiency via TSMC's 2nm node."}
+                    ? "Der neue Maßstab in der mobilen Bild- und Videoverarbeitung. Mechanisch variable Blende (f/1.48 bis f/4.0), A20 Pro Rechenplattform und unübertroffene Effizienz durch TSMCs 2nm-Verfahren."
+                    : "The definitive creative instrument. Physical mechanical variable aperture (f/1.48 to f/4.0), the A20 Pro platform, and unmatched efficiency via TSMC's 2nm node."}
                 </p>
               </div>
 
@@ -577,22 +517,22 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                 <div className="rounded-xl border border-border/80 bg-surface/50 p-3.5">
                   <div className="text-xs text-muted uppercase tracking-wider">{isDe ? "Architektur" : "Architecture"}</div>
                   <div className="text-lg font-bold text-foreground mt-0.5">2 nm A20 Pro</div>
-                  <div className="text-[11px] text-muted">6-Core CPU & GPU</div>
+                  <div className="text-[11px] text-muted">6-Core CPU · 7-Core GPU</div>
                 </div>
                 <div className="rounded-xl border border-border/80 bg-surface/50 p-3.5">
                   <div className="text-xs text-muted uppercase tracking-wider">{isDe ? "Optik" : "Optics"}</div>
-                  <div className="text-lg font-bold text-foreground mt-0.5">48 MP Variable</div>
-                  <div className="text-[11px] text-muted">f/1.48 – f/4.0 mechanisch</div>
+                  <div className="text-lg font-bold text-foreground mt-0.5">48 MP</div>
+                  <div className="text-[11px] text-muted">Pro: variable Blende / aperture</div>
                 </div>
                 <div className="rounded-xl border border-border/80 bg-surface/50 p-3.5">
                   <div className="text-xs text-muted uppercase tracking-wider">{isDe ? "Speicher" : "Memory"}</div>
-                  <div className="text-lg font-bold text-foreground mt-0.5">12 GB RAM</div>
-                  <div className="text-[11px] text-muted">Bis zu 2 TB NVMe</div>
+                  <div className="text-lg font-bold text-foreground mt-0.5">256 GB–2 TB</div>
+                  <div className="text-[11px] text-muted">Kapazität / capacity</div>
                 </div>
                 <div className="rounded-xl border border-border/80 bg-surface/50 p-3.5">
                   <div className="text-xs text-muted uppercase tracking-wider">{isDe ? "Laden" : "Charging"}</div>
-                  <div className="text-lg font-bold text-foreground mt-0.5">45W / 25W</div>
-                  <div className="text-[11px] text-muted">USB-PD & Qi2 MagSafe</div>
+                  <div className="text-lg font-bold text-foreground mt-0.5">USB-C · MagSafe</div>
+                  <div className="text-[11px] text-muted">Ladezubehör separat / chargers separate</div>
                 </div>
               </div>
 
@@ -601,10 +541,10 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                 <div className="flex items-center justify-between border-b border-border/50 pb-3">
                   <div>
                     <div className="text-[11px] font-semibold text-gold uppercase tracking-wider">
-                      {isDe ? "Status & Reservierung" : "Status & Reservation"}
+                      {isDe ? "Preis & Verfügbarkeit" : "Price & availability"}
                     </div>
                     <div className="text-base font-bold text-foreground">
-                      {isDe ? "Vorbestellung & Quotation" : "Pre-order & Quotation"}
+                      {isDe ? "Unverbindliche Anfrage" : "Non-binding inquiry"}
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-green">
@@ -713,7 +653,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
               <p className="text-xs sm:text-sm text-muted leading-relaxed">
                 {isDe
                   ? "Bringe dein aktuelles iPhone (z.B. iPhone 14, 15, 16 oder 17) zu Apfel Park. Der geprüfte Restwert wird direkt vom Anschaffungspreis deines neuen Geräts abgezogen."
-                  : "Trade in your current iPhone (e.g. iPhone 14, 15, 16, or 17). The certified trade-in value is deducted directly from the purchase price of your new device."}
+                  : "Trade in your current iPhone (e.g. iPhone 14, 15, 16, or 17). The agreed trade-in value is deducted directly from the purchase price of your new device."}
               </p>
               <Link href={`/${locale}/repairs`} className="inline-flex items-center gap-1 text-xs font-semibold text-gold hover:underline">
                 <span>{isDe ? "Ankaufswert unverbindlich berechnen" : "Calculate trade-in value"}</span>
@@ -743,7 +683,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                 <ShieldCheckIcon className="size-5" />
               </div>
               <h3 className="text-lg font-bold text-foreground">
-                {isDe ? "Versicherter DHL Expressversand" : "Insured Express Dispatch"}
+                {isDe ? "Versicherter DHL Versand" : "Insured Express Dispatch"}
               </h3>
               <p className="text-xs sm:text-sm text-muted leading-relaxed">
                 {isDe
@@ -779,8 +719,8 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
               </summary>
               <p className="mt-3 text-sm text-muted leading-relaxed">
                 {isDe
-                  ? "Die weltweite Vorstellung fand im September 2026 statt. Reservierungen und individuelle Preisanfragen bei Apfel Park sind ab sofort aktiv. Die ersten Auslieferungen des iPhone 18 Pro und Pro Max erfolgen zeitnah, gefolgt vom iPhone Duo (Foldable) im Herbst 2026."
-                  : "Following the September 2026 announcement, priority pre-order requests are open at Apfel Park. First dispatches of iPhone 18 Pro and Pro Max commence shortly, followed by the foldable iPhone Duo in autumn 2026."}
+                  ? "Bitte frage Modell, Speicher und Farbe unverbindlich an. Wir bestätigen Preis, Bestand und Liefertermin individuell. Eine Anfrage ist noch keine Bestellung oder Reservierungszusage."
+                  : "Ask about the model, storage and colour without obligation. We confirm price, stock and delivery individually. An inquiry is not an order or a guaranteed reservation."}
               </p>
             </details>
 

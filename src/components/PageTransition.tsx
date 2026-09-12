@@ -31,14 +31,3 @@ export default function PageTransition({ children }: PageTransitionProps) {
     </div>
   );
 }
-
-/**
- * Hook for programmatic page transition control
- */
-export function usePageTransition() {
-  return {
-    isNavigating: false,
-    startTransition: () => {},
-    endTransition: () => {},
-  };
-}

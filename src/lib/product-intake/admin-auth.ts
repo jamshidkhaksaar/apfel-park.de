@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { canManageProducts } from "@/lib/admin-auth";
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
@@ -9,9 +9,6 @@ import { ProductIntakeError } from "./errors";
 import { isProductIntakeOwner } from "./owner";
 import { parseIdempotencyKey } from "./schemas";
 import type { ProductIntakeActor } from "./types";
-
-export const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-export const forbidden = (message = "Forbidden") => NextResponse.json({ error: message }, { status: 403 });
 
 export const actorFromUser = (user: User): ProductIntakeActor => ({
   type: "admin",

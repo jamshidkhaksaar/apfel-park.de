@@ -12,7 +12,7 @@ This document provides guidelines for AI coding agents working in the Apfel Park
 |----------|------------|
 | Framework | Next.js 16.x (App Router) |
 | Language | TypeScript 5.x (strict mode) |
-| Runtime | Node.js 18+ |
+| Runtime | Node.js >=24.14.0 <25; npm >=11.12.0 <12 |
 | UI | React 19.x |
 | Styling | Tailwind CSS 4.x |
 | Linting | ESLint 9 with Next.js + TypeScript presets |
@@ -22,7 +22,7 @@ This document provides guidelines for AI coding agents working in the Apfel Park
 
 ```bash
 # Development
-npm run dev          # Start dev server at localhost:3000
+npm run dev -- --port 3100  # Development; never bind production port 3000
 
 # Production
 npm run build        # Build for production
@@ -36,12 +36,27 @@ docker build -t apfel .                    # Build Docker image
 docker run -p 3000:3000 apfel              # Run container
 ```
 
-### Running Tests
+### Validation and releases
 
-No testing framework is currently configured. When adding tests:
-- Recommended: Vitest or Jest with React Testing Library
-- Place test files adjacent to source: `Component.test.tsx`
-- Run single test: `npx vitest run path/to/file.test.tsx`
+```bash
+npm test              # Vitest suite (src/**/*.test.ts)
+npm run typecheck     # strict TypeScript, including unused locals/parameters
+npm run audit:unused  # review unreachable source files
+npm run lint
+```
+
+Browser regression scripts live in `scripts/`. They use synthetic data and accept
+`PLAYWRIGHT_MODULE` where documented. Integration tests that need an isolated
+PostgreSQL database have their own runners in `scripts/integration/`.
+
+Production source is `/srv/apfel-park/app/source`; `/srv/apfel-park/app/current`
+points to an immutable release. Work in an isolated git worktree based on the
+current release SHA, then commit and push before using `bash scripts/deploy.sh <ref>`.
+The canonical script runs tests, lint, typecheck, audit, build and runtime checks
+before activation, and rolls back failed health checks. Do not edit release files
+or restart a development build onto port 3000. Add new migrations; never rewrite
+applied migrations. Catalog-table schema changes need the existing owner migration
+workflow in `deployment/vps/product-intake/apply-owner-migration.sh`.
 
 ## Project Structure
 

@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { analyticsItem, withGa4Items } from "@/lib/analytics";
+import { subscribeConsentedTracking } from "@/lib/consented-tracking";
 import type { CatalogCardModel } from "@/lib/catalog-card";
-import type { Locale } from "@/lib/i18n";
+import { accessoryTypeLabels, type Locale } from "@/lib/i18n";
+import { parseStorageFilterValues } from '@/lib/product-storage';
 import type { StoreCatalogCategory, StoreCatalogFacets, StoreCatalogFilters, StoreCatalogSort } from "@/lib/products";
 import GalaxyFoldBanner from "@/components/banner/GalaxyFoldBanner";
 import PixelBanner from "@/components/banner/PixelBanner";
@@ -72,6 +74,7 @@ export default function StoreCatalogClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const lastListImpression = useRef('');
   const isGerman = lang === "de";
   const view: StoreView = searchParams.get("view") === "list" ? "list" : "grid";
   const listName = lockedCategory && lockedCategory !== "all"
@@ -103,22 +106,27 @@ export default function StoreCatalogClient({
 
   useEffect(() => {
     if (products.length === 0) return;
-    window.apfelTrack?.("view_item_list", withGa4Items({
-      item_list_id: "store-catalog",
-      item_list_name: listName,
-    }, products.map((product, index) => analyticsItem({
-      item_id: product.id,
-      item_name: product.title,
-      item_category: product.category,
-      price: product.price,
-      index: (page - 1) * 24 + index + 1,
-      item_list_id: "store-catalog",
-      item_list_name: listName,
-    }))));
-  }, [listName, page, products]);
+    const key = JSON.stringify([pathname, listName, page, products.map(product => product.id)]);
+    return subscribeConsentedTracking(track => {
+      if (lastListImpression.current === key) return;
+      const queued = track("view_item_list", withGa4Items({
+        item_list_id: "store-catalog",
+        item_list_name: listName,
+      }, products.map((product, index) => analyticsItem({
+        item_id: product.id,
+        item_name: product.title,
+        item_category: product.category,
+        price: product.price,
+        index: (page - 1) * 24 + index + 1,
+        item_list_id: "store-catalog",
+        item_list_name: listName,
+      }))));
+      if (queued !== false) lastListImpression.current = key;
+    });
+  }, [listName, page, pathname, products]);
 
   const removeMulti = (param: "brand" | "storage" | "condition" | "atype", value: string) => pushParams((next) => {
-    const values = (next.get(param) ?? "").split(",").map((entry) => entry.trim()).filter(Boolean);
+    const values = param === 'storage' ? parseStorageFilterValues(next.get(param) ?? '') : (next.get(param) ?? "").split(",").map((entry) => entry.trim()).filter(Boolean);
     const filtered = values.filter((entry) => entry.toLowerCase() !== value.toLowerCase());
     if (filtered.length > 0) next.set(param, filtered.join(",")); else next.delete(param);
   }, param, value);
@@ -135,7 +143,7 @@ export default function StoreCatalogClient({
   }
   for (const storage of activeFilters.storages) chips.push({ key: `storage-${storage}`, label: storage, remove: () => removeMulti("storage", storage) });
   for (const condition of activeFilters.conditions) chips.push({ key: `condition-${condition}`, label: conditionLabels[lang][condition], remove: () => removeMulti("condition", condition) });
-  for (const type of activeFilters.accessoryTypes) chips.push({ key: `type-${type}`, label: type, remove: () => removeMulti("atype", type) });
+  for (const type of activeFilters.accessoryTypes) chips.push({ key: `type-${type}`, label: accessoryTypeLabels[type]?.[lang] ?? type, remove: () => removeMulti("atype", type) });
   if (activeFilters.inStockOnly) chips.push({ key: "stock", label: isGerman ? "Sofort verfügbar" : "In stock", remove: () => pushParams((next) => next.delete("stock"), "stock", "all") });
   if (activeFilters.priceMin !== undefined || activeFilters.priceMax !== undefined) chips.push({
     key: "price",
@@ -287,7 +295,7 @@ export default function StoreCatalogClient({
           ) : null}
 
           {/* Kept out of the result list — an interruption mid-grid breaks scanning. */}
-          {trendingProducts.length >= 5 ? <TrendingProductsCarousel products={trendingProducts} lang={lang} compact /> : null}
+          <TrendingProductsCarousel products={trendingProducts} lang={lang} compact />
 
         </div>
       </div>

@@ -6,7 +6,8 @@ import { useCallback, useRef } from "react";
 
 import type { CatalogCardModel } from "@/lib/catalog-card";
 import { formatPrice } from "@/lib/format";
-import type { Locale } from "@/lib/i18n";
+import { trendingAvailabilityCopy, type Locale } from "@/lib/i18n";
+import { isCompleteTrendingSelection } from '@/lib/trending-products';
 import { shouldBypassImageOptimization } from "@/lib/image";
 
 type TrendingProductsCarouselProps = {
@@ -49,7 +50,7 @@ export default function TrendingProductsCarousel({ products, lang, compact = fal
   }, []);
 
 
-  if (products.length === 0) return null;
+  if (!isCompleteTrendingSelection(products)) return null;
 
   return (
     <section
@@ -65,9 +66,7 @@ export default function TrendingProductsCarousel({ products, lang, compact = fal
             {isGerman ? "Trend-Produkte im Shop" : "Trending products in store"}
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-muted">
-            {isGerman
-              ? "Aus aktueller Suchnachfrage ausgewählt – nur sofort verfügbare Artikel."
-              : "Selected from current search demand – only items available now."}
+            {trendingAvailabilityCopy[lang]}
           </p>
         </div>
         <div className="flex shrink-0 gap-2 self-end sm:self-auto">

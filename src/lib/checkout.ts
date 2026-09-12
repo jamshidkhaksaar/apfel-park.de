@@ -161,7 +161,7 @@ export const normalizeCheckoutCustomer = (
         line2: sanitizeInput(customer.address.line2),
         postalCode: sanitizeInput(customer.address.postalCode),
         city: sanitizeInput(customer.address.city),
-        country: sanitizeInput(customer.address.country || "DE") || "DE",
+        country: sanitizeInput(customer.address.country).toUpperCase() || "DE",
       }
     : null;
 
@@ -174,6 +174,14 @@ export const normalizeCheckoutCustomer = (
   }
 
   if (shippingMethod === "germany") {
+    if (address && address.country !== "DE") {
+      throw new Error(
+        locale === "de"
+          ? "Eine Lieferung ist nur innerhalb Deutschlands möglich."
+          : "Delivery is only available within Germany.",
+      );
+    }
+
     if (phone) {
       const phoneDigits = phone.replace(/\D/g, "");
       if (phone.length > 40 || phoneDigits.length < 6 || phoneDigits.length > 15) {
@@ -191,7 +199,7 @@ export const normalizeCheckoutCustomer = (
       !address.city ||
       address.line1.length > 200 ||
       (address.line2?.length ?? 0) > 200 ||
-      address.postalCode.length > 20 ||
+      !/^[0-9]{5}$/.test(address.postalCode) ||
       address.city.length > 100
     ) {
       throw new Error(
@@ -462,28 +470,6 @@ export async function attachProviderReference(input: {
   );
   const updatedAt = toDatabaseTimestampToken(result.rows[0]?.updated_at);
   return updatedAt ? { updatedAt } : null;
-}
-
-/**
- * The amount an order is expected to be paid, in cents.
- *
- * The webhook uses this to refuse a "paid" event whose amount does not match
- * the order. Without it, anyone able to produce a valid webhook signature and
- * an order id could mark an order paid without paying -- and customers see
- * their own order id in the checkout success URL.
- */
-export async function getOrderAmountCents(orderId: string): Promise<number | null> {
-  try {
-    const result = await query(
-      `SELECT round(total_amount * 100)::int AS cents FROM orders WHERE id = $1 LIMIT 1`,
-      [orderId],
-    );
-    const row = result.rows[0] as { cents?: number } | undefined;
-    return typeof row?.cents === "number" ? row.cents : null;
-  } catch (error) {
-    console.error("getOrderAmountCents failed:", error);
-    return null;
-  }
 }
 
 export async function getOrderPaymentExpectation(orderId: string): Promise<{ cents: number; currency: string } | null> {

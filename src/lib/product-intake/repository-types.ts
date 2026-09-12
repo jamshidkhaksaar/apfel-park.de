@@ -9,5 +9,3 @@ export type SqlExecutor = {
     values?: unknown[],
   ) => Promise<SqlResult<Row>>;
 };
-
-export type TransactionRunner = <T>(work: (executor: SqlExecutor) => Promise<T>) => Promise<T>;

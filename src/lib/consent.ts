@@ -28,12 +28,25 @@ const getSecureFlag = () => {
 export const readConsentMode = (): ConsentMode => {
   if (typeof document === "undefined") return "unset";
 
-  const cookieMatch = document.cookie.match(/(?:^|; )apfel-consent=([^;]+)/);
-  const cookieValue = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-  const storedValue = typeof window !== "undefined" ? window.localStorage.getItem(CONSENT_STORAGE_KEY) : null;
-  const value = cookieValue || storedValue;
+  try {
+    const cookieMatch = document.cookie.match(/(?:^|;\s*)apfel-consent=([^;]*)/);
+    if (cookieMatch) {
+      const value = decodeURIComponent(cookieMatch[1]);
+      // The cookie is authoritative. An invalid value must not resurrect an
+      // older grant from localStorage, and a valid cookie needs no storage read.
+      return value === "necessary" || value === "external" ? value : "unset";
+    }
+  } catch {
+    return "unset";
+  }
 
-  return value === "necessary" || value === "external" ? value : "unset";
+  try {
+    const value = typeof window !== "undefined" ? window.localStorage.getItem(CONSENT_STORAGE_KEY) : null;
+    return value === "necessary" || value === "external" ? value : "unset";
+  } catch {
+    // Restricted/private storage must not crash the storefront or grant consent.
+    return "unset";
+  }
 };
 
 export const writeConsentMode = (mode: Exclude<ConsentMode, "unset">) => {
@@ -47,19 +60,6 @@ export const writeConsentMode = (mode: Exclude<ConsentMode, "unset">) => {
 
   document.cookie = `${CONSENT_COOKIE_NAME}=${mode}; ${getCookieDomain()}path=/; max-age=${ONE_YEAR}; SameSite=Lax${getSecureFlag()}`;
   window.dispatchEvent(new CustomEvent(CONSENT_EVENT_NAME, { detail: mode }));
-};
-
-export const clearConsentMode = () => {
-  if (typeof document === "undefined") return;
-
-  try {
-    window.localStorage.removeItem(CONSENT_STORAGE_KEY);
-  } catch {
-    // ignore storage failure
-  }
-
-  document.cookie = `${CONSENT_COOKIE_NAME}=; ${getCookieDomain()}path=/; max-age=0; SameSite=Lax${getSecureFlag()}`;
-  window.dispatchEvent(new CustomEvent(CONSENT_EVENT_NAME, { detail: "unset" }));
 };
 
 export const openConsentSettings = () => {

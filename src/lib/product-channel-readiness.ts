@@ -54,6 +54,7 @@ export type ProductChannelFacts = {
   sku?: string;
   mpn?: string;
   gtin?: string;
+  eprelId?: string;
   identifierStatus?: ProductIdentifierStatus;
   asin?: string;
   ebayEpid?: string;
@@ -139,11 +140,11 @@ const addUnitErrors = (
   units.forEach((unit, index) => {
     const label = unitLabel(unit, index, units.length);
     const sku = unit.sku || input.sku;
-    const status = unit.identifierStatus || input.identifierStatus || "unknown";
-    const gtinInput = unit.gtin || input.gtin;
+    const status = unit.identifierStatus || (units.length === 1 ? input.identifierStatus : undefined) || "unknown";
+    const gtinInput = unit.gtin || (units.length === 1 ? input.gtin : undefined);
     const gtin = validatedGtin(gtinInput);
-    const mpn = unit.mpn || input.mpn;
-    const asin = unit.asin || input.asin;
+    const mpn = unit.mpn || (units.length === 1 ? input.mpn : undefined);
+    const asin = unit.asin || (units.length === 1 ? input.asin : undefined);
 
     if (!nonEmpty(sku)) {
       target.errors.push(`${label}: add a unique sellable SKU.`);
@@ -160,7 +161,15 @@ const addUnitErrors = (
       if (units.length > 1 && (!nonEmpty(unit.color) || !nonEmpty(unit.storage))) {
         target.errors.push(`${label}: add every variant-defining color and storage value.`);
       }
-      if (status === "unknown") target.errors.push(`${label}: confirm whether manufacturer identifiers exist.`);
+      // Legacy imports predate identifier_status. A supplied GTIN/MPN already
+      // establishes that identifiers exist; do not empty the feed over an unset
+      // dropdown. This never creates an identifier or an exemption.
+      if (status === "unknown" && !gtin && !nonEmpty(mpn)) {
+        target.errors.push(`${label}: confirm whether manufacturer identifiers exist.`);
+      }
+      if (status === "not_applicable" && (gtin || nonEmpty(mpn))) {
+        target.errors.push(`${label}: identifiers are supplied but marked not applicable.`);
+      }
       if (status === "assigned" && !gtin && !nonEmpty(mpn)) {
         target.errors.push(`${label}: add its assigned GTIN or manufacturer MPN.`);
       }
@@ -189,6 +198,9 @@ export const evaluateProductChannelReadiness = (input: ProductChannelFacts): Pro
   addCoreErrors(input, google);
   if (!nonEmpty(input.brand)) google.errors.push("Add the product brand for Google Merchant.");
   addUnitErrors(input, google, "google");
+  if (nonEmpty(input.eprelId) && !/^[1-9]\d*$/.test(input.eprelId!.trim())) {
+    google.errors.push("Use a numeric EPREL registration ID, not a hardware model number.");
+  }
   if ((input.images?.length ?? 0) < 4) google.warnings.push("Google performs best with several high-resolution product images.");
 
   addCoreErrors(input, ebay);

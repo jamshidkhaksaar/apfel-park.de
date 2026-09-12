@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { createAdminDbClient } from "@/lib/admin-db";
-import { locales, type Locale } from "@/lib/i18n";
+import { locales } from "@/lib/i18n";
 import { accessoryCollectionSlugs, getAccessoryCollection } from "@/lib/accessory-collections";
 import { countActiveSubcategoryProducts, getProducts } from "@/lib/products";
 import { isRepairBenchmarkPublished } from "@/lib/repair-price-benchmark";
@@ -130,35 +130,31 @@ const normalizeSettings = (input: unknown): SeoSettings => {
   };
 };
 
-export const getSeoSettings = async (): Promise<SeoSettings> => {
+export const getSeoSettings = async (
+  options: { failOnError?: boolean } = {},
+): Promise<SeoSettings> => {
   try {
     const admin = createAdminDbClient();
-    const { data } = await admin
+    const { data, error } = await admin
       .from("store_settings")
       .select("value")
       .eq("key", "seo_settings")
       .maybeSingle();
 
+    if (error) throw error;
     return normalizeSettings(data?.value);
-  } catch {
+  } catch (error) {
+    if (options.failOnError) throw error;
     return buildDefaultSeoSettings();
   }
 };
 
-export const resolveSeoPage = async (routeId: SeoRouteId, locale: Locale) => {
-  const settings = await getSeoSettings();
-  const route = settings.pages[routeId];
-  return {
-    global: settings.global,
-    route,
-    metadata: route.locales[locale],
-  };
-};
-
 export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
-  const settings = await getSeoSettings();
+  // A temporary dependency failure must not become a successful, shortened
+  // sitemap. Ordinary page metadata keeps its existing soft fallback.
+  const settings = await getSeoSettings({ failOnError: true });
   if (!settings.global.enableSitemap) return [];
-  const products = await getProducts().catch(() => []);
+  const products = await getProducts(undefined, undefined, "de", { failOnError: true });
   const stockedCategories = new Set(products.map((product) => product.category));
   const categoryRoutes: Partial<Record<SeoRouteId, string>> = {
     smartphones: "smartphones",
@@ -214,7 +210,7 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
       accessoryCollectionSlugs.map(async (slug) => {
         const copy = getAccessoryCollection(slug, "de");
         if (!copy) return null;
-        return (await countActiveSubcategoryProducts(copy.subcategory)) > 0 ? slug : null;
+        return (await countActiveSubcategoryProducts(copy.subcategory, { failOnError: true })) > 0 ? slug : null;
       }),
     )
   ).filter((slug): slug is string => slug !== null);
@@ -281,7 +277,18 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
       }))
     : [];
 
-  return [...staticEntries, ...repairServiceEntries, ...repairComparisonEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...productEntries];
+  const tradeInEntries = locales.map((locale) => ({
+    url: `${siteInfo.url}/${locale}/trade-in`,
+    alternates: {
+      languages: {
+        de: `${siteInfo.url}/de/trade-in`,
+        en: `${siteInfo.url}/en/trade-in`,
+        "x-default": `${siteInfo.url}/de/trade-in`,
+      },
+    },
+  }));
+
+  return [...staticEntries, ...repairServiceEntries, ...repairComparisonEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...tradeInEntries, ...productEntries];
 };
 
 export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {

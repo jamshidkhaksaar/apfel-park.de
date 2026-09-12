@@ -9,6 +9,7 @@ import { query } from "@/lib/db";
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 import { isValidInputLength, sanitizeInput, validateImageFileExtension } from "@/lib/security";
 import { resolveLegacyDraftPolicy } from "@/lib/legacy-draft-policy";
+import { aiIntakeTextProvenance } from '@/lib/product-text-provenance';
 
 export const runtime = "nodejs";
 
@@ -192,7 +193,16 @@ export async function POST(request: NextRequest) {
     const conditionNote = sanitizeInput(typeof payload.conditionNote === "string" ? payload.conditionNote : "");
     const conditionNoteI18n = cleanLocalized(payload.conditionNoteI18n, 1000);
     const updateExisting = payload.updateExisting === true;
-    const importMetadata = cleanImportMetadata(payload, conditionNoteI18n);
+    // This authenticated endpoint receives listing copy from the legacy AI intake pipeline.
+    // It stays draft-only; recording provenance never grants publication authority.
+    const importMetadata = {
+      ...cleanImportMetadata(payload, conditionNoteI18n),
+      contentProvenance: aiIntakeTextProvenance(
+        { title: title.de, description: description.de },
+        { title: title.en, description: description.en },
+        ['title', 'description'],
+      ),
+    };
 
     if (importKey && updateExisting) {
       const state = await query(
@@ -329,7 +339,8 @@ export async function POST(request: NextRequest) {
           "feature_bullets"=$15, "feature_bullets_i18n"=$16::jsonb,
           "specs"=$17::jsonb, "specs_i18n"=$18::jsonb,
           "is_active"=$19, "condition"=$20, "condition_note"=$21,
-          "import_metadata"=$22::jsonb
+          "import_metadata"=coalesce("import_metadata",'{}'::jsonb) || $22::jsonb || jsonb_build_object('contentProvenance',
+            CASE WHEN jsonb_typeof("import_metadata"->'contentProvenance')='object' THEN "import_metadata"->'contentProvenance' ELSE '{}'::jsonb END || ($22::jsonb->'contentProvenance'))
         WHERE "import_key"=$23
         RETURNING "id","slug","is_active","images"`,
         [

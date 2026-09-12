@@ -40,10 +40,10 @@ export async function updateOrderFulfillment(formData: FormData) {
     redirect("/admin/orders?error=invalid");
   }
   const currentResult = await query(
-    `SELECT status, payment_status, provider, provider_order_id, provider_session_id, provider_status, updated_at::text AS updated_at FROM orders WHERE id = $1 LIMIT 1`,
+    `SELECT status, payment_status, provider, provider_order_id, provider_session_id, provider_status, metadata, updated_at::text AS updated_at FROM orders WHERE id = $1 LIMIT 1`,
     [id],
   );
-  const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; updated_at?: unknown } | undefined;
+  const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; metadata?: { paymentMode?: unknown } | null; updated_at?: unknown } | undefined;
   if (!current) redirect("/admin/orders?error=not-found");
   const orderPath = returnTo === "detail" ? `/admin/orders/${id}` : "/admin/orders";
   const redirectError = (reason: string): never => redirect(`${orderPath}?error=${reason}`);
@@ -72,6 +72,11 @@ export async function updateOrderFulfillment(formData: FormData) {
     if (!canExpireStripeCheckout && !canInspectPayPalOrder) return redirectError(decision.reason);
 
     if (canInspectPayPalOrder && providerOrderId) {
+      const mode = getPaymentMode();
+      const originalMode = current.metadata?.paymentMode;
+      if ((originalMode !== "live" && originalMode !== "sandbox") || originalMode !== mode) {
+        return redirectError("provider_cancel_failed");
+      }
       const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
       const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
       if (!clientId || !clientSecret) return redirectError("provider_cancel_failed");
@@ -79,9 +84,10 @@ export async function updateOrderFulfillment(formData: FormData) {
       try {
         inspection = await inspectPayPalOrderForAdminCancellation({
           orderId: providerOrderId,
+          localOrderId: id,
           clientId,
           clientSecret,
-          mode: getPaymentMode(),
+          mode,
         });
       } catch (error) {
         console.error("Admin PayPal order cancellation check failed", {

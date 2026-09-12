@@ -170,8 +170,9 @@ export const renderRepairEstimatePdf = async (
     doc.fillColor(muted).font(regularFont).fontSize(8.5)
       .text(payload.issuerText, 138, 65, { width: 190, lineGap: 2 });
     doc.text(`${siteInfo.address.street} · ${siteInfo.address.postalCode} ${siteInfo.address.city}`, 138, doc.y + 4, { width: 250 });
-    doc.text(`${siteInfo.phone} · ${siteInfo.email}`, 138, doc.y + 3, { width: 270 });
+    doc.text(`${siteInfo.owner.phone} · ${siteInfo.email}`, 138, doc.y + 3, { width: 270 });
     doc.text(`USt-IdNr. / VAT ID: ${siteInfo.vatId}`, 138, doc.y + 3, { width: 250 });
+    const issuerBottom = doc.y;
 
     doc.fillColor(gold).font(boldFont).fontSize(16)
       .text(labels.title, 346, 44, { width: 199, align: 'right' });
@@ -189,8 +190,9 @@ export const renderRepairEstimatePdf = async (
       metaY += 13;
     }
 
-    doc.moveTo(50, 131).lineTo(doc.page.width - 50, 131).lineWidth(1.2).strokeColor(gold).stroke();
-    const recipientY = 151;
+    const dividerY = Math.max(131, issuerBottom + 12, metaY + 12);
+    doc.moveTo(50, dividerY).lineTo(doc.page.width - 50, dividerY).lineWidth(1.2).strokeColor(gold).stroke();
+    const recipientY = dividerY + 20;
     const recipientLines = addressLines(payload);
     doc.fillColor(gold).font(boldFont).fontSize(8)
       .text(labels.recipient.toUpperCase(), 50, recipientY, { width: 240 });
@@ -209,7 +211,7 @@ export const renderRepairEstimatePdf = async (
         doc.text(`${labels.claim}: ${payload.insurer.claimNumber}`, 330, recipientY + 43, { width: 215 });
       }
     }
-    doc.y = 222;
+    doc.y = Math.max(222, recipientY + 71);
 
     const deviceY = doc.y;
     doc.roundedRect(50, deviceY, contentWidth, 48, 5).fillAndStroke(paperTint, line);

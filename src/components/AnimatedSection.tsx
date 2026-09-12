@@ -1,7 +1,7 @@
 "use client";
 
-import { type ReactNode, type HTMLAttributes, type Key, isValidElement } from "react";
-import { animationClasses, useAnimateOnScroll, useInView } from "../hooks/useInView";
+import { type ReactNode, type HTMLAttributes } from "react";
+import { useAnimateOnScroll } from "../hooks/useInView";
 
 type AnimationVariant =
   | "fade-up"
@@ -60,69 +60,5 @@ export default function AnimatedSection({
     >
       {children}
     </Element>
-  );
-}
-
-type AnimatedListProps = {
-  children: ReactNode[];
-  /** Base animation variant */
-  animation?: AnimationVariant;
-  /** Stagger delay between items in ms */
-  staggerDelay?: number;
-  /** Container class name */
-  className?: string;
-  /** Wrapper element for each item */
-  itemWrapper?: "div" | "li" | "article";
-  /** Provide stable keys for dynamic lists */
-  getKey?: (child: ReactNode, index: number) => Key;
-};
-
-/**
- * Renders a list of items with staggered scroll animations.
- * 
- * @example
- * <AnimatedList animation="fade-up" staggerDelay={100}>
- *   {items.map(item => <Card key={item.id} {...item} />)}
- * </AnimatedList>
- */
-export function AnimatedList({
-  children,
-  animation = "fade-up",
-  staggerDelay = 100,
-  className = "",
-  itemWrapper: ItemWrapper = "div",
-  getKey,
-}: AnimatedListProps) {
-  const [ref, inView] = useInView({
-    threshold: 0.05,
-    rootMargin: "0px 0px -20px 0px",
-    initialInView: true,
-  });
-  const itemAnimation = animationClasses[animation];
-
-  return (
-    <div ref={ref} className={className}>
-      {children.map((child, index) => (
-        <ItemWrapper
-          key={
-            (isValidElement(child) && child.key != null)
-              ? child.key
-              : getKey
-                ? getKey(child, index)
-                : index
-          }
-          className={`transition-all duration-500 ease-out ${
-            inView
-              ? itemAnimation.visible
-              : itemAnimation.hidden
-          }`}
-          style={{
-            transitionDelay: inView ? `${index * staggerDelay}ms` : "0ms",
-          }}
-        >
-          {child}
-        </ItemWrapper>
-      ))}
-    </div>
   );
 }

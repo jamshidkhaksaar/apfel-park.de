@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import PageIntro from "../../../../components/PageIntro";
 import WithdrawalForm from "../../../../components/WithdrawalForm";
+import LegalBusinessIdentity from '@/components/LegalBusinessIdentity';
 import { type Locale } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { requireLocale } from "@/lib/route-locale";
@@ -42,6 +43,7 @@ export default async function WithdrawalPage({ params }: { params: Promise<{ lan
       />
       <section className="section-pad">
         <div className="container-page max-w-3xl space-y-6">
+          <LegalBusinessIdentity lang={locale} />
           <WithdrawalForm lang={locale} />
           <p className="text-sm text-muted">
             {isGerman

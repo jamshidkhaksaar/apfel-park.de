@@ -1,3 +1,5 @@
+import { businessIdentity } from './business-identity';
+
 export type EstimateLanguage = 'de' | 'en';
 export type EstimateStatus = 'draft' | 'issued' | 'accepted' | 'declined' | 'expired';
 
@@ -100,7 +102,7 @@ export type RepairEstimateRow = {
 };
 
 export const defaultEstimateTemplate: RepairEstimateTemplateSettings = {
-  issuerText: 'Apfel Park',
+  issuerText: `${businessIdentity.legalOwner}\nhandelnd unter ${businessIdentity.tradingName}`,
   bankName: 'Sparkasse Holstein',
   accountHolder: '',
   iban: 'DE82 2135 2240 0187 9906 92',
@@ -157,7 +159,7 @@ export const createDefaultEstimatePayload = (
     device: { brandId: '', familyId: '', modelId: '', brand: '', family: '', model: '', serialNumber: '' },
     damageAssessment: '',
     items: [],
-    issuerText: settings.issuerText,
+    issuerText: `${businessIdentity.legalOwner}\n${language === 'de' ? 'handelnd unter' : 'trading as'} ${businessIdentity.tradingName}`,
     bankName: settings.bankName,
     accountHolder: settings.accountHolder,
     iban: settings.iban,
@@ -294,7 +296,9 @@ export const validateEstimatePayload = (payload: RepairEstimatePayload, forIssue
 export const normalizeTemplateSettings = (value: unknown): RepairEstimateTemplateSettings => {
   const data = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   return {
-    issuerText: text(data.issuerText, 500) || defaultEstimateTemplate.issuerText,
+    // Current template follows canonical identity. Historical payloads retain
+    // their captured issuerText through normalizeEstimatePayload instead.
+    issuerText: defaultEstimateTemplate.issuerText,
     bankName: text(data.bankName, 160) || defaultEstimateTemplate.bankName,
     accountHolder: text(data.accountHolder, 160),
     iban: text(data.iban, 80).toUpperCase() || defaultEstimateTemplate.iban,

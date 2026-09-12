@@ -1,9 +1,9 @@
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 
 import type { User } from "@/lib/auth-types";
-import { getUserByEmail } from "@/lib/users";
+import { query } from "@/lib/db";
 
 export const ADMIN_SESSION_COOKIE = "apfel_admin_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 14;
@@ -22,10 +22,6 @@ const getPrimaryAdminEmail = (): string => {
   if (!adminEmail) throw new Error("ADMIN_EMAILS is not configured");
   return adminEmail.toLowerCase();
 };
-
-const adminEmails = (): Set<string> => new Set(
-  (process.env.ADMIN_EMAILS ?? "").split(",").map((value) => value.trim().toLowerCase()).filter(Boolean),
-);
 
 const sign = (payload: string): string => createHmac("sha256", getSessionSecret()).update(payload).digest("base64url");
 const encodeEmail = (email: string): string => Buffer.from(email, "utf8").toString("base64url");
@@ -56,6 +52,7 @@ export const createAdminUser = (email = getPrimaryAdminEmail(), role = "admin"):
   user_metadata: { role },
 });
 
+// Low-level signing only. Login must use createPersistedSessionToken.
 export const createSessionToken = (email: string, role = "admin", now = new Date()): string => {
   const normalized = email.toLowerCase();
   const sessionId = randomUUID();
@@ -64,6 +61,7 @@ export const createSessionToken = (email: string, role = "admin", now = new Date
   return `${payload}.${sign(payload)}`;
 };
 
+// Cryptographic/age check only; never use this alone as an authorization decision.
 export const verifySessionToken = (token: string, now = new Date()): { email: string; role: string } | null => {
   const parsed = parseToken(token);
   if (!parsed) return null;
@@ -85,28 +83,57 @@ export const getSessionCookieOptions = () => ({
   maxAge: SESSION_MAX_AGE_SECONDS,
 });
 
-const resolveVerifiedUser = async (verified: { email: string; role: string }): Promise<User | null> => {
-  if (verified.role === "admin" && adminEmails().has(verified.email)) {
-    return createAdminUser(verified.email, "admin");
-  }
-  const dbUser = await getUserByEmail(verified.email);
-  if (!dbUser) return null;
-  return createAdminUser(dbUser.email, dbUser.role);
+const tokenHash = (token: string): string => createHash('sha256').update(token).digest('hex');
+
+// Signature verification alone is not authentication: every token needs a live record.
+const resolveVerifiedUser = async (token: string): Promise<User | null> => {
+  const verified = verifySessionToken(token);
+  if (!verified) return null;
+  const result = await query(
+    `SELECT u.email, u.role FROM admin_sessions s
+     JOIN users u ON u.id::text = s.user_id
+     WHERE s.token_hash = $1 AND u.email = $2 AND u.is_active = true
+       AND s.security_version = u.security_version AND s.expires_at > now()`,
+    [tokenHash(token), verified.email],
+  );
+  const user = result.rows[0];
+  return user ? createAdminUser(user.email, user.role) : null;
 };
 
 export const readSessionUser = async (): Promise<User | null> => {
   const token = (await cookies()).get(ADMIN_SESSION_COOKIE)?.value;
   if (!token) return null;
-  const verified = verifySessionToken(token);
-  return verified ? resolveVerifiedUser(verified) : null;
+  return resolveVerifiedUser(token);
 };
 
-export const setSessionCookie = async (email: string, role?: string): Promise<void> => {
-  (await cookies()).set(ADMIN_SESSION_COOKIE, createSessionToken(email, role), getSessionCookieOptions());
+export const createPersistedSessionToken = async (
+  email: string, role: string, securityVersion: number, userId: string,
+): Promise<string> => {
+  const token = createSessionToken(email, role);
+  const result = await query(
+    `INSERT INTO admin_sessions (token_hash, user_id, security_version, expires_at)
+     SELECT $1, id::text, security_version, now() + interval '14 days' FROM users
+     WHERE email = $2 AND is_active = true AND security_version = $3 AND id::text = $4
+     RETURNING token_hash`,
+    [tokenHash(token), email.toLowerCase().trim(), securityVersion, userId],
+  );
+  if (!result.rows.length) throw new Error('Session registration rejected');
+  return token;
+};
+
+export const setSessionCookie = async (email: string, role: string, securityVersion: number, userId: string): Promise<void> => {
+  const token = await createPersistedSessionToken(email, role, securityVersion, userId);
+  (await cookies()).set(ADMIN_SESSION_COOKIE, token, getSessionCookieOptions());
 };
 
 export const clearSessionCookie = async (): Promise<void> => {
-  (await cookies()).set(ADMIN_SESSION_COOKIE, "", {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
+  if (token && verifySessionToken(token)) {
+    // Do not report successful logout unless persistent revocation succeeds.
+    await query('DELETE FROM admin_sessions WHERE token_hash = $1', [tokenHash(token)]);
+  }
+  cookieStore.set(ADMIN_SESSION_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: shouldUseSecureCookies(),
@@ -118,6 +145,5 @@ export const clearSessionCookie = async (): Promise<void> => {
 export const readSessionUserFromRequest = async (request: NextRequest): Promise<User | null> => {
   const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   if (!token) return null;
-  const verified = verifySessionToken(token);
-  return verified ? resolveVerifiedUser(verified) : null;
+  return resolveVerifiedUser(token);
 };

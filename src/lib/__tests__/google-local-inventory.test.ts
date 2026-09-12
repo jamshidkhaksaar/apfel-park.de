@@ -18,20 +18,26 @@ const product = {
   images: ['/iphone.webp'],
   brand: 'Apple',
   sku: 'IP17',
-  identifierStatus: 'unknown',
+  identifierStatus: 'not_applicable',
   stock: 3,
   slug: 'apple-iphone-17',
   featureBullets: [],
   specs: [],
   faq: [],
   variants: [
-    { color: 'Schwarz', storage: '128 GB', stock: 2, sku: 'IP17-BLK-128' },
-    { color: 'Blau', storage: '256 GB', stock: 0, sku: 'IP17-BLU-256' },
+    { color: 'Schwarz', storage: '128 GB', stock: 2, sku: 'IP17-BLK-128', identifierStatus: 'not_applicable' },
+    { color: 'Blau', storage: '256 GB', stock: 0, sku: 'IP17-BLU-256', identifierStatus: 'not_applicable' },
   ],
   hasDiscount: false,
 } satisfies Product;
 
 describe('Google local inventory feed', () => {
+  it('uses the same legacy-identifier readiness and empty-feed guard as the online feed', () => {
+    const legacy = { ...product, variants: [], identifierStatus: 'unknown' as const, gtin: '4006381333931' };
+    expect(buildGoogleLocalInventoryFeedForProducts([legacy], 'hamburg-store')).toContain('hamburg-store\tproduct-1\t3\tin_stock');
+    expect(() => buildGoogleLocalInventoryFeedForProducts([{ ...legacy, gtin: undefined }], 'hamburg-store')).toThrow('all selected products failed readiness');
+  });
+
   it('publishes the required shop, item, quantity and availability columns', () => {
     const feed = buildGoogleLocalInventoryFeedForProducts([product], 'hamburg-store');
     const lines = feed.trim().split('\n');

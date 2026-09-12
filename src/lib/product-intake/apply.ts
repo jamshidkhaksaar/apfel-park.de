@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { deleteBlobByUrl, resolveUploadPath, uploadProductImage } from "@/lib/blob";
 import { withTransaction } from "@/lib/db";
+import { aiIntakeTextProvenance } from '@/lib/product-text-provenance';
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 
 import { ProductIntakeError } from "./errors";
@@ -346,6 +347,11 @@ export const createApprovedProductDraft = async (
         identifierStatus,
       };
       const metadata = {
+        contentProvenance: aiIntakeTextProvenance(
+          proposal.listingPreview.de,
+          proposal.listingPreview.en,
+          ['hermes', 'n8n_v2', 'safi_bot'].includes(run.source) ? ['title', 'description'] : [],
+        ),
         productIntake: {
           runId: run.id,
           proposalHash: run.proposalHash,
@@ -455,8 +461,8 @@ export const publishApprovedProductDraft = async (
   if (run.status !== "approved_twice" || run.approvalCount !== 2) {
     throw new ProductIntakeError("state_conflict", "The second approval is required before publication", 409);
   }
-  if (!run.validation.readiness.store.ready || !run.validation.readiness.google.ready) {
-    throw new ProductIntakeError("state_conflict", "Store and Google readiness blockers must be resolved before publication", 409);
+  if (!run.validation.readiness.store.ready) {
+    throw new ProductIntakeError("state_conflict", "Store readiness blockers must be resolved before publication", 409);
   }
   return withTransaction(async (client) => {
     const lockedRun = await client.query(

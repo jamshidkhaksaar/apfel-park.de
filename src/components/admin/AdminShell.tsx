@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { type ReactNode, useState, useEffect } from "react";
+import { type ReactNode, useState, useEffect, useRef } from "react";
+
+import { useAdminSidebar } from "@/lib/admin-sidebar";
 
 import { createAdminBrowserClient } from "@/lib/admin-auth-client";
 import { useAdmin } from "@/lib/admin-context";
 import { useTheme } from "@/components/ThemeProvider";
-import AdminCommandPalette, { type CommandItem } from "@/components/admin/AdminCommandPalette";
+import AdminCommandPalette, { lockAdminScroll, type CommandItem } from "@/components/admin/AdminCommandPalette";
 
 const playAdminTone = () => {
   try {
@@ -146,8 +148,10 @@ export default function AdminShell({
   const { dict, lang, setLang, user } = useAdmin();
   const { theme, toggleTheme } = useTheme();
   const [clock, setClock] = useState('');
+  const [logoutPending, setLogoutPending] = useState(false);
+  const [logoutFailed, setLogoutFailed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, toggleSidebarCollapsed] = useAdminSidebar();
   const [navigatingPath, setNavigatingPath] = useState<string | null>(null);
   const [badges, setBadges] = useState<AdminBadgeCounts>({ chat: 0, repairs: 0, orders: 0 });
 
@@ -159,14 +163,47 @@ export default function AdminShell({
     return () => clearInterval(id);
   }, []);
 
-  // Lock body scroll when mobile sidebar is open
+  const sidebarRef = useRef<HTMLElement>(null);
+  const mainAreaRef = useRef<HTMLDivElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const desktopTriggerRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
-    if (sidebarOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
+    const media = window.matchMedia('(min-width: 1024px)');
+    const reset = () => { if (media.matches) setSidebarOpen(false); };
+    media.addEventListener('change', reset);
+    return () => media.removeEventListener('change', reset);
+  }, []);
+
+  useEffect(() => {
+    if (!sidebarOpen || window.matchMedia('(min-width: 1024px)').matches) return;
+    const sidebar = sidebarRef.current;
+    const main = mainAreaRef.current;
+    if (!sidebar || !main) return;
+    const unlockScroll = lockAdminScroll();
+    const previousInert = main.inert;
+    main.inert = true;
+    const focusables = () => Array.from(sidebar.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex="0"]')).filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
+    focusables()[0]?.focus();
+    const keydown = (event: KeyboardEvent) => {
+      // A native command dialog above the drawer owns keyboard focus.
+      if (document.querySelector('dialog[open]')) return;
+      if (event.key === 'Escape') { event.preventDefault(); setSidebarOpen(false); }
+      if (event.key === 'Tab') {
+        const elements = focusables();
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', keydown);
+    return () => {
+      document.removeEventListener('keydown', keydown);
+      unlockScroll();
+      main.inert = previousInert;
+      (window.matchMedia('(min-width: 1024px)').matches ? desktopTriggerRef : menuTriggerRef).current?.focus();
+    };
   }, [sidebarOpen]);
 
   useEffect(() => {
@@ -243,10 +280,18 @@ export default function AdminShell({
   };
 
   const handleLogout = async () => {
-    const adminClient = createAdminBrowserClient();
-    await adminClient.auth.signOut();
-    router.push('/login');
-    router.refresh();
+    if (logoutPending) return;
+    setLogoutPending(true);
+    setLogoutFailed(false);
+    try {
+      await createAdminBrowserClient().auth.signOut();
+      router.push('/login');
+      router.refresh();
+    } catch {
+      setLogoutFailed(true);
+    } finally {
+      setLogoutPending(false);
+    }
   };
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -335,6 +380,9 @@ export default function AdminShell({
         {/* ── Sidebar (single element; slides in on mobile, always visible on desktop) ── */}
         <aside
           id="admin-sidebar"
+          ref={sidebarRef}
+          role={sidebarOpen ? "dialog" : undefined}
+          aria-modal={sidebarOpen ? true : undefined}
           aria-label="Admin navigation"
           className={`
             admin-shell-panel
@@ -343,7 +391,7 @@ export default function AdminShell({
             transition-[transform,width] duration-300 ease-in-out
             lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:bg-surface/40
             ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
-            ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+            ${sidebarOpen ? 'visible translate-x-0 shadow-2xl' : 'invisible -translate-x-full lg:visible'}
           `}
         >
           {/* Brand mark */}
@@ -501,6 +549,7 @@ export default function AdminShell({
           </nav>
 
           {/* Bottom links */}
+          {logoutFailed && sidebarOpen ? <p id="logout-error" role="alert" className="px-4 py-2 text-sm text-red-600 dark:text-red-400">{dict.sidebar.logoutFailed}</p> : null}
           <div className={`border-t border-border px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
             <a
               href="https://mail.apfel-park.de"
@@ -527,6 +576,10 @@ export default function AdminShell({
             </Link>
             <button
               onClick={handleLogout}
+              disabled={logoutPending}
+              aria-busy={logoutPending}
+              aria-label={dict.sidebar.logout}
+              aria-describedby={logoutFailed ? 'logout-error' : undefined}
               title={sidebarCollapsed ? dict.sidebar.logout : undefined}
               className={`mt-0.5 flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-red-400/70 transition-all duration-150 hover:bg-red-500/8 hover:text-red-400 lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
@@ -539,7 +592,7 @@ export default function AdminShell({
         </aside>
 
         {/* ── Main area ── */}
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div ref={mainAreaRef} className="flex min-w-0 flex-1 flex-col overflow-hidden">
 
           {/* Top header */}
           <header className="admin-shell-panel flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface/20 px-4 lg:px-8">
@@ -548,7 +601,10 @@ export default function AdminShell({
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
-                onClick={() => setSidebarCollapsed((value) => !value)}
+                ref={desktopTriggerRef}
+                onClick={toggleSidebarCollapsed}
+                aria-expanded={!sidebarCollapsed}
+                aria-controls="admin-sidebar"
                 aria-label={sidebarCollapsed ? dict.sidebar.expandNavigation : dict.sidebar.collapseNavigation}
                 title={sidebarCollapsed ? dict.sidebar.expandNavigation : dict.sidebar.collapseNavigation}
                 className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-strong text-muted/70 transition-all duration-150 hover:border-gold/30 hover:bg-gold/10 hover:text-gold lg:flex"
@@ -561,6 +617,7 @@ export default function AdminShell({
               {/* Hamburger – mobile only */}
               <button
                 type="button"
+                ref={menuTriggerRef}
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open navigation menu"
                 aria-expanded={sidebarOpen}
@@ -623,6 +680,10 @@ export default function AdminShell({
               {/* Logout */}
               <button
                 onClick={handleLogout}
+                disabled={logoutPending}
+                aria-busy={logoutPending}
+                aria-label={dict.sidebar.logout}
+                aria-describedby={logoutFailed ? 'logout-error' : undefined}
                 title={dict.sidebar.logout}
                 className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium text-muted/50 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 sm:flex"
               >
@@ -634,6 +695,8 @@ export default function AdminShell({
             </div>
           </header>
           {navigatingPath ? <div className="relative z-20 h-0.5 shrink-0 overflow-hidden bg-gold/15"><div className="h-full w-1/3 animate-pulse bg-gold" /></div> : null}
+
+          {logoutFailed && !sidebarOpen ? <p id="logout-error" role="alert" className="px-4 py-2 text-sm text-red-600 dark:text-red-400">{dict.sidebar.logoutFailed}</p> : null}
 
           {/* Page content */}
           <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 lg:p-6">

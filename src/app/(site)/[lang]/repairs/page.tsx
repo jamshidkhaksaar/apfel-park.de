@@ -417,7 +417,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
               
               <div className="flex flex-wrap items-center gap-4">
                 <Link
-                  href={`tel:${siteInfo.phone.replace(/\s/g, "")}`}
+                  href={`tel:${siteInfo.phoneE164}`}
                   className="btn-primary shrink-0"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

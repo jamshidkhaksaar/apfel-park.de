@@ -15,7 +15,6 @@ import { sanitizeInput } from "@/lib/security";
  * The existing `reviews` table drives homepage testimonials and has no
  * product_id, so this is a separate table rather than an overload of it.
  */
-export type ProductReviewStatus = "pending" | "approved" | "rejected";
 
 export type ProductReview = {
   id: string;

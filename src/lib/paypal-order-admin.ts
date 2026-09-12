@@ -4,6 +4,8 @@ export type PayPalAdminCancellationInspection =
   | { outcome: "protected"; providerStatus: string };
 
 type PayPalOrderSnapshot = {
+  id?: string;
+  purchase_units?: Array<{ custom_id?: string }>;
   status?: string;
   name?: string;
   message?: string;
@@ -19,12 +21,14 @@ const parseJson = async (response: Response): Promise<PayPalOrderSnapshot & { ac
 
 export async function inspectPayPalOrderForAdminCancellation({
   orderId,
+  localOrderId,
   clientId,
   clientSecret,
   mode,
   fetchImpl = fetch,
 }: {
   orderId: string;
+  localOrderId: string;
   clientId: string;
   clientSecret: string;
   mode: "live" | "sandbox";
@@ -55,9 +59,7 @@ export async function inspectPayPalOrderForAdminCancellation({
     },
   );
   const order = await parseJson(lookup);
-  if (lookup.status === 404 && order.name === "RESOURCE_NOT_FOUND") {
-    return { outcome: "cancelable", providerStatus: "PAYPAL_ORDER_NOT_FOUND" };
-  }
+  // Absence can mean wrong merchant credentials; it is not terminal evidence.
   if (!lookup.ok) {
     throw new Error(order.message || "PayPal order lookup failed");
   }
@@ -67,6 +69,16 @@ export async function inspectPayPalOrderForAdminCancellation({
     return { outcome: "protected", providerStatus };
   }
   if (providerStatus === "VOIDED") {
+    // Checkout creates exactly one purchase unit with custom_id = local order UUID.
+    if (!orderId || !localOrderId || order.id !== orderId
+      || !Array.isArray(order.purchase_units) || order.purchase_units.length !== 1
+      || order.purchase_units[0]?.custom_id !== localOrderId) {
+      throw new Error("PayPal order identity mismatch");
+    }
+    // Even empty or malformed payments contradict capture-free terminal evidence.
+    if ("payments" in order.purchase_units[0]) {
+      throw new Error("PayPal order contains payment evidence");
+    }
     return { outcome: "cancelable", providerStatus };
   }
   if (["CREATED", "PAYER_ACTION_REQUIRED", "APPROVED"].includes(providerStatus)) {

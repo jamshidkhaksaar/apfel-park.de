@@ -440,7 +440,7 @@ export default function IPhoneBanner({
                     : "Apple iPhone Duo (Foldable)"}
                 </h3>
                 <span style={{ fontSize: "12px", color: "#e7c779" }}>
-                  {theaterTab === "pro-0" && (isEn ? "Titanium Lineup – Color Overview" : "Titanium Lineup – Farbübersicht")}
+                  {theaterTab === "pro-0" && (isEn ? "iPhone Pro Lineup – Colour Overview" : "iPhone Pro Lineup – Farbübersicht")}
                   {theaterTab === "pro-1" && (isEn ? "Front and back with variable optics" : "Vorder- und Rückseite mit variabler Optik")}
                   {theaterTab === "duo-0" && (isEn ? "Titanium Dark – 7.6\" Foldable Display" : "Titan Dunkel – 7.6\" Foldable Display")}
                   {theaterTab === "duo-1" && (isEn ? "Titanium Light – Ultra-thin Hinge" : "Titan Hell – Ultradünnes Scharnier")}
@@ -592,4 +592,3 @@ export default function IPhoneBanner({
     </>
   );
 }
-

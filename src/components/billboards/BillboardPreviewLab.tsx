@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { type Locale } from "@/lib/i18n";
 import IPhoneBanner from "@/components/banner/IPhoneBanner";

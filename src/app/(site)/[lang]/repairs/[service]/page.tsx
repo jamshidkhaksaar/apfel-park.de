@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 
 import { locales } from '@/lib/i18n';
 import { createMetadata } from '@/lib/metadata';
-import { getRepairService, repairServiceSlugs } from '@/lib/repair-services';
+import { getRepairService, repairServices, repairServiceSlugs } from '@/lib/repair-services';
+import { isRepairBenchmarkPublished } from '@/lib/repair-price-benchmark';
 import { safeJsonStringify } from '@/lib/security';
 import { siteInfo } from '@/lib/site';
 import { requireLocale } from "@/lib/route-locale";
@@ -89,7 +90,7 @@ export default async function RepairServicePage({
             <Link href={`/${locale}/repairs#repair-request`} className="btn-primary">
               {locale === 'de' ? 'Reparatur anfragen' : 'Request a repair'}
             </Link>
-            <Link href={`tel:${siteInfo.phone.replace(/\s/g, '')}`} className="btn-secondary">
+            <Link href={`tel:${siteInfo.phoneE164}`} className="btn-secondary">
               {siteInfo.phone}
             </Link>
           </div>
@@ -125,6 +126,19 @@ export default async function RepairServicePage({
           </div>
         </div>
       </section>
+      <nav className="container-page py-8" aria-label={locale === 'de' ? 'Weitere Reparaturangebote' : 'Related repair services'}>
+        <h2 className="text-xl font-semibold">{locale === 'de' ? 'Weitere Reparaturangebote' : 'Related repair services'}</h2>
+        <ul className="mt-4 flex flex-wrap gap-3">
+          {repairServices.filter((related) => related.slug !== service.slug).map((related) => (
+            <li key={related.slug}>
+              <Link className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 py-2 text-sm hover:text-gold focus-visible:outline-2 focus-visible:outline-gold" href={`/${locale}/repairs/${related.slug}`}>
+                {related.copy[locale].title}
+              </Link>
+            </li>
+          ))}
+          {isRepairBenchmarkPublished() ? <li><Link className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 py-2 text-sm hover:text-gold" href={`/${locale}/repairs/preisvergleich-hamburg`}>{locale === 'de' ? 'Reparaturpreise in Hamburg vergleichen' : 'Compare Hamburg repair prices'}</Link></li> : null}
+        </ul>
+      </nav>
     </div>
   );
 }

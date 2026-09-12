@@ -10,6 +10,9 @@ OWNER_MIGRATIONS=(
   20260827_professional_product_platform.sql
   20260827_campaign_redemption_history.sql
   20260828_provider_reference_uniqueness.sql
+  20260907_smartphone_editor_drafts.sql
+  20260904_device_quote_requests.sql
+  20260907_inventory_catalog_workflow.sql
 )
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RELEASE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
@@ -74,8 +77,9 @@ for EXPECTED_FILENAME in "${OWNER_MIGRATIONS[@]}"; do
   log "applying $EXPECTED_FILENAME as the local database owner"
   sudo -u postgres env PGOPTIONS="-c apfel.runtime_role=$APP_ROLE" \
     psql --no-psqlrc --dbname="$DB_NAME" --set=ON_ERROR_STOP=1 --single-transaction \
-    --file="$MIGRATION_FILE" \
-    --command="insert into public.schema_migrations (filename, checksum) values ('$EXPECTED_FILENAME', '$CHECKSUM')"
+    --file=- \
+    --command="insert into public.schema_migrations (filename, checksum) values ('$EXPECTED_FILENAME', '$CHECKSUM')" \
+    < "$MIGRATION_FILE"
   VERIFY="$(psql "$DATABASE_URL" -AtXq -v ON_ERROR_STOP=1 -c "select checksum from public.schema_migrations where filename='$EXPECTED_FILENAME'")"
   [[ "$VERIFY" == "$CHECKSUM" ]] || die "post-migration verification failed for $EXPECTED_FILENAME"
   log "applied $EXPECTED_FILENAME"

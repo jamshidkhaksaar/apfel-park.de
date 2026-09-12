@@ -1,19 +1,11 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/login-rate-limit";
-import { ADMIN_SESSION_COOKIE, createSessionToken, getSessionCookieOptions } from "@/lib/session";
+import { ADMIN_SESSION_COOKIE, createPersistedSessionToken, getSessionCookieOptions } from "@/lib/session";
 import { verifyReCaptcha } from "@/lib/recaptcha";
 import { isSafeRedirect } from "@/lib/security";
 import { verifyUserCredentials } from "@/lib/users";
-
-const comparePasswords = (left: string, right: string): boolean => {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-  if (leftBuffer.length !== rightBuffer.length) return false;
-  return timingSafeEqual(leftBuffer, rightBuffer);
-};
 
 export async function POST(request: NextRequest) {
   const csrf = rejectCrossSiteAdminMutation(request);
@@ -61,26 +53,9 @@ export async function POST(request: NextRequest) {
     console.warn("[Login] reCAPTCHA verification failed with empty token — relying on rate limiting");
   }
 
-  let sessionRole: string | undefined;
-
-  const adminEmails = new Set(
-    (process.env.ADMIN_EMAILS ?? "")
-      .split(",")
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean),
-  );
-  const expectedPassword = process.env.ADMIN_PASSWORD ?? "";
-
-  if (adminEmails.has(email) && expectedPassword && comparePasswords(password, expectedPassword)) {
-    sessionRole = "admin";
-  } else {
-    const dbResult = await verifyUserCredentials(email, password);
-    if (dbResult.valid) {
-      sessionRole = dbResult.role;
-    }
-  }
-
-  if (!sessionRole) {
+  // Database credentials and current account state are authoritative. No env-password bypass.
+  const dbResult = await verifyUserCredentials(email, password);
+  if (!dbResult.valid) {
     recordLoginFailure(ipKey);
     recordLoginFailure(emailKey);
     return buildRelativeRedirect("/login?error=invalid");
@@ -93,7 +68,7 @@ export async function POST(request: NextRequest) {
   const response = buildRelativeRedirect(target);
   response.cookies.set(
     ADMIN_SESSION_COOKIE,
-    createSessionToken(email, sessionRole),
+    await createPersistedSessionToken(email, dbResult.role, dbResult.securityVersion, dbResult.userId),
     getSessionCookieOptions(),
   );
   return response;

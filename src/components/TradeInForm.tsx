@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 
 import { useReCaptcha } from "@/components/ReCaptcha";
 import type { Locale } from "@/lib/i18n";
+import { trackSuccessfulLead } from "@/lib/lead-analytics";
 
 const input = "w-full rounded-xl border border-border bg-surface px-4 py-3 text-foreground";
 
@@ -14,15 +15,18 @@ export default function TradeInForm({ locale }: { locale: Locale }) {
   const [submitting, setSubmitting] = useState(false);
   const { execute, ReCaptchaComponent, isLoading } = useReCaptcha("trade_in");
   const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); setSubmitting(true); setStatus("");
+    event.preventDefault();
+    const form = event.currentTarget;
+    setSubmitting(true); setStatus("");
     try {
       const token = await execute();
       if (!token) throw new Error(de ? "Sicherheitsprüfung nicht verfügbar." : "Security check unavailable.");
-      const data = new FormData(event.currentTarget); data.set("locale", locale); data.set("recaptchaToken", token); data.set("consent", data.get("consent") ? "true" : "false"); data.delete("images"); files.forEach((file) => data.append("images", file));
+      const data = new FormData(form); data.set("locale", locale); data.set("recaptchaToken", token); data.set("consent", data.get("consent") ? "true" : "false"); data.delete("images"); files.forEach((file) => data.append("images", file));
       const response = await fetch("/api/trade-in", { method: "POST", body: data }); const payload = await response.json();
       if (!response.ok || !payload.success) throw new Error(payload.error || "failed");
+      trackSuccessfulLead("trade_in", locale);
       setStatus(de ? `Anfrage ${payload.id} wurde gesendet. Wir prüfen die Fotos und melden uns mit einem unverbindlichen Angebot.` : `Request ${payload.id} was sent. We will review the photos and reply with a non-binding quote.`);
-      event.currentTarget.reset(); setFiles([]);
+      form.reset(); setFiles([]);
     } catch (error) { setStatus(`${de ? "Senden fehlgeschlagen" : "Submission failed"}: ${error instanceof Error ? error.message : ""}`); }
     finally { setSubmitting(false); }
   };
