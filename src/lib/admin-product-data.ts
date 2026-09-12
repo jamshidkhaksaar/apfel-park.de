@@ -1,4 +1,5 @@
 import type { AdminProductRecord } from "@/lib/admin-product-types";
+import { requiresEnergyEvidenceReview } from '@/lib/product-evidence-hold';
 import { knownAiTextFields } from '@/lib/product-text-provenance';
 import type {
   BatteryDetails,
@@ -172,6 +173,7 @@ const toVariants = (value: unknown) => {
 };
 
 export const mapAdminProduct = (row: ProductRow, featuredIds: string[] = []): AdminProductRecord => ({
+  energyReviewRequired: requiresEnergyEvidenceReview(row.import_metadata),
   aiGeneratedFields: knownAiTextFields(row.import_metadata, row),
   id: row.id,
   title: row.title,

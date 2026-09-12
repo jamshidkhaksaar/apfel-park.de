@@ -42,6 +42,7 @@ export type ChannelVariantFacts = {
 };
 
 export type ProductChannelFacts = {
+  energyReviewRequired?: boolean;
   title: string;
   description?: string;
   category?: string;
@@ -196,6 +197,7 @@ export const evaluateProductChannelReadiness = (input: ProductChannelFacts): Pro
   if (!(input.safetyWarnings ?? []).some(nonEmpty)) store.warnings.push("Product safety information is incomplete.");
 
   addCoreErrors(input, google);
+  if (input.energyReviewRequired) google.errors.push('Energy-label evidence requires review before Google publication.');
   if (!nonEmpty(input.brand)) google.errors.push("Add the product brand for Google Merchant.");
   addUnitErrors(input, google, "google");
   if (nonEmpty(input.eprelId) && !/^[1-9]\d*$/.test(input.eprelId!.trim())) {

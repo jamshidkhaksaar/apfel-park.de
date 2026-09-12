@@ -6,6 +6,7 @@ import ProductDeactivateButton from "@/components/admin/ProductDeactivateButton"
 import AdminFilterForm from "@/components/admin/AdminFilterForm";
 import ProductTipsBadge from "@/components/admin/ProductTipsBadge";
 import { productMissingData } from "@/lib/product-missing-data";
+import type { ChannelVariantFacts, ProductIdentifierStatus } from '@/lib/product-channel-readiness';
 import AdminProductIntakeQueue from "@/components/admin/AdminProductIntakeQueue";
 import AdminShell from "@/components/admin/AdminShell";
 import ProductIntakeWizard from "@/components/admin/ProductIntakeWizard";
@@ -27,6 +28,10 @@ export const dynamic = "force-dynamic";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 type CatalogRow = {
+  energy_review_required: boolean;
+  identifier_status: ProductIdentifierStatus | null;
+  variants: ChannelVariantFacts[] | null;
+  eprel_id: string | null;
   id: string;
   title: string;
   brand: string | null;
@@ -151,12 +156,16 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const page = Math.min(requestedPage, pages);
   values.push(PAGE_SIZE, (page - 1) * PAGE_SIZE);
   const productsResult = await query(
-    `SELECT id,title,brand,model,sku,category,condition,price,stock,slug,is_active,images,subcategory,updated_at,(extract(epoch from (now() - updated_at)) / 60)::int AS edited_minutes_ago,description,mpn,gtin,condition_note,battery_health,has_real_product_photos,manufacturer,eu_responsible_person
+    `SELECT id,title,brand,model,sku,category,condition,price,stock,slug,is_active,images,subcategory,updated_at,(extract(epoch from (now() - updated_at)) / 60)::int AS edited_minutes_ago,description,mpn,gtin,condition_note,battery_health,has_real_product_photos,manufacturer,eu_responsible_person,identifier_status,variants,eprel_id,coalesce(import_metadata->'energyEvidenceReview'->>'status'='needs_supplier_confirmation',false) AS energy_review_required
      FROM products ${where} ORDER BY ${orderBy[sort] ?? orderBy.newest} LIMIT $${values.length - 1} OFFSET $${values.length}`,
     values,
   );
   const products = productsResult.rows as CatalogRow[];
   const tipsByProduct = new Map(products.map((product) => [product.id, productMissingData({
+    energyReviewRequired: product.energy_review_required,
+    identifierStatus: product.identifier_status ?? 'unknown',
+    variants: product.variants ?? [],
+    eprelId: product.eprel_id ?? undefined,
     title: product.title,
     description: product.description ?? "",
     category: product.category,

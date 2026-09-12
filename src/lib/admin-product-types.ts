@@ -27,6 +27,7 @@ export type ProductVariant = {
 };
 
 export type AdminProductRecord = {
+  energyReviewRequired?: boolean;
   aiGeneratedFields?: AiTextField[];
   id: string;
   title: string;

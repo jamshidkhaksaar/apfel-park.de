@@ -1,4 +1,5 @@
 import { createDbClient, query } from "@/lib/db";
+import { requiresEnergyEvidenceReview } from '@/lib/product-evidence-hold';
 import { deviceModelNeedles } from "@/lib/device-model";
 import type { Locale } from "@/lib/i18n";
 import { resolveProductConditionNote } from "@/lib/product-condition";
@@ -43,6 +44,7 @@ export type ProductVariant = {
 };
 
 export type Product = {
+  energyReviewRequired?: boolean;
   googleFeedEnabled?: boolean;
   id: string;
   title: string;
@@ -492,6 +494,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
       ]),
     ]) : undefined,
     googleFeedEnabled: row.import_metadata?.smartphoneEditor?.googleSelected !== false,
+    energyReviewRequired: requiresEnergyEvidenceReview(row.import_metadata),
     conditionNote: resolveProductConditionNote(row.import_metadata?.conditionNoteI18n, locale, row.condition_note) || undefined,
     image,
     images: images.length > 0 ? images : [image],

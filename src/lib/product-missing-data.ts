@@ -8,6 +8,8 @@ export type MissingDataInput = ProductChannelFacts & {
 };
 
 export type MissingDataItem = {
+  messageDe?: string;
+  labelDe?: string;
   code: string;
   label: string;
   severity: "error" | "warning";
@@ -35,6 +37,11 @@ export function productMissingData(input: MissingDataInput): MissingDataChecklis
   const readiness = evaluateProductChannelReadiness(input);
   const items: MissingDataItem[] = [];
   const push = (item: MissingDataItem) => items.push(item);
+  if (input.energyReviewRequired) {
+    push({ code: 'energy_review', label: 'Energy evidence review', labelDe: 'Energie-Nachweis prüfen', severity: 'error', channel: 'google', aiFillable: false,
+      message: 'Google publication is on hold. Verify the exact device and supplier energy-label evidence before requesting reactivation. AI fill or an ordinary save does not clear this hold.',
+      messageDe: 'Google-Veröffentlichung pausiert. Exaktes Gerät und Energie-Nachweis vom Lieferanten prüfen, bevor die Freigabe angefordert wird. KI-Ausfüllen oder normales Speichern hebt die Prüfsperre nicht auf.' });
+  }
 
   const imageCount = input.images?.filter(Boolean).length ?? 0;
   if (imageCount === 0) {
@@ -78,6 +85,7 @@ export function productMissingData(input: MissingDataInput): MissingDataChecklis
 
   for (const channel of ["store", "google", "ebay", "amazon"] as const) {
     for (const error of readiness[channel].errors) {
+      if (input.energyReviewRequired && channel === 'google' && error === 'Energy-label evidence requires review before Google publication.') continue;
       push({ code: `channel_${channel}`, label: channelLabel[channel], severity: "error", channel, aiFillable: false, message: error });
     }
   }

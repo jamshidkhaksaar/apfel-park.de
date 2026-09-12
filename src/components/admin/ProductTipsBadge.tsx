@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { MissingDataChecklist } from "@/lib/product-missing-data";
 
 export default function ProductTipsBadge({ tips, locale }: { tips: MissingDataChecklist; locale: "de" | "en" }) {
   const [open, setOpen] = useState(false);
+  const panelId = useId();
+  const held = tips.items.some(item => item.code === 'energy_review');
   const isGerman = locale === "de";
   const count = tips.items.length;
   if (count === 0) {
@@ -18,16 +20,18 @@ export default function ProductTipsBadge({ tips, locale }: { tips: MissingDataCh
     <div className="relative">
       <button
         type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
         className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${tips.stockZero ? "bg-red-500/15 text-red-500" : tips.errorCount > 0 ? "bg-amber-500/15 text-amber-500" : "bg-surface text-muted"}`}
       >
-        {tips.stockZero ? (isGerman ? "Ausverkauft" : "Out of stock") : `${count} ${isGerman ? "Tipps" : "tips"}`}
+        {held ? (isGerman ? 'Google pausiert' : 'Google on hold') : tips.stockZero ? (isGerman ? "Ausverkauft" : "Out of stock") : `${count} ${isGerman ? "Tipps" : "tips"}`}
       </button>
       {open ? (
-        <div className="absolute right-0 top-8 z-30 w-72 rounded-xl border border-border/60 bg-surface p-3 shadow-2xl">
-          {tips.items.map((item) => (
-            <p key={item.code} className={`mb-1 text-xs ${item.severity === "error" ? "text-amber-500" : "text-muted"}`}>
-              • {item.message}
+        <div id={panelId} className="absolute right-0 top-8 z-30 w-72 rounded-xl border border-border/60 bg-surface p-3 shadow-2xl">
+          {tips.items.map((item, index) => (
+            <p key={`${item.code}-${index}`} className={`mb-1 text-xs ${item.severity === "error" ? "text-amber-500" : "text-muted"}`}>
+              • {isGerman ? item.messageDe ?? item.message : item.message}
             </p>
           ))}
         </div>
