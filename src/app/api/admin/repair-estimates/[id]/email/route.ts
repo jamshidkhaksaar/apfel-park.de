@@ -6,6 +6,7 @@ import { requireRepairEstimateUser } from '@/lib/repair-estimate-auth';
 import { rejectCrossSiteAdminMutation } from '@/lib/admin-csrf';
 import { readEstimatePdf } from '@/lib/repair-estimate-storage';
 import { normalizeEstimatePayload } from '@/lib/repair-estimates';
+import { isValidEmail } from '@/lib/security';
 
 export const runtime = 'nodejs';
 
@@ -35,10 +36,12 @@ export async function POST(
     const version = versionResult.rows[0] as Record<string, unknown> | undefined;
     if (!version) return NextResponse.json({ error: 'Issue the estimate before sending it.' }, { status: 400 });
     const payload = normalizeEstimatePayload(version.payload);
-    const recipients = [
-      body.customer === true ? payload.customer.email : '',
-      body.insurer === true && payload.insurer.enabled ? payload.insurer.email : '',
-    ].filter((email) => /^\S+@\S+\.\S+$/.test(email));
+    const recipients: string[] = [];
+    if (body.customer === true) recipients.push(payload.customer.email);
+    if (body.insurer === true && payload.insurer.enabled) recipients.push(payload.insurer.email);
+    if (recipients.some(email => !isValidEmail(email))) {
+      return NextResponse.json({ error: 'Correct the email address for every selected recipient before sending.' }, { status: 400 });
+    }
     const uniqueRecipients = [...new Set(recipients)];
     if (uniqueRecipients.length === 0) return NextResponse.json({ error: 'Select a recipient with a valid email address.' }, { status: 400 });
 

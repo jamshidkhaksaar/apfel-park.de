@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { sendReviewInviteEmail } from "@/lib/email";
+import { isValidEmail } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
       .filter((link): link is { title: string; url: string } => Boolean(link?.title && link?.url))
       .slice(0, 10);
 
-    if (!payload.email || links.length === 0) {
+    if (!payload.email || !isValidEmail(payload.email) || links.length === 0) {
       return NextResponse.json({ success: false, error: "Missing email or links" }, { status: 400 });
     }
 

@@ -1,4 +1,5 @@
 import { businessIdentity } from './business-identity';
+import { isValidEmail } from './security';
 
 export type EstimateLanguage = 'de' | 'en';
 export type EstimateStatus = 'draft' | 'issued' | 'accepted' | 'declined' | 'expired';
@@ -129,7 +130,9 @@ const normalizeAddress = (value: unknown): EstimateAddress => {
   const data = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   return {
     name: text(data.name, 160),
-    email: text(data.email, 254).toLowerCase(),
+    // Keep invalid/overlength input visible to validation; never turn truncation
+    // into a different deliverable mailbox, including historical versions.
+    email: typeof data.email === 'string' ? data.email.trim().toLowerCase() : '',
     phone: text(data.phone, 60),
     street: text(data.street, 180),
     postalCode: text(data.postalCode, 24),
@@ -282,8 +285,8 @@ export const validateEstimatePayload = (payload: RepairEstimatePayload, forIssue
   if (forIssue && !payload.damageAssessment) errors.push('damage_assessment');
   if (forIssue && payload.items.length === 0) errors.push('items');
   if (payload.items.some((item) => !item.description || item.grossUnitCents < 0 || item.quantity < 1)) errors.push('items');
-  if (payload.customer.email && !/^\S+@\S+\.\S+$/.test(payload.customer.email)) errors.push('customer_email');
-  if (payload.insurer.enabled && payload.insurer.email && !/^\S+@\S+\.\S+$/.test(payload.insurer.email)) errors.push('insurer_email');
+  if (payload.customer.email && !isValidEmail(payload.customer.email)) errors.push('customer_email');
+  if (payload.insurer.enabled && payload.insurer.email && !isValidEmail(payload.insurer.email)) errors.push('insurer_email');
   if (forIssue) {
     if (!payload.issuerText) errors.push('issuer');
     if (!payload.accountHolder) errors.push('account_holder');

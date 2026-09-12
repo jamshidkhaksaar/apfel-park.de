@@ -119,11 +119,29 @@ export const validateImageFileExtension = (file: File): boolean => {
  * Enforces a reasonable length limit (254 chars) and standard format.
  */
 export const isValidEmail = (email: string): boolean => {
-  if (!email || email.length > 254) return false;
-
-  // Standard email regex that doesn't allow spaces and requires domain part
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  if (typeof email !== 'string' || !email || email.length > 254) return false;
+  if (/[\s\p{C}]/u.test(email)) return false;
+  // A form value is one bare mailbox, never an RFC address list, display name,
+  // quoted string or comment. Do not let the transport reinterpret its suffix.
+  const parts = email.split('@');
+  if (parts.length !== 2) return false;
+  const [local, domain] = parts;
+  if (!local || local.length > 64 || local.startsWith('.') || local.endsWith('.') || local.includes('..')) return false;
+  if (!/^[a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~.\u0080-\u{10FFFF}]+$/u.test(local)) return false;
+  if (!/^[\p{L}\p{M}\p{N}.-]+$/u.test(domain)) return false;
+  try {
+    // URL's UTS-46 conversion supports IDN domains without changing the caller's
+    // stored address. Validate the resulting DNS labels, not URL delimiters.
+    const asciiDomain = new URL(`https://${domain}`).hostname;
+    // WHATWG URLs expand numeric aliases (127.1, integer/hex/octal hosts).
+    // Unlike IDN encoding, this must not silently select another mailbox.
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(asciiDomain) && domain !== asciiDomain) return false;
+    const labels = asciiDomain.split('.');
+    return asciiDomain.length <= 253 && labels.length >= 2 && labels.every(label =>
+      label.length <= 63 && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label));
+  } catch {
+    return false;
+  }
 };
 
 /**

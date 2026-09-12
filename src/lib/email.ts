@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
 import { createAdminDbClient } from "@/lib/admin-db";
-import { escapeHtml } from "@/lib/security";
+import { escapeHtml, isValidEmail } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
 import { legalIdentityText } from '@/lib/business-identity';
 import { withBusinessEmailIdentity } from '@/lib/business-email-identity';
@@ -216,6 +216,13 @@ const sendWithResend = async (email: OutboundEmail): Promise<EmailSendResult> =>
 };
 
 const sendTransactionalEmail = async (email: OutboundEmail): Promise<EmailSendResult> => {
+  const recipients = Array.isArray(email.to) ? Array.from(email.to) : [email.to];
+  if (!recipients.length || !recipients.every(isValidEmail) ||
+      (email.replyTo !== undefined && !isValidEmail(email.replyTo))) {
+    // Fail the whole message before either provider, including saved addresses.
+    // Do not include customer data in the error or silently drop recipients.
+    return { success: false, error: 'Invalid email recipient or reply-to address' };
+  }
   const identifiedEmail = withBusinessEmailIdentity(email);
   const smtpResult = await sendWithSmtp(identifiedEmail);
   if (smtpResult.success) {
