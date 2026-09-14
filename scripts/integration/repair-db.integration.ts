@@ -50,6 +50,7 @@ it('rolls the entire job back if the redemption insert fails',async()=>{
 it('applies the saved coupon once to final gross cost and rejects an ineligible confirmed date',async()=>{
   const r=await saveRepairBooking(customer,await input());const update={id:r.id,status:'ready',estimatedCost:1,finalCost:120,repairSummary:'Test',notes:'',appointment:today+'T12:00'};
   expect((await updateRepairBookingRecord(update)).finalCost).toBe(102);expect((await updateRepairBookingRecord(update)).finalCost).toBe(102);
+  const cleared=await updateRepairBookingRecord({...update,finalCost:null});expect(cleared.finalCost).toBeNull();expect(cleared.details.finalBaseAmountCents).toBeNull();
   await expect(updateRepairBookingRecord({...update,appointment:tomorrow+'T12:00'})).rejects.toThrow('coupon_date');
 });
 it('releases cancellation exactly once and does not silently reopen a cancelled coupon',async()=>{

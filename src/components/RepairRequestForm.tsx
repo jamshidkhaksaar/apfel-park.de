@@ -269,7 +269,7 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
         customerName: "",
         customerEmail: "",
         customerPhone: "",
-        deviceModel: "",
+        deviceModel: formatCatalogLabel(catalogSelection.brandId,catalogSelection.familyId,catalogSelection.modelId),
         issueDescription: "",
       });
     } catch (error) {

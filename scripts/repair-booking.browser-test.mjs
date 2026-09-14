@@ -29,7 +29,7 @@ try{
   await page.getByLabel(lang==='de'?'Name *':'Name *',{exact:true}).fill('Fixture');await page.getByLabel(lang==='de'?'E-Mail *':'Email *',{exact:true}).fill('fixture@example.invalid');await page.getByLabel(lang==='de'?'Telefon *':'Phone *',{exact:true}).fill('000000');await page.getByLabel(lang==='de'?'Fehlerbeschreibung *':'Issue description *',{exact:true}).fill('Display broken');
   if(lang==='de'&&width===390)await page.locator('[data-repair-booking-options]').screenshot({path:out+'/booking-390.png'});
   await page.getByRole('button',{name:lang==='de'?'Reparatur anfragen':'Request repair',exact:true}).click();await page.getByText('R-123',{exact:true}).waitFor();
-  const saved=calls.find(c=>c.path==='/api/repairs');assert.equal(saved.body.quoteFingerprint,'server-preview');assert.equal(saved.body.requestedDate,today);assert.equal(saved.body.selection.variantId,'premium');assert.ok(saved.body.bookingKey);assert.deepEqual(errors,[]);results.push({lang,width,flow:'repair request with validated coupon',pass:true});await context.close();
+  const saved=calls.find(c=>c.path==='/api/repairs');assert.equal(saved.body.quoteFingerprint,'server-preview');assert.equal(saved.body.requestedDate,today);assert.equal(saved.body.selection.variantId,'premium');assert.ok(saved.body.bookingKey);assert.ok(await page.getByLabel(lang==='de'?'Gerät *':'Device *',{exact:true}).inputValue(),'device remains usable for a subsequent request');assert.deepEqual(errors,[]);results.push({lang,width,flow:'repair request with validated coupon',pass:true});await context.close();
  }
  for(const lang of ['de','en']){
   const page=await browser.newPage({viewport:{width:390,height:1000}}),saves=[];

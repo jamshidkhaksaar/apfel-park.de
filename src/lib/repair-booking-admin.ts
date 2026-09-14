@@ -17,6 +17,7 @@ export const updateRepairBookingRecord=async(input:{id:string;status:string;esti
   if(coupon&&appointmentAt&&coupon.rules.dateBasis==='repair_date'&&!coupon.rules.dates.includes(hamburgDate(new Date(appointmentAt))))throw new Error('coupon_date');
   for(const amount of[input.estimatedCost,input.finalCost])if(amount!==null&&(!Number.isFinite(amount)||amount<0||amount>9999999))throw new Error('invalid');
   let finalCost=input.finalCost;
+  if(coupon&&finalCost===null&&input.status!=='cancelled')details.finalBaseAmountCents=null;
   if(coupon&&input.status==='cancelled'){finalCost=existing.final_cost;details.couponReleased=true;}
   if(coupon&&finalCost!==null&&input.status!=='cancelled'){
     const base=Math.round(finalCost*100);
