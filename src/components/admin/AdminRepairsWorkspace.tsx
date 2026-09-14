@@ -6,9 +6,12 @@ import { useMemo, useState } from "react";
 import type { AdminDictionary } from "@/lib/admin-i18n";
 import { updateRepair } from "@/app/admin/repairs/actions";
 import type { RepairCatalog } from "@/lib/repair-catalog";
+import { repairBookingSummary, type RepairBookingDetails } from "@/lib/repair-booking";
+import { campaignDateForInput } from "@/lib/campaign-dates";
 import AdminRepairCatalogManager from "@/components/admin/AdminRepairCatalogManager";
 
 type RepairRow = {
+  booking_details?:RepairBookingDetails;
   id: string;
   ticket_number: number | null;
   customer_name: string;
@@ -26,6 +29,7 @@ type RepairRow = {
 };
 
 type Props = {
+  bookingError?:string;
   locale: "de" | "en";
   repairsPage: AdminDictionary["repairsPage"];
   repairs: RepairRow[];
@@ -82,6 +86,7 @@ const formatStatus = (status: string | null, repairsPage: AdminDictionary["repai
 
 export default function AdminRepairsWorkspace({
   locale,
+  bookingError,
   repairsPage,
   repairs,
   catalog,
@@ -337,7 +342,10 @@ export default function AdminRepairsWorkspace({
                 <p className="mt-3 whitespace-pre-wrap text-sm text-foreground">{selectedRepair.issue_description ?? "-"}</p>
               </div>
 
-              <form action={updateRepair} className="grid gap-5">
+              {selectedRepair.booking_details?.fingerprint?<div className="rounded-xl border border-gold/30 p-4 text-sm whitespace-pre-wrap">{repairBookingSummary(selectedRepair.booking_details,locale)}</div>:null}
+              {bookingError?<p role="alert" className="rounded-xl bg-red/10 p-4 text-sm text-red-text">{locale==="de"?"Änderung nicht gespeichert. Bestätigter Reparaturtag muss zum Gutschein passen; Mindestwert prüfen. Stornierte Gutschein-Anfragen müssen neu angelegt werden.":"Change was not saved. Confirmed repair date must match the coupon; check the minimum spend. Cancelled coupon requests must be recreated."}</p>:null}
+              <form key={selectedRepair.id} action={updateRepair} className="grid gap-5">
+                {selectedRepair.booking_details?.fingerprint?<label className="block text-sm">{locale==="de"?"Bestätigter Termin (Hamburg)":"Confirmed appointment (Hamburg)"}<input type="datetime-local" name="appointment" defaultValue={campaignDateForInput(selectedRepair.booking_details.appointmentAt)} className={inputClassName}/><span className="mt-1 block text-xs text-muted">{locale==="de"?"Leer = Termin noch nicht bestätigt. Speichern sendet die Terminbestätigung an den Kunden.":"Empty means not confirmed. Saving sends the appointment confirmation to the customer."}</span></label>:null}
                 <input type="hidden" name="id" value={selectedRepair.id} />
 
                 <div className="grid gap-4 lg:grid-cols-3">
@@ -361,6 +369,7 @@ export default function AdminRepairsWorkspace({
                     <input
                       type="text"
                       name="estimatedCost"
+                      readOnly={Boolean(selectedRepair.booking_details?.coupon)}
                       defaultValue={formatMoneyInput(selectedRepair.estimated_cost)}
                       placeholder="0.00"
                       className={inputClassName}
@@ -368,12 +377,12 @@ export default function AdminRepairsWorkspace({
                   </div>
                   <div>
                     <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-                      {repairsPage.finalCost}
+                      {selectedRepair.booking_details?.coupon?(locale==="de"?"Reparatur-Endpreis VOR Gutschein":"Repair final price BEFORE coupon"):repairsPage.finalCost}
                     </label>
                     <input
                       type="text"
                       name="finalCost"
-                      defaultValue={formatMoneyInput(selectedRepair.final_cost)}
+                      defaultValue={formatMoneyInput(selectedRepair.booking_details?.coupon?(typeof selectedRepair.booking_details.finalBaseAmountCents==="number"?selectedRepair.booking_details.finalBaseAmountCents/100:null):selectedRepair.final_cost)}
                       placeholder="0.00"
                       className={inputClassName}
                     />

@@ -8,6 +8,7 @@ import AdminRepairsWorkspace from "../../../components/admin/AdminRepairsWorkspa
 export const dynamic = "force-dynamic";
 
 type RepairRow = {
+  booking_details?: import("@/lib/repair-booking").RepairBookingDetails;
   id: string;
   ticket_number: number | null;
   customer_name: string;
@@ -38,12 +39,12 @@ export default async function RepairsPage({
   const { data } = await adminClient
     .from("repairs")
     .select(
-      "id,ticket_number,customer_name,customer_email,customer_phone,customer_locale,device_model,issue_description,status,estimated_cost,final_cost,repair_summary,notes,created_at",
+      "id,ticket_number,customer_name,customer_email,customer_phone,customer_locale,device_model,issue_description,status,estimated_cost,final_cost,repair_summary,notes,created_at,booking_details",
     )
     .order("created_at", { ascending: false })
     .limit(100);
 
-  const repairs = (data ?? []) as RepairRow[];
+  const repairs = ((data ?? []) as RepairRow[]).map(row=>({...row,estimated_cost:row.estimated_cost==null?null:Number(row.estimated_cost),final_cost:row.final_cost==null?null:Number(row.final_cost)}));
   const openRepairs = repairs.filter(
     (repair) => !["completed", "cancelled"].includes((repair.status ?? "").toLowerCase()),
   ).length;
@@ -56,6 +57,7 @@ export default async function RepairsPage({
         repairs={repairs}
         catalog={catalog}
         openRepairs={openRepairs}
+        bookingError={typeof params.error==="string"?params.error:undefined}
         showSuccess={params.updated === "1"}
         showEmailWarning={params.email === "warning"}
       />

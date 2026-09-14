@@ -22,6 +22,7 @@ type RepairRequestEmailData = {
   deviceModel: string;
   issueDescription: string;
   locale: string;
+  bookingSummary?: string;
 };
 
 type RepairStatusEmailData = {
@@ -34,6 +35,7 @@ type RepairStatusEmailData = {
   repairSummary?: string | null;
   estimatedCost?: number | null;
   finalCost?: number | null;
+  bookingSummary?: string;
 };
 
 type ChatSummaryEmailData = {
@@ -565,7 +567,7 @@ const buildRepairRequestConfirmation = (data: RepairRequestEmailData) => {
         <p>Apfel Park Repairs</p>
       `;
 
-  return { subject, text, html };
+  return { subject, text: data.bookingSummary?`${text}\n\n${data.bookingSummary}`:text, html:data.bookingSummary?`${html}<p>${escapeHtml(data.bookingSummary).replace(/\n/g,"<br/>")}</p>`:html };
 };
 
 const buildRepairAdminNotification = (data: RepairRequestEmailData) => {
@@ -614,7 +616,7 @@ const buildRepairAdminNotification = (data: RepairRequestEmailData) => {
         <p><strong>Issue:</strong><br/>${escapeHtml(data.issueDescription).replace(/\n/g, "<br/>")}</p>
       `;
 
-  return { subject, text, html };
+  return { subject, text: data.bookingSummary?`${text}\n\n${data.bookingSummary}`:text, html:data.bookingSummary?`${html}<p>${escapeHtml(data.bookingSummary).replace(/\n/g,"<br/>")}</p>`:html };
 };
 
 const getStatusCopy = (status: string, locale: string) => {
@@ -726,8 +728,8 @@ const buildRepairStatusUpdate = (data: RepairStatusEmailData) => {
 
   return {
     subject: `${copy.subject} | ${ticket}`,
-    text: lines.join("\n"),
-    html: htmlSections.join(""),
+    text: [...lines,...(data.bookingSummary?["",data.bookingSummary]:[])].join("\n"),
+    html: htmlSections.join("")+(data.bookingSummary?`<p>${escapeHtml(data.bookingSummary).replace(/\n/g,"<br/>")}</p>`:""),
   };
 };
 

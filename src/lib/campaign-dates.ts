@@ -39,6 +39,8 @@ export const campaignWindow = (starts?: string | null, ends?: string | null) => 
 
 export const campaignErrorMessage = (code: string, locale: 'de' | 'en'): string => {
   const messages: Record<string, [string,string]> = {
+    repair_scope_only: ['Reparaturkampagnen bitte getrennt von Produktkampagnen anlegen.', 'Create repair campaigns separately from product campaigns.'],
+    invalid_repair_dates: ['Bitte gültige konkrete Aktionstage auswählen; mindestens ein Tag darf noch nicht vergangen sein.', 'Choose valid specific promotion dates, including at least one date that has not passed.'],
     invalid_window: ['Das Ende muss nach dem Start liegen. Bitte Datum und Uhrzeit prüfen.', 'The end must be later than the start. Check both the date and time.'],
     invalid_date: ['Bitte ein gültiges Datum und eine gültige Uhrzeit in Hamburg eingeben. Diese Uhrzeit kann bei der Zeitumstellung entfallen.', 'Enter a valid date and Hamburg time. Some times do not exist during the clock change.'],
     ambiguous_date: ['Diese Uhrzeit kommt bei der Zeitumstellung zweimal vor. Bitte eine Uhrzeit außerhalb der Umstellung wählen.', 'This time occurs twice during the clock change. Choose a time outside the transition.'],

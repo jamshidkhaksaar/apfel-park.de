@@ -1,0 +1,16 @@
+import { beforeEach,expect,it,vi } from 'vitest';
+import { NextRequest } from 'next/server';
+const m=vi.hoisted(()=>({captcha:vi.fn(),save:vi.fn(),customer:vi.fn(),admin:vi.fn(),track:vi.fn()}));
+vi.mock('@/lib/public-rate-limit',()=>({consumePublicRateLimit:async()=>({allowed:true})}));
+vi.mock('@/lib/recaptcha',()=>({verifyReCaptcha:m.captcha}));
+vi.mock('@/lib/repair-booking-server',()=>({saveRepairBooking:m.save}));
+vi.mock('@/lib/email',()=>({sendRepairRequestCustomerEmail:m.customer,sendRepairRequestAdminEmail:m.admin}));
+vi.mock('@/lib/marketing',()=>({sendLeadTrackingEvents:m.track}));
+import {POST} from './route';
+const request=()=>new NextRequest('https://apfel-park.de/api/repairs',{method:'POST',body:JSON.stringify({customerName:'Fixture',customerEmail:'test@example.invalid',customerPhone:'0000000',deviceModel:'Fixture phone',issueDescription:'Broken display',recaptchaToken:'fixture',locale:'de'})});
+beforeEach(()=>{vi.clearAllMocks();m.captcha.mockResolvedValue({success:true});m.save.mockResolvedValue({ticket_number:1,booking_details:{fingerprint:'f',repairLabel:'Display',deviceLabel:'Verified phone',requestedDate:'2026-09-16',baseAmountCents:10000,totalAmountCents:8500,discountAmountCents:1500},duplicate:false});m.customer.mockResolvedValue({success:true});m.admin.mockResolvedValue({success:true});m.track.mockResolvedValue(undefined);});
+it('keeps the captcha gate before any booking or email',async()=>{m.captcha.mockResolvedValue({success:false});expect((await POST(request())).status).toBe(403);expect(m.save).not.toHaveBeenCalled();expect(m.customer).not.toHaveBeenCalled();});
+it('sends the server-generated booking information to both customer and shop',async()=>{expect((await POST(request())).status).toBe(200);expect(m.customer.mock.calls[0][0].bookingSummary).toContain('85,00');expect(m.admin.mock.calls[0][0].deviceModel).toBe('Verified phone');});
+it('does not resend emails for an idempotent replay',async()=>{m.save.mockResolvedValue({ticket_number:1,booking_details:{},duplicate:true});expect((await POST(request())).status).toBe(200);expect(m.customer).not.toHaveBeenCalled();expect(m.admin).not.toHaveBeenCalled();});
+it('does not turn successful booking into failure because optional tracking failed',async()=>{m.track.mockRejectedValue(new Error('offline'));expect((await POST(request())).status).toBe(200);});
+it('returns actionable stale-quote conflict instead of an internal error',async()=>{m.save.mockRejectedValue(new Error('quote_changed'));expect((await POST(request())).status).toBe(409);expect(m.customer).not.toHaveBeenCalled();});

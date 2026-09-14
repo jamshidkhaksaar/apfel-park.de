@@ -48,7 +48,7 @@ describe('campaign-backed promotion safety',()=>{
   });
   it('targets shopping surfaces without exposing the banner on admin, repair or accessory routes',()=>{
     for(const path of ['/de','/en/store','/de/tablets','/de/laptops','/en/gebrauchte-iphones'])expect(promotionSurface(path,'')).not.toBeNull();
-    for(const path of ['/admin','/de/repairs','/de/accessories','/de/checkout','/de/cart','/en/about'])expect(promotionSurface(path,'')).toBeNull();
+    for(const path of ['/admin','/de/accessories','/de/checkout','/de/cart','/en/about'])expect(promotionSurface(path,'')).toBeNull();
     expect(promotionSurface('/de/store','category=accessories')).toBeNull();
     expect(promotionSurface('/de/store/example-phone','')).toEqual({slug:'example-phone'});
   });

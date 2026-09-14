@@ -10,5 +10,6 @@ export default function StorePromotion({locale,initial=null}:{locale:'de'|'en';i
   const seed=context&&!context.slug&&(!context.category||initial?.categories.includes(context.category))?initial:null;
   const promotion=usePromotion(query,seed);
   if(!context||!promotion)return null;
+  if(promotion.categories.includes('repairs')&&!/^\/(de|en)(?:\/repairs(?:\/.*)?)?$/.test(path))return null;
   return <div className="container-page py-3"><PromotionBanner key={promotion.id} promotion={promotion} locale={locale} compact={Boolean(context.slug)}/></div>;
 }

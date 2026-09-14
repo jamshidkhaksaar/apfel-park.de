@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { createAdminDbClient } from "@/lib/admin-db";
+import { saveRepairBooking } from "@/lib/repair-booking-server";
+import { repairBookingSummary, repairBookingError, repairBookingErrorStatus, type RepairBookingInput, type RepairBookingDetails } from "@/lib/repair-booking";
 import {
   sendRepairRequestAdminEmail,
   sendRepairRequestCustomerEmail,
@@ -26,9 +27,11 @@ const toTicketNumber = (value: number | null): string => (value ? `R-${value}` :
 export async function POST(request: NextRequest) {
   const limit = await consumePublicRateLimit(request.headers, "repair_request", 5, 15 * 60);
   if (!limit.allowed) return NextResponse.json({ success: false, error: "Too many requests" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
+  let locale:"de"|"en"="de";
   try {
-    const payload: RepairRequestPayload = await request.json();
-    const locale = payload.locale === "de" ? "de" : "en";
+    const raw=await request.text();if(raw.length>16384)return NextResponse.json({success:false,error:"Request too large"},{status:413});
+    const payload: RepairRequestPayload & RepairBookingInput = JSON.parse(raw);
+    locale = payload.locale === "de" ? "de" : "en";
     const customerName = sanitizeInput(payload.customerName);
     const customerEmail = sanitizeInput(payload.customerEmail).toLowerCase();
     const customerPhone = sanitizeInput(payload.customerPhone);
@@ -74,41 +77,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const adminDb = createAdminDbClient();
-    const { data, error } = await adminDb
-      .from("repairs")
-      .insert({
-        customer_name: customerName,
-        customer_email: customerEmail,
-        customer_phone: customerPhone,
-        customer_locale: locale,
-        device_model: deviceModel,
-        issue_description: issueDescription,
-        status: "new",
-        status_updated_at: new Date().toISOString(),
-      })
-      .select("id,ticket_number,customer_name,customer_email,customer_phone,customer_locale,device_model,issue_description")
-      .single();
-
-    if (error || !data) {
-      console.error("[Repairs API] Insert failed:", error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: locale === "de" ? "Die Reparaturanfrage konnte nicht gespeichert werden." : "The repair request could not be saved.",
-        },
-        { status: 500 },
-      );
-    }
+    const data=await saveRepairBooking({customerName,customerEmail,customerPhone,deviceModel,issueDescription,locale},payload);
+    const bookingDetails=data.booking_details as RepairBookingDetails;
+    const bookingSummary=repairBookingSummary(bookingDetails,locale);
+    if(data.duplicate)return NextResponse.json({success:true,ticketNumber:toTicketNumber(data.ticket_number as number),bookingSummary,message:locale==="de"?"Diese Anfrage wurde bereits gespeichert.":"This request was already saved."});
 
     const emailPayload = {
       ticketNumber: data.ticket_number as number | null,
       customerName,
       customerEmail,
       customerPhone,
-      deviceModel,
+      deviceModel:bookingDetails.repairLabel?bookingDetails.deviceLabel:deviceModel,
       issueDescription,
       locale,
+      bookingSummary,
     };
 
     const [customerEmailResult, adminEmailResult] = await Promise.all([
@@ -139,11 +121,12 @@ export async function POST(request: NextRequest) {
         userAgent: request.headers.get("user-agent"),
         url: `${siteInfo.url}/repairs`,
       },
-    );
+    ).catch(()=>undefined);
 
     return NextResponse.json({
       success: true,
       ticketNumber: toTicketNumber(data.ticket_number as number | null),
+      bookingSummary,
       message:
         locale === "de"
           ? "Deine Reparaturanfrage wurde erfolgreich gesendet."
@@ -154,9 +137,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "Internal server error",
+        error: repairBookingError(error instanceof Error?error.message:"",locale==="de"),
       },
-      { status: 500 },
+      { status: repairBookingErrorStatus(error instanceof Error?error.message:"") },
     );
   }
 }

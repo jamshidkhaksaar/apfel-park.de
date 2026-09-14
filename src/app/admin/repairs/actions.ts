@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { isAdminUser } from "@/lib/admin-auth";
+import { canManageRepairs } from "@/lib/admin-auth";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
-import { query } from "@/lib/db";
+import { updateRepairBookingRecord } from "@/lib/repair-booking-admin";
+import { repairBookingSummary } from "@/lib/repair-booking";
 import { sendRepairStatusEmail } from "@/lib/email";
 import { sanitizeInput } from "@/lib/security";
 
@@ -39,7 +40,7 @@ export async function updateRepair(formData: FormData) {
     error: authError,
   } = await adminClient.auth.getUser();
 
-  if (authError || !isAdminUser(user)) {
+  if (authError || !canManageRepairs(user)) {
     redirect(buildRedirect({ error: "auth" }));
   }
 
@@ -54,44 +55,13 @@ export async function updateRepair(formData: FormData) {
     redirect(buildRedirect({ error: "invalid" }));
   }
 
-  const existingResult = await query(
-    `SELECT id, ticket_number, customer_name, customer_email, customer_locale, device_model, status
-     FROM repairs
-     WHERE id = $1
-     LIMIT 1`,
-    [id],
-  );
-
-  const existing = existingResult.rows[0] as
-    | {
-        id: string;
-        ticket_number: number | null;
-        customer_name: string;
-        customer_email: string | null;
-        customer_locale: string | null;
-        device_model: string;
-        status: string | null;
-      }
-    | undefined;
-
-  if (!existing) {
-    redirect(buildRedirect({ error: "missing" }));
-  }
-
-  await query(
-    `UPDATE repairs
-     SET status = $2,
-         estimated_cost = $3,
-         final_cost = $4,
-         repair_summary = $5,
-         notes = $6,
-         status_updated_at = NOW()
-     WHERE id = $1`,
-    [id, nextStatus, estimatedCost, finalCost, repairSummary || null, notes || null],
-  );
+  let saved;
+  try { saved=await updateRepairBookingRecord({id,status:nextStatus,estimatedCost,finalCost,repairSummary,notes,appointment:sanitizeInput(formData.get("appointment"))}); }
+  catch(error){const message=error instanceof Error?error.message:"invalid";redirect(buildRedirect({error:["missing","coupon_date","coupon_minimum","cancelled_coupon"].includes(message)?message:"invalid"}));}
+  const existing=saved.existing;
 
   let emailWarning = false;
-  if (existing.customer_email && (existing.status ?? "") !== nextStatus) {
+  if (existing.customer_email && saved.changed) {
     const emailResult = await sendRepairStatusEmail({
       ticketNumber: existing.ticket_number,
       customerName: existing.customer_name,
@@ -100,8 +70,9 @@ export async function updateRepair(formData: FormData) {
       locale: existing.customer_locale === "de" ? "de" : "en",
       status: nextStatus,
       repairSummary: repairSummary || null,
-      estimatedCost,
-      finalCost,
+      estimatedCost:saved.estimatedCost,
+      finalCost:saved.finalCost,
+      bookingSummary:repairBookingSummary(saved.details,existing.customer_locale==="de"?"de":"en"),
     });
 
     if (!emailResult.success) {

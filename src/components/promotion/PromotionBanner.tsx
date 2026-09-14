@@ -4,7 +4,7 @@ import { promotionDiscount, promotionScope, type PublicPromotion } from '@/lib/p
 import styles from './PromotionBanner.module.css';
 
 export default function PromotionBanner({promotion,locale,compact=false,preview=false}:{promotion:PublicPromotion;locale:'de'|'en';compact?:boolean;preview?:boolean}){
-  const de=locale==='de',id=useId();
+  const de=locale==='de',id=useId(),repairs=promotion.categories.includes('repairs');
   const [copied,setCopied]=useState(false),[copyFailed,setCopyFailed]=useState(false);
   const [clock,setClock]=useState({expiry:promotion.endsAt,seconds:promotion.expiresInSeconds});
   useEffect(()=>{
@@ -23,16 +23,18 @@ export default function PromotionBanner({promotion,locale,compact=false,preview=
   return <aside className={`${styles.banner} ${compact?styles.compact:''}`} aria-label={de?'Aktueller Gutschein':'Current coupon'} data-promotion-banner>
     <div className={styles.content}>
       <svg className={styles.ticket} width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 5h16v5a2 2 0 0 0 0 4v5H4v-5a2 2 0 0 0 0-4V5Z"/><path d="m9 15 6-6"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/></svg>
-      <div className={styles.message}><p className={styles.headline}>{promotion.headline[locale]|| (de?'Dein Technik-Upgrade. Jetzt günstiger.':'Your next tech upgrade, for less.')}</p><p className={styles.scope}><strong>{promotionDiscount(promotion,locale)} {de?'Rabatt':'off'}</strong><span>{promotionScope(promotion,locale)}</span></p></div>
+      <div className={styles.message}><p className={styles.headline}>{promotion.headline[locale]|| (repairs?(de?'Deine Reparatur. Jetzt günstiger.':'Your repair, for less.'):(de?'Dein Technik-Upgrade. Jetzt günstiger.':'Your next tech upgrade, for less.'))}</p><p className={styles.scope}><strong>{promotionDiscount(promotion,locale)} {de?'Rabatt':'off'}</strong><span>{promotionScope(promotion,locale)}</span></p></div>
       <div className={styles.actions}>
         {promotion.endsAt?<div className={styles.timer}><span>{de?'Endet in':'Ends in'}</span><span className={styles.digits} aria-hidden="true">{countdown}</span><time className="sr-only" dateTime={promotion.endsAt}>{endLabel} ({de?'Hamburg-Zeit':'Hamburg time'})</time></div>:null}
         <button type="button" className={styles.copy} onClick={()=>void copy()} aria-describedby={id}><span className={styles.code}>{promotion.code}</span><span aria-hidden="true">{copied?'✓':'⧉'}</span><span>{copied?(de?'Kopiert':'Copied'):(de?'Code kopieren':'Copy code')}</span></button>
       </div>
     </div>
     <div id={id} className={styles.footer}>
+      {promotion.repairRules?<span>{de?'Aktionstage':'Promotion dates'}: {promotion.repairRules.dates.join(', ')} · {promotion.repairRules.dateBasis==='repair_date'?(de?'Wunschtermin der Reparatur':'Requested repair date'):(de?'Tag der Online-Anfrage':'Online request date')}</span>:null}
+      {repairs?<a href={`/${locale}/repairs?coupon=${encodeURIComponent(promotion.code)}#repair-request`} className="inline-flex min-h-11 items-center underline">{de?'Reparatur anfragen':'Request repair'}</a>:null}
       <span>{promotion.minimumOrder>0?(de?`Ab ${new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(promotion.minimumOrder)} Warenwert`:`Minimum basket ${new Intl.NumberFormat('en-GB',{style:'currency',currency:'EUR'}).format(promotion.minimumOrder)}`):(de?'Kein Mindestbestellwert':'No minimum spend')}</span>
-      <details><summary>{de?'Bedingungen':'Terms'}</summary><p>{promotionScope(promotion,locale)}. {de?'Zubehör und Reparaturen sind ausgeschlossen. Ein Code pro Bestellung; Versandkosten werden nicht rabattiert. Der Rabatt wird im Checkout geprüft.':'Accessories and repairs are excluded. One code per order; shipping is not discounted. The discount is validated at checkout.'} {promotion.endsAt?`${de?'Gültig bis':'Valid until'} ${endLabel} (${de?'Hamburg-Zeit':'Hamburg time'}).`:(de?'Kein festes Enddatum; gültig solange die Kampagne aktiv und ihr Einlösungslimit nicht erreicht ist.':'No fixed end date; valid while the campaign is active and its redemption limit has not been reached.')}</p></details>
+      <details><summary>{de?'Bedingungen':'Terms'}</summary><p>{promotionScope(promotion,locale)}. {repairs?(de?'Nur bepreiste Katalog-Reparaturen an den angegebenen Aktionstagen. Gerätekäufe und Zubehör ausgeschlossen. Ein Code pro Anfrage; Termin und Endpreis werden vom Team bestätigt. Solange Einlösungen verfügbar sind.':'Priced catalog repairs on the specified dates only. Device purchases and accessories excluded. One code per request; appointment and final price require staff confirmation. Subject to remaining redemptions.'):(de?'Zubehör und Reparaturen sind ausgeschlossen. Ein Code pro Bestellung; Versandkosten werden nicht rabattiert. Der Rabatt wird im Checkout geprüft.':'Accessories and repairs are excluded. One code per order; shipping is not discounted. The discount is validated at checkout.')} {promotion.endsAt?`${de?'Gültig bis':'Valid until'} ${endLabel} (${de?'Hamburg-Zeit':'Hamburg time'}).`:(de?'Kein festes Enddatum; gültig solange die Kampagne aktiv und ihr Einlösungslimit nicht erreicht ist.':'No fixed end date; valid while the campaign is active and its redemption limit has not been reached.')}</p></details>
     </div>
-    <span className={styles.feedback} role="status">{copyFailed?(de?`Bitte den Code ${promotion.code} markieren und manuell kopieren.`:`Select and copy ${promotion.code} manually.`):copied?(de?'Gutscheincode kopiert. Im Checkout anwenden.':'Coupon copied. Apply it at checkout.'):''}</span>
+    <span className={styles.feedback} role="status">{copyFailed?(de?`Bitte den Code ${promotion.code} markieren und manuell kopieren.`:`Select and copy ${promotion.code} manually.`):copied?(repairs?(de?'Gutscheincode kopiert. In der Reparaturanfrage eingeben.':'Coupon copied. Enter it in the repair request.'):(de?'Gutscheincode kopiert. Im Checkout anwenden.':'Coupon copied. Apply it at checkout.')):''}</span>
   </aside>;
 }

@@ -13,6 +13,7 @@ OWNER_MIGRATIONS=(
   20260907_smartphone_editor_drafts.sql
   20260904_device_quote_requests.sql
   20260907_inventory_catalog_workflow.sql
+  20260914_repair_coupon_bookings.sql
 )
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RELEASE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"

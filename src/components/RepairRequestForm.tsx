@@ -1,4 +1,6 @@
 "use client";
+import RepairBookingOptions from "./RepairBookingOptions";
+import { type RepairBookingInput, type RepairBookingDetails } from "@/lib/repair-booking";
 import { trackSuccessfulLead } from "@/lib/lead-analytics";
 
 import { FormEvent, useId, useMemo, useState } from "react";
@@ -24,6 +26,7 @@ type SubmitState = {
   type: "idle" | "loading" | "success" | "error";
   message?: string;
   ticketNumber?: string;
+  bookingSummary?:string;
   errors?: Partial<Record<keyof RepairFormData, string>>;
 };
 
@@ -158,6 +161,10 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
     familyId: initialFamily?.id ?? "",
     modelId: initialModel?.id ?? "",
   });
+  const [bookingKey,setBookingKey]=useState(()=>crypto.randomUUID());
+  const [booking,setBooking]=useState<RepairBookingInput>({selection:{brandId:initialBrand?.id||"",familyId:initialFamily?.id||"",modelId:initialModel?.id||"",partId:searchParams.get("part")||"",variantId:searchParams.get("variant")||""},requestedDate:"",preferredTime:"",couponCode:searchParams.get("coupon")||""});
+  const [checkedQuote,setCheckedQuote]=useState<RepairBookingDetails|null>(null);
+  const activeQuote=checkedQuote && JSON.stringify(checkedQuote.selection)===JSON.stringify(booking.selection) && checkedQuote.requestedDate===(booking.requestedDate||null) && checkedQuote.preferredTime===(booking.preferredTime||null) && (checkedQuote.coupon?.code||"")===(booking.couponCode||"").toUpperCase() ? checkedQuote:null;
   const [status, setStatus] = useState<SubmitState>({ type: "idle" });
   const { token: recaptchaToken, error: recaptchaError, isLoading: recaptchaLoading, ReCaptchaComponent } =
     useReCaptcha("repair_request");
@@ -179,6 +186,8 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
   const selectedFamily = selectedBrand?.families.find((family) => family.id === catalogSelection.familyId) ?? null;
   const selectedModel = selectedFamily?.models.find((model) => model.id === catalogSelection.modelId) ?? null;
 
+  const selectedRepairPrice=selectedModel?.parts?.find(p=>p.id===booking.selection?.partId)?.variants.find(v=>v.id===booking.selection?.variantId)?.price;
+
   const setField = (field: keyof RepairFormData, value: string) => {
     setFormData((current) => ({ ...current, [field]: value }));
     if (status.errors?.[field]) {
@@ -191,6 +200,7 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
 
   const syncCatalogDevice = (brandId: string, familyId: string, modelId: string) => {
     setCatalogSelection({ brandId, familyId, modelId });
+    setBooking(current=>({...current,selection:{brandId,familyId,modelId,partId:"",variantId:""}}));setCheckedQuote(null);
     setFormData((current) => ({
       ...current,
       deviceModel: formatCatalogLabel(brandId, familyId, modelId),
@@ -199,6 +209,8 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if(status.type==="loading")return;
+    if(booking.couponCode&&!activeQuote){setStatus({type:"error",message:lang==="de"?"Bitte den Gutschein für die aktuelle Auswahl prüfen.":"Validate the coupon for the current selection."});return;}
 
     if (Object.keys(validationErrors).length > 0) {
       setStatus({
@@ -227,6 +239,9 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
         },
         body: JSON.stringify({
           ...formData,
+          ...booking,
+          bookingKey,
+          quoteFingerprint:activeQuote?.fingerprint,
           locale: lang,
           recaptchaToken,
         }),
@@ -247,7 +262,9 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
         type: "success",
         message: result.message || text.success,
         ticketNumber: result.ticketNumber,
+        bookingSummary:result.bookingSummary,
       });
+      setBookingKey(crypto.randomUUID());setCheckedQuote(null);setBooking(current=>({...current,couponCode:""}));
       setFormData({
         customerName: "",
         customerEmail: "",
@@ -290,6 +307,7 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
         {status.type === "success" && (
           <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-300">
             <p className="font-semibold">{status.message}</p>
+            {status.bookingSummary?<p className="mt-3 whitespace-pre-wrap">{status.bookingSummary}</p>:null}
             {status.ticketNumber && (
               <p className="mt-2">
                 {text.successTicket}: <strong>{status.ticketNumber}</strong>
@@ -371,8 +389,8 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
           <div className="rounded-2xl border border-gold/20 bg-gold/10 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">{text.estimateTitle}</p>
             <p className="mt-2 text-xl font-bold text-foreground">
-              {typeof selectedModel?.price === "number"
-                ? `${selectedModel.price.toFixed(2).replace(".", ",")} €`
+              {typeof selectedRepairPrice === "number" && selectedRepairPrice>0
+                ? new Intl.NumberFormat(lang,{style:"currency",currency:"EUR"}).format(selectedRepairPrice)
                 : lang === "de"
                   ? "Preis auf Anfrage"
                   : "Price on request"}
@@ -381,6 +399,7 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
           </div>
         </div>
 
+        <RepairBookingOptions lang={lang} model={selectedModel} value={booking} quote={activeQuote} onChange={next=>{setBooking(next);setCheckedQuote(null);}} onQuote={setCheckedQuote} disabled={status.type==="loading"}/>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor={`${id}-customerName`} className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted">
@@ -439,6 +458,7 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
             </label>
             <input
               id={`${id}-deviceModel`}
+              readOnly={Boolean(booking.selection?.partId)}
               type="text"
               value={formData.deviceModel}
               onChange={(event) => setField("deviceModel", event.target.value)}

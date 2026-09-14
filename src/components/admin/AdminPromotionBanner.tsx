@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { normalizeRepairRules } from '@/lib/repair-campaign-rules';
 import { useEffect, useState } from 'react';
 import { emptyPromotion, promotionCampaignIssue, type PromotionCampaign, type PublicPromotion } from '@/lib/promotion';
 import PromotionBanner from '@/components/promotion/PromotionBanner';
@@ -30,10 +31,10 @@ export default function AdminPromotionBanner({locale}:{locale:'de'|'en'}){
     limit_reached:['Das Einlösungslimit ist erreicht.','The redemption limit has been reached.'],
     scheduled:['Geplant: Der Banner erscheint erst zum Kampagnenstart.','Scheduled: the banner appears when the campaign starts.'],
     invalid_window:['Der Kampagnenzeitraum ist ungültig. Bitte unter Kampagnen & Gutscheine korrigieren.','The campaign dates are invalid. Correct them under Campaigns & coupons.'],
-    device_scope_required:['Bitte die Kampagne auf Smartphones, Tablets und/oder Laptops beschränken. Leere Kategorien und Produkte bedeuten alle Artikel, einschließlich Zubehör.','Restrict the campaign to smartphones, tablets and/or laptops. Empty category and product selections mean all items, including accessories.'],
+    device_scope_required:['Bitte eine reine Reparaturkampagne mit Aktionstagen ODER eine Geräte-Kampagne wählen. Leere Kategorien und Produkte bedeuten alle Artikel, einschließlich Zubehör.','Choose a repair-only campaign with specific dates OR a device campaign. Empty category and product selections mean all items, including accessories.'],
     invalid_campaign:['Die Kampagnendaten sind ungültig.','The campaign data is invalid.'],
   };
-  const preview:PublicPromotion|null=selected?{id:selected.id,code:selected.code,discountType:selected.discount_type as 'percent'|'fixed',discountValue:Number(selected.discount_value),minimumOrder:Number(selected.minimum_order),
+  const preview:PublicPromotion|null=selected?{repairRules:selected.eligible_categories.includes('repairs')?normalizeRepairRules(selected.repair_rules):undefined,id:selected.id,code:selected.code,discountType:selected.discount_type as 'percent'|'fixed',discountValue:Number(selected.discount_value),minimumOrder:Number(selected.minimum_order),
     startsAt:selected.starts_at?new Date(selected.starts_at).toISOString():null,endsAt:selected.ends_at?new Date(selected.ends_at).toISOString():null,
     headline:settings.headline,categories:selected.eligible_categories.length?selected.eligible_categories:selectedCategories,includesSelected:selected.eligible_product_ids.length>0,selectedOnly:selected.eligible_categories.length===0,
     expiresInSeconds:selected.ends_at?Math.max(0,Math.floor((new Date(selected.ends_at).getTime()-now)/1000)):0}:null;
@@ -46,7 +47,7 @@ export default function AdminPromotionBanner({locale}:{locale:'de'|'en'}){
   const field='mt-2 min-h-11 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground';
   if(loading)return <p role="status">{de?'Aktionsbanner wird geladen…':'Loading promotion banner…'}</p>;
   return <div className="space-y-6">
-    <p className="max-w-3xl text-sm leading-6 text-muted">{de?'Hier steuerst du den Gutscheinbanner auf der Startseite, im Shop und auf passenden Geräteseiten. Rabatt, Zeitraum und Bedingungen stammen immer aus der verknüpften Kampagne. Zubehör und Reparaturen werden nicht beworben.':'Control the coupon banner on the homepage, store and eligible device pages. Discount, dates and terms always come from the linked campaign. Accessories and repairs are not promoted.'}</p>
+    <p className="max-w-3xl text-sm leading-6 text-muted">{de?'Hier steuerst du den Gutscheinbanner auf der Startseite, im Shop und auf passenden Geräteseiten. Rabatt, Zeitraum und Bedingungen stammen immer aus der verknüpften Kampagne. Eine Reparaturkampagne erscheint auf Reparaturseiten; Produktkampagnen erscheinen auf passenden Shopseiten.':'Control the coupon banner on the homepage, store and eligible device pages. Discount, dates and terms always come from the linked campaign. Repair campaigns appear on repair pages; product campaigns appear on eligible store pages.'}</p>
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
       <section className="space-y-4 rounded-xl border border-border p-5" aria-label={de?'Banner-Einstellungen':'Banner settings'}>
         <label className="flex min-h-11 items-center justify-between gap-3 font-semibold"><span>{de?'Banner veröffentlichen':'Publish banner'}</span><input type="checkbox" checked={settings.enabled} onChange={e=>setSettings({...settings,enabled:e.target.checked})} className="h-5 w-5 accent-gold"/></label>

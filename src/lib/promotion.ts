@@ -1,9 +1,10 @@
+import { normalizeRepairRules, hamburgDate } from './repair-campaign-rules';
 export const deviceCategories = ['smartphones','tablets','laptops'] as const;
 export type PromotionSettings = { enabled: boolean; campaignId: string | null; headline: {de:string;en:string}; updatedAt?:string; updatedBy?:string };
 export type PublicPromotion = {
   id:string; code:string; discountType:'percent'|'fixed'; discountValue:number; minimumOrder:number;
   endsAt:string|null; startsAt:string|null; headline:{de:string;en:string};
-  categories:string[]; includesSelected:boolean; selectedOnly:boolean; expiresInSeconds:number;
+  categories:string[]; includesSelected:boolean; selectedOnly:boolean; expiresInSeconds:number; repairRules?:import('./repair-campaign-rules').RepairCampaignRules;
 };
 export const emptyPromotion = (): PromotionSettings => ({enabled:false,campaignId:null,headline:{de:'',en:''}});
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -18,7 +19,7 @@ export const sanitizePromotionSettings = (input: unknown): PromotionSettings => 
 export type PromotionCampaign = {
   id:string;code:string;discount_type:string;discount_value:number|string;minimum_order:number|string;
   eligible_categories:string[];eligible_product_ids:string[];starts_at:string|Date|null;ends_at:string|Date|null;
-  maximum_redemptions:number|null;redemption_count:number;is_active:boolean;
+  maximum_redemptions:number|null;redemption_count:number;is_active:boolean;repair_rules?:unknown;
 };
 export const promotionCampaignIssue = (campaign: PromotionCampaign | null, selectedCategories:string[], now=Date.now()): string | null => {
   if(!campaign) return 'missing_campaign';
@@ -28,6 +29,13 @@ export const promotionCampaignIssue = (campaign: PromotionCampaign | null, selec
   if(end!==null&&end<=now) return 'expired';
   if(campaign.maximum_redemptions!==null&&campaign.redemption_count>=campaign.maximum_redemptions) return 'limit_reached';
   if(!/^[A-Z0-9][A-Z0-9_-]{2,63}$/i.test(campaign.code)||!Number.isFinite(Number(campaign.discount_value))||Number(campaign.discount_value)<=0||!['percent','fixed'].includes(campaign.discount_type)||(campaign.discount_type==='percent'&&Number(campaign.discount_value)>100)||!Number.isFinite(Number(campaign.minimum_order))||Number(campaign.minimum_order)<0) return 'invalid_campaign';
+  if(campaign.eligible_categories.includes('repairs')){
+    if(campaign.eligible_categories.length!==1||campaign.eligible_product_ids.length)return 'device_scope_required';
+    const rules=normalizeRepairRules(campaign.repair_rules),today=hamburgDate(new Date(now));
+    if(!rules.dates.some(d=>d>=today))return 'expired';
+    if(rules.dateBasis==='booking_date'&&!rules.dates.includes(today))return 'scheduled';
+    return start!==null&&start>now?'scheduled':null;
+  }
   const categories=[...campaign.eligible_categories,...selectedCategories];
   if(!categories.length||categories.some(c=>!(deviceCategories as readonly string[]).includes(c))) return 'device_scope_required';
   if(start!==null&&start>now) return 'scheduled';
@@ -37,13 +45,14 @@ export const promotionSurface = (pathname:string, query:string): {category?:stri
   const path=pathname.replace(/^\/(de|en)(?=\/|$)/,'') || '/';
   const category=new URLSearchParams(query).get('category');
   if(category && category!=='all' && !(deviceCategories as readonly string[]).includes(category) && category!=='open-box-smartphones-tablets') return null;
+  if(path==='/repairs'||path.startsWith('/repairs/'))return {category:'repairs'};
   if(path==='/'||path==='/store') return category&&category!=='all'&&category!=='open-box-smartphones-tablets'?{category}:{};
   if(path==='/tablets'||path==='/laptops') return {category:path.slice(1)};
   if(['/smartphones','/samsung-handys','/xiaomi-redmi-handys','/handys-ohne-vertrag','/gebrauchte-handys','/gebrauchte-iphones','/iphone-17','/iphone-16-pro-max','/open-box'].includes(path)) return {category:'smartphones'};
   const product=/^\/store\/([^/]+)$/.exec(path);
   return product?{slug:product[1]}:null;
 };
-const labels:Record<string,[string,string]>={smartphones:['Smartphones','smartphones'],tablets:['Tablets','tablets'],laptops:['Laptops','laptops']};
+const labels:Record<string,[string,string]>={smartphones:['Smartphones','smartphones'],tablets:['Tablets','tablets'],laptops:['Laptops','laptops'],repairs:['Reparaturen','repairs']};
 export const promotionScope = (promo:PublicPromotion,locale:'de'|'en'):string => {
   const names=promo.categories.map(c=>labels[c]?.[locale==='de'?0:1]).filter(Boolean).join(', ');
   if(promo.selectedOnly)return locale==='de'?`Auf ausgewählte ${names}`:`On selected ${names}`;

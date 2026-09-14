@@ -5,6 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { campaignDateForInput, campaignWindow, campaignErrorMessage } from "@/lib/campaign-dates";
 
+import RepairCampaignDates from "./RepairCampaignDates";
+import { normalizeRepairRules, type RepairCampaignRules } from "@/lib/repair-campaign-rules";
+
 type Localized = { de: string; en: string };
 type CampaignForm = {
   id?: string;
@@ -20,6 +23,7 @@ type CampaignForm = {
   endsAt: string;
   maximumRedemptions: number | null;
   isActive: boolean;
+  repairRules: RepairCampaignRules;
 };
 type CampaignRow = {
   id: string;
@@ -36,11 +40,12 @@ type CampaignRow = {
   maximum_redemptions?: number | null;
   redemption_count?: number;
   is_active: boolean;
+  repair_rules?:RepairCampaignRules;
 };
 type ProductRow = { id: string; title: string; category: string };
 
 const field = "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground";
-const categories = ["smartphones", "tablets", "laptops", "accessories", "consoles"];
+const categories = ["smartphones", "tablets", "laptops", "accessories", "consoles", "repairs"];
 const empty = (): CampaignForm => ({
   code: "",
   title: { de: "", en: "" },
@@ -54,6 +59,7 @@ const empty = (): CampaignForm => ({
   endsAt: "",
   maximumRedemptions: null,
   isActive: false,
+  repairRules: {dateBasis:"repair_date",dates:[]},
 });
 
 export default function AdminCampaignManager({ locale }: { locale: "de" | "en" }) {
@@ -92,17 +98,20 @@ export default function AdminCampaignManager({ locale }: { locale: "de" | "en" }
     endsAt: campaignDateForInput(campaign.ends_at),
     maximumRedemptions: campaign.maximum_redemptions ?? null,
     isActive: Boolean(campaign.is_active),
+    repairRules:normalizeRepairRules(campaign.repair_rules),
   });
 
   const toggle = (key: "eligibleProductIds" | "eligibleCategories", item: string) => setValue((current) => ({
     ...current,
-    [key]: current[key].includes(item) ? current[key].filter((entry) => entry !== item) : [...current[key], item],
+    ...(key==="eligibleCategories"&&item==="repairs"?{eligibleProductIds:[]}:{}),
+    [key]: current[key].includes(item) ? current[key].filter((entry) => entry !== item) : key==="eligibleCategories"?(item==="repairs"?["repairs"]:[...current[key].filter(v=>v!=="repairs"),item]):[...current[key], item],
   }));
 
   const save = async () => {
     setBusy(true); setMessage("");
     try {
     const dates = campaignWindow(value.startsAt,value.endsAt);
+    if(value.isActive&&value.eligibleCategories.includes("repairs")&&!value.repairRules.dates.length){setMessage(de?"Bitte konkrete Reparatur-Aktionstage auswählen.":"Choose specific repair promotion dates.");return;}
     const response = await fetch("/api/admin/campaigns", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({...value,...dates}) });
     const payload = await response.json();
     setMessage(response.ok && payload.success ? (de ? "Kampagne gespeichert." : "Campaign saved.") : campaignErrorMessage(payload.error || "Failed",locale));
@@ -151,8 +160,8 @@ export default function AdminCampaignManager({ locale }: { locale: "de" | "en" }
         <label className="text-sm text-muted">{de ? "Ende (Hamburg)" : "Ends (Hamburg)"}<input type="datetime-local" className={`${field} mt-1`} value={value.endsAt} onChange={(event) => setValue({ ...value, endsAt: event.target.value })} /></label>
       </div>
 
-      <div className="mt-5"><p className="text-sm font-semibold text-foreground">{de ? "Berechtigte Kategorien" : "Eligible categories"}</p><div className="mt-2 flex flex-wrap gap-2">{categories.map((category) => <label key={category} className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm"><input type="checkbox" checked={value.eligibleCategories.includes(category)} onChange={() => toggle("eligibleCategories", category)} />{category}</label>)}</div></div>
-      <div className="mt-5"><p className="text-sm font-semibold text-foreground">{de ? "Bestimmte Produkte (leer = alle)" : "Specific products (empty = all)"}</p><div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border p-3"><div className="grid gap-2 md:grid-cols-2">{products.map((product) => <label key={product.id} className="flex min-h-11 items-center gap-2 text-sm text-foreground"><input type="checkbox" checked={value.eligibleProductIds.includes(product.id)} onChange={() => toggle("eligibleProductIds", product.id)} /><span>{product.title}</span></label>)}</div></div></div>
+      <div className="mt-5"><p className="text-sm font-semibold text-foreground">{de ? "Berechtigte Kategorien" : "Eligible categories"}</p><div className="mt-2 flex flex-wrap gap-2">{categories.map((category) => <label key={category} className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm"><input type="checkbox" checked={value.eligibleCategories.includes(category)} onChange={() => toggle("eligibleCategories", category)} />{category==="repairs"?(de?"Reparaturen":"Repairs"):category}</label>)}</div></div>
+      {value.eligibleCategories.includes("repairs")?<RepairCampaignDates locale={locale} value={value.repairRules} onChange={repairRules=>setValue({...value,repairRules})}/>:<div className="mt-5"><p className="text-sm font-semibold text-foreground">{de ? "Bestimmte Produkte (leer = alle)" : "Specific products (empty = all)"}</p><div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border p-3"><div className="grid gap-2 md:grid-cols-2">{products.map((product) => <label key={product.id} className="flex min-h-11 items-center gap-2 text-sm text-foreground"><input type="checkbox" checked={value.eligibleProductIds.includes(product.id)} onChange={() => toggle("eligibleProductIds", product.id)} /><span>{product.title}</span></label>)}</div></div></div>}
 
       {message ? <p role="status" className="mt-4 text-sm text-muted">{message}</p> : null}
       <div className="mt-5 flex flex-wrap gap-3">
