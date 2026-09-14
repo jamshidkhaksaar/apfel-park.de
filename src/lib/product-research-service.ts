@@ -7,7 +7,7 @@ import { deviceModelNeedles } from '@/lib/device-model';
 const modelToken = (value: string): string => value.toLowerCase().replace(/^galaxy\s*/i, '').replace(/[^a-z0-9]/g, '').replace('iphone17air', 'iphoneair');
 
 const deviceModelFamily = (model: string): string | null => {
-  const match = /\b(ipad\s*(?:pro|air|mini)?)\b/i.exec(model);
+  const match = /\b(ipad\s*(?:pro|air|mini)?|thinkpad\s*(?:x1|[a-z]\d{1,2}[a-z]?)?)\b/i.exec(model);
   return match ? match[1].trim() : null;
 };
 
@@ -28,7 +28,18 @@ export const modelSpecificResearchSource = (source: ResearchSource, model: strin
 
 /** Verified source URLs only; no product facts are supplied from this registry. */
 export const preferredResearchUrls = (brand: string, model: string): string[] => {
-  if (brand.toLowerCase() !== 'apple') return [];
+  const brandName = brand.toLowerCase();
+  if (brandName === 'lenovo') {
+    const token = modelToken(model).replace(/^lenovo/, '');
+    if (token.includes('thinkpadt14gen6') || token.includes('thinkpadt14g6') || token.includes('t14gen6') || token.includes('t14g6')) {
+      return [
+        'https://www.lenovo.com/de/de/p/laptops/thinkpad/thinkpadt/thinkpad-t14-gen-6-14-inch-intel/len101t0127',
+        'https://www.lenovo.com/de/de/p/laptops/thinkpad/thinkpadt/thinkpad-t14-gen-6-14-inch-amd/len101t0116',
+      ];
+    }
+    return [];
+  }
+  if (brandName !== 'apple') return [];
   const token = modelToken(model).replace(/^apple/, '');
   if (token === 'iphone17promax') return ['https://support.apple.com/de-de/125091'];
   if (token.includes('ipadpro13') || token.includes('13ipadpro')) return ['https://support.apple.com/de-de/119891', 'https://www.apple.com/de/ipad-pro/specs/'];
@@ -84,7 +95,7 @@ export const researchProductFromOfficialPages = async (
   signal: AbortSignal = AbortSignal.timeout(65000),
 ): Promise<ProductResearchResult> => {
   const now = new Date().toISOString().slice(0, 10);
-  const discovery = await gemini(`${DISCOVERY}\nPrefer German/EU product and support pages. If an exact hardware model is supplied, find sources for that variant rather than assuming a regional version.`, JSON.stringify({ date: now, query: input.query, market: 'Germany', hardwareModel: input.hardwareModel, observedPublicFields: input.photo?.hints ?? {} }), signal, input.photo, true);
+  const discovery = await gemini(`${DISCOVERY}\nPrefer German/EU product and support pages. If an exact hardware model is supplied, find sources for that variant rather than assuming a regional version. For Lenovo, prefer lenovo.com web store product pages (lenovo.com/de/de/p/laptops/...) over psref.lenovo.com.`, JSON.stringify({ date: now, query: input.query, market: 'Germany', hardwareModel: input.hardwareModel, observedPublicFields: input.photo?.hints ?? {} }), signal, input.photo, true);
   const brand = typeof discovery.value.brand === 'string' ? discovery.value.brand.trim().slice(0, 100) : '';
   const model = typeof discovery.value.model === 'string' ? discovery.value.model.trim().slice(0, 160) : '';
   if (!brand || model.length < 3) throw new Error('research_unverified_model');

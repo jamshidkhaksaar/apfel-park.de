@@ -47,10 +47,46 @@ export const officialPageText = (html: string): string => {
     if (script[1].length > 250_000) continue;
     try { collect(JSON.parse(script[1])); } catch { /* malformed optional markup is not evidence */ }
   }
-  return he.decode(main
+  const metaProperties: string[] = [];
+  for (const m of html.matchAll(/<meta\b[^>]+>/gi)) {
+    const tag = m[0];
+    const nameMatch = tag.match(/(?:name|property)=["']([^"']+)["']/i);
+    const contentMatch = tag.match(/content=["']([^"']*)["']/i);
+    if (nameMatch && contentMatch) {
+      const key = nameMatch[1].trim();
+      const val = he.decode(contentMatch[1].trim());
+      if (val && !/^(?:viewport|robots|theme-color|language|csrf|apple-mobile|price|amount)/i.test(key) && (
+        /^(?:description|keywords|processor|memory|display|display_type|hard_drive|operating_system|weight|series_mktg_weight)/i.test(key)
+        || /^(?:og:description|twitter:description|productInfo\.(?:name|category))/i.test(key)
+      )) {
+        metaProperties.push(`${key}: ${val}`);
+      }
+    }
+  }
+
+  const scriptProperties: string[] = [];
+  for (const m of html.matchAll(/"(marketingLongDescription|pdpSummary|marketingTagline)":\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g)) {
+    let val = m[2];
+    try { val = JSON.parse(`"${val}"`); } catch { /* ignore malformed string */ }
+    val = he.decode(val.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+    if (val.length > 10 && !scriptProperties.includes(val)) {
+      scriptProperties.push(val);
+    }
+  }
+
+  const baseText = he.decode(main
     .replace(/<(script|style|noscript|nav|header|footer)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
     .replace(/<[^>]+>/g, ' '))
-    .replace(/\s+/g, ' ').trim() + (productData.length ? `\nPublished product data: ${JSON.stringify(productData)}` : '');
+    .replace(/\s+/g, ' ').trim();
+
+  const sections = [
+    baseText,
+    metaProperties.length ? `Published metadata:\n${metaProperties.join('\n')}` : '',
+    scriptProperties.length ? `Published descriptions:\n${scriptProperties.join('\n')}` : '',
+    productData.length ? `Published product data: ${JSON.stringify(productData)}` : '',
+  ].filter(Boolean);
+
+  return sections.join('\n\n');
 };
 
 const UNIT_WORDS = new Set(['inch', 'inches', 'zoll', 'modell', 'generation', 'gen']);
@@ -63,10 +99,10 @@ export const sourceMatchesModel = (text: string, model: string): boolean => {
   if (haystack.includes(` ${target} `)) return true;
   const cleanTarget = target.split(/\s+/).filter(t => !UNIT_WORDS.has(t)).join(' ');
   if (cleanTarget.length >= 4 && haystack.includes(` ${cleanTarget} `)) return true;
-  const tokens = cleanTarget.split(/\s+/);
-  if (!tokens.every(t => haystack.includes(` ${t} `))) return false;
   const candidates = [target, cleanTarget, ...deviceModelNeedles(model).map(normalize)].filter(n => n.length >= 4);
-  return candidates.some(needle => haystack.includes(` ${needle} `));
+  if (candidates.some(needle => haystack.includes(` ${needle} `))) return true;
+  const tokens = cleanTarget.split(/\s+/);
+  return tokens.length > 0 && tokens.every(t => haystack.includes(` ${t} `));
 };
 
 const readBounded = async (response: Response): Promise<string> => {

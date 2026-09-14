@@ -31,7 +31,7 @@ export const finalizeResearchedProduct = (
   const research = sanitizeResearchResult(raw);
   if (!research.title || !research.description || !research.brand || !research.model) throw new Error('research_incomplete');
   const category = normalized(research.category ?? '');
-  const categories: Record<string, string> = { smartphone: 'smartphones', smartphones: 'smartphones', phones: 'smartphones', tablet: 'tablets', tablets: 'tablets', accessories: 'accessories', zubehor: 'accessories', laptop: 'laptops', laptops: 'laptops', notebooks: 'laptops', consoles: 'consoles', konsolen: 'consoles' };
+  const categories: Record<string, string> = { smartphone: 'smartphones', smartphones: 'smartphones', phones: 'smartphones', tablet: 'tablets', tablets: 'tablets', accessories: 'accessories', zubehor: 'accessories', laptop: 'laptops', laptops: 'laptops', notebooks: 'laptops', notebook: 'laptops', computer: 'laptops', consoles: 'consoles', konsolen: 'consoles' };
   research.category = categories[category];
   research.description = retainZoomQualifier(research.description, sources);
   research.subtitle = research.subtitle ? retainZoomQualifier(research.subtitle, sources) : undefined;

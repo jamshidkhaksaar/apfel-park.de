@@ -26,6 +26,12 @@ describe('official research evidence gates', () => {
     expect(preferredResearchUrls('Apple', 'iPhone 17 Pro Max')).toEqual(['https://support.apple.com/de-de/125091']);
     expect(preferredResearchUrls('Apple', 'iPad Pro 13')).toEqual(['https://support.apple.com/de-de/119891', 'https://www.apple.com/de/ipad-pro/specs/']);
     expect(preferredResearchUrls('Apple', 'iPhone 18 Pro Max')).toEqual([]);
+    expect(preferredResearchUrls('Lenovo', 'Lenovo ThinkPad T14 G6')).toEqual([
+      'https://www.lenovo.com/de/de/p/laptops/thinkpad/thinkpadt/thinkpad-t14-gen-6-14-inch-intel/len101t0127',
+      'https://www.lenovo.com/de/de/p/laptops/thinkpad/thinkpadt/thinkpad-t14-gen-6-14-inch-amd/len101t0116',
+    ]);
+    expect(modelSpecificResearchSource({ ...source, title: 'ThinkPad T14 Gen 6 (Intel) | Lenovo Deutschland' }, 'Lenovo ThinkPad T14 G6', 'Lenovo')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: 'ThinkPad T14 Gen 5 (Intel) | Lenovo Deutschland' }, 'Lenovo ThinkPad T14 G6', 'Lenovo')).toBe(false);
   });
   it('retains an optical-quality qualification backed by the source', () => {
     const optics = { ...source, text: '8x Tele-Zoom in optischer Qualität. 4x optischer Zoom.' };
@@ -81,6 +87,14 @@ describe('official research evidence gates', () => {
     expect(sourceMatchesModel(text, 'iPhone 17 Pro Max')).toBe(true);
     expect(sourceMatchesModel('13" iPad Pro (M5) mit Apple M5 Chip', 'iPad Pro 13-inch (M5)')).toBe(true);
     expect(sourceMatchesModel('13" iPad Pro (M4) mit Apple M4 Chip', 'iPad Pro 11-inch (M4)')).toBe(false);
+    expect(sourceMatchesModel('ThinkPad T14 Gen 6 (Intel)', 'Lenovo ThinkPad T14 G6')).toBe(true);
+    expect(sourceMatchesModel('ThinkPad T14 Gen 6 (Intel)', 'ThinkPad T14 Gen 6')).toBe(true);
+
+    const spaHtml = '<head><meta name="Processor" content="Bis zu Intel Core Ultra 7"><meta name="memory" content="Bis zu 32 GB LPDDR5x"></head><main><div>ThinkPad T14 Gen 6</div></main>';
+    const spaText = officialPageText(spaHtml);
+    expect(spaText).toContain('Processor: Bis zu Intel Core Ultra 7');
+    expect(spaText).toContain('memory: Bis zu 32 GB LPDDR5x');
+    expect(spaText).toContain('ThinkPad T14 Gen 6');
   });
   it('returns a source only after an actual successful bounded fetch', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(`<title>Specs</title><main>${source.text}</main>`, { headers: { 'content-type': 'text/html' } }));

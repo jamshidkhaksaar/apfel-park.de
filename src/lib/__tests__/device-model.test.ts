@@ -23,6 +23,9 @@ describe("deviceModelNeedles", () => {
     ["Apple iPad Air 11″ (M2) 128GB Blau", ["ipad air 11", "11 ipad air"]],
     ["Apple iPad (10. Generation) 64GB Silber", ["ipad 10", "10 ipad"]],
     ["Apple iPad mini (A17 Pro) 128GB", ["ipad mini a17 pro", "a17 pro ipad mini"]],
+    ["Lenovo ThinkPad T14 G6", ["thinkpad t14 gen 6", "thinkpad t14 g6", "t14 gen 6", "t14 g6"]],
+    ["ThinkPad T14 Gen 6 Intel", ["thinkpad t14 gen 6", "thinkpad t14 g6", "t14 gen 6", "t14 g6"]],
+    ["Lenovo ThinkPad X1 Carbon Gen 12", ["thinkpad x1 carbon gen 12", "thinkpad x1 carbon g12", "x1 carbon gen 12", "x1 carbon g12"]],
   ])("%s -> %j", (title, expected) => {
     expect(deviceModelNeedles(title)).toEqual(expected);
   });

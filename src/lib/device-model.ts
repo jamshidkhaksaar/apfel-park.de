@@ -44,6 +44,19 @@ const MODEL_PATTERNS: Array<(text: string) => ModelMatch | null> = [
     return { needle, variants };
   },
   (text) => {
+    const match = /\bthinkpad\s*(x1\s*(?:carbon|yoga|extreme|nano)|[a-z]\d{1,2}[a-z]?|[a-z]{2,4}\d{1,2}[a-z]?)?(?:\s*(?:g|gen\.?|generation)\s*(\d{1,2}))?\b/i.exec(text);
+    if (!match) return null;
+    const series = match[1] ? match[1].toLowerCase().replace(/\s+/g, ' ') : '';
+    const gen = match[2];
+    if (!series && !gen) return null;
+    const genSuffix = gen ? ` gen ${gen}` : '';
+    const needle = collapse(`thinkpad ${series}${genSuffix}`);
+    const variants = gen
+      ? [needle, collapse(`thinkpad ${series} g${gen}`), collapse(`${series} gen ${gen}`), collapse(`${series} g${gen}`)]
+      : [needle];
+    return { needle, variants };
+  },
+  (text) => {
     const match = /\b(?:galaxy\s*)?z\s*(fold|flip)\s*(\d+)\b/i.exec(text);
     if (!match) return null;
     const kind = match[1].toLowerCase();
