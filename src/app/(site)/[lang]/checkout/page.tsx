@@ -33,7 +33,7 @@ export default async function CheckoutPage({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ shipping?: string }>;
+  searchParams: Promise<{ shipping?: string; coupon?: string }>;
 }) {
   const [{ lang }, query, couponEnabled] = await Promise.all([params, searchParams, hasActiveCouponCampaign()]);
   const locale = lang === "en" ? "en" : "de";
@@ -52,6 +52,7 @@ export default async function CheckoutPage({
           // customer had filled in the whole form.
           paypalEnabled={isPayPalConfigured()}
           couponEnabled={couponEnabled}
+          initialCoupon={typeof query.coupon==="string" && /^[A-Z0-9][A-Z0-9_-]{2,63}$/i.test(query.coupon) ? query.coupon.toUpperCase() : ""}
         />
       </div>
     </section>

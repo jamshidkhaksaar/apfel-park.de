@@ -14,6 +14,7 @@ import {
   writeStoredCart,
   type StoredCartItem,
 } from "@/components/checkout/cart";
+import CartPromotion, { type CartCouponPreview } from "@/components/promotion/CartPromotion";
 import { fulfillmentCopy } from "@/lib/fulfillment-copy";
 
 type Props = {
@@ -43,6 +44,18 @@ export default function CartClient({ locale }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const validationRequestRef = useRef(0);
+  const [couponPreview,setCouponPreview]=useState<CartCouponPreview|null>(null);
+  const [couponBusy,setCouponBusy]=useState(false);
+  const couponKey=JSON.stringify({items,shippingMethod});
+  const activeCoupon=!loading&&couponPreview?.key===couponKey?couponPreview:null;
+  useEffect(()=>{
+    if(!couponPreview?.expiresAt)return;
+    const expiry=couponPreview.expiresAt;
+    let timer:ReturnType<typeof setTimeout>;
+    const check=()=>{const remaining=expiry-Date.now();if(remaining<=0)setCouponPreview(null);else timer=setTimeout(check,Math.min(2_147_483_647,remaining));};
+    timer=setTimeout(check,Math.min(2_147_483_647,Math.max(0,expiry-Date.now())));
+    return()=>clearTimeout(timer);
+  },[couponPreview]);
 
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + Math.max(1, Number(item.quantity) || 1), 0),
@@ -52,6 +65,7 @@ export default function CartClient({ locale }: Props) {
   const validate = useCallback(async (nextItems: StoredCartItem[], nextShipping: ShippingMethod) => {
     const requestId = ++validationRequestRef.current;
     setLoading(true);
+    setCouponBusy(false);
     setError("");
     if (nextItems.length === 0) {
       setCart(null);
@@ -350,7 +364,9 @@ export default function CartClient({ locale }: Props) {
           </div>
         </section>
 
+        {cart && !loading ? <CartPromotion key={couponKey} locale={locale} items={items} categories={cart.items.map(item=>item.category)} shippingMethod={shippingMethod} cartKey={couponKey} applied={activeCoupon} onApplied={setCouponPreview} onBusy={setCouponBusy}/> : null}
         <div className="mt-6 space-y-3 border-t border-border/60 pt-5 text-sm">
+          {activeCoupon?<div className="flex justify-between text-green"><span>{locale==="de"?"Gutschein":"Coupon"} {activeCoupon.code}</span><span>−{formatMoney(locale,activeCoupon.discountAmountCents/100)}</span></div>:null}
           <div className="flex justify-between text-muted">
             <span>{locale === "de" ? "Artikel" : "Items"}</span>
             <span>{itemCount}</span>
@@ -365,22 +381,24 @@ export default function CartClient({ locale }: Props) {
           </div>
           <div className="flex justify-between text-xs text-muted">
             <span>{locale === "de" ? "Enthaltene MwSt." : "VAT included"}</span>
-            <span>{cart ? formatMoney(locale, cart.vatAmount, cart.currency) : "-"}</span>
+            <span>{cart ? formatMoney(locale, activeCoupon?activeCoupon.previewVatAmountCents/100:cart.vatAmount, cart.currency) : "-"}</span>
           </div>
           <div className="flex justify-between border-t border-border/60 pt-4 text-lg font-semibold text-foreground">
             <span>{locale === "de" ? "Gesamt" : "Total"}</span>
-            <span>{cart ? formatMoney(locale, cart.totalAmount, cart.currency) : "-"}</span>
+            <span>{cart ? formatMoney(locale, activeCoupon?activeCoupon.previewTotalAmountCents/100:cart.totalAmount, cart.currency) : "-"}</span>
           </div>
         </div>
 
         {cart && cart.items.length > 0 ? (
           <Link
-            href={`/${locale}/checkout?shipping=${shippingMethod}`}
+            href={`/${locale}/checkout?shipping=${shippingMethod}${activeCoupon?`&coupon=${encodeURIComponent(activeCoupon.code)}`:""}`}
+            aria-disabled={couponBusy||loading}
             className="btn-primary mt-6 w-full justify-center"
-            onClick={() => {
+            onClick={(event) => {
+              if(couponBusy||loading){event.preventDefault();return;}
               window.apfelTrack?.("begin_checkout", {
                 currency: cart.currency,
-                value: cart.totalAmount,
+                value: activeCoupon?activeCoupon.previewTotalAmountCents/100:cart.totalAmount,
                 items: cart.items.map((item) => ({ item_id: item.productId, item_name: item.title, quantity: item.quantity })),
               });
             }}

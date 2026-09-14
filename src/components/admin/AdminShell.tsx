@@ -316,6 +316,7 @@ export default function AdminShell({
     { label: lang === 'de' ? 'Produktbewertungen' : 'Product reviews', path: '/admin/product-reviews', icon: 'reviews' },
     { label: lang === 'de' ? 'Trade-in Anfragen' : 'Trade-in requests', path: '/admin/trade-ins', icon: 'batchBuy' },
     { label: lang === 'de' ? 'Kampagnen & Gutscheine' : 'Campaigns & coupons', path: '/admin/campaigns', icon: 'payments' },
+    { label: lang === 'de' ? 'Aktionsbanner' : 'Promotion banner', path: '/admin/promotion-banner', icon: 'branding' },
   ];
 
   const adminItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [

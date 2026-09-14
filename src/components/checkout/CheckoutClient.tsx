@@ -34,6 +34,7 @@ type Props = {
   /** PayPal is only offered when its credentials are configured. */
   paypalEnabled?: boolean;
   couponEnabled?: boolean;
+  initialCoupon?: string;
   initialShippingMethod: ShippingMethod;
 };
 
@@ -104,7 +105,7 @@ const createIdempotencyKey = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-export default function CheckoutClient({ locale, initialShippingMethod, stripePublishableKey, germanyShippingAmount = 6.9, paypalEnabled = false, couponEnabled = false }: Props) {
+export default function CheckoutClient({ locale, initialShippingMethod, stripePublishableKey, germanyShippingAmount = 6.9, paypalEnabled = false, couponEnabled = false, initialCoupon = "" }: Props) {
   const items = useSyncExternalStore(subscribeStoredCart, readStoredCart, getServerCartSnapshot);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>(initialShippingMethod);
   const [cart, setCart] = useState<ValidatedCart | null>(null);
@@ -124,7 +125,10 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
   const [conditionConsent, setConditionConsent] = useState(false);
   const [termsConsent, setTermsConsent] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState(createIdempotencyKey);
-  const [couponInput,setCouponInput]=useState("");
+  const [couponInput,setCouponInput]=useState(initialCoupon);
+  const [couponBusy,setCouponBusy]=useState(false);
+  const couponRequestRef=useRef(0);
+  const initialCouponApplied=useRef(false);
   const [couponCode,setCouponCode]=useState("");
   const [couponPreview,setCouponPreview]=useState<{discountAmountCents:number;previewTotalAmountCents:number;previewVatAmountCents:number}|null>(null);
   const [couponMessage,setCouponMessage]=useState("");
@@ -136,6 +140,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
 
   const validate = useCallback(async (nextItems: StoredCartItem[], nextShipping: ShippingMethod) => {
     const requestId = ++validationRequestRef.current;
+    ++couponRequestRef.current;setCouponBusy(false);
     setLoading(true);
     setError("");
     // An intent is created for one specific amount, so drop it whenever the
@@ -230,8 +235,8 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
   }, [cart, customer, shippingMethod, hasNonNewItems, conditionConsent, termsConsent, locale]);
 
   const canSubmit = useMemo(() => {
-    return getValidationIssue() === null;
-  }, [getValidationIssue]);
+    return getValidationIssue() === null && !couponBusy;
+  }, [getValidationIssue,couponBusy]);
 
   const buildPayload = () => ({
     items,
@@ -258,10 +263,32 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
     },
   });
 
-  const applyCoupon=async()=>{if(!couponInput.trim())return;setCouponMessage("");const response=await fetch("/api/coupons/validate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:couponInput,items,shippingMethod})});const data=await response.json();if(!response.ok||!data.success){setCouponCode("");setCouponPreview(null);setCouponMessage(locale==="de"?"Gutschein ist nicht gültig.":"Coupon is not valid.");return;}setCouponCode(String(data.code));setCouponInput(String(data.code));setCouponPreview({discountAmountCents:Number(data.discountAmountCents),previewTotalAmountCents:Number(data.previewTotalAmountCents),previewVatAmountCents:Number(data.previewVatAmountCents)});setCouponMessage(locale==="de"?"Gutschein angewendet.":"Coupon applied.");setClientSecret(null);setEmbeddedOrderId(null);setIdempotencyKey(createIdempotencyKey());};
-  const removeCoupon=()=>{setCouponCode("");setCouponPreview(null);setCouponMessage("");setClientSecret(null);setEmbeddedOrderId(null);setIdempotencyKey(createIdempotencyKey());};
+  const applyCoupon=useCallback(async(requestedCode=couponInput)=>{
+    if(!requestedCode.trim()||loading||!cart)return;
+    const requestId=++couponRequestRef.current,validationId=validationRequestRef.current;
+    setCouponBusy(true);setCouponMessage("");
+    try{
+      const response=await fetch("/api/coupons/validate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:requestedCode,items,shippingMethod})});
+      const data=await response.json();
+      if(requestId!==couponRequestRef.current||validationId!==validationRequestRef.current)return;
+      if(!response.ok||!data.success||![data.discountAmountCents,data.previewTotalAmountCents,data.previewVatAmountCents].every(n=>Number.isFinite(n)&&n>=0))throw new Error("invalid_coupon");
+      setCouponCode(String(data.code));setCouponInput(String(data.code));
+      setCouponPreview({discountAmountCents:Number(data.discountAmountCents),previewTotalAmountCents:Number(data.previewTotalAmountCents),previewVatAmountCents:Number(data.previewVatAmountCents)});
+      setCouponMessage(locale==="de"?"Gutschein angewendet.":"Coupon applied.");
+      setClientSecret(null);setEmbeddedOrderId(null);setIdempotencyKey(createIdempotencyKey());
+    }catch{
+      if(requestId===couponRequestRef.current){setCouponCode("");setCouponPreview(null);setCouponMessage(locale==="de"?"Gutschein konnte nicht angewendet werden. Bitte Gültigkeit und Warenkorb prüfen.":"Coupon could not be applied. Check its validity and your basket.");}
+    }finally{if(requestId===couponRequestRef.current)setCouponBusy(false);}
+  },[couponInput,loading,cart,items,shippingMethod,locale]);
+  useEffect(()=>{
+    if(initialCoupon&&!initialCouponApplied.current&&!loading&&cart){
+      initialCouponApplied.current=true;void applyCoupon(initialCoupon);
+    }
+  },[initialCoupon,loading,cart,applyCoupon]);
+  const removeCoupon=()=>{++couponRequestRef.current;setCouponBusy(false);setCouponCode("");setCouponPreview(null);setCouponMessage("");setClientSecret(null);setEmbeddedOrderId(null);setIdempotencyKey(createIdempotencyKey());};
 
   const startCheckout = async (provider: "stripe" | "paypal") => {
+    if(couponBusy)return;
     if (!cart || cart.items.length === 0) {
       setError(locale === "de" ? "Ihr Warenkorb ist leer." : "Your cart is empty.");
       return;
@@ -559,7 +586,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                 ))}
               </ul>
 
-              {couponEnabled?<div className="mt-5 rounded-xl border border-border/60 bg-surface/40 p-4"><label htmlFor="checkout-coupon" className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{locale==="de"?"Gutscheincode":"Coupon code"}</label><div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><input id="checkout-coupon" aria-describedby={couponMessage ? "checkout-coupon-feedback" : undefined} value={couponInput} onChange={event=>setCouponInput(event.target.value.toUpperCase())} disabled={Boolean(couponCode)} className="min-h-11 w-full min-w-0 rounded-xl border border-border bg-background px-3 text-sm text-foreground"/><button type="button" onClick={couponCode?removeCoupon:()=>void applyCoupon()} className="btn-secondary min-h-11 w-full justify-center px-4 sm:w-auto">{couponCode?(locale==="de"?"Entfernen":"Remove"):(locale==="de"?"Anwenden":"Apply")}</button></div>{couponMessage?<p id="checkout-coupon-feedback" role="status" className={`mt-2 text-xs ${couponPreview?"text-green":"text-red"}`}>{couponMessage}</p>:null}</div>:null}
+              {(couponEnabled||initialCoupon)?<div className="mt-5 rounded-xl border border-border/60 bg-surface/40 p-4"><label htmlFor="checkout-coupon" className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{locale==="de"?"Gutscheincode":"Coupon code"}</label><div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><input id="checkout-coupon" aria-describedby={couponMessage ? "checkout-coupon-feedback" : undefined} value={couponInput} onChange={event=>setCouponInput(event.target.value.toUpperCase())} disabled={Boolean(couponCode)} className="min-h-11 w-full min-w-0 rounded-xl border border-border bg-background px-3 text-sm text-foreground"/><button type="button" disabled={couponBusy||loading} onClick={couponCode?removeCoupon:()=>void applyCoupon()} className="btn-secondary min-h-11 w-full justify-center px-4 sm:w-auto">{couponBusy?(locale==="de"?"Prüft…":"Checking…"):couponCode?(locale==="de"?"Entfernen":"Remove"):(locale==="de"?"Anwenden":"Apply")}</button></div>{couponMessage?<p id="checkout-coupon-feedback" role="status" className={`mt-2 text-xs ${couponPreview?"text-green":"text-red"}`}>{couponMessage}</p>:null}</div>:null}
 
               <dl className="mt-6 space-y-2.5 border-t border-border/60 pt-5 text-sm">
                 <div className="flex justify-between text-muted">

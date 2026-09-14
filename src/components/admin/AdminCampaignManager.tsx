@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import Link from "next/link";
+import { campaignDateForInput, campaignWindow, campaignErrorMessage } from "@/lib/campaign-dates";
+
 type Localized = { de: string; en: string };
 type CampaignForm = {
   id?: string;
@@ -85,8 +88,8 @@ export default function AdminCampaignManager({ locale }: { locale: "de" | "en" }
     minimumOrder: Number(campaign.minimum_order),
     eligibleProductIds: campaign.eligible_product_ids ?? [],
     eligibleCategories: campaign.eligible_categories ?? [],
-    startsAt: campaign.starts_at ? String(campaign.starts_at).slice(0, 16) : "",
-    endsAt: campaign.ends_at ? String(campaign.ends_at).slice(0, 16) : "",
+    startsAt: campaignDateForInput(campaign.starts_at),
+    endsAt: campaignDateForInput(campaign.ends_at),
     maximumRedemptions: campaign.maximum_redemptions ?? null,
     isActive: Boolean(campaign.is_active),
   });
@@ -98,11 +101,14 @@ export default function AdminCampaignManager({ locale }: { locale: "de" | "en" }
 
   const save = async () => {
     setBusy(true); setMessage("");
-    const response = await fetch("/api/admin/campaigns", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(value) });
+    try {
+    const dates = campaignWindow(value.startsAt,value.endsAt);
+    const response = await fetch("/api/admin/campaigns", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({...value,...dates}) });
     const payload = await response.json();
-    setMessage(response.ok && payload.success ? (de ? "Kampagne gespeichert." : "Campaign saved.") : (payload.error || "Failed"));
+    setMessage(response.ok && payload.success ? (de ? "Kampagne gespeichert." : "Campaign saved.") : campaignErrorMessage(payload.error || "Failed",locale));
     if (response.ok && payload.success) { await load(); setValue((current) => ({ ...current, id: payload.id })); }
-    setBusy(false);
+    } catch(error) { setMessage(campaignErrorMessage(error instanceof Error?error.message:"Failed",locale)); }
+    finally { setBusy(false); }
   };
 
   const remove = async () => {
@@ -128,6 +134,8 @@ export default function AdminCampaignManager({ locale }: { locale: "de" | "en" }
     </aside>
 
     <section className="glass-panel rounded-2xl p-5">
+      <p className="mb-4 text-sm text-muted">{de ? "Zeiten gelten für Hamburg (Europe/Berlin), unabhängig von deinem Standort. Leerer Start = sofort; leeres Ende = ohne festes Enddatum. Das Ende muss nach dem Start liegen." : "Times use Hamburg (Europe/Berlin), regardless of your location. Empty start = immediately; empty end = no fixed expiry. The end must be after the start."}</p>
+      <Link href="/admin/promotion-banner" className="mb-4 inline-flex min-h-11 items-center text-sm font-semibold text-gold underline">{de ? "Aktionsbanner verwalten" : "Manage promotion banner"}</Link>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="text-sm text-muted">{de ? "Gutscheincode" : "Coupon code"}<input className={`${field} mt-1 uppercase`} value={value.code} onChange={(event) => setValue({ ...value, code: event.target.value.toUpperCase() })} /></label>
         <label className="flex min-h-11 items-center justify-between rounded-xl border border-border px-4 text-sm text-foreground">{de ? "Aktiv" : "Active"}<input type="checkbox" checked={value.isActive} onChange={(event) => setValue({ ...value, isActive: event.target.checked })} /></label>
@@ -139,8 +147,8 @@ export default function AdminCampaignManager({ locale }: { locale: "de" | "en" }
         <label className="text-sm text-muted">{de ? "Rabattwert" : "Discount value"}<input type="number" min="0.01" step="0.01" className={`${field} mt-1`} value={value.discountValue} onChange={(event) => setValue({ ...value, discountValue: Number(event.target.value) })} /></label>
         <label className="text-sm text-muted">{de ? "Mindestbestellwert" : "Minimum order"}<input type="number" min="0" step="0.01" className={`${field} mt-1`} value={value.minimumOrder} onChange={(event) => setValue({ ...value, minimumOrder: Number(event.target.value) })} /></label>
         <label className="text-sm text-muted">{de ? "Max. Einlösungen" : "Maximum redemptions"}<input type="number" min="1" className={`${field} mt-1`} value={value.maximumRedemptions ?? ""} onChange={(event) => setValue({ ...value, maximumRedemptions: event.target.value ? Number(event.target.value) : null })} /></label>
-        <label className="text-sm text-muted">{de ? "Start" : "Starts"}<input type="datetime-local" className={`${field} mt-1`} value={value.startsAt} onChange={(event) => setValue({ ...value, startsAt: event.target.value })} /></label>
-        <label className="text-sm text-muted">{de ? "Ende" : "Ends"}<input type="datetime-local" className={`${field} mt-1`} value={value.endsAt} onChange={(event) => setValue({ ...value, endsAt: event.target.value })} /></label>
+        <label className="text-sm text-muted">{de ? "Start (Hamburg)" : "Starts (Hamburg)"}<input type="datetime-local" className={`${field} mt-1`} value={value.startsAt} onChange={(event) => setValue({ ...value, startsAt: event.target.value })} /></label>
+        <label className="text-sm text-muted">{de ? "Ende (Hamburg)" : "Ends (Hamburg)"}<input type="datetime-local" className={`${field} mt-1`} value={value.endsAt} onChange={(event) => setValue({ ...value, endsAt: event.target.value })} /></label>
       </div>
 
       <div className="mt-5"><p className="text-sm font-semibold text-foreground">{de ? "Berechtigte Kategorien" : "Eligible categories"}</p><div className="mt-2 flex flex-wrap gap-2">{categories.map((category) => <label key={category} className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm"><input type="checkbox" checked={value.eligibleCategories.includes(category)} onChange={() => toggle("eligibleCategories", category)} />{category}</label>)}</div></div>

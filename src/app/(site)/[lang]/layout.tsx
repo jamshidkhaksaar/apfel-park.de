@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 
+import StorePromotion from "@/components/promotion/StorePromotion";
+import { getPublicPromotion } from "@/lib/promotion-server";
+
 import LocaleSync from "../../../components/LocaleSync";
 import MiniCart from "../../../components/checkout/MiniCart";
 import PageTransition from "../../../components/PageTransition";
@@ -21,6 +24,7 @@ export default async function SiteLayout({
   const { lang } = await params;
   const locale = requireLocale(lang);
   const dict = getDictionary(locale);
+  const promotion = await getPublicPromotion().catch(() => null);
 
   return (
     <div className="min-h-screen">
@@ -31,6 +35,7 @@ export default async function SiteLayout({
         labels={dict.header}
       />
       <main id="main-content" tabIndex={-1} className="page-surface">
+        <StorePromotion locale={locale} initial={promotion} />
         <PageTransition>{children}</PageTransition>
       </main>
       <SiteFooter lang={locale} />
