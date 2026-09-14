@@ -5,18 +5,38 @@ import type { ResearchPhoto } from '@/lib/product-research-photo';
 import { deviceModelNeedles } from '@/lib/device-model';
 
 const modelToken = (value: string): string => value.toLowerCase().replace(/^galaxy\s*/i, '').replace(/[^a-z0-9]/g, '').replace('iphone17air', 'iphoneair');
+
+const deviceModelFamily = (model: string): string | null => {
+  const match = /\b(ipad\s*(?:pro|air|mini)?)\b/i.exec(model);
+  return match ? match[1].trim() : null;
+};
+
 export const modelSpecificResearchSource = (source: ResearchSource, model: string, brand = ''): boolean => {
   const brandToken = modelToken(brand);
   const fullModel = modelToken(model);
   const needle = brandToken && fullModel.startsWith(brandToken) ? modelToken(fullModel.slice(brandToken.length)) : fullModel;
-  return needle.length >= 3 && modelToken(source.title).includes(needle) && !knownResearchModelConflict(model, source.title);
+  const needles = [needle, ...deviceModelNeedles(model).map(modelToken)].filter(n => n.length >= 3);
+  const titleToken = modelToken(source.title);
+  if (knownResearchModelConflict(model, source.title)) return false;
+  if (needles.some(n => titleToken.includes(n))) return true;
+  const family = deviceModelFamily(model);
+  if (family && titleToken.includes(modelToken(family)) && /technischedaten|techspecs|specifications/i.test(titleToken)) {
+    return true;
+  }
+  return false;
 };
 
 /** Verified source URLs only; no product facts are supplied from this registry. */
-export const preferredResearchUrls = (brand: string, model: string): string[] =>
-  brand.toLowerCase() === 'apple' && modelToken(model).replace(/^apple/, '') === 'iphone17promax'
-    ? ['https://support.apple.com/de-de/125091']
-    : [];
+export const preferredResearchUrls = (brand: string, model: string): string[] => {
+  if (brand.toLowerCase() !== 'apple') return [];
+  const token = modelToken(model).replace(/^apple/, '');
+  if (token === 'iphone17promax') return ['https://support.apple.com/de-de/125091'];
+  if (token.includes('ipadpro13') || token.includes('13ipadpro')) return ['https://support.apple.com/de-de/119891', 'https://www.apple.com/de/ipad-pro/specs/'];
+  if (token.includes('ipadpro11') || token.includes('11ipadpro')) return ['https://support.apple.com/de-de/119892', 'https://www.apple.com/de/ipad-pro/specs/'];
+  if (token.includes('ipadair13') || token.includes('13ipadair')) return ['https://support.apple.com/de-de/119893', 'https://www.apple.com/de/ipad-air/specs/'];
+  if (token.includes('ipadair11') || token.includes('11ipadair')) return ['https://support.apple.com/de-de/119894', 'https://www.apple.com/de/ipad-air/specs/'];
+  return [];
+};
 export const knownResearchModelConflict = (requested: string, actual: string): boolean => {
   const expected = deviceModelNeedles(requested).map(modelToken);
   const found = deviceModelNeedles(actual).map(modelToken);

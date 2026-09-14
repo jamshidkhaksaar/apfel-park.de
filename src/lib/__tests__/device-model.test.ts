@@ -18,6 +18,11 @@ describe("deviceModelNeedles", () => {
     ["BMW BMHCS23L22PTDK S23 Ultra S918 schwarz Leder Stempel Tricolor", ["s23 ultra"]],
     ["Google Pixel 8 Pro 128 GB", ["pixel 8 pro"]],
     ["Xiaomi Redmi Note 13 128 GB", ["redmi note 13"]],
+    ["Apple 13\" iPad Pro (M4) 256GB", ["ipad pro 13", "13 ipad pro"]],
+    ["Apple iPad Pro 13″ (M5) Space Schwarz", ["ipad pro 13", "13 ipad pro"]],
+    ["Apple iPad Air 11″ (M2) 128GB Blau", ["ipad air 11", "11 ipad air"]],
+    ["Apple iPad (10. Generation) 64GB Silber", ["ipad 10", "10 ipad"]],
+    ["Apple iPad mini (A17 Pro) 128GB", ["ipad mini a17 pro", "a17 pro ipad mini"]],
   ])("%s -> %j", (title, expected) => {
     expect(deviceModelNeedles(title)).toEqual(expected);
   });

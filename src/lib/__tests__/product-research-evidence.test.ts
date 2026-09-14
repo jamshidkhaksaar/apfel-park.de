@@ -19,7 +19,12 @@ describe('official research evidence gates', () => {
     expect(modelSpecificResearchSource({ ...source, title: 'iPhone 17 Pro Max - Technische Daten' }, 'iPhone 17 Pro Max')).toBe(true);
     expect(modelSpecificResearchSource({ ...source, title: 'iPhone 17 Pro Max - Technische Daten' }, 'Apple iPhone 17 Pro Max', 'Apple')).toBe(true);
     expect(modelSpecificResearchSource({ ...source, title: 'iPhone 17 Pro Max - Technische Daten' }, 'iPhone 17 Pro')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, title: 'iPad Pro - Technische Daten - Apple (DE)' }, 'iPad Pro 13-inch (M5)')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: '13" iPad Pro (M4) - Technische Daten - Apple Support (DE)' }, 'iPad Pro 13"')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: '11" iPad Pro (M4) - Technische Daten - Apple Support (DE)' }, 'iPad Pro 13"')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, title: 'iPad Pro - Apple (DE)' }, 'iPad Pro 13"')).toBe(false);
     expect(preferredResearchUrls('Apple', 'iPhone 17 Pro Max')).toEqual(['https://support.apple.com/de-de/125091']);
+    expect(preferredResearchUrls('Apple', 'iPad Pro 13')).toEqual(['https://support.apple.com/de-de/119891', 'https://www.apple.com/de/ipad-pro/specs/']);
     expect(preferredResearchUrls('Apple', 'iPhone 18 Pro Max')).toEqual([]);
   });
   it('retains an optical-quality qualification backed by the source', () => {
@@ -74,6 +79,8 @@ describe('official research evidence gates', () => {
     expect(text).not.toContain('Do not import');
     expect(text).not.toContain('price');
     expect(sourceMatchesModel(text, 'iPhone 17 Pro Max')).toBe(true);
+    expect(sourceMatchesModel('13" iPad Pro (M5) mit Apple M5 Chip', 'iPad Pro 13-inch (M5)')).toBe(true);
+    expect(sourceMatchesModel('13" iPad Pro (M4) mit Apple M4 Chip', 'iPad Pro 11-inch (M4)')).toBe(false);
   });
   it('returns a source only after an actual successful bounded fetch', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(`<title>Specs</title><main>${source.text}</main>`, { headers: { 'content-type': 'text/html' } }));

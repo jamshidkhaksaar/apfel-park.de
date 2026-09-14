@@ -1,4 +1,5 @@
 import he from 'he';
+import { deviceModelNeedles } from '@/lib/device-model';
 
 export type ResearchSource = { url: string; title: string; retrievedAt: string; text: string };
 
@@ -52,10 +53,20 @@ export const officialPageText = (html: string): string => {
     .replace(/\s+/g, ' ').trim() + (productData.length ? `\nPublished product data: ${JSON.stringify(productData)}` : '');
 };
 
+const UNIT_WORDS = new Set(['inch', 'inches', 'zoll', 'modell', 'generation', 'gen']);
+
 export const sourceMatchesModel = (text: string, model: string): boolean => {
   const normalize = (value: string): string => value.toLocaleLowerCase('de-DE').normalize('NFKD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').trim();
   const target = normalize(model);
-  return target.length >= 4 && ` ${normalize(text)} `.includes(` ${target} `);
+  if (target.length < 4) return false;
+  const haystack = ` ${normalize(text)} `;
+  if (haystack.includes(` ${target} `)) return true;
+  const cleanTarget = target.split(/\s+/).filter(t => !UNIT_WORDS.has(t)).join(' ');
+  if (cleanTarget.length >= 4 && haystack.includes(` ${cleanTarget} `)) return true;
+  const tokens = cleanTarget.split(/\s+/);
+  if (!tokens.every(t => haystack.includes(` ${t} `))) return false;
+  const candidates = [target, cleanTarget, ...deviceModelNeedles(model).map(normalize)].filter(n => n.length >= 4);
+  return candidates.some(needle => haystack.includes(` ${needle} `));
 };
 
 const readBounded = async (response: Response): Promise<string> => {
