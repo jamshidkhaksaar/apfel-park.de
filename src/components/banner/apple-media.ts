@@ -5,5 +5,6 @@ export const APPLE_MEDIA = {
   duoNight: "/images/apple/duo-night.webp",
   duoWhite: "/images/apple/duo-white.webp",
   duoVideo: "/images/apple/duo-video.mp4",
+  duoVideoMobile: "/images/apple/duo-video-mobile.mp4",
 } as const;
 

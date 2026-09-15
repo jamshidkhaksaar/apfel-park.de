@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { APPLE_MEDIA } from "./apple-media";
+import { useVideoVariant } from "@/hooks/useVideoVariant";
 import s from "./IPhoneBanner.module.css";
 
 type Model = "pro" | "duo";
@@ -88,6 +89,7 @@ export default function IPhoneBanner({
   const [theaterOpen, setTheaterOpen] = useState(false);
   const [theaterTab, setTheaterTab] = useState<TheaterTab>("duo-video");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const videoVariant = useVideoVariant();
 
   // Lock body scroll when theater is open
   useEffect(() => {
@@ -122,6 +124,7 @@ export default function IPhoneBanner({
   const stopped = paused || !animated;
   const proSrc = proView ? media.proFrontBack : media.proLineup;
   const duoSrc = duoView ? media.duoWhite : media.duoNight;
+  const duoVideoSrc = film && videoVariant ? (videoVariant === "mobile" ? media.duoVideoMobile : media.duoVideo) : undefined;
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -167,7 +170,7 @@ export default function IPhoneBanner({
       element.pause();
       document.removeEventListener("visibilitychange", playVideo);
     };
-  }, [film, stopped, reduced, offscreen, media.duoVideo]);
+  }, [film, stopped, reduced, offscreen, duoVideoSrc]);
 
   // Handle theater keyboard shortcuts
   useEffect(() => {
@@ -355,12 +358,12 @@ export default function IPhoneBanner({
                   <video
                     ref={video}
                     className={s.video}
-                    src={media.duoVideo}
-                    autoPlay
+                    src={duoVideoSrc}
+                    poster={duoSrc}
                     muted
                     loop
                     playsInline
-                    preload="auto"
+                    preload="none"
                     aria-hidden="true"
                     style={{ visibility: film ? "visible" : "hidden" }}
                   />
@@ -518,8 +521,8 @@ export default function IPhoneBanner({
                   className={s.theaterVideo}
                   src={media.duoVideo}
                   controls
-                  autoPlay
                   playsInline
+                  preload="none"
                 />
               )}
             </div>

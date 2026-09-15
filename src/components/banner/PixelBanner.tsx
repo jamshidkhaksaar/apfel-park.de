@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Locale } from "@/lib/i18n";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useVideoVariant } from "@/hooks/useVideoVariant";
 import s from "./PixelBanner.module.css";
 
 export type PixelBannerProps = {
@@ -73,9 +74,9 @@ const FOLD_COLORS: PhoneColor[] = [
 ];
 
 const VIDEOS = [
-  { src: "/images/google/pixel11/pixel-hero.mp4", nameDe: "Pixel 11", nameEn: "Pixel 11" },
-  { src: "/images/google/pixel11/pixel-magic.mp4", nameDe: "Magic Capture", nameEn: "Magic Capture" },
-  { src: "/images/google/pixel11/fold-video.mp4", nameDe: "Pro Fold", nameEn: "Pro Fold" },
+  { src: "/images/google/pixel11/pixel-hero.mp4", mobileSrc: "/images/google/pixel11/pixel-hero-mobile.mp4", poster: "/images/google/pixel11/pixel-hero-poster.webp", nameDe: "Pixel 11", nameEn: "Pixel 11" },
+  { src: "/images/google/pixel11/pixel-magic.mp4", mobileSrc: "/images/google/pixel11/pixel-magic-mobile.mp4", poster: "/images/google/pixel11/pixel-magic-poster.webp", nameDe: "Magic Capture", nameEn: "Magic Capture" },
+  { src: "/images/google/pixel11/fold-video.mp4", mobileSrc: "/images/google/pixel11/fold-video-mobile.mp4", poster: "/images/google/pixel11/fold-video-poster.webp", nameDe: "Pro Fold", nameEn: "Pro Fold" },
 ];
 
 export default function PixelBanner({
@@ -107,10 +108,12 @@ export default function PixelBanner({
   const [isHovered, setIsHovered] = useState(false);
   const [isInView, setIsInView] = useState(true);
   const reducedMotion = usePrefersReducedMotion();
+  const videoVariant = useVideoVariant();
 
   const currentPhone = PIXEL11_COLORS[phoneIndex];
   const currentFold = FOLD_COLORS[foldIndex];
   const currentVideo = VIDEOS[activeVideoIdx];
+  const videoSrc = isInView && videoVariant ? (videoVariant === "mobile" ? currentVideo.mobileSrc : currentVideo.src) : undefined;
 
   // Intersection observer for video playback
   useEffect(() => {
@@ -133,7 +136,7 @@ export default function PixelBanner({
     } else {
       videoRef.current.pause();
     }
-  }, [isInView, lightboxOpen, reducedMotion, activeVideoIdx]);
+  }, [isInView, lightboxOpen, reducedMotion, activeVideoIdx, videoSrc]);
 
   // Auto-cycle colors when not hovered
   useEffect(() => {
@@ -196,12 +199,13 @@ export default function PixelBanner({
       <div className={s.bgVideo} aria-hidden="true">
         <video
           ref={videoRef}
-          src={currentVideo.src}
+          src={videoSrc}
+          poster={currentVideo.poster}
           muted
           loop
           playsInline
           autoPlay
-          preload="metadata"
+          preload="none"
         />
       </div>
 
@@ -377,9 +381,10 @@ export default function PixelBanner({
             <video
               ref={foldVideoRef}
               src="/images/google/pixel11/fold-video.mp4"
+              poster="/images/google/pixel11/fold-video-poster.webp"
               controls
               playsInline
-              preload="metadata"
+              preload="none"
             />
             <button
               type="button"
