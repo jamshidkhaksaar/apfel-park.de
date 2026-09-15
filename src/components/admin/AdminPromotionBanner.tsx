@@ -31,7 +31,7 @@ export default function AdminPromotionBanner({locale}:{locale:'de'|'en'}){
     limit_reached:['Das Einlösungslimit ist erreicht.','The redemption limit has been reached.'],
     scheduled:['Geplant: Der Banner erscheint erst zum Kampagnenstart.','Scheduled: the banner appears when the campaign starts.'],
     invalid_window:['Der Kampagnenzeitraum ist ungültig. Bitte unter Kampagnen & Gutscheine korrigieren.','The campaign dates are invalid. Correct them under Campaigns & coupons.'],
-    device_scope_required:['Bitte eine reine Reparaturkampagne mit Aktionstagen ODER eine Geräte-Kampagne wählen. Leere Kategorien und Produkte bedeuten alle Artikel, einschließlich Zubehör.','Choose a repair-only campaign with specific dates OR a device campaign. Empty category and product selections mean all items, including accessories.'],
+    device_scope_required:['Bitte eine Kampagne für Geräte, Zubehör oder eine reine Reparaturkampagne mit Aktionstagen wählen. Leere Kategorien und Produkte bedeuten alle Artikel und sind für den Banner nicht erlaubt.','Choose a campaign scoped to devices, accessories, or a repair-only campaign with specific dates. Empty category and product selections mean all items and are not allowed on the banner.'],
     invalid_campaign:['Die Kampagnendaten sind ungültig.','The campaign data is invalid.'],
   };
   const preview:PublicPromotion|null=selected?{repairRules:selected.eligible_categories.includes('repairs')?normalizeRepairRules(selected.repair_rules):undefined,id:selected.id,code:selected.code,discountType:selected.discount_type as 'percent'|'fixed',discountValue:Number(selected.discount_value),minimumOrder:Number(selected.minimum_order),

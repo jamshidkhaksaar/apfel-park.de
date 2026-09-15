@@ -17,6 +17,7 @@ const q=new URLSearchParams(location.search),locale=q.get('lang')||'de',view=q.g
 const promotion=${JSON.stringify(promotion)};
 if(q.has('expiry')){promotion.expiresInSeconds=2;promotion.endsAt=new Date(Date.now()+2000).toISOString();}
 if(q.has('permanent'))promotion.endsAt=null;
+if(q.has('accessories')){promotion.categories=['accessories'];promotion.code='DIENSTAG20';promotion.discountValue=20;}
 window.copied='';Object.defineProperty(navigator,'clipboard',{value:{writeText:async text=>{window.copied=text;}},configurable:true});
 createRoot(document.getElementById('root')).render(<main className="container-page py-6">{view==='admin'?<Admin locale={locale}/>:view==='campaign'?<Campaign locale={locale}/>:view==='cart'?<Cart locale={locale}/>:view==='checkout'?<Checkout locale={locale} initialShippingMethod="pickup" initialCoupon="MONTAG10" couponEnabled={true}/>:<Banner promotion={promotion} locale={locale}/>}</main>);`;
 const bundle=await build({stdin:{contents:fixture,resolveDir:root,loader:'tsx'},outfile:root+'fixture-output/entry.js',bundle:true,write:false,format:'iife',jsx:'automatic',minify:true,define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},plugins:[{name:'next-fixture',setup(b){
@@ -70,6 +71,13 @@ try{
   {
     const {page,context}=await pageFor('banner','de',390,'&expiry');await page.locator('[data-promotion-banner]').waitFor();
     await page.locator('[data-promotion-banner]').waitFor({state:'detached',timeout:6000});results.push({view:'expiry hides banner',pass:true});await context.close();
+  }
+  {
+    const {page,context,errors}=await pageFor('banner','de',390,'&accessories');await page.locator('[data-promotion-banner]').waitFor();
+    assert.match(await page.getByRole('link').first().getAttribute('href')||'',/\/de\/store\?category=accessories/);
+    await page.getByText('Bedingungen',{exact:true}).click();
+    assert.match(await page.locator('details').innerText(),/Geräte und Reparaturen/);
+    assert.deepEqual(errors,[]);results.push({view:'accessory campaign shows with accessory CTA',pass:true});await context.close();
   }
   for(const lang of ['de','en']){
     const {page,context,calls,errors}=await pageFor('admin',lang,390);

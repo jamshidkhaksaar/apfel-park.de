@@ -1,10 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useId, useState } from 'react';
-import { promotionDiscount, promotionScope, type PublicPromotion } from '@/lib/promotion';
+import { bannerCategories, promotionDiscount, promotionExclusions, promotionScope, type PublicPromotion } from '@/lib/promotion';
 import styles from './PromotionBanner.module.css';
-
-const deviceCategories = ['smartphones', 'tablets', 'laptops'];
 
 export default function PromotionBanner({promotion,locale,compact=false,preview=false}:{promotion:PublicPromotion;locale:'de'|'en';compact?:boolean;preview?:boolean}){
   const de=locale==='de',id=useId(),repairs=promotion.categories.includes('repairs'),storageKey=`apfel-promotion-dismissed:${promotion.id}`;
@@ -38,7 +36,7 @@ export default function PromotionBanner({promotion,locale,compact=false,preview=
   const endsToday=endDate?dayKey(endDate)===dayKey(new Date()):false;
   const urgent=seconds>0&&seconds<=3600,soon=seconds>0&&seconds<=21600;
   const timerLabel=soon?(endsToday?(de?`Endet heute ${endTime}`:`Ends today ${endTime}`):(de?`Endet ${endLabel}`:`Ends ${endLabel}`)):(de?'Endet in':'Ends in');
-  const selectedDevices=promotion.categories.filter(category=>deviceCategories.includes(category));
+  const selectedDevices=promotion.categories.filter(category=>(bannerCategories as readonly string[]).includes(category));
   const shopHref=selectedDevices.length===1?`/${locale}/store?category=${encodeURIComponent(selectedDevices[0])}`:`/${locale}/store`;
   const copy=async()=>{try{await navigator.clipboard.writeText(promotion.code);setCopied(true);setCopyFailed(false);}catch{setCopyFailed(true);}};
   return <aside className={`${styles.banner} ${compact?styles.compact:''}`} aria-label={de?'Aktueller Gutschein':'Current coupon'} data-promotion-banner>
@@ -59,7 +57,7 @@ export default function PromotionBanner({promotion,locale,compact=false,preview=
     <div id={id} className={styles.footer}>
       {promotion.repairRules?<span>{de?'Aktionstage':'Promotion dates'}: {promotion.repairRules.dates.join(', ')} · {promotion.repairRules.dateBasis==='repair_date'?(de?'Wunschtermin der Reparatur':'Requested repair date'):(de?'Tag der Online-Anfrage':'Online request date')}</span>:null}
       <span>{promotion.minimumOrder>0?(de?`Ab ${new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(promotion.minimumOrder)} Warenwert`:`Minimum basket ${new Intl.NumberFormat('en-GB',{style:'currency',currency:'EUR'}).format(promotion.minimumOrder)}`):(de?'Kein Mindestbestellwert':'No minimum spend')}</span>
-      <details><summary>{de?'Bedingungen':'Terms'}</summary><p>{promotionScope(promotion,locale)}. {repairs?(de?'Nur bepreiste Katalog-Reparaturen an den angegebenen Aktionstagen. Gerätekäufe und Zubehör ausgeschlossen. Ein Code pro Anfrage; Termin und Endpreis werden vom Team bestätigt. Solange Einlösungen verfügbar sind.':'Priced catalog repairs on the specified dates only. Device purchases and accessories excluded. One code per request; appointment and final price require staff confirmation. Subject to remaining redemptions.'):(de?'Zubehör und Reparaturen sind ausgeschlossen. Ein Code pro Bestellung; Versandkosten werden nicht rabattiert. Der Rabatt wird im Checkout geprüft.':'Accessories and repairs are excluded. One code per order; shipping is not discounted. The discount is validated at checkout.')} {promotion.endsAt?`${de?'Gültig bis':'Valid until'} ${endLabel} (${de?'Hamburg-Zeit':'Hamburg time'}).`:(de?'Kein festes Enddatum; gültig solange die Kampagne aktiv und ihr Einlösungslimit nicht erreicht ist.':'No fixed end date; valid while the campaign is active and its redemption limit has not been reached.')}</p></details>
+      <details><summary>{de?'Bedingungen':'Terms'}</summary><p>{promotionScope(promotion,locale)}. {repairs?(de?'Nur bepreiste Katalog-Reparaturen an den angegebenen Aktionstagen. Gerätekäufe und Zubehör ausgeschlossen. Ein Code pro Anfrage; Termin und Endpreis werden vom Team bestätigt. Solange Einlösungen verfügbar sind.':'Priced catalog repairs on the specified dates only. Device purchases and accessories excluded. One code per request; appointment and final price require staff confirmation. Subject to remaining redemptions.'):(de?`${promotionExclusions(promotion,locale)} Ein Code pro Bestellung; Versandkosten werden nicht rabattiert. Der Rabatt wird im Checkout geprüft.`:`${promotionExclusions(promotion,locale)} One code per order; shipping is not discounted. The discount is validated at checkout.`)} {promotion.endsAt?`${de?'Gültig bis':'Valid until'} ${endLabel} (${de?'Hamburg-Zeit':'Hamburg time'}).`:(de?'Kein festes Enddatum; gültig solange die Kampagne aktiv und ihr Einlösungslimit nicht erreicht ist.':'No fixed end date; valid while the campaign is active and its redemption limit has not been reached.')}</p></details>
     </div>
     <span className={styles.feedback} role="status">{copyFailed?(de?`Bitte den Code ${promotion.code} markieren und manuell kopieren.`:`Select and copy ${promotion.code} manually.`):copied?(repairs?(de?'Gutscheincode kopiert. In der Reparaturanfrage eingeben.':'Coupon copied. Enter it in the repair request.'):(de?'Gutscheincode kopiert. Im Checkout anwenden.':'Coupon copied. Apply it at checkout.')):''}</span>
   </aside>;

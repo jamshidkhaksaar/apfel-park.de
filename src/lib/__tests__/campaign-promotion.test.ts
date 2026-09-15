@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { campaignDateForInput, campaignDateToIso, campaignErrorMessage, campaignWindow } from '../campaign-dates';
 import { sanitizeCampaignInput } from '../coupon';
 import { canAccessAdminPath, canManageCampaigns } from '../admin-auth';
-import { emptyPromotion, promotionCampaignIssue, promotionDiscount, promotionScope, promotionSurface, sanitizePromotionSettings, type PromotionCampaign, type PublicPromotion } from '../promotion';
+import { emptyPromotion, promotionCampaignIssue, promotionDiscount, promotionExclusions, promotionScope, promotionSurface, sanitizePromotionSettings, type PromotionCampaign, type PublicPromotion } from '../promotion';
 
 const campaign:PromotionCampaign={id:'11111111-1111-4111-8111-111111111111',code:'MONDAY10',discount_type:'percent',discount_value:10,minimum_order:0,eligible_categories:['smartphones','tablets','laptops'],eligible_product_ids:[],starts_at:'2026-09-12T18:39:00Z',ends_at:'2026-09-14T18:39:00Z',maximum_redemptions:100,redemption_count:0,is_active:true};
 const now=Date.parse('2026-09-13T10:00:00Z');
@@ -40,16 +40,17 @@ describe('campaign-backed promotion safety',()=>{
     expect(promotionCampaignIssue({...campaign,discount_value:101},[],now)).toBe('invalid_campaign');
     expect(promotionCampaignIssue({...campaign,starts_at:'2026-09-14T10:00Z'},[],now)).toBe('scheduled');
   });
-  it('does not advertise unrestricted or accessory campaigns',()=>{
+  it('allows device, accessory and product-scoped campaigns but rejects unrestricted scope',()=>{
     expect(promotionCampaignIssue({...campaign,eligible_categories:[]},[],now)).toBe('device_scope_required');
-    expect(promotionCampaignIssue({...campaign,eligible_categories:['accessories']},[],now)).toBe('device_scope_required');
-    expect(promotionCampaignIssue(campaign,['accessories'],now)).toBe('device_scope_required');
-    expect(promotionCampaignIssue({...campaign,eligible_categories:[],eligible_product_ids:[campaign.id]},['smartphones'],now)).toBeNull();
+    expect(promotionCampaignIssue({...campaign,eligible_categories:['accessories']},[],now)).toBeNull();
+    expect(promotionCampaignIssue({...campaign,eligible_categories:['smartphones','accessories']},[],now)).toBeNull();
+    expect(promotionCampaignIssue({...campaign,eligible_categories:[],eligible_product_ids:[campaign.id]},['accessories'],now)).toBeNull();
   });
-  it('targets shopping surfaces without exposing the banner on admin, repair or accessory routes',()=>{
-    for(const path of ['/de','/en/store','/de/tablets','/de/laptops','/en/gebrauchte-iphones'])expect(promotionSurface(path,'')).not.toBeNull();
-    for(const path of ['/admin','/de/accessories','/de/checkout','/de/cart','/en/about'])expect(promotionSurface(path,'')).toBeNull();
-    expect(promotionSurface('/de/store','category=accessories')).toBeNull();
+  it('targets shopping surfaces including accessories without exposing admin, checkout or cart routes',()=>{
+    for(const path of ['/de','/en/store','/de/tablets','/de/laptops','/de/accessories','/en/gebrauchte-iphones'])expect(promotionSurface(path,'')).not.toBeNull();
+    for(const path of ['/admin','/de/checkout','/de/cart','/en/about'])expect(promotionSurface(path,'')).toBeNull();
+    expect(promotionSurface('/de/store','category=accessories')).toEqual({category:'accessories'});
+    expect(promotionSurface('/de/accessories','')).toEqual({category:'accessories'});
     expect(promotionSurface('/de/store/example-phone','')).toEqual({slug:'example-phone'});
   });
   it('keeps promotional settings restricted to campaign managers',()=>{
@@ -62,5 +63,13 @@ describe('campaign-backed promotion safety',()=>{
     const publicPromo={discountType:'percent',discountValue:10,categories:['smartphones'],includesSelected:true,selectedOnly:true} as PublicPromotion;
     expect(promotionDiscount(publicPromo,'de')).toBe('10 %');
     expect(promotionScope(publicPromo,'de')).toContain('ausgewählte');
+  });
+  it('labels accessory scope and excludes the right item groups',()=>{
+    const accessoryPromo={discountType:'percent',discountValue:20,categories:['accessories'],includesSelected:false,selectedOnly:false} as PublicPromotion;
+    expect(promotionScope(accessoryPromo,'de')).toContain('Zubehör');
+    expect(promotionScope(accessoryPromo,'en')).toContain('accessories');
+    expect(promotionExclusions(accessoryPromo,'de')).toContain('Geräte');
+    expect(promotionExclusions({...accessoryPromo,categories:['smartphones']},'en')).toContain('Accessories and repairs');
+    expect(promotionExclusions({...accessoryPromo,categories:['smartphones','accessories']},'de')).toContain('Reparaturen');
   });
 });

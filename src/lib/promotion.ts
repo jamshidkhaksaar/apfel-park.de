@@ -1,5 +1,7 @@
 import { normalizeRepairRules, hamburgDate } from './repair-campaign-rules';
 export const deviceCategories = ['smartphones','tablets','laptops'] as const;
+export const bannerCategories = ['smartphones','tablets','laptops','accessories'] as const;
+const isBannerCategory = (category:string) => (bannerCategories as readonly string[]).includes(category);
 export type PromotionSettings = { enabled: boolean; campaignId: string | null; headline: {de:string;en:string}; updatedAt?:string; updatedBy?:string };
 export type PublicPromotion = {
   id:string; code:string; discountType:'percent'|'fixed'; discountValue:number; minimumOrder:number;
@@ -37,22 +39,23 @@ export const promotionCampaignIssue = (campaign: PromotionCampaign | null, selec
     return start!==null&&start>now?'scheduled':null;
   }
   const categories=[...campaign.eligible_categories,...selectedCategories];
-  if(!categories.length||categories.some(c=>!(deviceCategories as readonly string[]).includes(c))) return 'device_scope_required';
+  if(!categories.length||categories.some(c=>!isBannerCategory(c))) return 'device_scope_required';
   if(start!==null&&start>now) return 'scheduled';
   return null;
 };
 export const promotionSurface = (pathname:string, query:string): {category?:string;slug?:string} | null => {
   const path=pathname.replace(/^\/(de|en)(?=\/|$)/,'') || '/';
   const category=new URLSearchParams(query).get('category');
-  if(category && category!=='all' && !(deviceCategories as readonly string[]).includes(category) && category!=='open-box-smartphones-tablets') return null;
+  if(category && category!=='all' && !isBannerCategory(category) && category!=='open-box-smartphones-tablets') return null;
   if(path==='/repairs'||path.startsWith('/repairs/'))return {category:'repairs'};
+  if(path==='/accessories')return {category:'accessories'};
   if(path==='/'||path==='/store') return category&&category!=='all'&&category!=='open-box-smartphones-tablets'?{category}:{};
   if(path==='/tablets'||path==='/laptops') return {category:path.slice(1)};
   if(['/smartphones','/samsung-handys','/xiaomi-redmi-handys','/handys-ohne-vertrag','/gebrauchte-handys','/gebrauchte-iphones','/iphone-17','/iphone-16-pro-max','/open-box'].includes(path)) return {category:'smartphones'};
   const product=/^\/store\/([^/]+)$/.exec(path);
   return product?{slug:product[1]}:null;
 };
-const labels:Record<string,[string,string]>={smartphones:['Smartphones','smartphones'],tablets:['Tablets','tablets'],laptops:['Laptops','laptops'],repairs:['Reparaturen','repairs']};
+const labels:Record<string,[string,string]>={smartphones:['Smartphones','smartphones'],tablets:['Tablets','tablets'],laptops:['Laptops','laptops'],accessories:['Zubehör','accessories'],repairs:['Reparaturen','repairs']};
 export const promotionScope = (promo:PublicPromotion,locale:'de'|'en'):string => {
   const names=promo.categories.map(c=>labels[c]?.[locale==='de'?0:1]).filter(Boolean).join(', ');
   if(promo.selectedOnly)return locale==='de'?`Auf ausgewählte ${names}`:`On selected ${names}`;
@@ -61,3 +64,9 @@ export const promotionScope = (promo:PublicPromotion,locale:'de'|'en'):string =>
 export const promotionDiscount = (promo:PublicPromotion,locale:'de'|'en'):string => promo.discountType==='percent'
   ? `${new Intl.NumberFormat(locale).format(promo.discountValue)} %`
   : new Intl.NumberFormat(locale,{style:'currency',currency:'EUR'}).format(promo.discountValue);
+export const promotionExclusions = (promo:PublicPromotion,locale:'de'|'en'):string => {
+  const de=locale==='de',accessories=promo.categories.includes('accessories'),devices=promo.categories.some(category=>(deviceCategories as readonly string[]).includes(category));
+  if(accessories&&!devices)return de?'Geräte und Reparaturen sind ausgeschlossen.':'Devices and repairs are excluded.';
+  if(accessories&&devices)return de?'Reparaturen sind ausgeschlossen.':'Repairs are excluded.';
+  return de?'Zubehör und Reparaturen sind ausgeschlossen.':'Accessories and repairs are excluded.';
+};

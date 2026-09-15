@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ShippingMethod } from '@/lib/checkout';
 import type { StoredCartItem } from '@/components/checkout/cart';
-import { promotionDiscount, promotionScope } from '@/lib/promotion';
+import { promotionDiscount, promotionExclusions, promotionScope } from '@/lib/promotion';
 import { usePromotion } from './usePromotion';
 
 export type CartCouponPreview = {key:string;code:string;discountAmountCents:number;previewTotalAmountCents:number;previewVatAmountCents:number;expiresAt:number|null};
@@ -28,7 +28,7 @@ export default function CartPromotion({locale,items,categories,shippingMethod,ca
   if(!applied&&(!promotion||!categories.some(c=>promotion.categories.includes(c))))return null;
   return <div className="mt-5 rounded-xl border border-gold/40 bg-gold/5 p-4" data-cart-promotion>
     <p className="text-sm font-semibold text-foreground">{applied?`${de?'Gutschein':'Coupon'} ${applied.code}`:`${promotionDiscount(promotion!,locale)} ${de?'mit Gutscheincode':'with code'} ${promotion!.code}`}</p>
-    {promotion?<p className="mt-1 text-xs leading-5 text-muted">{promotionScope(promotion,locale)}. {de?'Zubehör ausgeschlossen.':'Accessories excluded.'}</p>:null}
+    {promotion?<p className="mt-1 text-xs leading-5 text-muted">{promotionScope(promotion,locale)}. {promotion.categories.includes('repairs')?(de?'Nur bepreiste Katalog-Reparaturen.':'Priced catalog repairs only.'):promotionExclusions(promotion,locale)}</p>:null}
     {promotion?.minimumOrder? <p className="mt-1 text-xs text-muted">{de?'Mindestbestellwert':'Minimum spend'}: {new Intl.NumberFormat(locale,{style:'currency',currency:'EUR'}).format(promotion.minimumOrder)}</p>:null}
     <button type="button" disabled={busy} onClick={()=>{if(applied){onApplied(null);setMessage('');}else void apply();}} className="btn-secondary mt-3 min-h-11 w-full justify-center text-sm disabled:opacity-50">{busy?(de?'Wird geprüft…':'Checking…'):applied?(de?'Gutschein entfernen':'Remove coupon'):(de?'Gutschein anwenden':'Apply coupon')}</button>
     {message?<p role="status" className="mt-2 text-xs leading-5 text-muted">{message}</p>:null}
