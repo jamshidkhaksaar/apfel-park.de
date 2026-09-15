@@ -112,6 +112,72 @@ function CheckCircleIcon({ className = "size-4" }: { className?: string }) {
 /* Component Implementation                                                   */
 /* -------------------------------------------------------------------------- */
 
+type ShowcaseFaq = { qDe: string; qEn: string; aDe: string; aEn: string };
+
+// Model-specific FAQ copy so the Pro, Pro Max and Duo pages are not duplicates.
+const IPHONE_FAQS: Record<ModelId, ShowcaseFaq[]> = {
+  pro: [
+    {
+      qDe: "Wann ist das iPhone 18 Pro in Deutschland erhältlich?",
+      qEn: "When is the iPhone 18 Pro available in Germany?",
+      aDe: "Bitte frage Modell, Speicher und Farbe unverbindlich an. Wir bestätigen Preis, Bestand und Liefertermin individuell. Eine Anfrage ist noch keine Bestellung oder Reservierungszusage.",
+      aEn: "Ask about the model, storage and colour without obligation. We confirm price, stock and delivery individually. An inquiry is not an order or a guaranteed reservation.",
+    },
+    {
+      qDe: "Für wen passt das iPhone 18 Pro?",
+      qEn: "Who is the iPhone 18 Pro for?",
+      aDe: "Das iPhone 18 Pro bietet ein 6,3-Zoll-ProMotion-Display, den A20 Pro und ein 48-MP-Triple-Kamerasystem mit 4-fachem Teleobjektiv sowie bis zu 34 Std. Videowiedergabe (Hersteller-Laborwert). Es passt zu Nutzern, die volle Pro-Ausstattung in kompakter Größe möchten.",
+      aEn: "The iPhone 18 Pro offers a 6.3-inch ProMotion display, the A20 Pro and a 48 MP triple camera system with 4x telephoto plus up to 34 h video playback (manufacturer lab figure). It suits users who want full Pro features in a compact size.",
+    },
+    {
+      qDe: "Sind die Geräte vertragsfrei und für alle Netze entsperrt?",
+      qEn: "Are the devices contract-free and unlocked for all carriers?",
+      aDe: "Ja. Über Apfel Park bezogene Neugeräte sind vertragsfrei (ohne SIM-Lock) und können mit deutschen sowie internationalen SIM-Karten und eSIM-Profilen genutzt werden.",
+      aEn: "Yes. Units supplied by Apfel Park are contract-free (no SIM lock) and work with German and international SIM cards and eSIM profiles.",
+    },
+  ],
+  promax: [
+    {
+      qDe: "Wann ist das iPhone 18 Pro Max in Deutschland erhältlich?",
+      qEn: "When is the iPhone 18 Pro Max available in Germany?",
+      aDe: "Bitte frage Modell, Speicher und Farbe unverbindlich an. Wir bestätigen Preis, Bestand und Liefertermin individuell. Eine Anfrage ist noch keine Bestellung oder Reservierungszusage.",
+      aEn: "Ask about the model, storage and colour without obligation. We confirm price, stock and delivery individually. An inquiry is not an order or a guaranteed reservation.",
+    },
+    {
+      qDe: "Was kann das Pro Max besser als das Pro?",
+      qEn: "What does the Pro Max do better than the Pro?",
+      aDe: "Das Pro Max hat ein 6,9-Zoll-Display, bis zu 8-fach optische Qualität beim Teleobjektiv und bis zu 43 Std. Videowiedergabe (Hersteller-Laborwerte).",
+      aEn: "The Pro Max has a 6.9-inch display, up to 8x optical-quality telephoto and up to 43 h video playback (manufacturer lab figures).",
+    },
+    {
+      qDe: "Eignet sich das Pro Max für Vielnutzer?",
+      qEn: "Is the Pro Max suitable for heavy users?",
+      aDe: "Es bietet das größte Display und die längste Videowiedergabe der Reihe (Hersteller-Laborwert). Ob das im Alltag den Unterschied macht, hängt von deiner Nutzung ab.",
+      aEn: "It offers the largest display and the longest video playback in the lineup (manufacturer lab figure). Whether that matters day to day depends on your use.",
+    },
+  ],
+  duo: [
+    {
+      qDe: "Wann ist das iPhone Duo in Deutschland erhältlich?",
+      qEn: "When is the iPhone Duo available in Germany?",
+      aDe: "Bitte frage Modell, Speicher und Farbe unverbindlich an. Wir bestätigen Preis, Bestand und Liefertermin individuell. Eine Anfrage ist noch keine Bestellung oder Reservierungszusage.",
+      aEn: "Ask about the model, storage and colour without obligation. We confirm price, stock and delivery individually. An inquiry is not an order or a guaranteed reservation.",
+    },
+    {
+      qDe: "Was ist das Besondere am iPhone Duo?",
+      qEn: "What is special about the iPhone Duo?",
+      aDe: "Das iPhone Duo ist Apples erstes faltbares iPhone. Es kombiniert ein 7,6-Zoll-Innendisplay mit einem 5,4-Zoll-Außendisplay und einem Titangehäuse (5,2 mm geöffnet) sowie Touch ID in der Seitentaste.",
+      aEn: "The iPhone Duo is Apple's first foldable iPhone. It combines a 7.6-inch inner display with a 5.4-inch outer display and a titanium body (5.2 mm open) plus Touch ID in the side button.",
+    },
+    {
+      qDe: "Kann ich mein altes Smartphone in Zahlung geben?",
+      qEn: "Can I trade in my current smartphone?",
+      aDe: "Selbstverständlich. Wir bewerten dein bisheriges Gerät fair und transparent. Der ermittelte Wert kann direkt mit dem Kaufpreis des iPhone Duo verrechnet werden.",
+      aEn: "Certainly. We assess your current device fairly and transparently. The agreed value can be credited directly against the iPhone Duo price.",
+    },
+  ],
+};
+
 export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhone18ShowcaseProps) {
   const isDe = locale === "de";
   const [selectedModel, setSelectedModel] = useState<ModelId>(initialModel);
@@ -188,6 +254,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
     { category: isDe ? "Gehäuse" : "Body", pro: isDe ? "Aluminium-Unibody · Ceramic Shield" : "Aluminium unibody · Ceramic Shield", promax: isDe ? "Aluminium-Unibody · Ceramic Shield" : "Aluminium unibody · Ceramic Shield", duo: isDe ? "Faltbares Titandesign · 5,2 mm geöffnet / 11,3 mm geschlossen" : "Foldable titanium design · 5.2 mm open / 11.3 mm closed" },
     { category: isDe ? "Biometrie" : "Biometrics", pro: isDe ? "Face ID" : "Face ID", promax: isDe ? "Face ID" : "Face ID", duo: isDe ? "Touch ID in der Seitentaste" : "Touch ID in the side button" },
   ];
+  const modelFaqs = IPHONE_FAQS[selectedModel];
   return (
     <div className="min-h-screen bg-background text-foreground antialiased selection:bg-gold selection:text-black">
       {/* Editorial Sub-Navigation & Breadcrumb Bar */}
@@ -710,61 +777,17 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
           </div>
 
           <div className="divide-y divide-border/70 border-y border-border/70">
-            <details className="group py-5 transition-colors">
-              <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground list-none">
-                <span>{isDe ? "Ab wann sind iPhone 18 Pro und iPhone Duo lieferbar?" : "When will iPhone 18 Pro and iPhone Duo be available?"}</span>
-                <span className="text-muted transition-transform group-open:rotate-180">
-                  <ChevronDownIcon className="size-4" />
-                </span>
-              </summary>
-              <p className="mt-3 text-sm text-muted leading-relaxed">
-                {isDe
-                  ? "Bitte frage Modell, Speicher und Farbe unverbindlich an. Wir bestätigen Preis, Bestand und Liefertermin individuell. Eine Anfrage ist noch keine Bestellung oder Reservierungszusage."
-                  : "Ask about the model, storage and colour without obligation. We confirm price, stock and delivery individually. An inquiry is not an order or a guaranteed reservation."}
-              </p>
-            </details>
-
-            <details className="group py-5 transition-colors">
-              <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground list-none">
-                <span>{isDe ? "Wie erhalte ich ein verbindliches Preisangebot?" : "How do I request a binding quotation?"}</span>
-                <span className="text-muted transition-transform group-open:rotate-180">
-                  <ChevronDownIcon className="size-4" />
-                </span>
-              </summary>
-              <p className="mt-3 text-sm text-muted leading-relaxed">
-                {isDe
-                  ? "Nutze einfach die WhatsApp-Direktanfrage oder schreibe uns eine E-Mail an info@apfel-park.de mit Angabe deines Wunschmodells, der Speichergröße und der Farbe. Unser Team antwortet umgehend mit einem transparenten Angebot."
-                  : "Simply click the WhatsApp quote button or email info@apfel-park.de stating your preferred model, color finish, and storage tier. Our team provides transparent pricing promptly."}
-              </p>
-            </details>
-
-            <details className="group py-5 transition-colors">
-              <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground list-none">
-                <span>{isDe ? "Sind die Geräte vertragsfrei und für alle Netze entsperrt?" : "Are devices factory unlocked and contract-free?"}</span>
-                <span className="text-muted transition-transform group-open:rotate-180">
-                  <ChevronDownIcon className="size-4" />
-                </span>
-              </summary>
-              <p className="mt-3 text-sm text-muted leading-relaxed">
-                {isDe
-                  ? "Ja. Alle über Apfel Park bezogenen Neugeräte sind 100% vertragsfrei (ohne SIM-Lock) und können mit allen deutschen sowie internationalen SIM-Karten und eSIM-Profilen genutzt werden."
-                  : "Yes. All units delivered by Apfel Park are 100% factory unlocked without contract ties and function seamlessly with any physical SIM or eSIM worldwide."}
-              </p>
-            </details>
-
-            <details className="group py-5 transition-colors">
-              <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground list-none">
-                <span>{isDe ? "Kann ich mein altes Smartphone direkt in Zahlung geben?" : "Can I trade in an existing smartphone directly?"}</span>
-                <span className="text-muted transition-transform group-open:rotate-180">
-                  <ChevronDownIcon className="size-4" />
-                </span>
-              </summary>
-              <p className="mt-3 text-sm text-muted leading-relaxed">
-                {isDe
-                  ? "Selbstverständlich. Wir bewerten dein bisheriges Gerät fair und transparent. Der ermittelte Wert kann direkt mit dem Kaufpreis des iPhone 18 Pro oder Duo verrechnet werden."
-                  : "Certainly. We provide transparent device assessments. The agreed trade-in value is credited immediately against your new order."}
-              </p>
-            </details>
+            {modelFaqs.map((faq) => (
+              <details key={faq.qEn} className="group py-5 transition-colors">
+                <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground list-none">
+                  <span>{isDe ? faq.qDe : faq.qEn}</span>
+                  <span className="text-muted transition-transform group-open:rotate-180">
+                    <ChevronDownIcon className="size-4" />
+                  </span>
+                </summary>
+                <p className="mt-3 text-sm text-muted leading-relaxed">{isDe ? faq.aDe : faq.aEn}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>

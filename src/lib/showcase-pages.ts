@@ -2,13 +2,13 @@ import type { Locale } from './i18n';
 import { siteInfo } from './site';
 
 export const showcasePages = {
-  'iphone-18-pro': { name: 'iPhone 18 Pro', image: '/images/apple/pro-lineup.webp', source: 'https://www.apple.com/de/iphone-18-pro/specs/' },
-  'iphone-18-pro-max': { name: 'iPhone 18 Pro Max', image: '/images/apple/pro-front-back.webp', source: 'https://www.apple.com/de/iphone-18-pro/specs/' },
-  'iphone-duo': { name: 'iPhone Duo', image: '/images/apple/duo-night.webp', source: 'https://www.apple.com/de/iphone-duo/specs/' },
-  'galaxy-z-fold-8': { name: 'Samsung Galaxy Z Fold8', image: '/images/samsung/zfold8/phone-fold.webp', source: 'https://www.samsung.com/de/smartphones/galaxy-z-fold8/specs/' },
-  'galaxy-z-fold-8-ultra': { name: 'Samsung Galaxy Z Fold8 Ultra', image: '/images/samsung/zfold8/phone-ultra.webp', source: 'https://www.samsung.com/de/smartphones/galaxy-z-fold8-ultra/specs/' },
-  'pixel-11': { name: 'Google Pixel 11', image: '/images/google/pixel11/pixel-frost.webp', source: 'https://store.google.com/de/product/pixel_11_specs?hl=de' },
-  'pixel-11-pro-fold': { name: 'Google Pixel 11 Pro Fold', image: '/images/google/pixel11/fold-olive.webp', source: 'https://support.google.com/pixelphone/answer/7158570?hl=de' },
+  'iphone-18-pro': { name: 'iPhone 18 Pro', image: '/images/apple/pro-lineup.webp', source: 'https://www.apple.com/de/iphone-18-pro/specs/', updated: '2026-09-15' },
+  'iphone-18-pro-max': { name: 'iPhone 18 Pro Max', image: '/images/apple/pro-front-back.webp', source: 'https://www.apple.com/de/iphone-18-pro/specs/', updated: '2026-09-15' },
+  'iphone-duo': { name: 'iPhone Duo', image: '/images/apple/duo-night.webp', source: 'https://www.apple.com/de/iphone-duo/specs/', updated: '2026-09-15' },
+  'galaxy-z-fold-8': { name: 'Samsung Galaxy Z Fold8', image: '/images/samsung/zfold8/phone-fold.webp', source: 'https://www.samsung.com/de/smartphones/galaxy-z-fold8/specs/', updated: '2026-09-15' },
+  'galaxy-z-fold-8-ultra': { name: 'Samsung Galaxy Z Fold8 Ultra', image: '/images/samsung/zfold8/phone-ultra.webp', source: 'https://www.samsung.com/de/smartphones/galaxy-z-fold8-ultra/specs/', updated: '2026-09-15' },
+  'pixel-11': { name: 'Google Pixel 11', image: '/images/google/pixel11/pixel-frost.webp', source: 'https://store.google.com/de/product/pixel_11_specs?hl=de', updated: '2026-09-15' },
+  'pixel-11-pro-fold': { name: 'Google Pixel 11 Pro Fold', image: '/images/google/pixel11/fold-olive.webp', source: 'https://support.google.com/pixelphone/answer/7158570?hl=de', updated: '2026-09-15' },
 } as const;
 export type ShowcaseOverviewContent = {
   tagline: { de: string; en: string };

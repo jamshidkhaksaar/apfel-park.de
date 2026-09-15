@@ -307,33 +307,60 @@ export default function PixelShowcase({
     { category: isDe ? "Akku" : "Battery", pixel11: isDe ? "4.985 mAh typisch · Ladezubehör separat" : "4,985 mAh typical · charging accessories separate", proFold: isDe ? "4.806 mAh typisch · Ladezubehör separat" : "4,806 mAh typical · charging accessories separate" },
     { category: isDe ? "Updates & Schutz" : "Updates & protection", pixel11: isDe ? "7 Jahre Updates ab Markteinführung · IP68 ab Werk" : "7 years of updates from launch · IP68 when new", proFold: isDe ? "7 Jahre Updates ab Markteinführung · IP68 ab Werk" : "7 years of updates from launch · IP68 when new" },
   ];
-  // FAQ list
-  const faqs = [
+  // FAQ list (model-specific so the two Pixel pages are not near-duplicates)
+  const pixel11Faqs = [
     {
-      qDe: "Wann sind Google Pixel 11 und Pixel 11 Pro Fold in Deutschland erhältlich?",
-      qEn: "When are Google Pixel 11 and Pixel 11 Pro Fold available in Germany?",
+      qDe: "Wann ist das Google Pixel 11 in Deutschland erhältlich?",
+      qEn: "When is the Google Pixel 11 available in Germany?",
       aDe: "Bitte frage die gewünschte Ausführung unverbindlich an. Wir bestätigen Preis, Gerätezustand, Bestand und Liefertermin individuell. Diese Modellvorstellung ist keine Bestandszusage.",
       aEn: "Ask about your preferred configuration without obligation. We confirm price, condition, stock and delivery date individually. This showcase is not a stock guarantee.",
     },
     {
-      qDe: "Was zeichnet den neuen Google Tensor G6 Prozessor aus?",
-      qEn: "What makes the new Google Tensor G6 processor special?",
-      aDe: "Google nennt für beide Modelle Tensor G6 und den Sicherheitschip Titan M3. KI-Funktionen hängen von Sprache, Region, Konto und Verbindung ab.",
-      aEn: "Google lists Tensor G6 and the Titan M3 security chip for both models. AI features depend on language, region, account and connectivity.",
+      qDe: "Für wen passt das kompakte Pixel 11?",
+      qEn: "Who is the compact Pixel 11 for?",
+      aDe: "Das Pixel 11 hat ein 6,3-Zoll-OLED-Display (60–120 Hz), Tensor G6 und eine 48-MP-Hauptkamera mit 5-fachem Teleobjektiv. Es passt zu allen, die Pro-Funktionen in einer handlichen Größe suchen.",
+      aEn: "The Pixel 11 has a 6.3-inch OLED display (60–120 Hz), Tensor G6 and a 48 MP main camera with 5x telephoto. It suits anyone who wants Pro features in a handy size.",
     },
     {
-      qDe: "Welche Farbvarianten sind für Google Pixel 11 erhältlich?",
-      qEn: "Which color finishes are available for Google Pixel 11?",
-      aDe: "Google nennt Frost, Hibiscus, Pistachio und Obsidian für Pixel 11 sowie Olive und Obsidian für Pro Fold. Die Verfügbarkeit bei Apfel Park bitte anfragen.",
-      aEn: "Google lists Frost, Hibiscus, Pistachio and Obsidian for Pixel 11, and Olive and Obsidian for Pro Fold. Ask about availability at Apfel Park.",
+      qDe: "Welche Farben gibt es beim Pixel 11?",
+      qEn: "Which colours does the Pixel 11 come in?",
+      aDe: "Google nennt Frost, Hibiscus, Pistachio und Obsidian. Die Verfügbarkeit bei Apfel Park bitte anfragen.",
+      aEn: "Google lists Frost, Hibiscus, Pistachio and Obsidian. Ask about availability at Apfel Park.",
     },
     {
-      qDe: "Wie lange garantiert Google Software- und Sicherheitsupdates?",
-      qEn: "How long does Google guarantee software and security updates?",
+      qDe: "Wie lange liefert Google Updates für das Pixel 11?",
+      qEn: "How long does Google provide updates for the Pixel 11?",
       aDe: "Google nennt sieben Jahre Betriebssystem-, Sicherheits- und Pixel-Drop-Updates ab der ersten Verfügbarkeit im Google Store in den USA, nicht ab deinem Kaufdatum.",
       aEn: "Google lists seven years of OS, security and Pixel Drop updates from first availability in the US Google Store, not from your purchase date.",
     },
   ];
+  const proFoldFaqs = [
+    {
+      qDe: "Wann ist das Google Pixel 11 Pro Fold in Deutschland erhältlich?",
+      qEn: "When is the Google Pixel 11 Pro Fold available in Germany?",
+      aDe: "Bitte frage die gewünschte Ausführung unverbindlich an. Wir bestätigen Preis, Gerätezustand, Bestand und Liefertermin individuell. Diese Modellvorstellung ist keine Bestandszusage.",
+      aEn: "Ask about your preferred configuration without obligation. We confirm price, condition, stock and delivery date individually. This showcase is not a stock guarantee.",
+    },
+    {
+      qDe: "Wie robust ist das Scharnier des Pixel 11 Pro Fold?",
+      qEn: "How sturdy is the Pixel 11 Pro Fold hinge?",
+      aDe: "Das Pro Fold nutzt ein Scharnier aus mehreren Stahllegierungen mit einer Aluminiumabdeckung. Der Schutz vor Wasser und Staub ist nicht dauerhaft und kann durch Verschleiß oder Schäden abnehmen.",
+      aEn: "The Pro Fold uses a multi-alloy steel hinge with an aluminium alloy cover. Water and dust resistance are not permanent and can decrease with wear or damage.",
+    },
+    {
+      qDe: "Was unterscheidet das Pro Fold vom Pixel 11?",
+      qEn: "What sets the Pro Fold apart from the Pixel 11?",
+      aDe: "Das Pro Fold bietet ein 8-Zoll-Super-Actua-Flex-Innendisplay, 16 GB Arbeitsspeicher, bis zu 1 TB Speicher und ein Gehäuse mit 5,0 mm im geöffneten Zustand.",
+      aEn: "The Pro Fold offers an 8-inch Super Actua Flex inner display, 16 GB of memory, up to 1 TB of storage and a body just 5.0 mm thin when open.",
+    },
+    {
+      qDe: "Welche Farben gibt es beim Pixel 11 Pro Fold?",
+      qEn: "Which colours does the Pixel 11 Pro Fold come in?",
+      aDe: "Google nennt Olive und Obsidian. Die Verfügbarkeit bei Apfel Park bitte anfragen.",
+      aEn: "Google lists Olive and Obsidian. Ask about availability at Apfel Park.",
+    },
+  ];
+  const faqs = selectedModel === "proFold" ? proFoldFaqs : pixel11Faqs;
 
   const architectureCards = [
     {

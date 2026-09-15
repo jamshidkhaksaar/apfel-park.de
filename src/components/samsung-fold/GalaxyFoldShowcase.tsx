@@ -252,7 +252,7 @@ export default function GalaxyFoldShowcase({
     { category: isDe ? "Schutz & Software" : "Protection & software", fold8: isDe ? "IP48 unter Laborbedingungen · Android 17 / One UI 9" : "IP48 under laboratory conditions · Android 17 / One UI 9", ultra: isDe ? "IP48 unter Laborbedingungen · Android 17 / One UI 9" : "IP48 under laboratory conditions · Android 17 / One UI 9" },
   ];
   // FAQ entries
-  const faqs = [
+  const fold8Faqs = [
     {
       qDe: "Wann ist das Samsung Galaxy Z Fold8 in Deutschland erhältlich?",
       qEn: "When is the Samsung Galaxy Z Fold8 available in Germany?",
@@ -260,24 +260,51 @@ export default function GalaxyFoldShowcase({
       aEn: "Ask about your preferred model without obligation. We confirm price, stock, condition and delivery individually; this showcase is not a stock guarantee.",
     },
     {
-      qDe: "Wie unterscheidet sich das Galaxy Z Fold8 vom Z Fold8 Ultra?",
-      qEn: "How does the Galaxy Z Fold8 differ from the Z Fold8 Ultra?",
-      aDe: "Das Fold8 hat ein 7,6-Zoll-Innendisplay und zwei 50-MP-Rückkameras. Das Ultra bietet ein 8-Zoll-Innendisplay, eine 200-MP-Hauptkamera und ein 3-faches Teleobjektiv.",
-      aEn: "Fold8 has a 7.6-inch inner display and two 50 MP rear cameras. Ultra offers an 8-inch inner display, a 200 MP main camera and 3x telephoto.",
+      qDe: "Wie groß und schwer ist das Galaxy Z Fold8?",
+      qEn: "How large and heavy is the Galaxy Z Fold8?",
+      aDe: "Das Fold8 hat ein 7,6-Zoll-Innendisplay und wiegt 201 g bei 4,5 mm im geöffneten und 9,7 mm im geschlossenen Zustand (Herstellerangaben).",
+      aEn: "The Fold8 has a 7.6-inch inner display and weighs 201 g at 4.5 mm open and 9.7 mm closed (manufacturer figures).",
     },
     {
-      qDe: "Hat das Galaxy Z Fold8 einen störenden Falz im Innendisplay?",
-      qEn: "Does the Galaxy Z Fold8 have a noticeable screen crease?",
-      aDe: "Die Flex-Titanium-Displaystruktur soll den Falz reduzieren. Wahrnehmung und Sichtbarkeit hängen von Blickwinkel, Beleuchtung und Nutzung ab.",
-      aEn: "The Flex Titanium display structure is designed to reduce the crease. Visibility depends on viewing angle, lighting and use.",
+      qDe: "Wie ist die Kamera des Galaxy Z Fold8 aufgestellt?",
+      qEn: "What is the Galaxy Z Fold8 camera like?",
+      aDe: "Das Fold8 hat zwei 50-MP-Rückkameras (Weitwinkel und Ultraweitwinkel). Ein Teleobjektiv bietet erst das Z Fold8 Ultra.",
+      aEn: "The Fold8 has two 50 MP rear cameras (wide and ultrawide). A telephoto is offered only on the Z Fold8 Ultra.",
     },
     {
-      qDe: "Sind die Geräte ohne Vertrag und für alle SIM-Karten geeignet?",
-      qEn: "Are the devices unlocked without contract for all carriers?",
-      aDe: "Netz- und SIM-Kompatibilität hängen vom konkreten Modell und Anbieter ab. Wir klären die gewünschte Ausführung vor einem Kauf.",
-      aEn: "Network and SIM compatibility depend on the specific model and carrier. We confirm the configuration before purchase.",
+      qDe: "Ist das Galaxy Z Fold8 wasserfest?",
+      qEn: "Is the Galaxy Z Fold8 water-resistant?",
+      aDe: "Samsung gibt IP48 unter Laborbedingungen an. Der Schutz ist nicht dauerhaft und kann durch Verschleiß oder Schäden abnehmen.",
+      aEn: "Samsung rates IP48 under laboratory conditions. Protection is not permanent and can decrease with wear or damage.",
     },
   ];
+  const ultraFaqs = [
+    {
+      qDe: "Wann ist das Samsung Galaxy Z Fold8 Ultra in Deutschland erhältlich?",
+      qEn: "When is the Samsung Galaxy Z Fold8 Ultra available in Germany?",
+      aDe: "Bitte frage dein Wunschmodell unverbindlich an. Preis, Bestand, Gerätezustand und Liefertermin bestätigen wir individuell; die Modellvorstellung ist keine Bestandszusage.",
+      aEn: "Ask about your preferred model without obligation. We confirm price, stock, condition and delivery individually; this showcase is not a stock guarantee.",
+    },
+    {
+      qDe: "Was kann die 200-MP-Kamera des Z Fold8 Ultra?",
+      qEn: "What can the Z Fold8 Ultra's 200 MP camera do?",
+      aDe: "Das Ultra kombiniert eine 200-MP-Hauptkamera mit einem 50-MP-Ultraweitwinkel und einem 10-MP-Teleobjektiv mit 3-fachem Zoom (Herstellerangaben).",
+      aEn: "The Ultra combines a 200 MP main camera with a 50 MP ultrawide and a 10 MP telephoto with 3x zoom (manufacturer figures).",
+    },
+    {
+      qDe: "Wie groß ist das Galaxy Z Fold8 Ultra?",
+      qEn: "How large is the Galaxy Z Fold8 Ultra?",
+      aDe: "Das Ultra hat ein 8-Zoll-Innendisplay, wiegt 215 g und misst 4,1 mm geöffnet bzw. 8,9 mm geschlossen (Herstellerangaben).",
+      aEn: "The Ultra has an 8-inch inner display, weighs 215 g and measures 4.1 mm open and 8.9 mm closed (manufacturer figures).",
+    },
+    {
+      qDe: "Ist das Galaxy Z Fold8 Ultra wasserfest?",
+      qEn: "Is the Galaxy Z Fold8 Ultra water-resistant?",
+      aDe: "Samsung gibt IP48 unter Laborbedingungen an. Der Schutz ist nicht dauerhaft und kann durch Verschleiß oder Schäden abnehmen.",
+      aEn: "Samsung rates IP48 under laboratory conditions. Protection is not permanent and can decrease with wear or damage.",
+    },
+  ];
+  const faqs = selectedModel === "ultra" ? ultraFaqs : fold8Faqs;
 
   const architectureCards = [
     { key: "snapdragon", accent: ARCH_ACCENTS.gold, Icon: SnapdragonCpuSvg, tag: "for Galaxy", title: "Snapdragon 8 Elite Gen 5", highlight: "Galaxy AI",

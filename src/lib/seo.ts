@@ -6,6 +6,7 @@ import { accessoryCollectionSlugs, getAccessoryCollection } from "@/lib/accessor
 import { countActiveSubcategoryProducts, getProducts } from "@/lib/products";
 import { isRepairBenchmarkPublished } from "@/lib/repair-price-benchmark";
 import { repairServiceSlugs } from "@/lib/repair-services";
+import { showcasePages, type ShowcaseSlug } from "@/lib/showcase-pages";
 import {
   buildDefaultSeoSettings,
   getSeoRouteIdByPath,
@@ -171,8 +172,15 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     const category = categoryRoutes[route.id];
     if (category && !stockedCategories.has(category as (typeof products)[number]["category"])) return [];
 
+    // Editorial showcase pages carry their own content date so improving them
+    // moves the sitemap lastmod and prompts a recrawl of the refreshed copy.
+    const slug = route.path.slice(1);
+    const showcase = slug in showcasePages ? showcasePages[slug as ShowcaseSlug] : null;
+    const lastModified = showcase?.updated ? new Date(showcase.updated) : undefined;
+
     return locales.map((locale) => ({
       url: `${siteInfo.url}/${locale}${route.path}`,
+      lastModified,
       alternates: {
         languages: {
           de: `${siteInfo.url}/de${route.path}`,
