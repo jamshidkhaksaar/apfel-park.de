@@ -61,7 +61,7 @@ try{
     assert.equal(await page.evaluate(()=>window.copied),'MONTAG10');
     await page.getByText(lang==='de'?'Bedingungen':'Terms',{exact:true}).click();
     assert.match(await page.locator('details').innerText(),lang==='de'?/Zubehör und Reparaturen/:/Accessories and repairs/);
-    assert.ok(await page.locator('button').evaluate(e=>e.getBoundingClientRect().height)>=44);
+    assert.ok(await page.getByRole('button',{name:/MONTAG10/}).evaluate(e=>e.getBoundingClientRect().height)>=44);
     if(lang==='de'&&(width===390||width===1440))await page.screenshot({path:`${output}/banner-${width}.png`});
     await page.emulateMedia({reducedMotion:'reduce'});
     assert.equal(await page.locator('[data-promotion-banner]').evaluate(e=>getComputedStyle(e).animationName),'none');
