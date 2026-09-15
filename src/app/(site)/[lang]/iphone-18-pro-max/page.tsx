@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import IPhone18Showcase from '@/components/iphone-18/IPhone18Showcase';
 import ShowcaseDisclosure from '@/components/ShowcaseDisclosure';
+import ShowcaseModelLinks from '@/components/ShowcaseModelLinks';
 import { createMetadata } from '@/lib/metadata';
 import { requireLocale } from '@/lib/route-locale';
 import { safeJsonStringify } from '@/lib/security';
@@ -22,6 +23,7 @@ export default async function ShowcasePage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(buildShowcaseSchema(slug, lang)) }} />
       <ShowcaseDisclosure lang={lang} slug={slug} />
       <IPhone18Showcase locale={lang} initialModel="promax" />
+      <ShowcaseModelLinks lang={lang} slug={slug} />
     </>
   );
 }
