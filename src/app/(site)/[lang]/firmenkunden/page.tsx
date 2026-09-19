@@ -59,6 +59,9 @@ const IconInvoice = () => (
 const IconChat = () => (
   <Icon className="h-5 w-5"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12Z" /></Icon>
 );
+const IconDownload = () => (
+  <Icon><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></Icon>
+);
 
 export default async function BusinessCustomersPage({ params }: { params: Promise<{ lang: string }> }) {
   const lang = requireLocale((await params).lang);
@@ -199,6 +202,30 @@ export default async function BusinessCustomersPage({ params }: { params: Promis
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="flex flex-col items-start justify-between gap-5 rounded-2xl border border-border bg-surface/40 px-6 py-5 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-3">
+              <span className="shrink-0 text-gold"><IconDownload /></span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {isGerman ? "Unternehmensprofil (PDF)" : "Company profile (PDF)"}
+                </p>
+                <p className="text-xs leading-5 text-muted">
+                  {isGerman
+                    ? "Firmenprofil, Leistungen und Kontaktdaten zum Weiterleiten an Ihre Einkaufs- oder IT-Abteilung."
+                    : "Profile, services and contact details to forward to your procurement or IT team."}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <a href="/downloads/apfel-park-unternehmensprofil.pdf" download className="btn-secondary">
+                {isGerman ? "Deutsch (PDF)" : "German (PDF)"}
+              </a>
+              <a href="/downloads/apfel-park-company-profile.pdf" download className="btn-secondary">
+                {isGerman ? "Englisch (PDF)" : "English (PDF)"}
+              </a>
+            </div>
           </div>
 
           <div>
