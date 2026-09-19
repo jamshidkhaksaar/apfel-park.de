@@ -17,6 +17,7 @@ const q=new URLSearchParams(location.search),locale=q.get('lang')||'de',view=q.g
 const promotion=${JSON.stringify(promotion)};
 if(q.has('expiry')){promotion.expiresInSeconds=2;promotion.endsAt=new Date(Date.now()+2000).toISOString();}
 if(q.has('permanent'))promotion.endsAt=null;
+if(q.has('mixed')){promotion.categories=['smartphones','accessories'];promotion.categoryWide=['smartphones'];promotion.selectedProductIds=['fixture-phone'];promotion.includesSelected=true;}
 if(q.has('accessories')){promotion.categories=['accessories'];promotion.code='DIENSTAG20';promotion.discountValue=20;}
 window.copied='';Object.defineProperty(navigator,'clipboard',{value:{writeText:async text=>{window.copied=text;}},configurable:true});
 createRoot(document.getElementById('root')).render(<main className="container-page py-6">{view==='admin'?<Admin locale={locale}/>:view==='campaign'?<Campaign locale={locale}/>:view==='cart'?<Cart locale={locale}/>:view==='checkout'?<Checkout locale={locale} initialShippingMethod="pickup" initialCoupon="MONTAG10" couponEnabled={true}/>:<Banner promotion={promotion} locale={locale}/>}</main>);`;
@@ -41,12 +42,12 @@ async function pageFor(view,lang='de',width=390,extra=''){
   await page.addInitScript(()=>localStorage.setItem('apfel-cart-v1',JSON.stringify([{productId:'fixture-phone',variantColor:null,variantStorage:null,quantity:1}])));
   await page.route('**/api/**',async route=>{
     const req=route.request(),path=new URL(req.url()).pathname,body=req.postDataJSON();calls.push({path,method:req.method(),body});
-    if(path==='/api/store/promotion')return route.fulfill({json:{promotion}});
+    if(path==='/api/store/promotion')return route.fulfill({json:{promotion:extra.includes('mixed')?{...promotion,categories:['smartphones','accessories'],categoryWide:['smartphones'],selectedProductIds:[extra.includes('unselected')?'another-case':'fixture-phone'],includesSelected:true}:promotion}});
     if(path==='/api/admin/promotion-banner')return route.fulfill({json:{success:true,settings:req.method()==='PUT'?body:{enabled:false,campaignId:campaign.id,headline:{de:'',en:''}}}});
     if(path==='/api/admin/campaigns')return route.fulfill({json:{success:true,campaigns:[campaign],products:[],id:campaign.id}});
     if(path==='/api/cart/validate'){
       const qty=body.items[0]?.quantity||1,total=qty*100;
-      return route.fulfill({json:{success:true,suggestions:[],cart:{currency:'EUR',subtotalAmount:total,subtotalAmountCents:total*100,totalAmount:total,totalAmountCents:total*100,shippingAmount:0,shippingAmountCents:0,vatAmount:15.97*qty,vatAmountCents:1597*qty,vatRate:.19,items:[{key:'fixture',productId:'fixture-phone',title:'Fixture Phone',slug:'fixture-phone',category:'smartphones',condition:'new',quantity:qty,variantColor:null,variantStorage:null,unitAmount:100,unitAmountCents:10000,lineAmount:total,lineAmountCents:total*100,stock:5}]}}});
+      return route.fulfill({json:{success:true,suggestions:[],cart:{currency:'EUR',subtotalAmount:total,subtotalAmountCents:total*100,totalAmount:total,totalAmountCents:total*100,shippingAmount:0,shippingAmountCents:0,vatAmount:15.97*qty,vatAmountCents:1597*qty,vatRate:.19,items:[{key:'fixture',productId:'fixture-phone',title:'Fixture Phone',slug:'fixture-phone',category:extra.includes('mixed')?'accessories':'smartphones',condition:'new',quantity:qty,variantColor:null,variantStorage:null,unitAmount:100,unitAmountCents:10000,lineAmount:total,lineAmountCents:total*100,stock:5}]}}});
     }
     if(path==='/api/coupons/validate')return route.fulfill({json:{success:true,code:'MONTAG10',discountAmountCents:1000,previewTotalAmountCents:9000,previewVatAmountCents:1437}});
     return route.fulfill({status:400,json:{error:'Unexpected fixture API'}});
@@ -111,6 +112,21 @@ try{
     const {page,context,calls,errors}=await pageFor('checkout');await page.getByText('Gutschein angewendet.',{exact:true}).waitFor();
     assert.equal(await page.locator('#checkout-coupon').inputValue(),'MONTAG10');assert.equal(calls.filter(c=>c.path==='/api/coupons/validate').length,1);
     assert.ok(!calls.some(c=>/payments|orders/.test(c.path)));assert.deepEqual(errors,[]);results.push({view:'checkout revalidates transferred code once',pass:true});await context.close();
+  }
+  for(const lang of ['de','en'])for(const eligible of [true,false]){
+    const {page,context,calls,errors}=await pageFor('cart',lang,390,eligible?'&mixed':'&mixed&unselected');
+    await page.getByText('Fixture Phone',{exact:true}).waitFor();
+    await page.waitForTimeout(150);
+    assert.ok(calls.some(c=>c.path==='/api/store/promotion'));
+    if(eligible){
+      await page.getByRole('button',{name:lang==='de'?'Gutschein anwenden':'Apply coupon',exact:true}).waitFor();
+      const text=await page.locator('[data-cart-promotion]').innerText();
+      assert.match(text,lang==='de'?/ausgewählte Artikel: Zubehör/:/selected items: accessories/);
+      assert.ok(!text.includes('Zubehör und Reparaturen')&&!text.includes('Accessories and repairs'));
+      await page.getByRole('button',{name:lang==='de'?'Gutschein anwenden':'Apply coupon',exact:true}).click();
+      await page.getByRole('button',{name:lang==='de'?'Gutschein entfernen':'Remove coupon',exact:true}).waitFor();
+    }else{assert.equal(await page.locator('[data-cart-promotion]').count(),0);}
+    assert.deepEqual(errors,[]);results.push({view:'mixed-scope accessory basket',lang,eligible,pass:true});await context.close();
   }
   await writeFile(`${output}/results.json`,JSON.stringify(results,null,2));console.log(JSON.stringify({passed:results.length,output}));
 }finally{await browser.close();await new Promise(r=>server.close(r));}

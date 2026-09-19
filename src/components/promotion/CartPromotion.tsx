@@ -2,11 +2,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ShippingMethod } from '@/lib/checkout';
 import type { StoredCartItem } from '@/components/checkout/cart';
-import { promotionDiscount, promotionExclusions, promotionScope } from '@/lib/promotion';
+import { promotionDiscount, promotionExclusions, promotionScope, promotionMatchesCart } from '@/lib/promotion';
 import { usePromotion } from './usePromotion';
 
 export type CartCouponPreview = {key:string;code:string;discountAmountCents:number;previewTotalAmountCents:number;previewVatAmountCents:number;expiresAt:number|null};
-export default function CartPromotion({locale,items,categories,shippingMethod,cartKey,applied,onApplied,onBusy}:{locale:'de'|'en';items:StoredCartItem[];categories:string[];shippingMethod:ShippingMethod;cartKey:string;applied:CartCouponPreview|null;onApplied:(value:CartCouponPreview|null)=>void;onBusy:(busy:boolean)=>void}){
+export default function CartPromotion({locale,items,eligibilityItems,shippingMethod,cartKey,applied,onApplied,onBusy}:{locale:'de'|'en';items:StoredCartItem[];eligibilityItems:Array<{productId:string;category:string}>;shippingMethod:ShippingMethod;cartKey:string;applied:CartCouponPreview|null;onApplied:(value:CartCouponPreview|null)=>void;onBusy:(busy:boolean)=>void}){
   const promotion=usePromotion(''),de=locale==='de';
   const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
   const alive=useRef(true);
@@ -25,7 +25,7 @@ export default function CartPromotion({locale,items,categories,shippingMethod,ca
     }catch{if(alive.current){onApplied(null);setMessage(de?'Dieser Gutschein passt aktuell nicht zum Warenkorb oder ist nicht mehr gültig. Mindestbestellwert und Artikel prüfen.':'This coupon is not valid for the current basket or is no longer available. Check the minimum spend and eligible items.');}}
     finally{if(alive.current){setBusy(false);onBusy(false);}}
   };
-  if(!applied&&(!promotion||!categories.some(c=>promotion.categories.includes(c))))return null;
+  if(!applied&&(!promotion||!promotionMatchesCart(promotion,eligibilityItems)))return null;
   return <div className="mt-5 rounded-xl border border-gold/40 bg-gold/5 p-4" data-cart-promotion>
     <p className="text-sm font-semibold text-foreground">{applied?`${de?'Gutschein':'Coupon'} ${applied.code}`:`${promotionDiscount(promotion!,locale)} ${de?'mit Gutscheincode':'with code'} ${promotion!.code}`}</p>
     {promotion?<p className="mt-1 text-xs leading-5 text-muted">{promotionScope(promotion,locale)}. {promotion.categories.includes('repairs')?(de?'Nur bepreiste Katalog-Reparaturen.':'Priced catalog repairs only.'):promotionExclusions(promotion,locale)}</p>:null}

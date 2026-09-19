@@ -36,7 +36,7 @@ export default function AdminPromotionBanner({locale}:{locale:'de'|'en'}){
   };
   const preview:PublicPromotion|null=selected?{repairRules:selected.eligible_categories.includes('repairs')?normalizeRepairRules(selected.repair_rules):undefined,id:selected.id,code:selected.code,discountType:selected.discount_type as 'percent'|'fixed',discountValue:Number(selected.discount_value),minimumOrder:Number(selected.minimum_order),
     startsAt:selected.starts_at?new Date(selected.starts_at).toISOString():null,endsAt:selected.ends_at?new Date(selected.ends_at).toISOString():null,
-    headline:settings.headline,categories:selected.eligible_categories.length?selected.eligible_categories:selectedCategories,includesSelected:selected.eligible_product_ids.length>0,selectedOnly:selected.eligible_categories.length===0,
+    headline:settings.headline,categories:[...new Set([...selected.eligible_categories,...selectedCategories])],categoryWide:selected.eligible_categories,selectedProductIds:products.filter(p=>selected.eligible_product_ids.includes(p.id)).map(p=>p.id),includesSelected:selected.eligible_product_ids.length>0,selectedOnly:selected.eligible_categories.length===0,
     expiresInSeconds:selected.ends_at?Math.max(0,Math.floor((new Date(selected.ends_at).getTime()-now)/1000)):0}:null;
   const save=async()=>{setBusy(true);setMessage('');try{
     const response=await fetch('/api/admin/promotion-banner',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(settings)});

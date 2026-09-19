@@ -59,10 +59,18 @@ Create replacement values from the `.example` files during migration, then resto
 
 ## Deploying
 
-    /srv/apfel-park/app/source/deployment/vps/scripts/deploy-app.sh [ref]
+    /srv/apfel-park/app/source/deployment/vps/scripts/deploy-app.sh <ref>
 
-Defaults to `origin/<branch checked out in the source clone>`. The script
-fetches origin, exports the commit with `git archive` into a fresh
+An explicit committed, pushed ref is required; omitting it fails before fetching.
+The target must include the currently deployed commit (or equal it). The script
+checks again before activation, so a newer live release cannot be silently overwritten
+by an older or divergent build. For a deliberate operator-approved rollback only,
+use `ALLOW_NON_FORWARD_DEPLOY=1 bash scripts/deploy.sh <previous-sha>`.
+Automatic rollback after a failed activation health check is unchanged.
+After successful verification, fast-forward the clean source checkout and its tracked
+branch to the deployed commit; never reset away another contributor's changes.
+
+The script fetches origin, exports the commit with `git archive` into a fresh
 `releases/<timestamp>-<sha>` directory, runs `npm ci`, `npm test` and
 `npm run build`, flips
 the `current` symlink atomically, restarts the service, health-checks it, and

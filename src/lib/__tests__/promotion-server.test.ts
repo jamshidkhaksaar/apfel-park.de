@@ -21,3 +21,14 @@ it('returns the selected campaign on an eligible product detail page',async()=>{
 it('hides inactive and limit-exhausted campaigns without a product query',async()=>{
   seed({...campaign,redemption_count:100});expect(await getPublicPromotion({slug:'phone'})).toBeNull();expect(query).toHaveBeenCalledTimes(2);
 });
+it('preserves mixed scope through the public API projection',async()=>{
+  const selectedId='22222222-2222-4222-8222-222222222222';
+  query.mockResolvedValueOnce({rows:[{value:{enabled:true,campaignId:id}}]}).mockResolvedValueOnce({rows:[{...campaign,eligible_categories:['smartphones'],eligible_product_ids:[selectedId]}]}).mockResolvedValueOnce({rows:[{id:selectedId,category:'accessories',is_active:true}]});
+  const result=await getPublicPromotion({category:'accessories'});
+  expect(result).toMatchObject({categories:['smartphones','accessories'],categoryWide:['smartphones'],selectedProductIds:[selectedId],selectedOnly:false});
+});
+it('does not publish inactive selected products or their IDs',async()=>{
+  const selectedId='22222222-2222-4222-8222-222222222222';
+  query.mockResolvedValueOnce({rows:[{value:{enabled:true,campaignId:id}}]}).mockResolvedValueOnce({rows:[{...campaign,eligible_categories:[],eligible_product_ids:[selectedId]}]}).mockResolvedValueOnce({rows:[{id:selectedId,category:'accessories',is_active:false}]});
+  expect(await getPublicPromotion()).toBeNull();
+});

@@ -364,7 +364,7 @@ export default function CartClient({ locale }: Props) {
           </div>
         </section>
 
-        {cart && !loading ? <CartPromotion key={couponKey} locale={locale} items={items} categories={cart.items.map(item=>item.category)} shippingMethod={shippingMethod} cartKey={couponKey} applied={activeCoupon} onApplied={setCouponPreview} onBusy={setCouponBusy}/> : null}
+        {cart && !loading ? <CartPromotion key={couponKey} locale={locale} items={items} eligibilityItems={cart.items} shippingMethod={shippingMethod} cartKey={couponKey} applied={activeCoupon} onApplied={setCouponPreview} onBusy={setCouponBusy}/> : null}
         <div className="mt-6 space-y-3 border-t border-border/60 pt-5 text-sm">
           {activeCoupon?<div className="flex justify-between text-green"><span>{locale==="de"?"Gutschein":"Coupon"} {activeCoupon.code}</span><span>−{formatMoney(locale,activeCoupon.discountAmountCents/100)}</span></div>:null}
           <div className="flex justify-between text-muted">

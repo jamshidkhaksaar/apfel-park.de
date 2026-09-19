@@ -7,6 +7,8 @@ export type PublicPromotion = {
   id:string; code:string; discountType:'percent'|'fixed'; discountValue:number; minimumOrder:number;
   endsAt:string|null; startsAt:string|null; headline:{de:string;en:string};
   categories:string[]; includesSelected:boolean; selectedOnly:boolean; expiresInSeconds:number; repairRules?:import('./repair-campaign-rules').RepairCampaignRules;
+  /** Full-category rules stay distinct from individually selected public products. */
+  categoryWide?:string[]; selectedProductIds?:string[];
 };
 export const emptyPromotion = (): PromotionSettings => ({enabled:false,campaignId:null,headline:{de:'',en:''}});
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -48,7 +50,7 @@ export const promotionSurface = (pathname:string, query:string): {category?:stri
   const category=new URLSearchParams(query).get('category');
   if(category && category!=='all' && !isBannerCategory(category) && category!=='open-box-smartphones-tablets') return null;
   if(path==='/repairs'||path.startsWith('/repairs/'))return {category:'repairs'};
-  if(path==='/accessories')return {category:'accessories'};
+  if(/^\/accessories(?:\/[^/]+)?$/.test(path))return {category:'accessories'};
   if(path==='/'||path==='/store') return category&&category!=='all'&&category!=='open-box-smartphones-tablets'?{category}:{};
   if(path==='/tablets'||path==='/laptops') return {category:path.slice(1)};
   if(['/smartphones','/samsung-handys','/xiaomi-redmi-handys','/handys-ohne-vertrag','/gebrauchte-handys','/gebrauchte-iphones','/iphone-17','/iphone-16-pro-max','/open-box'].includes(path)) return {category:'smartphones'};
@@ -57,9 +59,16 @@ export const promotionSurface = (pathname:string, query:string): {category?:stri
 };
 const labels:Record<string,[string,string]>={smartphones:['Smartphones','smartphones'],tablets:['Tablets','tablets'],laptops:['Laptops','laptops'],accessories:['Zubehör','accessories'],repairs:['Reparaturen','repairs']};
 export const promotionScope = (promo:PublicPromotion,locale:'de'|'en'):string => {
-  const names=promo.categories.map(c=>labels[c]?.[locale==='de'?0:1]).filter(Boolean).join(', ');
-  if(promo.selectedOnly)return locale==='de'?`Auf ausgewählte ${names}`:`On selected ${names}`;
-  return locale==='de'?`Auf ${names}${promo.includesSelected?' und weitere ausgewählte Geräte':''}`:`On ${names}${promo.includesSelected?' and other selected devices':''}`;
+  const names=(categories:string[])=>categories.map(c=>labels[c]?.[locale==='de'?0:1]).filter(Boolean).join(', ');
+  const broad=promo.categoryWide??(promo.selectedOnly?[]:promo.categories);
+  if(!broad.length)return locale==='de'?`Auf ausgewählte Artikel: ${names(promo.categories)}`:`On selected items: ${names(promo.categories)}`;
+  const selected=promo.categories.filter(c=>!broad.includes(c));
+  const extra=selected.length?(locale==='de'?` sowie ausgewählte Artikel: ${names(selected)}`:` plus selected items: ${names(selected)}`):'';
+  return `${locale==='de'?'Auf':'On'} ${names(broad)}${extra}`;
+};
+export const promotionMatchesCart = (promo:PublicPromotion,items:Array<{productId:string;category:string}>):boolean => {
+  const broad=promo.categoryWide??(promo.selectedOnly?[]:promo.categories);
+  return items.some(item=>broad.includes(item.category)||promo.selectedProductIds?.includes(item.productId));
 };
 export const promotionDiscount = (promo:PublicPromotion,locale:'de'|'en'):string => promo.discountType==='percent'
   ? `${new Intl.NumberFormat(locale).format(promo.discountValue)} %`

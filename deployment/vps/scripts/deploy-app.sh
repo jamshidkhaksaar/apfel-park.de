@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Deploy the Apfel Park Next.js app from a committed, pushed git ref.
 #
-#   deploy-app.sh [ref]     # default: origin/<branch checked out in source clone>
+#   deploy-app.sh <ref>    # explicit committed, pushed ref required
+#   ALLOW_NON_FORWARD_DEPLOY=1 deploy-app.sh <ref>  # intentional rollback only
 #
 # Why this exists: releases used to be made by copying the previous release
 # directory and editing it in place. Every release dir ended up a dirty git
@@ -27,17 +28,21 @@ export PATH=/root/.nvm/versions/node/v24.14.0/bin:$PATH
 log() { printf '[deploy] %s\n' "$*"; }
 die() { printf '[deploy] ERROR: %s\n' "$*" >&2; exit 1; }
 
+[ "$#" -eq 1 ] && [ -n "$1" ] || die "usage: deploy-app.sh <explicit git ref>; no implicit branch deployment"
+TARGET_CHECK="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check-deploy-target.sh"
+
 [ -f "$ENV_FILE" ]    || die "missing env file: $ENV_FILE"
 [ -d "$SOURCE/.git" ] || die "missing source clone at $SOURCE"
 
 log "fetching origin"
 git -C "$SOURCE" fetch origin --prune --tags --quiet
 
-branch="$(git -C "$SOURCE" rev-parse --abbrev-ref HEAD)"
-ref="${1:-origin/$branch}"
+ref="$1"
 sha="$(git -C "$SOURCE" rev-parse --verify "$ref^{commit}" 2>/dev/null)" \
   || die "ref not found: $ref"
 export DEPLOYMENT_VERSION="$sha"
+live_sha="$(cat "$CURRENT/.deployed-sha" 2>/dev/null || true)"
+bash "$TARGET_CHECK" "$SOURCE" "$live_sha" "$sha" || die "deployment target failed the forward-release check"
 
 # Refuse a commit that exists only locally -- deploying it would recreate the
 # exact "it only lives on the VPS" problem this script was written to prevent.
@@ -118,6 +123,8 @@ bash "$release/deployment/vps/scripts/preserve-static-assets.sh" \
   "$APP_ROOT/shared/next-static" "$RELEASES"/*/.next/static "$release/.next/static"
 
 previous="$(readlink -e "$CURRENT" 2>/dev/null || true)"
+live_sha="$(cat "$CURRENT/.deployed-sha" 2>/dev/null || true)"
+bash "$TARGET_CHECK" "$SOURCE" "$live_sha" "$sha" || die "live release changed during the build; refusing to overwrite it"
 worker_present=0
 if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then worker_present=1; fi
 
