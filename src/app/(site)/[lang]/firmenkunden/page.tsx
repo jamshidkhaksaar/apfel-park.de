@@ -233,12 +233,14 @@ export default async function BusinessCustomersPage({ params }: { params: Promis
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {isGerman ? "Was wir für Unternehmen übernehmen" : "What we handle for businesses"}
             </h2>
-            <div className="mt-8 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2" data-business-services>
               {services.map(service => (
-                <div key={service.title} className="bg-background p-6">
-                  <span className="inline-flex text-gold">{service.icon}</span>
-                  <h3 className="mt-4 font-semibold text-foreground">{service.title}</h3>
-                  <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
+                <article key={service.title} className="min-w-0 rounded-2xl border border-border bg-background p-5 sm:p-6 sm:last:odd:col-span-2">
+                  <div className="flex items-center gap-3">
+                    <span aria-hidden="true" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gold/20 bg-gold/5 text-gold">{service.icon}</span>
+                    <h3 className="font-semibold leading-snug text-foreground">{service.title}</h3>
+                  </div>
+                  <ul className="mt-5 space-y-2.5 text-sm leading-relaxed text-muted">
                     {service.body.map(item => (
                       <li key={item} className="flex items-start gap-2.5">
                         <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-gold" />
@@ -246,7 +248,7 @@ export default async function BusinessCustomersPage({ params }: { params: Promis
                       </li>
                     ))}
                   </ul>
-                </div>
+                </article>
               ))}
             </div>
           </div>
