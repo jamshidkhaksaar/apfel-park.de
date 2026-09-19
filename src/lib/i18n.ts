@@ -73,6 +73,7 @@ export const dictionary = {
       catalogLink: { label: "Alle Produkte A–Z", path: "/store/catalog" },
       companyLinks: [
         { label: "Über uns", path: "/about" },
+        { label: "Firmenkunden & B2B", path: "/firmenkunden" },
         { label: "FAQ", path: "/faq" },
         { label: "Ratgeber: Smartphone länger nutzen", path: "/ratgeber/smartphone-laenger-nutzen" },
         { label: "Gerätezustände & Rechte", path: "/device-conditions" },
@@ -796,6 +797,7 @@ export const dictionary = {
       catalogLink: { label: "All Products A–Z", path: "/store/catalog" },
       companyLinks: [
         { label: "About", path: "/about" },
+        { label: "Business & B2B", path: "/firmenkunden" },
         { label: "FAQ", path: "/faq" },
         { label: "Guide: Make your smartphone last longer", path: "/ratgeber/smartphone-laenger-nutzen" },
         { label: "Device conditions & rights", path: "/device-conditions" },

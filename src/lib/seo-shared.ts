@@ -32,6 +32,7 @@ export type SeoRouteId =
   | "faq"
   | "deviceConditions"
   | "deliveryReturns"
+  | "business"
   | "withdrawal"
   | "impressum"
   | "privacy"
@@ -665,6 +666,25 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     defaultKeywords: {
       de: "Versand Apfel Park, Rückgabe Apfel Park, Lieferzeit Hamburg",
       en: "shipping Apfel Park, returns Apfel Park, delivery Hamburg",
+    },
+  },
+  {
+    id: "business",
+    path: "/firmenkunden",
+    labels: { de: "Firmenkunden & B2B", en: "Business & B2B" },
+    priority: 0.7,
+    changeFrequency: "monthly",
+    defaultTitle: {
+      de: "Handy-Reparatur für Unternehmen in Hamburg | Apfel Park",
+      en: "Phone repair & device procurement for businesses in Hamburg | Apfel Park",
+    },
+    defaultDescription: {
+      de: "Reparaturen, Geräte und Zubehör für Hamburger Unternehmen: Firmengeräte-Reparatur, Mengenbestellungen und Gerätebeschaffung auf Rechnung. Angebot in 1–2 Werktagen.",
+      en: "Repairs, devices and accessories for Hamburg businesses: company device repair, bulk orders and device procurement on invoice. Quote within 1–2 business days.",
+    },
+    defaultKeywords: {
+      de: "Handy Reparatur Firma Hamburg, Firmengeräte Reparatur Hamburg, B2B Handy Hamburg, Handyzubehör Mengen, Firmenhandy Service Hamburg",
+      en: "business phone repair Hamburg, B2B phone services Hamburg, company device repair Hamburg",
     },
   },
   {
