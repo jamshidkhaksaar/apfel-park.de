@@ -397,6 +397,23 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
         </div>
       </section>
 
+      {/* B2B link */}
+      <section className="border-b border-border/60 py-8">
+        <div className="container-page flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <p className="text-sm text-muted">
+            {lang === "de"
+              ? "Sie reparieren Firmengeräte oder benötigen mehrere Geräte? Wir betreuen Unternehmen in Hamburg — auf Rechnung."
+              : "Repairing company devices or need several units? We serve businesses in Hamburg — on invoice."}
+          </p>
+          <Link
+            href={`/${lang}/firmenkunden`}
+            className="inline-flex min-h-11 shrink-0 items-center font-semibold text-gold underline underline-offset-4"
+          >
+            {lang === "de" ? "Für Unternehmen & B2B" : "For businesses & B2B"}
+          </Link>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="section-pad bg-surface/30">
         <div className="container-page">
