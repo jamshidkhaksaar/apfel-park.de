@@ -9,7 +9,7 @@ import { MINI_CART_OPEN_EVENT } from "@/components/checkout/MiniCart";
 import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
 import { shouldBypassImageOptimization } from "@/lib/image";
-import { getFamilyOptionTarget, localizedText, type ExperienceProductSummary, type ProductExperienceProfile, type ProductFamilyView } from "@/lib/product-experience";
+import { formatStorageLabel, getFamilyOptionTarget, localizedText, type ExperienceProductSummary, type ProductExperienceProfile, type ProductFamilyView } from "@/lib/product-experience";
 
 const sectionClass = "rounded-2xl border border-border bg-store-card p-5 sm:p-7";
 const WISHLIST_KEY = "apfel-wishlist-v1";
@@ -50,7 +50,8 @@ export function ProductFamilyConfigurator({ family, locale }: { family: ProductF
     <div className="mt-4 space-y-4">{axes.map(axis => <div key={axis}><p className="text-xs font-semibold text-muted">{labels[axis] ?? axis}</p><div className="mt-2 flex flex-wrap gap-2">{Array.from(new Set(family.members.map(member => member.optionValues[axis]).filter(Boolean))).map(value => {
       const member = getFamilyOptionTarget(family, axis, value);
       const classes = `min-h-11 rounded-xl border px-4 py-2.5 text-sm ${member?.selected ? 'border-gold bg-gold/10 text-foreground' : 'border-border text-muted'}`;
-      return member ? <Link key={value} href={`/${locale}/store/${member.slug}`} aria-current={member.selected ? 'page' : undefined} className={classes}>{labels[value] ?? value}{member.stock <= 0 ? ` · ${locale === 'de' ? 'nicht verfügbar' : 'unavailable'}` : ''}</Link> : <span key={value} aria-disabled="true" className={classes}>{labels[value] ?? value}</span>;
+      const label = axis.toLowerCase() === 'storage' ? formatStorageLabel(value) : labels[value] ?? value;
+      return member ? <Link key={value} href={`/${locale}/store/${member.slug}`} aria-current={member.selected ? 'page' : undefined} className={classes}>{label}{member.stock <= 0 ? ` · ${locale === 'de' ? 'nicht verfügbar' : 'unavailable'}` : ''}</Link> : <span key={value} aria-disabled="true" className={classes}>{label}</span>;
     })}</div></div>)}</div>
     {devices.length > 1 ? <div className="mt-5 grid gap-3 sm:grid-cols-2">{devices.map(device => <Link key={device.productId} href={`/${locale}/store/${device.slug}`} aria-current={device.selected ? 'page' : undefined} className={`flex gap-3 rounded-xl border p-3 ${device.selected ? 'border-gold' : 'border-border'}`}>
       {device.image ? <Image src={device.image} alt={device.title} width={80} height={100} unoptimized className="h-24 w-20 object-contain" /> : null}

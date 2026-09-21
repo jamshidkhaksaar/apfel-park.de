@@ -181,7 +181,17 @@ export const localizedText = (value: LocalizedText, locale: "de" | "en"): string
 export const getFamilyOptionTarget = (family: ProductFamilyView, axis: string, value: string): ProductFamilyMember | null => {
   const current = family.members.find(member => member.selected);
   if (!current) return null;
-  return family.members.find(member => member.optionValues[axis] === value && family.optionAxes.every(other => other === axis || !current.optionValues[other] || member.optionValues[other] === current.optionValues[other])) ?? null;
+  const others = family.optionAxes.filter(other => other !== axis && other.toLowerCase() !== 'device');
+  const candidates = family.members.filter(member => member.optionValues[axis] === value);
+  const score = (member: ProductFamilyMember): number => others.reduce((total, other) =>
+    total + (member.optionValues[other] === current.optionValues[other]
+      ? other.toLowerCase() === 'condition' ? 100 : 10 : 0), 0);
+  return candidates.sort((a, b) => score(b) - score(a) || Number(b.stock > 0) - Number(a.stock > 0))[0] ?? null;
+};
+
+export const formatStorageLabel = (value: string): string => {
+  const trimmed = value.trim();
+  return /^\d+$/.test(trimmed) ? `${trimmed} GB` : trimmed;
 };
 
 export const resolveBundleCartSelection = (variants: Array<{ color?: string; storage?: string; stock?: number; isActive?: boolean }>) => variants.length === 0

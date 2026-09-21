@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getFamilyOptionTarget, resolveBundleCartSelection, sanitizeProductExperienceProfile } from "../product-experience";
+import { formatStorageLabel, getFamilyOptionTarget, resolveBundleCartSelection, sanitizeProductExperienceProfile } from "../product-experience";
 
 describe("sanitizeProductExperienceProfile", () => {
   it("fails closed with every storefront section disabled", () => {
@@ -35,7 +35,7 @@ describe("sanitizeProductExperienceProfile", () => {
 });
 
 describe("getFamilyOptionTarget", () => {
-  it("preserves every other selected axis and disables missing combinations", () => {
+  it("preserves matching axes when possible and links to a real offer otherwise", () => {
     const base = { image: "", price: 1, stock: 1 };
     const family = { id: "f", name: "Phone", slug: "phone", optionAxes: ["Storage", "Color"], members: [
       { ...base, productId: "a", slug: "a", title: "A", optionValues: { Storage: "128", Color: "Black" }, selected: true },
@@ -43,7 +43,26 @@ describe("getFamilyOptionTarget", () => {
       { ...base, productId: "c", slug: "c", title: "C", optionValues: { Storage: "256", Color: "Blue" }, selected: false },
     ] };
     expect(getFamilyOptionTarget(family, "Color", "Blue")?.productId).toBe("b");
-    expect(getFamilyOptionTarget(family, "Storage", "256")).toBeNull();
+    expect(getFamilyOptionTarget(family, "Storage", "256")?.productId).toBe('c');
+    expect(getFamilyOptionTarget(family, "Storage", "512")).toBeNull();
+  });
+  it('prefers the same condition and ignores individual device IDs', () => {
+    const base = {image:'',price:1,stock:1,title:'Phone',slug:'phone'};
+    const family = {id:'f',name:'Phone',slug:'phone',optionAxes:['color','storage','condition','device'],members:[
+      {...base,productId:'red',selected:true,optionValues:{color:'Rot',storage:'64',condition:'used',device:'red'}},
+      {...base,productId:'white-new',selected:false,optionValues:{color:'Weiß',storage:'64',condition:'new',device:'white-new'}},
+      {...base,productId:'white-used',selected:false,optionValues:{color:'Weiß',storage:'128',condition:'used',device:'white-used'}},
+    ]};
+    expect(getFamilyOptionTarget(family,'color','Weiß')?.productId).toBe('white-used');
+  });
+});
+
+describe('formatStorageLabel', () => {
+  it('adds GB to bare capacities without duplicating existing units', () => {
+    expect(formatStorageLabel('64')).toBe('64 GB');
+    expect(formatStorageLabel(' 128 ')).toBe('128 GB');
+    expect(formatStorageLabel('256 GB')).toBe('256 GB');
+    expect(formatStorageLabel('1 TB')).toBe('1 TB');
   });
 });
 

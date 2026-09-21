@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { formatStorageLabel } from '@/lib/product-experience';
 import { useRouter } from "next/navigation";
 
 import { eprelProductUrl } from "@/lib/eprel";
@@ -311,7 +312,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                           }`}
                         >
                           <span className={`text-sm font-semibold ${isSelected ? "text-gold" : "text-foreground"}`}>
-                            {storage}
+                            {formatStorageLabel(storage)}
                           </span>
                           {variantPrice ? (
                             <span className="mt-1 text-xs text-muted">
