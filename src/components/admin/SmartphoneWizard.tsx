@@ -82,6 +82,8 @@ export default function SmartphoneWizard({
   const [drafts, setDrafts] = useState<{ id: string; title: string }[]>([]);
   const [status, setStatus] = useState('saved');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [photoConfirmation, setPhotoConfirmation] = useState('');
   const [busy, setBusy] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -101,6 +103,7 @@ export default function SmartphoneWizard({
     requestId: string;
     revision: number;
     entryIds: string[];
+    confirmedSharedPhotos?: boolean;
   } | null>(null);
   const load = useCallback((next: PhoneDraft) => {
     revision.current = next.revision;
@@ -160,6 +163,7 @@ export default function SmartphoneWizard({
         saved.current = JSON.stringify(snapshot);
         setDraft(result);
         setError('');
+        setNotice('saved');
         setStatus(
           JSON.stringify(current.current) === saved.current
             ? 'saved'
@@ -310,6 +314,7 @@ export default function SmartphoneWizard({
         requestId: crypto.randomUUID(),
         revision: revision.current,
         entryIds: selected,
+        confirmedSharedPhotos: photoConfirmation === JSON.stringify({ document: current.current, selected }),
       };
       publishRetry.current = request;
       const next = await call(
@@ -319,6 +324,7 @@ export default function SmartphoneWizard({
       );
       publishRetry.current = null;
       load(next);
+      setNotice('publishDone');
     } catch (e) {
       if (
         (e as { status?: number }).status &&
@@ -396,6 +402,11 @@ export default function SmartphoneWizard({
   );
   return (
     <div className="mx-auto max-w-[1500px] space-y-5 pb-24">
+      <style>{`@keyframes phone-notice-in{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
+      {!error && notice ? <div role="status" className="fixed right-4 top-20 z-[100] w-[calc(100%-2rem)] max-w-sm rounded-xl border border-gold bg-background p-4 shadow-xl motion-safe:animate-[phone-notice-in_200ms_ease-out]">
+        <p>{String(errorText(notice))}</p>
+        <button type="button" className="btn-secondary mt-2" onClick={() => setNotice('')}>{t.dismissNotice}</button>
+      </div> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-semibold text-foreground">
           {document.shared.title || t.title}
@@ -417,9 +428,11 @@ export default function SmartphoneWizard({
       {error ? (
         <div
           role="alert"
-          className="rounded-xl border border-border p-4 text-foreground"
+          className="fixed right-4 top-20 z-[100] max-h-[75vh] w-[calc(100%-2rem)] max-w-sm overflow-y-auto rounded-xl border border-gold bg-background p-4 text-foreground shadow-xl motion-safe:animate-[phone-notice-in_200ms_ease-out]"
         >
           <p>{String(errorText(error))}</p>
+          <button type="button" className="btn-secondary mt-2 mr-2" onClick={() => setError('')}>{t.dismissNotice}</button>
+          {error === 'shared_photos_confirmation_required' ? <button type="button" className="btn-secondary mt-2" onClick={() => { setError(''); go(6); }}>{t.reviewPhotos}</button> :
           <button
             className="btn-secondary mt-2"
             onClick={() => {
@@ -434,7 +447,7 @@ export default function SmartphoneWizard({
             }}
           >
             {error === 'conflict' ? t.refresh : t.save_failed}
-          </button>
+          </button>}
         </div>
       ) : null}
       <nav
@@ -1233,6 +1246,11 @@ export default function SmartphoneWizard({
         ) : null}
         {document.step === 6 ? (
           <>
+            <label className="flex items-start gap-3 rounded-xl border border-border p-4 text-sm">
+              <input type="checkbox" className="mt-1" checked={photoConfirmation === JSON.stringify({document,selected})}
+                onChange={event => { publishRetry.current = null; setPhotoConfirmation(event.target.checked ? JSON.stringify({document,selected}) : ''); }}/>
+              {t.confirmSharedPhotos}
+            </label>
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" className="btn-secondary" disabled={!readyIds.length}
                 onClick={() => setSelected(readyIds)}>{t.selectAllReady}</button>

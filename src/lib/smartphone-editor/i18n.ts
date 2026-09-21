@@ -16,6 +16,10 @@ export const phoneEditorText = {
     saved: 'Saved',
     save_failed: 'Save failed — retry',
     totalStock: 'Total stock',
+    publishDone: 'Selected entries published successfully. Channel synchronization may still be pending.',
+    dismissNotice: 'Dismiss',
+    reviewPhotos: 'Review photo confirmation',
+    confirmSharedPhotos: 'If photos are shared between same-model, same-color offers: I checked every selected offer and confirm these photos accurately represent each offer, including its visible condition. Different battery health, price and stock remain separate. Leave unchecked if this is not accurate.',
     units: 'phones',
     variants: 'variants',
     selectAllReady: 'Select all ready entries',
@@ -134,6 +138,10 @@ export const phoneEditorText = {
     saved: 'Gespeichert',
     save_failed: 'Speichern fehlgeschlagen — erneut versuchen',
     totalStock: 'Gesamtbestand',
+    publishDone: 'Ausgewählte Einträge erfolgreich veröffentlicht. Die Kanalsynchronisierung kann noch ausstehen.',
+    dismissNotice: 'Schließen',
+    reviewPhotos: 'Fotobestätigung prüfen',
+    confirmSharedPhotos: 'Bei gemeinsam genutzten Fotos für dasselbe Modell und dieselbe Farbe: Ich habe jedes ausgewählte Angebot geprüft und bestätige, dass die Fotos jedes Angebot einschließlich des sichtbaren Zustands korrekt darstellen. Akkuzustand, Preis und Bestand bleiben getrennt. Andernfalls nicht bestätigen.',
     units: 'Handys',
     variants: 'Varianten',
     selectAllReady: 'Alle bereiten Einträge auswählen',
@@ -309,6 +317,10 @@ export const translatePhoneChannelMessage = (
 };
 export const phoneErrorText = (code: string, locale: 'de' | 'en'): string => {
   const texts: Record<string, [string, string]> = {
+    shared_photos_confirmation_required: [
+      'Identical image content is used for multiple offers of the same model and color. Review the photo confirmation on the final step, or replace the shared photos. Nothing was published.',
+      'Mehrere Angebote desselben Modells und derselben Farbe verwenden identische Bildinhalte. Fotobestätigung im letzten Schritt prüfen oder die gemeinsamen Fotos ersetzen. Es wurde nichts veröffentlicht.',
+    ],
     duplicate_new_configuration: [
       'This new color/storage combination already exists. Open the existing model workspace and edit its quantity.',
       'Diese neue Farb-/Speicherkombination existiert bereits. Im bestehenden Modellarbeitsbereich die Anzahl bearbeiten.',
@@ -330,8 +342,8 @@ export const phoneErrorText = (code: string, locale: 'de' | 'en'): string => {
       'Ein Foto ist nicht lesbar. Ersetzen und erneut versuchen.',
     ],
     device_photo_reused: [
-      'These photos belong to another device or color. Upload the correct photos.',
-      'Diese Fotos gehören zu einem anderen Gerät oder einer anderen Farbe. Passende Fotos hochladen.',
+      'Identical image content is already assigned to another model or color. Check the photo assignments and upload the correct photos.',
+      'Identische Bildinhalte sind einem anderen Modell oder einer anderen Farbe zugeordnet. Fotozuordnung prüfen und passende Fotos hochladen.',
     ],
     distinct_photos_required: [
       'Four different photos are required.',

@@ -25,6 +25,7 @@ import {
   type PublishResult,
 } from './model';
 import type { ChannelKey } from '@/lib/product-channel-readiness';
+import { photoReuseError } from './photo-reuse';
 
 type Source = {
   fingerprint: string;
@@ -421,6 +422,8 @@ export const writeProduct = async (
 const verifyPhotos = async (
   client: TransactionClient,
   entries: PhoneEntry[],
+  document: PhoneDocument,
+  confirmedSharedPhotos: boolean,
 ) => {
   const ownership = new Map<string, PhoneEntry>();
   const hashes = new Map<string, string[]>();
@@ -446,29 +449,22 @@ const verifyPhotos = async (
       );
       const claim = (
         await client.query(
-          `SELECT * FROM smartphone_editor_photo_claims WHERE content_hash=$1`,
+          `SELECT c.*,p.brand,p.model FROM smartphone_editor_photo_claims c JOIN products p ON p.id=c.product_id WHERE content_hash=$1`,
           [hash],
         )
       ).rows[0];
-      if (
-        claim &&
-        claim.product_id !== entry.sourceProductId &&
-        (entry.condition !== 'new' ||
-          claim.condition !== 'new' ||
-          claim.color !== entry.color.trim().toLowerCase())
-      )
-        throw new DraftError('device_photo_reused');
+      if (claim && claim.product_id !== entry.sourceProductId) {
+        const error = photoReuseError({ ...document.shared, color: entry.color, condition: entry.condition }, claim, confirmedSharedPhotos);
+        if (error) throw new DraftError(error);
+      }
       if (distinct.has(hash)) throw new DraftError('distinct_photos_required');
       distinct.add(hash);
       const previous = ownership.get(hash);
-      if (
-        previous &&
-        (entry.condition !== 'new' ||
-          previous.condition !== 'new' ||
-          entry.color.trim().toLowerCase() !==
-            previous.color.trim().toLowerCase())
-      )
-        throw new DraftError('device_photo_reused');
+      if (previous) {
+        const error = photoReuseError({ ...document.shared, color: entry.color, condition: entry.condition },
+          { ...document.shared, color: previous.color, condition: previous.condition }, confirmedSharedPhotos);
+        if (error) throw new DraftError(error);
+      }
       ownership.set(hash, entry);
     }
     hashes.set(entry.id, [...distinct]);
@@ -480,6 +476,7 @@ export type PublishRequest = {
   revision: number;
   requestId: string;
   entryIds: string[];
+  confirmedSharedPhotos?: boolean;
 };
 export const publishPhoneDraft = async (
   id: string,
@@ -504,7 +501,8 @@ export const publishPhoneDraft = async (
       if (
         JSON.stringify(prior.rows[0].request.entryIds) !==
           JSON.stringify(input.entryIds) ||
-        prior.rows[0].request.revision !== input.revision
+        prior.rows[0].request.revision !== input.revision ||
+        (prior.rows[0].request.confirmedSharedPhotos === true) !== (input.confirmedSharedPhotos === true)
       )
         throw conflict();
       return prior.rows[0].response as PhoneDraft;
@@ -534,7 +532,7 @@ export const publishPhoneDraft = async (
         combos.add(combo);
       }
     }
-    const photoHashes = await verifyPhotos(client, selected);
+    const photoHashes = await verifyPhotos(client, selected, doc, input.confirmedSharedPhotos === true);
     // Lock the live rows in a fixed order; stock changes also invalidate the original snapshot.
     for (const productId of [
       ...new Set(
