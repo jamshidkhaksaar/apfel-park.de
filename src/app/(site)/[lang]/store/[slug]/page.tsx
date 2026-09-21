@@ -355,6 +355,7 @@ export default async function ProductDetailPage({
           </div>
 
           <ProductDetailExperience
+            key={product.id}
             locale={locale}
             paypalEnabled={isPayPalConfigured()}
             product={{ ...product, faq: displayFaq }}
