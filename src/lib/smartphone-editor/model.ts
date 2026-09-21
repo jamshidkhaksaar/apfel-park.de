@@ -186,6 +186,10 @@ export const entryProblems = (
       'Upload four distinct photos.',
       'Vier unterschiedliche Fotos hochladen.',
     );
+  if (entry.condition !== 'new' && !entry.hasRealProductPhotos)
+    add(6, 'hasRealProductPhotos',
+      'Confirm below that the uploaded photos show this product.',
+      'Unten bestätigen, dass die hochgeladenen Fotos dieses Produkt zeigen.');
   const conditionError = validateAdminProductCondition({
     ...document.shared,
     title: document.shared.title ?? '',
@@ -193,7 +197,8 @@ export const entryProblems = (
     model: document.shared.model ?? '',
     condition: entry.condition,
     conditionNote: entry.conditionNote,
-    hasRealProductPhotos: entry.hasRealProductPhotos,
+    // Report missing confirmation separately, at the review control that fixes it.
+    hasRealProductPhotos: true,
     imageCount: entryImages(entry).length,
     batteryHealth:
       entry.batteryHealth == null ? '' : String(entry.batteryHealth),

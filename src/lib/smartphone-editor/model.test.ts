@@ -11,6 +11,18 @@ import {
 } from './model';
 
 describe('smartphone workspace rules', () => {
+  it('routes missing photo confirmation to review without hiding other blockers', () => {
+    const document = newPhoneDocument();
+    document.shared = {title:'iPhone 12 Pro Max',brand:'Apple',model:'iPhone 12 Pro Max',description:'Description'};
+    const entry = document.entries[0];
+    Object.assign(entry,{condition:'used',color:'Black',storage:'128',stock:2,price:399,batteryHealth:90,conditionNote:'Minor wear',hasRealProductPhotos:false});
+    entry.photos.forEach((photo,i)=>{photo.url=`/uploads/products/test-${i}.webp`;});
+    expect(entryProblems(document,entry)).toEqual([{step:6,field:'hasRealProductPhotos',message:'Confirm below that the uploaded photos show this product.'}]);
+    entry.hasRealProductPhotos=true;
+    expect(entryProblems(document,entry)).toEqual([]);
+    entry.conditionNote='';
+    expect(entryProblems(document,entry).some(p=>p.field==='conditionNote')).toBe(true);
+  });
   it('allows multi-unit used and open-box offers but rejects invalid stock', () => {
     const document = newPhoneDocument();
     const entry = document.entries[0];

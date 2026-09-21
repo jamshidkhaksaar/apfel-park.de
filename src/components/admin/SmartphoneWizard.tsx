@@ -1325,6 +1325,15 @@ export default function SmartphoneWizard({
                       ))}
                     </div>
                   </div>
+                  {e.condition !== 'new' ? (
+                    <label id={`${e.id}-hasRealProductPhotos`} tabIndex={-1}
+                      className={`flex w-full items-start gap-3 rounded-xl border p-4 text-sm ${e.hasRealProductPhotos ? 'border-border' : 'border-gold bg-gold/5'}`}>
+                      <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-gold"
+                        checked={e.hasRealProductPhotos} disabled={uploading || entryImages(e).length === 0}
+                        onChange={event => updateEntry(e.id, { hasRealProductPhotos: event.target.checked })} />
+                      {t.hasRealProductPhotos}
+                    </label>
+                  ) : null}
                   <label className="flex gap-2 text-sm">
                     <input
                       type="checkbox"
