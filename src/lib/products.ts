@@ -1179,8 +1179,8 @@ export async function getStoreCatalog({
         return aConfigured - bConfigured;
       }
       return categoryRank[a.category] - categoryRank[b.category]
-        || Number(b.hasDiscount) - Number(a.hasDiscount)
-        || String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""));
+        || String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""))
+        || Number(b.hasDiscount) - Number(a.hasDiscount);
     }));
   }
   else {

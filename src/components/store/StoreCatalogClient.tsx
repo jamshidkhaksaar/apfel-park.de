@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { analyticsItem, withGa4Items } from "@/lib/analytics";
@@ -237,47 +237,15 @@ export default function StoreCatalogClient({
           {products.length > 0 ? (
             view === "list" ? (
               <div className="flex flex-col gap-3">
-                {products.map((product, index) => {
-                  const showFoldBanner = page === 1 && index === (products.length >= 6 ? 5 : (products.length >= 3 ? 2 : -1));
-                  const showPixelBanner = page === 1 && products.length >= 12 && index === 11;
-                  return (
-                    <Fragment key={product.id}>
+                {products.map((product, index) => (
                       <StoreProductRow key={product.id} product={product} locale={lang} listId={listId} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 3} />
-                      {showFoldBanner ? (
-                        <div className="my-4">
-                          <GalaxyFoldBanner lang={lang} variant="compact" />
-                        </div>
-                      ) : null}
-                      {showPixelBanner ? (
-                        <div className="my-4">
-                          <PixelBanner lang={lang} variant="compact" />
-                        </div>
-                      ) : null}
-                    </Fragment>
-                  );
-                })}
+                ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                {products.map((product, index) => {
-                  const showFoldBanner = page === 1 && index === (products.length >= 8 ? 7 : (products.length >= 4 ? 3 : -1));
-                  const showPixelBanner = page === 1 && products.length >= 16 && index === 15;
-                  return (
-                    <Fragment key={product.id}>
+              <div data-catalog-grid className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                {products.map((product, index) => (
                       <StoreProductCard key={product.id} product={product} locale={lang} listId={listId} listName={listName} position={(page - 1) * 24 + index + 1} priority={index < 4} />
-                      {showFoldBanner ? (
-                        <div className="col-span-full my-4">
-                          <GalaxyFoldBanner lang={lang} variant="compact" />
-                        </div>
-                      ) : null}
-                      {showPixelBanner ? (
-                        <div className="col-span-full my-4">
-                          <PixelBanner lang={lang} variant="compact" />
-                        </div>
-                      ) : null}
-                    </Fragment>
-                  );
-                })}
+                ))}
               </div>
             )
           ) : (
@@ -298,6 +266,12 @@ export default function StoreCatalogClient({
 
           {/* Kept out of the result list — an interruption mid-grid breaks scanning. */}
           <TrendingProductsCarousel products={trendingProducts} lang={lang} compact />
+          {page === 1 && products.length >= (view === 'list' ? 3 : 4) ? (
+            <div data-catalog-promotions className="mt-8 space-y-6">
+              <GalaxyFoldBanner lang={lang} variant="compact" />
+              {products.length >= (view === 'list' ? 12 : 16) ? <PixelBanner lang={lang} variant="compact" /> : null}
+            </div>
+          ) : null}
 
         </div>
       </div>
