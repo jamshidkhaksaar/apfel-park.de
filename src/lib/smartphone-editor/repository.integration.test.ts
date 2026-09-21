@@ -160,7 +160,7 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
     expect(product.variants).toHaveLength(1);
     expect(product.variants[0].price).toBe(650);
   });
-  it('cannot turn an individual device into bulk inventory', async () => {
+  it('supports restocking a used offer with multiple units', async () => {
     const result = await publish(await seed([await ready('used')]));
     result.document.entries[0].stock = 2;
     const draft = await savePhoneDraft(
@@ -169,16 +169,14 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
       result.document,
       'editor',
     );
-    await expect(publish(draft)).rejects.toThrow(
-      'individual_quantity_required',
-    );
+    await publish(draft);
     expect(
       (
         await query('SELECT stock FROM products WHERE id=$1', [
           result.results[0].productId,
         ])
       ).rows[0].stock,
-    ).toBe(1);
+    ).toBe(2);
   });
   it('keeps changes off the live listing until explicit publish and rejects intervening live changes', async () => {
     const initial = await publish(await seed());

@@ -522,21 +522,6 @@ export const publishPhoneDraft = async (
     const skus = new Set<string>();
     const combos = new Set<string>();
     for (const entry of selected) {
-      if (entry.condition !== 'new' && entry.stock > 1) {
-        const original = entry.sourceProductId
-          ? row.sources[entry.sourceProductId]?.payload
-          : undefined;
-        const originalStock =
-          entry.variantIndex === undefined
-            ? original?.stock
-            : original?.variants?.[entry.variantIndex]?.stock;
-        if (
-          !original ||
-          original.condition === 'new' ||
-          Number(originalStock ?? 1) <= 1
-        )
-          throw new DraftError('individual_quantity_required');
-      }
       if (entryProblems(doc, entry).length)
         throw new DraftError('entry_incomplete');
       if (skus.has(entry.sku.toLowerCase()))

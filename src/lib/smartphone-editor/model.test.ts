@@ -11,6 +11,21 @@ import {
 } from './model';
 
 describe('smartphone workspace rules', () => {
+  it('allows multi-unit used and open-box offers but rejects invalid stock', () => {
+    const document = newPhoneDocument();
+    const entry = document.entries[0];
+    for (const condition of ['used', 'open_box'] as const) {
+      entry.condition = condition;
+      for (const stock of [0, 1, 2, 7]) {
+        entry.stock = stock;
+        expect(entryProblems(document, entry).filter(p => p.field === 'stock')).toEqual([]);
+      }
+      for (const stock of [-1, 1.5, NaN]) {
+        entry.stock = stock;
+        expect(entryProblems(document, entry).some(p => p.field === 'stock')).toBe(true);
+      }
+    }
+  });
   it('inherits AI origin only from the field source actually used by an entry', () => {
     const document = newPhoneDocument();
     document.shared = { title: 'AI shared title', description: 'AI shared description', aiGeneratedFields: ['title', 'description'] };

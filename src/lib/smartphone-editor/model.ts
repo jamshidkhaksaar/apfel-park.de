@@ -165,20 +165,13 @@ export const entryProblems = (
     );
   if (
     !Number.isInteger(entry.stock) ||
-    entry.stock < 0 ||
-    (!entry.sourceProductId &&
-      entry.condition !== 'new' &&
-      entry.stock !== 1) ||
-    (entry.condition !== 'new' &&
-      entry.stock > 1 &&
-      (entry.details.condition === 'new' ||
-        Number(entry.details.stock ?? 1) <= 1))
+    entry.stock < 0
   )
     add(
       2,
       'stock',
-      'Check stock; each non-new device starts at one.',
-      'Bestand prüfen; jedes nicht neue Gerät startet mit eins.',
+      'Enter a whole-number stock quantity of zero or more.',
+      'Bestand als ganze Zahl ab null eingeben.',
     );
   if (!entry.sku.trim())
     add(2, 'sku', 'Add a unique SKU.', 'Eindeutige SKU ergänzen.');

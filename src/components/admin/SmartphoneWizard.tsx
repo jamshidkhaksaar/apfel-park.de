@@ -159,6 +159,7 @@ export default function SmartphoneWizard({
         revision.current = result.revision;
         saved.current = JSON.stringify(snapshot);
         setDraft(result);
+        setError('');
         setStatus(
           JSON.stringify(current.current) === saved.current
             ? 'saved'
@@ -371,6 +372,8 @@ export default function SmartphoneWizard({
   const entryLabel = (e: PhoneEntry) =>
     `${t[e.condition]} · ${e.color || '—'} · ${e.storage || '—'} · #${e.sku.slice(-8)}`;
   const shared = sharedEdit ?? document.shared;
+  const readyIds = document.entries.filter(e => entryProblems(document, e, locale).length === 0 && e.channels.length > 0).map(e => e.id);
+  const totalUnits = document.entries.reduce((total, e) => total + (Number.isInteger(e.stock) && e.stock >= 0 ? e.stock : 0), 0);
   const setShared = (patch: ProductPayload) =>
     change((d) => ({ ...d, pendingShared: { ...shared, ...patch } }));
   const editDetails = (e: PhoneEntry, patch: ProductPayload) =>
@@ -400,6 +403,9 @@ export default function SmartphoneWizard({
         <span role="status" className="text-sm text-muted">
           {String(errorText(status))}
         </span>
+        <p className="text-sm font-semibold" aria-live="polite">
+          {t.totalStock}: {totalUnits} {t.units} · {document.entries.length} {t.variants}
+        </p>
         <button
           className="btn-secondary"
           disabled={busy || uploading}
@@ -1227,6 +1233,13 @@ export default function SmartphoneWizard({
         ) : null}
         {document.step === 6 ? (
           <>
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" className="btn-secondary" disabled={!readyIds.length}
+                onClick={() => setSelected(readyIds)}>{t.selectAllReady}</button>
+              <button type="button" className="btn-secondary" disabled={!selected.length}
+                onClick={() => setSelected([])}>{t.clearSelection}</button>
+              <span className="text-sm" aria-live="polite">{selected.filter(id => readyIds.includes(id)).length} / {document.entries.length} {t.selectedEntries}</span>
+            </div>
             <h3 className="font-semibold">{t.tasks}</h3>
             <div className="space-y-2">
               {document.entries.flatMap((e) =>
@@ -1297,7 +1310,7 @@ export default function SmartphoneWizard({
                   <label className="flex gap-2 text-sm">
                     <input
                       type="checkbox"
-                      disabled={entryProblems(document, e, locale).length > 0}
+                      disabled={!readyIds.includes(e.id)}
                       checked={selected.includes(e.id)}
                       onChange={(event) =>
                         setSelected(
@@ -1309,13 +1322,17 @@ export default function SmartphoneWizard({
                     />
                     {t.select}
                   </label>
+                  {entryProblems(document, e, locale).map(problem => (
+                    <button type="button" key={problem.field} className="w-full text-left text-sm text-gold underline"
+                      onClick={() => go(problem.step, e.id, problem.field)}>{problem.message}</button>
+                  ))}
                 </div>,
               ),
             )}
             <button
               className="btn-primary"
               disabled={
-                busy || uploading || Boolean(sharedEdit) || error === 'conflict'
+                busy || uploading || Boolean(sharedEdit) || error === 'conflict' || !selected.some(id => readyIds.includes(id))
               }
               onClick={publish}
             >
