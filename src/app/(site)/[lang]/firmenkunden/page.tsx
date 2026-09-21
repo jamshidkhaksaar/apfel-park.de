@@ -6,6 +6,7 @@ import PageIntro from "../../../../components/PageIntro";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
 import { requireLocale } from "@/lib/route-locale";
+import TrusmiPartner from '@/components/TrusmiPartner';
 
 export const dynamic = "force-dynamic";
 
@@ -226,6 +227,10 @@ export default async function BusinessCustomersPage({ params }: { params: Promis
                 {isGerman ? "Englisch (PDF)" : "English (PDF)"}
               </a>
             </div>
+          </div>
+
+          <div id="trusmi" className="scroll-mt-32">
+            <TrusmiPartner locale={lang} wholesale />
           </div>
 
           <div>

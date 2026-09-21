@@ -20,6 +20,7 @@ import FeaturedStore from "../../../components/FeaturedStore";
 import IPhoneBanner from "@/components/banner/IPhoneBanner";
 import GalaxyFoldBanner from "@/components/banner/GalaxyFoldBanner";
 import PixelBanner from "@/components/banner/PixelBanner";
+import TrusmiPartner from '@/components/TrusmiPartner';
 
 import { getFeaturedProducts } from "../../../lib/products";
 import AnimatedSection from "../../../components/AnimatedSection";
@@ -151,6 +152,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
       {/* Featured Store */}
       <FeaturedStore products={featuredProducts} lang={lang} featured={dict.featuredStore} />
+      <div className="container-page py-6 md:py-8">
+        <TrusmiPartner locale={lang} />
+      </div>
 
       {/* Samsung Galaxy Z Fold8 & Z Fold8 Ultra Showcase Banner */}
       <div className="container-page py-6 md:py-8">
