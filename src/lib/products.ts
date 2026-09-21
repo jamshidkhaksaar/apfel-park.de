@@ -1,4 +1,5 @@
 import { createDbClient, query } from "@/lib/db";
+import { compareCatalogRecency } from '@/lib/catalog-recency';
 import { requiresEnergyEvidenceReview } from '@/lib/product-evidence-hold';
 import { deviceModelNeedles } from "@/lib/device-model";
 import type { Locale } from "@/lib/i18n";
@@ -1157,7 +1158,7 @@ export async function getStoreCatalog({
     stockRank(left) - stockRank(right) || fallback();
   if (sort === "price-asc") sorted.sort((a, b) => stockFirst(a, b, () => a.price - b.price));
   else if (sort === "price-desc") sorted.sort((a, b) => stockFirst(a, b, () => b.price - a.price));
-  else if (sort === "newest") sorted.sort((a, b) => stockFirst(a, b, () => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""))));
+  else if (sort === "newest") sorted.sort((a, b) => stockFirst(a, b, () => compareCatalogRecency(a.createdAt, b.createdAt)));
   else if (searchQuery) {
     sorted.sort((a, b) => stockFirst(a, b, () => catalogSearchScore(b, searchQuery) - catalogSearchScore(a, searchQuery)));
   }
@@ -1179,7 +1180,7 @@ export async function getStoreCatalog({
         return aConfigured - bConfigured;
       }
       return categoryRank[a.category] - categoryRank[b.category]
-        || String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""))
+        || compareCatalogRecency(a.createdAt, b.createdAt)
         || Number(b.hasDiscount) - Number(a.hasDiscount);
     }));
   }
@@ -1189,7 +1190,7 @@ export async function getStoreCatalog({
       return stockFirst(a, b, () => {
         const discount = Number(b.hasDiscount) - Number(a.hasDiscount);
         if (discount !== 0) return discount;
-        return String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""));
+        return compareCatalogRecency(a.createdAt, b.createdAt);
       });
     });
   }
