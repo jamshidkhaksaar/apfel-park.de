@@ -5,7 +5,7 @@ import { bannerCategories, promotionDiscount, promotionExclusions, promotionScop
 import styles from './PromotionBanner.module.css';
 
 export default function PromotionBanner({promotion,locale,compact=false,preview=false}:{promotion:PublicPromotion;locale:'de'|'en';compact?:boolean;preview?:boolean}){
-  const de=locale==='de',id=useId(),repairs=promotion.categories.includes('repairs'),storageKey=`apfel-promotion-dismissed:${promotion.id}`;
+  const de=locale==='de',id=useId(),repairs=promotion.categories.includes('repairs'),storageKey=`apfel-promotion-dismissed:${promotion.id}:${promotion.upcomingDates?.[0]??''}`;
   const [copied,setCopied]=useState(false),[copyFailed,setCopyFailed]=useState(false),[dismissed,setDismissed]=useState(false);
   const [clock,setClock]=useState({expiry:promotion.endsAt,seconds:promotion.expiresInSeconds});
   useEffect(()=>{
@@ -55,7 +55,8 @@ export default function PromotionBanner({promotion,locale,compact=false,preview=
       {preview?null:<button type="button" className={styles.dismiss} onClick={dismiss} aria-label={de?'Aktion ausblenden':'Dismiss promotion'}><span aria-hidden="true">✕</span></button>}
     </div>
     <div id={id} className={styles.footer}>
-      {promotion.repairRules?<span>{de?'Aktionstage':'Promotion dates'}: {promotion.repairRules.dates.join(', ')} · {promotion.repairRules.dateBasis==='repair_date'?(de?'Wunschtermin der Reparatur':'Requested repair date'):(de?'Tag der Online-Anfrage':'Online request date')}</span>:null}
+      {promotion.upcomingDates?.length?<span>{de?'Aktionstage (Hamburg)':'Promotion dates (Hamburg)'}: {promotion.upcomingDates.join(' · ')}</span>
+        :promotion.repairRules?<span>{de?'Aktionstage':'Promotion dates'}: {promotion.repairRules.dates.join(', ')} · {promotion.repairRules.dateBasis==='repair_date'?(de?'Wunschtermin der Reparatur':'Requested repair date'):(de?'Tag der Online-Anfrage':'Online request date')}</span>:null}
       <span>{promotion.minimumOrder>0?(de?`Ab ${new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(promotion.minimumOrder)} Warenwert`:`Minimum basket ${new Intl.NumberFormat('en-GB',{style:'currency',currency:'EUR'}).format(promotion.minimumOrder)}`):(de?'Kein Mindestbestellwert':'No minimum spend')}</span>
       <details><summary>{de?'Bedingungen':'Terms'}</summary><p>{promotionScope(promotion,locale)}. {repairs?(de?'Nur bepreiste Katalog-Reparaturen an den angegebenen Aktionstagen. Gerätekäufe und Zubehör ausgeschlossen. Ein Code pro Anfrage; Termin und Endpreis werden vom Team bestätigt. Solange Einlösungen verfügbar sind.':'Priced catalog repairs on the specified dates only. Device purchases and accessories excluded. One code per request; appointment and final price require staff confirmation. Subject to remaining redemptions.'):(de?`${promotionExclusions(promotion,locale)} Ein Code pro Bestellung; Versandkosten werden nicht rabattiert. Der Rabatt wird im Checkout geprüft.`:`${promotionExclusions(promotion,locale)} One code per order; shipping is not discounted. The discount is validated at checkout.`)} {promotion.endsAt?`${de?'Gültig bis':'Valid until'} ${endLabel} (${de?'Hamburg-Zeit':'Hamburg time'}).`:(de?'Kein festes Enddatum; gültig solange die Kampagne aktiv und ihr Einlösungslimit nicht erreicht ist.':'No fixed end date; valid while the campaign is active and its redemption limit has not been reached.')}</p></details>
     </div>

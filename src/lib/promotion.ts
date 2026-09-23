@@ -1,11 +1,12 @@
 import { normalizeRepairRules, hamburgDate } from './repair-campaign-rules';
+import { normalizeWeeklyDays, weeklyDayIsActive } from './campaign-weekly';
 export const deviceCategories = ['smartphones','tablets','laptops'] as const;
 export const bannerCategories = ['smartphones','tablets','laptops','accessories'] as const;
 const isBannerCategory = (category:string) => (bannerCategories as readonly string[]).includes(category);
 export type PromotionSettings = { enabled: boolean; campaignId: string | null; headline: {de:string;en:string}; updatedAt?:string; updatedBy?:string };
 export type PublicPromotion = {
   id:string; code:string; discountType:'percent'|'fixed'; discountValue:number; minimumOrder:number;
-  endsAt:string|null; startsAt:string|null; headline:{de:string;en:string};
+  endsAt:string|null; startsAt:string|null; headline:{de:string;en:string}; upcomingDates?:string[];
   categories:string[]; includesSelected:boolean; selectedOnly:boolean; expiresInSeconds:number; repairRules?:import('./repair-campaign-rules').RepairCampaignRules;
   /** Full-category rules stay distinct from individually selected public products. */
   categoryWide?:string[]; selectedProductIds?:string[];
@@ -32,12 +33,14 @@ export const promotionCampaignIssue = (campaign: PromotionCampaign | null, selec
   if((start!==null&&!Number.isFinite(start))||(end!==null&&!Number.isFinite(end))||(start!==null&&end!==null&&end<=start)) return 'invalid_window';
   if(end!==null&&end<=now) return 'expired';
   if(campaign.maximum_redemptions!==null&&campaign.redemption_count>=campaign.maximum_redemptions) return 'limit_reached';
+  const weeklyDays=normalizeWeeklyDays(campaign.repair_rules);
+  if(weeklyDays.length&&!weeklyDayIsActive(weeklyDays,new Date(now)))return 'scheduled';
   if(!/^[A-Z0-9][A-Z0-9_-]{2,63}$/i.test(campaign.code)||!Number.isFinite(Number(campaign.discount_value))||Number(campaign.discount_value)<=0||!['percent','fixed'].includes(campaign.discount_type)||(campaign.discount_type==='percent'&&Number(campaign.discount_value)>100)||!Number.isFinite(Number(campaign.minimum_order))||Number(campaign.minimum_order)<0) return 'invalid_campaign';
   if(campaign.eligible_categories.includes('repairs')){
     if(campaign.eligible_categories.length!==1||campaign.eligible_product_ids.length)return 'device_scope_required';
     const rules=normalizeRepairRules(campaign.repair_rules),today=hamburgDate(new Date(now));
-    if(!rules.dates.some(d=>d>=today))return 'expired';
-    if(rules.dateBasis==='booking_date'&&!rules.dates.includes(today))return 'scheduled';
+    if(!rules.weeklyDays?.length&&!rules.dates.some(d=>d>=today))return 'expired';
+    if(!rules.weeklyDays?.length&&rules.dateBasis==='booking_date'&&!rules.dates.includes(today))return 'scheduled';
     return start!==null&&start>now?'scheduled':null;
   }
   const categories=[...campaign.eligible_categories,...selectedCategories];

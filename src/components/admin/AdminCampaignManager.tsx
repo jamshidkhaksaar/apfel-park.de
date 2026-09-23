@@ -6,6 +6,7 @@ import Link from "next/link";
 import { campaignDateForInput, campaignWindow, campaignErrorMessage } from "@/lib/campaign-dates";
 
 import RepairCampaignDates from "./RepairCampaignDates";
+import WeeklyCampaignDays from './WeeklyCampaignDays';
 import { normalizeRepairRules, type RepairCampaignRules } from "@/lib/repair-campaign-rules";
 
 type Localized = { de: string; en: string };
@@ -111,7 +112,7 @@ export default function AdminCampaignManager({ locale }: { locale: "de" | "en" }
     setBusy(true); setMessage("");
     try {
     const dates = campaignWindow(value.startsAt,value.endsAt);
-    if(value.isActive&&value.eligibleCategories.includes("repairs")&&!value.repairRules.dates.length){setMessage(de?"Bitte konkrete Reparatur-Aktionstage auswählen.":"Choose specific repair promotion dates.");return;}
+    if(value.isActive&&value.eligibleCategories.includes("repairs")&&!value.repairRules.dates.length&&!value.repairRules.weeklyDays?.length){setMessage(de?"Bitte wöchentliche oder konkrete Reparatur-Aktionstage auswählen.":"Choose weekly or specific repair promotion dates.");return;}
     const response = await fetch("/api/admin/campaigns", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({...value,...dates}) });
     const payload = await response.json();
     setMessage(response.ok && payload.success ? (de ? "Kampagne gespeichert." : "Campaign saved.") : campaignErrorMessage(payload.error || "Failed",locale));
@@ -160,6 +161,11 @@ export default function AdminCampaignManager({ locale }: { locale: "de" | "en" }
         <label className="text-sm text-muted">{de ? "Ende (Hamburg)" : "Ends (Hamburg)"}<input type="datetime-local" className={`${field} mt-1`} value={value.endsAt} onChange={(event) => setValue({ ...value, endsAt: event.target.value })} /></label>
       </div>
 
+      <WeeklyCampaignDays locale={locale} value={value.repairRules} onChange={repairRules=>setValue(current=>({
+        ...current,repairRules,
+        startsAt:!current.repairRules.weeklyDays?.length&&repairRules.weeklyDays?.length?'':current.startsAt,
+        endsAt:!current.repairRules.weeklyDays?.length&&repairRules.weeklyDays?.length?'':current.endsAt,
+      }))}/>
       <div className="mt-5"><p className="text-sm font-semibold text-foreground">{de ? "Berechtigte Kategorien" : "Eligible categories"}</p><div className="mt-2 flex flex-wrap gap-2">{categories.map((category) => <label key={category} className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm"><input type="checkbox" checked={value.eligibleCategories.includes(category)} onChange={() => toggle("eligibleCategories", category)} />{category==="repairs"?(de?"Reparaturen":"Repairs"):category}</label>)}</div></div>
       {value.eligibleCategories.includes("repairs")?<RepairCampaignDates locale={locale} value={value.repairRules} onChange={repairRules=>setValue({...value,repairRules})}/>:<div className="mt-5"><p className="text-sm font-semibold text-foreground">{de ? "Bestimmte Produkte (leer = alle)" : "Specific products (empty = all)"}</p><div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border p-3"><div className="grid gap-2 md:grid-cols-2">{products.map((product) => <label key={product.id} className="flex min-h-11 items-center gap-2 text-sm text-foreground"><input type="checkbox" checked={value.eligibleProductIds.includes(product.id)} onChange={() => toggle("eligibleProductIds", product.id)} /><span>{product.title}</span></label>)}</div></div></div>}
 
