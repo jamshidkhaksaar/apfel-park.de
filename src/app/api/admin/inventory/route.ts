@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { canManageProducts } from "@/lib/admin-auth";
 import { inventoryCatalogFrom, inventoryCatalogWhere } from "@/lib/inventory-catalog";
+import { inventoryDuplicatePredicate } from "@/lib/inventory-duplicates";
 import { query } from "@/lib/db";
 import { readSessionUserFromRequest } from "@/lib/session";
 
@@ -75,6 +76,16 @@ export async function GET(request: NextRequest) {
         array_agg(DISTINCT condition ORDER BY condition) FILTER (WHERE coalesce(condition, '') <> '') AS conditions
         FROM products`),
     ]);
+    const productIds = [...new Set(inventory.rows.map((row) => String(row.product_id)))];
+    const duplicateCounts = productIds.length ? await query(
+      `SELECT anchor.id AS product_id, count(candidate.id)::int AS duplicate_count
+         FROM products anchor
+         JOIN products candidate ON ${inventoryDuplicatePredicate}
+        WHERE anchor.id = ANY($1::uuid[])
+        GROUP BY anchor.id`,
+      [productIds],
+    ) : { rows: [] };
+    const duplicateCountByProduct = new Map(duplicateCounts.rows.map((row) => [String(row.product_id), Number(row.duplicate_count)]));
 
     return NextResponse.json({
       pagination: { page, pages, total, limit },
@@ -86,6 +97,7 @@ export async function GET(request: NextRequest) {
       items: inventory.rows.map((row) => ({
         sku: String(row.sku),
         productId: String(row.product_id),
+        duplicateCount: duplicateCountByProduct.get(String(row.product_id)) ?? 0,
         title: String(row.title),
         model: row.model ? String(row.model) : null,
         image: Array.isArray(row.images) ? row.images.find((image: unknown) => typeof image === "string" && image.trim()) ?? null : null,

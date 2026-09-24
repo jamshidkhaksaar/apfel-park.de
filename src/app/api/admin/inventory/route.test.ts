@@ -11,6 +11,7 @@ beforeEach(() => {
   mocks.query.mockImplementation(async (sql: string) => {
     if (sql.startsWith('SELECT count(*)')) return { rows: [{ total: 75 }] };
     if (sql.includes('product.id AS product_id')) return { rows: [{ sku: 'TEST', product_id: '1', title: 'Test phone', images: ['', '/uploads/phone.jpg'], updated_at: '2026-09-07', on_hand: 0, reserved: 0, safety_buffer: 0, available: 0, version: 0 }] };
+    if (sql.includes('duplicate_count')) return { rows: [{ product_id: '1', duplicate_count: 2 }] };
     if (sql.includes('array_agg')) return { rows: [{ brands: ['Apple'], categories: ['smartphones'], conditions: ['used'] }] };
     return { rows: [] };
   });
@@ -24,10 +25,17 @@ it('applies combined filters to count and rows before paging and includes images
   const payload = await response.json();
   expect(payload.pagination).toEqual({ page: 2, pages: 2, total: 75, limit: 50 });
   expect(payload.items[0].image).toBe('/uploads/phone.jpg');
+  expect(payload.items[0].duplicateCount).toBe(2);
   expect(payload.filterOptions.brands).toEqual(['Apple']);
   const args = ['phone', '%phone%', 'inventory', 'Apple', 'smartphones', 'used', 'out'];
   expect(mocks.query.mock.calls[0][1]).toEqual(args);
   expect(mocks.query.mock.calls[1][1]).toEqual([...args, 50, 50]);
+});
+it('counts similar products across publication statuses', async () => {
+  await run();
+  const duplicateQuery = mocks.query.mock.calls.find((call) => String(call[0]).includes('duplicate_count'));
+  expect(duplicateQuery?.[0]).toContain('JOIN products candidate');
+  expect(duplicateQuery?.[0]).not.toMatch(/candidate\.is_active\s*=/);
 });
 it('binds special characters as values and safely defaults invalid enum filters', async () => {
   await run('brand=' + encodeURIComponent("O'Reilly") + '&status=invalid&stock=invalid&page=999');

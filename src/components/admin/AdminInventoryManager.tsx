@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import { adminDictionary } from "@/lib/admin-i18n";
 type InventoryRow = {
   sku: string;
   productId: string;
+  duplicateCount: number;
   title: string;
   model: string | null;
   image: string | null;
@@ -22,6 +23,18 @@ type InventoryRow = {
   available: number;
   version: number;
   updatedAt: string;
+};
+
+type SimilarProduct = {
+  id: string;
+  title: string;
+  model: string | null;
+  sku: string | null;
+  stock: number;
+  active: boolean;
+  catalogEnabled: boolean;
+  image: string | null;
+  reason: "gtin" | "sku" | "model" | "title";
 };
 
 type RecentAdjustment = {
@@ -71,6 +84,9 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
   const [busySku, setBusySku] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
+  const [similarProducts, setSimilarProducts] = useState<Record<string, SimilarProduct[]>>({});
+  const [loadingSimilarId, setLoadingSimilarId] = useState<string | null>(null);
   const [selectedSku, setSelectedSku] = useState("");
   const [type, setType] = useState<AdjustmentType>("restock");
   const [quantity, setQuantity] = useState("1");
@@ -97,6 +113,8 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       if (!response.ok) throw new Error(payload.error || "Inventory could not be loaded");
       const nextItems = payload.items ?? [];
       setItems(nextItems);
+      setExpandedRowKey(null);
+      setSimilarProducts({});
       if (payload.filterOptions) setFilterOptions(payload.filterOptions);
       if (payload.pagination) setPagination(payload.pagination);
       setHistory(payload.recentAdjustments ?? []);
@@ -191,6 +209,32 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       await loadInventory(query, pagination.page, status, filters);
     } catch { setError(text.failed); }
     finally { setBusyProduct(null); }
+  };
+
+  const toggleSimilar = async (item: InventoryRow) => {
+    const rowKey = `${item.productId}:${item.sku}`;
+    if (expandedRowKey === rowKey) {
+      setExpandedRowKey(null);
+      return;
+    }
+    setExpandedRowKey(rowKey);
+    if (similarProducts[item.productId]) return;
+    setLoadingSimilarId(item.productId);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/inventory/duplicates?productId=${encodeURIComponent(item.productId)}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const payload = await response.json() as { items?: SimilarProduct[]; error?: string };
+      if (!response.ok) throw new Error(payload.error || text.duplicatesFailed);
+      setSimilarProducts((current) => ({ ...current, [item.productId]: payload.items ?? [] }));
+    } catch {
+      setError(text.duplicatesFailed);
+      setExpandedRowKey(null);
+    } finally {
+      setLoadingSimilarId(null);
+    }
   };
 
   const submitSearch = (event: FormEvent) => {
@@ -330,10 +374,13 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
             </thead>
             <tbody className="divide-y divide-border/50">
               {loading ? <tr><td colSpan={8} className="px-4 py-12 text-center text-muted">{locale === "de" ? "Lager wird geladen…" : "Loading inventory…"}</td></tr> : items.length ? items.map((item) => (
-                <tr key={`${item.productId}:${item.sku}`} className="hover:bg-gold/[0.03]">
+                <Fragment key={`${item.productId}:${item.sku}`}>
+                <tr className="hover:bg-gold/[0.03]">
                   <td className="px-4 py-3"><div className="flex items-center gap-3">
                     <InventoryThumbnail key={item.image} src={item.image} title={item.title} fallback={filterText.noImage} />
-                    <div className="min-w-0"><p className="font-medium">{item.title}</p><p className="mt-0.5 break-all font-mono text-xs text-muted">{item.sku || "—"}</p></div>
+                    <div className="min-w-0"><p className="font-medium">{item.title}</p><p className="mt-0.5 break-all font-mono text-xs text-muted">{item.sku || "—"}</p>
+                      {item.duplicateCount > 0 ? <button type="button" aria-expanded={expandedRowKey === `${item.productId}:${item.sku}`} aria-controls={`similar-${item.productId}-${encodeURIComponent(item.sku)}`} onClick={() => void toggleSimilar(item)} className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-left text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-300">{text.possibleDuplicates}: {item.duplicateCount} · {text.viewDuplicates} {expandedRowKey === `${item.productId}:${item.sku}` ? "↑" : "→"}</button> : null}
+                    </div>
                   </div></td>
                   <td className="px-4 py-3">
                     <div className="flex min-w-48 flex-col items-start gap-2">
@@ -356,6 +403,22 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                   <td className="px-3 py-3 font-mono text-xs text-muted">{item.canAdjust ? `v${item.version}` : <span className="font-sans">{text.noStockRecord}</span>}</td>
                   <td className="px-4 py-3 text-right"><button type="button" disabled={!item.canAdjust || item.available < 1 || Boolean(busySku) || Boolean(busyProduct)} onClick={() => quickSale(item)} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-40">{locale === "de" ? "1× Vor Ort verkauft" : "Sell 1 in shop"}</button></td>
                 </tr>
+                {expandedRowKey === `${item.productId}:${item.sku}` ? <tr id={`similar-${item.productId}-${encodeURIComponent(item.sku)}`} className="bg-amber-500/[0.04]"><td colSpan={8} className="px-4 py-4">
+                  <div className="rounded-xl border border-amber-500/30 bg-surface p-4">
+                    <h3 className="font-semibold">{text.possibleDuplicates}: {item.title}</h3>
+                    <p className="mt-1 text-xs text-muted">{text.duplicatesExplanation}</p>
+                    {loadingSimilarId === item.productId ? <p className="mt-3 text-sm text-muted">{text.loadingDuplicates}</p> : null}
+                    {similarProducts[item.productId]?.length === 0 ? <p className="mt-3 text-sm text-muted">{text.noDuplicates}</p> : null}
+                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                      {similarProducts[item.productId]?.map((match) => <div key={match.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border/70 p-3">
+                        <InventoryThumbnail src={match.image} title={match.title} fallback={filterText.noImage} />
+                        <div className="min-w-0 flex-1"><p className="font-semibold">{match.title}</p><p className="text-xs text-muted">{[match.model, match.sku].filter(Boolean).join(" · ") || "—"}</p><p className="mt-1 text-xs text-muted">{text.duplicateReasons[match.reason] ?? text.duplicateReasons.title} · {match.active ? text.published : match.catalogEnabled ? text.draft : text.inventoryOnly} · {text.quantity}: {match.stock}</p></div>
+                        <Link href={`/admin/products/${match.id}`} prefetch={false} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold hover:bg-gold/10">{text.openDuplicate} →</Link>
+                      </div>)}
+                    </div>
+                  </div>
+                </td></tr> : null}
+                </Fragment>
               )) : <tr><td colSpan={8} className="px-4 py-12 text-center text-muted">{locale === "de" ? "Keine SKUs gefunden." : "No SKUs found."}</td></tr>}
             </tbody>
           </table>
