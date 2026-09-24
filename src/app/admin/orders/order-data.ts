@@ -30,6 +30,10 @@ export type OrderDetail = {
   customer_address: OrderAddress | null;
   status: string | null;
   payment_status: string | null;
+  provider_status: string | null;
+  decline_code: string | null;
+  customer_unpaid_email_sent_at: string | null;
+  customer_unpaid_email_last_error: string | null;
   shipping_method: string | null;
   provider: string | null;
   provider_payment_id: string | null;
@@ -61,7 +65,13 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
   if (!UUID_PATTERN.test(id)) return null;
   const result = await query(
     `SELECT id, order_number, created_at, paid_at, customer_name, customer_email, customer_phone,
-            customer_address, status, payment_status, shipping_method, provider,
+            customer_address, status, payment_status, provider_status, shipping_method, provider,
+            customer_unpaid_email_sent_at, customer_unpaid_email_last_error,
+            (SELECT e.payload #>> '{data,object,last_payment_error,decline_code}'
+               FROM payment_webhook_events e
+              WHERE e.provider = 'stripe' AND e.event_type = 'payment_intent.payment_failed'
+                AND e.payload #>> '{data,object,metadata,order_id}' = orders.id::text
+              ORDER BY e.created_at DESC LIMIT 1) AS decline_code,
             provider_payment_id, provider_session_id, checkout_locale,
             admin_notification_sent_at, admin_notification_last_error, admin_notification_attempts,
             total_amount, subtotal_amount, shipping_amount, vat_amount, coupon_code, discount_amount, currency, items,

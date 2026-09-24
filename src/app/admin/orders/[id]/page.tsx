@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getAdminDictionary, getAdminNumberLocale } from "@/lib/admin-i18n-server";
+import { getAdminDictionary, getAdminLocale, getAdminNumberLocale } from "@/lib/admin-i18n-server";
+import { getAdminPaymentStatus } from "@/lib/admin-payment-status";
 import AdminShell from "../../../../components/admin/AdminShell";
 import { resendOrderNotification, updateOrderFulfillment } from "../actions";
 import { formatVariant, getOrderDetail } from "../order-data";
@@ -20,10 +21,11 @@ export default async function OrderDetailPage({
 }) {
   const { id } = await params;
   const { updated, notified, notifyError, error } = await searchParams;
-  const [order, dict, numberLocale] = await Promise.all([
+  const [order, dict, numberLocale, locale] = await Promise.all([
     getOrderDetail(id),
     getAdminDictionary(),
     getAdminNumberLocale(),
+    getAdminLocale(),
   ]);
 
   if (!order) {
@@ -42,12 +44,18 @@ export default async function OrderDetailPage({
   const orderLabel = order.order_number ? `#A-${order.order_number}` : `#${order.id.slice(0, 8)}`;
   const isShipping = order.shipping_method === "germany";
   const errorMessage = error ? dict.ordersPage.errors[getOrderErrorMessageKey(error)] : null;
+  const payment = getAdminPaymentStatus(order, locale);
 
   const infoRows: Array<[string, string]> = [
     [t.createdAt, formatDate(order.created_at)],
     [t.paidAt, formatDate(order.paid_at)],
     [dict.ordersPage.table.status, order.status ?? "-"],
-    ["Payment", order.payment_status ?? "-"],
+    [locale === "de" ? "Zahlung" : "Payment", payment.label],
+    [locale === "de" ? "Zahlungsdetails" : "Payment details", payment.detail || "-"],
+    [locale === "de" ? "Kundenhinweis bei offener Zahlung" : "Unpaid email to customer",
+      order.customer_unpaid_email_sent_at ? formatDate(order.customer_unpaid_email_sent_at) :
+        order.customer_unpaid_email_last_error ? (locale === "de" ? "Fehlgeschlagen – erneuter Versuch geplant" : "Failed – retry scheduled") :
+          (locale === "de" ? "Noch nicht gesendet" : "Not sent yet")],
     [t.provider, order.provider ?? "-"],
     [t.paymentId, order.provider_payment_id ?? "-"],
     [t.sessionId, order.provider_session_id ?? "-"],

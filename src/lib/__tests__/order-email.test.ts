@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildPaidOrderAdminEmail } from "../email";
+import { buildPaidOrderAdminEmail, buildUnpaidOrderCustomerEmail } from "../email";
 
 describe("buildPaidOrderAdminEmail", () => {
   it("includes fulfillment details and escapes customer-controlled HTML", () => {
@@ -33,5 +33,25 @@ describe("buildPaidOrderAdminEmail", () => {
     expect(result.text).toContain("iPhone 15 Pro Max");
     expect(result.html).not.toContain("<script>alert(1)</script>");
     expect(result.html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+  });
+});
+
+describe("buildUnpaidOrderCustomerEmail", () => {
+  it("includes the order and logo while escaping customer content", () => {
+    const result = buildUnpaidOrderCustomerEmail({
+      orderId: "12345678-1234-1234-1234-123456789012",
+      orderNumber: 45,
+      customerName: "<script>alert(1)</script>",
+      customerEmail: "customer@example.com",
+      locale: "en",
+      items: [{ title: "<img src=x>", quantity: 1, lineAmount: 99 }],
+      totalAmount: 99,
+      currency: "EUR",
+    });
+    expect(result.subject).toContain("#A-45");
+    expect(result.html).toContain("/branding/apfel-park-white.png");
+    expect(result.html).not.toContain("<script>alert(1)</script>");
+    expect(result.html).toContain("&lt;img src=x&gt;");
+    expect(result.text).toContain("please do not pay again");
   });
 });

@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import { query } from "@/lib/db";
-import { getAdminDictionary, getAdminNumberLocale } from "@/lib/admin-i18n-server";
+import { getAdminDictionary, getAdminLocale, getAdminNumberLocale } from "@/lib/admin-i18n-server";
+import { getAdminPaymentStatus } from "@/lib/admin-payment-status";
 import type { AdminDictionary } from "@/lib/admin-i18n";
 import AdminShell from "../../../components/admin/AdminShell";
 import { updateOrderFulfillment } from "./actions";
@@ -25,6 +26,8 @@ type OrderRow = {
   status: string | null;
   payment_status: string | null;
   provider: string | null;
+  provider_status: string | null;
+  decline_code: string | null;
   shipping_method: string | null;
   created_at: string | null;
   total_amount: number | string;
@@ -76,8 +79,13 @@ const countItems = (items: unknown): number => {
 
 async function fetchOrders(search: string): Promise<OrderRow[]> {
   const baseSelect = `
-    SELECT id, order_number, customer_name, customer_email, customer_phone, customer_address,
-           status, payment_status, provider,
+    SELECT orders.id, order_number, customer_name, customer_email, customer_phone, customer_address,
+           status, payment_status, orders.provider, provider_status,
+           (SELECT e.payload #>> '{data,object,last_payment_error,decline_code}'
+              FROM payment_webhook_events e
+             WHERE e.provider = 'stripe' AND e.event_type = 'payment_intent.payment_failed'
+               AND e.payload #>> '{data,object,metadata,order_id}' = orders.id::text
+             ORDER BY e.created_at DESC LIMIT 1) AS decline_code,
            shipping_method, created_at, total_amount, currency, items,
            metadata->>'trackingId' AS tracking_id
     FROM orders`;
@@ -119,7 +127,7 @@ export default async function OrdersPage({
   const dict = await getAdminDictionary();
   const numberLocale = await getAdminNumberLocale();
 
-  const [orders, totalsResult, topProductsResult] = await Promise.all([
+  const [orders, totalsResult, topProductsResult, locale] = await Promise.all([
     fetchOrders(search),
     query(
       `SELECT
@@ -144,6 +152,7 @@ export default async function OrdersPage({
        ORDER BY qty DESC, revenue DESC
        LIMIT 8`,
     ),
+    getAdminLocale(),
   ]);
 
   const totals = (totalsResult.rows[0] ?? {
@@ -278,7 +287,7 @@ export default async function OrdersPage({
                 <th className="px-4 py-3">{dict.ordersPage.table.customer}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.delivery}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.items}</th>
-                <th className="px-4 py-3">Payment</th>
+                <th className="px-4 py-3">{locale === "de" ? "Zahlung" : "Payment"}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.tracking}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.total}</th>
                 <th className="px-4 py-3">{dict.ordersPage.table.status}</th>
@@ -320,8 +329,13 @@ export default async function OrdersPage({
                     </td>
                     <td className="px-4 py-3 text-muted">{countItems(order.items) || "-"}</td>
                     <td className="px-4 py-3 text-muted">
-                      <div>{order.payment_status ?? "-"}</div>
-                      <div className="text-xs">{order.provider ?? "-"}</div>
+                      {(() => {
+                        const payment = getAdminPaymentStatus(order, locale);
+                        return <>
+                          <div className={payment.tone === "error" ? "font-semibold text-red-600" : payment.tone === "success" ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>{payment.label}</div>
+                          <div className="text-xs">{payment.detail}</div>
+                        </>;
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-muted">
                       {order.tracking_id ? <span className="break-all text-xs">{order.tracking_id}</span> : "-"}

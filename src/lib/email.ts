@@ -69,7 +69,7 @@ type OutboundEmail = {
   text: string;
   html: string;
   replyTo?: string;
-  identity?: "repairs" | "sales";
+  identity?: "repairs" | "sales" | "noreply";
   attachments?: EmailAttachment[];
 };
 
@@ -97,16 +97,19 @@ const formatCurrency = (value: number | null | undefined, locale: string): strin
 
 // Sender identities: "repairs" (default) for the repair flow, "sales" for
 // shop matters such as orders and withdrawal confirmations.
-export type EmailIdentity = "repairs" | "sales";
+export type EmailIdentity = "repairs" | "sales" | "noreply";
 
 const getMailerConfig = (identity: EmailIdentity = "repairs") => {
   const host = process.env.SMTP_HOST?.trim();
   const port = Number(process.env.SMTP_PORT ?? "587");
   const defaultUser = process.env.SMTP_USER?.trim();
   const defaultPass = process.env.SMTP_PASS?.trim();
-  const user = identity === "sales" ? process.env.SMTP_SALES_USER?.trim() || defaultUser : defaultUser;
-  const pass = identity === "sales" ? process.env.SMTP_SALES_PASS?.trim() || defaultPass : defaultPass;
+  const user = identity === "noreply" ? process.env.SMTP_NOREPLY_USER?.trim() :
+    identity === "sales" ? process.env.SMTP_SALES_USER?.trim() || defaultUser : defaultUser;
+  const pass = identity === "noreply" ? process.env.SMTP_NOREPLY_PASS?.trim() :
+    identity === "sales" ? process.env.SMTP_SALES_PASS?.trim() || defaultPass : defaultPass;
   const from =
+    (identity === "noreply" ? process.env.SMTP_NOREPLY_FROM?.trim() || user : undefined) ||
     (identity === "sales" ? process.env.SMTP_SALES_FROM?.trim() || process.env.SMTP_SALES_USER?.trim() : undefined) ||
     process.env.SMTP_FROM_EMAIL?.trim() ||
     user ||
@@ -231,7 +234,7 @@ const sendTransactionalEmail = async (email: OutboundEmail): Promise<EmailSendRe
     return smtpResult;
   }
 
-  if (process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL) {
+  if (email.identity !== "noreply" && process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL) {
     return sendWithResend(identifiedEmail);
   }
 
@@ -457,6 +460,74 @@ export const sendPaidOrderAdminEmail = async (
     html,
     identity: "sales",
   });
+};
+
+export type UnpaidOrderCustomerEmailData = {
+  orderNumber: number | null;
+  orderId: string;
+  customerName: string | null;
+  customerEmail: string;
+  locale: "de" | "en";
+  items: unknown;
+  totalAmount: number | string;
+  currency: string | null;
+};
+
+export const buildUnpaidOrderCustomerEmail = (data: UnpaidOrderCustomerEmailData) => {
+  const de = data.locale === "de";
+  const orderLabel = data.orderNumber ? `#A-${data.orderNumber}` : `#${data.orderId.slice(0, 8)}`;
+  const money = new Intl.NumberFormat(de ? "de-DE" : "en-GB", {
+    style: "currency",
+    currency: data.currency?.toUpperCase() || "EUR",
+  });
+  const total = money.format(Number(data.totalAmount));
+  const items = normalizePaidOrderEmailItems(data.items);
+  const subject = de ? `Zahlung für Bestellung ${orderLabel} offen` : `Payment pending for order ${orderLabel}`;
+  const greeting = data.customerName?.trim()
+    ? (de ? `Hallo ${data.customerName.trim()},` : `Hello ${data.customerName.trim()},`)
+    : (de ? "Hallo," : "Hello,");
+  const heading = de ? "Wir haben noch keine Zahlung erhalten" : "We have not received your payment";
+  const intro = de
+    ? `Für deine Bestellung ${orderLabel} ist bisher keine Zahlung bei uns eingegangen. Die Bestellung ist deshalb noch nicht bestätigt.`
+    : `We have not received payment for order ${orderLabel}, so the order is not confirmed yet.`;
+  const help = de
+    ? "Wenn du weiterhin bestellen möchtest, starte bitte eine neue Bestellung im Shop. Falls dein Konto bereits belastet wurde, bezahle bitte nicht erneut und kontaktiere uns mit deiner Bestellnummer."
+    : "If you still want these items, please place a new order in our shop. If you have already been charged, please do not pay again; contact us with your order number.";
+  const itemLines = items.map((item) => `${item.quantity} × ${item.title}${item.lineAmount === null ? "" : ` — ${money.format(item.lineAmount)}`}`);
+  const text = [greeting, "", heading, intro, "", de ? "Deine Artikel:" : "Your items:", ...itemLines,
+    `${de ? "Gesamt" : "Total"}: ${total}`, "", help, "", "https://apfel-park.de/shop",
+    "sales@apfel-park.de"].join("\n");
+  const rows = items.map((item) => `<tr>
+    <td style="padding:12px 0;border-bottom:1px solid #e8e8e8;color:#1c1c1c">${escapeHtml(`${item.quantity} × ${item.title}`)}</td>
+    <td style="padding:12px 0;border-bottom:1px solid #e8e8e8;text-align:right;color:#1c1c1c">${escapeHtml(item.lineAmount === null ? "—" : money.format(item.lineAmount))}</td>
+  </tr>`).join("");
+  const html = `<!doctype html><html lang="${data.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  <body style="margin:0;padding:32px 12px;background:#f5f4ef;font-family:Arial,Helvetica,sans-serif;color:#1c1c1c">
+    <div style="max-width:620px;margin:auto;background:#fff;border:1px solid #e9e5d8;border-radius:18px;overflow:hidden">
+      <div style="padding:26px 32px;background:#151515;text-align:center"><img src="https://apfel-park.de/branding/apfel-park-white.png" width="150" alt="Apfel Park" style="display:block;width:150px;max-width:100%;height:auto;margin:auto"></div>
+      <div style="padding:34px 32px">
+        <div style="font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#9b7526">${escapeHtml(de ? "Zahlungsinformation" : "Payment update")}</div>
+        <h1 style="font-size:25px;line-height:1.25;margin:12px 0 22px">${escapeHtml(heading)}</h1>
+        <p style="line-height:1.7;margin:0 0 12px">${escapeHtml(greeting)}</p>
+        <p style="line-height:1.7;margin:0 0 24px">${escapeHtml(intro)}</p>
+        <div style="border:1px solid #eee7d6;border-radius:12px;padding:18px 22px;background:#fffcf5">
+          <div style="font-size:13px;color:#675e50;margin-bottom:12px">${escapeHtml(de ? "Bestellung" : "Order")} <strong style="color:#1c1c1c">${escapeHtml(orderLabel)}</strong></div>
+          <table role="presentation" style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${rows}
+            <tr><td style="padding-top:16px;font-weight:bold">${escapeHtml(de ? "Gesamt" : "Total")}</td><td style="padding-top:16px;text-align:right;font-weight:bold">${escapeHtml(total)}</td></tr>
+          </tbody></table>
+        </div>
+        <p style="line-height:1.7;margin:24px 0">${escapeHtml(help)}</p>
+        <a href="https://apfel-park.de/shop" style="display:inline-block;background:#b18b36;color:#fff;padding:13px 22px;border-radius:8px;text-decoration:none;font-weight:bold">${escapeHtml(de ? "Zum Shop" : "Visit shop")}</a>
+        <p style="font-size:13px;line-height:1.6;color:#666;margin:26px 0 0">${escapeHtml(de ? "Fragen? Schreib uns an" : "Questions? Email us at")} <a href="mailto:sales@apfel-park.de" style="color:#80621f">sales@apfel-park.de</a>. ${escapeHtml(de ? "Bitte antworte nicht auf diese E-Mail." : "Please do not reply to this email.")}</p>
+      </div>
+    </div>
+  </body></html>`;
+  return { subject, text, html };
+};
+
+export const sendUnpaidOrderCustomerEmail = async (data: UnpaidOrderCustomerEmailData): Promise<EmailSendResult> => {
+  const content = buildUnpaidOrderCustomerEmail(data);
+  return sendTransactionalEmail({ to: data.customerEmail, ...content, identity: "noreply" });
 };
 
 export const buildEmailContent = (data: ContactNotificationData) => {
