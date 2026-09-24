@@ -17,7 +17,7 @@ import { readSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProductEditorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{legacy?:string}> }) {
+export default async function ProductEditorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{legacy?:string;step?:string}> }) {
   const [{ id }, locale, promo, user] = await Promise.all([params, getAdminLocale(), getPromoPopupSettings(), readSessionUser()]);
   const [productResult, featuredResult] = await Promise.all([
     query(
@@ -55,7 +55,8 @@ export default async function ProductEditorPage({ params, searchParams }: { para
     isActive: product.isActive,
   });
 
-  if(phoneEditorEnabled() && product.category === "smartphones" && (await searchParams).legacy !== "1") return <AdminShell title={product.title}>{product.energyReviewRequired ? <ProductTipsCard tips={{ ...tips, items: tips.items.filter(item => item.code === "energy_review") }} locale={locale} /> : null}<SmartphoneWizard locale={locale} productId={product.id} researchEnabled={process.env.LEGACY_PRODUCT_RESEARCH_ENABLED === "true"}/><Link className="text-gold" href={`/admin/products/${product.id}?legacy=1`}>{locale === "de" ? "Erweiterte Katalog- und Darstellungseinstellungen" : "Advanced catalog and presentation settings"}</Link></AdminShell>;
+  const editorParams = await searchParams;
+  if(phoneEditorEnabled() && product.category === "smartphones" && editorParams.legacy !== "1") return <AdminShell title={product.title}>{product.energyReviewRequired ? <ProductTipsCard tips={{ ...tips, items: tips.items.filter(item => item.code === "energy_review") }} locale={locale} /> : null}<SmartphoneWizard locale={locale} productId={product.id} researchEnabled={process.env.LEGACY_PRODUCT_RESEARCH_ENABLED === "true"}/><Link className="text-gold" href={`/admin/products/${product.id}?legacy=1`}>{locale === "de" ? "Erweiterte Katalog- und Darstellungseinstellungen" : "Advanced catalog and presentation settings"}</Link></AdminShell>;
 
   return (
     <AdminShell title={product.title}>
@@ -67,7 +68,7 @@ export default async function ProductEditorPage({ params, searchParams }: { para
       <div id="ai-intake">
         <ProductLinkedIntakeCard locale={locale} productId={product.id} condition={product.condition} isOwner={isProductIntakeOwner(user)} />
       </div>
-      <ProductCatalogAdmin locale={locale} products={[product]} promo={promo} editorOnly />
+      <ProductCatalogAdmin locale={locale} products={[product]} promo={promo} editorOnly initialStep={editorParams.step === "pricing" ? "pricing" : undefined} />
     </AdminShell>
   );
 }

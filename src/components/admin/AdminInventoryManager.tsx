@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import { adminDictionary } from "@/lib/admin-i18n";
 
@@ -54,6 +55,7 @@ function InventoryThumbnail({ src, title, fallback }: { src: string | null; titl
 }
 
 export default function AdminInventoryManager({ locale }: { locale: "de" | "en" }) {
+  const router = useRouter();
   const text = adminDictionary[locale].inventoryCatalog;
   const filterText = adminDictionary[locale].inventoryFilters;
   const [filters, setFilters] = useState<InventoryFilters>(emptyFilters);
@@ -181,6 +183,10 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         body: JSON.stringify({ productId: item.productId, catalogEnabled: !item.catalogEnabled }),
       });
       if (!response.ok) throw new Error(text.failed);
+      if (!item.catalogEnabled) {
+        router.push(`/admin/products/${item.productId}?legacy=1&step=pricing`);
+        return;
+      }
       setNotice(text.updated);
       await loadInventory(query, pagination.page, status, filters);
     } catch { setError(text.failed); }
@@ -280,7 +286,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         <fieldset disabled={loading || Boolean(busyProduct) || Boolean(busySku)} className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5 disabled:opacity-60">
           <label className="min-w-0 text-xs text-muted">{text.title}
             <select value={status} onChange={(event) => { setStatus(event.target.value); void loadInventory(query, 1, event.target.value, filters); }} className="mt-1 w-full min-w-0 rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm text-foreground">
-              <option value="all">{text.all}</option><option value="inventory">{text.inventoryOnly}</option><option value="draft">{text.draft}</option><option value="published">{text.published}</option>
+              <option value="all">{text.all}</option><option value="needs_setup">{text.needsSetup}</option><option value="inventory">{text.inventoryOnly}</option><option value="draft">{text.draft}</option><option value="published">{text.published}</option>
             </select>
           </label>
           {([['brand', 'brands', filterText.brand], ['category', 'categories', filterText.category], ['condition', 'conditions', filterText.condition]] as const).map(([key, options, label]) => <label key={key} className="min-w-0 text-xs text-muted">{label}
@@ -340,7 +346,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                         <span aria-hidden="true" className={`flex h-5 w-9 items-center rounded-full p-0.5 ${item.catalogEnabled ? 'justify-end bg-gold' : 'justify-start bg-muted/30'}`}><span className="h-4 w-4 rounded-full bg-white shadow" /></span>
                         {item.catalogEnabled ? text.disable : text.enable}
                       </button>
-                      {item.catalogEnabled ? <Link href={`/admin/products/${item.productId}`} className="text-xs font-semibold text-gold">{text.edit} →</Link> : null}
+                      {item.catalogEnabled ? <Link href={`/admin/products/${item.productId}?legacy=1&step=pricing`} className="text-xs font-semibold text-gold">{text.edit} →</Link> : null}
                     </div>
                   </td>
                   <td className="px-3 py-3 text-right font-mono tabular-nums">{item.onHand}</td>

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(100, Math.max(1, Number.parseInt(request.nextUrl.searchParams.get("limit") ?? "50", 10) || 50));
   const requestedPage = Math.max(1, Math.min(1000000, Number.parseInt(request.nextUrl.searchParams.get("page") ?? "1", 10) || 1));
   const requestedStatus = request.nextUrl.searchParams.get("status") ?? "all";
-  const status = ["all", "inventory", "draft", "published"].includes(requestedStatus) ? requestedStatus : "all";
+  const status = ["all", "inventory", "draft", "published", "needs_setup"].includes(requestedStatus) ? requestedStatus : "all";
   const pattern = `%${search}%`;
   const brand = request.nextUrl.searchParams.get("brand")?.trim().slice(0, 200) ?? "";
   const category = request.nextUrl.searchParams.get("category")?.trim().slice(0, 100) ?? "";

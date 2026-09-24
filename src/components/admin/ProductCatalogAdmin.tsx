@@ -40,6 +40,7 @@ type Props = {
   promo: PromoSettings;
   editorOnly?: boolean;
   promotionsOnly?: boolean;
+  initialStep?: "pricing";
 };
 
 const imageSlotLabels = {
@@ -76,7 +77,7 @@ const discountPercentage = (price: number, compareAtPrice?: number | null) => {
   return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
 };
 
-export default function ProductCatalogAdmin({ locale, products, promo, editorOnly = false, promotionsOnly = false }: Props) {
+export default function ProductCatalogAdmin({ locale, products, promo, editorOnly = false, promotionsOnly = false, initialStep }: Props) {
   const [records, setRecords] = useState(products);
   const [selectedId, setSelectedId] = useState(products[0]?.id ?? "");
   const [search, setSearch] = useState("");
@@ -94,7 +95,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   const [aiMessage, setAiMessage] = useState("");
   const [aiJustFilled, setAiJustFilled] = useState(false);
   const [activeTab, setActiveTab] = useState<"catalog" | "promo">(promotionsOnly ? "promo" : "catalog");
-  const [wizardStep, setWizardStep] = useState<"basics" | "pricing" | "condition" | "content" | "variants" | "channels" | "images" | "experience" | "publishing">("basics");
+  const [wizardStep, setWizardStep] = useState<"basics" | "pricing" | "condition" | "content" | "variants" | "channels" | "images" | "experience" | "publishing">(initialStep ?? "basics");
   const [isSaving, startSaving] = useTransition();
   const [isSavingPromo, startSavingPromo] = useTransition();
   const slotLabels = imageSlotLabels[locale];
@@ -445,6 +446,12 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
     }
     if (formState.stock === "" || Number(formState.stock) < 0) {
       setSaveError(locale === "de" ? "Lagerbestand ist erforderlich." : "Stock is required.");
+      setWizardStep("pricing");
+      return;
+    }
+    if (initialStep === "pricing" && formState.isActive && Number(formState.stock) <= 0 &&
+      !formState.variants.some((variant) => Number(variant.stock ?? 0) > 0)) {
+      setSaveError(locale === "de" ? "Zum Veröffentlichen mindestens 1 Einheit eintragen." : "Enter at least 1 unit before publishing.");
       setWizardStep("pricing");
       return;
     }
@@ -1075,6 +1082,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                 {/* STEP 2: PRICING & STOCK */}
                 {wizardStep === "pricing" && (
                   <div id="pricing" className="rounded-2xl border border-border/80 bg-surface/70 p-5 space-y-5">
+                    {initialStep === "pricing" ? <p className="rounded-xl border border-gold/30 bg-gold/10 p-3 text-sm text-foreground">{locale === "de" ? "Preis und Lagerbestand eintragen, dann zur Veröffentlichung gehen. Änderungen werden erst beim Speichern veröffentlicht." : "Enter the price and quantity, then continue to publishing. Changes go live only when you save."}</p> : null}
                     <div className="border-b border-border/60 pb-3">
                       <h4 className="text-base font-bold text-heading flex items-center gap-2">
                         <span>💶</span> {locale === "de" ? "2. Preise, Kategorie & Lagerbestand" : "2. Pricing, Category & Stock"}
@@ -1109,12 +1117,24 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                       </label>
                       <label className="space-y-1.5">
                         <span className="text-xs font-bold uppercase tracking-wider text-muted-strong flex items-center gap-2">
-                          {locale === "de" ? "Lagerbestand" : "Stock"}
+                          {initialStep === "pricing" && formState.variants.length ? (locale === "de" ? "Gesamtbestand" : "Total stock") : (locale === "de" ? "Lagerbestand" : "Stock")}
                           <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 border border-amber-500/40">{locale === "de" ? "Pflichtfeld" : "Required"}</span>
                         </span>
-                        <input type="number" step="1" value={formState.stock} onChange={(event) => setFormState((prev) => ({ ...prev, stock: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none" />
+                        <input type="number" step="1" min="0" value={formState.stock} readOnly={initialStep === "pricing" && formState.variants.length > 0} onChange={(event) => setFormState((prev) => ({ ...prev, stock: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none read-only:opacity-60" />
                       </label>
                     </div>
+                    {initialStep === "pricing" && formState.variants.length > 0 ? <div className="space-y-3 rounded-xl border border-border/70 bg-surface-strong/60 p-4">
+                      <p className="text-sm font-semibold">{locale === "de" ? "Preis und Bestand je Variante" : "Price and quantity for each variant"}</p>
+                      {formState.variants.map((variant, index) => <div key={`${variant.sku || index}-${index}`} className="grid gap-3 rounded-lg border border-border/60 p-3 sm:grid-cols-[minmax(160px,1fr)_minmax(120px,180px)_minmax(120px,180px)]">
+                        <div className="text-sm font-medium">{[variant.storage, variant.color, variant.sku].filter(Boolean).join(" · ") || `${locale === "de" ? "Variante" : "Variant"} ${index + 1}`}</div>
+                        <label className="text-xs text-muted">{locale === "de" ? "Preis (€)" : "Price (€)"}<input type="number" min="0" step="0.01" value={variant.price ?? ""} placeholder={formState.price} onChange={(event) => setFormState((previous) => ({ ...previous, variants: previous.variants.map((item, itemIndex) => itemIndex === index ? { ...item, price: event.target.value === "" ? undefined : Number(event.target.value) } : item) }))} className="mt-1 w-full rounded-lg border border-border/80 bg-surface px-3 py-2 text-sm text-foreground" /></label>
+                        <label className="text-xs text-muted">{locale === "de" ? "Menge" : "Quantity"}<input type="number" min="0" step="1" value={variant.stock ?? ""} onChange={(event) => setFormState((previous) => {
+                          const variants = previous.variants.map((item, itemIndex) => itemIndex === index ? { ...item, stock: event.target.value === "" ? undefined : Number(event.target.value) } : item);
+                          return { ...previous, variants, stock: String(variants.reduce((total, item) => total + (item.stock ?? 0), 0)) };
+                        })} className="mt-1 w-full rounded-lg border border-border/80 bg-surface px-3 py-2 text-sm text-foreground" /></label>
+                      </div>)}
+                    </div> : null}
+                    {initialStep === "pricing" ? <button type="button" onClick={() => { setFormState((previous) => ({ ...previous, isActive: true })); setWizardStep("publishing"); }} className="rounded-xl bg-gold px-5 py-3 text-sm font-semibold text-black hover:bg-gold-deep">{locale === "de" ? "Weiter zur Veröffentlichung →" : "Continue to publishing →"}</button> : null}
                   </div>
                 )}
 
@@ -1671,7 +1691,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                         ) : (
                           <>
                             <span>💾</span>
-                            <span>{locale === "de" ? "Produkt jetzt speichern & veröffentlichen" : "Save & Publish Product Now"}</span>
+                            <span>{formState.isActive ? (locale === "de" ? "Produkt speichern & veröffentlichen" : "Save & publish product") : (locale === "de" ? "Entwurf speichern" : "Save draft")}</span>
                           </>
                         )}
                       </button>
