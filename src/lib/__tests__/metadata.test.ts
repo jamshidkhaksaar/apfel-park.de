@@ -44,6 +44,9 @@ describe("catalog metadata query policy", () => {
 
     expect(metadata.robots).toEqual({ index: true, follow: true });
     expect(metadata.alternates?.canonical).toBe("https://apfel-park.de/en/store?page=2");
+    expect(metadata.title).toMatch(/ – Page 2$/);
+    expect(metadata.description).toMatch(/ Page 2\.$/);
+    expect(metadata.openGraph?.title).toBe(metadata.title);
   });
 
   it("keeps pagination in the canonical for noindexed presentation views", async () => {
@@ -59,5 +62,16 @@ describe("catalog metadata query policy", () => {
 
     expect(metadata.robots).toEqual({ index: false, follow: true });
     expect(metadata.alternates?.canonical).toBe("https://apfel-park.de/de/store?page=2");
+    expect(metadata.title).not.toMatch(/Seite 2$/);
+  });
+
+  it("labels German paginated listings without changing the canonical or hreflang", async () => {
+    const metadata = await createMetadata("de", "Zubehör", "Zubehör entdecken.", "/accessories", undefined, {
+      canonicalQuery: "page=10",
+    });
+    expect(metadata.title).toMatch(/ – Seite 10$/);
+    expect(metadata.description).toMatch(/ Seite 10\.$/);
+    expect(metadata.alternates?.canonical).toBe("https://apfel-park.de/de/accessories?page=10");
+    expect(metadata.alternates?.languages?.en).toBe("https://apfel-park.de/en/accessories?page=10");
   });
 });

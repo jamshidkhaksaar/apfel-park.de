@@ -52,10 +52,20 @@ export const createMetadata = async (
   const routeMetadata = route ? route.locales[locale] : null;
   // Registered routes: admin/default route copy wins so /admin/seo overrides work.
   // Unregistered paths (products, articles, …): the page-supplied copy wins.
-  const resolvedTitle = normalizeMetadataTitle(routeMetadata ? routeMetadata.title || title : title);
-  const resolvedDescription = routeMetadata
+  const baseTitle = normalizeMetadataTitle(routeMetadata ? routeMetadata.title || title : title);
+  const baseDescription = routeMetadata
     ? routeMetadata.description || description
     : description;
+  // Only clean, self-canonical listing pages get distinct snippets. Filtered
+  // views remain noindex even when their canonical retains the page number.
+  const paginationPage = !options?.noindex && /^page=[1-9]\d*$/.test(options?.canonicalQuery ?? "")
+    ? Number(options?.canonicalQuery?.slice(5))
+    : null;
+  const pageLabel = paginationPage && paginationPage > 1 && Number.isSafeInteger(paginationPage)
+    ? locale === "de" ? `Seite ${paginationPage}` : `Page ${paginationPage}`
+    : null;
+  const resolvedTitle = pageLabel ? `${baseTitle} – ${pageLabel}` : baseTitle;
+  const resolvedDescription = pageLabel ? `${baseDescription.trim().replace(/[.!?]+$/, "")} ${pageLabel}.` : baseDescription;
   const keywordLocale = allLocales.includes(locale) ? locale : "de";
   const keywords = splitKeywords(
     routeMetadata?.keywords || global.defaultKeywords[keywordLocale],
