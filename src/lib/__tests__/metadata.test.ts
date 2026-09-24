@@ -70,7 +70,7 @@ describe("catalog metadata query policy", () => {
       canonicalQuery: "page=10",
     });
     expect(metadata.title).toMatch(/ – Seite 10$/);
-    expect(metadata.description).toMatch(/ Seite 10\.$/);
+    expect(metadata.description).toMatch(/\. Seite 10\.$/);
     expect(metadata.alternates?.canonical).toBe("https://apfel-park.de/de/accessories?page=10");
     expect(metadata.alternates?.languages?.en).toBe("https://apfel-park.de/en/accessories?page=10");
   });

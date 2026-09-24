@@ -65,7 +65,7 @@ export const createMetadata = async (
     ? locale === "de" ? `Seite ${paginationPage}` : `Page ${paginationPage}`
     : null;
   const resolvedTitle = pageLabel ? `${baseTitle} – ${pageLabel}` : baseTitle;
-  const resolvedDescription = pageLabel ? `${baseDescription.trim().replace(/[.!?]+$/, "")} ${pageLabel}.` : baseDescription;
+  const resolvedDescription = pageLabel ? `${baseDescription.trim().replace(/[.!?]*$/, ".")} ${pageLabel}.` : baseDescription;
   const keywordLocale = allLocales.includes(locale) ? locale : "de";
   const keywords = splitKeywords(
     routeMetadata?.keywords || global.defaultKeywords[keywordLocale],
