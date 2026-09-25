@@ -5,6 +5,13 @@ import { classifySubcategory, subcategoryLabel } from "../product-subcategory";
 const accessory = (title: string) => classifySubcategory("accessories", title);
 
 describe("classifySubcategory", () => {
+  it("separates replacement displays from protectors, batteries and cases", () => {
+    expect(accessory("TRUSMI Ersatzdisplay iPhone 15 Pro Soft OLED")).toBe("replacement-displays");
+    expect(accessory("TRUSMI LCD Assembly Compatible For iPhone 16 Pro (Incell)")).toBe("replacement-displays");
+    expect(accessory("TRUSMI Displayschutz iPhone 15 Pro")).toBe("screen-protection");
+    expect(accessory("TRUSMI Akku für iPhone 15 Pro")).toBe("charging");
+    expect(subcategoryLabel("replacement-displays", "de")).toBe("Ersatzdisplays");
+  });
   it("leaves non-accessory categories alone", () => {
     expect(classifySubcategory("smartphones", "iPhone 15 Pro Max 256GB")).toBe("smartphones");
     expect(classifySubcategory("tablets", "iPad Air")).toBe("tablets");

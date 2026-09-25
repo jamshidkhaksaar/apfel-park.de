@@ -14,6 +14,7 @@
  * case rather than to "other".
  */
 export const SUBCATEGORY_RULES: ReadonlyArray<readonly [string, RegExp]> = [
+  ["replacement-displays", /ersatzdisplay|displayeinheit|replacement display|lcd assembly|soft oled|hard oled|incell|in-cell/],
   ["screen-protection", /panzerglas|displayschutz|schutzglas|schutzfolie|displayfolie|screen protector|\bfolie\b/],
   ["audio", /kopfhörer|kopfhoerer|headphone|headset|earbud|airpod|ohrhörer|lautsprecher|speaker|soundbar/],
   ["wearables", /smartwatch|fitness.?tracker|smart.?band|aktivitätstracker/],
@@ -40,6 +41,7 @@ export const classifySubcategory = (category: string | null, text: string): stri
 };
 
 export const ACCESSORY_SUBCATEGORIES = [
+  "replacement-displays",
   "cases-hard",
   "cases-silicone",
   "cases-wallet",
@@ -59,6 +61,7 @@ export const ACCESSORY_SUBCATEGORIES = [
 
 export const subcategoryLabel = (slug: string, locale: "de" | "en"): string => {
   const labels: Record<string, [string, string]> = {
+    "replacement-displays": ["Ersatzdisplays", "Replacement displays"],
     "cases-hard": ["Hardcases", "Hard cases"],
     "cases-silicone": ["Silikonhüllen", "Silicone cases"],
     "cases-wallet": ["Klapphüllen", "Wallet cases"],

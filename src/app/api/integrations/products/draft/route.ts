@@ -365,7 +365,7 @@ export async function POST(request: NextRequest) {
           isActive,
           condition,
           conditionNote || null,
-          JSON.stringify({ sourceImageSha256: sourceImageSha256 || importKey, ...importMetadata }),
+          JSON.stringify({ sourceImageSha256: sourceImageSha256 || null, ...importMetadata }),
           importKey,
         ],
       );
@@ -439,7 +439,7 @@ export async function POST(request: NextRequest) {
         conditionNote || null,
         importKey || null,
         JSON.stringify({
-          sourceImageSha256: sourceImageSha256 || importKey || null,
+          sourceImageSha256: sourceImageSha256 || null,
           ...importMetadata,
         }),
       ],
