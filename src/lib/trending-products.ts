@@ -20,6 +20,7 @@ const categoryPriority: Record<Product['category'], number> = {
   tablets: 4,
   laptops: 3,
   consoles: 2,
+  parts: 1,
   accessories: 1,
 };
 

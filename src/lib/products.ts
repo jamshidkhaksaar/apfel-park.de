@@ -15,7 +15,7 @@ import { classifyAccessoryTypes, hasExplicitBluetoothEvidence } from '@/lib/prod
 import { selectTrendingProducts } from '@/lib/trending-products';
 import { readDescriptionAiHashes } from '@/lib/product-text-provenance';
 
-export type ProductCategory = "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
+export type ProductCategory = "smartphones" | "tablets" | "accessories" | "parts" | "consoles" | "laptops";
 
 export type ProductCondition = "new" | "open_box" | "used";
 
@@ -296,6 +296,7 @@ const DEFAULT_PROMO_POPUP: PromoPopupSettings = {
 const normalizeCategory = (category: string): ProductCategory | null => {
   const value = category.toLowerCase().trim();
   if (value === "smartphone" || value === "smartphones") return "smartphones";
+  if (value === "parts" || value === "spare-parts" || value === "ersatzteile") return "parts";
   if (value === "tablet" || value === "tablets") return "tablets";
   if (value === "accessory" || value === "accessories") return "accessories";
   if (value === "console" || value === "consoles" || value === "gaming" || value === "game") return "consoles";
@@ -313,6 +314,7 @@ const normalizeCondition = (condition: string | null | undefined): ProductCondit
 const fallbackImageByCategory: Record<ProductCategory, string> = {
   smartphones: "/images/slider_images/iphone.png",
   tablets: "/images/ipad.png",
+  parts: "/images/slider_images/accessories.png",
   accessories: "/images/slider_images/accessories.png",
   consoles: "/images/slider_images/ps5.png",
   laptops: "/images/slider_images/laptop.png",
@@ -321,6 +323,7 @@ const fallbackImageByCategory: Record<ProductCategory, string> = {
 const categoryFilters: Record<ProductCategory, string> = {
   smartphones: "category.ilike.*smartphone*,category.ilike.*smartphones*",
   tablets: "category.ilike.*tablet*,category.ilike.*tablets*",
+  parts: "category.ilike.parts,category.ilike.spare-parts,category.ilike.ersatzteile",
   accessories: "category.ilike.*accessory*,category.ilike.*accessories*",
   consoles: "category.ilike.*console*,category.ilike.*consoles*,category.ilike.*gaming*,category.ilike.*game*",
   laptops: "category.ilike.*laptop*,category.ilike.*laptops*",
@@ -1058,7 +1061,7 @@ export async function getStoreCatalog({
   failOnError = false,
 }: {
   category?: StoreCatalogCategory;
-  /** Narrows an accessory category to one subcategory landing page. */
+  /** Narrows an accessory or parts category to one subcategory landing page. */
   subcategory?: string;
   collection?: StoreCatalogCollection;
   sort?: StoreCatalogSort;
@@ -1084,6 +1087,7 @@ export async function getStoreCatalog({
     all: 0,
     smartphones: 0,
     tablets: 0,
+    parts: 0,
     accessories: 0,
     consoles: 0,
     laptops: 0,
@@ -1167,6 +1171,7 @@ export async function getStoreCatalog({
     const categoryRank: Record<ProductCategory, number> = {
       smartphones: 0,
       tablets: 1,
+      parts: 5,
       accessories: 2,
       laptops: 3,
       consoles: 4,

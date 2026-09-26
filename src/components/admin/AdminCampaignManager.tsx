@@ -46,7 +46,7 @@ type CampaignRow = {
 type ProductRow = { id: string; title: string; category: string };
 
 const field = "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground";
-const categories = ["smartphones", "tablets", "laptops", "accessories", "consoles", "repairs"];
+const categories = ["smartphones", "tablets", "laptops", "accessories", "parts", "consoles", "repairs"];
 const empty = (): CampaignForm => ({
   code: "",
   title: { de: "", en: "" },

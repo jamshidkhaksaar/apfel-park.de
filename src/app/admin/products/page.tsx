@@ -22,7 +22,7 @@ import { createIntakeAssetToken } from "@/lib/product-intake/asset-token";
 import { getProductIntakeRunDetail, listProductIntakeRuns } from "@/lib/product-intake/repository";
 import { catalogSummariesForProducts, listRecentProductRevisions } from "@/lib/product-intake/workspace-repository";
 import { workspaceViewFromParam } from "@/lib/product-intake/workspace";
-import { ACCESSORY_SUBCATEGORIES, subcategoryLabel } from "@/lib/product-subcategory";
+import { ACCESSORY_SUBCATEGORIES, PART_SUBCATEGORIES, subcategoryLabel } from "@/lib/product-subcategory";
 import { readSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -95,8 +95,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const requestedPage = Math.max(1, Number.parseInt(valueOf(params.page) || "1", 10) || 1);
   const view = workspaceViewFromParam(valueOf(params.view));
 
-  const CATEGORIES = ["smartphones", "tablets", "accessories", "consoles", "laptops"];
-  const SUBCATEGORIES = [...ACCESSORY_SUBCATEGORIES, ...CATEGORIES] as readonly string[];
+  const CATEGORIES = ["smartphones", "tablets", "accessories", "parts", "consoles", "laptops"];
+  const SUBCATEGORIES = [...new Set([...ACCESSORY_SUBCATEGORIES, ...PART_SUBCATEGORIES, ...CATEGORIES])] as readonly string[];
 
   // Each dropdown's options are counted with its own filter removed, so the
   // numbers show what picking that option would actually return rather than
@@ -276,7 +276,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
         {view === "catalog" ? (<AdminFilterForm key={filterQuery} className="glass-panel grid gap-3 rounded-2xl p-4 min-w-0 sm:grid-cols-2 xl:grid-cols-4 [&>input]:min-w-0 [&>select]:min-w-0 [&>select]:w-full" action="/admin/products">
           <input name="q" defaultValue={q} placeholder={locale === "de" ? "Produkt, Modell oder SKU suchen" : "Search product, model, or SKU"} className="rounded-xl border border-border/60 bg-surface/70 px-3.5 py-2.5 text-sm text-foreground" />
           <select name="brand" defaultValue={brand} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Marken" : "All brands"}</option>{brandOptions.map((item) => (<option key={item.value} value={item.value}>{item.label} ({item.n})</option>))}</select>
-          <select name="category" defaultValue={category} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Kategorien" : "All categories"}</option><option value="smartphones">Smartphones</option><option value="tablets">Tablets</option><option value="accessories">Accessories</option><option value="laptops">Laptops</option><option value="consoles">Consoles</option></select>
+          <select name="category" defaultValue={category} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Kategorien" : "All categories"}</option><option value="smartphones">Smartphones</option><option value="tablets">Tablets</option><option value="parts">{locale === "de" ? "Ersatzteile" : "Spare parts"}</option><option value="accessories">Accessories</option><option value="laptops">Laptops</option><option value="consoles">Consoles</option></select>
           <select name="subcategory" defaultValue={subcategory} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Unterkategorien" : "All subcategories"}</option>{subcategoryOptions.map((item) => (<option key={item.value} value={item.value}>{subcategoryLabel(item.value, locale)} ({item.n})</option>))}</select>
           <select name="condition" defaultValue={condition} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Zustände" : "All conditions"}</option><option value="new">{locale === "de" ? "Neu" : "New"}</option><option value="open_box">Open-box</option><option value="used">{locale === "de" ? "Gebraucht" : "Used"}</option></select>
           <select name="status" defaultValue={status} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Status" : "All statuses"}</option><option value="active">{locale === "de" ? "Aktiv" : "Active"}</option><option value="inactive">{locale === "de" ? "Entwurf" : "Draft"}</option><option value="out-of-stock">{locale === "de" ? "Ausverkauft" : "Out of stock"}</option></select>

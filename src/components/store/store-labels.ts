@@ -2,8 +2,8 @@ import type { Locale } from "@/lib/i18n";
 import type { ProductCategory, ProductCondition } from "@/lib/products";
 
 export const categoryLabels = {
-  de: { smartphones: "Smartphone", tablets: "Tablet", accessories: "Zubehör", consoles: "Konsole", laptops: "Laptop" },
-  en: { smartphones: "Smartphone", tablets: "Tablet", accessories: "Accessory", consoles: "Console", laptops: "Laptop" },
+  de: { smartphones: "Smartphone", tablets: "Tablet", accessories: "Zubehör", parts: "Ersatzteil", consoles: "Konsole", laptops: "Laptop" },
+  en: { smartphones: "Smartphone", tablets: "Tablet", accessories: "Accessory", parts: "Spare part", consoles: "Console", laptops: "Laptop" },
 } as const satisfies Record<Locale, Record<ProductCategory, string>>;
 
 export const conditionLabels = {

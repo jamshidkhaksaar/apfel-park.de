@@ -8,6 +8,7 @@ import { isAiGeneratedDescription } from '@/lib/product-text-provenance';
 const categoryMap: Record<Product['category'], string> = {
   smartphones: 'Electronics > Communications > Telephony > Mobile Phones',
   tablets: 'Electronics > Computers > Tablet Computers',
+  parts: "Electronics > Communications > Telephony > Mobile Phone Accessories",
   accessories: 'Electronics > Electronics Accessories',
   consoles: 'Electronics > Video Game Consoles',
   laptops: 'Electronics > Computers > Laptops',

@@ -37,7 +37,7 @@ export const generateMetadata = async ({
   );
 };
 
-const catalogCategories = new Set<StoreCatalogCategory>(["all", "smartphones", "tablets", "open-box-smartphones-tablets", "accessories", "consoles", "laptops"]);
+const catalogCategories = new Set<StoreCatalogCategory>(["all", "smartphones", "tablets", "open-box-smartphones-tablets", "accessories", "parts", "consoles", "laptops"]);
 const valueOf = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] ?? "" : value ?? "";
 
 export default async function StorePage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {

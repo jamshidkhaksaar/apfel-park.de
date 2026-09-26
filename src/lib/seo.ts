@@ -160,6 +160,7 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
   const categoryRoutes: Partial<Record<SeoRouteId, string>> = {
     smartphones: "smartphones",
     tablets: "tablets",
+    parts: "parts",
     accessories: "accessories",
     laptops: "laptops",
     gaming: "consoles",

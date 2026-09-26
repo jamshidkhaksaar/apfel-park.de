@@ -62,6 +62,7 @@ const MAX_IMAGES = 6;
 const normalizeCategory = (category: string): string | null => {
   const value = category.toLowerCase().trim();
   if (value === "smartphone" || value === "smartphones") return "smartphones";
+  if (value === "parts" || value === "spare-parts" || value === "ersatzteile") return "parts";
   if (value === "tablet" || value === "tablets") return "tablets";
   if (value === "accessory" || value === "accessories") return "accessories";
   if (value === "console" || value === "consoles" || value === "gaming") return "consoles";
@@ -222,7 +223,7 @@ export async function POST(request: NextRequest) {
 
     const baseTitle = title.de || title.en;
     if (!baseTitle) return NextResponse.json({ error: "Title (de or en) is required" }, { status: 400 });
-    if (!category) return NextResponse.json({ error: "Valid category is required (smartphones, tablets, accessories, consoles, laptops)" }, { status: 400 });
+    if (!category) return NextResponse.json({ error: "Valid category is required (smartphones, tablets, accessories, parts, consoles, laptops)" }, { status: 400 });
     if (price === null || Number.isNaN(price) || price < 0) {
       return NextResponse.json({ error: "Valid price is required" }, { status: 400 });
     }

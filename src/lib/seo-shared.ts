@@ -1,5 +1,5 @@
 import { showcasePages, showcaseDescription } from './showcase-pages';
-import { dictionary, type Locale } from "@/lib/i18n";
+import { dictionary, partsCatalogCopy, type Locale } from "@/lib/i18n";
 import { businessIdentity } from '@/lib/business-identity';
 
 export type SeoRouteId =
@@ -23,6 +23,7 @@ export type SeoRouteId =
   | "usedPhones"
   | "usedIphones"
   | "tablets"
+  | "parts"
   | "accessories"
   | "laptops"
   | "gaming"
@@ -114,6 +115,14 @@ export const siteKeywords = {
 } satisfies Record<Locale, string>;
 
 export const seoRouteDefinitions: SeoRouteDefinition[] = [
+  {
+    id: "parts", path: "/parts",
+    labels: { de: "Ersatzteile", en: "Spare parts" },
+    priority: 0.8, changeFrequency: "weekly",
+    defaultTitle: { de: partsCatalogCopy.de.title, en: partsCatalogCopy.en.title },
+    defaultDescription: { de: partsCatalogCopy.de.description, en: partsCatalogCopy.en.description },
+    defaultKeywords: { de: "TRUSMI Ersatzteile, iPhone Ersatzdisplay, Ersatzakku, Smartphone Ersatzteile Großhandel", en: "TRUSMI spare parts, iPhone replacement display, replacement battery, smartphone parts wholesale" },
+  },
   {
     id: "home",
     path: "",
@@ -675,12 +684,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.7,
     changeFrequency: "monthly",
     defaultTitle: {
-      de: "Handy-Reparatur für Unternehmen in Hamburg | Apfel Park",
-      en: "Phone repair & device procurement for businesses in Hamburg | Apfel Park",
+      de: "Smartphone-Ersatzteile & Service für Unternehmen | Apfel Park",
+      en: "Smartphone parts & services for businesses | Apfel Park",
     },
     defaultDescription: {
-      de: "Reparaturen, Geräte und Zubehör für Hamburger Unternehmen: Firmengeräte-Reparatur, Mengenbestellungen und Gerätebeschaffung auf Rechnung. Angebot in 1–2 Werktagen.",
-      en: "Repairs, devices and accessories for Hamburg businesses: company device repair, bulk orders and device procurement on invoice. Quote within 1–2 business days.",
+      de: "Reparaturen, Geräte, Zubehör und Smartphone-Ersatzteile für Unternehmen: Firmengeräte-Reparatur, Mengenbestellungen und Gerätebeschaffung auf Rechnung. Angebot in 1–2 Werktagen.",
+      en: "Repairs, devices, accessories and smartphone spare parts for businesses: company device repair, bulk orders and device procurement on invoice. Quote within 1–2 business days.",
     },
     defaultKeywords: {
       de: "Handy Reparatur Firma Hamburg, Firmengeräte Reparatur Hamburg, B2B Handy Hamburg, Handyzubehör Mengen, Firmenhandy Service Hamburg",

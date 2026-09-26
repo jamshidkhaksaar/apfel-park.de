@@ -15,12 +15,12 @@ export default function TrusmiPartner({ locale, wholesale = false }: { locale: L
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-gold">{de ? 'Offizieller TRUSMI-Partner in Deutschland' : 'Official TRUSMI partner in Germany'}</p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            {wholesale ? (de ? 'TRUSMI Zubehör im Großhandel' : 'TRUSMI accessories wholesale') : (de ? 'TRUSMI Zubehör bei Apfel Park' : 'TRUSMI accessories at Apfel Park')}
+            {wholesale ? (de ? 'TRUSMI Zubehör & Ersatzteile im Großhandel' : 'TRUSMI accessories & spare parts wholesale') : (de ? 'TRUSMI Zubehör & Ersatzteile bei Apfel Park' : 'TRUSMI accessories & spare parts at Apfel Park')}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             {wholesale
-              ? (de ? 'Ladekabel, Netzteile, Powerbanks und Audio-Zubehör für Fachhändler und Unternehmen. Fragen Sie Ihr individuelles Großhandelsangebot an – abgestimmt auf Artikel und Stückzahl, mit bestätigter Verfügbarkeit und Lieferzeit.' : 'Charging cables, chargers, power banks and audio accessories for retailers and businesses. Request an individual wholesale quote based on your items and quantities, with confirmed availability and delivery time.')
-              : (de ? 'Entdecken Sie TRUSMI Ladekabel, Netzteile, Powerbanks und Audio-Zubehör in unserem Sortiment. Auch für Unternehmen und Mengenbestellungen.' : 'Explore TRUSMI charging cables, chargers, power banks and audio accessories in our range. Also available for business enquiries and bulk orders.')}
+              ? (de ? 'Displays, Ersatzakkus, Ladekabel, Netzteile, Powerbanks und Audio-Zubehör für Fachhändler und Unternehmen. Fragen Sie Ihr individuelles Großhandelsangebot an – abgestimmt auf Artikel und Stückzahl, mit bestätigter Verfügbarkeit und Lieferzeit.' : 'Displays, replacement batteries, charging cables, chargers, power banks and audio accessories for retailers and businesses. Request an individual wholesale quote based on your items and quantities, with confirmed availability and delivery time.')
+              : (de ? 'Entdecken Sie TRUSMI Displays, Ersatzakkus, Ladekabel, Netzteile, Powerbanks und Audio-Zubehör in unserem Sortiment. Auch für Unternehmen und Mengenbestellungen.' : 'Explore TRUSMI displays, replacement batteries, charging cables, chargers, power banks and audio accessories in our range. Also available for business enquiries and bulk orders.')}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link href={wholesale ? `/${locale}/contact` : `/${locale}/accessories?brand=TRUSMI#store`} className="btn-primary min-h-11">
@@ -29,6 +29,7 @@ export default function TrusmiPartner({ locale, wholesale = false }: { locale: L
             <Link href={wholesale ? `/${locale}/accessories?brand=TRUSMI#store` : `/${locale}/firmenkunden#trusmi`} className="btn-secondary min-h-11">
               {wholesale ? (de ? 'Sortiment ansehen' : 'View the range') : (de ? 'Für Firmen & Händler' : 'For businesses & retailers')}
             </Link>
+            <Link href={`/${locale}/parts?brand=TRUSMI#store`} className="btn-secondary min-h-11">{de ? 'TRUSMI Ersatzteile ansehen' : 'Shop TRUSMI spare parts'}</Link>
           </div>
         </div>
       </div>

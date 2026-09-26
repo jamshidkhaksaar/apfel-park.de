@@ -309,7 +309,7 @@ export const parseProductProposal = (input: unknown): ProductProposal => {
     text(entry, `$.product.includedAccessories[${index}]`, { required: true, max: 160 })!,
   );
   const category = text(productValue.category, '$.product.category', { max: 80 });
-  if (category && !['smartphones', 'tablets', 'accessories', 'consoles', 'laptops'].includes(category)) {
+  if (category && !['smartphones', 'tablets', 'accessories', 'parts', 'consoles', 'laptops'].includes(category)) {
     throw new SchemaValidationError(['$.product.category must be a supported store category']);
   }
   const product = {

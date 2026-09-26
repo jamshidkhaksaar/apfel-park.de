@@ -49,12 +49,13 @@ const imageSlotLabels = {
   en: ["Front", "Back", "Side", "Extra"],
 } as const;
 
-const categoryOptions = ["all", "smartphones", "tablets", "accessories", "consoles", "laptops", "open-box", "discounted", "inactive"] as const;
+const categoryOptions = ["all", "smartphones", "tablets", "accessories", "parts", "consoles", "laptops", "open-box", "discounted", "inactive"] as const;
 
 const categoryLabel = (locale: AdminLocale, category: string) => {
   const labels: Record<string, string> = {
     smartphones: locale === "de" ? "Smartphones" : "Smartphones",
     tablets: "Tablets",
+    parts: locale === "de" ? "Ersatzteile" : "Spare parts",
     accessories: locale === "de" ? "Zubehör" : "Accessories",
     consoles: locale === "de" ? "Gaming" : "Gaming",
     laptops: locale === "de" ? "Laptops" : "Laptops",
@@ -1101,6 +1102,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                         <select value={formState.category} onChange={(event) => setFormState((prev) => ({ ...prev, category: event.target.value }))} className="w-full rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none">
                           <option value="smartphones">{categoryLabel(locale, "smartphones")}</option>
                           <option value="tablets">{categoryLabel(locale, "tablets")}</option>
+                          <option value="parts">{categoryLabel(locale, "parts")}</option>
                           <option value="accessories">{categoryLabel(locale, "accessories")}</option>
                           <option value="consoles">{categoryLabel(locale, "consoles")}</option>
                           <option value="laptops">{categoryLabel(locale, "laptops")}</option>

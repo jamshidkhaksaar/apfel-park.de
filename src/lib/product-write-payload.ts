@@ -1,5 +1,5 @@
 import { isValidInputLength, sanitizeInput } from '@/lib/security';
-import { classifySubcategory } from '@/lib/product-subcategory';
+import { classifyPartSubcategory, classifySubcategory } from '@/lib/product-subcategory';
 import { validatedGtin } from '@/lib/product-identifiers';
 import { eprelAssetRoutes } from '@/lib/eprel';
 import { energyLabelError } from '@/lib/energy-label-validation';
@@ -97,6 +97,7 @@ export type ProductPayload = {
 const normalizeCategory = (category: string): string | null => {
   const value = category.toLowerCase().trim();
   if (value === 'smartphone' || value === 'smartphones') return 'smartphones';
+  if (value === 'parts' || value === 'spare-parts' || value === 'ersatzteile') return 'parts';
   if (value === 'tablet' || value === 'tablets') return 'tablets';
   if (value === 'accessory' || value === 'accessories') return 'accessories';
   if (value === 'console' || value === 'consoles' || value === 'gaming')
@@ -597,9 +598,11 @@ export const buildPayload = (payload: ProductPayload, slug?: string) => {
   ) {
     energyLabel.ficheEn = expectedEnergyAssets.ficheEn;
   }
-  const category = payload.category
+  const selectedCategory = payload.category
     ? normalizeCategory(payload.category)
     : null;
+  const category = selectedCategory === "accessories" && classifyPartSubcategory(`${title} ${subtitle ?? ''} ${model ?? ''}`)
+    ? "parts" : selectedCategory;
   const condition = normalizeCondition(payload.condition);
   const subcategory = classifySubcategory(
     category,

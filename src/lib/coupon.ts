@@ -5,7 +5,7 @@ export type CouponCampaign={id:string;code:string;discountType:"percent"|"fixed"
 export type CouponCart={subtotalAmountCents:number;items:Array<{productId:string;category:string;lineAmountCents:number}>};
 export type CouponResult={ok:true;eligibleSubtotalCents:number;discountAmountCents:number;code:string;campaignId:string}|{ok:false;error:"inactive"|"not_started"|"expired"|"not_today"|"limit_reached"|"minimum_not_met"|"not_eligible"|"invalid"};
 export type CampaignAdminInput={id?:string;code?:string;title?:{de?:string;en?:string};description?:{de?:string;en?:string};discountType?:string;discountValue?:number;minimumOrder?:number;eligibleProductIds?:string[];eligibleCategories?:string[];startsAt?:string|null;endsAt?:string|null;maximumRedemptions?:number|null;isActive?:boolean;repairRules?:unknown};
-const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;const categories=new Set(["smartphones","tablets","laptops","accessories","consoles","repairs"]);const clean=(value:unknown,max:number)=>typeof value==="string"?value.trim().slice(0,max):"";
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;const categories=new Set(["smartphones","tablets","laptops","accessories","parts","consoles","repairs"]);const clean=(value:unknown,max:number)=>typeof value==="string"?value.trim().slice(0,max):"";
 export const sanitizeCampaignInput=(input:CampaignAdminInput)=>{
   const code=clean(input.code,64).toUpperCase();
   if(!/^[A-Z0-9][A-Z0-9_-]{2,63}$/.test(code))throw new Error('invalid_code');

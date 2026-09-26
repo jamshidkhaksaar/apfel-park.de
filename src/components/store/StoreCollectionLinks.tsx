@@ -14,6 +14,7 @@ const items = {
     { href: "/handys-ohne-vertrag", title: "Ohne Vertrag", text: "Tarif frei wählen", matches: (product: Product) => product.category === "smartphones" },
     { href: "/gebrauchte-iphones", title: "Gebrauchte iPhones", text: "Geprüft mit Garantie", matches: (product: Product) => product.category === "smartphones" && normalizeProductBrand(product.brand) === "Apple" && product.condition !== "new" },
     { href: "/open-box", title: "B-Ware & Open Box", text: "Ausgepackt und geprüft", matches: (product: Product) => (product.category === "smartphones" || product.category === "tablets") && product.condition === "open_box" },
+    { href: "/parts", title: "Ersatzteile", text: "Displays & Akkus", matches: (product: Product) => product.category === "parts" },
     { href: "/accessories", title: "Zubehör", text: "Hüllen, Kabel & Audio", matches: (product: Product) => product.category === "accessories" },
   ],
   en: [
@@ -24,6 +25,7 @@ const items = {
     { href: "/handys-ohne-vertrag", title: "No contract", text: "Keep your preferred plan", matches: (product: Product) => product.category === "smartphones" },
     { href: "/gebrauchte-iphones", title: "Used iPhones", text: "Tested with warranty", matches: (product: Product) => product.category === "smartphones" && normalizeProductBrand(product.brand) === "Apple" && product.condition !== "new" },
     { href: "/open-box", title: "Open Box", text: "Unboxed and tested", matches: (product: Product) => (product.category === "smartphones" || product.category === "tablets") && product.condition === "open_box" },
+    { href: "/parts", title: "Spare parts", text: "Displays & batteries", matches: (product: Product) => product.category === "parts" },
     { href: "/accessories", title: "Accessories", text: "Cases, cables and audio", matches: (product: Product) => product.category === "accessories" },
   ],
 } satisfies Record<Locale, Array<{ href: string; title: string; text: string; matches: (product: Product) => boolean }>>;

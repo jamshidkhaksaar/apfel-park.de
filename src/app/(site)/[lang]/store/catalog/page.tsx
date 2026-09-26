@@ -10,13 +10,14 @@ import { requireLocale } from "@/lib/route-locale";
 
 export const dynamic = "force-dynamic";
 
-const categoryOrder: ProductCategory[] = ["smartphones", "tablets", "laptops", "accessories", "consoles"];
+const categoryOrder: ProductCategory[] = ["smartphones", "tablets", "laptops", "accessories", "parts", "consoles"];
 
 const categoryName = (category: ProductCategory, locale: Locale) => {
   const labels: Record<ProductCategory, { de: string; en: string }> = {
     smartphones: { de: "Smartphones", en: "Smartphones" },
     tablets: { de: "Tablets", en: "Tablets" },
     laptops: { de: "Laptops", en: "Laptops" },
+    parts: { de: "Smartphone-Ersatzteile", en: "Smartphone parts" },
     accessories: { de: "Zubehör", en: "Accessories" },
     consoles: { de: "Konsolen", en: "Consoles" },
   };

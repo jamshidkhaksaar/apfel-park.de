@@ -32,8 +32,21 @@ export const SUBCATEGORY_RULES: ReadonlyArray<readonly [string, RegExp]> = [
   ["cases-other", /iphone|galaxy|samsung|pixel|xiaomi|huawei|z fold|z flip/],
 ];
 
-/** Only accessories get split; the other categories are already meaningful. */
+export const PART_SUBCATEGORIES = ['replacement-displays', 'replacement-batteries', 'repair-components'] as const;
+
+/** Avoid confusing power banks, screen protectors or cases with internal parts. */
+export const classifyPartSubcategory = (text: string): string | null => {
+  const haystack = text.toLowerCase();
+  if (/ersatzdisplay|displayeinheit|replacement display|lcd assembly|soft oled|hard oled|incell|in-cell/.test(haystack)) return 'replacement-displays';
+  if (!/power.?bank|externer akku|external battery|battery case|powerbank.hülle/.test(haystack)
+    && /ersatzakku|replacement batter|internal batter|(?:akku|battery).*(?:für|for).*?(?:iphone|galaxy|samsung|pixel|xiaomi|huawei)|(?:iphone|galaxy|samsung|pixel|xiaomi|huawei).*?(?:akku|battery)/.test(haystack)) return 'replacement-batteries';
+  if (/ersatzteil|repair component|flexkabel|flex cable|ladebuchse|charging port|hörmuschel|earpiece assembly|kameramodul|camera module/.test(haystack)) return 'repair-components';
+  return null;
+};
+
+/** Accessories and repair parts each have their own subcategories. */
 export const classifySubcategory = (category: string | null, text: string): string => {
+  if (category === "parts") return classifyPartSubcategory(text) ?? "repair-components";
   if (category !== "accessories") return category ?? "other";
   const haystack = text.toLowerCase();
   for (const [name, pattern] of SUBCATEGORY_RULES) if (pattern.test(haystack)) return name;
@@ -61,6 +74,9 @@ export const ACCESSORY_SUBCATEGORIES = [
 
 export const subcategoryLabel = (slug: string, locale: "de" | "en"): string => {
   const labels: Record<string, [string, string]> = {
+    parts: ["Ersatzteile", "Spare parts"],
+    "replacement-batteries": ["Ersatzakkus", "Replacement batteries"],
+    "repair-components": ["Reparaturkomponenten", "Repair components"],
     "replacement-displays": ["Ersatzdisplays", "Replacement displays"],
     "cases-hard": ["Hardcases", "Hard cases"],
     "cases-silicone": ["Silikonhüllen", "Silicone cases"],

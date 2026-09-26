@@ -19,8 +19,8 @@ export const parseFacetPreviewScope = (params: URLSearchParams): StoreCatalogSco
   const category = params.get('scopeCategory') ?? 'all';
   const subcategory = params.get('scopeSubcategory') || undefined;
   const collection = params.get('scopeCollection') || undefined;
-  if (!['all','smartphones','tablets','accessories','laptops','consoles','open-box-smartphones-tablets'].includes(category)) return null;
-  if (subcategory && (category !== 'accessories' || !/^[a-z0-9-]{1,64}$/.test(subcategory))) return null;
+  if (!['all','smartphones','tablets','accessories', 'parts','laptops','consoles','open-box-smartphones-tablets'].includes(category)) return null;
+  if (subcategory && (!['accessories', 'parts'].includes(category) || !/^[a-z0-9-]{1,64}$/.test(subcategory))) return null;
   if (collection && !['iphone-17','iphone-16-pro-max','used-phones','used-iphones','samsung-phones','xiaomi-redmi-phones','phones-without-contract'].includes(collection)) return null;
   return {category:category as StoreCatalogCategory,...(subcategory?{subcategory}:{}),...(collection?{collection:collection as StoreCatalogCollection}:{})};
 };

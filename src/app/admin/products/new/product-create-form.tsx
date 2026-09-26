@@ -820,6 +820,7 @@ export default function ProductCreateForm() {
                 <option value="tablets">Tablets</option>
                 <option value="laptops">Laptops</option>
                 <option value="consoles">Gaming & Konsolen</option>
+                <option value="parts">Ersatzteile / Spare parts</option>
                 <option value="accessories">Zubehör / Accessories</option>
               </select>
             </div>

@@ -73,6 +73,7 @@ export default async function StoreGrid({
     all: products.length,
     smartphones: products.filter((product) => product.category === "smartphones").length,
     tablets: products.filter((product) => product.category === "tablets").length,
+    parts: products.filter((product) => product.category === "parts").length,
     accessories: products.filter((product) => product.category === "accessories").length,
     consoles: products.filter((product) => product.category === "consoles").length,
     laptops: products.filter((product) => product.category === "laptops").length,

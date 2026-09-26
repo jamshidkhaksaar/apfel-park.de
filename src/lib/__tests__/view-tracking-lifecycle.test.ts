@@ -27,7 +27,7 @@ const productView = () => ProductViewTracker({ productId: product.id, title: pro
 const catalogView = (analyticsList?: CatalogAnalyticsList) => StoreCatalogClient({
   analyticsList,
   products: [product], lang: 'de', total: 1, page: 2, pages: 2,
-  counts: { all: 1, smartphones: 1, tablets: 0, accessories: 0, laptops: 0, consoles: 0, 'open-box-smartphones-tablets': 0 },
+  counts: { all: 1, smartphones: 1, tablets: 0, accessories: 0, parts: 0, laptops: 0, consoles: 0, 'open-box-smartphones-tablets': 0 },
   facets: { brands: [], storages: [], conditions: [], accessoryTypes: [], inStock: 1, priceMin: 10, priceMax: 10 },
   activeFilters: { query: '', brands: [], storages: [], conditions: [], accessoryTypes: [], inStockOnly: false },
 });

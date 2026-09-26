@@ -28,6 +28,8 @@ export const productCategoryLabel = (locale: Locale, category: ProductCategory):
       return "Smartphones";
     case "tablets":
       return "Tablets";
+    case "parts":
+      return locale === "de" ? "Ersatzteile" : "Spare parts";
     case "accessories":
       return locale === "de" ? "Zubehör" : "Accessories";
     case "laptops":

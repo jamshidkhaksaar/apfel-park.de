@@ -6,6 +6,7 @@ import PageIntro from "../../../../components/PageIntro";
 import { createMetadata } from "../../../../lib/metadata";
 import { siteInfo } from "../../../../lib/site";
 import { requireLocale } from "@/lib/route-locale";
+import { partsCatalogCopy } from '@/lib/i18n';
 import TrusmiPartner from '@/components/TrusmiPartner';
 
 export const dynamic = "force-dynamic";
@@ -15,11 +16,11 @@ export const generateMetadata = async ({ params }: { params: Promise<{ lang: str
   return createMetadata(
     lang,
     lang === "de"
-      ? "Handy-Reparatur für Unternehmen in Hamburg"
-      : "Phone repair & device procurement for businesses in Hamburg",
+      ? "Smartphone-Ersatzteile & Service für Unternehmen"
+      : "Smartphone parts & services for businesses",
     lang === "de"
-      ? "Reparaturen, Geräte und Zubehör für Hamburger Unternehmen: Firmengeräte-Reparatur, Mengenbestellungen und Gerätebeschaffung auf Rechnung. Angebot in 1–2 Werktagen."
-      : "Repairs, devices and accessories for Hamburg businesses: company device repair, bulk orders and device procurement on invoice. Quote within 1–2 business days.",
+      ? "Reparaturen, Geräte, Zubehör und Smartphone-Ersatzteile für Unternehmen: Firmengeräte-Reparatur, Mengenbestellungen und Gerätebeschaffung auf Rechnung. Angebot in 1–2 Werktagen."
+      : "Repairs, devices, accessories and smartphone spare parts for businesses: company device repair, bulk orders and device procurement on invoice. Quote within 1–2 business days.",
     "/firmenkunden",
   );
 };
@@ -67,6 +68,7 @@ const IconDownload = () => (
 export default async function BusinessCustomersPage({ params }: { params: Promise<{ lang: string }> }) {
   const lang = requireLocale((await params).lang);
   const isGerman = lang === "de";
+  const partsCopy = partsCatalogCopy[lang];
 
   const services = [
     {
@@ -170,10 +172,20 @@ export default async function BusinessCustomersPage({ params }: { params: Promis
     <div className="bg-background">
       <PageIntro
         title={isGerman ? "Smartphone- und Geräte-Service für Unternehmen" : "Smartphone and device services for businesses"}
-        subtitle={isGerman ? "Reparaturen, Gerätebeschaffung und Zubehör für Firmen in Hamburg — auf Rechnung, mit fester Ansprechperson." : "Repairs, device procurement and accessories for businesses in Hamburg — on invoice, with a fixed contact."}
+        subtitle={isGerman ? "Reparaturen, Gerätebeschaffung, Zubehör und Ersatzteile für Firmen und Werkstätten — auf Rechnung, mit fester Ansprechperson." : "Repairs, devices, accessories and spare parts for businesses and repair shops — on invoice, with a fixed contact."}
         eyebrow={isGerman ? "Firmenkunden & B2B" : "Business & B2B"}
       />
 
+      <section id="parts" className="container-page scroll-mt-32 py-8">
+        <div className="tech-card rounded-2xl p-6 sm:p-8">
+          <h2 className="text-2xl font-semibold text-foreground">{partsCopy.title} · B2B</h2>
+          <div className="mt-5 grid gap-6 md:grid-cols-2">
+            <div><h3 className="font-semibold text-foreground">{partsCopy.retailTitle}</h3><p className="mt-2 leading-relaxed text-muted">{partsCopy.retailBody}</p></div>
+            <div><h3 className="font-semibold text-foreground">{partsCopy.wholesaleTitle}</h3><p className="mt-2 leading-relaxed text-muted">{partsCopy.wholesaleBody}</p></div>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3"><Link href={`/${lang}/parts`} className="btn-primary">{partsCopy.all}</Link><Link href={`/${lang}/contact`} className="btn-secondary">{partsCopy.quote}</Link></div>
+        </div>
+      </section>
       <section className="section-pad">
         <div className="container-page max-w-5xl space-y-20">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
