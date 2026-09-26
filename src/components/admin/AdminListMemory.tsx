@@ -5,6 +5,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { adminListReturnTo } from "@/lib/admin-list-navigation";
 
+const comparableHref = (href: string): string => {
+  const url = new URL(adminListReturnTo(href), "https://admin.local");
+  for (const [key, value] of [...url.searchParams]) {
+    if (!value.trim() || (key === "page" && value === "1") ||
+      (url.pathname === "/admin/inventory" && (key === "status" || key === "stock") && value === "all") ||
+      (url.pathname === "/admin/products" && key === "sort" && value === "newest")) {
+      url.searchParams.delete(key);
+    }
+  }
+  url.searchParams.sort();
+  return `${url.pathname}?${url.searchParams}`;
+};
+
 export default function AdminListMemory({ path, ready = true }: {
   path: "/admin/products" | "/admin/inventory";
   ready?: boolean;
@@ -28,7 +41,8 @@ export default function AdminListMemory({ path, ready = true }: {
         if (path === "/admin/products") router.refresh();
       }
     } catch { /* Storage is optional. */ }
-    const savedScroll = previous?.href === href && Number.isFinite(previous.scroll) ? previous.scroll : 0;
+    const savedScroll = previous?.href && comparableHref(previous.href) === comparableHref(href)
+      && Number.isFinite(previous.scroll) ? previous.scroll : 0;
     let restored = false;
     const save = () => {
       if (!restored) return;
