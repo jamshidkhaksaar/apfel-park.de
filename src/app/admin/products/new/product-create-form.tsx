@@ -28,7 +28,7 @@ export type FormState = {
   title: string;
   subtitle: string;
   description: string;
-  category: "smartphones" | "tablets" | "accessories" | "consoles" | "laptops";
+  category: "smartphones" | "tablets" | "accessories" | "parts" | "consoles" | "laptops";
   condition: string;
   batteryHealth: string;
   hasRealProductPhotos: boolean;
