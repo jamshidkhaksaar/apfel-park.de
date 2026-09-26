@@ -1,5 +1,6 @@
 'use client';
 
+import { markAdminListsChanged } from '@/lib/admin-list-navigation';
 import { appliedResearchTextFields, normalizeAiTextFields } from '@/lib/product-ai-fields';
 import { photoMembershipChanged } from '@/lib/product-photo-confirmation';
 import Image from 'next/image';
@@ -114,10 +115,13 @@ export default function SmartphoneWizard({
     setDocument(next.document);
     setStatus('saved');
     setError('');
+    const navigation = new URLSearchParams({ draft: next.id });
+    const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+    if (returnTo) navigation.set("returnTo", returnTo);
     window.history.replaceState(
       null,
       '',
-      `/admin/products/phone?draft=${next.id}`,
+      `/admin/products/phone?${navigation}`,
     );
   }, []);
   useEffect(() => {
@@ -324,6 +328,7 @@ export default function SmartphoneWizard({
       );
       publishRetry.current = null;
       load(next);
+      markAdminListsChanged();
       setNotice('publishDone');
     } catch (e) {
       if (

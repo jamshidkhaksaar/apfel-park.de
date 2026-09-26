@@ -1,9 +1,11 @@
 "use client";
 
-import { FormEvent, Fragment, useCallback, useEffect, useState } from "react";
+import { FormEvent, Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import AdminListMemory from "@/components/admin/AdminListMemory";
+import { markAdminListsChanged, withAdminListReturnTo } from "@/lib/admin-list-navigation";
 
 import { adminDictionary } from "@/lib/admin-i18n";
 
@@ -69,6 +71,9 @@ function InventoryThumbnail({ src, title, fallback }: { src: string | null; titl
 
 export default function AdminInventoryManager({ locale }: { locale: "de" | "en" }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.toString();
+  const request = useRef<AbortController | null>(null);
   const text = adminDictionary[locale].inventoryCatalog;
   const filterText = adminDictionary[locale].inventoryFilters;
   const [filters, setFilters] = useState<InventoryFilters>(emptyFilters);
@@ -94,6 +99,9 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
   const language = locale === "de" ? "de-DE" : "en-GB";
 
   const loadInventory = useCallback(async (search = "", page = 1, filter = "all", selectedFilters: InventoryFilters = emptyFilters) => {
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
     setLoading(true);
     setError(null);
     try {
@@ -101,6 +109,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       const response = await fetch(`/api/admin/inventory?${params}`, {
         credentials: "include",
         cache: "no-store",
+        signal: controller.signal,
       });
       const payload = await response.json() as {
         pagination?: { page: number; pages: number; total: number };
@@ -112,6 +121,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       };
       if (!response.ok) throw new Error(payload.error || "Inventory could not be loaded");
       const nextItems = payload.items ?? [];
+      if (controller.signal.aborted) return;
       setItems(nextItems);
       setExpandedRowKey(null);
       setSimilarProducts({});
@@ -121,15 +131,38 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       if (payload.summary) setSummary(payload.summary);
       setSelectedSku((current) => current && nextItems.some((item) => item.sku === current && item.canAdjust) ? current : nextItems.find((item) => item.canAdjust)?.sku ?? "");
     } catch (loadError) {
+      if (controller.signal.aborted) return;
       setError(loadError instanceof Error ? loadError.message : "Inventory could not be loaded");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void loadInventory();
-  }, [loadInventory]);
+    const params = new URLSearchParams(urlQuery);
+    const search = params.get("q") ?? "";
+    const selectedStatus = params.get("status") || "all";
+    const selectedFilters = {
+      brand: params.get("brand") ?? "", category: params.get("category") ?? "",
+      condition: params.get("condition") ?? "", stock: params.get("stock") || "all",
+    };
+    const page = Math.max(1, Number.parseInt(params.get("page") || "1", 10) || 1);
+    setQuery(search); setStatus(selectedStatus); setFilters(selectedFilters);
+    void loadInventory(search, page, selectedStatus, selectedFilters);
+    return () => request.current?.abort();
+  }, [loadInventory, urlQuery]);
+
+  const navigateInventory = (search: string, page: number, selectedStatus: string, selectedFilters: InventoryFilters) => {
+    const params = new URLSearchParams({ q: search, page: String(page), status: selectedStatus, ...selectedFilters });
+    const href = `/admin/inventory?${params}`;
+    if (`${window.location.pathname}${window.location.search}` === href) {
+      void loadInventory(search, page, selectedStatus, selectedFilters);
+    } else window.history.pushState(null, "", href);
+  };
+  const inventoryReturnTo = `/admin/inventory?${urlQuery || "page=1&status=all&stock=all"}`;
+  const editorHref = (id: string, pricing = false) => withAdminListReturnTo(
+    `/admin/products/${id}${pricing ? "?legacy=1&step=pricing" : ""}`, inventoryReturnTo,
+  );
 
   const applyAdjustment = async (
     sku: string,
@@ -163,6 +196,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         error?: string;
       };
       if (!response.ok) throw new Error(payload.error || "Inventory adjustment failed");
+      markAdminListsChanged();
 
       setItems((current) => current.map((item) => item.sku === sku ? {
         ...item,
@@ -201,8 +235,9 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         body: JSON.stringify({ productId: item.productId, catalogEnabled: !item.catalogEnabled }),
       });
       if (!response.ok) throw new Error(text.failed);
+      markAdminListsChanged();
       if (!item.catalogEnabled) {
-        router.push(`/admin/products/${item.productId}?legacy=1&step=pricing`);
+        router.push(editorHref(item.productId, true));
         return;
       }
       setNotice(text.updated);
@@ -239,17 +274,17 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
-    if (!loading && !busyProduct && !busySku) void loadInventory(query, 1, status, filters);
+    if (!loading && !busyProduct && !busySku) navigateInventory(query, 1, status, filters);
   };
 
   const changeFilter = (key: keyof InventoryFilters, value: string) => {
     const next = { ...filters, [key]: value };
     setFilters(next);
-    void loadInventory(query, 1, status, next);
+    navigateInventory(query, 1, status, next);
   };
   const resetFilters = () => {
     setQuery(""); setStatus("all"); setFilters(emptyFilters);
-    void loadInventory();
+    navigateInventory("", 1, "all", emptyFilters);
   };
   const categoryLabels: Record<string, string> = adminDictionary[locale].productForm.categories;
   const conditionLabels: Record<string, string> = {
@@ -281,6 +316,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
 
   return (
     <div className="mx-auto w-full max-w-[1500px] space-y-6">
+      <AdminListMemory path="/admin/inventory" ready={!loading} />
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold tracking-[0.16em] text-gold">{locale === "de" ? "LIVE-BESTAND" : "LIVE INVENTORY"}</p>
@@ -329,7 +365,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         </div>
         <fieldset disabled={loading || Boolean(busyProduct) || Boolean(busySku)} className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5 disabled:opacity-60">
           <label className="min-w-0 text-xs text-muted">{text.title}
-            <select value={status} onChange={(event) => { setStatus(event.target.value); void loadInventory(query, 1, event.target.value, filters); }} className="mt-1 w-full min-w-0 rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm text-foreground">
+            <select value={status} onChange={(event) => { setStatus(event.target.value); navigateInventory(query, 1, event.target.value, filters); }} className="mt-1 w-full min-w-0 rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm text-foreground">
               <option value="all">{text.all}</option><option value="needs_setup">{text.needsSetup}</option><option value="inventory">{text.inventoryOnly}</option><option value="draft">{text.draft}</option><option value="published">{text.published}</option>
             </select>
           </label>
@@ -393,7 +429,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                         <span aria-hidden="true" className={`flex h-5 w-9 items-center rounded-full p-0.5 ${item.catalogEnabled ? 'justify-end bg-gold' : 'justify-start bg-muted/30'}`}><span className="h-4 w-4 rounded-full bg-white shadow" /></span>
                         {item.catalogEnabled ? text.disable : text.enable}
                       </button>
-                      {item.catalogEnabled ? <Link href={`/admin/products/${item.productId}?legacy=1&step=pricing`} className="text-xs font-semibold text-gold">{text.edit} →</Link> : null}
+                      {item.catalogEnabled ? <Link href={editorHref(item.productId, true)} className="text-xs font-semibold text-gold">{text.edit} →</Link> : null}
                     </div>
                   </td>
                   <td className="px-3 py-3 text-right font-mono tabular-nums">{item.onHand}</td>
@@ -413,7 +449,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                       {similarProducts[item.productId]?.map((match) => <div key={match.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border/70 p-3">
                         <InventoryThumbnail src={match.image} title={match.title} fallback={filterText.noImage} />
                         <div className="min-w-0 flex-1"><p className="font-semibold">{match.title}</p><p className="text-xs text-muted">{[match.model, match.sku].filter(Boolean).join(" · ") || "—"}</p><p className="mt-1 text-xs text-muted">{text.duplicateReasons[match.reason] ?? text.duplicateReasons.title} · {match.active ? text.published : match.catalogEnabled ? text.draft : text.inventoryOnly} · {text.quantity}: {match.stock}</p></div>
-                        <Link href={`/admin/products/${match.id}`} prefetch={false} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold hover:bg-gold/10">{text.openDuplicate} →</Link>
+                        <Link href={editorHref(match.id)} prefetch={false} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold hover:bg-gold/10">{text.openDuplicate} →</Link>
                       </div>)}
                     </div>
                   </div>
@@ -426,8 +462,8 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 p-4 text-sm">
           <span className="text-muted">{text.page} {pagination.page} {text.of} {pagination.pages} · {pagination.total} {text.entries}</span>
           <div className="flex gap-2">
-            <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page <= 1} onClick={() => void loadInventory(query, pagination.page - 1, status, filters)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.previous}</button>
-            <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page >= pagination.pages} onClick={() => void loadInventory(query, pagination.page + 1, status, filters)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.next}</button>
+            <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page <= 1} onClick={() => navigateInventory(query, pagination.page - 1, status, filters)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.previous}</button>
+            <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page >= pagination.pages} onClick={() => navigateInventory(query, pagination.page + 1, status, filters)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.next}</button>
           </div>
         </div>
       </section>

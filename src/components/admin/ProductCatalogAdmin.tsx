@@ -1,5 +1,6 @@
 "use client";
 
+import { markAdminListsChanged } from "@/lib/admin-list-navigation";
 import LegacyPhonePhotos from "@/components/admin/LegacyPhonePhotos";
 import Image from "next/image";
 import Link from "next/link";
@@ -661,6 +662,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           setSaveError(adminDictionary[locale].productEditor.experienceSaveFailed);
         }
 
+        markAdminListsChanged();
         setRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)));
         setFormState(productToForm(updated));
         setImageFiles([null, null, null, null]);

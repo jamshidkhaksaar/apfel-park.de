@@ -20,7 +20,6 @@ export default function ProductsWorkspaceTabs({
     const params = new URLSearchParams(query);
     if (next === "catalog") params.delete("view");
     else params.set("view", next);
-    params.delete("page");
     const encoded = params.toString();
     return encoded ? `/admin/products?${encoded}` : "/admin/products";
   };

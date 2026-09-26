@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { adminListReturnTo, withAdminListReturnTo } from "@/lib/admin-list-navigation";
 import SmartphoneWizard from "@/components/admin/SmartphoneWizard";
 import { phoneEditorEnabled } from "@/lib/smartphone-editor/http";
 import { notFound } from "next/navigation";
@@ -17,7 +18,7 @@ import { readSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProductEditorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{legacy?:string;step?:string}> }) {
+export default async function ProductEditorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{legacy?:string;step?:string;returnTo?:string}> }) {
   const [{ id }, locale, promo, user] = await Promise.all([params, getAdminLocale(), getPromoPopupSettings(), readSessionUser()]);
   const [productResult, featuredResult] = await Promise.all([
     query(
@@ -56,13 +57,16 @@ export default async function ProductEditorPage({ params, searchParams }: { para
   });
 
   const editorParams = await searchParams;
-  if(phoneEditorEnabled() && product.category === "smartphones" && editorParams.legacy !== "1") return <AdminShell title={product.title}>{product.energyReviewRequired ? <ProductTipsCard tips={{ ...tips, items: tips.items.filter(item => item.code === "energy_review") }} locale={locale} /> : null}<SmartphoneWizard locale={locale} productId={product.id} researchEnabled={process.env.LEGACY_PRODUCT_RESEARCH_ENABLED === "true"}/><Link className="text-gold" href={`/admin/products/${product.id}?legacy=1`}>{locale === "de" ? "Erweiterte Katalog- und Darstellungseinstellungen" : "Advanced catalog and presentation settings"}</Link></AdminShell>;
+  const returnHref = adminListReturnTo(editorParams.returnTo);
+  const backLabel = returnHref.startsWith("/admin/inventory") ? (locale === "de" ? "Zurück zum Lager" : "Back to inventory") : (locale === "de" ? "Zurück zum Produktkatalog" : "Back to product catalog");
+  const backLink = <Link href={returnHref} scroll={false} className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted transition hover:text-gold">← {backLabel}</Link>;
+  if(phoneEditorEnabled() && product.category === "smartphones" && editorParams.legacy !== "1") return <AdminShell title={product.title}>{backLink}{product.energyReviewRequired ? <ProductTipsCard tips={{ ...tips, items: tips.items.filter(item => item.code === "energy_review") }} locale={locale} /> : null}<SmartphoneWizard locale={locale} productId={product.id} researchEnabled={process.env.LEGACY_PRODUCT_RESEARCH_ENABLED === "true"}/><Link className="text-gold" href={withAdminListReturnTo(`/admin/products/${product.id}?legacy=1`, returnHref)}>{locale === "de" ? "Erweiterte Katalog- und Darstellungseinstellungen" : "Advanced catalog and presentation settings"}</Link></AdminShell>;
 
   return (
     <AdminShell title={product.title}>
       <div className="mx-auto mb-3 w-full max-w-[1500px]">
-        {phoneEditorEnabled() && product.category === "smartphones" ? <Link className="btn-primary mb-4 inline-flex" href={`/admin/products/${product.id}`}>{locale === "de" ? "Varianten und Fotos im Smartphone-Editor bearbeiten" : "Edit versions and photos in the smartphone editor"}</Link> : null}
-        <Link href="/admin/products" className="inline-flex items-center gap-2 text-sm font-medium text-muted transition hover:text-gold">← {locale === "de" ? "Zurück zum Produktkatalog" : "Back to product catalog"}</Link>
+        {phoneEditorEnabled() && product.category === "smartphones" ? <Link className="btn-primary mb-4 inline-flex" href={withAdminListReturnTo(`/admin/products/${product.id}`, returnHref)}>{locale === "de" ? "Varianten und Fotos im Smartphone-Editor bearbeiten" : "Edit versions and photos in the smartphone editor"}</Link> : null}
+        {backLink}
       </div>
       <ProductTipsCard tips={tips} locale={locale} />
       <div id="ai-intake">

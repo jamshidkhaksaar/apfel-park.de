@@ -1,5 +1,6 @@
 "use client";
 
+import { markAdminListsChanged } from "@/lib/admin-list-navigation";
 import LegacyPhonePhotos from "@/components/admin/LegacyPhonePhotos";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -618,6 +619,7 @@ export default function ProductCreateForm() {
         throw new Error(createPayload.error || dict.productForm.createFailed);
       }
 
+      markAdminListsChanged();
       router.push("/admin/products");
       router.refresh();
     } catch (submitError) {

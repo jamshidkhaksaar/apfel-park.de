@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useRef, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 /**
  * The product filters used to require pressing "Anwenden" after every change.
@@ -17,12 +18,23 @@ export default function AdminFilterForm({
   children: ReactNode;
 }) {
   const form = useRef<HTMLFormElement>(null);
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
 
   return (
     <form
       ref={form}
       action={action}
       className={className}
+      aria-busy={pending}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const params = new URLSearchParams();
+        for (const [key, value] of new FormData(event.currentTarget)) {
+          if (typeof value === "string" && value.trim()) params.set(key, value.trim());
+        }
+        startTransition(() => router.push(`${action}?${params}`));
+      }}
       onChange={(event) => {
         if (event.target instanceof HTMLSelectElement) form.current?.requestSubmit();
       }}

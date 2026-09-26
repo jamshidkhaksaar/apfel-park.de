@@ -9,6 +9,8 @@ import { productMissingData } from "@/lib/product-missing-data";
 import type { ChannelVariantFacts, ProductIdentifierStatus } from '@/lib/product-channel-readiness';
 import AdminProductIntakeQueue from "@/components/admin/AdminProductIntakeQueue";
 import AdminShell from "@/components/admin/AdminShell";
+import AdminListMemory from "@/components/admin/AdminListMemory";
+import { withAdminListReturnTo } from "@/lib/admin-list-navigation";
 import ProductIntakeWizard from "@/components/admin/ProductIntakeWizard";
 import ProductsHistoryPanel from "@/components/admin/ProductsHistoryPanel";
 import ProductsWorkspaceTabs from "@/components/admin/ProductsWorkspaceTabs";
@@ -223,6 +225,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     if (status) next.set("status", status);
     if (sort) next.set("sort", sort);
     if (view !== "catalog") next.set("view", view);
+    if (page > 1) next.set("page", String(page));
     return next.toString();
   })();
   const statusLabel = (status: string) => {
@@ -251,8 +254,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     return `/admin/products?${next.toString()}`;
   };
 
+  const editorHref = (id: string, hash = "") => withAdminListReturnTo(`/admin/products/${id}${hash}`, buildHref(page));
+
   return (
     <AdminShell title={dict.productsPage.title}>
+      <AdminListMemory path="/admin/products" />
       <ProductsWorkspaceTabs locale={locale} view={view} query={filterQuery}>
       <div className="min-w-0 space-y-4">
         <header className="flex flex-wrap items-end justify-between gap-4">
@@ -267,7 +273,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           </div>
         </header>
 
-        {view === "catalog" ? (<AdminFilterForm className="glass-panel grid gap-3 rounded-2xl p-4 min-w-0 sm:grid-cols-2 xl:grid-cols-4 [&>input]:min-w-0 [&>select]:min-w-0 [&>select]:w-full" action="/admin/products">
+        {view === "catalog" ? (<AdminFilterForm key={filterQuery} className="glass-panel grid gap-3 rounded-2xl p-4 min-w-0 sm:grid-cols-2 xl:grid-cols-4 [&>input]:min-w-0 [&>select]:min-w-0 [&>select]:w-full" action="/admin/products">
           <input name="q" defaultValue={q} placeholder={locale === "de" ? "Produkt, Modell oder SKU suchen" : "Search product, model, or SKU"} className="rounded-xl border border-border/60 bg-surface/70 px-3.5 py-2.5 text-sm text-foreground" />
           <select name="brand" defaultValue={brand} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Marken" : "All brands"}</option>{brandOptions.map((item) => (<option key={item.value} value={item.value}>{item.label} ({item.n})</option>))}</select>
           <select name="category" defaultValue={category} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Kategorien" : "All categories"}</option><option value="smartphones">Smartphones</option><option value="tablets">Tablets</option><option value="accessories">Accessories</option><option value="laptops">Laptops</option><option value="consoles">Consoles</option></select>
@@ -306,12 +312,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                     const justEdited = Boolean(product.is_active) && wasJustEdited(product.edited_minutes_ago);
                     return (
                     <tr key={product.id} className={`group transition hover:bg-gold/[0.04] ${justEdited ? "bg-gold/[0.05]" : ""}`}>
-                      <td className={`${tableStyles.titleCell} px-4 py-3`}><Link href={`/admin/products/${product.id}`} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><span className="break-words text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block break-words text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span></span></Link></td>
+                      <td className={`${tableStyles.titleCell} px-4 py-3`}><Link href={editorHref(product.id)} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><span className="break-words text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block break-words text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span></span></Link></td>
                       <td data-label={locale === "de" ? "Kategorie" : "Category"} className="px-4 py-3 text-sm text-muted">{product.category}{product.subcategory && product.subcategory !== product.category ? <span className="mt-0.5 block text-xs text-muted/70">{subcategoryLabel(product.subcategory, locale)}</span> : null}</td><td data-label={locale === "de" ? "Zustand" : "Condition"} className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? (locale === "de" ? "Gebraucht" : "Used") : (locale === "de" ? "Neu" : "New")}</td>
                       <td data-label="Status" className="px-4 py-3"><ProductDeactivateButton id={product.id} title={product.title} isActive={Boolean(product.is_active)} locale={locale} /></td>
                       <td data-label={locale === "de" ? "Tipps" : "Tips"} className="px-4 py-3"><ProductTipsBadge tips={tipsByProduct.get(product.id)!} locale={locale} /></td>
                       <td data-label={dict.productsWorkspace.aiStatus} className="px-4 py-3 text-sm text-muted">{statusLabel(summaries.get(product.id)?.status ?? "none")}<span className="mt-0.5 block text-xs">{summaries.get(product.id)?.intakeCode ?? "—"}</span></td>
-                      <td data-label={dict.productsWorkspace.latestCode} className="px-4 py-3"><Link href={`/admin/products/${product.id}#ai-intake`} prefetch={false} className="text-sm font-semibold text-gold">{dict.productsWorkspace.aiUpdate}</Link></td>
+                      <td data-label={dict.productsWorkspace.latestCode} className="px-4 py-3"><Link href={editorHref(product.id, "#ai-intake")} prefetch={false} className="text-sm font-semibold text-gold">{dict.productsWorkspace.aiUpdate}</Link></td>
                       <td data-label={locale === "de" ? "Preis" : "Price"} className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{money(locale, product.price)}</td><td data-label={locale === "de" ? "Lager" : "Stock"} className={`px-4 py-3 text-right text-sm tabular-nums ${(product.stock ?? 0) <= 0 ? "font-medium text-red-500" : "text-muted"}`}>{product.stock ?? 0}</td>
                       <td data-label={locale === "de" ? "Geändert" : "Updated"} className={`${tableStyles.updatedCell} px-4 py-3 text-sm text-muted`}>
                         {product.updated_at ? <div className="space-y-1.5">
@@ -319,7 +325,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                           {justEdited ? <span className="inline-flex flex-wrap items-center gap-1.5 rounded-md bg-gold/15 px-2 py-1 text-xs font-medium text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}<span className="font-normal opacity-70">{sinceEdit(locale, product.edited_minutes_ago ?? 0)}</span></span> : null}
                         </div> : "—"}
                       </td>
-                      <td className={`${tableStyles.editCell} px-4 py-3`}><Link href={`/admin/products/${product.id}`} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link></td>
+                      <td className={`${tableStyles.editCell} px-4 py-3`}><Link href={editorHref(product.id)} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link></td>
                     </tr>
                     );
                   })}
