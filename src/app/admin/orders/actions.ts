@@ -40,10 +40,19 @@ export async function updateOrderFulfillment(formData: FormData) {
     redirect("/admin/orders?error=invalid");
   }
   const currentResult = await query(
-    `SELECT status, payment_status, provider, provider_order_id, provider_session_id, provider_status, metadata, updated_at::text AS updated_at FROM orders WHERE id = $1 LIMIT 1`,
+    `SELECT status, payment_status, provider, provider_order_id, provider_session_id, provider_status, metadata,
+            created_at::text AS created_at, paid_at, provider_payment_id, updated_at::text AS updated_at,
+            EXISTS (SELECT 1 FROM payment_webhook_events e WHERE e.provider = 'paypal'
+              AND (e.event_type LIKE 'PAYMENT.CAPTURE.%' OR e.event_type LIKE 'PAYMENT.AUTHORIZATION.%'
+                   OR e.event_type = 'CHECKOUT.ORDER.APPROVED')
+              AND (e.payload #>> '{resource,custom_id}' = orders.id::text
+                   OR e.payload #>> '{resource,purchase_units,0,custom_id}' = orders.id::text
+                   OR e.payload #>> '{resource,id}' = orders.provider_order_id
+                   OR e.payload #>> '{resource,supplementary_data,related_ids,order_id}' = orders.provider_order_id)) AS paypal_payment_evidence
+     FROM orders WHERE id = $1 LIMIT 1`,
     [id],
   );
-  const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; metadata?: { paymentMode?: unknown } | null; updated_at?: unknown } | undefined;
+  const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; metadata?: { paymentMode?: unknown; paypalCaptureStartedAt?: unknown } | null; updated_at?: unknown; created_at?: string; paid_at?: string | null; provider_payment_id?: string | null; paypal_payment_evidence?: boolean } | undefined;
   if (!current) redirect("/admin/orders?error=not-found");
   const orderPath = returnTo === "detail" ? `/admin/orders/${id}` : "/admin/orders";
   const redirectError = (reason: string): never => redirect(`${orderPath}?error=${reason}`);
@@ -57,7 +66,7 @@ export async function updateOrderFulfillment(formData: FormData) {
     providerSessionId: current.provider_session_id,
     providerStatus: current.provider_status,
   });
-  let remoteCancellation: { providerStatus: string; updatedAt: string } | null = null;
+  let remoteCancellation: { providerStatus: string; expectedProviderStatus?: string; updatedAt: string } | null = null;
   if (!decision.allowed) {
     const providerSessionId = current.provider_session_id;
     const providerOrderId = current.provider_order_id;
@@ -88,6 +97,13 @@ export async function updateOrderFulfillment(formData: FormData) {
           clientId,
           clientSecret,
           mode,
+          allowUncapturedMissingOrder: current.status === "pending" && current.payment_status === "unpaid"
+            && ["CREATED", "PAYER_ACTION_REQUIRED", "paypal_admin_cancel_check"].includes(current.provider_status ?? "")
+            && current.paid_at === null && current.provider_payment_id === null
+            && current.paypal_payment_evidence === false
+            && !Object.hasOwn(current.metadata ?? {}, "paypalCaptureStartedAt")
+            && Boolean(current.created_at)
+            && Date.now() - new Date(current.created_at ?? "").getTime() >= 6 * 60 * 60 * 1000,
         });
       } catch (error) {
         console.error("Admin PayPal order cancellation check failed", {
@@ -99,14 +115,36 @@ export async function updateOrderFulfillment(formData: FormData) {
       if (inspection.outcome === "protected") return redirectError("provider_paid");
       if (inspection.outcome === "active") return redirectError("provider_active");
 
-      const snapshot = await attachProviderReference({
-        orderId: id,
-        provider: "paypal",
-        providerOrderId,
-        providerStatus: inspection.providerStatus,
-      });
-      if (!snapshot) return redirectError("conflict");
-      remoteCancellation = { providerStatus: inspection.providerStatus, updatedAt: snapshot.updatedAt };
+      if (["CREATED", "PAYER_ACTION_REQUIRED", "PAYPAL_ORDER_NOT_FOUND"].includes(inspection.providerStatus)) {
+        if (Object.hasOwn(current.metadata ?? {}, "paypalCaptureStartedAt")) return redirectError("provider_active");
+        // Fresh remote evidence is capture-free, but prevent a concurrent buyer
+        // return from starting capture between that lookup and cancellation.
+        const fenced = await query(
+          `UPDATE orders SET provider_status = 'paypal_admin_cancel_check', updated_at = now()
+           WHERE id = $1 AND provider = 'paypal' AND provider_order_id = $2
+             AND status = 'pending' AND payment_status = 'unpaid'
+             AND updated_at = $3::timestamptz
+             AND NOT (COALESCE(metadata, '{}'::jsonb) ? 'paypalCaptureStartedAt')
+           RETURNING updated_at::text AS updated_at`,
+          [id, providerOrderId, currentUpdatedAt],
+        );
+        const fencedAt = toDatabaseTimestampToken(fenced.rows[0]?.updated_at);
+        if (!fencedAt) return redirectError("conflict");
+        remoteCancellation = {
+          providerStatus: "cancelled_by_admin",
+          expectedProviderStatus: "paypal_admin_cancel_check",
+          updatedAt: fencedAt,
+        };
+      } else {
+        const snapshot = await attachProviderReference({
+          orderId: id,
+          provider: "paypal",
+          providerOrderId,
+          providerStatus: inspection.providerStatus,
+        });
+        if (!snapshot) return redirectError("conflict");
+        remoteCancellation = { providerStatus: inspection.providerStatus, updatedAt: snapshot.updatedAt };
+      }
     }
 
     if (canExpireStripeCheckout) {
@@ -156,7 +194,7 @@ export async function updateOrderFulfillment(formData: FormData) {
       providerStatus: remoteCancellation?.providerStatus ?? "cancelled_by_admin",
       expectedStatus: current.status,
       expectedPaymentStatus: current.payment_status,
-      expectedProviderStatus: remoteCancellation?.providerStatus ?? current.provider_status,
+      expectedProviderStatus: remoteCancellation?.expectedProviderStatus ?? remoteCancellation?.providerStatus ?? current.provider_status,
       expectedProviderOrderId: current.provider_order_id,
       expectedProviderSessionId: current.provider_session_id,
       expectedUpdatedAt: remoteCancellation?.updatedAt ?? currentUpdatedAt,

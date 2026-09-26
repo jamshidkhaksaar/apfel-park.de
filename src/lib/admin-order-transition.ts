@@ -30,6 +30,9 @@ export const validateAdminOrderTransition = ({
   if (nextStatus === "paid") return { allowed: false, reason: "payment_required" };
   if (nextStatus === "cancelled") {
     if (paymentStatus === "paid") return { allowed: false, reason: "refund_required" };
+    if (currentStatus === "cancelled" && (paymentStatus === "failed" || paymentStatus === "unpaid")) {
+      return { allowed: true, mode: "noop" };
+    }
     const normalizedProviderStatus = providerStatus?.toLowerCase().trim() ?? "";
     const providerBoundOrStarted = Boolean(providerOrderId || providerSessionId || normalizedProviderStatus);
     if (providerBoundOrStarted && !TERMINAL_PROVIDER_STATUSES.has(normalizedProviderStatus)) {

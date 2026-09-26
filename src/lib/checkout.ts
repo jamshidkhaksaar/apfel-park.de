@@ -485,16 +485,27 @@ export async function getPayPalCaptureExpectation(orderId: string, paypalOrderId
       [orderId],
     );
     const row = result.rows[0] as Record<string, unknown> | undefined;
-    if (!row || row.provider_status === "paypal_expiry_check" || !paypalCaptureRequestMatchesLocalOrder({
+    if (!row || ["paypal_expiry_check", "paypal_admin_cancel_check"].includes(String(row.provider_status)) || !paypalCaptureRequestMatchesLocalOrder({
       localProvider: typeof row.provider === "string" ? row.provider : null,
       status: typeof row.status === "string" ? row.status : null,
       paymentStatus: typeof row.payment_status === "string" ? row.payment_status : null,
       storedProviderOrderId: typeof row.provider_order_id === "string" ? row.provider_order_id : null,
       paypalOrderId,
     })) return null;
-    return typeof row.cents === "number" && typeof row.currency === "string"
-      ? { cents: row.cents, currency: row.currency }
-      : null;
+    if (typeof row.cents !== "number" || typeof row.currency !== "string") return null;
+    // Claim before making the remote request. The admin cancellation fence uses
+    // the same row, so either capture or cancellation wins atomically. Keep the
+    // marker on uncertain outcomes: a timeout is not proof that no money moved.
+    const claimed = await query(
+      `UPDATE orders SET metadata = COALESCE(metadata, '{}'::jsonb) ||
+           jsonb_build_object('paypalCaptureStartedAt', now()), updated_at = now()
+       WHERE id = $1 AND provider = 'paypal' AND provider_order_id = $2
+         AND status = 'pending' AND payment_status = 'unpaid'
+         AND COALESCE(provider_status, '') NOT IN ('paypal_expiry_check', 'paypal_admin_cancel_check')
+       RETURNING id`,
+      [orderId, paypalOrderId],
+    );
+    return claimed.rows[0] ? { cents: row.cents, currency: row.currency } : null;
   } catch (error) {
     console.error("getPayPalCaptureExpectation failed:", error);
     return null;

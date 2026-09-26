@@ -40,11 +40,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing order reference" }, { status: 400 });
     }
 
+    const token = await getAccessToken();
     const expected = await getPayPalCaptureExpectation(orderId, paypalOrderId);
     if (!expected) {
       return NextResponse.json({ success: false, error: "PayPal payment does not match an eligible order" }, { status: 400 });
     }
-    const token = await getAccessToken();
     const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${paypalOrderId}/capture`, {
       method: "POST",
       headers: {

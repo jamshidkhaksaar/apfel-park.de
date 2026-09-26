@@ -26,7 +26,7 @@ describe("PayPal admin order cancellation", () => {
     const base = mode === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
     expect(fetchImpl).toHaveBeenNthCalledWith(2, `${base}/v2/checkout/orders/${input.orderId}`, expect.any(Object));
   });
-  it.each(["CREATED", "APPROVED"])("retains active %s", async (status) => {
+  it.each(["APPROVED"])("retains active %s", async (status) => {
     const fetchImpl = vi.fn().mockResolvedValueOnce(jsonResponse({ access_token: "access-token" }))
       .mockResolvedValueOnce(jsonResponse({ status }));
     await expect(inspectPayPalOrderForAdminCancellation({ ...input, fetchImpl })).resolves.toEqual({ outcome: "active", providerStatus: status });
@@ -106,12 +106,15 @@ describe("PayPal admin order cancellation", () => {
       .resolves.toEqual({ outcome: "protected", providerStatus: "COMPLETED" });
   });
 
-  it("keeps an active PayPal approval flow blocked", async () => {
+  it("allows a bound uncaptured PayPal approval flow to enter guarded cancellation", async () => {
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(jsonResponse({ access_token: "access-token" }))
-      .mockResolvedValueOnce(jsonResponse({ status: "PAYER_ACTION_REQUIRED" }));
+      .mockResolvedValueOnce(jsonResponse({
+        id: input.orderId, intent: "CAPTURE", status: "PAYER_ACTION_REQUIRED",
+        purchase_units: [{ custom_id: input.localOrderId }],
+      }));
 
     await expect(inspectPayPalOrderForAdminCancellation({ ...input, fetchImpl }))
-      .resolves.toEqual({ outcome: "active", providerStatus: "PAYER_ACTION_REQUIRED" });
+      .resolves.toEqual({ outcome: "cancelable", providerStatus: "PAYER_ACTION_REQUIRED" });
   });
 });

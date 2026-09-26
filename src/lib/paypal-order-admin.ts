@@ -5,10 +5,12 @@ export type PayPalAdminCancellationInspection =
 
 type PayPalOrderSnapshot = {
   id?: string;
+  intent?: string;
   purchase_units?: Array<{ custom_id?: string }>;
   status?: string;
   name?: string;
   message?: string;
+  details?: Array<{ issue?: string }>;
 };
 
 const parseJson = async (response: Response): Promise<PayPalOrderSnapshot & { access_token?: string }> => {
@@ -25,6 +27,7 @@ export async function inspectPayPalOrderForAdminCancellation({
   clientId,
   clientSecret,
   mode,
+  allowUncapturedMissingOrder = false,
   fetchImpl = fetch,
 }: {
   orderId: string;
@@ -32,6 +35,7 @@ export async function inspectPayPalOrderForAdminCancellation({
   clientId: string;
   clientSecret: string;
   mode: "live" | "sandbox";
+  allowUncapturedMissingOrder?: boolean;
   fetchImpl?: typeof fetch;
 }): Promise<PayPalAdminCancellationInspection> {
   const baseUrl = mode === "live"
@@ -59,8 +63,14 @@ export async function inspectPayPalOrderForAdminCancellation({
     },
   );
   const order = await parseJson(lookup);
-  // Absence can mean wrong merchant credentials; it is not terminal evidence.
+  // Absence alone is ambiguous. Only the admin caller can opt in after checking
+  // the age, original pre-approval state, mode and absence of payment evidence.
   if (!lookup.ok) {
+    if (allowUncapturedMissingOrder && lookup.status === 404
+      && order.name === "RESOURCE_NOT_FOUND"
+      && order.details?.some((detail) => detail.issue === "INVALID_RESOURCE_ID")) {
+      return { outcome: "cancelable", providerStatus: "PAYPAL_ORDER_NOT_FOUND" };
+    }
     throw new Error(order.message || "PayPal order lookup failed");
   }
 
@@ -68,7 +78,7 @@ export async function inspectPayPalOrderForAdminCancellation({
   if (providerStatus === "COMPLETED") {
     return { outcome: "protected", providerStatus };
   }
-  if (providerStatus === "VOIDED") {
+  if (providerStatus === "VOIDED" || providerStatus === "CREATED" || providerStatus === "PAYER_ACTION_REQUIRED") {
     // Checkout creates exactly one purchase unit with custom_id = local order UUID.
     if (!orderId || !localOrderId || order.id !== orderId
       || !Array.isArray(order.purchase_units) || order.purchase_units.length !== 1
@@ -79,9 +89,12 @@ export async function inspectPayPalOrderForAdminCancellation({
     if ("payments" in order.purchase_units[0]) {
       throw new Error("PayPal order contains payment evidence");
     }
+    if (providerStatus !== "VOIDED" && order.intent !== "CAPTURE") {
+      throw new Error("PayPal order intent mismatch");
+    }
     return { outcome: "cancelable", providerStatus };
   }
-  if (["CREATED", "PAYER_ACTION_REQUIRED", "APPROVED"].includes(providerStatus)) {
+  if (providerStatus === "APPROVED") {
     return { outcome: "active", providerStatus };
   }
   throw new Error(`PayPal order has unsupported state ${providerStatus}`);

@@ -23,6 +23,13 @@ export const getAdminPaymentStatus = (order: PaymentStatusInput, locale: "de" | 
     };
   }
   if (order.payment_status === "failed" || order.status === "cancelled") {
+    if (providerStatus === "cancelled_by_admin") {
+      return {
+        label: german ? "Nicht bezahlt · Storniert" : "Unpaid · Cancelled",
+        detail: order.provider ?? "",
+        tone: "error" as const,
+      };
+    }
     if (decline) {
       return {
         label: german ? "Nicht bezahlt · Karte abgelehnt" : "Unpaid · Card declined",
