@@ -3,7 +3,7 @@
 import { FormEvent, Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import AdminListMemory from "@/components/admin/AdminListMemory";
 import { markAdminListsChanged, withAdminListReturnTo } from "@/lib/admin-list-navigation";
 
@@ -70,7 +70,6 @@ function InventoryThumbnail({ src, title, fallback }: { src: string | null; titl
 }
 
 export default function AdminInventoryManager({ locale }: { locale: "de" | "en" }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const urlQuery = searchParams.toString();
   const request = useRef<AbortController | null>(null);
@@ -89,6 +88,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
   const [busySku, setBusySku] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [pricingHref, setPricingHref] = useState<string | null>(null);
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Record<string, SimilarProduct[]>>({});
   const [loadingSimilarId, setLoadingSimilarId] = useState<string | null>(null);
@@ -225,6 +225,11 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
   const toggleCatalog = async (item: InventoryRow) => {
     if (busyProduct || loading) return;
     if (item.catalogEnabled && item.active && !window.confirm(text.disablingPublished)) return;
+    // Reserve the tab during the click so browsers allow it before the request finishes.
+    const pricingTab = !item.catalogEnabled ? window.open("about:blank", "_blank") : null;
+    if (pricingTab) pricingTab.opener = null;
+    const nextPricingHref = editorHref(item.productId, true);
+    setPricingHref(null);
     setBusyProduct(item.productId);
     setError(null);
     setNotice(null);
@@ -237,12 +242,15 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       if (!response.ok) throw new Error(text.failed);
       markAdminListsChanged();
       if (!item.catalogEnabled) {
-        router.push(editorHref(item.productId, true));
-        return;
+        if (pricingTab && !pricingTab.closed) pricingTab.location.replace(nextPricingHref);
+        else setPricingHref(nextPricingHref);
       }
       setNotice(text.updated);
       await loadInventory(query, pagination.page, status, filters);
-    } catch { setError(text.failed); }
+    } catch {
+      pricingTab?.close();
+      setError(text.failed);
+    }
     finally { setBusyProduct(null); }
   };
 
@@ -342,7 +350,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       </header>
 
       {error ? <p role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-500">{error}</p> : null}
-      {notice ? <p className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-500">{notice}</p> : null}
+      {notice ? <p className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-500">{notice}{pricingHref ? <> <a href={pricingHref} target="_blank" rel="noopener noreferrer" className="font-semibold underline">{text.edit} →</a></> : null}</p> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
@@ -429,7 +437,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                         <span aria-hidden="true" className={`flex h-5 w-9 items-center rounded-full p-0.5 ${item.catalogEnabled ? 'justify-end bg-gold' : 'justify-start bg-muted/30'}`}><span className="h-4 w-4 rounded-full bg-white shadow" /></span>
                         {item.catalogEnabled ? text.disable : text.enable}
                       </button>
-                      {item.catalogEnabled ? <Link href={editorHref(item.productId, true)} className="text-xs font-semibold text-gold">{text.edit} →</Link> : null}
+                      {item.catalogEnabled ? <Link href={editorHref(item.productId, true)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-gold">{text.edit} →</Link> : null}
                     </div>
                   </td>
                   <td className="px-3 py-3 text-right font-mono tabular-nums">{item.onHand}</td>
