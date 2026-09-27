@@ -1144,3 +1144,17 @@ export const sendReviewInviteEmail = async (data: ReviewInviteData): Promise<Ema
 
   return sendTransactionalEmail({ to: data.email, subject, text, html, identity: "sales" });
 };
+
+/** Customer invoices use the dedicated no-reply mailbox with support replies. */
+export const sendCustomerInvoiceEmail = async (data: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  pdf: Buffer;
+  filename: string;
+}): Promise<EmailSendResult> => sendTransactionalEmail({
+  to: data.to, subject: data.subject, text: data.text, html: data.html,
+  identity: 'noreply', replyTo: siteInfo.email,
+  attachments: [{ filename: data.filename, content: data.pdf, contentType: 'application/pdf' }],
+});

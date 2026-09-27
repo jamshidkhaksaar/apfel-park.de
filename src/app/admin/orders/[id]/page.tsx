@@ -1,3 +1,5 @@
+import AdminOrderInvoicePanel from "@/components/admin/AdminOrderInvoicePanel";
+import { normalizeInvoiceAddress } from "@/lib/order-invoice";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -167,6 +169,8 @@ export default async function OrderDetailPage({
           </form>
         ) : null}
       </div>
+
+      <AdminOrderInvoicePanel orderId={order.id} locale={locale} paid={order.payment_status === "paid" && order.status !== "cancelled"} billingAddress={normalizeInvoiceAddress(order.customer_address, order.customer_name ?? "")} />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="glass-panel rounded-2xl p-6">

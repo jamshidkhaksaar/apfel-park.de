@@ -92,6 +92,7 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
       "/admin/promotion-banner",
       "/admin/inventory",
       "/admin/orders",
+      "/admin/invoices",
       "/admin/repairs",
       "/admin/repair-estimates",
       "/admin/batch-buy",

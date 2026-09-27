@@ -306,6 +306,7 @@ export default function AdminShell({
 
   const managerItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
     { label: dict.sidebar.orders,    path: '/admin/orders',   icon: 'orders',  badge: badges.orders },
+    { label: lang === 'de' ? 'Rechnungen' : 'Invoices', path: '/admin/invoices', icon: 'orders' },
     { label: 'Marketplaces', path: '/admin/marketplaces', icon: 'marketplaces' },
     { label: dict.sidebar.withdrawals, path: '/admin/withdrawals', icon: 'orders' },
     { label: dict.sidebar.repairs,   path: '/admin/repairs',  icon: 'repairs', badge: badges.repairs },
