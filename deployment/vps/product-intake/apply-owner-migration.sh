@@ -15,6 +15,8 @@ OWNER_MIGRATIONS=(
   20260907_inventory_catalog_workflow.sql
   20260914_repair_coupon_bookings.sql
   20260924_customer_unpaid_order_email.sql
+  20260927_customer_order_invoices.sql
+  20260927_customer_order_invoices_permissions.sql
 )
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RELEASE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
