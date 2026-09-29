@@ -38,7 +38,7 @@ export const previewCustomerInvoice = async (orderId: string, options: InvoiceIs
   const snapshot = buildInvoiceSnapshot(order, settings, { ...options, taxMode: 'standard', preview: true, number: `ENTWURF-${order.order_number ?? orderId.slice(0, 8)}` });
   return renderOrderInvoicePdf(snapshot);
 };
-export const issueAndSendCustomerInvoice = async (orderId: string, actorId: string, options: InvoiceIssueOptions, resend = false): Promise<{ number: string; alreadySent: boolean }> => {
+export const issueAndSendCustomerInvoice = async (orderId: string, actorId: string | null, options: InvoiceIssueOptions, resend = false): Promise<{ number: string; alreadySent: boolean }> => {
   const claimToken = randomUUID();
   const invoice = await withTransaction(async client => {
     const settingsResult = await client.query('SELECT value FROM store_settings WHERE key=$1 FOR UPDATE', [settingsKey]);

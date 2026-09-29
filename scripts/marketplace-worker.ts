@@ -15,6 +15,7 @@ import { paypalCaptureIdentityMatches } from "../src/lib/payment-coupon";
 import { sendPurchaseTrackingEvents } from "../src/lib/marketing";
 import { notifyPaidOrderAdmin } from "../src/lib/order-notifications";
 import { sendDueUnpaidOrderEmails } from "../src/lib/customer-unpaid-notifications";
+import { sendDueCustomerInvoices } from '../src/lib/customer-invoice-auto';
 import {
   PAYPAL_STALE_ORDER_STATUSES,
   PROVIDER_RECONCILIATION_AGE_SECONDS,
@@ -722,6 +723,7 @@ const processJob = async (job: Job): Promise<void> => {
 export const runMarketplaceWorkerPass = async (): Promise<void> => {
   await reconcileUncertainProviderOutcomes();
   await sendDueUnpaidOrderEmails();
+  await sendDueCustomerInvoices();
   await runDeltaReconciliation();
   await queuePeriodicWork();
   for (const target of await claimInventoryTargets()) await processInventoryTarget(target);
