@@ -241,6 +241,9 @@ const sendTransactionalEmail = async (email: OutboundEmail): Promise<EmailSendRe
   return smtpResult;
 };
 
+export const sendShippingStatusEmail = async (to: string, content: { subject: string; text: string; html: string }): Promise<EmailSendResult> =>
+  sendTransactionalEmail({ to, ...content, identity: 'noreply', replyTo: 'info@apfel-park.de' });
+
 export const sendOfferSubscriptionConfirmationEmail = async (data: {
   email: string;
   locale: "de" | "en";

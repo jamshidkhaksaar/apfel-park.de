@@ -27,7 +27,7 @@ export const validateAdminOrderTransition = ({
   providerSessionId,
   providerStatus,
 }: AdminOrderTransitionInput): AdminOrderTransitionDecision => {
-  if (nextStatus === "paid") return { allowed: false, reason: "payment_required" };
+  if (nextStatus === "paid") return paymentStatus === 'paid' ? { allowed: true, mode: 'fulfillment' } : { allowed: false, reason: 'payment_required' };
   if (nextStatus === "cancelled") {
     if (paymentStatus === "paid") return { allowed: false, reason: "refund_required" };
     if (currentStatus === "cancelled" && (paymentStatus === "failed" || paymentStatus === "unpaid")) {
@@ -48,7 +48,7 @@ export const validateAdminOrderTransition = ({
       : { allowed: false, reason: "invalid_transition" };
   }
   if (nextStatus === "shipped") {
-    return paymentStatus === "paid" && (currentStatus === "paid" || currentStatus === "shipped")
+    return paymentStatus === "paid" && (currentStatus === "paid" || currentStatus === "shipped" || currentStatus === "delivered")
       ? { allowed: true, mode: "fulfillment" }
       : { allowed: false, reason: "payment_required" };
   }

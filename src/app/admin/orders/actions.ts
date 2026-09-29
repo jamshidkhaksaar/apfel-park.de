@@ -14,6 +14,8 @@ import { attachProviderReference, getPaymentMode, isOrderInProviderState, markOr
 import { toDatabaseTimestampToken } from "@/lib/database-timestamp";
 import { inspectPayPalOrderForAdminCancellation } from "@/lib/paypal-order-admin";
 import { expireStripeCheckoutSessionForAdmin } from "@/lib/stripe-checkout-admin";
+import { fulfillmentStages, shippingCarriers, type FulfillmentStage, type ShippingCarrier } from '@/lib/order-shipping';
+import { notifyShippingStage } from '@/lib/order-shipping-notifications';
 
 const ALLOWED_STATUSES = new Set(["pending", "paid", "shipped", "delivered", "cancelled"]);
 
@@ -31,9 +33,13 @@ export async function updateOrderFulfillment(formData: FormData) {
   }
 
   const id = sanitizeInput(formData.get("id"));
-  const nextStatus = sanitizeInput(formData.get("status")).toLowerCase();
+  const requestedStage = sanitizeInput(formData.get('fulfillmentStage')).toLowerCase();
+  const stage = fulfillmentStages.includes(requestedStage as FulfillmentStage) ? requestedStage as FulfillmentStage : null;
+  const nextStatus = stage ? (stage === 'packed' || stage === 'shipping' ? 'paid' : stage) : sanitizeInput(formData.get("status")).toLowerCase();
   const hasTracking = formData.has("trackingId");
   const trackingId = sanitizeInput(formData.get("trackingId"));
+  const requestedCarrier = sanitizeInput(formData.get('shippingCarrier')).toLowerCase();
+  const carrier = shippingCarriers.includes(requestedCarrier as ShippingCarrier) ? requestedCarrier as ShippingCarrier : null;
   const returnTo = sanitizeInput(formData.get("returnTo"));
 
   if (!UUID_PATTERN.test(id) || !ALLOWED_STATUSES.has(nextStatus)) {
@@ -52,10 +58,11 @@ export async function updateOrderFulfillment(formData: FormData) {
      FROM orders WHERE id = $1 LIMIT 1`,
     [id],
   );
-  const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; metadata?: { paymentMode?: unknown; paypalCaptureStartedAt?: unknown } | null; updated_at?: unknown; created_at?: string; paid_at?: string | null; provider_payment_id?: string | null; paypal_payment_evidence?: boolean } | undefined;
+  const current = currentResult.rows[0] as { status?: string; payment_status?: string; provider?: "stripe" | "paypal"; provider_order_id?: string | null; provider_session_id?: string | null; provider_status?: string | null; metadata?: { paymentMode?: unknown; paypalCaptureStartedAt?: unknown; trackingId?: string } | null; updated_at?: unknown; created_at?: string; paid_at?: string | null; provider_payment_id?: string | null; paypal_payment_evidence?: boolean } | undefined;
   if (!current) redirect("/admin/orders?error=not-found");
   const orderPath = returnTo === "detail" ? `/admin/orders/${id}` : "/admin/orders";
   const redirectError = (reason: string): never => redirect(`${orderPath}?error=${reason}`);
+  if (current.payment_status === 'paid' && (!stage || (trackingId && !carrier) || ((stage === 'shipped' || stage === 'delivered') && (!trackingId || !carrier)))) return redirectError('invalid');
   const currentUpdatedAt = toDatabaseTimestampToken(current.updated_at);
   if (!currentUpdatedAt) return redirectError("conflict");
   const decision = validateAdminOrderTransition({
@@ -208,15 +215,14 @@ export async function updateOrderFulfillment(formData: FormData) {
     const update = await query(
       `UPDATE orders
        SET status = $2,
-           metadata = CASE WHEN $3::text IS NULL THEN metadata
-                           ELSE COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('trackingId', $3::text) END,
+           metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('trackingId', $3::text, 'shippingCarrier', $6::text, 'fulfillmentStage', $7::text),
            updated_at = now()
        WHERE id = $1 AND payment_status = $4 AND status = $5
        RETURNING id`,
-      [id, nextStatus, hasTracking ? trackingId || null : null, current.payment_status, current.status],
+      [id, nextStatus, hasTracking ? trackingId || null : null, current.payment_status, current.status, carrier, stage],
     );
     if (!update.rows[0]) redirectError("conflict");
-    if (trackingId) {
+    if (trackingId && stage === 'shipped' && (current.status !== 'shipped' || current.metadata?.trackingId !== trackingId)) {
       const marketplaceOrders = await query(
         `SELECT marketplace, external_order_id FROM marketplace_orders WHERE order_id = $1`,
         [id],
@@ -230,6 +236,10 @@ export async function updateOrderFulfillment(formData: FormData) {
           }),
         ),
       );
+    }
+    if (stage) {
+      try { await notifyShippingStage(id, stage, carrier, trackingId); }
+      catch (error) { console.error('Shipping notification failed', { orderId: id, error: error instanceof Error ? error.message : 'unknown' }); }
     }
   }
 

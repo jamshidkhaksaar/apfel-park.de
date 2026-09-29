@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 
 import { getAdminDictionary, getAdminLocale, getAdminNumberLocale } from "@/lib/admin-i18n-server";
 import { getAdminPaymentStatus } from "@/lib/admin-payment-status";
+import { shippingCarriers, carrierLabel, fulfillmentStages } from '@/lib/order-shipping';
+import { query } from '@/lib/db';
 import AdminShell from "../../../../components/admin/AdminShell";
 import { resendOrderNotification, updateOrderFulfillment } from "../actions";
 import { formatVariant, getOrderDetail } from "../order-data";
@@ -33,6 +35,8 @@ export default async function OrderDetailPage({
   if (!order) {
     notFound();
   }
+  const shippingEmailSettings = await query("SELECT value FROM store_settings WHERE key='shipping_email_settings'");
+  const shippingEmailApproved = shippingEmailSettings.rows[0]?.value?.approvedVersion === 'shipping-v1' && Boolean(shippingEmailSettings.rows[0]?.value?.approvedAt);
 
   const t = dict.ordersPage.detail;
   const currency = new Intl.NumberFormat(numberLocale, {
@@ -68,6 +72,9 @@ export default async function OrderDetailPage({
         : t.emailNotSent,
     ],
     [t.trackingId, order.tracking_id ?? "-"],
+    [locale === 'de' ? 'Versanddienst' : 'Carrier', order.shipping_carrier && shippingCarriers.includes(order.shipping_carrier as typeof shippingCarriers[number]) ? carrierLabel(order.shipping_carrier as typeof shippingCarriers[number]) : '-'],
+    [locale === 'de' ? 'Versandphase' : 'Fulfillment stage', order.fulfillment_stage ?? order.status ?? '-'],
+    [locale === 'de' ? 'Versand-E-Mail' : 'Shipping email', order.shipping_email_sent_at ? formatDate(order.shipping_email_sent_at) : order.shipping_email_claimed_at ? (locale === 'de' ? 'Zustellung prüfen' : 'Review delivery') : (locale === 'de' ? 'Noch nicht gesendet' : 'Not sent')],
     [
       "Condition consent",
       order.condition_consent?.accepted
@@ -122,7 +129,12 @@ export default async function OrderDetailPage({
         <form action={updateOrderFulfillment} className="mt-4 flex flex-wrap items-end gap-4">
           <input type="hidden" name="id" value={order.id} />
           <input type="hidden" name="returnTo" value="detail" />
-          <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+          {order.payment_status === 'paid' ? <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+            {locale === 'de' ? 'Versandphase' : 'Fulfillment stage'}
+            <select name="fulfillmentStage" defaultValue={order.fulfillment_stage || order.status || 'paid'} className="rounded-lg border border-border/60 bg-surface-strong/40 px-3 py-2.5 text-sm normal-case tracking-normal text-foreground">
+              {fulfillmentStages.map(stage => <option key={stage} value={stage}>{({ paid: locale === 'de' ? 'Bezahlt' : 'Paid', packed: locale === 'de' ? 'Verpackt' : 'Packed', shipping: locale === 'de' ? 'Versandbereit' : 'Preparing shipment', shipped: locale === 'de' ? 'Versendet' : 'Shipped', delivered: locale === 'de' ? 'Zugestellt' : 'Delivered' })[stage]}</option>)}
+            </select>
+          </label> : <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted">
             {dict.ordersPage.table.status}
             <select
               name="status"
@@ -139,7 +151,14 @@ export default async function OrderDetailPage({
                 </option>
               ))}
             </select>
-          </label>
+          </label>}
+          {order.payment_status === 'paid' ? <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+            {locale === 'de' ? 'Versanddienst' : 'Shipping carrier'}
+            <select name="shippingCarrier" defaultValue={order.shipping_carrier || ''} className="rounded-lg border border-border/60 bg-surface-strong/40 px-3 py-2.5 text-sm normal-case tracking-normal text-foreground">
+              <option value="">{locale === 'de' ? 'Bitte auswählen' : 'Select carrier'}</option>
+              {shippingCarriers.map(carrier => <option key={carrier} value={carrier}>{carrierLabel(carrier)}</option>)}
+            </select>
+          </label> : null}
           <label className="flex min-w-[260px] flex-1 flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted">
             {t.trackingId}
             <input
@@ -157,6 +176,8 @@ export default async function OrderDetailPage({
             {t.save}
           </button>
         </form>
+        {order.payment_status === 'paid' ? <p className="mt-3 text-xs text-muted">{shippingEmailApproved ? (locale === 'de' ? 'Eine neue Versandphase sendet dem Kunden einmalig eine E-Mail. Eine Sendungsnummer erfordert einen Versanddienst.' : 'A new fulfillment stage sends one customer email. A tracking number requires a carrier.') : (locale === 'de' ? 'Versand-E-Mails an Kunden warten auf die Freigabe der Design-Vorschau. Eine Sendungsnummer erfordert einen Versanddienst.' : 'Customer shipping emails await approval of the design preview. A tracking number requires a carrier.')}</p> : null}
+        {order.shipping_email_last_error ? <p className="mt-2 text-xs text-red-600">{locale === 'de' ? 'Versand-E-Mail benötigt Zustellungsprüfung:' : 'Shipping email needs delivery review:'} {order.shipping_email_last_error}</p> : null}
         {order.payment_status === "paid" ? (
           <form action={resendOrderNotification} className="mt-4 border-t border-border/60 pt-4">
             <input type="hidden" name="id" value={order.id} />
