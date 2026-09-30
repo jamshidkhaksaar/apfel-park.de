@@ -1,3 +1,4 @@
+import EmailObfuscationBoundary from '@/components/EmailObfuscationBoundary';
 import type { Metadata } from "next";
 
 import PageIntro from "../../../../components/PageIntro";
@@ -47,7 +48,7 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
                 {section.body.map((item: string) => (
                   <li key={item} className="flex items-start gap-2">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan" />
-                    {item}
+                    {item.includes('@') ? <EmailObfuscationBoundary>{item}</EmailObfuscationBoundary> : item}
                   </li>
                 ))}
               </ul>

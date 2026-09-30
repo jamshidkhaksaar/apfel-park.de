@@ -15,6 +15,19 @@ describe("metadata title ownership", () => {
   });
 });
 
+describe("audited route snippet lengths", () => {
+  it.each(['de', 'en'] as const)('keeps rewritten copy and clean pagination within snippet budgets in %s', async (locale) => {
+    for (const path of ['/firmenkunden', '/parts', '/handys-ohne-vertrag', '/gebrauchte-handys', '/handy-shop-hamburg-wilhelmsburg']) {
+      for (const page of [undefined, 'page=2', 'page=3']) {
+        const metadata = await createMetadata(locale, 'ignored page title', 'ignored page description', path, undefined, { canonicalQuery: page });
+        expect(`${metadata.title} | Apfel Park`.length, `${path} ${page} title`).toBeLessThanOrEqual(60);
+        expect(String(metadata.description).length, `${path} ${page} description`).toBeLessThanOrEqual(160);
+        expect(String(metadata.description).length).toBeGreaterThanOrEqual(70);
+      }
+    }
+  });
+});
+
 describe("catalog metadata query policy", () => {
   it("noindexes presentation parameters while following links and canonicalizing to the collection", async () => {
     const indexing = resolveStoreIndexing({ view: "list" });

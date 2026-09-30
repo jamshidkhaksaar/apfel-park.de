@@ -1,3 +1,4 @@
+import EmailObfuscationBoundary from '@/components/EmailObfuscationBoundary';
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -197,7 +198,7 @@ export default async function DeliveryReturnsPage({ params }: { params: Promise<
                 {section.body.map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
-                    {item}
+                    {item.includes('@') ? <EmailObfuscationBoundary>{item}</EmailObfuscationBoundary> : item}
                   </li>
                 ))}
               </ul>

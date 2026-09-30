@@ -102,9 +102,6 @@ export const generateMetadata = async ({
   const price = formatMoney(locale, product.price);
   const variantLabel = productVariantLabel(product.title, product.subtitle);
   const reference = productReference(product.sku, product.slug);
-  const titlePrefix = locale === "en" ? "Buy " : "";
-  // The SKU fragment (" · 7PM256") wasted title budget and meant nothing to searchers.
-  const titleSuffix = "";
   const seoProductName = product.title.replace(/^Apple (?=iPhone\b)/i, "");
   const descriptiveName = [product.title, variantLabel].filter(Boolean).join(" ");
   const titleCondition = product.condition === "used"
@@ -112,10 +109,31 @@ export const generateMetadata = async ({
     : product.condition === "open_box"
       ? "Open Box"
       : "";
-  const descriptiveTitle = [seoProductName, titleCondition].filter(Boolean).join(" ");
-  // The root layout adds " | Apfel Park"; keep the rendered title near 60 characters.
-  const compactName = compactText(descriptiveTitle, Math.max(24, 46 - titlePrefix.length - titleSuffix.length));
-  const seoTitle = `${titlePrefix}${compactName}${titleSuffix}`;
+  // Only name attributes shared by every variant; never advertise one variant
+  // as if it represented a multi-storage or multi-color product page.
+  const singleValue = (values: string[]) => {
+    const unique = [...new Set(values.map(value => value.trim()))];
+    return unique.length === 1 ? unique[0] : "";
+  };
+  const specValue = (pattern: RegExp) => product.specs.find(spec => pattern.test(spec.label))?.value ?? "";
+  const storage = product.variants.length
+    ? singleValue(product.variants.map(variant => variant.storage))
+    : specValue(/^(speicher|storage)$/i);
+  const color = product.variants.length
+    ? singleValue(product.variants.map(variant => variant.color))
+    : specValue(/^(farbe|colou?r)$/i);
+  const attributes = [storage, color].filter(value => value && !seoProductName.toLocaleLowerCase().includes(value.toLocaleLowerCase()));
+  const descriptiveTitle = [seoProductName, ...attributes, titleCondition].filter(Boolean).join(" ");
+  // Preserve the distinguishing attribute, not a clipped title shared by peers.
+  // If the accurate attributes do not fit (or are absent), use the existing
+  // item reference. The root layout owns the remaining 13-character brand.
+  const identityTitle = [seoProductName, titleCondition, `#${reference}`].filter(Boolean).join(" ");
+  const seoTitle = attributes.length && descriptiveTitle.length <= 47
+    ? descriptiveTitle
+    : `${compactText([seoProductName, titleCondition].filter(Boolean).join(" "), 44 - reference.length)} #${reference}`;
+  // Prefer an unshortened model and identity when they fit.
+  const resolvedSeoTitle = (!attributes.length || descriptiveTitle.length > 47) && identityTitle.length <= 47
+    ? identityTitle : seoTitle;
   const seoDescription = compactText(
     (product.stock ?? 0) <= 0
       ? locale === "de"
@@ -133,7 +151,7 @@ export const generateMetadata = async ({
   // and availability already reach Google through the Product JSON-LD below.
   return createMetadata(
     lang,
-    seoTitle,
+    resolvedSeoTitle,
     seoDescription,
     `/store/${slug}`,
     product.image,

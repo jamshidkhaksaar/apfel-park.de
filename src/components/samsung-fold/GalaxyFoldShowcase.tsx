@@ -1,5 +1,6 @@
 "use client";
 
+import EmailObfuscationBoundary from '@/components/EmailObfuscationBoundary';
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -398,13 +399,13 @@ export default function GalaxyFoldShowcase({
                 <span>{isDe ? "Angebot via WhatsApp anfragen" : "Request Quote via WhatsApp"}</span>
               </a>
 
-              <a
+              <EmailObfuscationBoundary><a
                 href={emailUrl}
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-6 py-3 text-xs sm:text-sm font-semibold text-foreground transition-all hover:border-gold hover:text-gold min-h-[44px]"
               >
                 <MailIcon className="size-4" />
                 <span>{isDe ? "Per E-Mail anfragen" : "Request Quote via Email"}</span>
-              </a>
+              </a></EmailObfuscationBoundary>
 
               <Link
                 href={`/${locale}/repairs`}

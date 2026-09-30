@@ -1564,7 +1564,7 @@ export const deviceQuoteCopy = {
 export const partsCatalogCopy = {
   de: {
     title: 'Smartphone-Ersatzteile',
-    description: 'TRUSMI Displays, Ersatzakkus und Smartphone-Komponenten bei Apfel Park. Einzelstücke online bestellen oder ein Großhandelsangebot für Werkstätten und Händler anfragen.',
+    description: 'TRUSMI Displays, Akkus und Smartphone-Ersatzteile online bestellen. Werkstätten und Händler können ein Großhandelsangebot bei Apfel Park anfragen.',
     subtitle: 'Displays, Akkus und Reparaturkomponenten — für Privatkunden, Werkstätten und Fachhändler.',
     all: 'Alle Ersatzteile', displays: 'Displays', batteries: 'Akkus', components: 'Weitere Komponenten',
     retailTitle: 'Einzelkauf für Privatkunden & Unternehmen',
@@ -1577,7 +1577,7 @@ export const partsCatalogCopy = {
   },
   en: {
     title: 'Smartphone spare parts',
-    description: 'TRUSMI replacement displays, batteries and smartphone components at Apfel Park. Buy individual parts online or request a wholesale quote for repair shops and retailers.',
+    description: 'Buy TRUSMI displays, batteries and smartphone parts online at Apfel Park. Repair shops and retailers can request a wholesale quote.',
     subtitle: 'Displays, batteries and repair components — for individuals, repair shops and retailers.',
     all: 'All spare parts', displays: 'Displays', batteries: 'Batteries', components: 'Other components',
     retailTitle: 'Individual purchases for people & businesses',

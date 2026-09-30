@@ -1,3 +1,4 @@
+import EmailObfuscationBoundary from '@/components/EmailObfuscationBoundary';
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -339,7 +340,7 @@ export default async function BusinessCustomersPage({ params }: { params: Promis
                 <p className="mt-3 text-sm text-foreground">
                   <a href={`tel:${siteInfo.landlineE164}`} className="text-gold underline underline-offset-4">{siteInfo.landline}</a>
                   {" · "}
-                  <a href={`mailto:${siteInfo.email}`} className="text-gold underline underline-offset-4">{siteInfo.email}</a>
+                  <EmailObfuscationBoundary><a href={`mailto:${siteInfo.email}`} className="text-gold underline underline-offset-4">{siteInfo.email}</a></EmailObfuscationBoundary>
                 </p>
               </div>
               <Link href={`/${lang}/contact`} className="btn-primary shrink-0">

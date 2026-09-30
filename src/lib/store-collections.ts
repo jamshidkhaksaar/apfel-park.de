@@ -280,7 +280,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/handys-ohne-vertrag",
       title: "Handys ohne Vertrag günstig kaufen",
       metaTitle: "Handys ohne Vertrag günstig kaufen",
-      description: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr. Neu, Open Box oder gebraucht mit klarer Zustandsangabe und Versand in Deutschland.",
+      description: "Handys ohne Vertrag von Apple, Samsung, Google und Xiaomi vergleichen. Neu, Open Box oder gebraucht mit Zustandsangabe und Versand in Deutschland.",
       eyebrow: "Smartphones ohne Vertrag",
       introTitle: "Flexibel bleiben und nur das Gerät kaufen",
       intro: [
@@ -320,7 +320,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     en: {
       path: "/handys-ohne-vertrag",
       title: "Buy Phones Without a Contract in Germany",
-      metaTitle: "Buy Phones Without a Contract in Germany",
+      metaTitle: "Buy Contract-Free Phones in Germany",
       description: "Buy contract-free phones from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
       eyebrow: "Phones without a contract",
       introTitle: "Stay flexible and buy the device only",
@@ -363,8 +363,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     de: {
       path: "/gebrauchte-handys",
       title: "Gebrauchte Handys kaufen – Open Box & geprüft",
-      metaTitle: "Gebrauchte Handys kaufen – Open Box & geprüft",
-      description: "Gebrauchte und Open-Box-Handys von Apple, Samsung, Google und weiteren Marken mit transparentem Zustand, Versand oder Abholung in Hamburg vergleichen.",
+      metaTitle: "Gebrauchte & Open-Box-Handys kaufen",
+      description: "Gebrauchte und Open-Box-Handys von Apple, Samsung und Google vergleichen: Zustand und Preis, Versand in Deutschland oder Abholung in Hamburg.",
       eyebrow: "Gebraucht & Open Box",
       introTitle: "Smartphones mit transparentem Zustand",
       intro: [

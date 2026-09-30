@@ -206,11 +206,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.93,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Handy-Reparatur Wilhelmsburg – Hamburg",
+      de: "Handy-Reparatur Hamburg-Wilhelmsburg",
       en: "Phone Store Hamburg-Wilhelmsburg",
     },
     defaultDescription: {
-      de: "Handy-Reparatur für iPhone, Samsung und weitere Smartphones bei Apfel Park in Hamburg-Wilhelmsburg. Dazu Smartphones, Zubehör, Abholung und Versand.",
+      de: "Handy-Reparatur, Smartphones und Zubehör bei Apfel Park in Hamburg-Wilhelmsburg. Geräte online vergleichen, vor Ort abholen oder liefern lassen.",
       en: "Buy smartphones, iPhones, Samsung phones and accessories at Apfel Park in Hamburg-Wilhelmsburg. Live stock, store collection or delivery.",
     },
     defaultKeywords: {
@@ -435,10 +435,10 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     changeFrequency: "daily",
     defaultTitle: {
       de: "Handys ohne Vertrag günstig kaufen",
-      en: "Buy Phones Without a Contract in Germany",
+      en: "Buy Contract-Free Phones in Germany",
     },
     defaultDescription: {
-      de: "Smartphones ohne Vertrag von Apple, Samsung, Google, Xiaomi und mehr. Neu, Open Box oder gebraucht mit klarer Zustandsangabe und Versand in Deutschland.",
+      de: "Handys ohne Vertrag von Apple, Samsung, Google und Xiaomi vergleichen. Neu, Open Box oder gebraucht mit Zustandsangabe und Versand in Deutschland.",
       en: "Buy contract-free phones from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
     },
     defaultKeywords: {
@@ -453,11 +453,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.92,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Gebrauchte Handys kaufen – Open Box & geprüft",
+      de: "Gebrauchte & Open-Box-Handys kaufen",
       en: "Buy Used & Open-Box Phones – Tested",
     },
     defaultDescription: {
-      de: "Gebrauchte und Open-Box-Handys von Apple, Samsung, Google und weiteren Marken mit transparentem Zustand, Versand oder Abholung in Hamburg vergleichen.",
+      de: "Gebrauchte und Open-Box-Handys von Apple, Samsung und Google vergleichen: Zustand und Preis, Versand in Deutschland oder Abholung in Hamburg.",
       en: "Compare used and open-box phones from Apple, Samsung, Google and more with clear condition details, delivery in Germany or collection in Hamburg.",
     },
     defaultKeywords: {
@@ -684,12 +684,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.7,
     changeFrequency: "monthly",
     defaultTitle: {
-      de: "Smartphone-Ersatzteile & Service für Unternehmen | Apfel Park",
-      en: "Smartphone parts & services for businesses | Apfel Park",
+      de: "Ersatzteile & Service für Firmen",
+      en: "Phone Parts & Services for Businesses",
     },
     defaultDescription: {
-      de: "Reparaturen, Geräte, Zubehör und Smartphone-Ersatzteile für Unternehmen: Firmengeräte-Reparatur, Mengenbestellungen und Gerätebeschaffung auf Rechnung. Angebot in 1–2 Werktagen.",
-      en: "Repairs, devices, accessories and smartphone spare parts for businesses: company device repair, bulk orders and device procurement on invoice. Quote within 1–2 business days.",
+      de: "Reparaturen, Geräte, Zubehör und Ersatzteile für Firmen auf Rechnung. Mengenbestellungen und Gerätebeschaffung: Angebot in 1–2 Werktagen anfragen.",
+      en: "Repairs, devices, accessories and phone parts for businesses on invoice. Request bulk orders or device sourcing, with a quote in 1–2 business days.",
     },
     defaultKeywords: {
       de: "Handy Reparatur Firma Hamburg, Firmengeräte Reparatur Hamburg, B2B Handy Hamburg, Handyzubehör Mengen, Firmenhandy Service Hamburg",
