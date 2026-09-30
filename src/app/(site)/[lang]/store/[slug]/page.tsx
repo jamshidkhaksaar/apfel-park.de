@@ -102,7 +102,10 @@ export const generateMetadata = async ({
   const price = formatMoney(locale, product.price);
   const variantLabel = productVariantLabel(product.title, product.subtitle);
   const reference = productReference(product.sku, product.slug);
-  const seoProductName = product.title.replace(/^Apple (?=iPhone\b)/i, "");
+  // Keep English purchase intent explicit: new/open-box offer names and
+  // attributes can otherwise be identical across the two locale URLs.
+  const titlePrefix = locale === "en" ? "Buy " : "";
+  const seoProductName = titlePrefix + product.title.replace(/^Apple (?=iPhone\b)/i, "");
   const descriptiveName = [product.title, variantLabel].filter(Boolean).join(" ");
   const titleCondition = product.condition === "used"
     ? locale === "de" ? "Gebraucht" : "Used"

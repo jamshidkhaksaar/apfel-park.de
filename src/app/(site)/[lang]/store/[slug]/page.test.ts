@@ -54,6 +54,19 @@ const auditedOffers = [
 ];
 
 describe('audited product offer metadata', () => {
+  it('keeps the same open-box offer distinct between locales', async () => {
+    mocks.createMetadata.mockImplementation((_locale, title) => ({ title }));
+    mocks.getProductBySlug.mockResolvedValue({
+      id: 'ipad-offer', slug: 'apple-ipad-6-32-gb-openbox', title: 'Apple iPad 6', subtitle: '',
+      condition: 'open_box', price: 1, stock: 1, variants: [], specs: [{ label: 'Speicher', value: '32 GB' }],
+    });
+    const de = await generateMetadata({ params: Promise.resolve({ lang: 'de', slug: 'apple-ipad-6-32-gb-openbox' }) });
+    const en = await generateMetadata({ params: Promise.resolve({ lang: 'en', slug: 'apple-ipad-6-32-gb-openbox' }) });
+    expect(en.title).not.toBe(de.title);
+    expect(en.title).toMatch(/^Buy /);
+    expect(`${en.title} | Apfel Park`.length).toBeLessThanOrEqual(60);
+  });
+
   it('reserves the full identity and ellipsis budget for a long unbroken model name', async () => {
     mocks.createMetadata.mockImplementation((_locale, title) => ({ title }));
     mocks.getProductBySlug.mockResolvedValue({
