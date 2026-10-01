@@ -40,6 +40,18 @@ const contentSecurityPolicy = [
   "manifest-src 'self'",
 ].join("; ");
 
+// Checkout alone needs the optional Places SDK. Keep every base directive intact.
+const checkoutGoogleSources: Record<string, string> = {
+  'script-src': 'https://maps.googleapis.com https://maps.gstatic.com',
+  'connect-src': 'https://maps.googleapis.com https://places.googleapis.com https://maps.gstatic.com',
+  'style-src': 'https://fonts.googleapis.com',
+  'font-src': 'https://fonts.gstatic.com',
+};
+const checkoutContentSecurityPolicy = contentSecurityPolicy.split('; ').map((directive) => {
+  const sources = checkoutGoogleSources[directive.split(' ')[0]];
+  return sources ? `${directive} ${sources}` : directive;
+}).join('; ');
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   deploymentId: process.env.DEPLOYMENT_VERSION,
@@ -153,7 +165,12 @@ const nextConfig: NextConfig = {
             value: 'same-origin-allow-popups'
           }
         ]
-      }
+      },
+      // Later exact matches override only CSP; all other global headers remain.
+      ...['/de/checkout', '/en/checkout'].map((source) => ({
+        source,
+        headers: [{ key: 'Content-Security-Policy', value: checkoutContentSecurityPolicy }],
+      })),
     ];
   }
 };

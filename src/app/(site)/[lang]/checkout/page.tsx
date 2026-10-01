@@ -43,6 +43,7 @@ export default async function CheckoutPage({
       <div className="container-page">
         <CheckoutClient
           locale={locale}
+          googlePlacesApiKey={process.env.GOOGLE_PLACES_BROWSER_API_KEY?.trim() || null}
           initialShippingMethod={normalizeShippingMethod(query.shipping)}
           stripePublishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() || null}
           // Shown on the shipping options so the cost is visible before choosing.

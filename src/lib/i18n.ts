@@ -651,6 +651,7 @@ export const dictionary = {
             "Hosting und Serverbetrieb erfolgen auf einem gemieteten Server bei Hetzner. Die Website nutzt Cloudflare für DNS und technische Schutzfunktionen.",
             "E-Mail-Kommunikation und Reparaturstatus-E-Mails werden über unser selbst gehostetes Mail-System verarbeitet.",
             "Kartendarstellungen erfolgen nur nach Einwilligung über Google Maps. Wenn aktiviert, kann Google dabei technische Nutzungsdaten verarbeiten.",
+            "Die optionale Google Places-Adresssuche im Checkout wird ausschließlich nach gesonderter Aktivierung geladen. Google erhält Such- und Adresseingaben sowie Netzwerkdaten wie Ihre IP-Adresse. Sie können die Suche im Checkout deaktivieren oder über die Datenschutzeinstellungen Ihre Einwilligung widerrufen; die manuelle Adresseingabe bleibt verfügbar. Bereits übermittelte Daten werden dadurch nicht zurückgerufen.",
             "Wenn Spam-Schutz per Google reCAPTCHA aktiviert ist, wird dieser externe Dienst ebenfalls nur nach Einwilligung geladen.",
             "Wenn Sie externe Dienste erlauben, nutzen wir Google Analytics 4 von Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. Dabei werden Seitenaufrufe und Shop-Ereignisse wie Produktansicht, Warenkorb, Checkout und Kauf mit technischen Nutzungsdaten verarbeitet, um Reichweite und Verkaufstrichter auszuwerten. Wir übermitteln über diese Ereignisse keine Namen, E-Mail-Adressen oder Zahlungsdaten.",
             "Wenn Marketing-Tracking aktiviert und von Ihnen freigegeben wurde, können Meta Pixel und TikTok Pixel technische Nutzungs- und Ereignisdaten für Reichweitenmessung, Kampagnenauswertung und Werbeattribution verarbeiten.",
@@ -1378,6 +1379,7 @@ export const dictionary = {
             "Hosting and server operations run on a rented server with Hetzner. The website also uses Cloudflare for DNS and technical protection features.",
             "Email communication and repair-status emails are processed through our self-hosted mail system.",
             "Maps are provided only after consent through Google Maps. When enabled, Google may process technical usage data.",
+            "The optional Google Places address search in checkout loads only after separate activation. Google receives search and address input and network data such as your IP address. You can disable the search in checkout or withdraw consent through the privacy settings; manual address entry remains available. This does not recall data already transmitted.",
             "If spam protection through Google reCAPTCHA is enabled, this external service is also loaded only after consent.",
             "If you allow external services, we use Google Analytics 4 from Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland. It processes page views and shop events such as product views, cart actions, checkout and purchases together with technical usage data so that we can measure reach and the sales funnel. These events do not send names, email addresses or payment data.",
             "If marketing tracking is configured and you allow external services, Meta Pixel and TikTok Pixel may process technical usage and event data for reach measurement, campaign reporting, and ad attribution.",
@@ -1587,5 +1589,35 @@ export const partsCatalogCopy = {
     quote: 'Request a wholesale quote', business: 'Business & B2B',
     compatibility: 'The exact device model and variant must match the spare part. Parts prices exclude installation. For installation enquiries, use our repair service.',
     repairs: 'View repair services',
+  },
+} as const;
+
+// Optional checkout service: activation is independent of global external consent.
+export const googleAddressCopy = {
+  de: {
+    title: 'Adresse mit Google suchen (optional)',
+    disclosure: 'Nach Aktivierung erhält Google Ihre Such- und Adresseingaben sowie Netzwerkdaten (z. B. Ihre IP-Adresse). Sie können die Suche jederzeit deaktivieren und Ihre Adresse manuell eingeben.',
+    privacy: 'Datenschutzerklärung',
+    enable: 'Google-Adresssuche aktivieren',
+    disable: 'Google-Adresssuche deaktivieren',
+    label: 'Lieferadresse in Deutschland suchen',
+    loading: 'Google-Adresssuche wird geladen…',
+    ready: 'Suchen Sie Ihre Lieferadresse oder geben Sie sie unten manuell ein.',
+    applied: 'Adresse übernommen. Bitte prüfen Sie die Angaben unten.',
+    invalid: 'Bitte wählen Sie eine vollständige deutsche Adresse mit Hausnummer oder geben Sie Ihre Adresse manuell ein.',
+    error: 'Google-Adresssuche ist nicht verfügbar. Bitte geben Sie Ihre Adresse manuell ein.',
+  },
+  en: {
+    title: 'Search for an address with Google (optional)',
+    disclosure: 'After activation, Google receives your search and address input and network data (such as your IP address). You can disable the search at any time and enter your address manually.',
+    privacy: 'Privacy policy',
+    enable: 'Enable Google address search',
+    disable: 'Disable Google address search',
+    label: 'Search for a delivery address in Germany',
+    loading: 'Loading Google address search…',
+    ready: 'Search for your delivery address or enter it manually below.',
+    applied: 'Address filled in. Please check the details below.',
+    invalid: 'Please select a complete German address with a house number or enter your address manually.',
+    error: 'Google address search is unavailable. Please enter your address manually.',
   },
 } as const;

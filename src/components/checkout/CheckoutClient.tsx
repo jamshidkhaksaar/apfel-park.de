@@ -17,6 +17,7 @@ import {
 import PaymentBrandIcons, { PaymentBrandMark } from "@/components/PaymentBrandIcons";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import { siteInfo } from "@/lib/site";
+import GoogleAddressSearch from './GoogleAddressSearch';
 import LegalBusinessIdentity from '@/components/LegalBusinessIdentity';
 import { buildStripePaymentReturnUrl } from "@/lib/stripe";
 import { fulfillmentCopy } from "@/lib/fulfillment-copy";
@@ -30,6 +31,7 @@ type Props = {
   locale: "de" | "en";
   /** When absent the checkout keeps using the hosted Stripe redirect. */
   stripePublishableKey?: string | null;
+  googlePlacesApiKey?: string | null;
   germanyShippingAmount?: number;
   /** PayPal is only offered when its credentials are configured. */
   paypalEnabled?: boolean;
@@ -105,7 +107,7 @@ const createIdempotencyKey = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-export default function CheckoutClient({ locale, initialShippingMethod, stripePublishableKey, germanyShippingAmount = 6.9, paypalEnabled = false, couponEnabled = false, initialCoupon = "" }: Props) {
+export default function CheckoutClient({ locale, initialShippingMethod, stripePublishableKey, googlePlacesApiKey, germanyShippingAmount = 6.9, paypalEnabled = false, couponEnabled = false, initialCoupon = "" }: Props) {
   const items = useSyncExternalStore(subscribeStoredCart, readStoredCart, getServerCartSnapshot);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>(initialShippingMethod);
   const [cart, setCart] = useState<ValidatedCart | null>(null);
@@ -135,6 +137,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [embeddedOrderId, setEmbeddedOrderId] = useState<string | null>(null);
   const validationRequestRef = useRef(0);
+  const addressEditRevision = useRef(0);
   const clock = useSyncExternalStore(subscribeClock, clockSnapshot, serverClockSnapshot);
   const embeddedPayments = Boolean(stripePublishableKey);
 
@@ -376,6 +379,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
   };
 
   const updateCustomerField = <K extends keyof CustomerState>(field: K, value: CustomerState[K]) => {
+    ++addressEditRevision.current;
     setCustomer((current) => ({ ...current, [field]: value }));
     if (invalidField === field) setInvalidField(null);
     setClientSecret(null);
@@ -529,6 +533,18 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
 
           {shippingMethod === "germany" ? (
             <div className="mt-6 grid gap-5 md:grid-cols-2">
+              {googlePlacesApiKey?.trim() ? (
+                <GoogleAddressSearch
+                  locale={locale}
+                  apiKey={googlePlacesApiKey}
+                  manualRevision={addressEditRevision}
+                  onAddress={(address) => {
+                    updateCustomerField('line1', address.line1);
+                    updateCustomerField('postalCode', address.postalCode);
+                    updateCustomerField('city', address.city);
+                  }}
+                />
+              ) : null}
               <label className="block md:col-span-2">
                 <span className={LABEL_CLASS}>{locale === "de" ? "Straße und Hausnummer *" : "Street and number *"}</span>
                 <input required data-checkout-field="line1" aria-invalid={invalidField === "line1"} aria-describedby={invalidField === "line1" ? "checkout-error-summary" : undefined} autoComplete="address-line1" className={FIELD_CLASS} value={customer.line1} onChange={(event) => updateCustomerField("line1", event.target.value)} />
