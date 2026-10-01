@@ -21,6 +21,7 @@ const bundle = await build({
       const [address,setAddress]=useState({line1:'',postalCode:'20095',city:'Hamburg',line2:'Apartment 2',name:'MOCKED Customer'});
       const revision=useRef(0);
       window.currentAddress=address;
+      window.unmountStreet=()=>setMounted(false);
       const change=(key,value)=>{revision.current++;setAddress(a=>({...a,[key]:value}))};
       return <form onSubmit={e=>{e.preventDefault();window.submits=(window.submits||0)+1}}>
         <button type="button" id="shipping" onClick={()=>setShipping(s=>!s)}>Shipping</button>
@@ -82,7 +83,7 @@ const mockSdk = `
      window.mockQueries.push(request);
      if(window.mockDelayQueries)await new Promise(resolve=>window.mockPending[request.input]={resolve});
      if(window.mockMode==='queryFailure')throw Error('MOCKED query');
-     return {suggestions:[0,1].map(i=>({placePrediction:{text:{toString:()=>request.input+' result '+i},toPlace:()=>{
+     return {suggestions:Array.from({length:window.mockCount||2},(_,i)=>i).map(i=>({placePrediction:{text:{toString:()=>request.input+' result '+i},toPlace:()=>{
        const mode=window.mockMode,delay=window.mockDelayDetails;
        const place={fetchFields:async options=>{
          window.mockFields.push(options.fields);
@@ -104,7 +105,7 @@ const test = async (name, fn) => {
   catch(error) { failures++; console.error('FAIL MOCKED:',name,error); }
 };
 const fresh = async (query = '', mode = 'success') => {
-  const page = await browser.newPage();
+  const page = await browser.newPage({hasTouch:true});
   page.setDefaultTimeout(2000);
   page.setDefaultNavigationTimeout(10000);
   page.on('pageerror',error=>console.error('MOCKED fixture page error:',error.message));
@@ -127,6 +128,83 @@ const line = page => page.locator('input[name=line1]');
 const query = async (page,value='Teststraße') => {await line(page).fill(value);await page.getByRole('option').first().waitFor();};
 const consent = async (page,mode) => page.evaluate(mode=>{document.cookie='apfel-consent='+mode+'; path=/';window.dispatchEvent(new Event('apfel-consent-change'));},mode);
 try {
+ const geometry = async page => page.evaluate(()=>{
+   const rect=el=>{const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,height:r.height}};
+   const input=document.querySelector('input[name=line1]'),footer=[...document.querySelectorAll('[translate=no]')].find(el=>el.textContent==='Google Maps');
+   const vv=window.visualViewport;
+   return {input:rect(input),menu:rect(footer.parentElement),footer:rect(footer),list:rect(document.querySelector('[role=listbox]')),
+     top:Math.max(vv?.offsetTop||0,document.querySelector('.site-header')?.getBoundingClientRect().bottom||0),
+     bottom:(vv?.offsetTop||0)+(vv?.height||innerHeight),left:vv?.offsetLeft||0,right:(vv?.offsetLeft||0)+(vv?.width||innerWidth)};
+ });
+ const fits = async (page,side) => {
+   await page.waitForTimeout(50);
+   const g=await geometry(page);
+   assert.ok(g.menu.top>=g.top-1&&g.menu.bottom<=g.bottom+1,JSON.stringify(g));
+   assert.ok(g.footer.top>=g.top&&g.footer.bottom<=g.bottom+1,'attribution inside usable viewport');
+   assert.ok(g.menu.left>=g.left-1&&g.menu.right<=g.right+1,'no horizontal overflow');
+   assert.ok(Math.abs(g.input.left-g.menu.left)<1&&Math.abs(g.input.width-g.menu.width)<1,'input alignment');
+   assert.ok(g.list.height<=240,'preserve option scroll cap');
+   if(side==='above')assert.ok(g.menu.bottom<=g.input.top,'must flip above');
+   if(side==='below')assert.ok(g.menu.top>=g.input.bottom,'must open below');
+   return g;
+ };
+ const position = async (page,top) => page.evaluate(top=>{
+   const form=document.querySelector('form');form.style.minHeight='1800px';
+   form.style.paddingTop=(parseFloat(form.style.paddingTop||'0')+top-document.querySelector('input[name=line1]').getBoundingClientRect().top)+'px';
+ },top);
+ await test('viewport placement keeps attribution visible near top/bottom on mobile and desktop; selection survives flips',async()=>{
+   for(const width of [375,1280]){
+     const {page}=await fresh();await page.setViewportSize({width,height:800});
+     await page.evaluate(()=>{const h=document.createElement('header');h.className='site-header';h.style.cssText='position:fixed;top:0;height:72px;width:100%;z-index:50';document.body.prepend(h)});
+     await position(page,700);await query(page,'Bottom');await fits(page,'above');
+     // Pointer selection uses the actual touch-capable context on mobile.
+     if(width===375)await page.getByRole('option').first().tap();else await page.getByRole('option').first().click();
+     await page.waitForFunction(()=>window.currentAddress.line1==='Bottom0 12');
+     await query(page,'Flipped keyboard');await fits(page,'above');
+     await line(page).press('ArrowDown');await line(page).press('Enter');
+     await page.waitForFunction(()=>window.currentAddress.line1==='Flipped keyboard0 12');
+     await position(page,100);await query(page,'Top');await fits(page,'below');
+     await page.setViewportSize({width,height:260});await fits(page,'below');
+     await page.evaluate(()=>window.scrollTo(0,25));await fits(page,'below');
+     await line(page).press('ArrowDown');await line(page).press('Enter');
+     await page.waitForFunction(()=>window.currentAddress.line1==='Top0 12');
+     assert.equal(await line(page).evaluate(el=>el===document.activeElement),true);await page.close();
+   }
+ });
+ await test('visualViewport offsets/keyboard, ancestor scroll, bounded options and listener cleanup',async()=>{
+   const {page}=await fresh();await page.setViewportSize({width:375,height:800});
+   await page.evaluate(()=>{
+     const vv=new EventTarget();Object.assign(vv,{offsetTop:0,offsetLeft:0,height:800,width:375});
+     Object.defineProperty(window,'visualViewport',{configurable:true,value:vv});window.mockViewport=vv;
+     window.geometryListeners=[];window.geometryObservers=0;
+     const NativeObserver=window.ResizeObserver;
+     window.ResizeObserver=class extends NativeObserver {
+       constructor(callback){super(callback);window.geometryObservers++}
+       disconnect(){window.geometryObservers--;super.disconnect()}
+     };
+     for(const target of [window,vv]){
+       const add=target.addEventListener.bind(target),remove=target.removeEventListener.bind(target);
+       target.addEventListener=(type,fn,options)=>{if(type==='scroll'||type==='resize')window.geometryListeners.push({target,type,fn});add(type,fn,options)};
+       target.removeEventListener=(type,fn,options)=>{window.geometryListeners=window.geometryListeners.filter(l=>!(l.target===target&&l.type===type&&l.fn===fn));remove(type,fn,options)};
+     }
+   });
+   await position(page,500);await query(page,'Keyboard');
+   await page.evaluate(()=>{window.mockViewport.height=580;window.mockViewport.dispatchEvent(new Event('resize'))});await fits(page,'above');
+   await page.evaluate(()=>{window.mockViewport.offsetTop=350;window.mockViewport.dispatchEvent(new Event('scroll'))});await fits(page,'below');
+   await page.evaluate(()=>{window.mockCount=12});await query(page,'Many');
+   await page.evaluate(()=>{window.mockViewport.offsetTop=0;window.mockViewport.height=650;window.mockViewport.dispatchEvent(new Event('resize'))});await fits(page,'above');
+   await page.evaluate(()=>{
+     const root=document.getElementById('root');root.style.height='600px';root.style.overflowY='auto';root.scrollTop=300;
+   });await fits(page,'below');
+   await line(page).press('ArrowUp');await fits(page,'below');
+   const activeBox=await page.locator('[aria-selected=true]').boundingBox(),listBox=await page.getByRole('listbox').boundingBox();
+   assert.ok(activeBox.y>=listBox.y-1&&activeBox.y+activeBox.height<=listBox.y+listBox.height+1,'last option scrolls within list');
+   assert.equal(await page.evaluate(()=>window.geometryObservers),1,'one active geometry observer');
+   assert.equal(await page.evaluate(()=>window.geometryListeners.length),4,'open menu subscribes once to viewport/scroll events');
+   await line(page).press('Escape');assert.equal(await page.evaluate(()=>window.geometryListeners.length),0,'closed menu removes listeners');assert.equal(await page.evaluate(()=>window.geometryObservers),0);
+   await query(page,'Unmount');await page.evaluate(()=>window.unmountStreet());assert.equal(await page.evaluate(()=>window.geometryListeners.length),0,'unmounted menu removes listeners');assert.equal(await page.evaluate(()=>window.geometryObservers),0);
+   await page.close();
+ });
  await test('configured checkout-only CSP remains exact and has no unsafe-eval',async()=>{
    for(const path of ['/de/checkout','/en/checkout','/de/store','/de/checkout/child']){
      const policy=(await fetch(base+path)).headers.get('content-security-policy');

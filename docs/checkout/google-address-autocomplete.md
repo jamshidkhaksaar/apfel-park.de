@@ -200,3 +200,44 @@ Final fix gates ran serially and exited 0: `final-tests.log` (185 files /
 1,291 tests passed; 2 files / 22 tests skipped), `final-lint.log`,
 `final-typecheck.log`, `final-unused.log` (815 files, 0 unreachable candidates),
 and `final-browser.log` (21 mocked groups passed). `git diff --check` also passed.
+
+## Viewport placement fix (2026-10-01)
+
+The anchored menu now measures the native input, visual viewport offsets/size,
+sticky site header and attribution footer. It opens above when the options and
+footer cannot fit below and more space is available above. Only the options
+scroll; their height remains capped at 15rem and shrinks to reserve the measured
+footer height and menu borders. Menu coordinates stay within the usable viewport,
+with input width/edges preserved where they fit. Keyboard navigation scrolls the
+options list without moving the input's scroll ancestors.
+
+While open, window and ancestor scrolling, window/visualViewport resizing and
+visualViewport scrolling trigger a coalesced measurement. ResizeObserver tracks
+input, anchor, footer and header size changes. Equal measurements preserve state;
+closing or unmounting removes listeners, disconnects the observer and cancels
+pending animation frames. Input layout, focus, typed text, provider/session/
+consent/race handling and payment fields keep their existing behavior.
+
+TDD logs in `/root/.hermes/cache/scratch/google-inline-viewport-*.log`:
+
+- `red-browser.log`: both new placement groups failed before source changes.
+  The footer bottom was 878px in an 800px viewport and 678px in a simulated
+  580px keyboard viewport. All 21 existing mocked behavior groups passed.
+- `green-browser.log`: both new groups and all 21 existing groups passed.
+  Final regression coverage also checks keyboard selection above the input,
+  scrolling the last option, and observer cleanup on unmount without blur.
+
+The regression uses the existing CSP/style fixture and intercepted fake Google
+API. Mobile and desktop checks cover top/bottom placement, sticky header bounds,
+viewport resizing, window/ancestor scroll, simulated visualViewport keyboard
+size/offset changes, bounded option scrolling, visible attribution, touch/pointer
+and keyboard selection, and listener/observer cleanup. Simulated keyboard geometry
+is not a real mobile OS keyboard verification. No real Google/payment request,
+deployment, commit, push, environment change or dependency change is included.
+
+Final serial gates passed: `final-tests.log` (185 files / 1,291 tests passed;
+2 files / 22 tests skipped), `final-lint.log`, `final-typecheck.log`,
+`final-unused.log` (815 files, 0 unreachable candidates), and
+`final-browser.log` (23 mocked groups passed). `git diff --check` passed.
+Changed files: `src/components/checkout/CheckoutStreetAddress.tsx`,
+`scripts/google-checkout.browser-test.mjs`, and this document.

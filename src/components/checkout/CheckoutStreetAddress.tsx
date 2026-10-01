@@ -34,6 +34,11 @@ export default function CheckoutStreetAddress({ locale, apiKey, manualRevision, 
   const copy = googleAddressCopy[locale];
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
+  const anchor = useRef<HTMLDivElement>(null);
+  const dropdown = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const attribution = useRef<HTMLDivElement>(null);
+  const [placement, setPlacement] = useState({ top: 0, left: 0, width: 0, optionHeight: 0 });
   const [allowed, setAllowed] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const operation = useRef<AbortController | undefined>(undefined);
@@ -148,15 +153,80 @@ export default function CheckoutStreetAddress({ locale, apiKey, manualRevision, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey, locale]);
 
+  const expanded = options.length > 0;
+  useLayoutEffect(() => {
+    if (!expanded) return;
+    const viewport = window.visualViewport;
+    const header = document.querySelector('.site-header');
+    let frame = 0;
+    const measure = (): void => {
+      if (!input.current || !anchor.current || !dropdown.current || !list.current || !attribution.current) return;
+      const field = input.current.getBoundingClientRect();
+      const origin = anchor.current.getBoundingClientRect();
+      const viewportTop = viewport?.offsetTop ?? 0;
+      const bottom = viewportTop + (viewport?.height ?? window.innerHeight);
+      // The sticky header occupies the top of the usable viewport.
+      const top = Math.min(bottom, Math.max(viewportTop, header?.getBoundingClientRect().bottom ?? 0));
+      const left = viewport?.offsetLeft ?? 0;
+      const right = left + (viewport?.width ?? document.documentElement.clientWidth);
+      const width = Math.min(field.width, Math.max(0, right - left));
+      const chrome = getComputedStyle(dropdown.current);
+      const footerHeight = attribution.current.getBoundingClientRect().height + parseFloat(chrome.borderTopWidth) + parseFloat(chrome.borderBottomWidth);
+      const optionCap = 15 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const desired = footerHeight + Math.min(optionCap, list.current.scrollHeight);
+      const below = Math.max(0, bottom - Math.max(top, field.bottom + 4));
+      const above = Math.max(0, Math.min(bottom, field.top - 4) - top);
+      const flip = below < desired && above > below;
+      const available = Math.max(footerHeight, flip ? above : below);
+      const optionHeight = Math.max(0, Math.min(optionCap, available - footerHeight));
+      const height = footerHeight + Math.min(list.current.scrollHeight, optionHeight);
+      const menuTop = Math.max(top, Math.min(bottom - height, flip ? field.top - 4 - height : field.bottom + 4));
+      const next = {
+        top: menuTop - origin.top,
+        left: Math.max(left, Math.min(field.left, right - width)) - origin.left,
+        width,
+        optionHeight,
+      };
+      setPlacement(previous => Object.keys(next).every(key => previous[key as keyof typeof next] === next[key as keyof typeof next]) ? previous : next);
+    };
+    const scheduleMeasure = (): void => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+    measure();
+    // Capture catches scrolls in checkout ancestors as well as the window.
+    window.addEventListener('scroll', scheduleMeasure, true);
+    window.addEventListener('resize', scheduleMeasure);
+    viewport?.addEventListener('scroll', scheduleMeasure);
+    viewport?.addEventListener('resize', scheduleMeasure);
+    const observer = new ResizeObserver(scheduleMeasure);
+    for (const element of [anchor.current, input.current, attribution.current, header]) {
+      if (element) observer.observe(element);
+    }
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('scroll', scheduleMeasure, true);
+      window.removeEventListener('resize', scheduleMeasure);
+      viewport?.removeEventListener('scroll', scheduleMeasure);
+      viewport?.removeEventListener('resize', scheduleMeasure);
+    };
+  }, [expanded, options]);
+
   useEffect(() => {
-    if (active >= 0) document.getElementById(options[active]?.id)?.scrollIntoView({ block: 'nearest' });
+    const option = active >= 0 ? document.getElementById(options[active]?.id) : null;
+    if (!option || !list.current) return;
+    const bounds = list.current.getBoundingClientRect();
+    const item = option.getBoundingClientRect();
+    // Scroll only suggestions; scrollIntoView can also move the input's ancestors.
+    if (item.top < bounds.top) list.current.scrollTop += item.top - bounds.top;
+    else if (item.bottom > bounds.bottom) list.current.scrollTop += item.bottom - bounds.bottom;
   }, [active, options]);
 
   const enabled = allowed && !unavailable && Boolean(apiKey?.trim());
-  const expanded = options.length > 0;
   return (
     <div data-checkout-street-address className="min-w-0">
-      <div className="relative">
+      <div ref={anchor} className="relative">
       <input
         {...inputProps}
         ref={input}
@@ -202,8 +272,9 @@ export default function CheckoutStreetAddress({ locale, apiKey, manualRevision, 
         }}
       />
       {expanded ? (
-        <div className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-border bg-surface text-foreground shadow-lg">
-          <ul id={`${id}-list`} role="listbox" aria-label={copy.label} className="max-h-60 overflow-y-auto">
+        <div ref={dropdown} className="absolute w-full z-50 overflow-hidden rounded-lg border border-border bg-surface text-foreground shadow-lg"
+          style={{ top: placement.top, left: placement.left, width: placement.width || undefined }}>
+          <ul ref={list} style={{ maxHeight: placement.optionHeight }} id={`${id}-list`} role="listbox" aria-label={copy.label} className="max-h-60 overflow-y-auto">
             {options.map((option, index) => (
               <li key={option.id} id={option.id} role="option" aria-selected={index === active}
                 className={`cursor-pointer px-3 py-3 text-sm hover:bg-gold/10 ${index === active ? 'bg-gold/10' : ''}`}
@@ -212,7 +283,7 @@ export default function CheckoutStreetAddress({ locale, apiKey, manualRevision, 
               >{option.text}</li>
             ))}
           </ul>
-          <div translate="no" className="border-t border-border px-3 py-2 text-right" style={{ fontFamily: 'Arial, sans-serif', fontSize: 12, fontWeight: 400, letterSpacing: 'normal', color: 'var(--google-attribution-color)', background: 'var(--surface)' }}>Google Maps</div>
+          <div ref={attribution} translate="no" className="border-t border-border px-3 py-2 text-right" style={{ fontFamily: 'Arial, sans-serif', fontSize: 12, fontWeight: 400, letterSpacing: 'normal', color: 'var(--google-attribution-color)', background: 'var(--surface)' }}>Google Maps</div>
         </div>
       ) : null}
       </div>
