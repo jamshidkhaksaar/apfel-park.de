@@ -4,11 +4,21 @@ export type GooglePlace = {
   addressComponents?: GoogleAddressComponent[];
   fetchFields: (options: { fields: ['addressComponents'] }) => Promise<unknown>;
 };
+export type PlacePrediction = {
+  text: { toString: () => string };
+  toPlace: () => GooglePlace;
+};
 export type PlacesLibrary = {
-  PlaceAutocompleteElement: new (options: {
-    includedRegionCodes: ['de'];
-    requestedLanguage: 'de' | 'en';
-  }) => HTMLElement;
+  AutocompleteSessionToken: new () => object;
+  AutocompleteSuggestion: {
+    fetchAutocompleteSuggestions: (options: {
+      input: string;
+      includedRegionCodes: ['de'];
+      language: 'de' | 'en';
+      region: 'de';
+      sessionToken: object;
+    }) => Promise<{ suggestions: { placePrediction?: PlacePrediction }[] }>;
+  };
 };
 type MapsWindow = Window & {
   google?: { maps?: { importLibrary?: (name: 'places') => Promise<PlacesLibrary> } };
@@ -56,7 +66,7 @@ export const subscribeGooglePlacesAuthFailure = (listener: () => void): (() => v
   };
 };
 
-/** Shared SDK remains installed across widget lifetimes. No work occurs until called. */
+/** Shared SDK remains installed across consumer lifetimes. No work occurs until called. */
 export const loadGooglePlaces = (apiKey: string): Promise<PlacesLibrary> => {
   if (pending) return pending;
   const browser = window as unknown as MapsWindow;

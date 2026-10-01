@@ -21,7 +21,7 @@ it('loads once only when called and imports Places after script load', async () 
   const second = loadGooglePlaces('MOCKED');
   expect(first).toBe(second);
   expect(scripts).toHaveLength(1);
-  const library = { PlaceAutocompleteElement: class {} };
+  const library = { AutocompleteSessionToken: class {}, AutocompleteSuggestion: { fetchAutocompleteSuggestions: vi.fn().mockResolvedValue({ suggestions: [] }) } };
   Object.assign(window, { google: { maps: { importLibrary: vi.fn().mockResolvedValue(library) } } });
   scripts[0].onload?.();
   expect(await first).toBe(library);
@@ -40,7 +40,7 @@ it.each(['network', 'auth', 'timeout', 'import'])('rejects %s failure and allows
     scripts[0].onload?.();
   }
   await rejection;
-  const library = { PlaceAutocompleteElement: class {} };
+  const library = { AutocompleteSessionToken: class {}, AutocompleteSuggestion: { fetchAutocompleteSuggestions: vi.fn().mockResolvedValue({ suggestions: [] }) } };
   Object.assign(window, { google: { maps: { importLibrary: vi.fn().mockResolvedValue(library) } } });
   expect(await loadGooglePlaces('MOCKED')).toBe(library);
 });
@@ -55,7 +55,7 @@ it('waits for the async SDK readiness callback when the script load precedes ini
   expect(result).not.toHaveBeenCalled();
   const callback = new URL(scripts[0].src ?? '').searchParams.get('callback');
   expect(callback).toBeTruthy();
-  const library = { PlaceAutocompleteElement: class {} };
+  const library = { AutocompleteSessionToken: class {}, AutocompleteSuggestion: { fetchAutocompleteSuggestions: vi.fn().mockResolvedValue({ suggestions: [] }) } };
   Object.assign(window, { google: { maps: { importLibrary: vi.fn().mockResolvedValue(library) } } });
   (window as unknown as Record<string, () => void>)[callback!]();
   expect(await promise).toBe(library);
@@ -64,7 +64,7 @@ it('waits for the async SDK readiness callback when the script load precedes ini
 it('imports once when SDK readiness callback and script load both fire', async () => {
   const { loadGooglePlaces, scripts } = await fixture();
   const promise = loadGooglePlaces('MOCKED');
-  const library = { PlaceAutocompleteElement: class {} };
+  const library = { AutocompleteSessionToken: class {}, AutocompleteSuggestion: { fetchAutocompleteSuggestions: vi.fn().mockResolvedValue({ suggestions: [] }) } };
   const importer = vi.fn().mockResolvedValue(library);
   Object.assign(window, { google: { maps: { importLibrary: importer } } });
   const callback = new URL(scripts[0].src ?? '').searchParams.get('callback')!;
@@ -86,7 +86,7 @@ it('monitors late auth failure for multiple consumers, invalidates readiness and
   const unsubscribeFirst = subscribeGooglePlacesAuthFailure(firstConsumer);
   const unsubscribeSecond = subscribeGooglePlacesAuthFailure(secondConsumer);
   const handler = browser.gm_authFailure;
-  const library = { PlaceAutocompleteElement: class {} };
+  const library = { AutocompleteSessionToken: class {}, AutocompleteSuggestion: { fetchAutocompleteSuggestions: vi.fn().mockResolvedValue({ suggestions: [] }) } };
   const importer = vi.fn().mockResolvedValue(library);
   const ready = loadGooglePlaces('MOCKED');
   Object.assign(window, { google: { maps: { importLibrary: importer } } });

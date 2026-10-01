@@ -1,229 +1,202 @@
-# Optional Google address search in checkout
+# Inline checkout address suggestions
 
-The German and English checkout offer an optional Google Places (New)
-PlaceAutocompleteElement immediately above the existing manual delivery fields.
-Germany shipping only; pickup and an absent key show no panel. There is no map,
-geometry request, second payment button, or legacy Autocomplete integration.
+The existing German/English street-and-number input is a native labeled combobox.
+`CheckoutStreetAddress` adds a dropdown to that field; it adds no search field,
+map, activation panel, or enable/disable control. The delivery form, required
+validation, error-summary association, manual edits, and payment invalidation
+continue through `CheckoutClient.updateCustomerField`. Selection changes only
+line1, postcode, and city. Contact details and line2 are preserved.
 
-## Current decision: keep disabled
+## Implementation plan and TDD evidence
 
-The user explicitly requires Google autocomplete to remain DISABLED in production.
-GOOGLE_PLACES_BROWSER_API_KEY remains absent; this fix changes no runtime
-configuration. The implementation agent does not deploy, restart, commit or push.
-An operator may deploy the code safely with the feature disabled through the
-normal release workflow; deployment is separate from activation.
+1. Write failing checkout render contracts for an inline combobox and absence of
+   the standalone panel. Replace the panel with an inert street-field component;
+   verify that slice passes.
+2. Replace the widget browser tests with explicitly mocked Places (New) Data API
+   tests against the inert component. Capture failures before implementing
+   consent, debounce, predictions, selection, session tokens, and race guards.
+3. Add a failing native-autofill fallback assertion, then restore browser autofill
+   when the SDK fails. Extend the styled fixture to the actual checkout client.
+4. Stop implementation, then run tests, lint, typecheck, unused-source audit and
+   browser regression serially. The parent owns build/deployment and real-provider
+   verification.
 
-## Enablement (future operator action, requiring a separate activation decision)
+Logs are in `/root/.hermes/cache/scratch/google-inline-*.log`:
 
-1. In the intended Google Cloud project, enable Maps JavaScript API and Places API
-   (New), and configure billing, quotas and usage alerts.
-2. Create a browser API key with Website / HTTP referrer restrictions for
-   https://apfel-park.de/* and https://www.apfel-park.de/* (the checked-in nginx configuration lists and
-   redirects this alias). Verify deployed hostnames before allowing aliases. Use a
-   separate restricted key/project for any intentional test origin.
-3. Restrict the key to Maps JavaScript API and Places API (New).
-4. In the runtime service environment, set GOOGLE_PLACES_BROWSER_API_KEY. The
-   dynamic checkout page trims it and passes it to the browser. Do not use the
-   map embed key or a NEXT_PUBLIC fallback. Never commit keys or print them in
-   logs. No env file or runtime configuration was changed for this implementation.
+- `red-contract.log`: 2 failing assertions, 4 passing tests on the original panel.
+  Dependencies were initially absent; the earlier startup failure was resolved
+  with `npm ci --ignore-scripts` from the unchanged lockfile (`install.log`).
+- `green-contract.log`: all 6 checkout tests pass with the inert inline field.
+- `red-browser.log`: 8 behavior groups fail against that inert component; the
+  unchanged checkout-only CSP group passes.
+- `green-browser.log`: all 9 original behavior groups pass with the Data API mock.
+- `red-autofill.log`: SDK failure leaves autocomplete off, failing the new test.
+- `green-autofill.log`: all 10 groups pass, including the actual checkout client.
+- `red-integration.log` / `fixture-debug.log`: fixture setup failures, **not**
+  product TDD evidence; the Next browser shell needed a synthetic process.env.
+- `red-enter.log` / `green-enter.log`: historical tests incorrectly treated native
+  submission after dismissal as a regression. The review fixes below supersede
+  those assertions and restore native Enter behavior when the menu is closed.
+- `green-cleanup.log`: expanded errors, pending-query abandonment, styles and
+  cleanup checks.
+- `final-tests.log`, `final-lint.log`, `final-typecheck.log`, `final-unused.log`,
+  `final-browser.log`: final serial gates.
 
-Browser keys are visible to browser users and in network requests. Environment
-configuration prevents committing a key; it does not make it a browser secret.
-Google's referrer/API restrictions, quotas and monitoring enforce its intended
-use. Do not enable this service with an unrestricted key.
+## Consent and manual fallback
 
-## Privacy and manual fallback
+The existing `readConsentMode()` cookie/storage and `apfel-consent-change` event
+are authoritative. Only `external` consent permits Google SDK loading and
+suggestions. Unset/necessary consent shows one compact helper line with a button
+that opens the existing Cookie settings dialog using `openConsentSettings()`;
+this never grants consent itself. CookieBanner and default bilingual privacy
+content explicitly disclose address suggestions among external services.
 
-The panel describes the transmission of search/address input and network data
-(including IP address) and links to the localized privacy page. Loading requires
-a separate explicit activation in this checkout session. Global external or
-marketing consent never enables this widget automatically, and activation does
-not change that global consent. The disable control, pickup switch, component
-unmount and the existing consent withdrawal notification remove the widget and
-invalidate pending work. React StrictMode cleanup does not remove a shared SDK.
-A new explicit activation is required to resume.
+No SDK load happens for pickup, absent/blank dedicated browser key, fewer than
+three query characters, or an unfocused field. With consent, typing is debounced
+300 ms. A focused field can resume after consent is granted. Withdrawal closes
+suggestions and invalidates pending work immediately without changing fields.
+Manual typing always remains available. Native address autofill is preserved
+when Google is unavailable; it is turned off while Google suggestions are enabled
+to avoid competing menus.
 
-SDK gm_authFailure monitoring remains subscribed throughout active widget
-lifetimes, including after importLibrary resolves. A late auth failure notifies
-all active consumers, invalidates cached readiness, removes their widgets and
-announces the existing localized manual fallback without changing manual inputs.
-The next explicit activation imports Places afresh; it does not unload a shared
-successful SDK. Subscriptions are cleaned on disable, withdrawal, pickup and
-unmount. The shared monitor chains the previous auth handler and restores it when
-the last subscriber leaves, without overwriting another component's replacement.
+The runtime browser key is passed by the existing dynamic checkout page. This
+work neither reads nor changes its configuration. Browser keys remain visible to
+visitors; referrer and API restrictions, quotas and billing are operator-owned.
+No shared environment, catalog, database, privacy override or migration changes
+are part of this task. Default privacy text is not evidence that a database policy
+override has been checked; the parent must review that separately.
 
-A SDK script already requested after opt-in remains shared: disabling removes
-the widget and ignores late initialization/details; it cannot recall prior
-transmissions or reliably cancel an in-flight network request. No key, pickup,
-or a fresh page before activation creates no Google request from this feature.
+## Current API and sessions
 
-Only addressComponents are fetched. Complete German route + house number +
-five-digit postcode + city + DE addresses fill the three manual fields. Name,
-email, phone and optional line2 are preserved. Incomplete/foreign addresses,
-SDK/auth errors, timeouts and detail errors leave manual entry available.
-Newer selections and manual typing take precedence over pending details.
-Autofill uses the checkout's existing field-update path, including payment
-state invalidation and idempotency renewal.
+The existing singleton lazy loader exposes
+`AutocompleteSuggestion.fetchAutocompleteSuggestions` and
+`AutocompleteSessionToken` from `importLibrary('places')`. Requests include
+`includedRegionCodes: ['de']`, the checkout `language`, `region: 'de'`, and a
+per-interaction token. There is no primary-type filter: complete German addresses
+are checked after selection rather than relying on unverified filters.
 
-Default German/English privacy copy includes factual information for this
-optional service. Database privacy overrides were not changed. Before enabling,
-review the actual published policy (an override can supersede these defaults),
-provider/privacy disclosures and your own configuration; this change makes no
-legal-compliance guarantee.
+The token is reused for successive queries within an interaction and discarded
+on selection or abandonment (blur, Tab, Escape, short/empty query, withdrawal,
+pickup/unmount, failure). Predictions use `text.toString()` for display and
+`toPlace().fetchFields({ fields: ['addressComponents'] })` for selection. Google
+propagates the prediction request's session token into the first details request.
+No token is reused after that request; no selected-text refetch occurs until the
+user edits it. Session tokens group billing; they do not guarantee free requests,
+and abandoned interactions may still incur provider charges.
 
-## Checkout CSP and activation checks
+There is no legacy Autocomplete or PlaceAutocompleteElement. No geometry,
+formatted-address, photos, map, persistent prediction cache, or prediction logging
+is introduced. The narrow dropdown displays unmodified, nontranslated
+"Google Maps" attribution at 12px, weight 400, normal spacing, sans serif; color
+is white in dark mode and #1f1f1f in the site's light (`mono`) theme.
 
-The unchanged global CSP remains first in next.config.ts. Later overrides apply
-only to exact /de/checkout and /en/checkout, retaining every base directive and
-Stripe/PayPal protection. They append only these sources:
+## Accessibility, failures and races
 
-- script-src: https://maps.googleapis.com and https://maps.gstatic.com.
-- connect-src: https://maps.googleapis.com, https://places.googleapis.com and
-  https://maps.gstatic.com.
-- style-src: https://fonts.googleapis.com.
-- font-src: https://fonts.gstatic.com.
+The input exposes combobox/list autocomplete semantics with an expanded listbox,
+stable real option IDs, active-descendant and selected-option state. Arrow keys
+move the active option. Enter prevents form submission only while the suggestions
+menu is open, selecting the active option when present and otherwise leaving the
+text unchanged. With no menu (missing key, necessary-only consent, provider
+failure, pending predictions, selection completed, or dismissed suggestions),
+Enter retains the native input/form behavior. Escape, Tab and blur close without selection or
+focus trapping. Pointer selection prevents the input-blur race. Focus stays in
+the input after selection. Options scroll within a max-height dropdown; input
+and dropdown share responsive width. Status/fallback text is politely announced.
 
-The existing Maps image sources remain unchanged. No unsafe-eval, wildcard or
-broad scheme is added. Other routes, including checkout children, retain the base
-policy. Unit tests assert the header entry order and exact directive additions;
-the isolated MOCKED fixture serves these configured policies as HTTP headers.
-It does not prove Next.js/deployed proxy header precedence or real SDK compatibility.
+IME composition start closes suggestions and invalidates pending debounce,
+predictions and details. Interim text does not schedule or send provider requests;
+composition end schedules the committed value with the normal debounce. Composing
+native key events and keys during an active composition retain native defaults
+without navigating or selecting options. Input change, keyboard and composition
+callbacks are forwarded.
 
-Before any separately authorized activation, validate live response headers for
-both checkout URLs and representative other routes, including any proxy CSP.
-Then use a confirmed restricted key to validate real provider/CSP compatibility,
-SDK authorization, widget readiness and fallback in the browser. These checks
-remain outstanding; mock success is not provider readiness. If the provider
-requires unsafe-eval, activation remains blocked pending a separate security
-decision; do not automatically relax CSP. Google's CSP guidance recommends nonce
-based strict policies; its broader examples must not be copied as blanket
-allowlist relaxations:
-https://developers.google.com/maps/documentation/javascript/content-security-policy.
+Generation and manual-edit revision checks invalidate stale predictions/details
+synchronously. Callback refs stay current. Queries, new selections, edits to any
+customer field, blur, consent withdrawal, pickup and unmount cannot be overwritten
+by late details. Abandoned operation timeout listeners/timers are cleaned up;
+provider work already sent cannot be recalled. Invalid/non-German/incomplete
+addresses and details failures preserve manually entered fields. SDK/auth/query
+failures fall back without automatic retry storms; a new consent grant or fresh
+mount can start a fresh interaction. Both details and predictions time out after
+15 seconds, and the existing singleton SDK readiness timeout and late auth-failure
+subscriptions remain intact.
 
-## Local validation
+## Validation scope and remaining review
 
-- npm test: mapper fixtures, singleton loader failure/retry tests, runtime prop,
-  localized default privacy and checkout render tests, plus existing suite.
-- npm run lint; npm run typecheck; npm run audit:unused.
-- node scripts/google-checkout.browser-test.mjs: isolated React StrictMode fixture,
-  MOCKED SDK/network; intercepted Google script requests only. Covers opt-in,
-  pickup, missing key, autofill/manual editing, incomplete/foreign rejection,
-  detail failures, SDK network/auth failure and timeout, late SDK auth failure after readiness,
-  configured CSP headers, explicit fresh retry, out-of-order selection,
-  manual edits during pending details, disable, withdrawal, pickup, unmount and
-  late initialization. Native form submission behavior is tested with a fixture
-  submit button, not an order or payment request.
+`scripts/google-checkout.browser-test.mjs` serves isolated React StrictMode and
+actual CheckoutClient fixtures with the candidate `next.config.ts` headers and
+compiled project styles. Routing/image shells are mocked; payment SDK rendering
+is stubbed. Cart validation uses synthetic data; all other API routes are blocked.
+Every provider request is intercepted and fulfilled with an explicitly mocked NEW
+Data API or a synthetic failure. No real Google or payment request or real order
+is made. The script uses the installed Playwright and Chromium paths specified in
+the task, and accepts `PLAYWRIGHT_MODULE`.
 
-The script defaults to installed Playwright at
-/root/apfel-audit/browser/node_modules/playwright/index.mjs and Chromium at
-/root/.cache/puppeteer/chrome/linux-152.0.7977.75/chrome-linux64/chrome.
-PLAYWRIGHT_MODULE may specify an alternate Playwright module path.
-No real Google/provider success is asserted. All red/green and final validation
-logs are under /root/.hermes/cache/scratch/google-checkout-*.log.
+Checkout-only CSP and its exact locale paths remain unchanged, with no
+unsafe-eval relaxation. Local mocks do not establish live CSP compatibility,
+provider authorization, quotas, billing, actual prediction quality, or real
+Google success. The parent must perform build, policy-override review and real
+provider verification with public addresses before its release decision.
 
-## Rollback
+## Official references checked
 
-Unset the dedicated runtime key through the normal authorized configuration
-workflow to hide the panel. The original manual address and payment flow remain
-available. Code rollback can remove this panel and runtime prop through the
-normal release process. This task does not deploy, restart, commit or push.
+- [Programmatic Autocomplete (New)](https://developers.google.com/maps/documentation/javascript/place-autocomplete-data)
+- [Autocomplete Data reference](https://developers.google.com/maps/documentation/javascript/reference/autocomplete-data)
+- [Places policies and Google Maps attribution](https://developers.google.com/maps/documentation/places/web-service/policies)
 
-## API references verified
+## Original inline implementation result (2026-10-01)
 
-- https://developers.google.com/maps/documentation/javascript/place-autocomplete-new
-- https://developers.google.com/maps/documentation/javascript/reference/places-widget
-- https://developers.google.com/maps/documentation/javascript/load-maps-js-api
+All required full gates ran serially after source implementation stopped and
+exited 0: 185 test files passed, 2 skipped; 1,291 tests passed, 22 skipped;
+lint passed without warnings; strict typecheck passed; unused-source audit checked
+815 files and found 0 unreachable source-file candidates; all 10 explicitly
+mocked browser groups passed. `git diff --check` passed. HEAD remains
+`a460a7060e2eee11558043eca63abdf8a4b5b527`; no commit, push, deployment, restart,
+shared environment change, database/catalog change, or real provider API request
+was performed. Dependency versions and lockfile are unchanged.
 
-Current widget options include includedRegionCodes and requestedLanguage;
-selection uses gmp-select, placePrediction.toPlace(), and
-fetchFields({fields: ['addressComponents']}). gmp-error reports backend denial.
+Actual edited files:
 
-The async SDK uses an explicit readiness callback; its script load event alone
-is not assumed to mean Maps is ready. The shared loader rejects after 15 seconds.
+- Added `src/components/checkout/CheckoutStreetAddress.tsx`.
+- Removed `src/components/checkout/GoogleAddressSearch.tsx`.
+- `src/components/checkout/CheckoutClient.tsx`.
+- `src/lib/google-places-loader.ts`.
+- `src/lib/i18n.ts`.
+- `src/components/CookieBanner.tsx`.
+- `src/app/globals.css` (two attribution theme variables only).
+- `src/lib/__tests__/google-places-checkout.test.ts`.
+- `src/lib/__tests__/google-places-loader.test.ts`.
+- `scripts/google-checkout.browser-test.mjs`.
+- `docs/checkout/google-address-autocomplete.md`.
 
-## Earlier implementation evidence (2026-10-01, before these two fixes)
+## Keyboard review fixes (2026-10-01)
 
-Final local validation passed on Node v24.14.0:
-185 test files passed, 2 skipped; 1,288 tests passed, 22 skipped.
-All 7 MOCKED browser groups passed. Lint and strict typecheck passed;
-the unused-source audit reported 0 unreachable source candidates.
+Only the two independent keyboard review issues were corrected. Strict vertical
+TDD evidence is in `/root/.hermes/cache/scratch/google-inline-fix-*.log`:
 
-Final logs:
-- /root/.hermes/cache/scratch/google-checkout-final-tests.log
-- /root/.hermes/cache/scratch/google-checkout-final-browser.log
-- /root/.hermes/cache/scratch/google-checkout-final-lint.log
-- /root/.hermes/cache/scratch/google-checkout-final-typecheck.log
-- /root/.hermes/cache/scratch/google-checkout-final-unused.log
+- `red-ime.log`: 10 groups passed, 3 failed. Composing ArrowDown was prevented
+  (`true` instead of `false`); interim composition loaded the mocked SDK
+  (1 request instead of 0); pending debounce reopened 2 options instead of 0.
+- `green-ime.log`: all 13 groups passed after composition lifecycle and native
+  keyboard guards, including deferred committed input and pending prediction/
+  details invalidation.
+- `red-enter.log`: 13 groups passed, 8 failed. The existing dismissal group and
+  missing-key, necessary-only, query-failure, SDK-failure, Escape-dismissed,
+  completed-selection and pending-query scenarios recorded 0 isolated native
+  form submissions instead of 1. Composition remained green.
+- `green-enter.log`: all 21 groups passed after limiting Enter prevention to
+  the open suggestions menu, including no-active-option and active selection.
 
-TDD red/green pairs:
-- google-checkout-mapper-red.log / google-checkout-mapper-green.log
-- google-checkout-mapper-validation-red.log / google-checkout-mapper-validation-green.log
-- google-checkout-loader-red.log / google-checkout-loader-green.log
-- google-checkout-loader-readiness-red.log / google-checkout-loader-readiness-green.log
-- google-checkout-loader-callback-red.log / google-checkout-loader-callback-green.log
-- google-checkout-browser-behavior-red.log / google-checkout-browser-green.log
-- google-checkout-integration-red.log / google-checkout-integration-green.log
+Composition events are simulated in Chromium; these checks do not establish
+real OS/IME behavior. Native submission counts use only the isolated synthetic
+form. No new submission test runs against CheckoutClient, and no order/payment
+writes or real provider requests are made.
 
-All pair filenames above reside in /root/.hermes/cache/scratch/.
-The browser red run exercised a null component skeleton; the earlier missing-module
-build failure is also captured in google-checkout-browser-red.log.
-The integration first-attempt log records a corrected SSR attribute-case assertion.
-The typecheck callback red log records the corrected assertion of the external
-browser-global shape. These are local evidence, not production verification.
+Fix files: `CheckoutStreetAddress.tsx`, `google-checkout.browser-test.mjs`, and
+this document. Existing staged inline work is preserved; no dependency, API
+mapping, CSP, environment, commit, push or deployment changes are included.
 
-Edited files:
-- src/app/(site)/[lang]/checkout/page.tsx
-- src/components/checkout/CheckoutClient.tsx
-- src/components/checkout/GoogleAddressSearch.tsx
-- src/lib/i18n.ts
-- src/lib/google-places-address.ts
-- src/lib/google-places-loader.ts
-- src/lib/__tests__/google-places-address.test.ts
-- src/lib/__tests__/google-places-loader.test.ts
-- src/lib/__tests__/google-places-checkout.test.ts
-- scripts/google-checkout.browser-test.mjs
-- docs/checkout/google-address-autocomplete.md
-
-## Two-issue fix evidence (2026-10-01)
-
-Tests were written and run failing before the corresponding implementation:
-
-- google-checkout-fix-unit-red.log: 3 failed, 9 passed (missing lifetime
-  subscription API and missing checkout CSP overrides).
-- google-checkout-fix-unit-green.log: 12 passed.
-- google-checkout-fix-browser-red.log: late auth failure failed because the
-  mounted widget remained; the other 7 groups passed.
-- google-checkout-fix-browser-green.log: all 8 groups passed.
-- google-checkout-fix-csp-browser-red.log: fixture CSP response-header assertion
-  failed because the fixture served no CSP; the other 8 groups passed.
-- google-checkout-fix-csp-browser-green.log: all 9 groups passed with configured
-  CSP headers and fresh-import assertions.
-
-All filenames above reside in /root/.hermes/cache/scratch/.
-Final checks ran serially on Node v24.14.0 and all exited 0:
-
-- /root/.hermes/cache/scratch/google-checkout-fix-final-targeted.log:
-  4 files, 32 tests passed (loader, mapper, checkout and CSP).
-- /root/.hermes/cache/scratch/google-checkout-fix-final-tests.log:
-  185 files passed, 2 skipped; 1,291 tests passed, 22 skipped.
-- /root/.hermes/cache/scratch/google-checkout-fix-final-lint.log: passed.
-- /root/.hermes/cache/scratch/google-checkout-fix-final-typecheck.log: passed.
-- /root/.hermes/cache/scratch/google-checkout-fix-final-unused.log:
-  815 files checked, 0 unreachable source candidates. The audit still lists
-  computed module loading for manual review, including the browser fixture.
-- /root/.hermes/cache/scratch/google-checkout-fix-final-browser.log:
-  all 9 MOCKED browser groups passed.
-
-Files edited for these two fixes only:
-
-- src/lib/google-places-loader.ts
-- src/components/checkout/GoogleAddressSearch.tsx
-- next.config.ts
-- src/lib/__tests__/google-places-loader.test.ts
-- src/lib/__tests__/content-security-policy.test.ts
-- scripts/google-checkout.browser-test.mjs
-- docs/checkout/google-address-autocomplete.md
-
-No deployment, commit, push, runtime/environment configuration change or real
-provider request was made. Production activation and real provider readiness
-have not been validated; the explicit keep-disabled decision remains in force.
+Final fix gates ran serially and exited 0: `final-tests.log` (185 files /
+1,291 tests passed; 2 files / 22 tests skipped), `final-lint.log`,
+`final-typecheck.log`, `final-unused.log` (815 files, 0 unreachable candidates),
+and `final-browser.log` (21 mocked groups passed). `git diff --check` also passed.

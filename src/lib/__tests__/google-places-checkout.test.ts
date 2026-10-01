@@ -25,11 +25,14 @@ it.each(['de', 'en'])('passes only the trimmed dedicated runtime browser key to 
   expect(absent.props.children.props.children.props.googlePlacesApiKey).toBeNull();
 });
 
-it.each(['de', 'en'])('shows optional search only for Germany shipping with a key (%s)', (locale) => {
+it.each(['de', 'en'])('uses the existing street input without standalone Google controls (%s)', (locale) => {
   const render = (shipping: 'germany' | 'pickup', key?: string): string => renderToStaticMarkup(createElement(
     CheckoutClient, { locale: locale as 'de' | 'en', initialShippingMethod: shipping, ...{ googlePlacesApiKey: key } },
   ));
-  expect(render('germany', 'MOCKED')).toContain('data-google-address-search');
+  expect(render('germany', 'MOCKED')).toContain('data-checkout-street-address');
+  expect(render('germany', 'MOCKED')).not.toContain('data-google-address-search');
+  expect(render('germany', 'MOCKED')).toContain('role="combobox"');
+  expect(render('germany', 'MOCKED')).not.toMatch(/Enable Google|Disable Google|Adresssuche aktivieren/);
   expect(render('germany')).not.toContain('data-google-address-search');
   expect(render('pickup', 'MOCKED')).not.toContain('data-google-address-search');
   expect(render('germany', 'MOCKED')).toMatch(/autoComplete="address-line2"/i);

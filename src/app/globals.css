@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --google-attribution-color: #fff;
   /* Dark Theme - Brand Gold */
   color-scheme: dark;
   --background: #0b0b0c;
@@ -56,6 +57,7 @@
    BLACK & WHITE THEME (Apple Style)
    ======================================== */
 [data-theme="mono"] {
+  --google-attribution-color: #1f1f1f;
   /* Core Colors - Light Theme */
   color-scheme: light;
   --background: #ffffff;

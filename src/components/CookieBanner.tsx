@@ -18,7 +18,7 @@ const copy = {
   de: {
     title: "Datenschutz & Cookies",
     body:
-      "Notwendige Cookies sichern Sprache und Sitzungen. Karten, Analyse- und Marketingdienste laden erst nach deiner Zustimmung.",
+      "Notwendige Cookies sichern Sprache und Sitzungen. Karten, Adressvorschläge, Analyse- und Marketingdienste laden erst nach deiner Zustimmung.",
     necessary: "Nur notwendige",
     external: "Externe Dienste erlauben",
     manage: "Cookie-Einstellungen",
@@ -27,7 +27,7 @@ const copy = {
   en: {
     title: "Privacy & cookies",
     body:
-      "Necessary cookies preserve language and secure sessions. Maps, analytics, and marketing services load only with your consent.",
+      "Necessary cookies preserve language and secure sessions. Maps, address suggestions, analytics, and marketing services load only with your consent.",
     necessary: "Necessary only",
     external: "Allow external services",
     manage: "Cookie settings",

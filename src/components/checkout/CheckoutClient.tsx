@@ -17,7 +17,7 @@ import {
 import PaymentBrandIcons, { PaymentBrandMark } from "@/components/PaymentBrandIcons";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import { siteInfo } from "@/lib/site";
-import GoogleAddressSearch from './GoogleAddressSearch';
+import CheckoutStreetAddress from './CheckoutStreetAddress';
 import LegalBusinessIdentity from '@/components/LegalBusinessIdentity';
 import { buildStripePaymentReturnUrl } from "@/lib/stripe";
 import { fulfillmentCopy } from "@/lib/fulfillment-copy";
@@ -533,22 +533,20 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
 
           {shippingMethod === "germany" ? (
             <div className="mt-6 grid gap-5 md:grid-cols-2">
-              {googlePlacesApiKey?.trim() ? (
-                <GoogleAddressSearch
+              <div className="block md:col-span-2">
+                <label htmlFor="checkout-street" className={LABEL_CLASS}>{locale === "de" ? "Straße und Hausnummer *" : "Street and number *"}</label>
+                <CheckoutStreetAddress
                   locale={locale}
-                  apiKey={googlePlacesApiKey}
+                  apiKey={googlePlacesApiKey ?? undefined}
                   manualRevision={addressEditRevision}
                   onAddress={(address) => {
                     updateCustomerField('line1', address.line1);
                     updateCustomerField('postalCode', address.postalCode);
                     updateCustomerField('city', address.city);
                   }}
+                  inputProps={{ id: 'checkout-street', required: true, 'data-checkout-field': 'line1', 'aria-invalid': invalidField === 'line1', 'aria-describedby': invalidField === 'line1' ? 'checkout-error-summary' : undefined, className: FIELD_CLASS, value: customer.line1, onChange: (event) => updateCustomerField('line1', event.target.value) }}
                 />
-              ) : null}
-              <label className="block md:col-span-2">
-                <span className={LABEL_CLASS}>{locale === "de" ? "Straße und Hausnummer *" : "Street and number *"}</span>
-                <input required data-checkout-field="line1" aria-invalid={invalidField === "line1"} aria-describedby={invalidField === "line1" ? "checkout-error-summary" : undefined} autoComplete="address-line1" className={FIELD_CLASS} value={customer.line1} onChange={(event) => updateCustomerField("line1", event.target.value)} />
-              </label>
+              </div>
               <label className="block md:col-span-2">
                 <span className={LABEL_CLASS}>{locale === "de" ? "Adresszusatz (optional)" : "Address line 2 (optional)"}</span>
                 <input autoComplete="address-line2" className={FIELD_CLASS} value={customer.line2} onChange={(event) => updateCustomerField("line2", event.target.value)} />
