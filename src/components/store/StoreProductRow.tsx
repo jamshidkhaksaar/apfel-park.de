@@ -90,7 +90,7 @@ export default function StoreProductRow({
           </ul>
         ) : null}
 
-        <p className="mt-auto hidden text-xs text-muted sm:block">{isOutOfStock ? "" : deliveryLabel(locale)}</p>
+        <p className="mt-auto hidden text-xs text-muted sm:block">{isOutOfStock ? "" : deliveryLabel(locale,product.pickupStock)}</p>
 
         {/* Below lg the right rail folds in here so the row stays one column set. */}
         <div className="mt-2 flex items-end justify-between gap-2 lg:hidden">

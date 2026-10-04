@@ -85,11 +85,15 @@ const merchantRequest = async (url: string, body: unknown): Promise<void> => {
   }
 };
 
-const offerIdForSku = async (sku: string): Promise<string> => {
+const offerIdForSku = async (sku: string): Promise<{offerId:string;localQuantity:number}> => {
   const result = await query(
-    `SELECT product.id AS product_id, product.sku AS product_sku, product.variants
+    `SELECT product.id AS product_id, product.sku AS product_sku, product.variants,
+       least(available_inventory(inventory.on_hand,inventory.reserved,inventory.safety_buffer),
+         greatest(0,coalesce(pickup.on_hand-pickup.reserved,0)))::int AS local_quantity
        FROM inventory_skus inventory
        JOIN products product ON product.id = inventory.product_id
+       LEFT JOIN ops_branches branch ON branch.code='main'
+       LEFT JOIN ops_balances pickup ON pickup.inventory_id=inventory.id AND pickup.branch_id=branch.id
       WHERE inventory.sku = $1 AND inventory.location = 'local'
       LIMIT 1`,
     [sku],
@@ -99,7 +103,7 @@ const offerIdForSku = async (sku: string): Promise<string> => {
   const variants = Array.isArray(row.variants) ? row.variants as ProductVariant[] : [];
   const variantIndex = variants.findIndex((variant) => variant.sku === sku);
   const variant = variantIndex >= 0 ? variants[variantIndex] : undefined;
-  return googleMerchantItemId(String(row.product_id), variant, Math.max(0, variantIndex));
+  return {offerId:googleMerchantItemId(String(row.product_id), variant, Math.max(0, variantIndex)),localQuantity:Number(row.local_quantity ?? 0)};
 };
 
 export const updateGoogleMerchantAvailability = async (sku: string, quantity: number): Promise<void> => {
@@ -107,7 +111,7 @@ export const updateGoogleMerchantAvailability = async (sku: string, quantity: nu
   const accountId = process.env.GOOGLE_MERCHANT_ACCOUNT_ID?.trim() || siteInfo.googleMerchantId;
   const dataSource = required("GOOGLE_MERCHANT_SUPPLEMENTAL_DATA_SOURCE");
   const storeCode = process.env.GOOGLE_MERCHANT_STORE_CODE?.trim() || siteInfo.googleBusinessProfile.storeCode;
-  const offerId = await offerIdForSku(sku);
+  const {offerId,localQuantity} = await offerIdForSku(sku);
   const available = Math.max(0, Math.trunc(quantity));
   const availability = available > 0 ? "IN_STOCK" : "OUT_OF_STOCK";
 
@@ -125,10 +129,10 @@ export const updateGoogleMerchantAvailability = async (sku: string, quantity: nu
   await merchantRequest(localUrl, {
     storeCode,
     localInventoryAttributes: {
-      availability,
-      quantity: String(available),
-      pickupMethod: available > 0 ? "BUY" : "NOT_SUPPORTED",
-      ...(available > 0 ? { pickupSla: "SAME_DAY" } : {}),
+      availability:localQuantity>0 ? "IN_STOCK" : "OUT_OF_STOCK",
+      quantity: String(localQuantity),
+      pickupMethod: localQuantity > 0 ? "BUY" : "NOT_SUPPORTED",
+      ...(localQuantity > 0 ? { pickupSla: "SAME_DAY" } : {}),
     },
   });
 };

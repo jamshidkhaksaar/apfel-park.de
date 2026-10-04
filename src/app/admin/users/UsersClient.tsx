@@ -6,7 +6,7 @@ import AdminShell from "@/components/admin/AdminShell";
 import type { UserPublic, UserRole } from "@/lib/users";
 
 export default function UsersClient({ users: initialUsers }: { users: UserPublic[] }) {
-  const { dict } = useAdmin();
+  const { dict, lang } = useAdmin();
   const [users, setUsers] = useState<UserPublic[]>(initialUsers);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<UserPublic | null>(null);
@@ -24,6 +24,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
     return [
       { value: "admin" as UserRole, label: d.roles.admin, desc: d.roleDescriptions.admin },
       { value: "manager" as UserRole, label: d.roles.manager, desc: d.roleDescriptions.manager },
+      { value: "cashier" as UserRole, label: lang === "de" ? "Kassenmitarbeiter" : "Cashier", desc: lang === "de" ? "Nur Kasse & Lager; Filialzugriff anschließend dort zuweisen." : "Till only; assign branch access in Till & Inventory." },
       {
         value: "product_editor" as UserRole,
         label: d.roles.product_editor,
@@ -166,6 +167,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
       admin: "bg-gold/15 text-gold border-gold/30",
       manager: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
       product_editor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+      cashier: "bg-amber-500/15 text-amber-500 border-amber-500/30",
     };
     const roleData = roles.find((r) => r.value === role);
     return (

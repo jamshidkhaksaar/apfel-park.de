@@ -101,6 +101,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
   const activeComparePrice = selectedVariant?.compareAtPrice ?? product.compareAtPrice;
   const activeDiscount = getDiscount(activePrice, activeComparePrice);
   const activeStock = selectedVariant?.stock ?? product.stock;
+  const activePickupStock=selectedVariant?.pickupStock ?? product.pickupStock ?? 0;
   const activeSku = selectedVariant?.sku || product.sku;
   const galleryImages = useMemo(
     () => productGalleryImages(product, selectedVariant),
@@ -345,11 +346,11 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             {!isOutOfStock ? (
               <p className="mt-1.5 text-sm text-foreground">{deliveryEstimate(locale)}</p>
             ) : null}
-            <p className="mt-1 text-xs text-muted">
+            {!isOutOfStock && activePickupStock>0 ? <p className="mt-1 text-xs text-muted">
               {locale === "de"
-                ? "Oder heute abholen in Hamburg-Wilhelmsburg (Mo–Sa 09:30–20:00)"
-                : "Or collect today in Hamburg-Wilhelmsburg (Mon–Sat 9:30–20:00)"}
-            </p>
+                ? "Abholung in Hamburg-Wilhelmsburg (Mo–Sa 09:30–20:00)"
+                : "Pickup in Hamburg-Wilhelmsburg (Mon–Sat 9:30–20:00)"}
+            </p> : null}
           </div>
 
           <ProductPurchaseFacts
@@ -644,7 +645,9 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           <p>
             {isOutOfStock
               ? locale === "de" ? "Dieser Artikel ist aktuell nicht bestellbar." : "This item is not currently available to order."
-              : locale === "de" ? "Abholung im Store oder versicherter Versand innerhalb Deutschlands." : "Store pickup or tracked shipping within Germany."}
+              : activePickupStock>0
+                ? locale === "de" ? "Abholung im Store oder versicherter Versand innerhalb Deutschlands." : "Store pickup or tracked shipping within Germany."
+                : locale === "de" ? "Versicherter Versand innerhalb Deutschlands." : "Tracked shipping within Germany."}
           </p>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p>{locale === "de" ? "Die für Ihre Bestellung verfügbaren Zahlungsarten werden im Checkout angezeigt." : "The payment methods available for your order are shown during checkout."}</p>

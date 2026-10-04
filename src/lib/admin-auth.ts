@@ -102,7 +102,11 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
     );
   } else if (role === "product_editor") {
     paths.push("/admin/products", "/admin/inventory");
+  } else if (role === "cashier") {
+    return ["/admin/kasse-lager"];
   }
+
+  if (role === "manager") paths.push("/admin/kasse-lager");
 
   return paths;
 };
@@ -111,7 +115,7 @@ export const canAccessAdminPath = (user: User | null, pathname: string): boolean
   if (!user || !pathname.startsWith("/admin")) return false;
   if (isAdminUser(user)) return true;
   const role = getUserRole(user);
-  if (role !== "manager" && role !== "product_editor") return false;
+  if (role !== "manager" && role !== "product_editor" && role !== "cashier") return false;
   return getAuthorizedPaths(user).some(
     (allowed) => pathname === allowed || (allowed !== "/admin" && pathname.startsWith(`${allowed}/`)),
   );

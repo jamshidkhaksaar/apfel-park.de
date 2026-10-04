@@ -35,5 +35,6 @@ export const stockLabel = (locale: Locale, stock: number, tone: StockTone): stri
   return isGerman ? "Sofort verfügbar" : "In stock";
 };
 
-export const deliveryLabel = (locale: Locale): string =>
-  locale === "de" ? "1–3 Werktage · Abholung möglich" : "1–3 business days · pickup available";
+export const deliveryLabel = (locale: Locale, pickupStock?:number): string =>
+  pickupStock===0 ? locale==='de' ? '1–3 Werktage · Versand verfügbar' : '1–3 business days · shipping available' :
+    locale === "de" ? "1–3 Werktage · Abholung möglich" : "1–3 business days · pickup available";

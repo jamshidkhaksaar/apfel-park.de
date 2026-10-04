@@ -21,6 +21,7 @@ export type CatalogCardModel = {
   category: ProductCategory;
   condition: ProductCondition;
   stock: number;
+  pickupStock?: number;
   brand?: string;
   sku?: string;
   energyClass?: string;
@@ -86,6 +87,7 @@ export const toCatalogCardModel = (
   category: product.category,
   condition: product.condition,
   stock: Math.max(0, product.stock ?? 0),
+  pickupStock: product.pickupStock,
   brand: product.brand,
   sku: product.sku,
   energyClass: product.energyLabel?.efficiencyClass,

@@ -33,6 +33,7 @@ export type ProductVariant = {
   price?: number;
   compareAtPrice?: number;
   stock?: number;
+  pickupStock?: number;
   sku?: string;
   mpn?: string;
   gtin?: string;
@@ -87,6 +88,8 @@ export type Product = {
   batteryDetails?: BatteryDetails;
   marketplaceCategoryMappings?: MarketplaceCategoryMappings;
   stock?: number;
+  /** Availability at the currently configured Wilhelmsburg pickup branch. */
+  pickupStock?: number;
   slug: string;
   /** Server-side evidence: stock was resolved against active local ledger rows. */
   inventoryVerified?: boolean;
@@ -565,6 +568,7 @@ type ProductInventoryRow = {
   product_id: string;
   sku: string;
   available: number;
+  pickup_available?: number;
 };
 
 /** Overlay compatibility stock fields with the authoritative reservation ledger. */
@@ -572,23 +576,38 @@ const hydrateProductsWithInventory = async (products: Product[], failOnError = f
   if (products.length === 0) return products;
   try {
     const result = await query(
-      `SELECT product_id, sku,
-              available_inventory(on_hand, reserved, safety_buffer)::int AS available
-         FROM inventory_skus
-        WHERE location = 'local' AND is_active = true AND product_id = ANY($1::uuid[])`,
+      `SELECT inventory.product_id, inventory.sku,
+              available_inventory(inventory.on_hand, inventory.reserved, inventory.safety_buffer)::int AS available,
+              least(available_inventory(inventory.on_hand, inventory.reserved, inventory.safety_buffer),
+                greatest(0,coalesce(pickup.on_hand-pickup.reserved,0)))::int AS pickup_available
+         FROM inventory_skus inventory
+         LEFT JOIN ops_branches branch ON branch.code='main'
+         LEFT JOIN ops_balances pickup ON pickup.inventory_id=inventory.id AND pickup.branch_id=branch.id
+        WHERE inventory.location = 'local' AND inventory.is_active = true AND inventory.product_id = ANY($1::uuid[])`,
       [products.map((product) => product.id)],
-    );
+    ).catch(async error=>{
+      // Build gates run before additive migrations. Before branch allocations
+      // exist, the legacy local ledger is entirely the primary shop's stock.
+      if((error as {code?:string}).code!=='42P01') throw error;
+      return query(`SELECT product_id,sku,available_inventory(on_hand,reserved,safety_buffer)::int AS available,
+        available_inventory(on_hand,reserved,safety_buffer)::int AS pickup_available FROM inventory_skus
+        WHERE location='local' AND is_active=true AND product_id=ANY($1::uuid[])`,[products.map(product=>product.id)]);
+    });
     const rows = result.rows as ProductInventoryRow[];
     const bySku = new Map(rows.map((row) => [row.sku, Number(row.available)] as const));
+    const pickupBySku = new Map(rows.map(row=>[row.sku,Number(row.pickup_available ?? 0)] as const));
     const byProduct = new Map<string, number>();
+    const pickupByProduct = new Map<string, number>();
     for (const row of rows) {
       byProduct.set(row.product_id, (byProduct.get(row.product_id) ?? 0) + Number(row.available));
+      pickupByProduct.set(row.product_id,(pickupByProduct.get(row.product_id) ?? 0)+Number(row.pickup_available ?? 0));
     }
 
     return products.map((product) => {
       const variants = product.variants.map((variant) => ({
         ...variant,
         stock: variant.sku && bySku.has(variant.sku) ? bySku.get(variant.sku) : variant.stock,
+        pickupStock: variant.sku ? pickupBySku.get(variant.sku) ?? 0 : 0,
       }));
       const variantStock = variants.length > 0
         ? variants.reduce((sum, variant) => sum + Math.max(0, variant.stock ?? 0), 0)
@@ -602,6 +621,8 @@ const hydrateProductsWithInventory = async (products: Product[], failOnError = f
         variants,
         inventoryVerified,
         stock: variantStock ?? directStock ?? byProduct.get(product.id) ?? product.stock,
+        pickupStock: variants.length>0 ? variants.reduce((sum,variant)=>sum+(variant.pickupStock ?? 0),0) :
+          (product.sku ? pickupBySku.get(product.sku) ?? 0 : pickupByProduct.get(product.id) ?? 0),
       };
     });
   } catch (error) {

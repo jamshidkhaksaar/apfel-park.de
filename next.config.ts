@@ -54,6 +54,7 @@ const checkoutContentSecurityPolicy = contentSecurityPolicy.split('; ').map((dir
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  serverExternalPackages: ['bwip-js'],
   deploymentId: process.env.DEPLOYMENT_VERSION,
   experimental: {
     proxyClientMaxBodySize: '25mb',

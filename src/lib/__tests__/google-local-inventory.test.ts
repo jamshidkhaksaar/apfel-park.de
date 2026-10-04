@@ -32,6 +32,11 @@ const product = {
 } satisfies Product;
 
 describe('Google local inventory feed', () => {
+  it('uses pickup-branch stock while online stock can include other branches',()=>{
+    const local=buildGoogleLocalInventoryFeedForProducts([{...product,variants:[],stock:5,pickupStock:0}], 'hamburg-store');
+    expect(local).toContain('hamburg-store\tproduct-1\t0\tout_of_stock');
+    expect(buildGoogleMerchantFeedForProducts([{...product,variants:[],stock:5,pickupStock:0}])).toContain('<g:availability>in_stock</g:availability>');
+  });
   it('uses the same legacy-identifier readiness and empty-feed guard as the online feed', () => {
     const legacy = { ...product, variants: [], identifierStatus: 'unknown' as const, gtin: '4006381333931' };
     expect(buildGoogleLocalInventoryFeedForProducts([legacy], 'hamburg-store')).toContain('hamburg-store\tproduct-1\t3\tin_stock');

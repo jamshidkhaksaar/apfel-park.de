@@ -101,7 +101,7 @@ export default function StoreProductCard({
           <div className="mt-2 flex items-end justify-between gap-2">
             <div className="min-w-0">
               <p className={`text-[11px] font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
-              {!isOutOfStock ? <p className="mt-0.5 text-[11px] leading-4 text-muted">{deliveryLabel(locale)}</p> : null}
+              {!isOutOfStock ? <p className="mt-0.5 text-[11px] leading-4 text-muted">{deliveryLabel(locale,product.pickupStock)}</p> : null}
             </div>
             <AddToCartButton
               onClick={onQuickAdd}

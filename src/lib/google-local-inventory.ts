@@ -10,7 +10,7 @@ const inventoryRowsForProduct = (product: Product, storeCode: string): string[] 
   const variants = product.variants.length > 0 ? product.variants : [undefined];
 
   return variants.map((variant, index) => {
-    const quantity = inventoryQuantity(variant?.stock ?? product.stock);
+    const quantity = inventoryQuantity(variant?.pickupStock ?? product.pickupStock ?? variant?.stock ?? product.stock);
     const availability = quantity > 0 ? 'in_stock' : 'out_of_stock';
     const itemId = googleMerchantItemId(product.id, variant, index);
 

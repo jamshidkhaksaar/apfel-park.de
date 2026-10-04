@@ -213,6 +213,7 @@ export default function AdminShell({
 
   // Badge polling
   useEffect(() => {
+    if (user?.role === "cashier") return;
     let cancelled = false;
     let previous: AdminBadgeCounts | null = null;
     let timer: number | null = null;
@@ -272,7 +273,7 @@ export default function AdminShell({
       window.removeEventListener("online", resumePolling);
       document.removeEventListener("visibilitychange", resumePolling);
     };
-  }, []);
+  }, [user?.role]);
 
   const handleLangChange = (nextLang: 'de' | 'en') => {
     setLang(nextLang);
@@ -299,9 +300,14 @@ export default function AdminShell({
   const isAdmin = user?.role === "admin";
 
   const baseItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
+    ...(user?.role === "cashier" ? [] : [
     { label: dict.sidebar.dashboard, path: '/admin', icon: 'dashboard' },
     { label: dict.sidebar.products,  path: '/admin/products', icon: 'products' },
     { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory' },
+    ]),
+    ...(user?.role === "admin" || user?.role === "manager" || user?.role === "cashier" ? [
+      { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments' },
+    ] : []),
   ];
 
   const managerItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
@@ -349,11 +355,11 @@ export default function AdminShell({
     ...baseItems.map((item) => ({ ...item, group: groupLabels.catalog })),
     ...(canManage ? managerItems.map((item) => ({ ...item, group: groupLabels.ops })) : []),
     ...(isAdmin ? adminItems.map((item) => ({ ...item, group: groupLabels.system })) : []),
-    { label: lang === "de" ? "Produkt anlegen" : "New product", path: "/admin/products/new", group: groupLabels.catalog, keywords: "neu new create add artikel" },
-    { label: lang === "de" ? "Aktionen & Rabatte" : "Promotions", path: "/admin/products/promotions", group: groupLabels.catalog, keywords: "rabatt discount sale aktion" },
+    ...(userRole === "cashier" ? [] : [{ label: lang === "de" ? "Produkt anlegen" : "New product", path: "/admin/products/new", group: groupLabels.catalog, keywords: "neu new create add artikel" }]),
+    ...(userRole === "cashier" ? [] : [{ label: lang === "de" ? "Aktionen & Rabatte" : "Promotions", path: "/admin/products/promotions", group: groupLabels.catalog, keywords: "rabatt discount sale aktion" }]),
     ...(canManage ? [{ label: lang === "de" ? "Trade-in Anfragen" : "Trade-in requests", path: "/admin/trade-ins", group: groupLabels.ops, keywords: "trade in ankauf verkaufen quote angebot" }] : []),
     ...(canManage ? [{ label: lang === "de" ? "Kampagnen & Gutscheine" : "Campaigns & coupons", path: "/admin/campaigns", group: groupLabels.catalog, keywords: "coupon gutschein rabatt campaign code" }] : []),
-    { label: lang === "de" ? "Produkt-Erfassung" : "Product intake", path: "/admin/product-intake", group: groupLabels.catalog, keywords: "intake erfassung scan" },
+    ...(userRole === "cashier" ? [] : [{ label: lang === "de" ? "Produkt-Erfassung" : "Product intake", path: "/admin/product-intake", group: groupLabels.catalog, keywords: "intake erfassung scan" }]),
     ...(canManage ? [{ label: lang === "de" ? "Kostenvoranschlag anlegen" : "New repair estimate", path: "/admin/repair-estimates/new", group: groupLabels.ops, keywords: "neu new angebot quote" }] : []),
     { label: lang === "de" ? "Shop öffnen" : "Open storefront", path: `/${lang}/store`, group: groupLabels.system, keywords: "shop store frontend website" },
   ];

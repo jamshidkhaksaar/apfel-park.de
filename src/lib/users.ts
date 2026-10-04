@@ -1,9 +1,9 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { createDbClient, query } from "@/lib/db";
 
-export type UserRole = "admin" | "manager" | "product_editor";
+export type UserRole = "admin" | "manager" | "product_editor" | "cashier";
 
-export const VALID_ROLES: UserRole[] = ["admin", "manager", "product_editor"];
+export const VALID_ROLES: UserRole[] = ["admin", "manager", "product_editor", "cashier"];
 
 export type UserRow = {
   id: string;
