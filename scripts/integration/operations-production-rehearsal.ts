@@ -20,7 +20,7 @@ const main=async()=>{
   stage='restore';
   const restore=spawnSync('sudo',['-u','postgres','pg_restore','--clean','--if-exists',`--dbname=${database}`,'--exit-on-error'],{input:dump.stdout,maxBuffer:4*1024*1024});
   assert.equal(restore.status,0,'Private rehearsal restore failed');
-  const migration=await readFile('supabase/migrations/20261003_operations_workspace.sql','utf8');
+  const migration=await readFile('supabase/migrations/20261006_operations_pilot.sql','utf8');
   stage='migration';
   const apply=spawnSync('sudo',['-u','postgres','env',`PGOPTIONS=-c apfel.runtime_role=${role}`,'psql','--no-psqlrc',`--dbname=${database}`,'--set=ON_ERROR_STOP=1','--single-transaction','--file=-'],{input:migration,maxBuffer:4*1024*1024});
   assert.equal(apply.status,0,'Rehearsal migration failed');

@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { readSessionUserFromRequest } from '@/lib/session';
 import { getOperationsAccess } from '@/lib/operations/access';
+import { operationsError } from '@/lib/operations/api-errors';
 
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export async function GET(request: NextRequest) {
-  const access=await getOperationsAccess(await readSessionUserFromRequest(request));
+  let access;try{access=await getOperationsAccess(await readSessionUserFromRequest(request));}catch(error){return operationsError(error);}
   if (!access) return NextResponse.json({error:'Unauthorized'},{status:401});
   const rawCursor=request.headers.get('last-event-id') ?? '0';
   let cursor=/^\d{1,18}$/.test(rawCursor) ? BigInt(rawCursor) : BigInt(0);
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
           if (latest>cursor || !sentInitial) {sentInitial=true;cursor=latest;send(`id: ${latest}\ndata: {"changed":true}\n\n`); }
           else send(': heartbeat\n\n');
           timer=setTimeout(()=>void tick(),2000);
-        } catch { close(); }
+        } catch { console.error('[operations-events] stream_failed');close(); }
       };
       await tick();
     },

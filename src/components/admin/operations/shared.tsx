@@ -14,6 +14,6 @@ export const conditionText = (condition:string,copy:OperationsCopy):string => {
 export const statusText=(state:string,copy:OperationsCopy):string=>({available:copy.available,reserved:copy.reserved,sold:copy.sold,inspection:copy.inspection,
   transit:copy.transit,written_off:copy.writtenOff,faulty:copy.faulty,recorded:copy.recorded,dispatched:copy.dispatchedStatus,received:copy.receivedStatus,training:copy.training}[state] ?? state);
 export function Field({label,children}: {label:string;children:ReactNode}) {return <label className="grid min-w-0 gap-1.5 text-xs font-medium text-muted">{label}{children}</label>;}
-export function FormActions({busy,copy,label}: {busy:boolean;copy:OperationsCopy;label:string}) {return <button className={opsButton} disabled={busy}>{busy ? copy.saving : label}</button>;}
+export function FormActions({busy,disabled=false,copy,label}: {busy:boolean;disabled?:boolean;copy:OperationsCopy;label:string}) {return <button className={opsButton} disabled={busy || disabled}>{busy ? copy.saving : label}</button>;}
 export function Section({title,children}: {title:string;children:ReactNode}) {return <section className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5"><h2 className="mb-4 text-base font-semibold">{title}</h2>{children}</section>;}
 export function Empty({copy}: {copy:OperationsCopy}) {return <p role="status" className="py-8 text-center text-sm text-muted">{copy.noResults}</p>;}

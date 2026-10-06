@@ -23,9 +23,15 @@ const main=async () => {
       CREATE TABLE orders(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),total_amount numeric,subtotal_amount numeric,shipping_amount numeric DEFAULT 0,vat_amount numeric DEFAULT 0,
         paid_at timestamptz,payment_status text DEFAULT 'unpaid',status text DEFAULT 'pending',shipping_method text DEFAULT 'shipping',order_number integer,items jsonb DEFAULT '[]');
       CREATE TABLE store_settings(key text PRIMARY KEY,value jsonb,updated_at timestamptz DEFAULT now());`);
-    for (const name of ['20260712_marketplace_foundation.sql','20260818_live_omnichannel_inventory.sql','20261003_operations_workspace.sql'])
+    for (const name of ['20260712_marketplace_foundation.sql','20260818_live_omnichannel_inventory.sql','20261003_operations_workspace.sql','20261006_operations_pilot.sql'])
       await pool.query(await readFile(`supabase/migrations/${name}`,'utf8'));
-    const {writeOperations}=await import('../../src/lib/operations/write');
+    process.env.APP_SESSION_SECRET='isolated-operations-preview-secret';
+    const {writeOperations:rawWrite}=await import('../../src/lib/operations/write');
+    const {previewOperations}=await import('../../src/lib/operations/preview');
+    const writeOperations=async(access:import('../../src/lib/operations/types').OperationsAccess,body:Record<string,unknown>)=>{
+      if(body.action==='asset_private') return rawWrite(access,body);
+      const preview=await previewOperations(access,body);return rawWrite(access,{...body,previewToken:preview.token});
+    };
     const {readOperationsStock,readOperationsAssets,reportDates}=await import('../../src/lib/operations/read');
     const {query,withTransaction}=await import('../../src/lib/db');
     const {reserveInventoryBatch,releaseInventoryReservation}=await import('../../src/lib/marketplaces/inventory');
@@ -85,6 +91,50 @@ const main=async () => {
     assert.equal(Number((await pool.query('SELECT reserved FROM inventory_skus WHERE id=$1',[inventory])).rows[0].reserved),0);checks++;
     assert.throws(()=>reportDates('2026-02-30','2026-03-01'),/invalid_dates/);checks++;
     await assert.rejects(pool.query('UPDATE ops_documents SET payload=$2 WHERE id=$1',[till.id,{totalCents:1}]),/immutable/);checks++;
+    // Preview is read-only; cancelled review cannot alter stock or documents.
+    const previewBody={...purchase,quantity:1,idempotencyKey:'preview-read-only-001'};
+    const before=(await pool.query('SELECT count(*)::int AS n FROM ops_documents')).rows[0].n;
+    const preview=await previewOperations(access,previewBody);
+    assert.equal((await pool.query('SELECT count(*)::int AS n FROM ops_documents')).rows[0].n,before);checks++;
+    await assert.rejects(rawWrite(access,previewBody),/confirmation_required/);checks++;
+    await pool.query('UPDATE inventory_skus SET on_hand=on_hand+1 WHERE id=$1',[inventory]);
+    await assert.rejects(rawWrite(access,{...previewBody,previewToken:preview.token}),/stale_information/);checks++;
+    // A committed replay is returned even after the confirmation expires/is lost.
+    const fresh=await previewOperations(access,previewBody);await rawWrite(access,{...previewBody,previewToken:fresh.token});
+    assert.equal((await rawWrite(access,previewBody)).replayed,true);checks++;
+    const {readOperationsReport}=await import('../../src/lib/operations/report');
+    const {readStockSummary}=await import('../../src/lib/operations/stock-summary');
+    const {readOperationsDocumentPage}=await import('../../src/lib/operations/read');
+    const inactive=(await pool.query("INSERT INTO products(title,category,price,sku,is_active) VALUES('Inactive stock','Accessories',10,'OPS-INACTIVE',false) RETURNING id")).rows[0].id;
+    await pool.query("INSERT INTO inventory_skus(product_id,sku,location,on_hand,safety_buffer) VALUES($1,'OPS-INACTIVE','local',3,0)",[inactive]);
+    const stats=await withTransaction(client=>readStockSummary(client,null));assert(stats.inactiveUnits>=3);assert(stats.physicalUnits>stats.availableUnits);checks++;
+    await pool.query(`INSERT INTO orders(total_amount,subtotal_amount,vat_amount,paid_at,payment_status,order_number,items)
+      SELECT 1,1,0,'2026-10-06T12:00:00Z','paid',10000+n,'[{"sku":"REPORT-TEST","quantity":1,"lineAmount":1}]'::jsonb FROM generate_series(1,5101) n`);
+    const report=await readOperationsReport(access,null,'2026-10-06','2026-10-06');
+    assert.equal(report.summary.orders,5101);assert.equal(report.summary.capturedCents,510100);assert.equal(report.attribution.unassignedOrders,5101);checks++;
+    assert.equal(report.summary.contributionCents,null);assert.equal(report.summary.feesCents,null);checks++;
+    const pending=(await pool.query(`INSERT INTO ops_documents(kind,branch_id,destination_id,status,payload,actor_id,idempotency_key,request_hash,created_at)
+      VALUES('transfer',$1,$2,'dispatched','{}',$3,'old-pending-transfer','synthetic','2026-01-01') RETURNING id`,[mainId,secondId,ownerId])).rows[0].id;
+    await pool.query(`INSERT INTO ops_documents(kind,branch_id,status,payload,actor_id,idempotency_key,request_hash)
+      SELECT 'threshold',$1,'recorded','{}',$2,'newer-document-'||n,'synthetic' FROM generate_series(1,150) n`,[mainId,ownerId]);
+    const pendingPage=await readOperationsDocumentPage(access,null,{kind:'transfer',status:'dispatched'});
+    assert(pendingPage.documents.some(doc=>doc.id===pending));checks++;
+    // The global buffer is subtracted once, not once per branch.
+    const bufferProduct=(await pool.query("INSERT INTO products(title,category,price,sku) VALUES('Buffer test','Accessories',10,'OPS-BUFFER') RETURNING id")).rows[0].id;
+    const bufferInventory=(await pool.query("INSERT INTO inventory_skus(product_id,sku,location,on_hand,safety_buffer) VALUES($1,'OPS-BUFFER','local',10,2) RETURNING id",[bufferProduct])).rows[0].id;
+    const baseline=await withTransaction(client=>readStockSummary(client,null));
+    await pool.query('UPDATE inventory_skus SET safety_buffer=0 WHERE id=$1',[bufferInventory]);
+    const noBuffer=await withTransaction(client=>readStockSummary(client,null));assert.equal(noBuffer.availableUnits-baseline.availableUnits,2);checks++;
+    const staffId=(await pool.query("INSERT INTO users(email,role) VALUES('cashier-test@example.invalid','manager') RETURNING id")).rows[0].id;
+    await writeOperations(access,{action:'member',branchId:mainId,userId:staffId,role:'cashier',idempotencyKey:'grant-cashier-test'});
+    const {getOperationsAccess}=await import('../../src/lib/operations/access');
+    const staff=await getOperationsAccess({id:'cashier-test@example.invalid',email:'cashier-test@example.invalid',app_metadata:{role:'cashier'}});
+    assert(staff && !staff.owner && staff.branchId===mainId);checks++;
+    await assert.rejects(readOperationsReport(staff,null,'2026-10-06','2026-10-06'),/owner_required/);checks++;
+    const beforeVersion=(await pool.query('SELECT security_version FROM users WHERE id=$1',[staffId])).rows[0].security_version;
+    await writeOperations(access,{action:'member_revoke',branchId:mainId,userId:staffId,idempotencyKey:'revoke-cashier-test'});
+    assert.equal((await pool.query('SELECT security_version FROM users WHERE id=$1',[staffId])).rows[0].security_version,beforeVersion+1);
+    assert.equal(await getOperationsAccess({id:'cashier-test@example.invalid',email:'cashier-test@example.invalid',app_metadata:{role:'cashier'}}),null);checks++;
     await query('SELECT 1');
     process.stdout.write(JSON.stringify({passed:checks,isolatedDatabase:database,productionTouched:false})+'\n');
   } finally { await pool.end(); }

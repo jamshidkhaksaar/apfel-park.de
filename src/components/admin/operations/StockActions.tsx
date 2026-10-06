@@ -4,7 +4,7 @@ import type { OperationsCopy } from '@/lib/admin-i18n';
 import type { Branch,StockItem } from '@/lib/operations/types';
 import { Field,FormActions,Section,opsInput } from './shared';
 
-export type Mutate = (body:Record<string,unknown>)=>Promise<Record<string,unknown>|null>;
+export type Mutate = (body:Record<string,unknown>,options?:{expectedTotalCents?:number})=>Promise<Record<string,unknown>|null>;
 export default function StockActions({mode,item,branches,copy,busy,mutate}: {
   mode:'stock'|'purchases'|'transfers';item:StockItem|null;branches:Branch[];copy:OperationsCopy;busy:boolean;mutate:Mutate;
 }) {

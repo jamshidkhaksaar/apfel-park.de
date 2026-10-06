@@ -20,6 +20,8 @@ const main=async()=>{
     {inventoryId:'00000000-0000-4000-8000-000000000012',productId:'00000000-0000-4000-8000-000000000013',sku:'TEST-CABLE',title:'TRUSMI USB-C Ladekabel · 1 m',category:'Accessories',condition:'sealed',image:null,priceCents:1490,branchId:branches[0].id,branchName:branches[0].name,onHand:10,reserved:0,available:10,minimum:2,target:10,missingCosts:0}];
   const overview={units:12,reserved:1,lowStock:1,outOfStock:0,missingCosts:1,capturedCents:25900,refundedCents:0,revenueCents:25900,shippingIncomeCents:499,shippingExpenseCents:420,feesCents:680,overheadCents:0,purchasesCents:100000,unitsSold:1,orders:1,partialRefundsUnknown:0,knownCostCents:0,costUnits:0,stockValueCents:55000,contributionCents:null,outputVatCents:4135,inputVatCents:0,taxEstimateCents:null,incompleteExpenses:0,windowStart:'2026-10-01',windowEnd:'2026-10-04',historicalCostGap:true,missingPaymentFees:0,unpricedShopUnits:0};
   const documents:Record<string,unknown>[]=[];
+  const summary={...overview,asOf:new Date().toISOString(),completenessReasons:['purchase_costs','tax_rules_unconfirmed'],unassignedOrders:1};
+  const stockSummary={physicalUnits:13,inactiveUnits:1,transitUnits:0,availableUnits:12,reservedUnits:1,lowStock:1,outOfStock:0,missingCosts:1,missingDeviceDetails:1,stockValueCents:55000};
   const server=createServer(async(req,res)=>{
     const url=new URL(req.url ?? '/','http://127.0.0.1');
     if(url.pathname==='/fixture.js'){res.setHeader('Content-Type','text/javascript');res.end(bundle.outputFiles[0].text);return;}
@@ -29,6 +31,13 @@ const main=async()=>{
       res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-store'});res.write('id: 1\ndata: {"changed":true}\n\n');
       const timer=setInterval(()=>res.write('data: {"changed":true}\n\n'),4000);req.on('close',()=>clearInterval(timer));return;
     }
+    if(url.pathname==='/api/admin/operations/preview'){
+      let raw='';for await(const chunk of req) raw+=String(chunk);const body=JSON.parse(raw);
+      const lines=Array.isArray(body.items) ? body.items.map((line:Record<string,unknown>)=>{const item=stock.find(s=>s.inventoryId===line.inventoryId)!;const price=item.priceCents+((req.headers.referer ?? '').includes('fault=price') ? 100:0);return {...line,title:item.title,sku:item.sku,condition:item.condition,unitCents:price,totalCents:price*Number(line.quantity)};}):undefined;
+      res.setHeader('Content-Type','application/json');res.end(JSON.stringify({token:'synthetic-preview',expiresAt:new Date(Date.now()+600000).toISOString(),branchName:branches[0].name,action:body.action,
+        changes:body.action==='purchase' ? [{field:'onHand',before:3,after:3+Number(body.quantity)},{field:'totalCents',before:null,after:Math.round(Number(body.unitGross)*100)*Number(body.quantity)}]:[],
+        lines,totalCents:lines?.reduce((n:number,line:{totalCents:number})=>n+line.totalCents,0)}));return;
+    }
     if(url.pathname==='/api/admin/operations'){
       res.setHeader('Content-Type','application/json');
       if(req.method==='POST'){
@@ -37,10 +46,15 @@ const main=async()=>{
         documents.unshift(doc);res.end(JSON.stringify(doc));return;
       }
       const view=url.searchParams.get('view');const q=(url.searchParams.get('q') ?? '').toLowerCase();
+      if(q==='failscan'){res.statusCode=503;res.end(JSON.stringify({error:'temporarily_unavailable'}));return;}
+      if((req.headers.referer ?? '').includes('fault=session')){res.statusCode=401;res.end(JSON.stringify({error:'Unauthorized'}));return;}
       const data=view==='bootstrap' ? {owner:true,branches,settings:{users:[{id:'00000000-0000-4000-8000-000000000003',email:'staff@example.invalid',role:'cashier'}],members:[],identifierStorageReady:true}} :
-        view==='stock' ? {items:stock.filter(s=>!q || (s.title+' '+s.sku).toLowerCase().includes(q)),total:2} :
-        view==='overview' ? overview : view==='documents' ? {documents} : view==='orders' ? {orders:[]} :
-        view==='assets' ? {assets:[{id:'00000000-0000-4000-8000-000000000014',label:'APF-00000024',inventoryId:stock[0].inventoryId,branchId:branches[0].id,title:stock[0].title,sku:stock[0].sku,state:'available',color:'Schwarz',storage:'128 GB',batteryHealth:88,costGrossCents:null,costNetCents:null,identifierRecorded:false}]} : {asset:null};
+        view==='stock' ? {items:stock.filter(s=>!q || q==='ambiguous' || (s.title+' '+s.sku).toLowerCase().includes(q)),total:2,asOf:new Date().toISOString()} :
+        view==='overview' ? {asOf:new Date().toISOString(),stock:stockSummary,today:summary,pendingTransfers:1} :
+        view==='reports' ? {asOf:new Date().toISOString(),currentStock:stockSummary,summary,previous:{...summary,capturedCents:20000,windowStart:'2026-09-25',windowEnd:'2026-09-30'},attribution:{knownOrders:0,unassignedOrders:1},refundBasis:'selected_sales_cohort',shopRevenueAvailable:false} :
+        view==='health' ? {branchMismatches:0,assetMismatches:0,checkedAt:new Date().toISOString()} :
+        view==='documents' ? {documents,total:documents.length,asOf:new Date().toISOString()} : view==='orders' || view==='expenses' ? {orders:[],items:[],total:0,asOf:new Date().toISOString()} :
+        view==='assets' ? {total:1,asOf:new Date().toISOString(),assets:[{id:'00000000-0000-4000-8000-000000000014',label:'APF-00000024',inventoryId:stock[0].inventoryId,branchId:branches[0].id,title:stock[0].title,sku:stock[0].sku,state:'available',color:'Schwarz',storage:'128 GB',batteryHealth:88,costGrossCents:null,costNetCents:null,identifierRecorded:false}]} : {asset:null};
       res.end(JSON.stringify(data));return;
     }
     res.setHeader('Content-Type','text/html; charset=utf-8');

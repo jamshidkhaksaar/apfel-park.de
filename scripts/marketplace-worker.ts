@@ -206,6 +206,11 @@ const runDeltaReconciliation = async (): Promise<void> => {
   const now = Date.now();
   if (now - lastDeltaReconciliationAt < deltaReconciliationMilliseconds) return;
 
+  // Diagnostics only: never silently rewrite branch/device history.
+  const { recordOperationsHealth } = await import('../src/lib/operations/health');
+  try { await recordOperationsHealth(); }
+  catch { console.error('[operations-health] diagnostics_failed'); }
+
   const mirrorResult = await query(
     `SELECT reconcile_inventory_mirrors()::int AS repaired`,
   );

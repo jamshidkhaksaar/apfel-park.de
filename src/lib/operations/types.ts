@@ -5,24 +5,36 @@ export type StockItem = {
   image: string | null; priceCents: number; branchId: string; branchName: string;
   onHand: number; reserved: number; available: number; minimum: number; target: number;
   missingCosts?: number;
+  inventoryVersion?: string; active?: boolean;
 };
 export type Asset = { id: string; label: string; inventoryId: string; branchId: string; title: string; sku: string;
   state: string; color: string; storage: string; batteryHealth: number | null;
-  costGrossCents?: number | null; costNetCents?: number | null; identifierRecorded?: boolean };
+  costGrossCents?: number | null; costNetCents?: number | null; identifierRecorded?: boolean; updatedAt?: string };
 export type BasketItem = { inventoryId: string; quantity: number; assetId?: string };
 export type TillLine = BasketItem & { title: string; sku: string; unitCents: number; totalCents: number; condition: string };
 export type OperationsDocument = { id: string; number: number; kind: string; status: string; branch_id: string;
   destination_id: string | null; payload: Record<string, unknown>; created_at: string };
 export type Overview = {
   units: number; reserved: number; lowStock: number; outOfStock: number; missingCosts: number;
-  capturedCents: number; refundedCents: number; revenueCents: number; shippingIncomeCents: number;
-  shippingExpenseCents: number; feesCents: number; overheadCents: number; purchasesCents: number;
+  capturedCents: number; refundedCents: number; revenueCents: number | null; shippingIncomeCents: number;
+  shippingExpenseCents: number | null; feesCents: number | null; overheadCents: number | null; purchasesCents: number;
   unitsSold: number; orders: number; partialRefundsUnknown: number;
   knownCostCents: number; costUnits: number; stockValueCents: number; contributionCents: number | null;
   outputVatCents: number; inputVatCents: number; taxEstimateCents: number | null;
   incompleteExpenses: number; windowStart: string; windowEnd: string; historicalCostGap: boolean;
   missingPaymentFees: number; unpricedShopUnits: number;
+  asOf: string; completenessReasons: string[]; unassignedOrders: number;
 };
+
+export type StockSummary = { physicalUnits: number; inactiveUnits: number; transitUnits: number; availableUnits: number;
+  reservedUnits: number; lowStock: number; outOfStock: number; missingCosts: number; missingDeviceDetails: number; stockValueCents: number };
+export type OperationsOverview = { asOf: string; stock: StockSummary; today: Overview; pendingTransfers: number };
+export type OperationsReport = { asOf: string; currentStock: StockSummary; summary: Overview; previous: Overview;
+  attribution: { knownOrders: number; unassignedOrders: number }; refundBasis: 'selected_sales_cohort'; shopRevenueAvailable: false };
+export type ListOptions = { page?: number; kind?: string; status?: string; from?: string; to?: string; q?: string; filter?: string; category?: string };
+export type OperationPreview = { token: string; expiresAt: string; branchName: string; action: string;
+  changes: Array<{ field: string; before: string | number | null; after: string | number | null }>;
+  totalCents?: number; lines?: TillLine[]; alreadyApplied?: boolean };
 
 export const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const moneyCents = (value: unknown): number => {

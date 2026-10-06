@@ -1,45 +1,56 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRef,useState,type FormEvent } from 'react';
+import { useEffect,useRef,useState,type FormEvent } from 'react';
 import type { OperationsCopy } from '@/lib/admin-i18n';
 import {isSensitiveSearchInput,type StockItem} from '@/lib/operations/types';
-import { useOperationsRead } from './use-operations';
+import { operationRequest,useOperationsRead } from './use-operations';
+import { operationErrorText } from './ReviewDialog';
 import { conditionText,Empty,money,opsInput,opsQuietButton } from './shared';
 
-export default function StockPanel({branchId,revision,copy,locale,owner,onSelect}: {
-  branchId:string;revision:number;copy:OperationsCopy;locale:'de'|'en';owner:boolean;onSelect?:(item:StockItem,assetId?:string)=>void;
+export default function StockPanel({branchId,revision,copy,locale,owner,onSelect,initialFilter=''}: {
+  branchId:string;revision:number;copy:OperationsCopy;locale:'de'|'en';owner:boolean;onSelect?:(item:StockItem,assetId?:string)=>void;initialFilter?:string;
 }) {
   const [query,setQuery]=useState('');const [search,setSearch]=useState('');const [page,setPage]=useState(1);const [scanBusy,setScanBusy]=useState(false);
+  const [filter,setFilter]=useState(initialFilter);const [scanMessage,setScanMessage]=useState<string|null>(null);
+  const queue=useRef<string[]>([]);const processing=useRef(false);const stopped=useRef(false);
+  useEffect(()=>{stopped.current=false;return()=>{stopped.current=true;queue.current=[];};},[]);
   const input=useRef<HTMLInputElement>(null);
-  const url=`/api/admin/operations?view=stock&branchId=${branchId}&q=${encodeURIComponent(search)}&page=${page}`;
-  const {data,loading,error}=useOperationsRead<{items:StockItem[];total:number}>(url,revision);
-  const submit=async (event:FormEvent) => {
-    event.preventDefault();const value=query.trim();
-    if(isSensitiveSearchInput(value)) {setQuery('');return;}
-    setSearch(value);setPage(1);
-    if (!onSelect || !branchId || !value) return;
-    setScanBusy(true);
-    try {
-      const response=await fetch(`/api/admin/operations?view=stock&branchId=${branchId}&q=${encodeURIComponent(value)}`,{cache:'no-store'});
-      if(!response.ok) return;const results=await response.json() as {items:StockItem[]};
-      if(results.items.length!==1) return;
-      const item=results.items[0];let assetId: string|undefined;
-      if(/^APF-\d{8,18}$/.test(value.toUpperCase())) {
-        const scan=await fetch(`/api/admin/operations?view=scan&branchId=${branchId}&q=${encodeURIComponent(value.toUpperCase())}`,{cache:'no-store'});
-        if(!scan.ok) return;const scanned=await scan.json() as {asset:{id:string}|null};
-        if(!scanned.asset) return;assetId=scanned.asset.id;
-      } else if (item.sku!==value && !/^\d{8,14}$/.test(value) && !/^APS-\d{8,18}$/.test(value.toUpperCase())) return;
-      if(item.available>0) {onSelect(item,assetId);setQuery('');input.current?.focus();}
-    } finally {setScanBusy(false);}
+  const url=`/api/admin/operations?view=stock&branchId=${branchId}&q=${encodeURIComponent(search)}&page=${page}&filter=${filter}`;
+  const {data,loading,error,retry}=useOperationsRead<{items:StockItem[];total:number}>(url,revision);
+  const drain=async()=>{
+    if(processing.current) return;processing.current=true;setScanBusy(true);
+    try{while(queue.current.length && !stopped.current){const value=queue.current.shift()!;setSearch(value);setPage(1);
+      try{
+        const results=await operationRequest<{items:StockItem[]}>(`/api/admin/operations?view=stock&branchId=${branchId}&q=${encodeURIComponent(value)}`);
+        if(stopped.current) return;
+        if(results.items.length!==1){setScanMessage(results.items.length ? 'ambiguous':'missing');continue;}
+        const item=results.items[0];let assetId:string|undefined;
+        if(/^APF-\d{8,18}$/.test(value.toUpperCase())){
+          const scanned=await operationRequest<{asset:{id:string}|null}>(`/api/admin/operations?view=scan&branchId=${branchId}&q=${encodeURIComponent(value.toUpperCase())}`);
+          if(stopped.current) return;if(!scanned.asset){setScanMessage('missing');continue;}assetId=scanned.asset.id;
+        }else if(item.sku!==value && !/^\d{8,14}$/.test(value) && !/^APS-\d{8,18}$/.test(value.toUpperCase())){setScanMessage('ambiguous');continue;}
+        if(item.available>0){onSelect?.(item,assetId);setScanMessage('found');input.current?.focus();}else setScanMessage('missing');
+      }catch(error){if(!stopped.current){setQuery(value);setScanMessage(error instanceof Error ? error.message:'network_error');}}
+    }}finally{processing.current=false;if(!stopped.current) setScanBusy(false);}
+  };
+  const submit=(event:FormEvent)=>{
+    event.preventDefault();const value=query.trim();if(isSensitiveSearchInput(value)){setQuery('');setScanMessage('private');return;}
+    if(!onSelect || !branchId || !value){setSearch(value);setPage(1);return;}
+    queue.current.push(value);setQuery('');void drain();
   };
   return <section className="min-w-0 space-y-4">
     <h2 className="sr-only">{copy.stock}</h2>
     <form onSubmit={submit} className="flex min-w-0 gap-2">
       <input ref={input} aria-label={copy.search} placeholder={copy.search} value={query} onChange={e=>setQuery(e.target.value)} className={opsInput} maxLength={80} />
-      <button className={opsQuietButton} disabled={scanBusy}>{copy.scan}</button>
+      <button className={opsQuietButton}>{scanBusy ? copy.reviewLoading:copy.scan}</button>
     </form>
-    {error ? <p role="alert" className="text-sm text-red-500">{copy.failed}</p> : null}
+    {scanMessage ? <p role="status" className="text-sm">{{found:copy.scanFound,missing:copy.scanMissing,ambiguous:copy.scanAmbiguous,private:copy.scanPrivate}[scanMessage] ?? operationErrorText(scanMessage,copy)}</p>:null}
+    <label className="flex flex-wrap items-center gap-2 text-sm">{copy.filter}<select className={opsInput+' sm:max-w-xs'} value={filter} onChange={e=>{setFilter(e.target.value);setPage(1);}}>
+      <option value="">{copy.all}</option><option value="low">{copy.low}</option><option value="empty">{copy.empty}</option><option value="reserved">{copy.reserved}</option>
+      {owner ? <><option value="inactive">{copy.inactive}</option><option value="missing_costs">{copy.missingCosts}</option></>:null}
+    </select></label>
+    {error ? <div role="alert" className="flex flex-wrap gap-2 text-sm"><span>{operationErrorText(error,copy)}</span><button type="button" className={opsQuietButton} onClick={retry}>{copy.retry}</button></div>:null}
     <div aria-busy={loading} className="grid gap-2">
       {loading && !data ? [1,2,3].map(n=><div key={n} className="h-24 rounded-xl border border-border bg-surface motion-safe:animate-pulse"/>) : null}
       {data?.items.map(item=><article key={`${item.inventoryId}:${item.branchId}`} className="flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-3 sm:flex-nowrap">
@@ -50,6 +61,7 @@ export default function StockPanel({branchId,revision,copy,locale,owner,onSelect
         <div className="min-w-0 flex-1"><h3 className="break-words text-sm font-semibold">{item.title}</h3>
           <p className="mt-1 break-all text-xs text-muted">{item.sku} · {conditionText(item.condition,copy)} · {item.branchName}</p>
           <p className="mt-1 text-xs font-medium">{item.available===0 ? copy.empty : `${copy.available}: ${item.available}`} · {copy.reserved}: {item.reserved}</p>
+          {item.active===false ? <p className="mt-1 text-xs text-muted">{copy.inactive}</p>:null}
           {owner && item.missingCosts ? <p className="mt-1 text-xs text-amber-600">{copy.missingCosts}: {item.missingCosts}</p> : null}
         </div>
         <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:max-w-[60%]"><span className="text-sm font-semibold tabular-nums">{money(item.priceCents,locale)}</span>
@@ -58,7 +70,7 @@ export default function StockPanel({branchId,revision,copy,locale,owner,onSelect
           {owner ? <a className="p-2 text-xs font-medium underline" href={`/admin/kasse-lager/labels?inventory=${item.inventoryId}`} target="_blank" rel="noopener noreferrer">{copy.labels}</a> : null}
         </div>
       </article>)}
-      {!loading && !data?.items.length ? <Empty copy={copy} /> : null}
+      {!loading && !error && !data?.items.length ? <Empty copy={copy} /> : null}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
       <span>{data?.total ?? 0} · {copy.page} {page}</span>

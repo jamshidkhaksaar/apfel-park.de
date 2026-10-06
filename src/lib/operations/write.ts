@@ -4,13 +4,14 @@ import { adjustInventory, releaseInventoryReservation, reserveInventoryBatch } f
 import { assertOperationsBranch, requireOperationsOwner } from './access';
 import { decryptDeviceIdentifier,encryptDeviceIdentifier } from './private-identifiers';
 import { reportDates } from './read';
-import { assertCashierPayload, moneyCents, wholeQuantity, uuidPattern, type OperationsAccess, type TillLine } from './types';
+import { assertCashierPayload, moneyCents, wholeQuantity, uuidPattern, type OperationsAccess } from './types';
+import { buildTillLines } from './till';
+import { canonicalOperation, operationBody, verifyOperationConfirmation } from './preview';
+export { buildTillLines } from './till';
 
 const text = (value: unknown, max=500): string => typeof value==='string' ? value.trim().slice(0,max) : '';
 const id = (value: unknown): string => { const s=text(value,40); if (!uuidPattern.test(s)) throw new Error('invalid_reference'); return s; };
 const optionalMoney = (value: unknown): number | null => value===undefined || value===null || value==='' ? null : moneyCents(value);
-const canonical = (value: unknown): unknown => Array.isArray(value) ? value.map(canonical) : value && typeof value==='object'
-  ? Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>[key,canonical(item)])) : value;
 const lockInventory = async (client: TransactionClient, inventoryId: string) => {
   const result=await client.query("SELECT * FROM inventory_skus WHERE id=$1 AND location='local' AND is_active=true FOR UPDATE", [inventoryId]);
   if (!result.rows[0]) throw new Error('stock_not_found'); return result.rows[0];
@@ -34,37 +35,10 @@ const moveCostBatches = async (client: TransactionClient, inventoryId: string, s
   }
 };
 
-export const buildTillLines = async (client: TransactionClient, branchId: string, input: unknown): Promise<TillLine[]> => {
-  if (!Array.isArray(input) || input.length<1 || input.length>100) throw new Error('invalid_basket');
-  const lines: TillLine[]=[]; const totals=new Map<string,number>(); const assets=new Set<string>();
-  for (const value of input) {
-    if (!value || typeof value!=='object') throw new Error('invalid_basket');
-    const item=value as Record<string,unknown>; const inventoryId=id(item.inventoryId); const quantity=wholeQuantity(item.quantity);
-    const assetId=item.assetId ? id(item.assetId) : undefined;
-    if (assetId && (quantity!==1 || assets.has(assetId))) throw new Error('invalid_basket');
-    if (assetId) assets.add(assetId);
-    const result=await client.query(`SELECT i.sku,p.title,p.condition,round(coalesce(nullif(v.value->>'price','')::numeric,p.price)*100)::bigint AS price,
-      s.on_hand-s.reserved AS branch_available,available_inventory(i.on_hand,i.reserved,i.safety_buffer) AS total_available
-      FROM inventory_skus i JOIN products p ON p.id=i.product_id JOIN ops_balances s ON s.inventory_id=i.id AND s.branch_id=$2
-      LEFT JOIN LATERAL(SELECT value FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p.variants)='array' THEN p.variants ELSE '[]' END)
-        WHERE value->>'sku'=i.sku LIMIT 1) v ON true WHERE i.id=$1 AND i.location='local' AND i.is_active AND p.is_active`, [inventoryId,branchId]);
-    const product=result.rows[0]; if (!product || Number(product.price)<=0) throw new Error('product_not_sellable');
-    const total=(totals.get(inventoryId) ?? 0)+quantity;totals.set(inventoryId,total);
-    if (total>Math.min(Number(product.branch_available),Number(product.total_available))) throw new Error('insufficient_stock');
-    if (assetId) {
-      const asset=await client.query("SELECT 1 FROM ops_assets WHERE id=$1 AND inventory_id=$2 AND branch_id=$3 AND state='available'", [assetId,inventoryId,branchId]);
-      if (!asset.rows[0]) throw new Error('asset_unavailable');
-    }
-    const unitCents=Number(product.price);
-    lines.push({ inventoryId,quantity,assetId,title:String(product.title),sku:String(product.sku),condition:String(product.condition),unitCents,totalCents:unitCents*quantity });
-  }
-  return lines;
-};
-
 export const writeOperations = async (access: OperationsAccess, body: Record<string,unknown>) => {
   const action=text(body.action,50);
   if (action==='live_sale') throw new Error('fiscal_not_configured');
-  if (action==='training_sale') assertCashierPayload(body); else requireOperationsOwner(access);
+  if (action==='training_sale') assertCashierPayload(operationBody(body)); else requireOperationsOwner(access);
   const branchId=id(body.branchId);assertOperationsBranch(access,branchId);
   if(action==='asset_private') {
     const assetId=id(body.assetId);
@@ -78,14 +52,17 @@ export const writeOperations = async (access: OperationsAccess, body: Record<str
   const rawKey=text(body.idempotencyKey,120);
   if (!/^[A-Za-z0-9:_-]{8,120}$/.test(rawKey)) throw new Error('invalid_idempotency_key');
   const key=`${access.userId}:${rawKey}`;
-  const hash=createHash('sha256').update(JSON.stringify(canonical(body))).digest('hex');
+  const hash=createHash('sha256').update(JSON.stringify(canonicalOperation(operationBody(body)))).digest('hex');
   return withTransaction(async client => {
+    await client.query("SET LOCAL lock_timeout='5s'");
+    await client.query("SET LOCAL statement_timeout='15s'");
     await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [key]);
     const existing=await client.query('SELECT id,number,kind,status,payload,request_hash FROM ops_documents WHERE idempotency_key=$1', [key]);
     if (existing.rows[0]) {
       if (existing.rows[0].request_hash!==hash) throw new Error('idempotency_conflict');
       return { ...existing.rows[0],replayed:true,request_hash:undefined };
     }
+    await verifyOperationConfirmation(client,access,body);
     const branch=await activeBranch(client,branchId);
     let kind=action; let status='recorded'; let destination: string|null=null; let payload: Record<string,unknown>={};
     if (action==='purchase') {
@@ -179,6 +156,15 @@ export const writeOperations = async (access: OperationsAccess, body: Record<str
       const created=(await client.query('INSERT INTO ops_branches(code,name,address) VALUES($1,$2,$3) RETURNING id', [code,name,address])).rows[0];
       await client.query("INSERT INTO ops_balances(inventory_id,branch_id) SELECT id,$1 FROM inventory_skus WHERE location='local' ON CONFLICT DO NOTHING", [created.id]);
       payload={branchId:created.id,name,address,code};
+    } else if (action==='member_revoke') {
+      kind='membership';const userId=id(body.userId);
+      if(userId===access.userId) throw new Error('cannot_revoke_self');
+      const target=(await client.query('SELECT id,role FROM users WHERE id=$1 FOR UPDATE',[userId])).rows[0];
+      if(!target || target.role==='admin') throw new Error('cannot_revoke_admin');
+      const revoked=await client.query('UPDATE ops_members SET active=false WHERE user_id=$1 AND active RETURNING user_id',[userId]);
+      if(!revoked.rowCount) throw new Error('membership_not_found');
+      await client.query('UPDATE users SET security_version=security_version+1,updated_at=now() WHERE id=$1',[userId]);
+      payload={userId,revoked:true};
     } else if (action==='member') {
       kind='membership';const userId=id(body.userId);const role=text(body.role,20);
       if (!['cashier','owner'].includes(role)) throw new Error('invalid_role');
@@ -186,9 +172,7 @@ export const writeOperations = async (access: OperationsAccess, body: Record<str
       if (!target || userId===access.userId && role==='cashier' || target.role==='admin' && role==='cashier') throw new Error('invalid_role');
       await client.query(`INSERT INTO ops_members(user_id,role,branch_id) VALUES($1,$2,$3)
         ON CONFLICT(user_id) DO UPDATE SET role=$2,branch_id=$3,active=true`, [userId,role,role==='cashier' ? branchId : null]);
-      if (target.role!=='admin') {
-        await client.query('UPDATE users SET role=$2,security_version=security_version+1,updated_at=now() WHERE id=$1', [userId,role==='cashier' ? 'cashier' : 'manager']);
-      }
+      await client.query('UPDATE users SET role=$2,security_version=security_version+1,updated_at=now() WHERE id=$1', [userId,target.role==='admin' ? 'admin':role==='cashier' ? 'cashier':'manager']);
       payload={userId,role,branchId:role==='cashier' ? branchId : null};
     } else if (action==='training_sale') {
       const lines=await buildTillLines(client,branchId,body.items);status='training';

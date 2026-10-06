@@ -6,7 +6,7 @@ import { useOperationsRead } from './use-operations';
 import type { Mutate } from './StockActions';
 import { Field,FormActions,opsInput,Section } from './shared';
 
-type Bootstrap = {branches:Branch[];settings:{users:Array<{id:string;email:string;role:string}>;members:Array<{user_id:string;email:string;role:string;branch_id:string|null}>;identifierStorageReady:boolean}};
+type Bootstrap = {branches:Branch[];settings:{users:Array<{id:string;email:string;role:string}>;members:Array<{user_id:string;email:string;role:string;branch_id:string|null;active:boolean}>;identifierStorageReady:boolean}};
 export default function SettingsPanel({branchId,revision,copy,busy,mutate}: {branchId:string;revision:number;copy:OperationsCopy;busy:boolean;mutate:Mutate}) {
   const {data,error}=useOperationsRead<Bootstrap>('/api/admin/operations?view=bootstrap',revision);
   const submit=(action:string)=>async (event:FormEvent<HTMLFormElement>)=>{
@@ -32,7 +32,8 @@ export default function SettingsPanel({branchId,revision,copy,busy,mutate}: {bra
           <FormActions copy={copy} busy={busy || !branchId} label={copy.assign}/>
         </form>
         <ul className="mt-5 divide-y divide-border">{data?.settings.members.map(member=><li key={member.user_id} className="py-3 text-xs">
-          <p className="break-all font-semibold">{member.email}</p><p className="mt-1 text-muted">{member.role==='owner' ? copy.owner : copy.cashier} · {data.branches.find(b=>b.id===member.branch_id)?.name ?? copy.allShops}</p>
+          <p className="break-all font-semibold">{member.email}</p><p className="mt-1 text-muted">{member.role==='owner' ? copy.owner : copy.cashier} · {data.branches.find(b=>b.id===member.branch_id)?.name ?? copy.allShops} · {member.active ? copy.available:copy.inactive}</p>
+          {member.active && data.settings.users.find(user=>user.id===member.user_id)?.role!=='admin' ? <button type="button" className="mt-2 min-h-11 rounded-lg border border-border px-3 text-sm" disabled={busy} onClick={()=>void mutate({action:'member_revoke',branchId,userId:member.user_id})}>{copy.revoke}</button>:null}
         </li>)}</ul>
       </Section>
     </div>

@@ -1,0 +1,14 @@
+import {beforeEach,expect,it,vi} from 'vitest';
+import {NextRequest,NextResponse} from 'next/server';
+const mocks=vi.hoisted(()=>({access:vi.fn(),csrf:vi.fn(),preview:vi.fn()}));
+vi.mock('@/lib/session',()=>({readSessionUserFromRequest:async()=>({email:'test@example.invalid'})}));
+vi.mock('@/lib/operations/access',()=>({getOperationsAccess:mocks.access}));
+vi.mock('@/lib/admin-csrf',()=>({rejectCrossSiteAdminMutation:mocks.csrf}));
+vi.mock('@/lib/operations/preview',()=>({previewOperations:mocks.preview}));
+import {POST} from './route';
+const request=()=>new NextRequest('https://apfel-park.de/api/admin/operations/preview',{method:'POST',body:JSON.stringify({action:'purchase'})});
+beforeEach(()=>{vi.clearAllMocks();mocks.access.mockResolvedValue({owner:true});mocks.csrf.mockReturnValue(null);mocks.preview.mockResolvedValue({token:'preview',changes:[]});});
+it('requires a session before returning any preview',async()=>{mocks.access.mockResolvedValue(null);expect((await POST(request())).status).toBe(401);expect(mocks.preview).not.toHaveBeenCalled();});
+it('rejects cross-site preview requests',async()=>{mocks.csrf.mockReturnValue(NextResponse.json({},{status:403}));expect((await POST(request())).status).toBe(403);expect(mocks.preview).not.toHaveBeenCalled();});
+it('returns a read-only proposal without calling a mutation handler',async()=>{expect((await POST(request())).status).toBe(200);expect(mocks.preview).toHaveBeenCalledOnce();});
+it('returns a stale confirmation as a recoverable conflict',async()=>{mocks.preview.mockRejectedValue(new Error('stale_information'));expect((await POST(request())).status).toBe(409);});
