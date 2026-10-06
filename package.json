@@ -63,6 +63,9 @@
     "vitest": "4.1.11"
   },
   "overrides": {
+    "@next/eslint-plugin-next": {
+      "fast-glob": "npm:tinyglobby@0.2.17"
+    },
     "eslint-plugin-react-hooks": "7.0.1",
     "nanoid": "^3.3.18"
   }
