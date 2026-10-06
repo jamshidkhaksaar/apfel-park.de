@@ -22,7 +22,7 @@ export type Overview = {
   knownCostCents: number; costUnits: number; stockValueCents: number; contributionCents: number | null;
   outputVatCents: number; inputVatCents: number; taxEstimateCents: number | null;
   incompleteExpenses: number; windowStart: string; windowEnd: string; historicalCostGap: boolean;
-  missingPaymentFees: number; unpricedShopUnits: number;
+  missingPaymentFees: number; missingShippingCosts: number; unpricedShopUnits: number;
   asOf: string; completenessReasons: string[]; unassignedOrders: number;
 };
 

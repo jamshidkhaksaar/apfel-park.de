@@ -22,12 +22,13 @@ export const previousReportDates=(from:string,to:string) => {
 // Existing checkout uses a single fulfilment branch. Missing/mixed allocations
 // remain unassigned rather than inventing historic shop attribution.
 export const orderFactsSql=`WITH facts AS (
-  SELECT o.id,o.order_number,o.payment_status,o.paid_at,o.items,
+  SELECT o.id,o.order_number,o.payment_status,o.paid_at,o.items,coalesce(o.shipping_method,'unknown') AS shipping_method,
     round(o.total_amount*100)::bigint AS gross,round(o.shipping_amount*100)::bigint AS shipping,round(o.vat_amount*100)::bigint AS vat,
     coalesce(lines.units,0) AS units,coalesce(cost.units,0) AS cost_units,coalesce(cost.net_known,0) AS net_known,
     coalesce(cost.net_cost,0) AS net_cost,
     CASE WHEN cost.branch_count=1 AND cost.units=lines.units THEN cost.branch_id ELSE NULL END AS fulfilment_branch,
-    EXISTS(SELECT 1 FROM ops_expenses e WHERE e.order_id=o.id AND e.category='payment_fee' AND e.net_cents IS NOT NULL) AS fee_recorded
+    EXISTS(SELECT 1 FROM ops_expenses e WHERE e.order_id=o.id AND e.category='payment_fee' AND e.net_cents IS NOT NULL) AS fee_recorded,
+    EXISTS(SELECT 1 FROM ops_expenses e WHERE e.order_id=o.id AND e.category='shipping' AND e.net_cents IS NOT NULL) AS shipping_cost_recorded
   FROM orders o
   LEFT JOIN LATERAL (SELECT sum((x->>'quantity')::integer)::bigint AS units
     FROM jsonb_array_elements(CASE WHEN jsonb_typeof(o.items)='array' THEN o.items ELSE '[]' END) x) lines ON true
@@ -45,6 +46,7 @@ const readPeriod=async (client:TransactionClient,branchId:string|null,from:strin
     count(*) FILTER(WHERE payment_status='partially_refunded')::int AS partial,
     count(*) FILTER(WHERE fulfilment_branch IS NULL)::int AS unassigned,
     count(*) FILTER(WHERE payment_status<>'refunded' AND NOT fee_recorded)::int AS missing_fees,
+    count(*) FILTER(WHERE shipping_method<>'pickup' AND NOT shipping_cost_recorded)::int AS missing_shipping,
     coalesce(sum(shipping) FILTER(WHERE payment_status<>'refunded'),0)::bigint AS shipping,
     coalesce(sum(vat) FILTER(WHERE payment_status<>'refunded'),0)::bigint AS vat,
     coalesce(sum(units) FILTER(WHERE payment_status<>'refunded'),0)::bigint AS units,
@@ -65,11 +67,12 @@ const readPeriod=async (client:TransactionClient,branchId:string|null,from:strin
   const shippingCategories=['shipping','return_shipping'];const overheadCategories=['rent','salary','other','write_off'];
   const partial=Number(orders.partial);const missingFees=Number(orders.missing_fees);const units=Number(orders.units);const known=Number(orders.known_units);
   const incompleteExpenses=expenses.reduce((n,e)=>n+Number(e.incomplete),0);const refunded=Number(orders.refunded);
-  const reasons=[...(known<units ? ['purchase_costs']:[]),...(partial ? ['partial_refunds']:[]),...(missingFees ? ['payment_fees']:[]),
+  const missingShipping=Number(orders.missing_shipping);
+  const reasons=[...(known<units ? ['purchase_costs']:[]),...(partial ? ['partial_refunds']:[]),...(missingFees ? ['payment_fees']:[]),...(missingShipping ? ['shipping_costs']:[]),
     ...(incompleteExpenses ? ['expense_net_missing']:[]),...(Number(shop.units) ? ['historic_shop_sales']:[]),...(!taxRules ? ['tax_rules_unconfirmed']:[]),
     ...(refunded ? ['refund_cost_basis']:[]),...(Number(orders.unassigned) ? ['branch_attribution']:[])];
   const revenue=partial ? null : Number(orders.captured)-refunded;
-  const shipping=incomplete(shippingCategories) ? null : sumExpense(shippingCategories);
+  const shipping=missingShipping || incomplete(shippingCategories) ? null : sumExpense(shippingCategories);
   const fees=missingFees || incomplete(['payment_fee']) ? null : sumExpense(['payment_fee']);
   const overhead=incomplete(overheadCategories) ? null : sumExpense(overheadCategories);
   const contribution=revenue!==null && shipping!==null && fees!==null && overhead!==null && known===units && !refunded && !Number(shop.units) && taxRules
@@ -79,7 +82,7 @@ const readPeriod=async (client:TransactionClient,branchId:string|null,from:strin
     feesCents:fees,overheadCents:overhead,purchasesCents:Number(purchases.gross),unitsSold:units,orders:Number(orders.orders),partialRefundsUnknown:partial,
     knownCostCents:Number(orders.cost),costUnits:known,stockValueCents:stock.stockValueCents,contributionCents:contribution,outputVatCents:Number(orders.vat),
     inputVatCents:Number(purchases.vat)+expenses.reduce((n,e)=>n+Number(e.vat),0),taxEstimateCents:null,incompleteExpenses,windowStart:from,windowEnd:to,
-    historicalCostGap:known<units || refunded>0,missingPaymentFees:missingFees,unpricedShopUnits:Number(shop.units),completenessReasons:reasons,unassignedOrders:Number(orders.unassigned)};
+    historicalCostGap:known<units || refunded>0,missingPaymentFees:missingFees,missingShippingCosts:missingShipping,unpricedShopUnits:Number(shop.units),completenessReasons:reasons,unassignedOrders:Number(orders.unassigned)};
 };
 
 export const readOperationsReport=async(access:OperationsAccess,branchId:string|null,from:string,to:string):Promise<OperationsReport> => {

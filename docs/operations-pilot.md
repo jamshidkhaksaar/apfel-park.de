@@ -25,6 +25,11 @@ Migration 20261006_operations_pilot.sql adds indexes and fills only empty,
 unambiguous SKU-variant color/storage. It leaves serials, IMEIs, batteries,
 costs, tax modes, ledger quantities, and membership grants unchanged.
 
+Live-review follow-up: missing shipping-cost evidence for non-pickup orders is
+unavailable rather than EUR 0. The common Hamburg clock explicitly uses
+Europe/Berlin. Existing transparent sidebar alignment borders are intentional;
+the visual hook's side-tab findings do not warrant changing that styling.
+
 Verification: Vitest, lint, typecheck, unused-source/security audit, production
 build, runtime upload regression; scripts/integration/operations-db.ts tests
 synthetic PostgreSQL. The production rehearsal backs up and restores privately,

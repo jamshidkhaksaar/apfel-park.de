@@ -157,7 +157,7 @@ export default function AdminShell({
 
   // Live clock
   useEffect(() => {
-    const tick = () => setClock(new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    const tick = () => setClock(new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Europe/Berlin' }));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);

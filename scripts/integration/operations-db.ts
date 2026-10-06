@@ -113,6 +113,7 @@ const main=async () => {
     const report=await readOperationsReport(access,null,'2026-10-06','2026-10-06');
     assert.equal(report.summary.orders,5101);assert.equal(report.summary.capturedCents,510100);assert.equal(report.attribution.unassignedOrders,5101);checks++;
     assert.equal(report.summary.contributionCents,null);assert.equal(report.summary.feesCents,null);checks++;
+    assert.equal(report.summary.shippingExpenseCents,null);assert.equal(report.summary.missingShippingCosts,5101);checks++;
     const pending=(await pool.query(`INSERT INTO ops_documents(kind,branch_id,destination_id,status,payload,actor_id,idempotency_key,request_hash,created_at)
       VALUES('transfer',$1,$2,'dispatched','{}',$3,'old-pending-transfer','synthetic','2026-01-01') RETURNING id`,[mainId,secondId,ownerId])).rows[0].id;
     await pool.query(`INSERT INTO ops_documents(kind,branch_id,status,payload,actor_id,idempotency_key,request_hash)
