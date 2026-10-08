@@ -59,7 +59,7 @@ const readRow = async (
   lock = false,
 ): Promise<DraftRow> => {
   const result = await client.query(
-    `SELECT * FROM smartphone_editor_drafts WHERE id=$1 ${lock ? 'FOR UPDATE' : ''}`,
+    `SELECT * FROM smartphone_editor_drafts WHERE id=$1 AND deleted_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
     [id],
   );
   if (!result.rows[0]) throw new DraftError('not_found', 404);
@@ -106,10 +106,26 @@ export const loadPhoneDraft = async (id: string): Promise<PhoneDraft> => {
 export const listPhoneDrafts = async (productId?: string) =>
   (
     await query(
-      `SELECT id,revision,document->'shared'->>'title' AS title,updated_at FROM smartphone_editor_drafts WHERE ($1::text IS NULL OR sources ? $1) ORDER BY updated_at DESC LIMIT 100`,
+      `SELECT id,revision,document->'shared'->>'title' AS title,updated_at FROM smartphone_editor_drafts WHERE deleted_at IS NULL AND ($1::text IS NULL OR sources ? $1) ORDER BY updated_at DESC LIMIT 100`,
       [productId ?? null],
     )
   ).rows;
+export const deletePhoneDraft = async (id: string, actor: string, revision?: number) => {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    throw new DraftError('not_found', 404);
+  }
+  return withTransaction(async (client) => {
+    const row = await readRow(client, id, true);
+    if (revision !== undefined && revision !== row.revision) throw conflict();
+    // Keep publication receipts and the original draft for audit history.
+    // Published products, inventory, marketplace jobs and shared photos survive.
+    await client.query(
+      `UPDATE smartphone_editor_drafts SET deleted_at=now(),updated_at=now(),updated_by=$2,revision=revision+1 WHERE id=$1`,
+      [id, actor],
+    );
+    return { success: true };
+  });
+};
 export const searchPhoneModels = async (search: string) =>
   (
     await query(

@@ -80,7 +80,7 @@ export default function SmartphoneWizard({
   const t = phoneEditorText[locale];
   const [draft, setDraft] = useState<PhoneDraft | null>(null);
   const [document, setDocument] = useState<PhoneDocument | null>(null);
-  const [drafts, setDrafts] = useState<{ id: string; title: string }[]>([]);
+  const [drafts, setDrafts] = useState<{ id: string; title: string; revision: number }[]>([]);
   const [status, setStatus] = useState('saved');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -100,6 +100,7 @@ export default function SmartphoneWizard({
   const revision = useRef(0);
   const draftId = useRef('');
   const saving = useRef<Promise<void> | null>(null);
+  const deleting = useRef(false);
   const publishRetry = useRef<{
     requestId: string;
     revision: number;
@@ -147,7 +148,9 @@ export default function SmartphoneWizard({
     };
   }, [load, productId]);
   const flush = useCallback(async () => {
+    if (deleting.current) return;
     if (saving.current) await saving.current;
+    if (deleting.current) return;
     if (
       !current.current ||
       !draftId.current ||
@@ -343,11 +346,51 @@ export default function SmartphoneWizard({
   };
   const errorText = (key: string) =>
     t[key as keyof typeof t] ?? phoneErrorText(key, locale);
+  const removeDraft = async (id: string, expectedRevision: number) => {
+    if (busy || deleting.current || !window.confirm(t.deleteDraftConfirm)) return;
+    deleting.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      // A pending autosave must finish before checking the deletion revision.
+      if (saving.current) await saving.current;
+      const isCurrent = id === draftId.current;
+      const nextRevision = isCurrent ? revision.current : expectedRevision;
+      await call(`/api/admin/smartphone-drafts/${id}?revision=${nextRevision}`, 'DELETE');
+      setDrafts((items) => items.filter((item) => item.id !== id));
+      if (isCurrent) {
+        current.current = null;
+        draftId.current = '';
+        revision.current = 0;
+        saved.current = 'null';
+        publishRetry.current = null;
+        setDraft(null);
+        setDocument(null);
+        setSelected([]);
+        setPhotoConfirmation('');
+        setStatus('saved');
+        const navigation = new URLSearchParams(window.location.search);
+        navigation.delete('draft');
+        if (productId) navigation.set('product', productId);
+        window.history.replaceState(null, '', `/admin/products/phone${navigation.size ? `?${navigation}` : ''}`);
+        const result = await call(`/api/admin/smartphone-drafts${productId ? `?productId=${encodeURIComponent(productId)}` : ''}`);
+        setDrafts(result.drafts);
+      }
+      setNotice('draftDeleted');
+      markAdminListsChanged();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      deleting.current = false;
+      setBusy(false);
+    }
+  };
   if (!draft || !document)
     return (
       <div className="space-y-5">
         <h2 className="text-2xl font-semibold">{t.title}</h2>
         {error ? <p role="alert">{String(errorText(error))}</p> : null}
+        {notice === 'draftDeleted' ? <p role="status">{t.draftDeleted}</p> : null}
         <button
           className="btn-primary"
           disabled={busy || initializing}
@@ -363,9 +406,10 @@ export default function SmartphoneWizard({
         <h3>{t.resume}</h3>
         {drafts.length ? (
           drafts.map((item) => (
+            <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-3">
             <button
-              key={item.id}
               className="block text-gold"
+              disabled={busy || initializing}
               onClick={() => {
                 void call(`/api/admin/smartphone-drafts/${item.id}`)
                   .then(load)
@@ -374,6 +418,10 @@ export default function SmartphoneWizard({
             >
               {item.title || item.id}
             </button>
+            <button type="button" className="rounded-lg border border-red-500/30 px-3 py-2 text-sm text-red-400 disabled:opacity-50" disabled={busy || initializing} onClick={() => void removeDraft(item.id, item.revision)}>
+              {t.deleteDraft}
+            </button>
+            </div>
           ))
         ) : (
           <p className="text-muted">{t.empty}</p>
@@ -428,6 +476,9 @@ export default function SmartphoneWizard({
           onClick={() => go(2)}
         >
           {t.priceShortcut}
+        </button>
+        <button type="button" className="rounded-xl border border-red-500/30 px-3 py-2 text-sm text-red-400 disabled:opacity-50" disabled={busy || uploading} onClick={() => void removeDraft(draft.id, draft.revision)}>
+          {t.deleteDraft}
         </button>
       </div>
       {error ? (

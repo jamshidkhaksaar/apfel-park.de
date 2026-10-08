@@ -694,6 +694,7 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
           throw new Error(payload.error || "Delete failed");
         }
 
+        markAdminListsChanged();
         setRecords((current) => current.filter((item) => item.id !== selectedProduct.id));
         setSelectedId("");
         setSaveMessage(locale === "de" ? "Produkt gelöscht." : "Product deleted.");

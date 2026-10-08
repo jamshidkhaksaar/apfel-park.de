@@ -1,5 +1,8 @@
 export const phoneEditorText = {
   en: {
+    deleteDraft: 'Delete draft',
+    deleteDraftConfirm: 'Delete this draft? Any products already published from it will remain unchanged.',
+    draftDeleted: 'Draft deleted.',
     title: 'Phone workspace',
     steps: [
       'Choose the phone',
@@ -122,6 +125,9 @@ export const phoneEditorText = {
     saveFirst: 'Wait for uploads and saving before publishing.',
   },
   de: {
+    deleteDraft: 'Entwurf löschen',
+    deleteDraftConfirm: 'Diesen Entwurf löschen? Bereits veröffentlichte Produkte bleiben unverändert.',
+    draftDeleted: 'Entwurf gelöscht.',
     title: 'Smartphone-Arbeitsbereich',
     steps: [
       'Telefon auswählen',
