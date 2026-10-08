@@ -4,7 +4,6 @@ import { canManageProducts } from "@/lib/admin-auth";
 import { inventoryCatalogFrom, inventoryCatalogWhere } from "@/lib/inventory-catalog";
 import { inventoryDuplicatePredicate } from "@/lib/inventory-duplicates";
 import { inventoryProductDetails } from "@/lib/inventory-product-details";
-import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
 import { readSessionUserFromRequest } from "@/lib/session";
 
@@ -28,7 +27,7 @@ export async function GET(request: NextRequest) {
   const filters = [search, pattern, status, brand, category, condition, stock];
 
   try {
-    const locale = await getAdminLocale();
+    const locale = request.cookies.get("admin-lang")?.value === "en" ? "en" : "de";
     const count = await query(`SELECT count(*)::int AS total ${inventoryCatalogFrom} ${inventoryCatalogWhere}`, filters);
     const total = Number(count.rows[0]?.total ?? 0);
     const pages = Math.max(1, Math.ceil(total / limit));
