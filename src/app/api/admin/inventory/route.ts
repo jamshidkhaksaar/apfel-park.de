@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { canManageProducts } from "@/lib/admin-auth";
 import { inventoryCatalogFrom, inventoryCatalogWhere } from "@/lib/inventory-catalog";
 import { inventoryDuplicatePredicate } from "@/lib/inventory-duplicates";
+import { inventoryProductDetails } from "@/lib/inventory-product-details";
+import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
 import { readSessionUserFromRequest } from "@/lib/session";
 
@@ -26,6 +28,7 @@ export async function GET(request: NextRequest) {
   const filters = [search, pattern, status, brand, category, condition, stock];
 
   try {
+    const locale = await getAdminLocale();
     const count = await query(`SELECT count(*)::int AS total ${inventoryCatalogFrom} ${inventoryCatalogWhere}`, filters);
     const total = Number(count.rows[0]?.total ?? 0);
     const pages = Math.max(1, Math.ceil(total / limit));
@@ -41,7 +44,8 @@ export async function GET(request: NextRequest) {
            coalesce(inventory.version, 0) AS version,
            coalesce(inventory.updated_at, product.updated_at, product.created_at) AS updated_at,
            inventory.id IS NOT NULL AS can_adjust,
-           product.id AS product_id, product.title, product.model, product.images, product.brand, product.category, product.condition, product.is_active, product.catalog_enabled
+           product.id AS product_id, product.sku AS product_sku, product.title, product.model, product.images, product.brand, product.category, product.condition, product.is_active, product.catalog_enabled,
+           product.variants, product.specs, product.import_metadata
          ${inventoryCatalogFrom} ${inventoryCatalogWhere}
          ORDER BY product.title, product.id, inventory.sku
          LIMIT $8 OFFSET $9`,
@@ -95,6 +99,7 @@ export async function GET(request: NextRequest) {
         conditions: filterOptions.rows[0]?.conditions ?? [],
       },
       items: inventory.rows.map((row) => ({
+        ...inventoryProductDetails(row, locale),
         sku: String(row.sku),
         productId: String(row.product_id),
         duplicateCount: duplicateCountByProduct.get(String(row.product_id)) ?? 0,

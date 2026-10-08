@@ -625,6 +625,9 @@ export const adminDictionary = {
       noImage: "Kein Bild",
     },
     inventoryCatalog: {
+      color: "Farbe",
+      storage: "Speicher",
+      notSpecified: "Nicht angegeben",
       title: "Online-Shop",
       explanation: "Alle Produkte bleiben im Lager. Für Produkte aktivieren, dort bearbeiten und anschließend im Shop veröffentlichen.",
       inventoryOnly: "Nur im Lager · Inaktiv",
@@ -1616,6 +1619,9 @@ export const adminDictionary = {
       noImage: "No image",
     },
     inventoryCatalog: {
+      color: "Color",
+      storage: "Storage",
+      notSpecified: "Not specified",
       title: "Online shop",
       explanation: "All products stay in Inventory. Enable them for Products, edit them there, then publish them to the store.",
       inventoryOnly: "Inventory only · Inactive",

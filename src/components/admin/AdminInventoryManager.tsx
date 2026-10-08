@@ -15,6 +15,8 @@ type InventoryRow = {
   duplicateCount: number;
   title: string;
   model: string | null;
+  color: string | null;
+  storage: string | null;
   image: string | null;
   active: boolean;
   catalogEnabled: boolean;
@@ -395,7 +397,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         <h2 className="text-lg font-semibold">{locale === "de" ? "Bestand buchen" : "Record inventory movement"}</h2>
         <form onSubmit={submitAdjustment} className="mt-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_190px_120px_minmax(220px,1fr)_auto]">
           <select value={selectedSku} onChange={(event) => setSelectedSku(event.target.value)} className="min-w-0 max-w-full rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm">
-            {items.filter((item) => item.canAdjust).map((item) => <option key={item.sku} value={item.sku}>{item.title} · {item.sku}</option>)}
+            {items.filter((item) => item.canAdjust).map((item) => <option key={item.sku} value={item.sku}>{[item.title, item.color, item.storage, item.sku].filter(Boolean).join(' · ')}</option>)}
           </select>
           <select value={type} onChange={(event) => setType(event.target.value as AdjustmentType)} className="min-w-0 max-w-full rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm">
             {(Object.keys(adjustmentLabels) as AdjustmentType[]).map((value) => <option key={value} value={value}>{adjustmentLabels[value][locale]}</option>)}
@@ -423,6 +425,10 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                   <td className="px-4 py-3"><div className="flex items-center gap-3">
                     <InventoryThumbnail key={item.image} src={item.image} title={item.title} fallback={filterText.noImage} />
                     <div className="min-w-0"><p className="font-medium">{item.title}</p><p className="mt-0.5 break-all font-mono text-xs text-muted">{item.sku || "—"}</p>
+                      <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                        <div className="flex gap-1"><dt className="text-muted">{text.color}:</dt><dd className="font-medium">{item.color || text.notSpecified}</dd></div>
+                        <div className="flex gap-1"><dt className="text-muted">{text.storage}:</dt><dd className="font-medium">{item.storage || text.notSpecified}</dd></div>
+                      </dl>
                       {item.duplicateCount > 0 ? <button type="button" aria-expanded={expandedRowKey === `${item.productId}:${item.sku}`} aria-controls={`similar-${item.productId}-${encodeURIComponent(item.sku)}`} onClick={() => void toggleSimilar(item)} className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-left text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-300">{text.possibleDuplicates}: {item.duplicateCount} · {text.viewDuplicates} {expandedRowKey === `${item.productId}:${item.sku}` ? "↑" : "→"}</button> : null}
                     </div>
                   </div></td>
