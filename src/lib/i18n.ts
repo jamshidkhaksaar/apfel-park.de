@@ -1617,3 +1617,15 @@ export const googleAddressCopy = {
     error: 'Google address search is unavailable. Please enter your address manually.',
   },
 } as const;
+export const uploadGalleryCopy = {
+  en: {
+    open: 'Choose from gallery', title: 'Uploaded photo gallery', close: 'Close', search: 'Search filenames in this folder…',
+    root: 'Uploads', loading: 'Loading photos…', empty: 'No photos found in this folder.', failed: 'Could not load the gallery. Please try again.',
+    previous: 'Previous', next: 'Next', use: 'Use this photo', selected: 'Selected', photos: 'photos', page: 'Page', retry: 'Retry',
+  },
+  de: {
+    open: 'Aus Galerie wählen', title: 'Galerie hochgeladener Fotos', close: 'Schließen', search: 'Dateinamen in diesem Ordner suchen…',
+    root: 'Uploads', loading: 'Fotos werden geladen…', empty: 'Keine Fotos in diesem Ordner gefunden.', failed: 'Galerie konnte nicht geladen werden. Bitte erneut versuchen.',
+    previous: 'Zurück', next: 'Weiter', use: 'Dieses Foto verwenden', selected: 'Ausgewählt', photos: 'Fotos', page: 'Seite', retry: 'Erneut versuchen',
+  },
+} as const;

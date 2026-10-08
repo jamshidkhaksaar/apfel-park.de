@@ -2,6 +2,7 @@
 
 import { markAdminListsChanged } from "@/lib/admin-list-navigation";
 import LegacyPhonePhotos from "@/components/admin/LegacyPhonePhotos";
+import UploadGalleryButton from "@/components/admin/UploadGalleryButton";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -261,14 +262,11 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
   }, [selectedProduct?.id]);
 
   useEffect(() => {
-    const previews = imageFiles
-      .filter((file): file is File => Boolean(file))
-      .slice(0, 4)
-      .map((file) => URL.createObjectURL(file));
+    const previews = imageFiles.slice(0, 4).map(file => file ? URL.createObjectURL(file) : '');
     setImagePreviews(previews);
 
     return () => {
-      previews.forEach((preview) => URL.revokeObjectURL(preview));
+      previews.filter(Boolean).forEach((preview) => URL.revokeObjectURL(preview));
     };
   }, [imageFiles]);
 
@@ -1456,12 +1454,13 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       {slotLabels.map((slotLabel, index) => {
                         const selectedFile = imageFiles[index];
-                        const preview = imagePreviews[index];
+                        const preview = imagePreviews[index] || formState.images[index];
 
                         return (
+                          <div key={slotLabel}>
                           <label
                             key={slotLabel}
-                            className="group cursor-pointer rounded-2xl border border-border/80 bg-surface/60 p-4 transition hover:border-gold hover:bg-surface shadow-md"
+                            className="group block cursor-pointer rounded-2xl border border-border/80 bg-surface/60 p-4 transition hover:border-gold hover:bg-surface shadow-md"
                           >
                             <div className="flex items-center justify-between gap-3">
                               <span className="text-xs font-bold uppercase tracking-wider text-muted-strong">{slotLabel}</span>
@@ -1493,6 +1492,15 @@ export default function ProductCatalogAdmin({ locale, products, promo, editorOnl
                               className="sr-only"
                             />
                           </label>
+                          <UploadGalleryButton locale={locale} disabled={isSaving || photoUploadBusy} onSelect={url => {
+                            setImageFiles(current => current.map((file, slot) => slot === index ? null : file));
+                            setFormState(previous => {
+                              const images = [...previous.images];
+                              images[index] = url;
+                              return { ...previous, images, hasRealProductPhotos: false };
+                            });
+                          }} />
+                          </div>
                         );
                       })}
                     </div>

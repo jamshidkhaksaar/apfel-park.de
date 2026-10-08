@@ -2,6 +2,7 @@
 
 import { markAdminListsChanged } from "@/lib/admin-list-navigation";
 import LegacyPhonePhotos from "@/components/admin/LegacyPhonePhotos";
+import UploadGalleryButton from "@/components/admin/UploadGalleryButton";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -269,6 +270,8 @@ export default function ProductCreateForm() {
   const [currentStep, setCurrentStep] = useState<StepId>("basics");
   const [state, setState] = useState<FormState>(initialState);
   const [imageFiles, setImageFiles] = useState<Array<File | null>>([null, null, null, null]);
+  const [galleryImages, setGalleryImages] = useState<string[]>(['', '', '', '']);
+  const hasImages = imageFiles.some(Boolean) || galleryImages.some(Boolean);
   const [photoUploadBusy, setPhotoUploadBusy] = useState(false);
   const [variantImageFiles, setVariantImageFiles] = useState<Array<File | null>>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -307,7 +310,7 @@ export default function ProductCreateForm() {
     sku: state.sku,
     mpn: state.mpn,
     gtin: state.gtin,
-    images: imageFiles.filter(Boolean).map((_, index) => `pending-${index}`),
+    images: galleryImages.map((url, index) => imageFiles[index] ? `pending-${index}` : url).filter(Boolean),
     variants: state.variants,
     manufacturer: { name: state.manufacturerName, address: state.manufacturerAddress, email: state.manufacturerEmail },
     euResponsiblePerson: { name: state.euResponsibleName, address: state.euResponsibleAddress, email: state.euResponsibleEmail },
@@ -316,23 +319,20 @@ export default function ProductCreateForm() {
   };
 
   useEffect(() => {
-    const previews = imageFiles
-      .filter((file): file is File => Boolean(file))
-      .slice(0, 4)
-      .map((file) => URL.createObjectURL(file));
+    const previews = imageFiles.slice(0, 4).map((file, index) => file ? URL.createObjectURL(file) : galleryImages[index] || '');
     setImagePreviews(previews);
 
     return () => {
-      previews.forEach((preview) => URL.revokeObjectURL(preview));
+      previews.filter(preview => preview.startsWith('blob:')).forEach((preview) => URL.revokeObjectURL(preview));
     };
-  }, [imageFiles]);
+  }, [imageFiles, galleryImages]);
 
   const getConditionValidationError = () =>
     validateAdminProductCondition({
       condition: state.condition,
       conditionNote: state.conditionNote,
       hasRealProductPhotos: state.hasRealProductPhotos,
-      imageCount: imageFiles.some(Boolean) ? 1 : 0,
+      imageCount: hasImages ? 1 : 0,
       batteryHealth: state.batteryHealth,
       title: state.title,
       brand: state.brand,
@@ -400,7 +400,7 @@ export default function ProductCreateForm() {
       condition: state.condition,
       conditionNote: state.conditionNote,
       hasRealProductPhotos: state.hasRealProductPhotos,
-      imageCount: imageFiles.some(Boolean) ? 1 : 0,
+      imageCount: hasImages ? 1 : 0,
       batteryHealth: state.batteryHealth,
       title: state.title,
       brand: state.brand,
@@ -411,7 +411,7 @@ export default function ProductCreateForm() {
     const isContentValid = Boolean(state.description.trim() || state.featureBulletsText.trim() || state.specsText.trim());
     const isVariantsValid = true;
     const isChannelsValid = true;
-    const isImagesValid = aiSuccess ? imageFiles.some(Boolean) : state.condition === "new" || imageFiles.some(Boolean);
+    const isImagesValid = aiSuccess ? hasImages : state.condition === "new" || hasImages;
     const isPublishingValid = isBasicsValid && isPricingValid && isConditionValid;
 
     return {
@@ -424,7 +424,7 @@ export default function ProductCreateForm() {
       images: isImagesValid,
       publishing: isPublishingValid,
     };
-  }, [state, imageFiles, aiSuccess, isGerman]);
+  }, [state, hasImages, aiSuccess, isGerman]);
 
   const currentStepIndex = WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -485,7 +485,7 @@ export default function ProductCreateForm() {
     setError(null);
     setStepError(null);
 
-    if (aiSuccess && !imageFiles.some(Boolean)) {
+    if (aiSuccess && !hasImages) {
       setError(isGerman ? 'Bitte ein eigenes Produktfoto als Titelbild hochladen. Recherchefotos und Herstellerbilder ersetzen es nicht.' : 'Upload your own product cover photo. Research photos and manufacturer images do not replace it.');
       setCurrentStep('images');
       setSubmitting(false);
@@ -523,7 +523,11 @@ export default function ProductCreateForm() {
     try {
       const imageUrls: string[] = [];
 
-      for (const imageFile of imageFiles.filter((file): file is File => Boolean(file)).slice(0, 4)) {
+      for (const [slotIndex, imageFile] of imageFiles.slice(0, 4).entries()) {
+        if (!imageFile) {
+          if (galleryImages[slotIndex]) imageUrls.push(galleryImages[slotIndex]);
+          continue;
+        }
         const uploadData = new FormData();
         uploadData.append("file", imageFile);
 
@@ -1482,9 +1486,10 @@ export default function ProductCreateForm() {
               const preview = imagePreviews[index];
 
               return (
+                <div key={slotLabel}>
                 <label
                   key={slotLabel}
-                  className="group cursor-pointer rounded-2xl border border-border/80 bg-surface/60 p-4 transition-all hover:border-gold hover:bg-surface shadow-md"
+                  className="group block cursor-pointer rounded-2xl border border-border/80 bg-surface/60 p-4 transition-all hover:border-gold hover:bg-surface shadow-md"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-muted-strong">{slotLabel}</span>
@@ -1510,11 +1515,18 @@ export default function ProductCreateForm() {
                       if (!nextFile) return;
                       setState((prev) => ({ ...prev, hasRealProductPhotos: false }));
                       setImageFiles((current) => current.map((file, fileIndex) => (fileIndex === index ? nextFile : file)));
+                      setGalleryImages(current => current.map((url, slot) => slot === index ? '' : url));
                       event.currentTarget.value = "";
                     }}
                     className="sr-only"
                   />
                 </label>
+                <UploadGalleryButton locale={isGerman ? 'de' : 'en'} disabled={submitting || photoUploadBusy} onSelect={url => {
+                  setImageFiles(current => current.map((file, slot) => slot === index ? null : file));
+                  setGalleryImages(current => current.map((value, slot) => slot === index ? url : value));
+                  setState(previous => ({ ...previous, hasRealProductPhotos: false }));
+                }} />
+                </div>
               );
             })}
           </div>
@@ -1627,7 +1639,7 @@ export default function ProductCreateForm() {
                 <button type="button" onClick={() => goToStep("images")} className="text-[11px] font-semibold text-muted hover:text-gold">Bearbeiten ✎</button>
               </div>
               <div className="text-xs text-muted space-y-1">
-                <p>Bilder hochgeladen: <span className="font-bold text-foreground">{imageFiles.filter(Boolean).length}</span></p>
+                <p>Bilder hochgeladen: <span className="font-bold text-foreground">{imageFiles.filter(Boolean).length + galleryImages.filter(Boolean).length}</span></p>
                 <p>{isGerman ? 'Lizenzierte Zusatzbilder' : 'Licensed additional images'}: <span className="font-bold text-foreground">{state.condition === 'new' ? aiGallery.length : 0}</span></p>
                 <p>Varianten: <span className="font-bold text-foreground">{state.variants.length}</span></p>
                 <p>Highlights: <span className="font-bold text-foreground">{parseFeatureBullets(state.featureBulletsText).length}</span></p>

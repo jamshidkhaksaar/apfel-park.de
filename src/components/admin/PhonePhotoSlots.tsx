@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { phoneEditorText } from '@/lib/smartphone-editor/i18n';
 import type { PhotoSlot } from '@/lib/smartphone-editor/model';
+import UploadGalleryButton from './UploadGalleryButton';
 
 type Props = {
   locale: 'de' | 'en';
@@ -122,6 +123,10 @@ export default function PhonePhotoSlots({
               }}
             />
           </label>
+          <UploadGalleryButton locale={locale} disabled={Boolean(locked)} onSelect={url => {
+            setFailure(null);
+            onChange(slots.map(photo => photo.id === slot.id ? { ...photo, url } : photo), coverId);
+          }} />
           {progress?.id === slot.id ? (
             <progress
               aria-label={t.saving}
