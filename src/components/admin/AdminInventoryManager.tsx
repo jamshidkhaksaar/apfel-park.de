@@ -17,6 +17,7 @@ type InventoryRow = {
   model: string | null;
   color: string | null;
   storage: string | null;
+  price: number | null;
   image: string | null;
   active: boolean;
   catalogEnabled: boolean;
@@ -85,6 +86,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
   const [items, setItems] = useState<InventoryRow[]>([]);
   const [history, setHistory] = useState<RecentAdjustment[]>([]);
   const [summary, setSummary] = useState({ available: 0, reserved: 0, low: 0, out: 0 });
+  const [filteredSummary, setFilteredSummary] = useState<{ onHand: number; reserved: number; available: number } | null>(null);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [busySku, setBusySku] = useState<string | null>(null);
@@ -99,12 +101,14 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
   const [quantity, setQuantity] = useState("1");
   const [note, setNote] = useState("");
   const language = locale === "de" ? "de-DE" : "en-GB";
+  const priceFormat = new Intl.NumberFormat(language, { style: 'currency', currency: 'EUR' });
 
   const loadInventory = useCallback(async (search = "", page = 1, filter = "all", selectedFilters: InventoryFilters = emptyFilters) => {
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
     setLoading(true);
+    setFilteredSummary(null);
     setError(null);
     try {
       const params = new URLSearchParams({ q: search, page: String(page), status: filter, ...selectedFilters });
@@ -119,6 +123,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         items?: InventoryRow[];
         recentAdjustments?: RecentAdjustment[];
         summary?: { available: number; reserved: number; low: number; out: number };
+        filteredSummary?: { onHand: number; reserved: number; available: number };
         error?: string;
       };
       if (!response.ok) throw new Error(payload.error || "Inventory could not be loaded");
@@ -131,6 +136,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
       if (payload.pagination) setPagination(payload.pagination);
       setHistory(payload.recentAdjustments ?? []);
       if (payload.summary) setSummary(payload.summary);
+      setFilteredSummary(payload.filteredSummary ?? null);
       setSelectedSku((current) => current && nextItems.some((item) => item.sku === current && item.canAdjust) ? current : nextItems.find((item) => item.canAdjust)?.sku ?? "");
     } catch (loadError) {
       if (controller.signal.aborted) return;
@@ -416,10 +422,10 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px] text-left text-sm">
             <thead className="border-b border-border/60 bg-surface/50 text-xs uppercase tracking-wide text-muted">
-              <tr><th className="px-4 py-3">{locale === "de" ? "Produkt / SKU" : "Product / SKU"}</th><th className="px-4 py-3">{text.title}</th><th className="px-3 py-3 text-right">{locale === "de" ? "Physisch" : "On hand"}</th><th className="px-3 py-3 text-right">{locale === "de" ? "Reserviert" : "Reserved"}</th><th className="px-3 py-3 text-right">{locale === "de" ? "Puffer" : "Buffer"}</th><th className="px-3 py-3 text-right">{locale === "de" ? "Verfügbar" : "Available"}</th><th className="px-3 py-3">Version</th><th className="px-4 py-3 text-right">{locale === "de" ? "Aktion" : "Action"}</th></tr>
+              <tr><th className="px-4 py-3">{locale === "de" ? "Produkt / SKU" : "Product / SKU"}</th><th className="px-4 py-3">{text.title}</th><th className="px-3 py-3 text-right">{text.price}</th><th className="px-3 py-3 text-right">{locale === "de" ? "Physisch" : "On hand"}</th><th className="px-3 py-3 text-right">{locale === "de" ? "Reserviert" : "Reserved"}</th><th className="px-3 py-3 text-right">{locale === "de" ? "Puffer" : "Buffer"}</th><th className="px-3 py-3 text-right">{locale === "de" ? "Verfügbar" : "Available"}</th><th className="px-3 py-3">Version</th><th className="px-4 py-3 text-right">{locale === "de" ? "Aktion" : "Action"}</th></tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {loading ? <tr><td colSpan={8} className="px-4 py-12 text-center text-muted">{locale === "de" ? "Lager wird geladen…" : "Loading inventory…"}</td></tr> : items.length ? items.map((item) => (
+              {loading ? <tr><td colSpan={9} className="px-4 py-12 text-center text-muted">{locale === "de" ? "Lager wird geladen…" : "Loading inventory…"}</td></tr> : items.length ? items.map((item) => (
                 <Fragment key={`${item.productId}:${item.sku}`}>
                 <tr className="hover:bg-gold/[0.03]">
                   <td className="px-4 py-3"><div className="flex items-center gap-3">
@@ -446,6 +452,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                       {item.catalogEnabled ? <Link href={editorHref(item.productId, true)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-gold">{text.edit} →</Link> : null}
                     </div>
                   </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-right font-semibold tabular-nums">{item.price === null ? text.notSpecified : priceFormat.format(item.price)}</td>
                   <td className="px-3 py-3 text-right font-mono tabular-nums">{item.onHand}</td>
                   <td className="px-3 py-3 text-right font-mono tabular-nums">{item.reserved}</td>
                   <td className="px-3 py-3 text-right font-mono tabular-nums">{item.safetyBuffer}</td>
@@ -453,7 +460,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                   <td className="px-3 py-3 font-mono text-xs text-muted">{item.canAdjust ? `v${item.version}` : <span className="font-sans">{text.noStockRecord}</span>}</td>
                   <td className="px-4 py-3 text-right"><button type="button" disabled={!item.canAdjust || item.available < 1 || Boolean(busySku) || Boolean(busyProduct)} onClick={() => quickSale(item)} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-40">{locale === "de" ? "1× Vor Ort verkauft" : "Sell 1 in shop"}</button></td>
                 </tr>
-                {expandedRowKey === `${item.productId}:${item.sku}` ? <tr id={`similar-${item.productId}-${encodeURIComponent(item.sku)}`} className="bg-amber-500/[0.04]"><td colSpan={8} className="px-4 py-4">
+                {expandedRowKey === `${item.productId}:${item.sku}` ? <tr id={`similar-${item.productId}-${encodeURIComponent(item.sku)}`} className="bg-amber-500/[0.04]"><td colSpan={9} className="px-4 py-4">
                   <div className="rounded-xl border border-amber-500/30 bg-surface p-4">
                     <h3 className="font-semibold">{text.possibleDuplicates}: {item.title}</h3>
                     <p className="mt-1 text-xs text-muted">{text.duplicatesExplanation}</p>
@@ -469,7 +476,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                   </div>
                 </td></tr> : null}
                 </Fragment>
-              )) : <tr><td colSpan={8} className="px-4 py-12 text-center text-muted">{locale === "de" ? "Keine SKUs gefunden." : "No SKUs found."}</td></tr>}
+              )) : <tr><td colSpan={9} className="px-4 py-12 text-center text-muted">{locale === "de" ? "Keine SKUs gefunden." : "No SKUs found."}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -479,6 +486,21 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
             <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page <= 1} onClick={() => navigateInventory(query, pagination.page - 1, status, filters)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.previous}</button>
             <button type="button" disabled={loading || Boolean(busyProduct) || Boolean(busySku) || pagination.page >= pagination.pages} onClick={() => navigateInventory(query, pagination.page + 1, status, filters)} className="rounded-lg border border-border px-3 py-2 disabled:opacity-40">{text.next}</button>
           </div>
+        </div>
+      </section>
+
+      <section aria-live="polite" aria-busy={loading} className="rounded-2xl border border-gold/30 bg-gold/[0.05] p-5">
+        <h2 className="text-lg font-semibold">{text.filteredTotal}</h2>
+        <p className="mt-1 text-sm text-muted">{text.filteredTotalHint}</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          {([
+            [text.totalQuantity, filteredSummary?.onHand],
+            [text.totalReserved, filteredSummary?.reserved],
+            [text.totalAvailable, filteredSummary?.available],
+          ] as const).map(([label, value]) => <div key={label}>
+            <p className="text-xs text-muted">{label}</p>
+            <p className="mt-1 font-mono text-3xl font-semibold tabular-nums text-gold">{loading ? '…' : value === undefined ? '—' : value.toLocaleString(language)}</p>
+          </div>)}
         </div>
       </section>
 

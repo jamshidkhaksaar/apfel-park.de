@@ -11,6 +11,19 @@ const localized = (value: unknown, fallback: unknown, locale: 'de' | 'en'): stri
 const storageLabel = (value: string): string => normalizeStorageValue(value)?.label
   ?? (/^\d+$/.test(value) ? `${value}GB` : value);
 
+const priceValue = (value: unknown): number | null => {
+  if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return null;
+  const price = Number(value);
+  return Number.isFinite(price) && price >= 0 ? price : null;
+};
+
+export const inventoryProductPrice = (row: Record<string, unknown>): number | null => {
+  const variants = (Array.isArray(row.variants) ? row.variants : []).map(object);
+  const variant = variants.find(value => text(value.sku) && text(value.sku) === text(row.sku))
+    ?? (variants.length === 1 ? variants[0] : undefined);
+  return priceValue(variant?.price) ?? priceValue(row.price);
+};
+
 /** Inventory variants describe the row's SKU, even when its quantity is zero. */
 export const inventoryProductDetails = (row: Record<string, unknown>, locale: 'de' | 'en', scope: 'sku' | 'product' = 'sku'): { color: string | null; storage: string | null } => {
   const variants: ProductVariant[] = (Array.isArray(row.variants) ? row.variants : []).map(value => {
