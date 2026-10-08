@@ -12,7 +12,7 @@ const storageLabel = (value: string): string => normalizeStorageValue(value)?.la
   ?? (/^\d+$/.test(value) ? `${value}GB` : value);
 
 /** Inventory variants describe the row's SKU, even when its quantity is zero. */
-export const inventoryProductDetails = (row: Record<string, unknown>, locale: 'de' | 'en'): { color: string | null; storage: string | null } => {
+export const inventoryProductDetails = (row: Record<string, unknown>, locale: 'de' | 'en', scope: 'sku' | 'product' = 'sku'): { color: string | null; storage: string | null } => {
   const variants: ProductVariant[] = (Array.isArray(row.variants) ? row.variants : []).map(value => {
     const variant = object(value);
     return {
@@ -23,7 +23,7 @@ export const inventoryProductDetails = (row: Record<string, unknown>, locale: 'd
   });
   const matched = variants.filter(variant => variant.sku && variant.sku === text(row.sku));
   // A single variant is unambiguous; parent rows can summarize all their variants.
-  const selected = matched.length ? matched : variants.length === 1 || !row.can_adjust || row.sku === row.product_sku ? variants : [];
+  const selected = scope === 'product' ? variants : matched.length ? matched : variants.length === 1 || !row.can_adjust || row.sku === row.product_sku ? variants : [];
   const specs: ProductSpec[] = (Array.isArray(row.specs) ? row.specs : []).flatMap(value => {
     const spec = object(value);
     return text(spec.label) && text(spec.value) ? [{ label: text(spec.label), value: text(spec.value) }] : [];
