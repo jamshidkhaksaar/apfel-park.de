@@ -32,9 +32,10 @@ export const inventoryProductDetails = (row: Record<string, unknown>, locale: 'd
   const colors = [...new Set(selected.map(variant => variant.color).filter(Boolean))];
   const capacities = [...new Set(selected.map(variant => variant.storage).filter(Boolean))];
   const unrelatedVariant = variants.length > 1 && !selected.length;
+  const category = row.category === 'smartphones' || row.category === 'tablets' || row.category === 'laptops' ? row.category : 'accessories';
   const color = colors.join(' / ') || (!unrelatedVariant ? specs.find(spec => /^(farbe|color|colour)$/i.test(spec.label))?.value || text(evidence.color) : '');
   const storage = capacities.join(' / ') || (!unrelatedVariant ? storageLabel(text(evidence.storage)) || readProductStorage({
-    category: text(row.category), title: text(row.title), model: text(row.model), specs, variants: [], stock: 0,
+    category, title: text(row.title), model: text(row.model), specs, variants: [], stock: 0,
   }).values.join(' / ') : '');
   return { color: color || null, storage: storage || null };
 };
