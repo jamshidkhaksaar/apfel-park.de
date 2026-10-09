@@ -55,7 +55,7 @@ export const saveProductFamily = (input: Parameters<typeof persistFamily>[1]): P
 export async function getProductFamilyForProduct(productId: string, locale: Locale): Promise<ProductFamilyView | null> {
   try {
     const familyResult = await query(
-      `SELECT f.id,f.name,f.slug,f.option_axes
+      `SELECT f.id,f.name,f.slug,f.option_axes,f.smartphone_model_key
        FROM product_families f JOIN product_family_members m ON m.family_id=f.id
        WHERE m.product_id=$1 AND f.is_active=true AND m.is_active=true LIMIT 1`,
       [productId],
@@ -91,6 +91,7 @@ export async function getProductFamilyForProduct(productId: string, locale: Loca
     return {
       id: String(family.id),
       name: String(family.name),
+      automatic: Boolean(family.smartphone_model_key),
       slug: String(family.slug),
       optionAxes: [...new Set([...(Array.isArray(family.option_axes) ? family.option_axes.filter((axis): axis is string => typeof axis === "string") : []), ...(members.some(member => member.optionValues.batteryHealth) ? ["batteryHealth"] : [])])],
       members,
@@ -141,13 +142,13 @@ export async function getProductExperienceView(productId: string, locale: Locale
       : [],
     profile.enabledSections.bundles ? getExperienceProducts(profile.bundleProductIds, locale) : [],
   ]);
-  return { profile, family: profile.enabledSections.familyConfigurator ? family : null, comparisons, bundles };
+  return { profile, family: family?.automatic || profile.enabledSections.familyConfigurator ? family : null, comparisons, bundles };
 }
 
 export async function getProductExperienceAdminContext(productId: string) {
   const [profile, familyResult, productsResult] = await Promise.all([
     getProductExperienceProfile(productId),
-    query(`SELECT f.id,f.name,f.slug,f.option_axes,f.is_active
+    query(`SELECT f.id,f.name,f.slug,f.option_axes,f.smartphone_model_key,f.is_active
            FROM product_family_members m JOIN product_families f ON f.id=m.family_id WHERE m.product_id=$1 LIMIT 1`, [productId]),
     query(`SELECT id,title,brand,model,slug,condition,price,stock,images FROM products WHERE is_active=true ORDER BY updated_at DESC NULLS LAST,created_at DESC LIMIT 250`),
   ]);

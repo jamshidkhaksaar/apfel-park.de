@@ -10,6 +10,7 @@ import type {
   ProductIdentifierStatus,
 } from "@/lib/product-channel-readiness";
 import { cache } from "react";
+import { catalogProductKey, getStoreFamilyMemberships, groupStoreProducts, type CatalogFamily, type StoreFamily } from "./store-product-families";
 import { normalizeStorageValue, parseStorageFilterValues, productStorages } from '@/lib/product-storage';
 import { classifyAccessoryTypes, hasExplicitBluetoothEvidence } from '@/lib/product-accessory-types';
 import { selectTrendingProducts } from '@/lib/trending-products';
@@ -47,6 +48,8 @@ export type ProductVariant = {
 };
 
 export type Product = {
+  catalogFamily?: CatalogFamily;
+  storeFamily?: StoreFamily;
   energyReviewRequired?: boolean;
   googleFeedEnabled?: boolean;
   id: string;
@@ -808,6 +811,8 @@ const catalogSearchText = (product: Product): string => normalizeCatalogSearchTe
   product.subtitle,
   product.brand,
   product.model,
+  product.catalogFamily?.color,
+  product.catalogFamily?.storage,
   ...product.featureBullets,
   ...product.specs.flatMap((spec) => [spec.label, spec.value]),
   ...product.variants.flatMap((variant) => [variant.color, variant.storage]),
@@ -1007,6 +1012,8 @@ export const filterCatalogWithFacets = (
   const conditionCounts = new Map<ProductCondition, number>();
   const typeCounts = new Map<AccessoryType, number>();
   const filtered: Product[] = [];
+  const facetKeys = new Map<string,Set<string>>();
+  const increment = (facet: string, product: Product) => { const seen=facetKeys.get(facet) ?? new Set<string>(); const key=catalogProductKey(product); if(seen.has(key)) return false; seen.add(key); facetKeys.set(facet,seen); return true; };
   let inStock = 0;
   let priceMin = Number.POSITIVE_INFINITY;
   let priceMax = 0;
@@ -1032,18 +1039,18 @@ export const filterCatalogWithFacets = (
     if (!failed.length) filtered.push(product);
     const eligible = (group: Group): boolean => failed.every(value => value === group);
 
-    if (key && eligible('brand')) brandCounts.set(key, (brandCounts.get(key) ?? 0) + 1);
+    if (key && eligible('brand') && increment(`brand:${key}`,product)) brandCounts.set(key, (brandCounts.get(key) ?? 0) + 1);
     // When counting storage alternatives, ignore the selected capacity as well
     // as its stock failure; show other capacities that are actually available.
     const storageFacetEligible = failed.every(value=>value==='storage'||value==='stock')
       && (!filters?.inStockOnly || (product.stock ?? 0)>0);
     if (storageFacetEligible) for (const value of filters?.inStockOnly ? availableStorages : storages) {
       const storage = normalizeStorageValue(value);
-      if (storage) storageCounts.set(storage.label, {count:(storageCounts.get(storage.label)?.count ?? 0) + 1,gb:storage.gb});
+      if (storage && increment(`storage:${storage.label}`,product)) storageCounts.set(storage.label, {count:(storageCounts.get(storage.label)?.count ?? 0) + 1,gb:storage.gb});
     }
-    if (eligible('condition')) conditionCounts.set(product.condition, (conditionCounts.get(product.condition) ?? 0) + 1);
-    if (eligible('type')) for (const type of types) typeCounts.set(type, (typeCounts.get(type) ?? 0) + 1);
-    if (eligible('stock') && storageAvailable) inStock += 1;
+    if (eligible('condition') && increment(`condition:${product.condition}`,product)) conditionCounts.set(product.condition, (conditionCounts.get(product.condition) ?? 0) + 1);
+    if (eligible('type')) for (const type of types) if(increment(`type:${type}`,product)) typeCounts.set(type, (typeCounts.get(type) ?? 0) + 1);
+    if (eligible('stock') && storageAvailable && increment('stock',product)) inStock += 1;
     if (eligible('price')) {
       priceMin = Math.min(priceMin, product.price);
       priceMax = Math.max(priceMax, product.price);
@@ -1101,10 +1108,12 @@ export async function getStoreCatalog({
   // The catalog is small (~100 products), so fetch all active products once
   // and do faceting, filtering, sorting and pagination in JS. This gives
   // accurate facet counts and keeps the logic in one place.
-  const [all, merchandisingIds] = await Promise.all([
+  const [offers, merchandisingIds, memberships] = await Promise.all([
     getProducts(undefined, undefined, locale, { failOnError }),
     merchandising === "storefront" ? getStorefrontMerchandisingIds() : Promise.resolve([]),
+    getStoreFamilyMemberships(),
   ]);
+  const all = offers.map(product => memberships.has(product.id) ? {...product,catalogFamily:memberships.get(product.id)} : product);
 
   // Category tab counts (across the whole catalog).
   const counts: Record<StoreCatalogCategory, number> = {
@@ -1117,13 +1126,13 @@ export async function getStoreCatalog({
     laptops: 0,
     "open-box-smartphones-tablets": 0,
   };
-  for (const product of all) {
+  for (const product of groupStoreProducts(all)) {
     counts.all += 1;
     counts[product.category] += 1;
-    if ((product.category === "smartphones" || product.category === "tablets") && product.isOpenBox) {
-      counts["open-box-smartphones-tablets"] += 1;
-    }
+
   }
+
+  counts["open-box-smartphones-tablets"] = groupStoreProducts(all.filter(product => (product.category === "smartphones" || product.category === "tablets") && product.isOpenBox)).length;
 
   // Scope to the requested category.
   const categoryScoped = category === "all"
@@ -1180,13 +1189,13 @@ export async function getStoreCatalog({
   facets.scope = { category, ...(subcategory ? { subcategory } : {}), ...(collection ? { collection } : {}) };
 
   // Sort.
-  const sorted = [...filtered];
-  const stockRank = (product: Product) => (product.stock ?? 0) > 0 ? 0 : 1;
+  const sorted = groupStoreProducts(filtered);
+  const stockRank = (product: Product) => (product.storeFamily?.stock ?? product.stock ?? 0) > 0 ? 0 : 1;
   const stockFirst = (left: Product, right: Product, fallback: () => number) =>
     stockRank(left) - stockRank(right) || fallback();
   if (sort === "price-asc") sorted.sort((a, b) => stockFirst(a, b, () => a.price - b.price));
   else if (sort === "price-desc") sorted.sort((a, b) => stockFirst(a, b, () => b.price - a.price));
-  else if (sort === "newest") sorted.sort((a, b) => stockFirst(a, b, () => compareCatalogRecency(a.createdAt, b.createdAt)));
+  else if (sort === "newest") sorted.sort((a, b) => stockFirst(a, b, () => compareCatalogRecency(a.storeFamily?.newest ?? a.createdAt, b.storeFamily?.newest ?? b.createdAt)));
   else if (searchQuery) {
     sorted.sort((a, b) => stockFirst(a, b, () => catalogSearchScore(b, searchQuery) - catalogSearchScore(a, searchQuery)));
   }
@@ -1201,15 +1210,19 @@ export async function getStoreCatalog({
       consoles: 4,
     };
     sorted.sort((a, b) => stockFirst(a, b, () => {
-      const aConfigured = configuredRank.get(a.id);
-      const bConfigured = configuredRank.get(b.id);
+      const rank = (product: Product) => {
+        const ranks = (product.storeFamily?.productIds ?? [product.id]).flatMap(id => configuredRank.has(id) ? [configuredRank.get(id)!] : []);
+        return ranks.length ? Math.min(...ranks) : undefined;
+      };
+      const aConfigured = rank(a);
+      const bConfigured = rank(b);
       if (aConfigured !== undefined || bConfigured !== undefined) {
         if (aConfigured === undefined) return 1;
         if (bConfigured === undefined) return -1;
         return aConfigured - bConfigured;
       }
       return categoryRank[a.category] - categoryRank[b.category]
-        || compareCatalogRecency(a.createdAt, b.createdAt)
+        || compareCatalogRecency(a.storeFamily?.newest ?? a.createdAt, b.storeFamily?.newest ?? b.createdAt)
         || Number(b.hasDiscount) - Number(a.hasDiscount);
     }));
   }
@@ -1219,7 +1232,7 @@ export async function getStoreCatalog({
       return stockFirst(a, b, () => {
         const discount = Number(b.hasDiscount) - Number(a.hasDiscount);
         if (discount !== 0) return discount;
-        return compareCatalogRecency(a.createdAt, b.createdAt);
+        return compareCatalogRecency(a.storeFamily?.newest ?? a.createdAt, b.storeFamily?.newest ?? b.createdAt);
       });
     });
   }
@@ -1263,15 +1276,20 @@ export async function getFeaturedProducts(locale: Locale = "de"): Promise<Produc
 export async function getTrendingProducts(locale: Locale = "de", limit = 8): Promise<Product[]> {
   try {
     const db = createDbClient();
-    const [{ data: settingRow, error }, products] = await Promise.all([
+    const [{ data: settingRow, error }, products, memberships] = await Promise.all([
       db.from<{ value: unknown }>('store_settings').select('value').eq('key', 'trending_products').maybeSingle(),
       getProducts(undefined, undefined, locale, { failOnError: true }),
+      getStoreFamilyMemberships(),
     ]);
     if (error) throw error;
     const setting = settingRow?.value && typeof settingRow.value === 'object'
       ? settingRow.value as TrendingProductsSetting
       : null;
-    return selectTrendingProducts(products.filter(product => product.inventoryVerified), setting?.productIds, limit);
+    const offers = products.filter(product => product.inventoryVerified).map(product => memberships.has(product.id) ? {...product,catalogFamily:memberships.get(product.id)} : product);
+    const grouped = groupStoreProducts(offers);
+    const byOffer = new Map(grouped.flatMap(product => (product.storeFamily?.productIds ?? [product.id]).map(id => [id,product.id] as const)));
+    const picks = Array.isArray(setting?.productIds) ? setting.productIds.map(id => byOffer.get(id) ?? id) : setting?.productIds;
+    return selectTrendingProducts(grouped, picks, limit);
   } catch {
     // Optional merchandising must never advertise guessed stock after a failed
     // ledger/settings read. Keep the persisted last-known-good cache untouched.

@@ -12,6 +12,8 @@ export type CatalogCardVariant = {
 };
 
 export type CatalogCardModel = {
+  familyOptions?: boolean;
+  priceFrom?: boolean;
   id: string;
   title: string;
   slug: string;
@@ -51,7 +53,7 @@ const factLabelPriority = (category: ProductCategory): RegExp[] => category === 
 
 export const catalogCardFacts = (product: Product): string[] => {
   const facts: string[] = [];
-  const storages = productStorages(product).map(value=>value.replace(/(GB|TB)$/,' $1'));
+  const storages = (product.storeFamily?.storages ?? productStorages(product)).map(value=>value.replace(/(GB|TB)$/,' $1'));
   if (storages.length > 0) facts.push(storages.slice(0, 3).join(" · "));
 
   for (const pattern of factLabelPriority(product.category)) {
@@ -79,6 +81,8 @@ export const toCatalogCardModel = (
   rating?: ProductRatingSummary,
 ): CatalogCardModel => ({
   id: product.id,
+  familyOptions: Boolean(product.catalogFamily),
+  priceFrom: product.storeFamily?.priceVaries,
   title: product.title,
   slug: product.slug,
   image: product.image,
@@ -86,16 +90,16 @@ export const toCatalogCardModel = (
   compareAtPrice: product.compareAtPrice,
   category: product.category,
   condition: product.condition,
-  stock: Math.max(0, product.stock ?? 0),
-  pickupStock: product.pickupStock,
+  stock: Math.max(0, product.storeFamily?.stock ?? product.stock ?? 0),
+  pickupStock: product.storeFamily?.pickupStock ?? product.pickupStock,
   brand: product.brand,
   sku: product.sku,
   energyClass: product.energyLabel?.efficiencyClass,
   facts: catalogCardFacts(product),
-  colors: uniqueValues(product.variants.map((variant) => variant.color)),
+  colors: product.storeFamily?.colors ?? uniqueValues(product.variants.map((variant) => variant.color)),
   // This list describes actual variant choices. Non-variant capacity is already
   // included in facts; duplicating it here would repeat the same label in cards.
-  storages: uniqueValues(product.variants.map(variant=>variant.storage)),
+  storages: product.storeFamily?.storages ?? uniqueValues(product.variants.map(variant=>variant.storage)),
   variants: product.variants.map((variant) => ({
     color: variant.color,
     storage: variant.storage,

@@ -17,8 +17,8 @@ import { autoPublishProductPromotion } from '@/lib/marketing';
 import { readOfferPresets, saveOfferPresets } from '@/lib/product-offer-presets-repository';
 import { productDeletionPreview, deleteCatalogProduct } from '@/lib/product-deletion';
 import { catalogStockSummary } from '@/lib/catalog-stock-summary';
-import { getProductFamilyForProduct } from '@/lib/product-experience-repository';
-import { getProductBySlug } from '@/lib/products';
+import { getProductExperienceView, getProductFamilyForProduct } from '@/lib/product-experience-repository';
+import { parseStoreCatalogFilters, getStoreCatalog, getProductBySlug } from '@/lib/products';
 vi.mock('server-only',()=>({}));
 vi.mock('@/lib/marketing', () => ({ autoPublishProductPromotion: vi.fn().mockResolvedValue([]) }));
 
@@ -90,12 +90,30 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
       true,
     );
   it('keeps battery tiers as independent priced offers in the customer selector', async () => {
-    const low=await ready('used');const high=await ready('used'); low.batteryHealth=90;low.price=399;high.batteryHealth=95;high.batteryHealthMax=100;high.price=449;
+    const low=await ready('used');const high=await ready('used'); low.experience=sanitizeProductExperienceProfile({enabledSections:{packageContents:true},packageContents:[{label:{en:'Cable',de:'Kabel'},included:true}]});high.experience=sanitizeProductExperienceProfile({});low.batteryHealth=90;low.price=399;high.batteryHealth=95;high.batteryHealthMax=100;high.price=449;
     const result=await publish(await seed([low,high]));
     const family=await getProductFamilyForProduct(result.results[0].productId,'en');
     expect(family?.optionAxes).toContain('batteryHealth');
     expect(family?.members.map(member=>member.optionValues.batteryHealth).sort()).toEqual(['90%','95–100%']);
     expect(family?.members.map(member=>member.price).sort()).toEqual([399,449]);
+    const view=await getProductExperienceView(result.results[0].productId,'en');
+    expect(view.family?.members).toHaveLength(2);expect(view.profile.enabledSections.familyConfigurator).toBe(true);
+    await query("UPDATE product_experience_profiles SET enabled_sections=jsonb_set(enabled_sections,'{familyConfigurator}','false') WHERE product_id=$1",[result.results[0].productId]);
+    expect((await getProductExperienceView(result.results[0].productId,'en')).family?.members).toHaveLength(2);
+  });
+  it('groups researched offers before pagination while preserving capacity filters', async () => {
+    const low=await ready('used');low.storage='128 GB';low.price=399;
+    const high=await ready('used');high.storage='256 GB';high.price=499;
+    const blue=await ready('used','Blue');blue.storage='128 GB';blue.price=449;
+    for(const offer of [low,high,blue]) offer.experience=sanitizeProductExperienceProfile({});
+    const draft=await seed([low,high,blue]);await publish(draft);
+    const catalog=await getStoreCatalog({filters:parseStoreCatalogFilters({q:draft.document.shared.model}),pageSize:1,locale:'en'});
+    expect(catalog.total).toBe(1);expect(catalog.pages).toBe(1);expect(catalog.products).toHaveLength(1);
+    expect(catalog.products[0]).toMatchObject({price:399,stock:1,storeFamily:{stock:3,offerCount:3,colors:['Black','Blue'],storages:['128GB','256GB']}});
+    expect(catalog.facets.storages).toEqual([{value:'128GB',count:1},{value:'256GB',count:1}]);
+    const filtered=await getStoreCatalog({filters:parseStoreCatalogFilters({q:draft.document.shared.model,storage:'256GB'}),locale:'en'});
+    expect(filtered.total).toBe(1);expect(filtered.products[0].price).toBe(499);
+    expect(filtered.products[0].storeFamily?.offerCount).toBe(1);
   });
   it('archives a deleted offer and stock history, blocks reserved deletion and prevents resurrection', async () => {
     const draft=await seed([await ready('used')]);const result=await publish(draft);const id=result.results[0].productId;

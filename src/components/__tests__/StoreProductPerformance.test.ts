@@ -6,6 +6,7 @@ import type { CatalogCardModel } from "@/lib/catalog-card";
 import StoreProductCard from "../store/StoreProductCard";
 import StoreProductRow from "../store/StoreProductRow";
 
+vi.mock("next/navigation",()=>({useRouter:()=>({push:vi.fn()})}));
 const drawerRender = vi.hoisted(() => vi.fn(() => null));
 vi.mock("../store/StoreQuickAddDrawer", () => ({ default: drawerRender }));
 const product: CatalogCardModel = {

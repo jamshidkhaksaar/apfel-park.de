@@ -95,21 +95,22 @@ export default function StoreProductRow({
         {/* Below lg the right rail folds in here so the row stays one column set. */}
         <div className="mt-2 flex items-end justify-between gap-2 lg:hidden">
           <div className="flex flex-col gap-1">
-            <PriceBlock locale={locale} price={product.price} compareAtPrice={product.compareAtPrice} size="card" />
+            <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} size="card" />
             <p className={`text-[11px] font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
           </div>
           <AddToCartButton
             onClick={onQuickAdd}
             disabled={isOutOfStock}
             added={added}
-            label={isGerman ? `${product.title} in den Warenkorb` : `Add ${product.title} to cart`}
+            label={product.familyOptions ? (isGerman ? `Optionen für ${product.title} wählen` : `Choose options for ${product.title}`) : isGerman ? `${product.title} in den Warenkorb` : `Add ${product.title} to cart`}
+              options={product.familyOptions}
           />
         </div>
       </div>
 
       <div className="hidden w-44 shrink-0 flex-col items-end justify-between gap-3 border-l border-border py-1 pl-4 lg:flex">
         <div className="flex flex-col items-end gap-1.5">
-          <PriceBlock locale={locale} price={product.price} compareAtPrice={product.compareAtPrice} size="row" align="end" />
+          <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} size="row" align="end" />
           <p className={`text-xs font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
           {product.energyClass ? <EnergyClassArrow grade={product.energyClass} locale={locale} className="origin-top-right scale-90" /> : null}
         </div>
@@ -117,7 +118,8 @@ export default function StoreProductRow({
           onClick={onQuickAdd}
           disabled={isOutOfStock}
           added={added}
-          label={isGerman ? `${product.title} in den Warenkorb` : `Add ${product.title} to cart`}
+          label={product.familyOptions ? (isGerman ? `Optionen für ${product.title} wählen` : `Choose options for ${product.title}`) : isGerman ? `${product.title} in den Warenkorb` : `Add ${product.title} to cart`}
+              options={product.familyOptions}
         />
       </div>
 

@@ -69,6 +69,7 @@ export type ProductFamilyMember = {
 };
 
 export type ProductFamilyView = {
+  automatic?: boolean;
   id: string;
   name: string;
   slug: string;

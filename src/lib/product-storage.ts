@@ -1,8 +1,8 @@
 import type {Product} from './products';
 
 export type StorageValue = {label:string;gb:number};
-type StorageProduct = Pick<Product,'category'|'title'|'model'|'specs'|'variants'|'stock'>;
-export type StorageEvidence = {values:string[];source:'variants'|'specs'|'title'|'unknown'|'conflict'};
+type StorageProduct = Pick<Product,'category'|'title'|'model'|'specs'|'variants'|'stock'|'catalogFamily'>;
+export type StorageEvidence = {values:string[];source:'family'|'variants'|'specs'|'title'|'unknown'|'conflict'};
 
 /** A capacity token, not RAM, a transfer rate, or a manufacturer option list. */
 export const normalizeStorageValue = (value?: string): StorageValue | null => {
@@ -45,6 +45,8 @@ export const readProductStorage = (product:StorageProduct):StorageEvidence => {
   const variants=product.variants.map(v=>normalizeStorageValue(v.storage)).filter((v):v is StorageValue=>Boolean(v));
   // Explicit offer capacities beat generic family specifications and parent titles.
   if(variants.length) return {values:ordered(variants),source:'variants'};
+  const familyStorage=normalizeStorageValue(product.catalogFamily?.storage?.replace(/^(\d+)$/, '$1 GB'));
+  if(familyStorage) return {values:[familyStorage.label],source:'family'};
   const specs:StorageValue[]=[];
   for(const spec of product.specs) {
     const label=spec.label.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();

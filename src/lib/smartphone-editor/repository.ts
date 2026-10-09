@@ -84,7 +84,7 @@ const readEditorFamily = async (client: TransactionClient, familyId: string) => 
   const f = (await client.query('SELECT * FROM product_families WHERE id=$1', [familyId])).rows[0];
   if (!f) return undefined;
   const members = (await client.query('SELECT product_id,option_values,position,is_active FROM product_family_members WHERE family_id=$1 ORDER BY position,product_id', [familyId])).rows;
-  return { id: f.id, name: f.name, slug: f.slug, optionAxes: f.option_axes, isActive: f.is_active, members: members.map(m => ({ productId: m.product_id, optionValues: m.option_values, position: m.position, isActive: m.is_active })) };
+  return { automatic: Boolean(f.smartphone_model_key), id: f.id, name: f.name, slug: f.slug, optionAxes: f.option_axes, isActive: f.is_active, members: members.map(m => ({ productId: m.product_id, optionValues: m.option_values, position: m.position, isActive: m.is_active })) };
 };
 const experienceFingerprint = async (client: Pick<TransactionClient, 'query'>, productId: string): Promise<string> => {
   const result = await client.query("SELECT md5(coalesce((SELECT to_jsonb(x)::text FROM product_experience_profiles x WHERE product_id=$1),'null') || coalesce((SELECT to_jsonb(f)::text || coalesce((SELECT jsonb_agg(to_jsonb(m) ORDER BY m.product_id)::text FROM product_family_members m WHERE m.family_id=f.id),'[]') FROM product_families f JOIN product_family_members own ON own.family_id=f.id WHERE own.product_id=$1),'null')) AS fingerprint", [productId]);
@@ -768,6 +768,12 @@ export const publishPhoneDraft = async (
           [productId],
         );
       }
+      if (familyId) await client.query(
+        `INSERT INTO product_experience_profiles(product_id,enabled_sections)
+         SELECT $1,'{"familyConfigurator":true}'::jsonb FROM product_families WHERE id=$2 AND smartphone_model_key IS NOT NULL
+         ON CONFLICT(product_id) DO UPDATE SET enabled_sections=product_experience_profiles.enabled_sections || excluded.enabled_sections`,
+        [productId,familyId],
+      );
       for (const e of entries) {
         for (const hash of photoHashes.get(e.id) ?? [])
           await client.query(

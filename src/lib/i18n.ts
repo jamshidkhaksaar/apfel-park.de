@@ -1674,7 +1674,7 @@ export const catalogToolsText = {
     deleteDrafts: 'Delete selected drafts', draftDeleteHint: 'Remove these drafts from the workspace. Products already published from them remain available.', selectDraft: 'Select draft', selectAllDrafts: 'Select all shown drafts',
     conflict: 'This item changed. Close this dialog and reload before deleting.', not_found: 'This item was already removed.', reservations: 'This offer has reserved stock. Complete or release those orders before deleting.', confirmation_required: 'Complete both confirmation steps.',
     units: 'Units', listings: 'Listings', subtotal: 'Stock value', model: 'Model', searchSummary: 'Stock in these results', total: 'Subtotal',
-    manualVersion: 'Add a custom version', chooseResearch: 'Choose a researched version above to open its form.', batteryTier: 'Add battery-health option', batteryHealth: 'Battery health', notSpecified: 'Not specified',
+    automaticOptions: 'Storage, color and battery options are enabled automatically for this model.', manualVersion: 'Add a custom version', chooseResearch: 'Choose a researched version above to open its form.', batteryTier: 'Add battery-health option', batteryHealth: 'Battery health', notSpecified: 'Not specified',
   },
   de: {
     step: 'Schritt', continue: 'Weiter', cancel: 'Abbrechen', typeDelete: 'Zum Bestätigen DELETE eingeben', confirmDelete: 'Löschen bestätigen', deleting: 'Wird gelöscht…', loading: 'Wird geladen…', failed: 'Löschen fehlgeschlagen. Bitte erneut versuchen.',
@@ -1682,6 +1682,6 @@ export const catalogToolsText = {
     deleteDrafts: 'Ausgewählte Entwürfe löschen', draftDeleteHint: 'Diese Entwürfe aus dem Arbeitsbereich entfernen. Bereits daraus veröffentlichte Produkte bleiben verfügbar.', selectDraft: 'Entwurf auswählen', selectAllDrafts: 'Alle angezeigten Entwürfe auswählen',
     conflict: 'Dieser Eintrag wurde geändert. Dialog schließen und vor dem Löschen neu laden.', not_found: 'Dieser Eintrag wurde bereits entfernt.', reservations: 'Für dieses Angebot ist Bestand reserviert. Die Bestellungen vor dem Löschen abschließen oder freigeben.', confirmation_required: 'Beide Bestätigungsschritte abschließen.',
     units: 'Stück', listings: 'Angebote', subtotal: 'Bestandswert', model: 'Modell', searchSummary: 'Bestand dieser Ergebnisse', total: 'Zwischensumme',
-    manualVersion: 'Eigene Version hinzufügen', chooseResearch: 'Oben eine recherchierte Version auswählen, um das Formular zu öffnen.', batteryTier: 'Option für Batteriekapazität hinzufügen', batteryHealth: 'Batteriekapazität', notSpecified: 'Nicht angegeben',
+    automaticOptions: 'Speicher-, Farb- und Akkuoptionen werden für dieses Modell automatisch angezeigt.', manualVersion: 'Eigene Version hinzufügen', chooseResearch: 'Oben eine recherchierte Version auswählen, um das Formular zu öffnen.', batteryTier: 'Option für Batteriekapazität hinzufügen', batteryHealth: 'Batteriekapazität', notSpecified: 'Nicht angegeben',
   },
 } as const;

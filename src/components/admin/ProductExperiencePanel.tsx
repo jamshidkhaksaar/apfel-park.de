@@ -3,6 +3,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { AdminLocale } from '@/lib/admin-i18n';
 import type { ExperienceCandidate, ExperienceFamilyState } from '@/lib/admin-product-types';
+import { catalogToolsText } from "@/lib/i18n";
 import { PRODUCT_EXPERIENCE_SECTIONS, type ProductExperienceProfile } from '@/lib/product-experience';
 import { EXPERIENCE_PRESETS } from './product-experience-presets';
 
@@ -164,8 +165,9 @@ export default function ProductExperiencePanel({
             </div>
           </div>
 
+          {familyState.automatic ? <p className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-sm text-foreground">{catalogToolsText[locale].automaticOptions}</p> : null}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {PRODUCT_EXPERIENCE_SECTIONS.map((sec) => {
+            {PRODUCT_EXPERIENCE_SECTIONS.filter(section => !familyState.automatic || section !== "familyConfigurator").map((sec) => {
               const active = experienceProfile.enabledSections[sec];
               const labelsMap: Record<string, { de: string; en: string; descDe: string; descEn: string; icon: string }> = {
                 familyConfigurator: { icon: "👨‍👩‍👧", de: "Varianten-Konfigurator", en: "Variant configurator", descDe: "Verbindet Speichervarianten zu einer Produktfamilie", descEn: "Links sibling storage listings into a unified family" },
