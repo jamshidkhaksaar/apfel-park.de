@@ -86,7 +86,7 @@ describe('audited product offer metadata', () => {
       variants: [{ storage: '128', color: 'Blau' }, { storage: '256', color: 'Rot' }], specs: [],
     });
     const metadata = await generateMetadata({ params: Promise.resolve({ lang: 'de', slug: 'mixed-offer-123456' }) });
-    expect(metadata.title).toBe('iPhone 12 Gebraucht #123456');
+    expect(metadata.title).toBe('iPhone 12 A+ #123456');
   });
 
   it.each(['de', 'en'])('distinguishes storage and color without losing the model in %s', async (lang) => {
