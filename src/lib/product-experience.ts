@@ -187,7 +187,7 @@ export const getFamilyOptionTarget = (family: ProductFamilyView, axis: string, v
   const current = family.members.find(member => member.selected);
   if (!current) return null;
   const others = family.optionAxes.filter(other => other !== axis && other.toLowerCase() !== 'device');
-  const candidates = family.members.filter(member => member.optionValues[axis] === value);
+  const candidates = family.members.filter(member => member.optionValues[axis] === value && (axis !== 'batteryHealth' || ['condition','color','storage'].every(other => member.optionValues[other] === current.optionValues[other])));
   const score = (member: ProductFamilyMember): number => others.reduce((total, other) =>
     total + (member.optionValues[other] === current.optionValues[other]
       ? other.toLowerCase() === 'condition' ? 100 : 10 : 0), 0);

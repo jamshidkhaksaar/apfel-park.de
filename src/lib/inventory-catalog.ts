@@ -2,7 +2,7 @@ import { markOpenIntakeRunsStale } from "@/lib/product-intake/stale-runs";
 import { withTransaction } from '@/lib/db';
 
 export const setInventoryCatalogEnabled = async (id: string, enabled: boolean) => withTransaction(async (db) => {
-  const current = await db.query('SELECT id, is_active, catalog_enabled FROM products WHERE id = $1 FOR UPDATE', [id]);
+  const current = await db.query("SELECT id, is_active, catalog_enabled FROM products WHERE id = $1 AND import_metadata->>'catalogDeletedAt' IS NULL FOR UPDATE", [id]);
   if (!current.rows.length) return null;
   const product = current.rows[0];
   if (product.catalog_enabled === enabled) return { catalogEnabled: enabled, active: Boolean(product.is_active) };
@@ -17,7 +17,8 @@ export const inventoryCatalogFrom = `FROM products product
   LEFT JOIN inventory_skus inventory ON inventory.product_id = product.id
     AND inventory.location = 'local' AND inventory.is_active = true`;
 
-export const inventoryCatalogWhere = `WHERE ($1 = '' OR inventory.sku ILIKE $2 OR product.sku ILIKE $2 OR product.title ILIKE $2 OR coalesce(product.model, '') ILIKE $2)
+export const inventoryCatalogWhere = `WHERE product.import_metadata->>'catalogDeletedAt' IS NULL
+  AND ($1 = '' OR inventory.sku ILIKE $2 OR product.sku ILIKE $2 OR product.title ILIKE $2 OR coalesce(product.model, '') ILIKE $2)
   AND ($3 = 'all' OR ($3 = 'inventory' AND product.catalog_enabled = false)
     OR ($3 = 'draft' AND product.catalog_enabled = true AND coalesce(product.is_active, false) = false)
     OR ($3 = 'published' AND product.is_active = true)

@@ -21,7 +21,7 @@ export default async function ProductEditorPage({ params, searchParams }: { para
   if (!phoneEditorEnabled()) notFound();
   const [productResult, featuredResult] = await Promise.all([
     query(
-      `SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,gtin,identifier_status,asin,ebay_epid,country_of_origin,package_weight_kg,package_length_cm,package_width_cm,package_height_cm,battery_details,charger_included,charging_power_min_w,charging_power_max_w,usb_pd_supported,marketplace_category_mappings,marketplace_attributes,amazon_gtin_exemption,amazon_renewed_approved,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,faq,updated_at,import_metadata FROM products WHERE id = $1 LIMIT 1`,
+      `SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,gtin,identifier_status,asin,ebay_epid,country_of_origin,package_weight_kg,package_length_cm,package_width_cm,package_height_cm,battery_details,charger_included,charging_power_min_w,charging_power_max_w,usb_pd_supported,marketplace_category_mappings,marketplace_attributes,amazon_gtin_exemption,amazon_renewed_approved,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,faq,updated_at,import_metadata FROM products WHERE id = $1 AND import_metadata->>'catalogDeletedAt' IS NULL LIMIT 1`,
       [id],
     ),
     query(`SELECT value FROM store_settings WHERE key = 'featured_product_ids' LIMIT 1`),

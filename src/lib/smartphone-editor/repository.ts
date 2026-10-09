@@ -148,10 +148,22 @@ export const deletePhoneDraft = async (id: string, actor: string, revision?: num
     return { success: true };
   });
 };
+export const deletePhoneDrafts = async (input: unknown, actor: string) => {
+  if (!Array.isArray(input) || !input.length || input.length > 100 || input.some(item => !item || typeof item.id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id) || !Number.isSafeInteger(item.revision) || item.revision < 1) || new Set(input.map(item => item.id)).size !== input.length) throw new DraftError('invalid_selection');
+  return withTransaction(async client => {
+    const targets = [...input].sort((a, b) => a.id.localeCompare(b.id));
+    for (const item of targets) {
+      const row = await readRow(client, item.id, true);
+      if (row.revision !== item.revision) throw conflict();
+    }
+    await client.query('UPDATE smartphone_editor_drafts SET deleted_at=now(),updated_at=now(),updated_by=$2,revision=revision+1 WHERE id=ANY($1::uuid[])', [targets.map(item => item.id), actor]);
+    return { success: true };
+  });
+};
 export const searchPhoneModels = async (search: string) =>
   (
     await query(
-      `SELECT DISTINCT ON (lower(brand),lower(model)) id,brand,model,title FROM products WHERE concat_ws(' ',brand,model,title) ILIKE $1 ORDER BY lower(brand),lower(model),updated_at DESC LIMIT 30`,
+      `SELECT DISTINCT ON (lower(brand),lower(model)) id,brand,model,title FROM products WHERE import_metadata->>'catalogDeletedAt' IS NULL AND concat_ws(' ',brand,model,title) ILIKE $1 ORDER BY lower(brand),lower(model),updated_at DESC LIMIT 30`,
       [`%${search.slice(0, 100)}%`],
     )
   ).rows;
@@ -159,7 +171,7 @@ export const phoneModelTemplate = async (
   id: string,
 ): Promise<ProductPayload> => {
   const result = await query(
-    `SELECT * FROM products WHERE id=$1`,
+    `SELECT * FROM products WHERE id=$1 AND import_metadata->>'catalogDeletedAt' IS NULL`,
     [id],
   );
   if (!result.rows[0]) throw new DraftError('not_found', 404);
@@ -200,10 +212,10 @@ export const createPhoneDraft = async (
       );
       familyId = family.rows[0]?.id ?? null;
       const result = await client.query(
-        `SELECT p.*,md5(to_jsonb(p)::text) AS fingerprint FROM products p WHERE (id=$1 OR ($2::boolean AND id IN (SELECT product_id FROM product_family_members WHERE family_id=$3))) ORDER BY id FOR SHARE`,
+        `SELECT p.*,md5(to_jsonb(p)::text) AS fingerprint FROM products p WHERE p.import_metadata->>'catalogDeletedAt' IS NULL AND (id=$1 OR ($2::boolean AND id IN (SELECT product_id FROM product_family_members WHERE family_id=$3))) ORDER BY id FOR SHARE`,
         [productId, Boolean(family.rows[0]?.smartphone_model_key), familyId],
       );
-      if (!result.rows.length) throw new DraftError('not_found', 404);
+      if (!result.rows.some(row => row.id === productId)) throw new DraftError('not_found', 404);
       if (familyId) document.family = await readEditorFamily(client, familyId);
       const featured = (await client.query("SELECT value FROM store_settings WHERE key='featured_product_ids'")).rows[0]?.value ?? [];
       document.entries = [];

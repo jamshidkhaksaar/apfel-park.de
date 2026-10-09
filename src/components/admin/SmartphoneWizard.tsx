@@ -13,6 +13,8 @@ import type { ProductPayload } from '@/lib/product-write-payload';
 import {
   channels,
   newPhoneEntry,
+  isResearchPlaceholder,
+  newBatteryHealthOffer,
   entryImages,
   entryReadiness,
   entryProblems,
@@ -34,7 +36,10 @@ import EditorChannelFields from './EditorChannelFields';
 import OfferPresetManager from './OfferPresetManager';
 import { defaultOfferPresets, packageItemIcon, type OfferPresets } from '@/lib/product-offer-options';
 import { localizedText } from '@/lib/product-experience';
-import { offerEditorText } from '@/lib/i18n';
+import { offerEditorText, catalogToolsText } from '@/lib/i18n';
+import { formatBatteryHealth } from '@/lib/product-offer-options';
+import ConfirmDeletionDialog from './ConfirmDeletionDialog';
+import ProductDeleteButton from './ProductDeleteButton';
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-foreground';
@@ -89,6 +94,11 @@ export default function SmartphoneWizard({
 }) {
   const router = useRouter();
   const t = phoneEditorText[locale];
+  const cleanup = catalogToolsText[locale];
+  const [manualVersion, setManualVersion] = useState(false);
+  const [draftSelection, setDraftSelection] = useState<string[]>([]);
+  const [draftDeletion, setDraftDeletion] = useState<Array<{id: string; revision: number}> | null>(null);
+  const deletionDialog = draftDeletion ? <ConfirmDeletionDialog locale={locale} title={`${cleanup.deleteDrafts} (${draftDeletion.length})`} description={cleanup.draftDeleteHint} onClose={() => setDraftDeletion(null)} onConfirm={() => confirmDraftDeletion()}/> : null;
   const [presets, setPresets] = useState<OfferPresets>(defaultOfferPresets);
   const reloadPresets = async () => { const result = await call('/api/admin/products/offer-presets'); setPresets(result.presets); };
   useEffect(() => {
@@ -134,6 +144,7 @@ export default function SmartphoneWizard({
     confirmedSharedPhotos?: boolean;
   } | null>(null);
   const load = useCallback((next: PhoneDraft) => {
+    setManualVersion(false); setDraftSelection([]);
     revision.current = next.revision;
     draftId.current = next.id;
     current.current = next.document;
@@ -385,57 +396,30 @@ export default function SmartphoneWizard({
   };
   const errorText = (key: string) =>
     t[key as keyof typeof t] ?? phoneErrorText(key, locale);
-  const removeDraft = async (id: string, expectedRevision: number) => {
-    if (busy || deleting.current || !window.confirm(t.deleteDraftConfirm)) return;
-    deleting.current = true;
-    setBusy(true);
-    setError('');
+  const confirmDraftDeletion = async () => {
+    if (!draftDeletion || deleting.current) return;
+    deleting.current = true; setBusy(true);
     try {
-      // A pending autosave must finish before checking the deletion revision.
       if (saving.current) await saving.current;
-      const isCurrent = id === draftId.current;
-      const nextRevision = isCurrent ? revision.current : expectedRevision;
-      await call(`/api/admin/smartphone-drafts/${id}?revision=${nextRevision}`, 'DELETE');
-      setDrafts((items) => items.filter((item) => item.id !== id));
-      if (isCurrent) {
-        current.current = null;
-        draftId.current = '';
-        revision.current = 0;
-        saved.current = 'null';
-        publishRetry.current = null;
-        setDraft(null);
-        setDocument(null);
-        setSelected([]);
-        setPhotoConfirmation('');
-        setStatus('saved');
-        const navigation = new URLSearchParams(window.location.search);
-        navigation.delete('draft');
-        if (productId) navigation.set('product', productId);
-        window.history.replaceState(null, '', `/admin/products/phone${navigation.size ? `?${navigation}` : ''}`);
-        const result = await call(`/api/admin/smartphone-drafts${productId ? `?productId=${encodeURIComponent(productId)}` : ''}`);
-        setDrafts(result.drafts);
-      }
-      setNotice('draftDeleted');
-      markAdminListsChanged();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      deleting.current = false;
-      setBusy(false);
-    }
+      const targets = draftDeletion.map(item => item.id === draftId.current ? { ...item, revision: revision.current } : item);
+      const response = await fetch('/api/admin/smartphone-drafts/bulk-delete', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ confirmation: 'DELETE', drafts: targets })});
+      const value = await response.json(); if (!response.ok) throw new Error(cleanup[value.error as keyof typeof cleanup] ?? cleanup.failed);
+      if (targets.some(item => item.id === draftId.current)) {
+        current.current = null; draftId.current = ''; revision.current = 0; saved.current = 'null'; publishRetry.current = null; setDraft(null); setDocument(null); setSelected([]); setPhotoConfirmation(''); setStatus('saved');
+        const navigation = new URL(window.location.href); navigation.searchParams.delete('draft'); if (productId) navigation.searchParams.set('product',productId); window.history.replaceState(null,'',navigation.pathname+navigation.search);
+        const next = await call(`/api/admin/smartphone-drafts${productId ? `?productId=${encodeURIComponent(productId)}` : ''}`); setDrafts(next.drafts);
+      } else { const next = await call(`/api/admin/smartphone-drafts${productId ? `?productId=${encodeURIComponent(productId)}` : ''}`); setDrafts(next.drafts); }
+      setDraftSelection([]); setDraftDeletion(null); setNotice('draftDeleted'); markAdminListsChanged();
+    } finally { deleting.current = false; setBusy(false); }
   };
-  const removeProduct = async () => {
-    if (!productId || !window.confirm(locale === 'de' ? 'Dieses Produkt wirklich löschen?' : 'Delete this product?')) return;
-    setBusy(true);
-    try {
-      await call(`/api/admin/products?id=${encodeURIComponent(productId)}`, 'DELETE');
-      markAdminListsChanged();
-      router.push('/admin/products');
-    } catch (e) { setError((e as Error).message); setBusy(false); }
+  const removeDraft = (id: string, expectedRevision: number) => {
+    if (busy || deleting.current) return;
+    setDraftDeletion([{ id, revision: expectedRevision }]);
   };
   if (!draft || !document)
     return (
       <div className="space-y-5">
+        {deletionDialog}
         <h2 className="text-2xl font-semibold">{t.title}</h2>
         {error ? <p role="alert">{String(errorText(error))}</p> : null}
         {notice === 'draftDeleted' ? <p role="status">{t.draftDeleted}</p> : null}
@@ -452,10 +436,12 @@ export default function SmartphoneWizard({
           <p className="w-full text-sm text-muted">{locale === 'de' ? 'Die vorhandenen Varianten werden als Entwurf geladen. Das veröffentlichte Produkt ändert sich erst nach der Prüfung und Veröffentlichung.' : 'Existing versions open as a draft. The live product changes only after review and publication.'}</p>
         </div> : null}
         <h3>{t.resume}</h3>
-        {productId ? <button type="button" className="rounded-lg border border-red-500/30 px-3 py-2 text-sm text-red-400 disabled:opacity-50" disabled={busy} onClick={() => void removeProduct()}>{locale === 'de' ? 'Produkt löschen' : 'Delete product'}</button> : null}
+        {productId ? <ProductDeleteButton id={productId} title={t.title} locale={locale} onDeleted={() => router.push('/admin/products')}/> : null}
+        {drafts.length ? <div className="flex flex-wrap items-center gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={draftSelection.length === drafts.length} onChange={event => setDraftSelection(event.target.checked ? drafts.map(item => item.id) : [])}/>{cleanup.selectAllDrafts}</label><button type="button" className="btn-secondary" disabled={!draftSelection.length || busy} onClick={() => setDraftDeletion(drafts.filter(item => draftSelection.includes(item.id)).map(({id,revision}) => ({id,revision})))}>{cleanup.deleteDrafts} ({draftSelection.length})</button></div> : null}
         {drafts.length ? (
           drafts.map((item) => (
             <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-3">
+            <input type="checkbox" aria-label={`${cleanup.selectDraft}: ${item.title || item.id}`} checked={draftSelection.includes(item.id)} onChange={event => setDraftSelection(ids => event.target.checked ? [...ids,item.id] : ids.filter(id => id !== item.id))}/>
             <button
               className="block text-gold"
               disabled={busy || initializing}
@@ -478,10 +464,11 @@ export default function SmartphoneWizard({
       </div>
     );
   const entryLabel = (e: PhoneEntry) =>
-    `${t[e.condition]} · ${e.color || '—'} · ${e.storage || '—'} · #${e.sku.slice(-8)}`;
+    `${t[e.condition]} · ${e.color || '—'} · ${e.storage || '—'}${e.condition === 'used' && e.batteryHealth != null ? ` · ${formatBatteryHealth(e.batteryHealth, e.batteryHealthMax != null ? {min:e.batteryHealth,max:e.batteryHealthMax} : undefined)}` : ''} · #${e.sku.slice(-8)}`;
+  const versionEntries = document.variantSuggestions?.length && !manualVersion ? document.entries.filter(entry => !isResearchPlaceholder(entry, {...document.shared,...document.pendingShared})) : document.entries;
   const shared = sharedEdit ?? document.shared;
   const readyIds = document.entries.filter(e => entryProblems(document, e, locale).length === 0 && e.channels.length > 0).map(e => e.id);
-  const totalUnits = document.entries.reduce((total, e) => total + (Number.isInteger(e.stock) && e.stock >= 0 ? e.stock : 0), 0);
+  const totalUnits = versionEntries.reduce((total, e) => total + (Number.isInteger(e.stock) && e.stock >= 0 ? e.stock : 0), 0);
   const setShared = (patch: ProductPayload) =>
     change((d) => ({ ...d, pendingShared: { ...shared, ...patch } }));
   const editDetails = (e: PhoneEntry, patch: ProductPayload) =>
@@ -504,6 +491,7 @@ export default function SmartphoneWizard({
   );
   return (
     <div className="mx-auto max-w-[1500px] space-y-5 pb-24">
+      {deletionDialog}
       <style>{`@keyframes phone-notice-in{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
       {!error && notice ? <div role="status" className="fixed right-4 top-20 z-[100] w-[calc(100%-2rem)] max-w-sm rounded-xl border border-gold bg-background p-4 shadow-xl motion-safe:animate-[phone-notice-in_200ms_ease-out]">
         <p>{String(errorText(notice))}</p>
@@ -517,7 +505,7 @@ export default function SmartphoneWizard({
           {String(errorText(status))}
         </span>
         <p className="text-sm font-semibold" aria-live="polite">
-          {t.totalStock}: {totalUnits} {t.units} · {document.entries.length} {t.variants}
+          {t.totalStock}: {totalUnits} {t.units} · {versionEntries.length} {t.variants}
         </p>
         <button
           className="btn-secondary"
@@ -529,6 +517,7 @@ export default function SmartphoneWizard({
         <button type="button" className="rounded-xl border border-red-500/30 px-3 py-2 text-sm text-red-400 disabled:opacity-50" disabled={busy || uploading} onClick={() => void removeDraft(draft.id, draft.revision)}>
           {t.deleteDraft}
         </button>
+        {productId ? <ProductDeleteButton id={productId} title={document.shared.title || t.title} locale={locale} onDeleted={() => router.push('/admin/products')}/> : null}
       </div>
       {error ? (
         <div
@@ -635,15 +624,17 @@ export default function SmartphoneWizard({
         {document.step === 1 ? (
           <>
             <OfferPresetManager key={`${presets.revision}-${presets.conditionNotes.length}-${presets.gifts.length}`} locale={locale} value={presets} onReload={reloadPresets} onSave={async value => { const result = await call('/api/admin/products/offer-presets', 'PATCH', value); setPresets(result.presets); setNotice(offerEditorText[locale].saved); }}/>
-            {document.variantSuggestions?.length ? <section className="rounded-xl border border-border p-4 space-y-3"><h3 className="font-semibold">{locale === 'de' ? 'Versionen aus der KI-Recherche' : 'Versions suggested by AI research'}</h3><p className="text-sm text-muted">{locale === 'de' ? 'Version auswählen und tatsächlichen Bestand, Preis und Zustand eintragen.' : 'Choose a version and enter its actual quantity, price and condition.'}</p><div className="flex flex-wrap gap-2">{document.variantSuggestions.map((suggestion, index) => <button key={index} type="button" className="btn-secondary" onClick={() => change(d => {
+            {document.variantSuggestions?.length ? <section className="rounded-xl border border-border p-4 space-y-3"><h3 className="font-semibold">{locale === 'de' ? 'Versionen aus der KI-Recherche' : 'Versions suggested by AI research'}</h3><p className="text-sm text-muted">{locale === 'de' ? 'Version auswählen und tatsächlichen Bestand, Preis und Zustand eintragen.' : 'Choose a version and enter its actual quantity, price and condition.'}</p><div className="flex flex-wrap gap-2">{document.variantSuggestions.map((suggestion, index) => <button key={index} type="button" className="btn-secondary" disabled={document.entries.length >= 100 && !document.entries.some(entry => isResearchPlaceholder(entry, {...document.shared,...document.pendingShared}))} onClick={() => change(d => {
               const donor = d.entries.find(entry => entry.condition === 'new' && entry.color.trim().toLowerCase() === suggestion.color.trim().toLowerCase());
               if (d.entries.some(item => item.condition === 'new' && item.color === suggestion.color && item.storage === suggestion.storage)) return d;
-              const empty = d.entries.find(item => !item.sourceProductId && !item.color && !item.storage && !item.price && !entryImages(item).length);
+              const empty = d.entries.find(entry => isResearchPlaceholder(entry, {...d.shared,...d.pendingShared}));
+              if (!empty && d.entries.length >= 100) return d;
               const entry = empty ? { ...empty, ...suggestion, stock: 0 } : { ...newPhoneEntry(donor ?? d.entries[0]), ...suggestion, stock: 0, price: 0 };
               return { ...d, entries: empty ? d.entries.map(item => item.id === empty.id ? entry : item) : [...d.entries, entry] };
             })}>{suggestion.color} · {suggestion.storage}</button>)}</div></section> : null}
+            {document.variantSuggestions?.length ? <div className="flex flex-wrap items-center gap-3"><button type="button" className="btn-secondary" disabled={document.entries.length >= 100} onClick={() => { setManualVersion(true); if (!document.entries.some(entry => isResearchPlaceholder(entry, {...document.shared,...document.pendingShared}))) change(d => ({...d,entries:[...d.entries,newPhoneEntry()]})); }}>{cleanup.manualVersion}</button>{!versionEntries.length ? <p className="text-sm text-muted">{cleanup.chooseResearch}</p> : null}</div> : null}
             <div className="space-y-4">
-              {document.entries.map((e) =>
+              {versionEntries.map((e) =>
                 card(
                   e,
                   <>
@@ -688,6 +679,7 @@ export default function SmartphoneWizard({
                     <label className="mt-3 flex gap-2 text-sm"><input type="checkbox" checked={Boolean(e.individualPhotos)} onChange={event => updateEntry(e.id, { individualPhotos: event.target.checked })} />{locale === 'de' ? 'Eigene Fotos für diese Version verwenden' : 'Use separate photos for this version'}</label>
                     <VersionOfferFields locale={locale} entry={e} presets={presets} chargerIncluded={Object.prototype.hasOwnProperty.call(e.details, 'chargerIncluded') ? e.details.chargerIncluded : shared.chargerIncluded} onChange={patch => updateEntry(e.id, patch)} />
                     <div className="mt-4 flex flex-wrap gap-3">
+                      {e.condition === 'used' ? <button type="button" className="btn-secondary" disabled={document.entries.length >= 100} onClick={() => change(d => ({ ...d, entries: [...d.entries, newBatteryHealthOffer(e)] }))}>{cleanup.batteryTier}</button> : null}
                       <button
                         className="btn-secondary"
                         onClick={() =>
@@ -699,13 +691,13 @@ export default function SmartphoneWizard({
                       >
                         {t.add}
                       </button>
-                      {!e.sourceProductId && document.entries.length > 1 ? (
+                      {!e.sourceProductId && (document.entries.length > 1 || document.variantSuggestions?.length) ? (
                         <button
                           className="btn-secondary"
                           onClick={() =>
                             change((d) => ({
                               ...d,
-                              entries: d.entries.filter(
+                              entries: d.entries.length === 1 ? [newPhoneEntry()] : d.entries.filter(
                                 (item) => item.id !== e.id,
                               ),
                             }))

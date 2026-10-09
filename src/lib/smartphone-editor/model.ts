@@ -102,6 +102,13 @@ export const newPhoneDocument = (): PhoneDocument => ({
   },
   entries: [newPhoneEntry()],
 });
+/** An untouched initial row stays available internally until a researched option is selected. */
+export const isResearchPlaceholder = (entry: PhoneEntry, shared: ProductPayload = {}): boolean => !entry.sourceProductId && !entry.color && !entry.storage && entry.condition === 'new' && entry.price === 0 && entry.stock === 1 && entry.sku === `AP-${entry.id}` && entry.batteryHealth == null && entry.batteryHealthMax == null && !entry.conditionNote && !entry.defects && !entry.accessories && !entry.hasRealProductPhotos && !entry.photos.some(photo => photo.url) && !Object.entries(entry.details).some(([key,value]) => JSON.stringify(value) !== JSON.stringify(shared[key as keyof ProductPayload])) && !entry.experience?.packageContents.some(item => item.isGift);
+export const newBatteryHealthOffer = (source: PhoneEntry): PhoneEntry => {
+  const entry = newPhoneEntry(source);
+  const photos = source.photos.map(photo => ({ ...photo, id: crypto.randomUUID() }));
+  return { ...entry, stock: 0, conditionNote: source.conditionNote, conditionNotePresetId: source.conditionNotePresetId, defects: source.defects, accessories: source.accessories, details: structuredClone(source.details), photos, coverId: photos[source.photos.findIndex(photo => photo.id === source.coverId)]?.id ?? photos[0].id };
+};
 export const entryImages = (entry: PhoneEntry): string[] =>
   [...entry.photos]
     .sort(

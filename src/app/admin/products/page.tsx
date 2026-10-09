@@ -1,3 +1,6 @@
+import CatalogStockSummary from "@/components/admin/CatalogStockSummary";
+import ProductDeleteButton from "@/components/admin/ProductDeleteButton";
+import { catalogStockSummary } from "@/lib/catalog-stock-summary";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -142,7 +145,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     "price-desc": "price DESC",
     title: "title ASC",
   };
-  const [countResult, brandResult, subcategoryResult] = await Promise.all([
+  const [countResult, brandResult, subcategoryResult, stockSummary] = await Promise.all([
     query(`SELECT COUNT(*)::int AS total FROM products ${where}`, values),
     query(
       `SELECT min(brand) AS label, lower(brand) AS value, COUNT(*)::int AS n FROM products ${brandFacet.where}${brandFacet.where ? " AND" : " WHERE"} brand IS NOT NULL AND brand <> ''
@@ -154,6 +157,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
        GROUP BY subcategory ORDER BY n DESC`,
       subcategoryFacet.values,
     ),
+    catalogStockSummary(where, values),
   ]);
   const brandOptions = brandResult.rows as { label: string; value: string; n: number }[];
   const subcategoryOptions = subcategoryResult.rows as { value: string; n: number }[];
@@ -278,6 +282,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           </div>
         </header>
 
+        {view === "catalog" ? <CatalogStockSummary summary={stockSummary} locale={locale} expanded={Boolean(q)}/> : null}
         {view === "catalog" ? (<AdminFilterForm key={filterQuery} className="glass-panel grid gap-3 rounded-2xl p-4 min-w-0 sm:grid-cols-2 xl:grid-cols-4 [&>input]:min-w-0 [&>select]:min-w-0 [&>select]:w-full" action="/admin/products">
           <input name="q" defaultValue={q} placeholder={locale === "de" ? "Produkt, Modell oder SKU suchen" : "Search product, model, or SKU"} className="rounded-xl border border-border/60 bg-surface/70 px-3.5 py-2.5 text-sm text-foreground" />
           <select name="brand" defaultValue={brand} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Marken" : "All brands"}</option>{brandOptions.map((item) => (<option key={item.value} value={item.value}>{item.label} ({item.n})</option>))}</select>
@@ -336,7 +341,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                           {justEdited ? <span className="inline-flex flex-wrap items-center gap-1.5 rounded-md bg-gold/15 px-2 py-1 text-xs font-medium text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}<span className="font-normal opacity-70">{sinceEdit(locale, product.edited_minutes_ago ?? 0)}</span></span> : null}
                         </div> : "—"}
                       </td>
-                      <td className={`${tableStyles.editCell} px-4 py-3`}><Link href={editorHref(product.id)} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link></td>
+                      <td className={`${tableStyles.editCell} px-4 py-3`}><Link href={editorHref(product.id)} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link><ProductDeleteButton id={product.id} title={product.title} locale={locale}/></td>
                     </tr>
                     );
                   })}

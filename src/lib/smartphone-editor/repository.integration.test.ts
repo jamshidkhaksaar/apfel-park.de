@@ -9,12 +9,17 @@ import {
   listPhoneDrafts,
   savePhoneDraft,
   publishPhoneDraft,
+  deletePhoneDrafts,
 } from './repository';
 import { newPhoneEntry, type PhoneDraft, type PhoneEntry } from './model';
 import { sanitizeProductExperienceProfile } from '@/lib/product-experience';
 import { autoPublishProductPromotion } from '@/lib/marketing';
 import { readOfferPresets, saveOfferPresets } from '@/lib/product-offer-presets-repository';
+import { productDeletionPreview, deleteCatalogProduct } from '@/lib/product-deletion';
+import { catalogStockSummary } from '@/lib/catalog-stock-summary';
+import { getProductFamilyForProduct } from '@/lib/product-experience-repository';
 import { getProductBySlug } from '@/lib/products';
+vi.mock('server-only',()=>({}));
 vi.mock('@/lib/marketing', () => ({ autoPublishProductPromotion: vi.fn().mockResolvedValue([]) }));
 
 const enabled = process.env.PHONE_EDITOR_INTEGRATION === '1';
@@ -84,6 +89,48 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
       'test-admin',
       true,
     );
+  it('keeps battery tiers as independent priced offers in the customer selector', async () => {
+    const low=await ready('used');const high=await ready('used'); low.batteryHealth=90;low.price=399;high.batteryHealth=95;high.batteryHealthMax=100;high.price=449;
+    const result=await publish(await seed([low,high]));
+    const family=await getProductFamilyForProduct(result.results[0].productId,'en');
+    expect(family?.optionAxes).toContain('batteryHealth');
+    expect(family?.members.map(member=>member.optionValues.batteryHealth).sort()).toEqual(['90%','95–100%']);
+    expect(family?.members.map(member=>member.price).sort()).toEqual([399,449]);
+  });
+  it('archives a deleted offer and stock history, blocks reserved deletion and prevents resurrection', async () => {
+    const draft=await seed([await ready('used')]);const result=await publish(draft);const id=result.results[0].productId;
+    await query('UPDATE inventory_skus SET reserved=1 WHERE product_id=$1',[id]);
+    let preview=await productDeletionPreview(id);
+    await expect(deleteCatalogProduct(id,{confirmation:'DELETE',fingerprint:preview.fingerprint},'test-admin')).rejects.toMatchObject({message:'reservations'});
+    await query('UPDATE inventory_skus SET reserved=0 WHERE product_id=$1',[id]);
+    await expect(deleteCatalogProduct(id,{confirmation:'DELETE',fingerprint:preview.fingerprint},'test-admin')).rejects.toMatchObject({message:'conflict'});
+    preview=await productDeletionPreview(id);
+    await expect(deleteCatalogProduct(id,{},'test-admin')).rejects.toMatchObject({message:'confirmation_required'});
+    await deleteCatalogProduct(id,{confirmation:'DELETE',fingerprint:preview.fingerprint},'test-admin');
+    const row=(await query('SELECT is_active,catalog_enabled,slug,import_metadata FROM products WHERE id=$1',[id])).rows[0];
+    expect(row).toMatchObject({is_active:false,catalog_enabled:false});expect(row.import_metadata.catalogDeletedBy).toBe('test-admin');
+    expect((await query('SELECT on_hand,is_active FROM inventory_skus WHERE product_id=$1',[id])).rows[0]).toMatchObject({on_hand:1,is_active:false});
+    expect(await getProductBySlug(row.slug,'en')).toBeNull();
+    await expect(createPhoneDraft('test-admin',id)).rejects.toMatchObject({message:'not_found'});
+    await query('UPDATE products SET is_active=true,catalog_enabled=true WHERE id=$1',[id]);
+    expect((await query('SELECT is_active,catalog_enabled FROM products WHERE id=$1',[id])).rows[0]).toEqual({is_active:false,catalog_enabled:false});
+    await expect(publish({...draft,revision:result.revision})).rejects.toMatchObject({message:'conflict'});
+  });
+  it('cleans drafts atomically with stale-revision protection and leaves published offers intact', async () => {
+    const one=await seed();const two=await seed();const published=await publish(one);
+    await expect(deletePhoneDrafts([{id:one.id,revision:one.revision},{id:two.id,revision:two.revision}],'test-admin')).rejects.toMatchObject({message:'conflict'});
+    expect(await loadPhoneDraft(two.id)).toMatchObject({id:two.id});
+    await deletePhoneDrafts([{id:one.id,revision:published.revision},{id:two.id,revision:two.revision}],'test-admin');
+    await expect(loadPhoneDraft(one.id)).rejects.toMatchObject({message:'not_found'});
+    await expect(loadPhoneDraft(two.id)).rejects.toMatchObject({message:'not_found'});
+    expect((await query('SELECT is_active FROM products WHERE id=$1',[published.results[0].productId])).rows[0].is_active).toBe(true);
+  });
+  it('summarizes all filtered units by model with per-variant prices', async () => {
+    const draft=await seed();const model=draft.document.shared.model!;const one=await publish(draft);const id=one.results[0].productId;
+    await query("UPDATE products SET variants=$2::jsonb,stock=10 WHERE id=$1",[id,JSON.stringify([{color:'Black',storage:'128',price:400,stock:8},{color:'Black',storage:'256',price:500,stock:2}])]);
+    const summary=await catalogStockSummary('WHERE model=$1 AND catalog_enabled=true',[model]);
+    expect(summary).toMatchObject({listings:1,units:10,value:4200});expect(summary.models[0].model).toBe(model);
+  });
   it('persists editable presets and prevents stale global-default overwrites', async () => {
     const before = await readOfferPresets();
     before.conditionNotes[2].text.en = 'QA A+ note';

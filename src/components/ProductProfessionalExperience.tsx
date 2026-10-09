@@ -9,6 +9,7 @@ import { MINI_CART_OPEN_EVENT } from "@/components/checkout/MiniCart";
 import { formatPrice } from "@/lib/format";
 import OfferItemIcon from './OfferItemIcon';
 import { formatBatteryHealth, packageItemIcon } from '@/lib/product-offer-options';
+import { catalogToolsText } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import { formatStorageLabel, getFamilyOptionTarget, localizedText, type ExperienceProductSummary, type ProductExperienceProfile, type ProductFamilyView } from "@/lib/product-experience";
@@ -42,18 +43,18 @@ export function ProductWishlistButton({ productId, title, locale }: { productId:
 }
 
 export function ProductFamilyConfigurator({ family, locale }: { family: ProductFamilyView; locale: Locale }) {
-  const axes = family.optionAxes.filter(axis => axis !== 'device' && family.members.some(member => member.optionValues[axis]));
   const current = family.members.find(member => member.selected);
+  const axes = family.optionAxes.filter(axis => axis !== 'device' && (axis !== 'batteryHealth' || current?.optionValues.condition === 'used') && family.members.some(member => member.optionValues[axis]));
   const devices = family.members.filter(member => axes.every(axis => member.optionValues[axis] === current?.optionValues[axis]));
-  const labels: Record<string,string> = locale === 'de' ? {color:'Farbe',storage:'Speicher',condition:'Zustand',new:'Neu',used:'A+',open_box:'Open-Box'} : {color:'Color',storage:'Storage',condition:'Condition',new:'New',used:'A+',open_box:'Open-box'};
+  const labels: Record<string,string> = locale === 'de' ? {color:'Farbe',storage:'Speicher',condition:'Zustand',new:'Neu',used:'A+',open_box:'Open-Box',batteryHealth:catalogToolsText[locale].batteryHealth,unspecified:catalogToolsText[locale].notSpecified} : {color:'Color',storage:'Storage',condition:'Condition',new:'New',used:'A+',open_box:'Open-box',batteryHealth:catalogToolsText[locale].batteryHealth,unspecified:catalogToolsText[locale].notSpecified};
   if (axes.length === 0 || family.members.length < 2) return null;
   return <section className="mt-5 rounded-2xl border border-border/60 bg-surface/50 p-4" aria-label={locale === 'de' ? 'Produktvarianten' : 'Product variants'}>
     <p className="text-sm font-semibold text-foreground">{family.name}</p>
-    <div className="mt-4 space-y-4">{axes.map(axis => <div key={axis}><p className="text-xs font-semibold text-muted">{labels[axis] ?? axis}</p><div className="mt-2 flex flex-wrap gap-2">{Array.from(new Set(family.members.map(member => member.optionValues[axis]).filter(Boolean))).map(value => {
+    <div className="mt-4 space-y-4">{axes.map(axis => <div key={axis}><p className="text-xs font-semibold text-muted">{labels[axis] ?? axis}</p><div className="mt-2 flex flex-wrap gap-2">{Array.from(new Set(family.members.filter(member => axis !== 'batteryHealth' || ['condition','color','storage'].every(other => member.optionValues[other] === current?.optionValues[other])).map(member => member.optionValues[axis]).filter(Boolean))).sort((a,b) => axis === 'batteryHealth' ? (Number.parseInt(a) || 0) - (Number.parseInt(b) || 0) : 0).map(value => {
       const member = getFamilyOptionTarget(family, axis, value);
       const classes = `min-h-11 rounded-xl border px-4 py-2.5 text-sm ${member?.selected ? 'border-gold bg-gold/10 text-foreground' : 'border-border text-muted'}`;
       const label = axis.toLowerCase() === 'storage' ? formatStorageLabel(value) : labels[value] ?? value;
-      return member ? <Link key={value} href={`/${locale}/store/${member.slug}`} aria-current={member.selected ? 'page' : undefined} className={classes}>{label}{member.stock <= 0 ? ` · ${locale === 'de' ? 'nicht verfügbar' : 'unavailable'}` : ''}</Link> : <span key={value} aria-disabled="true" className={classes}>{label}</span>;
+      return member ? <Link key={value} href={`/${locale}/store/${member.slug}`} aria-current={member.selected ? 'page' : undefined} className={classes}>{label}{axis === 'batteryHealth' ? ` · ${formatPrice(locale,member.price)}` : ''}{member.stock <= 0 ? ` · ${locale === 'de' ? 'nicht verfügbar' : 'unavailable'}` : ''}</Link> : <span key={value} aria-disabled="true" className={classes}>{label}</span>;
     })}</div></div>)}</div>
     {devices.length > 1 ? <div className="mt-5 grid gap-3 sm:grid-cols-2">{devices.map(device => <Link key={device.productId} href={`/${locale}/store/${device.slug}`} aria-current={device.selected ? 'page' : undefined} className={`flex gap-3 rounded-xl border p-3 ${device.selected ? 'border-gold' : 'border-border'}`}>
       {device.image ? <Image src={device.image} alt={device.title} width={80} height={100} unoptimized className="h-24 w-20 object-contain" /> : null}
