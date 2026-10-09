@@ -22,6 +22,8 @@ export type PhoneEntry = {
   stock: number;
   sku: string;
   batteryHealth: number | null;
+  batteryHealthMax?: number | null;
+  conditionNotePresetId?: string;
   conditionNote: string;
   defects: string;
   accessories: string;
@@ -76,6 +78,7 @@ export const newPhoneEntry = (source?: PhoneEntry): PhoneEntry => {
     stock: 1,
     sku: `AP-${id}`,
     batteryHealth: null,
+    batteryHealthMax: null,
     conditionNote: '',
     defects: '',
     accessories: '',
@@ -120,7 +123,8 @@ export const entryPayload = (
   price: entry.price,
   stock: entry.stock,
   sku: entry.sku,
-  batteryHealth: entry.batteryHealth,
+  batteryHealth: entry.batteryHealthMax != null ? null : entry.batteryHealth,
+  batteryHealthRange: entry.batteryHealthMax != null ? { min: entry.batteryHealth!, max: entry.batteryHealthMax } : null,
   conditionNote: [entry.conditionNote, entry.defects, entry.accessories]
     .filter(Boolean)
     .join('\n'),
@@ -209,6 +213,7 @@ export const entryProblems = (
     imageCount: entryImages(entry).length,
     batteryHealth:
       entry.batteryHealth == null ? '' : String(entry.batteryHealth),
+    batteryHealthMax: entry.batteryHealthMax == null ? '' : String(entry.batteryHealthMax),
     locale,
   });
   if (conditionError)
@@ -272,9 +277,11 @@ export const validateDocument = (value: unknown): PhoneDocument => {
     if (
       typeof e.hasRealProductPhotos !== 'boolean' ||
       (e.individualPhotos !== undefined && typeof e.individualPhotos !== 'boolean') ||
+      (e.conditionNotePresetId !== undefined && (typeof e.conditionNotePresetId !== 'string' || !/^[a-z0-9-]{1,80}$/i.test(e.conditionNotePresetId))) ||
       !Number.isFinite(e.price) ||
       !Number.isFinite(e.stock) ||
       (e.batteryHealth !== null && !Number.isFinite(e.batteryHealth)) ||
+      (e.batteryHealthMax != null && !Number.isFinite(e.batteryHealthMax)) ||
       !['new', 'used', 'open_box'].includes(e.condition) ||
       ![
         'color',

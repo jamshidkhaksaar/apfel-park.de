@@ -1,4 +1,5 @@
 import type { ProductCondition } from "@/lib/products";
+import { offerIcons, type OfferIcon, type BatteryHealthRange } from './product-offer-options';
 
 export type LocalizedText = { de: string; en: string };
 
@@ -18,7 +19,7 @@ export const PRODUCT_EXPERIENCE_SECTIONS = [
 export type ProductExperienceSection = (typeof PRODUCT_EXPERIENCE_SECTIONS)[number];
 export type ProductExperienceFlags = Record<ProductExperienceSection, boolean>;
 
-export type PackageContentItem = { label: LocalizedText; included: boolean };
+export type PackageContentItem = { label: LocalizedText; included: boolean; icon?: OfferIcon; isGift?: boolean; presetId?: string };
 export type ConditionGuideItem = {
   condition: ProductCondition;
   label: LocalizedText;
@@ -55,6 +56,7 @@ export type ProductExperienceProfile = {
 export type ProductFamilyMember = {
   conditionNote?: string;
   batteryHealth?: number;
+  batteryHealthRange?: BatteryHealthRange;
   productId: string;
   slug: string;
   title: string;
@@ -129,6 +131,9 @@ export const sanitizeProductExperienceProfile = (value: unknown): ProductExperie
   const packageContents = records(source.packageContents).slice(0, 30).map((entry) => ({
     label: text(entry.label, 120),
     included: entry.included !== false,
+    ...(offerIcons.includes(entry.icon as OfferIcon) ? { icon: entry.icon as OfferIcon } : {}),
+    ...(entry.isGift === true ? { isGift: true } : {}),
+    ...(typeof entry.presetId === 'string' && /^[a-z0-9-]{1,80}$/i.test(entry.presetId) ? { presetId: entry.presetId } : {}),
   })).filter((entry) => validLocalized(entry.label));
 
   const conditionGuide = records(source.conditionGuide).slice(0, 8).map((entry) => {

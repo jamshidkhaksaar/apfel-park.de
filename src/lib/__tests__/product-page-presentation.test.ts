@@ -13,7 +13,7 @@ describe("product page presentation signals", () => {
     });
 
     expect(signals.conditionTitle).toBe("Zustand transparent");
-    expect(signals.conditionLabel).toBe("Gebraucht");
+    expect(signals.conditionLabel).toBe("A+");
     expect(signals.stockLabel).toBe("4 verfügbar");
     expect(signals.realPhotosLabel).toBe("Echte Produktfotos");
     expect(signals.batteryLabel).toBeNull();

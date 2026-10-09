@@ -1,3 +1,4 @@
+import { offerEditorText } from './i18n';
 export type AdminProductLocale = "de" | "en";
 
 export type AdminProductConditionValidationInput = {
@@ -6,6 +7,7 @@ export type AdminProductConditionValidationInput = {
   hasRealProductPhotos: boolean;
   imageCount: number;
   batteryHealth: string;
+  batteryHealthMax?: string;
   title: string;
   brand: string;
   model: string;
@@ -16,6 +18,9 @@ export const isIphoneProduct = ({ title, brand, model }: Pick<AdminProductCondit
   /iphone/i.test(`${brand} ${model} ${title}`);
 
 export const validateAdminProductCondition = (input: AdminProductConditionValidationInput): string | null => {
+  const copy = offerEditorText[input.locale];
+  const upper = input.batteryHealthMax?.trim() ?? '';
+  if (upper && (!input.batteryHealth.trim() || !Number.isInteger(Number(input.batteryHealth)) || Number(input.batteryHealth) < 1 || !Number.isInteger(Number(upper)) || Number(upper) < Number(input.batteryHealth) || Number(upper) > 100)) return copy.batteryInvalid;
   if (input.condition === "new") return null;
 
   const messages = {
@@ -34,7 +39,7 @@ export const validateAdminProductCondition = (input: AdminProductConditionValida
   };
 
   if (!input.hasRealProductPhotos || input.imageCount < 1 || !input.conditionNote.trim()) {
-    return messages.conditionDetailsRequired;
+    return copy.conditionRequired;
   }
 
   const batteryHealth = input.batteryHealth.trim();
@@ -46,7 +51,7 @@ export const validateAdminProductCondition = (input: AdminProductConditionValida
   }
 
   if (input.condition === "used" && isIphoneProduct(input) && !batteryHealth) {
-    return messages.batteryHealthRequired;
+    return copy.batteryRequired;
   }
 
   return null;

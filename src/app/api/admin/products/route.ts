@@ -283,7 +283,7 @@ export async function POST(request: NextRequest) {
         JSON.stringify(product.marketplaceAttributes),
         product.amazonGtinExemption,
         product.amazonRenewedApproved,
-        JSON.stringify({ contentProvenance: buildAiTextProvenance(null, {}, product, product.aiGeneratedFields) }),
+        JSON.stringify({ contentProvenance: buildAiTextProvenance(null, {}, product, product.aiGeneratedFields), ...(product.batteryHealthRange ? { batteryHealthRange: product.batteryHealthRange } : {}) }),
       ],
     );
 
@@ -465,7 +465,7 @@ export async function PATCH(request: NextRequest) {
             THEN "import_metadata" - 'conditionNoteI18n'
           ELSE "import_metadata"
         END,'{}'::jsonb) || jsonb_build_object('contentProvenance',
-          CASE WHEN jsonb_typeof("import_metadata"->'contentProvenance')='object' THEN "import_metadata"->'contentProvenance' ELSE '{}'::jsonb END || $50::jsonb),
+          CASE WHEN jsonb_typeof("import_metadata"->'contentProvenance')='object' THEN "import_metadata"->'contentProvenance' ELSE '{}'::jsonb END || $50::jsonb) || $51::jsonb,
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -519,6 +519,7 @@ export async function PATCH(request: NextRequest) {
         product.amazonRenewedApproved,
         invalidateConditionNoteTranslations,
         JSON.stringify(buildAiTextProvenance(existing?.import_metadata, existing ?? {}, product, product.aiGeneratedFields)),
+        JSON.stringify(payload.batteryHealthRange !== undefined ? { batteryHealthRange: product.batteryHealthRange } : payload.batteryHealth != null ? { batteryHealthRange: null } : {}),
       ],
     );
 

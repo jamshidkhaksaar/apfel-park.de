@@ -4,6 +4,7 @@ import { validatedGtin } from '@/lib/product-identifiers';
 import { eprelAssetRoutes } from '@/lib/eprel';
 import { energyLabelError } from '@/lib/energy-label-validation';
 import { normalizeAiTextFields, type AiTextField } from '@/lib/product-ai-fields';
+import { validBatteryHealthRange, type BatteryHealthRange } from './product-offer-options';
 import type {
   BatteryDetails,
   MarketplaceAttributes,
@@ -22,6 +23,7 @@ export type ProductPayload = {
   category?: string;
   condition?: string;
   batteryHealth?: number | null;
+  batteryHealthRange?: BatteryHealthRange | null;
   hasRealProductPhotos?: boolean;
   conditionNote?: string;
   brand?: string;
@@ -613,6 +615,7 @@ export const buildPayload = (payload: ProductPayload, slug?: string) => {
       ? null
       : Number(payload.batteryHealth);
   const hasRealProductPhotos = Boolean(payload.hasRealProductPhotos);
+  const batteryHealthRange = payload.batteryHealthRange ?? null;
   const conditionNote = payload.conditionNote
     ? sanitizeInput(payload.conditionNote)
     : null;
@@ -669,6 +672,7 @@ export const buildPayload = (payload: ProductPayload, slug?: string) => {
     stock,
     condition,
     batteryHealth,
+    batteryHealthRange,
     hasRealProductPhotos,
     conditionNote,
     images,
@@ -709,10 +713,12 @@ export const validatePayload = (
     return messages.conditionDetailsRequired;
   }
   if (
-    data.batteryHealth !== null &&
+    (data.batteryHealthRange !== null && !validBatteryHealthRange(data.batteryHealthRange)) ||
+    (data.batteryHealthRange !== null && data.batteryHealth !== null) ||
+    (data.batteryHealth !== null &&
     (!Number.isInteger(data.batteryHealth) ||
       data.batteryHealth < 1 ||
-      data.batteryHealth > 100)
+      data.batteryHealth > 100))
   ) {
     return messages.batteryHealthInvalid;
   }
@@ -749,7 +755,7 @@ export const validatePayload = (
   const isUsedIphone =
     data.condition === 'used' &&
     /iphone/i.test(`${data.brand || ''} ${data.model || ''} ${data.title}`);
-  if (isUsedIphone && data.batteryHealth === null)
+  if (isUsedIphone && data.batteryHealth === null && !validBatteryHealthRange(data.batteryHealthRange))
     return messages.batteryHealthRequired;
 
   if (

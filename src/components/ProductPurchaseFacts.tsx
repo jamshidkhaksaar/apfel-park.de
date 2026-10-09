@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Locale } from "@/lib/i18n";
 import { getProductPageSignals, getSafeConditionNote } from "@/lib/product-page-presentation";
 import type { ProductCondition } from "@/lib/products";
+import type { BatteryHealthRange } from '@/lib/product-offer-options';
 
 type Props = {
   locale: Locale;
@@ -11,6 +12,7 @@ type Props = {
   model?: string;
   stock?: number;
   batteryHealth?: number;
+  batteryHealthRange?: BatteryHealthRange;
   hasRealProductPhotos: boolean;
 };
 
@@ -21,10 +23,11 @@ export default function ProductPurchaseFacts({
   model,
   stock,
   batteryHealth,
+  batteryHealthRange,
   hasRealProductPhotos,
 }: Props) {
   const isGerman = locale === "de";
-  const signals = getProductPageSignals({ locale, condition, stock, batteryHealth, hasRealProductPhotos });
+  const signals = getProductPageSignals({ locale, condition, stock, batteryHealth, batteryHealthRange, hasRealProductPhotos });
   const safeConditionNote = getSafeConditionNote({ condition, model, note: conditionNote });
   const hasTransparency = condition !== "new" || safeConditionNote || signals.batteryLabel || signals.realPhotosLabel;
 

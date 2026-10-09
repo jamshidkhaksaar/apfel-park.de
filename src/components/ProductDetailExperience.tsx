@@ -13,6 +13,7 @@ import { productGalleryImages } from "@/lib/product-gallery";
 import { ProductFamilyConfigurator, ProductWishlistButton } from "@/components/ProductProfessionalExperience";
 import ProductMobilePurchaseBar from "@/components/ProductMobilePurchaseBar";
 import ProductPurchaseFacts from "@/components/ProductPurchaseFacts";
+import ProductOfferContents from './ProductOfferContents';
 import ProductGpsrContacts from "@/components/ProductGpsrContacts";
 import PaymentBrandIcons from "@/components/PaymentBrandIcons";
 import EuEnergyLabelSection, { EnergyClassArrow } from "@/components/EuEnergyLabelSection";
@@ -360,8 +361,10 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             model={product.model}
             stock={activeStock}
             batteryHealth={product.batteryHealth}
+            batteryHealthRange={product.batteryHealthRange}
             hasRealProductPhotos={product.hasRealProductPhotos}
           />
+          <ProductOfferContents locale={locale} items={experience?.profile.packageContents} chargerIncluded={product.charging?.chargerIncluded} usbPdSupported={product.charging?.usbPdSupported}/>
 
           <div className="mt-6 flex items-center gap-4 sm:mt-8">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
@@ -491,7 +494,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
             {([
               [locale === "de" ? "Modell" : "Model", product.model],
-              [locale === "de" ? "Zustand" : "Condition", product.condition === "new" ? (locale === "de" ? "Neu" : "New") : product.condition === "open_box" ? "Open Box" : (locale === "de" ? "Gebraucht" : "Used")],
+              [locale === "de" ? "Zustand" : "Condition", product.condition === "new" ? (locale === "de" ? "Neu" : "New") : product.condition === "open_box" ? "Open Box" : (locale === "de" ? "A+" : "A+")],
               ["SKU", activeSku],
               ["MPN", product.mpn],
               ["GTIN/EAN", product.gtin],

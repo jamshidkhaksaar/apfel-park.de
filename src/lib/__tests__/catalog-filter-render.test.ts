@@ -14,7 +14,7 @@ describe('filter and discovery rendering',()=>{
   it('uses shared localized labels and retains an active single condition',()=>{
     const html=renderToStaticMarkup(createElement(StoreFilterPanels,props));
     expect(html).toContain('Hüllen');
-    expect(html).toContain('Gebraucht');
+    expect(html).toContain('A+');
     expect(html).toContain('Zustand');
     expect(accessoryTypeLabels.cases).toEqual({de:'Hüllen',en:'Cases'});
   });

@@ -16,7 +16,7 @@ const STYLES: Record<string, string> = {
 const LABELS: Record<string, { de: string; en: string }> = {
   new: { de: "Versiegelt", en: "Sealed" },
   open_box: { de: "Unboxed", en: "Unboxed" },
-  used: { de: "Gebraucht A+", en: "Used A+" },
+  used: { de: "A+", en: "A+" },
 };
 
 /**

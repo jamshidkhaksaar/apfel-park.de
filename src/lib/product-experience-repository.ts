@@ -2,6 +2,7 @@ import "server-only";
 
 import { query, withTransaction } from "@/lib/db";
 import { persistProfile, persistFamily } from '@/lib/product-experience-persistence';
+import { readBatteryHealthRange } from './product-offer-options';
 import {
   localizedText,
   resolveBundleCartSelection,
@@ -63,7 +64,7 @@ export async function getProductFamilyForProduct(productId: string, locale: Loca
     if (!family) return null;
     const membersResult = await query(
       `SELECT m.product_id,m.option_values,m.position,p.slug,p.title,p.title_i18n,p.images,
-              p.price,p.compare_at_price,p.stock,p.condition_note,p.battery_health
+              p.price,p.compare_at_price,p.stock,p.condition_note,p.battery_health,p.import_metadata
        FROM product_family_members m JOIN products p ON p.id=m.product_id
        WHERE m.family_id=$1 AND m.is_active=true AND p.is_active=true
        ORDER BY m.position,p.created_at`,
@@ -75,6 +76,7 @@ export async function getProductFamilyForProduct(productId: string, locale: Loca
       return {
         conditionNote: String(row.condition_note ?? ""),
         batteryHealth: row.battery_health == null ? undefined : Number(row.battery_health),
+        batteryHealthRange: readBatteryHealthRange(row.import_metadata, row.battery_health == null ? undefined : Number(row.battery_health)),
         productId: String(row.product_id),
         slug: String(row.slug),
         title: localizedText(localized, locale) || String(row.title),

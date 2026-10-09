@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { ProductChannelReadinessPanel } from "@/components/admin/ProductChannelFields";
 import { evaluateProductChannelReadiness } from "@/lib/product-channel-readiness";
+import { offerEditorText } from "@/lib/i18n";
 import { adminDictionary } from "@/lib/admin-i18n";
 import { isIphoneProduct, validateAdminProductCondition } from "@/lib/admin-product-validation";
 import type { AdminProductRecord } from "@/lib/admin-product-types";
@@ -361,7 +362,7 @@ export default function ProductIntakeWizard({
               {mode === "new" ? <option value="">{copy.noTemplate}</option> : null}
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
-                  {product.title} {product.condition ? `· ${product.condition}` : ""}
+                  {product.title} {product.condition ? `· ${product.condition === "used" ? "A+" : product.condition}` : ""}
                 </option>
               ))}
             </select>
@@ -386,7 +387,7 @@ export default function ProductIntakeWizard({
             <select value={condition} onChange={(event) => setCondition(event.target.value as WizardCondition)} className="mt-1 w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">
               <option value="new">{isGerman ? "Neu & versiegelt" : "Sealed"}</option>
               <option value="open_box">{isGerman ? "Open-Box" : "Open-box"}</option>
-              <option value="used">{isGerman ? "Gebraucht" : "Used"}</option>
+              <option value="used">{"A+"}</option>
             </select>
           </label>
           {condition !== "new" ? (
@@ -467,7 +468,7 @@ export default function ProductIntakeWizard({
             {copy.publishLiveLabel}
           </label>
           <div className="rounded-xl border border-border/60 bg-background/40 p-4 text-sm">
-            <p><span className="text-muted">{copy.confirmedCondition}:</span> {condition}</p>
+            <p><span className="text-muted">{copy.confirmedCondition}:</span> {offerEditorText[locale][condition]}</p>
             <p><span className="text-muted">GTIN:</span> {gtin}</p>
             <p><span className="text-muted">MPN:</span> {mpn}</p>
             <p><span className="text-muted">{copy.pricePlaceholder}:</span> {price}</p>

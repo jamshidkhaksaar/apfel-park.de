@@ -14,6 +14,7 @@ import { normalizeStorageValue, parseStorageFilterValues, productStorages } from
 import { classifyAccessoryTypes, hasExplicitBluetoothEvidence } from '@/lib/product-accessory-types';
 import { selectTrendingProducts } from '@/lib/trending-products';
 import { readDescriptionAiHashes } from '@/lib/product-text-provenance';
+import { readBatteryHealthRange, type BatteryHealthRange } from './product-offer-options';
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "parts" | "consoles" | "laptops";
 
@@ -62,6 +63,7 @@ export type Product = {
   condition: ProductCondition;
   isOpenBox: boolean;
   batteryHealth?: number;
+  batteryHealthRange?: BatteryHealthRange;
   hasRealProductPhotos: boolean;
   conditionNote?: string;
   image: string;
@@ -490,6 +492,7 @@ const mapProduct = (row: DbProduct, locale: Locale = "de"): Product | null => {
     condition,
     isOpenBox: condition !== "new",
     batteryHealth: batteryHealth !== undefined ? Math.max(1, Math.min(100, Math.round(batteryHealth))) : undefined,
+    batteryHealthRange: readBatteryHealthRange(row.import_metadata, batteryHealth),
     hasRealProductPhotos: Boolean(row.has_real_product_photos),
     bluetoothEvidence: category === 'accessories' ? hasExplicitBluetoothEvidence([
       row.title ?? '', row.description ?? '', ...(row.feature_bullets ?? []),

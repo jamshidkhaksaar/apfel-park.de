@@ -31,6 +31,10 @@ import VersionOfferFields from './VersionOfferFields';
 import ProductInformationFields from './ProductInformationFields';
 import EditorExperienceFields from './EditorExperienceFields';
 import EditorChannelFields from './EditorChannelFields';
+import OfferPresetManager from './OfferPresetManager';
+import { defaultOfferPresets, packageItemIcon, type OfferPresets } from '@/lib/product-offer-options';
+import { localizedText } from '@/lib/product-experience';
+import { offerEditorText } from '@/lib/i18n';
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-foreground';
@@ -85,6 +89,13 @@ export default function SmartphoneWizard({
 }) {
   const router = useRouter();
   const t = phoneEditorText[locale];
+  const [presets, setPresets] = useState<OfferPresets>(defaultOfferPresets);
+  const reloadPresets = async () => { const result = await call('/api/admin/products/offer-presets'); setPresets(result.presets); };
+  useEffect(() => {
+    let active = true;
+    void call('/api/admin/products/offer-presets').then(result => { if (active) setPresets(result.presets); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
   const [draft, setDraft] = useState<PhoneDraft | null>(null);
   const [document, setDocument] = useState<PhoneDocument | null>(null);
   const [drafts, setDrafts] = useState<{ id: string; title: string; revision: number }[]>([]);
@@ -271,10 +282,19 @@ export default function SmartphoneWizard({
   const updateEntry = (id: string, patch: Partial<PhoneEntry>) =>
     change((doc) => {
       const target = doc.entries.find((e) => e.id === id)!;
+      const chargers = patch.experience?.packageContents.filter(item => packageItemIcon(item) === 'charger');
+      if (chargers?.length && !Object.prototype.hasOwnProperty.call(patch.details ?? {}, 'chargerIncluded')) patch = { ...patch, details: { ...target.details, ...patch.details, chargerIncluded: chargers.some(item => item.included) } };
+      if (patch.condition && (!target.conditionNote.trim() || target.conditionNotePresetId)) {
+        const condition = patch.condition;
+        const preset = presets.conditionNotes.find(item => item.id === presets.defaults[condition]);
+        if (preset) patch = { ...patch, conditionNote: localizedText(preset.text, locale), conditionNotePresetId: preset.id };
+      }
+      if ('conditionNote' in patch && !('conditionNotePresetId' in patch)) patch = { ...patch, conditionNotePresetId: undefined };
       const sharedCondition = [
         'condition',
         'conditionNote',
         'batteryHealth',
+        'batteryHealthMax',
         'hasRealProductPhotos',
         'defects',
         'accessories',
@@ -284,11 +304,13 @@ export default function SmartphoneWizard({
       return {
         ...doc,
         entries: doc.entries.map((e) =>
-          e.id === id ||
+          e.id === id
+            ? { ...e, ...patch }
+            :
           (sharedCondition &&
             target.variantIndex !== undefined &&
             e.sourceProductId === target.sourceProductId)
-            ? { ...e, ...patch }
+            ? { ...e, ...patch, details: { ...e.details, ...Object.fromEntries(Object.entries(patch.details ?? {}).filter(([key]) => key === 'chargerIncluded')) } }
             : target.sourceProductId && e.sourceProductId === target.sourceProductId && Object.keys(productSettings).length
               ? { ...e, details: { ...e.details, ...productSettings } } : e,
         ),
@@ -612,6 +634,7 @@ export default function SmartphoneWizard({
         ) : null}
         {document.step === 1 ? (
           <>
+            <OfferPresetManager key={`${presets.revision}-${presets.conditionNotes.length}-${presets.gifts.length}`} locale={locale} value={presets} onReload={reloadPresets} onSave={async value => { const result = await call('/api/admin/products/offer-presets', 'PATCH', value); setPresets(result.presets); setNotice(offerEditorText[locale].saved); }}/>
             {document.variantSuggestions?.length ? <section className="rounded-xl border border-border p-4 space-y-3"><h3 className="font-semibold">{locale === 'de' ? 'Versionen aus der KI-Recherche' : 'Versions suggested by AI research'}</h3><p className="text-sm text-muted">{locale === 'de' ? 'Version auswählen und tatsächlichen Bestand, Preis und Zustand eintragen.' : 'Choose a version and enter its actual quantity, price and condition.'}</p><div className="flex flex-wrap gap-2">{document.variantSuggestions.map((suggestion, index) => <button key={index} type="button" className="btn-secondary" onClick={() => change(d => {
               const donor = d.entries.find(entry => entry.condition === 'new' && entry.color.trim().toLowerCase() === suggestion.color.trim().toLowerCase());
               if (d.entries.some(item => item.condition === 'new' && item.color === suggestion.color && item.storage === suggestion.storage)) return d;
@@ -628,6 +651,7 @@ export default function SmartphoneWizard({
                       <label className="text-sm">
                         {t.condition}
                         <select
+                          aria-label={t.condition}
                           className={inputClass}
                           value={e.condition}
                           onChange={(event) =>
@@ -662,7 +686,7 @@ export default function SmartphoneWizard({
                       />
                     </div>
                     <label className="mt-3 flex gap-2 text-sm"><input type="checkbox" checked={Boolean(e.individualPhotos)} onChange={event => updateEntry(e.id, { individualPhotos: event.target.checked })} />{locale === 'de' ? 'Eigene Fotos für diese Version verwenden' : 'Use separate photos for this version'}</label>
-                    <VersionOfferFields locale={locale} entry={e} onChange={patch => updateEntry(e.id, patch)} />
+                    <VersionOfferFields locale={locale} entry={e} presets={presets} chargerIncluded={Object.prototype.hasOwnProperty.call(e.details, 'chargerIncluded') ? e.details.chargerIncluded : shared.chargerIncluded} onChange={patch => updateEntry(e.id, patch)} />
                     <div className="mt-4 flex flex-wrap gap-3">
                       <button
                         className="btn-secondary"

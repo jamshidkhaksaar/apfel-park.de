@@ -224,6 +224,7 @@ export const createPhoneDraft = async (
           'asin',
           'ebayEpid',
           'batteryHealth',
+          'batteryHealthRange',
           'conditionNote',
           'condition',
           'stock',
@@ -247,7 +248,9 @@ export const createPhoneDraft = async (
               price: variant?.price ?? p.price,
               stock: variant?.stock ?? p.stock,
               sku: variant?.sku || p.sku,
-              batteryHealth: p.batteryHealth ?? null,
+              batteryHealth: p.batteryHealthRange?.min ?? p.batteryHealth ?? null,
+              batteryHealthMax: p.batteryHealthRange?.max ?? null,
+              conditionNotePresetId: typeof row.import_metadata?.smartphoneEditor?.conditionNotePresetId === 'string' ? row.import_metadata.smartphoneEditor.conditionNotePresetId : undefined,
               conditionNote:
                 row.import_metadata?.smartphoneEditor?.conditionNote ??
                 p.conditionNote ??
@@ -309,6 +312,7 @@ const verifySources = (document: PhoneDocument, row: DraftRow) => {
           e.condition !== entries[0].condition ||
           e.conditionNote !== entries[0].conditionNote ||
           e.batteryHealth !== entries[0].batteryHealth ||
+          e.batteryHealthMax !== entries[0].batteryHealthMax ||
           e.hasRealProductPhotos !== entries[0].hasRealProductPhotos,
       )
     )
@@ -448,6 +452,9 @@ export const writeProduct = async (
       `INSERT INTO products(id,slug,${fields.map(column).join(',')},import_metadata) VALUES($1,$2,${fields.map((f, i) => `$${i + 3}${jsonFields.has(f) ? '::jsonb' : ''}`).join(',')},jsonb_build_object('contentProvenance',$${values.length + 3}::jsonb))`,
       [id, slug, ...values, provenance],
     );
+  }
+  if (payload.batteryHealthRange !== undefined || payload.batteryHealth != null) {
+    await client.query("UPDATE products SET import_metadata=jsonb_set(coalesce(import_metadata,'{}'::jsonb),'{batteryHealthRange}',$2::jsonb,true) WHERE id=$1", [id, JSON.stringify(p.batteryHealthRange)]);
   }
   const units = p.variants.length
     ? p.variants
@@ -705,7 +712,7 @@ export const publishPhoneDraft = async (
       if (payload.isHomepageFeatured !== undefined) await syncFeatured(client, productId, payload.isHomepageFeatured);
 
       await client.query(
-        `UPDATE products SET import_metadata=jsonb_set(coalesce(import_metadata,'{}'::jsonb),'{smartphoneEditor}',jsonb_build_object('googleSelected',$2::boolean,'channels',$3::jsonb,'conditionNote',$4::text,'defects',$5::text,'accessories',$6::text),true) WHERE id=$1`,
+        `UPDATE products SET import_metadata=jsonb_set(coalesce(import_metadata,'{}'::jsonb),'{smartphoneEditor}',jsonb_build_object('googleSelected',$2::boolean,'channels',$3::jsonb,'conditionNote',$4::text,'defects',$5::text,'accessories',$6::text,'conditionNotePresetId',$7::text),true) WHERE id=$1`,
         [
           productId,
           entries.some((e) => e.channels.includes('google')),
@@ -713,6 +720,7 @@ export const publishPhoneDraft = async (
           first.conditionNote,
           first.defects,
           first.accessories,
+          first.conditionNotePresetId ?? null,
         ],
       );
       if (source && familyId && entries.length === 1)

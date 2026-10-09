@@ -1,11 +1,13 @@
 import type { Locale } from "./i18n";
 import type { ProductCondition } from "./products";
+import { formatBatteryHealth, type BatteryHealthRange } from './product-offer-options';
 
 export type ProductPageSignalInput = {
   locale: Locale;
   condition: ProductCondition;
   stock?: number;
   batteryHealth?: number;
+  batteryHealthRange?: BatteryHealthRange;
   hasRealProductPhotos: boolean;
 };
 
@@ -42,6 +44,7 @@ export const getProductPageSignals = ({
   condition,
   stock,
   batteryHealth,
+  batteryHealthRange,
   hasRealProductPhotos,
 }: ProductPageSignalInput): ProductPageSignals => {
   const isGerman = locale === "de";
@@ -49,7 +52,8 @@ export const getProductPageSignals = ({
     ? isGerman ? "Neu & versiegelt" : "New & sealed"
     : condition === "open_box"
       ? "Open-Box"
-      : isGerman ? "Gebraucht" : "Used";
+      : 'A+';
+  const health = formatBatteryHealth(batteryHealth, batteryHealthRange);
 
   return {
     conditionTitle: isGerman ? "Zustand transparent" : "Condition transparency",
@@ -65,8 +69,8 @@ export const getProductPageSignals = ({
     realPhotosLabel: hasRealProductPhotos
       ? isGerman ? "Echte Produktfotos" : "Real product photos"
       : null,
-    batteryLabel: batteryHealth !== undefined
-      ? isGerman ? `Batteriekapazität: ${batteryHealth}%` : `Battery health: ${batteryHealth}%`
+    batteryLabel: health !== undefined
+      ? isGerman ? `Batteriekapazität: ${health}` : `Battery health: ${health}`
       : null,
   };
 };

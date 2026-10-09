@@ -23,7 +23,7 @@ describe("catalog initial render budget", () => {
         const html = renderToStaticMarkup(createElement(Component, { product, locale, listName: "Fixture", position: 1 }));
         expect(html).toContain("Fixture Phone");
         expect(html).toContain(`/${locale}/store/fixture-phone`);
-        expect(html).toContain(locale === "de" ? "Gebraucht" : "Used");
+        expect(html).toContain("A+");
         expect(html).toContain(locale === "de" ? "in den Warenkorb" : "Add Fixture Phone to cart");
         expect(drawerRender).not.toHaveBeenCalled();
       });

@@ -13,6 +13,8 @@ import {
 import { newPhoneEntry, type PhoneDraft, type PhoneEntry } from './model';
 import { sanitizeProductExperienceProfile } from '@/lib/product-experience';
 import { autoPublishProductPromotion } from '@/lib/marketing';
+import { readOfferPresets, saveOfferPresets } from '@/lib/product-offer-presets-repository';
+import { getProductBySlug } from '@/lib/products';
 vi.mock('@/lib/marketing', () => ({ autoPublishProductPromotion: vi.fn().mockResolvedValue([]) }));
 
 const enabled = process.env.PHONE_EDITOR_INTEGRATION === '1';
@@ -82,6 +84,36 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
       'test-admin',
       true,
     );
+  it('persists editable presets and prevents stale global-default overwrites', async () => {
+    const before = await readOfferPresets();
+    before.conditionNotes[2].text.en = 'QA A+ note';
+    before.gifts.push({ id: 'test-gift', icon: 'gift', label: { de: 'Testgeschenk', en: 'QA gift' } });
+    const saved = await saveOfferPresets(before);
+    expect(saved.revision).toBe(before.revision + 1);
+    expect(await readOfferPresets()).toEqual(saved);
+    await expect(saveOfferPresets(before)).rejects.toThrow('presets_conflict');
+  });
+  it('publishes and reloads a battery range and gifts without an invented exact measurement', async () => {
+    const entry = await ready('used');
+    entry.batteryHealth = 95; entry.batteryHealthMax = 100;
+    entry.conditionNotePresetId = 'grade-aplus';
+    entry.experience = sanitizeProductExperienceProfile({ enabledSections: { packageContents: true }, packageContents: [{ label: { de: 'Hülle', en: 'Case' }, included: true, icon: 'case', isGift: true, presetId: 'case' }] });
+    entry.details.chargerIncluded = false;
+    const published = await publish(await seed([entry]));
+    const id = published.results[0].productId;
+    const row = (await query('SELECT slug,battery_health,import_metadata,charger_included FROM products WHERE id=$1', [id])).rows[0];
+    expect(row.battery_health).toBeNull();
+    expect(row.import_metadata.batteryHealthRange).toEqual({ min: 95, max: 100 });
+    expect(row.charger_included).toBe(false);
+    expect((await getProductBySlug(row.slug, 'en'))?.batteryHealthRange).toEqual({ min: 95, max: 100 });
+    const edit = await createPhoneDraft('editor', id);
+    expect(edit.document.entries[0]).toMatchObject({ batteryHealth: 95, batteryHealthMax: 100, conditionNotePresetId: 'grade-aplus', experience: { packageContents: [{ icon: 'case', isGift: true, presetId: 'case' }] } });
+    edit.document.entries[0].batteryHealth = 97; edit.document.entries[0].batteryHealthMax = null;
+    await publish(await savePhoneDraft(edit.id, edit.revision, edit.document, 'editor'));
+    const measured = (await query('SELECT battery_health,import_metadata FROM products WHERE id=$1', [id])).rows[0];
+    expect(measured.battery_health).toBe(97);
+    expect(measured.import_metadata.batteryHealthRange).toBeNull();
+  });
   it('saves incomplete drafts, restores photos, and rejects a stale concurrent save', async () => {
     const d = await createPhoneDraft('test-admin');
     const updated = await savePhoneDraft(

@@ -47,7 +47,7 @@ export const EXPERIENCE_PRESETS = {
     },
     {
       condition: "used" as const,
-      label: { de: "Gebraucht (Zustand A+ Exzellent)", en: "Refurbished (Grade A+ Excellent)" },
+      label: { de: "A+ (Exzellent)", en: "A+ (Excellent)" },
       description: { de: "Technisch einwandfrei, professionell 50+ Punkte geprüft. Minimale bis keine Mikrokratzer.", en: "Technically flawless, 50+ points certified. Minimal to no micro-scratches." },
       imageUrls: [],
     },

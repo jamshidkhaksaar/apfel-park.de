@@ -36,6 +36,7 @@ export type AdminProductRecord = {
   category: string;
   condition: string;
   batteryHealth?: number | null;
+  batteryHealthRange?: import('./product-offer-options').BatteryHealthRange;
   hasRealProductPhotos?: boolean;
   conditionNote?: string;
   brand: string;

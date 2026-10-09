@@ -1,6 +1,7 @@
 import type { AdminProductRecord } from "@/lib/admin-product-types";
 import { requiresEnergyEvidenceReview } from '@/lib/product-evidence-hold';
 import { knownAiTextFields } from '@/lib/product-text-provenance';
+import { readBatteryHealthRange } from './product-offer-options';
 import type {
   BatteryDetails,
   MarketplaceAttributes,
@@ -182,6 +183,7 @@ export const mapAdminProduct = (row: ProductRow, featuredIds: string[] = []): Ad
   category: row.category,
   condition: row.condition ?? "new",
   batteryHealth: row.battery_health,
+  batteryHealthRange: readBatteryHealthRange(row.import_metadata, row.battery_health),
   hasRealProductPhotos: Boolean(row.has_real_product_photos),
   conditionNote: row.condition_note ?? "",
   brand: row.brand ?? "",
