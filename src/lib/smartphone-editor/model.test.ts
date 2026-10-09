@@ -38,6 +38,17 @@ describe('smartphone workspace rules', () => {
       }
     }
   });
+  it('does not inherit a comparison price hidden in shared product data', () => {
+    const document = newPhoneDocument();
+    document.shared = { title: 'iPhone 15 Pro', compareAtPrice: 749 };
+    const entry = document.entries[0];
+    entry.price = 759;
+    expect(entryPayload(document, entry).compareAtPrice).toBeNull();
+    entry.details.compareAtPrice = 899;
+    expect(entryPayload(document, entry).compareAtPrice).toBe(899);
+    entry.details.compareAtPrice = null;
+    expect(entryPayload(document, entry).compareAtPrice).toBeNull();
+  });
   it('inherits AI origin only from the field source actually used by an entry', () => {
     const document = newPhoneDocument();
     document.shared = { title: 'AI shared title', description: 'AI shared description', aiGeneratedFields: ['title', 'description'] };

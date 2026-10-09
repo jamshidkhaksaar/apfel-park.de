@@ -30,6 +30,7 @@ import { persistProfile, persistFamily } from '@/lib/product-experience-persiste
 import { markOpenIntakeRunsStale } from '@/lib/product-intake/stale-runs';
 import { sanitizeProductExperienceProfile } from '@/lib/product-experience';
 import { autoPublishProductPromotion } from '@/lib/marketing';
+import { deleteCatalogProduct, ProductDeletionError } from '@/lib/product-deletion';
 
 type Source = {
   fingerprint: string;
@@ -362,6 +363,54 @@ export const savePhoneDraft = async (
     );
     return view(result.rows[0]);
   });
+// Archive a published offer and detach it from this draft in one transaction.
+// Other versions, including unpublished edits, remain exactly as saved.
+export const removePhoneDraftProduct = async (
+  id: string,
+  input: { revision: number; entryId: string; fingerprint: string; confirmation: string },
+  actor: string,
+): Promise<PhoneDraft> => {
+  if (!input || !Number.isSafeInteger(input.revision) || input.revision < 1 || typeof input.entryId !== 'string') throw new DraftError('invalid_request');
+  try {
+    return await withTransaction(async client => {
+      const row = await readRow(client, id, true);
+      if (row.revision !== input.revision) throw conflict();
+      const entry = row.document.entries.find(item => item.id === input.entryId);
+      if (!entry?.sourceProductId || !row.sources[entry.sourceProductId]) throw new DraftError('not_found', 404);
+      const productId = entry.sourceProductId;
+      if (row.document.entries.filter(item => item.sourceProductId === productId).length > 1) throw new DraftError('legacy_version_removal');
+      // Lock the family before checking shared presentation fingerprints.
+      await client.query('SELECT f.id FROM product_families f JOIN product_family_members m ON m.family_id=f.id WHERE m.product_id=$1 FOR UPDATE OF f', [productId]);
+      const sourceIds = Object.keys(row.sources).sort();
+      await client.query('SELECT id FROM products WHERE id=ANY($1::uuid[]) ORDER BY id FOR UPDATE', [sourceIds]);
+      await client.query('SELECT product_id FROM product_experience_profiles WHERE product_id=ANY($1::uuid[]) ORDER BY product_id FOR UPDATE', [sourceIds]);
+      const before = new Map<string, string>();
+      for (const otherId of Object.keys(row.sources).filter(key => key !== productId)) {
+        before.set(otherId, await experienceFingerprint(client, otherId));
+      }
+      await deleteCatalogProduct(productId, input, actor, client);
+      const document = row.document;
+      document.entries = document.entries.filter(item => item.sourceProductId !== productId);
+      if (!document.entries.length) document.entries = [newPhoneEntry()];
+      if (document.family) document.family.members = document.family.members.filter(member => member.productId !== productId);
+      delete row.sources[productId];
+      // Refresh only fingerprints changed by this removal, preserving conflicts
+      // when another editor had already changed the remaining offer's profile.
+      for (const [otherId, source] of Object.entries(row.sources)) {
+        if (before.get(otherId) === source.experienceFingerprint) source.experienceFingerprint = await experienceFingerprint(client, otherId);
+      }
+      const results = row.results.filter(result => result.productId !== productId);
+      const saved = await client.query(
+        'UPDATE smartphone_editor_drafts SET document=$2::jsonb,sources=$3::jsonb,results=$4::jsonb,revision=revision+1,updated_by=$5,updated_at=now() WHERE id=$1 RETURNING *',
+        [id, JSON.stringify(document), JSON.stringify(row.sources), JSON.stringify(results), actor],
+      );
+      return view(saved.rows[0]);
+    });
+  } catch (error) {
+    if (error instanceof ProductDeletionError) throw new DraftError(error.message, error.status);
+    throw error;
+  }
+};
 const fields = [
   'title',
   'subtitle',

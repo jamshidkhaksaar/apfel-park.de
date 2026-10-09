@@ -412,6 +412,27 @@ export default function SmartphoneWizard({
       setDraftSelection([]); setDraftDeletion(null); setNotice('draftDeleted'); markAdminListsChanged();
     } finally { deleting.current = false; setBusy(false); }
   };
+  const removePublishedVersion = async (entryId: string, fingerprint: string) => {
+    await flush();
+    deleting.current = true;
+    setBusy(true);
+    try {
+      const result = await call(`/api/admin/smartphone-drafts/${draftId.current}/remove-product`, 'POST', {
+        revision: revision.current, entryId, fingerprint, confirmation: 'DELETE',
+      });
+      load(result);
+      setSelected(ids => ids.filter(id => result.document.entries.some((entry: PhoneEntry) => entry.id === id)));
+      setNotice(cleanup.versionRemoved);
+      markAdminListsChanged();
+    } catch (reason) {
+      const code = (reason as Error).message;
+      setError(code);
+      throw new Error(cleanup[code as keyof typeof cleanup] ?? t[code as keyof typeof t] ?? cleanup.failed);
+    } finally {
+      deleting.current = false;
+      setBusy(false);
+    }
+  };
   const removeDraft = (id: string, expectedRevision: number) => {
     if (busy || deleting.current) return;
     setDraftDeletion([{ id, revision: expectedRevision }]);
@@ -691,6 +712,7 @@ export default function SmartphoneWizard({
                       >
                         {t.add}
                       </button>
+                      {e.sourceProductId && document.entries.filter(item => item.sourceProductId === e.sourceProductId).length === 1 ? <ProductDeleteButton id={e.sourceProductId} title={`${shared.title || t.title} · ${entryLabel(e)}`} locale={locale} onConfirmDeletion={preview => removePublishedVersion(e.id, preview.fingerprint)}/> : null}
                       {!e.sourceProductId && (document.entries.length > 1 || document.variantSuggestions?.length) ? (
                         <button
                           className="btn-secondary"

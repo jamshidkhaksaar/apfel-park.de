@@ -122,6 +122,8 @@ export const entryPayload = (
 ): ProductPayload => ({
   ...document.shared,
   ...entry.details,
+  // Comparison prices belong to an offer; blank means no comparison price.
+  compareAtPrice: entry.details.compareAtPrice ?? null,
   aiGeneratedFields: (['title', 'description'] as const).filter(field => normalizeAiTextFields(
     Object.prototype.hasOwnProperty.call(entry.details, field) ? entry.details.aiGeneratedFields : document.shared.aiGeneratedFields,
   ).includes(field)),

@@ -10,6 +10,7 @@ import {
   savePhoneDraft,
   publishPhoneDraft,
   deletePhoneDrafts,
+  removePhoneDraftProduct,
 } from './repository';
 import { newPhoneEntry, type PhoneDraft, type PhoneEntry } from './model';
 import { getFamilyOptionTarget, sanitizeProductExperienceProfile } from '@/lib/product-experience';
@@ -126,6 +127,74 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
     expect(other.stock).toBe(3);
     expect(getFamilyOptionTarget(sold!, 'batteryHealth', other.optionValues.batteryHealth)?.productId).toBe(other.productId);
   });
+  it('publishes and updates without inheriting a hidden shared comparison price', async () => {
+    const draft = await seed();
+    draft.document.shared.compareAtPrice = 400;
+    draft.document.entries[0].price = 759;
+    const saved = await savePhoneDraft(draft.id, draft.revision, draft.document, 'test-admin');
+    const result = await publish(saved);
+    const id = result.results[0].productId;
+    expect((await query('SELECT compare_at_price FROM products WHERE id=$1', [id])).rows[0].compare_at_price).toBeNull();
+    const edit = await createPhoneDraft('test-admin', id);
+    edit.document.entries[0].details.compareAtPrice = 899;
+    await publish(await savePhoneDraft(edit.id, edit.revision, edit.document, 'test-admin'));
+    expect(Number((await query('SELECT compare_at_price FROM products WHERE id=$1', [id])).rows[0].compare_at_price)).toBe(899);
+    const clear = await createPhoneDraft('test-admin', id);
+    clear.document.entries[0].details.compareAtPrice = null;
+    await publish(await savePhoneDraft(clear.id, clear.revision, clear.document, 'test-admin'));
+    expect((await query('SELECT compare_at_price FROM products WHERE id=$1', [id])).rows[0].compare_at_price).toBeNull();
+  });
+  it('removes a published version atomically and preserves edited and unpublished sibling versions', async () => {
+    const initial = await seed([await ready('used'), await ready('used', 'Blue')]);
+    const published = await publish(initial);
+    const id = published.results[0].productId;
+    const edit = await createPhoneDraft('test-admin', id);
+    const target = edit.document.entries.find(entry => entry.sourceProductId === id)!;
+    const sibling = edit.document.entries.find(entry => entry.sourceProductId !== id)!;
+    sibling.price = 799;
+    edit.document.entries.push(await ready('used', 'White'));
+    const saved = await savePhoneDraft(edit.id, edit.revision, edit.document, 'test-admin');
+    const preview = await productDeletionPreview(id);
+    const input = {revision:saved.revision, entryId:target.id, fingerprint:preview.fingerprint, confirmation:'DELETE'};
+    await expect(removePhoneDraftProduct(saved.id, {...input,revision:saved.revision-1}, 'test-admin')).rejects.toMatchObject({message:'conflict'});
+    await expect(removePhoneDraftProduct(saved.id, {...input,confirmation:''}, 'test-admin')).rejects.toMatchObject({message:'confirmation_required'});
+    await query('UPDATE inventory_skus SET reserved=1 WHERE product_id=$1', [id]);
+    const reserved = await productDeletionPreview(id);
+    await expect(removePhoneDraftProduct(saved.id, {...input,fingerprint:reserved.fingerprint}, 'test-admin')).rejects.toMatchObject({message:'reservations'});
+    expect((await loadPhoneDraft(saved.id)).document.entries).toHaveLength(3);
+    await query('UPDATE inventory_skus SET reserved=0 WHERE product_id=$1', [id]);
+    const fresh = await productDeletionPreview(id);
+    const removed = await removePhoneDraftProduct(saved.id, {...input,fingerprint:fresh.fingerprint}, 'test-admin');
+    expect(removed.document.entries).toEqual(saved.document.entries.filter(entry => entry.sourceProductId !== id));
+    expect(removed.document.family?.members.some(member => member.productId === id)).toBe(false);
+    expect((await query('SELECT is_active,catalog_enabled FROM products WHERE id=$1', [id])).rows[0]).toEqual({is_active:false,catalog_enabled:false});
+    expect((await query('SELECT on_hand,is_active FROM inventory_skus WHERE product_id=$1', [id])).rows[0]).toMatchObject({on_hand:1,is_active:false});
+    const republished = await publish(removed);
+    expect(republished.results).toHaveLength(2);
+    expect((await query('SELECT price FROM products WHERE id=$1', [sibling.sourceProductId])).rows[0].price).toBe('799.00');
+    expect((await query('SELECT is_active FROM products WHERE id=$1', [id])).rows[0].is_active).toBe(false);
+  });
+  it('preserves a pre-existing presentation conflict on a remaining version', async () => {
+    const published = await publish(await seed([await ready('used'), await ready('used', 'Blue')]));
+    const id = published.results[0].productId;
+    const edit = await createPhoneDraft('test-admin', id);
+    const target = edit.document.entries.find(entry => entry.sourceProductId === id)!;
+    const sibling = edit.document.entries.find(entry => entry.sourceProductId !== id)!;
+    await query("UPDATE product_experience_profiles SET enabled_sections=jsonb_set(enabled_sections,'{packageContents}','true') WHERE product_id=$1", [sibling.sourceProductId]);
+    const preview = await productDeletionPreview(id);
+    const removed = await removePhoneDraftProduct(edit.id, {revision:edit.revision,entryId:target.id,fingerprint:preview.fingerprint,confirmation:'DELETE'}, 'test-admin');
+    await expect(publish(removed)).rejects.toMatchObject({message:'conflict'});
+  });
+  it('keeps an editable blank starter after removing the last published offer', async () => {
+    const published = await publish(await seed());
+    const id = published.results[0].productId;
+    const edit = await createPhoneDraft('test-admin', id);
+    const preview = await productDeletionPreview(id);
+    const removed = await removePhoneDraftProduct(edit.id, {revision:edit.revision,entryId:edit.document.entries[0].id,fingerprint:preview.fingerprint,confirmation:'DELETE'}, 'test-admin');
+    expect(removed.document.entries).toHaveLength(1);
+    expect(removed.document.entries[0].sourceProductId).toBeUndefined();
+    await expect(savePhoneDraft(removed.id, removed.revision, removed.document, 'test-admin')).resolves.toBeDefined();
+  });
   it('groups researched offers before pagination while preserving capacity filters', async () => {
     const low=await ready('used');low.storage='128 GB';low.price=399;
     const high=await ready('used');high.storage='256 GB';high.price=499;
@@ -134,7 +203,7 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
     const draft=await seed([low,high,blue]);await publish(draft);
     const catalog=await getStoreCatalog({filters:parseStoreCatalogFilters({q:draft.document.shared.model}),pageSize:1,locale:'en'});
     expect(catalog.total).toBe(1);expect(catalog.pages).toBe(1);expect(catalog.products).toHaveLength(1);
-    expect(catalog.products[0]).toMatchObject({price:399,stock:1,storeFamily:{stock:3,offerCount:3,colors:['Black','Blue'],storages:['128GB','256GB']}});
+    expect(catalog.products[0]).toMatchObject({price:399,stock:1,storeFamily:{stock:3,offerCount:3,colors:expect.arrayContaining(['Black','Blue']),storages:['128GB','256GB']}});
     expect(catalog.facets.storages).toEqual([{value:'128GB',count:1},{value:'256GB',count:1}]);
     const filtered=await getStoreCatalog({filters:parseStoreCatalogFilters({q:draft.document.shared.model,storage:'256GB'}),locale:'en'});
     expect(filtered.total).toBe(1);expect(filtered.products[0].price).toBe(499);

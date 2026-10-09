@@ -1632,6 +1632,7 @@ export const uploadGalleryCopy = {
 
 export const offerEditorText = {
   en: {
+    comparePriceOptional: 'Compare-at price (€) — optional', comparePriceHint: 'Leave blank when there is no comparison price. If entered, it must be higher than the selling price.',
     presets: 'Default condition notes & gifts', presetsHint: 'These presets are shared by all product editors. Existing products keep their saved details.',
     conditionNotes: 'Condition note presets', giftPresets: 'Gift presets', notePreset: 'Choose a condition note', choose: 'Choose…',
     defaultNote: 'Default for this condition', addNote: 'Add condition note', addGift: 'Add gift preset', remove: 'Remove', save: 'Save defaults',
@@ -1649,6 +1650,7 @@ export const offerEditorText = {
     giftBadge: 'Gift', notIncluded: 'Not included',
   },
   de: {
+    comparePriceOptional: 'Streichpreis (€) — optional', comparePriceHint: 'Leer lassen, wenn kein Streichpreis vorhanden ist. Falls angegeben, muss er über dem Verkaufspreis liegen.',
     presets: 'Standard-Zustandshinweise & Geschenke', presetsHint: 'Diese Vorlagen gelten für alle Produkteditoren. Bestehende Produkte behalten ihre gespeicherten Angaben.',
     conditionNotes: 'Vorlagen für Zustandshinweise', giftPresets: 'Geschenkvorlagen', notePreset: 'Zustandshinweis auswählen', choose: 'Auswählen…',
     defaultNote: 'Standard für diesen Zustand', addNote: 'Zustandshinweis hinzufügen', addGift: 'Geschenkvorlage hinzufügen', remove: 'Entfernen', save: 'Standards speichern',
@@ -1669,6 +1671,7 @@ export const offerEditorText = {
 
 export const catalogToolsText = {
   en: {
+    versionRemoved: 'Version removed. The other versions were kept.', legacy_version_removal: 'These legacy variants share one product. Delete the complete product from the product list.',
     step: 'Step', continue: 'Continue', cancel: 'Cancel', typeDelete: 'Type DELETE to confirm', confirmDelete: 'Confirm deletion', deleting: 'Deleting…', loading: 'Loading…', failed: 'Could not delete. Please try again.',
     deleteProduct: 'Delete product', productDeleteHint: 'Remove this offer from the shop, product catalog and inventory selection. Other versions remain available. Order history and stock records are retained.',
     deleteDrafts: 'Delete selected drafts', draftDeleteHint: 'Remove these drafts from the workspace. Products already published from them remain available.', selectDraft: 'Select draft', selectAllDrafts: 'Select all shown drafts',
@@ -1677,6 +1680,7 @@ export const catalogToolsText = {
     chooseOptions: 'Choose a color, then storage and battery health. Unavailable combinations are disabled.', optionUnavailable: 'Unavailable with these options', optionSoldOut: 'Sold out', alsoSelects: 'Also selects', automaticOptions: 'Storage, color and battery options are enabled automatically for this model.', manualVersion: 'Add a custom version', chooseResearch: 'Choose a researched version above to open its form.', batteryTier: 'Add battery-health option', batteryHealth: 'Battery health', notSpecified: 'Not specified',
   },
   de: {
+    versionRemoved: 'Version entfernt. Die anderen Versionen bleiben erhalten.', legacy_version_removal: 'Diese älteren Varianten gehören zu einem gemeinsamen Produkt. Das vollständige Produkt in der Produktliste löschen.',
     step: 'Schritt', continue: 'Weiter', cancel: 'Abbrechen', typeDelete: 'Zum Bestätigen DELETE eingeben', confirmDelete: 'Löschen bestätigen', deleting: 'Wird gelöscht…', loading: 'Wird geladen…', failed: 'Löschen fehlgeschlagen. Bitte erneut versuchen.',
     deleteProduct: 'Produkt löschen', productDeleteHint: 'Dieses Angebot aus Shop, Produktkatalog und Lagerauswahl entfernen. Andere Versionen bleiben verfügbar. Bestellhistorie und Bestandsnachweise bleiben erhalten.',
     deleteDrafts: 'Ausgewählte Entwürfe löschen', draftDeleteHint: 'Diese Entwürfe aus dem Arbeitsbereich entfernen. Bereits daraus veröffentlichte Produkte bleiben verfügbar.', selectDraft: 'Entwurf auswählen', selectAllDrafts: 'Alle angezeigten Entwürfe auswählen',
