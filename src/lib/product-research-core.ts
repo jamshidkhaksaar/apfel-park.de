@@ -21,6 +21,11 @@ export type ProductResearchResult = {
   variants?: Array<{ color: string; storage: string; sku?: string; images?: string[] }>;
   gallery?: string[];
   batteryDetails?: { included?: boolean; wattHours?: number };
+  chargerIncluded?: boolean;
+  chargingPowerMinW?: number;
+  chargingPowerMaxW?: number;
+  usbPdSupported?: boolean;
+  faq?: { de?: Array<{ q: string; a: string }>; en?: Array<{ q: string; a: string }> };
   manufacturer?: { name?: string; address?: string; email?: string };
   euResponsiblePerson?: { name?: string; address?: string; email?: string };
   energyLabel?: {
@@ -124,6 +129,14 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
     features: strings("features", 300),
     variants,
     gallery,
+    chargerIncluded: typeof value.chargerIncluded === 'boolean' ? value.chargerIncluded : undefined,
+    chargingPowerMinW: positiveNum(value.chargingPowerMinW),
+    chargingPowerMaxW: positiveNum(value.chargingPowerMaxW),
+    usbPdSupported: typeof value.usbPdSupported === 'boolean' ? value.usbPdSupported : undefined,
+    faq: value.faq && typeof value.faq === 'object' ? Object.fromEntries((['de', 'en'] as const).map(locale => {
+      const items = (value.faq as Record<string, unknown>)[locale];
+      return [locale, Array.isArray(items) ? items.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object')).map(item => ({ q: textFrom(item, 'q', 200) ?? '', a: textFrom(item, 'a', 1000) ?? '' })).filter(item => item.q && item.a).slice(0, 12) : []];
+    })) : undefined,
     batteryDetails: value.batteryDetails && typeof value.batteryDetails === "object"
       ? { included: typeof (value.batteryDetails as Record<string, unknown>).included === 'boolean' ? (value.batteryDetails as { included: boolean }).included : undefined, wattHours: positiveNum((value.batteryDetails as Record<string, unknown>).wattHours) }
       : undefined,

@@ -169,7 +169,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
   };
   const inventoryReturnTo = `/admin/inventory?${urlQuery || "page=1&status=all&stock=all"}`;
   const editorHref = (id: string, pricing = false) => withAdminListReturnTo(
-    `/admin/products/${id}${pricing ? "?legacy=1&step=pricing" : ""}`, inventoryReturnTo,
+    `/admin/products/${id}${pricing ? "?step=pricing" : ""}`, inventoryReturnTo,
   );
 
   const applyAdjustment = async (

@@ -92,6 +92,10 @@ export const finalizeResearchedProduct = (
   }
   if (!research.manufacturer || !research.euResponsiblePerson) warnings.push('GPSR: Nicht belegte Hersteller- oder EU-Verantwortlichenangaben bitte anhand von Verpackung bzw. Produktunterlagen ergänzen.');
   research.safetyWarnings = research.safetyWarnings?.filter(warning => citedSources('safetyWarnings').some(source => sourceHas(source, warning)));
+  for (const field of ['chargerIncluded', 'chargingPowerMinW', 'chargingPowerMaxW', 'usbPdSupported', 'faq'] as const) {
+    if (!citedSources(field).length) delete research[field];
+  }
+  if (context.condition !== 'new') research.chargerIncluded = undefined;
   if (context.condition !== 'new' || !citedSources('batteryDetails').length) research.batteryDetails = undefined;
   if (context.condition !== 'new' || !citedSources('packageContents').length) research.packageContents = undefined;
   const hints = context.hints ?? {};

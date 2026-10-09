@@ -100,12 +100,14 @@ describe('smartphone workspace rules', () => {
     ]);
     expect(e.photos[0].url).toBe('/uploads/0.webp');
   });
-  it('allows an incomplete draft but requires four distinct photos before publication', () => {
+  it('allows an incomplete draft but requires a photo while allowing optional additional views', () => {
     const d = newPhoneDocument();
     expect(validateDocument(d)).toEqual(d);
     expect(
       entryProblems(d, d.entries[0]).some((p) => p.field === 'photos'),
     ).toBe(true);
+    d.entries[0].photos[0].url = '/uploads/one.webp';
+    expect(entryProblems(d, d.entries[0]).some(p => p.field === 'photos')).toBe(false);
     d.entries[0].photos.forEach((p) => (p.url = '/uploads/same.webp'));
     expect(
       entryProblems(d, d.entries[0]).some((p) => p.field === 'photos'),

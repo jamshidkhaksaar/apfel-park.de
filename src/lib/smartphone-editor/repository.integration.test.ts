@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { uploadProductImage } from '@/lib/blob';
 import sharp from 'sharp';
 import { randomUUID } from 'node:crypto';
@@ -11,6 +11,9 @@ import {
   publishPhoneDraft,
 } from './repository';
 import { newPhoneEntry, type PhoneDraft, type PhoneEntry } from './model';
+import { sanitizeProductExperienceProfile } from '@/lib/product-experience';
+import { autoPublishProductPromotion } from '@/lib/marketing';
+vi.mock('@/lib/marketing', () => ({ autoPublishProductPromotion: vi.fn().mockResolvedValue([]) }));
 
 const enabled = process.env.PHONE_EDITOR_INTEGRATION === '1';
 describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () => {
@@ -227,7 +230,7 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
       5, 1, 1,
     ]);
   });
-  it('rejects duplicate image bytes and reuse of used-device evidence', async () => {
+  it('rejects duplicate views but permits confirmed reuse of used-device photos', async () => {
     const e = await ready('used');
     const d = await seed([e]);
     d.document.entries[0].photos[1].url = e.photos[0].url;
@@ -241,9 +244,10 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
       ...p,
       url: used.photos[i].url,
     }));
-    await expect(publish(await seed([clone]))).rejects.toThrow(
-      'device_photo_reused',
-    );
+    const reuse = await seed([clone]);
+    await expect(publish(reuse)).rejects.toThrow('shared_photos_confirmation_required');
+    const reviewed = await publishPhoneDraft(reuse.id, { revision: reuse.revision, requestId: randomUUID(), entryIds: [clone.id], confirmedSharedPhotos: true }, 'editor', true);
+    expect(reviewed.results[0].channels.store).toBe('published');
   });
   it('rolls back every product when any SKU conflicts', async () => {
     const original = await publish(await seed());
@@ -302,5 +306,60 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
     ).rows[0];
     expect(after.slug).toBe(before.slug);
     expect(after.variants[1].isDefault).toBe(true);
+  });
+  it('publishes different storage offers from one color gallery and announces once per product', async () => {
+    const first = await ready();
+    first.photos = first.photos.slice(0, 1);
+    first.coverId = first.photos[0].id;
+    first.storage = '128 GB'; first.stock = 250; first.price = 399;
+    const second = newPhoneEntry(first);
+    second.storage = '256 GB'; second.stock = 1000; second.price = 499;
+    const d = await seed([first, second]);
+    vi.mocked(autoPublishProductPromotion).mockClear();
+    const key = randomUUID();
+    const published = await publish(d, key);
+    const rows = (await query('SELECT price,stock,images FROM products WHERE id=ANY($1::uuid[]) ORDER BY price', [published.results.map(result => result.productId)])).rows;
+    expect(rows.map(row => [Number(row.price), row.stock])).toEqual([[399, 250], [499, 1000]]);
+    expect(rows[0].images).toEqual(rows[1].images);
+    expect(rows[0].images).toHaveLength(1);
+    expect(vi.mocked(autoPublishProductPromotion)).toHaveBeenCalledTimes(2);
+    await publish(d, key);
+    expect(vi.mocked(autoPublishProductPromotion)).toHaveBeenCalledTimes(2);
+  });
+  it('supports generic products, shared catalog assets, full presentation and homepage settings', async () => {
+    const e = await ready();
+    e.color = ''; e.storage = ''; e.photos = e.photos.slice(0, 1); e.coverId = e.photos[0].id;
+    e.experience = { ...sanitizeProductExperienceProfile({}), dimensions: { heightMm: 100 }, packageContents: [{ label: { de: 'Kabel', en: 'Cable' }, included: true }], campaign: { badge: { de: 'Neu', en: 'New' }, message: { de: 'Details', en: 'Details' } } };
+    e.details = { compareAtPrice: 599, isHomepageFeatured: true, faq: { en: [{ q: 'Compatibility?', a: 'USB-C' }] }, chargerIncluded: false, chargingPowerMaxW: 30 };
+    const d = await seed([e]);
+    d.document.shared.category = 'accessories';
+    const saved = await savePhoneDraft(d.id, d.revision, d.document, 'editor');
+    const published = await publish(saved);
+    const id = published.results[0].productId;
+    const product = (await query('SELECT category,compare_at_price,faq,charger_included,charging_power_max_w FROM products WHERE id=$1', [id])).rows[0];
+    expect(product).toMatchObject({ category: 'accessories', faq: { en: [{ q: 'Compatibility?', a: 'USB-C' }] }, charger_included: false });
+    expect(Number(product.compare_at_price)).toBe(599);
+    const edit = await createPhoneDraft('editor', id);
+    expect(edit.document.entries[0].experience).toMatchObject({ dimensions: { heightMm: 100 }, packageContents: [{ label: { en: 'Cable' } }] });
+    expect(edit.document.entries[0].details.isHomepageFeatured).toBe(true);
+    edit.document.entries[0].price = 510;
+    await publish(await savePhoneDraft(edit.id, edit.revision, edit.document, 'editor'));
+    expect(Number((await query('SELECT price FROM products WHERE id=$1', [id])).rows[0].price)).toBe(510);
+    const copy = await ready();
+    copy.photos = e.photos.map(photo => ({ ...photo, id: randomUUID() })); copy.coverId = copy.photos[0].id;
+    expect((await publish(await seed([copy]))).results[0].channels.store).toBe('published');
+  });
+  it('preserves profile concurrency and writes inactive product and inventory flags atomically', async () => {
+    const initial = await publish(await seed());
+    const id = initial.results[0].productId;
+    const edit = await createPhoneDraft('editor', id);
+    await query("UPDATE product_experience_profiles SET dimensions='{" + '"heightMm":150' + "}'::jsonb WHERE product_id=$1", [id]);
+    await expect(publish(edit)).rejects.toThrow('conflict');
+    const fresh = await createPhoneDraft('editor', id);
+    fresh.document.entries[0].details.isActive = false;
+    const saved = await savePhoneDraft(fresh.id, fresh.revision, fresh.document, 'editor');
+    await publish(saved);
+    expect((await query('SELECT is_active FROM products WHERE id=$1', [id])).rows[0].is_active).toBe(false);
+    expect((await query('SELECT is_active FROM inventory_skus WHERE product_id=$1', [id])).rows[0].is_active).toBe(false);
   });
 });

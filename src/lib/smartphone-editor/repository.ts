@@ -26,6 +26,10 @@ import {
 } from './model';
 import type { ChannelKey } from '@/lib/product-channel-readiness';
 import { photoReuseError } from './photo-reuse';
+import { persistProfile, persistFamily } from '@/lib/product-experience-persistence';
+import { markOpenIntakeRunsStale } from '@/lib/product-intake/stale-runs';
+import { sanitizeProductExperienceProfile } from '@/lib/product-experience';
+import { autoPublishProductPromotion } from '@/lib/marketing';
 
 type Source = {
   fingerprint: string;
@@ -33,6 +37,7 @@ type Source = {
   payload: ProductPayload;
   entryIds: string[];
   variants: boolean;
+  experienceFingerprint?: string;
 };
 type DraftRow = PhoneDraft & {
   sources: Record<string, Source>;
@@ -75,6 +80,23 @@ const inventoryFingerprint = async (
   );
   return result.rows[0].fingerprint as string;
 };
+const readEditorFamily = async (client: TransactionClient, familyId: string) => {
+  const f = (await client.query('SELECT * FROM product_families WHERE id=$1', [familyId])).rows[0];
+  if (!f) return undefined;
+  const members = (await client.query('SELECT product_id,option_values,position,is_active FROM product_family_members WHERE family_id=$1 ORDER BY position,product_id', [familyId])).rows;
+  return { id: f.id, name: f.name, slug: f.slug, optionAxes: f.option_axes, isActive: f.is_active, members: members.map(m => ({ productId: m.product_id, optionValues: m.option_values, position: m.position, isActive: m.is_active })) };
+};
+const experienceFingerprint = async (client: Pick<TransactionClient, 'query'>, productId: string): Promise<string> => {
+  const result = await client.query("SELECT md5(coalesce((SELECT to_jsonb(x)::text FROM product_experience_profiles x WHERE product_id=$1),'null') || coalesce((SELECT to_jsonb(f)::text || coalesce((SELECT jsonb_agg(to_jsonb(m) ORDER BY m.product_id)::text FROM product_family_members m WHERE m.family_id=f.id),'[]') FROM product_families f JOIN product_family_members own ON own.family_id=f.id WHERE own.product_id=$1),'null')) AS fingerprint", [productId]);
+  return result.rows[0].fingerprint;
+};
+const syncFeatured = async (client: TransactionClient, productId: string, featured: boolean) => {
+  await client.query("INSERT INTO store_settings(key,value) VALUES('featured_product_ids','[]'::jsonb) ON CONFLICT(key) DO NOTHING");
+  const row = (await client.query("SELECT value FROM store_settings WHERE key='featured_product_ids' FOR UPDATE")).rows[0];
+  const ids = Array.isArray(row.value) ? row.value.filter((id: unknown) => typeof id === 'string') : [];
+  await client.query("UPDATE store_settings SET value=$1::jsonb,updated_at=now() WHERE key='featured_product_ids'", [JSON.stringify(featured ? [...new Set([...ids, productId])] : ids.filter((id: string) => id !== productId))]);
+};
+export const editorProductCandidates = async () => (await query('SELECT id,title,brand,model,condition,price,stock,images FROM products WHERE is_active=true ORDER BY updated_at DESC LIMIT 250')).rows;
 const publicClient = { query } as Pick<TransactionClient, 'query'>;
 export const loadPhoneDraft = async (id: string): Promise<PhoneDraft> => {
   const row = await readRow(publicClient, id);
@@ -129,7 +151,7 @@ export const deletePhoneDraft = async (id: string, actor: string, revision?: num
 export const searchPhoneModels = async (search: string) =>
   (
     await query(
-      `SELECT DISTINCT ON (lower(brand),lower(model)) id,brand,model,title FROM products WHERE category='smartphones' AND concat_ws(' ',brand,model,title) ILIKE $1 ORDER BY lower(brand),lower(model),updated_at DESC LIMIT 30`,
+      `SELECT DISTINCT ON (lower(brand),lower(model)) id,brand,model,title FROM products WHERE concat_ws(' ',brand,model,title) ILIKE $1 ORDER BY lower(brand),lower(model),updated_at DESC LIMIT 30`,
       [`%${search.slice(0, 100)}%`],
     )
   ).rows;
@@ -137,7 +159,7 @@ export const phoneModelTemplate = async (
   id: string,
 ): Promise<ProductPayload> => {
   const result = await query(
-    `SELECT * FROM products WHERE id=$1 AND category='smartphones'`,
+    `SELECT * FROM products WHERE id=$1`,
     [id],
   );
   if (!result.rows[0]) throw new DraftError('not_found', 404);
@@ -154,7 +176,13 @@ export const phoneModelTemplate = async (
     euResponsiblePerson: p.euResponsiblePerson,
     safetyWarnings: p.safetyWarnings,
     safetyDocuments: p.safetyDocuments,
-    category: 'smartphones',
+    category: p.category,
+    subtitle: p.subtitle,
+    energyLabel: p.energyLabel,
+    eprelId: p.eprelId,
+    countryOfOrigin: p.countryOfOrigin,
+    batteryDetails: p.batteryDetails,
+    faq: p.faq,
   };
 };
 export const createPhoneDraft = async (
@@ -167,19 +195,23 @@ export const createPhoneDraft = async (
     let familyId: string | null = null;
     if (productId) {
       const family = await client.query(
-        `SELECT f.id,f.smartphone_model_key FROM product_families f JOIN product_family_members m ON m.family_id=f.id WHERE m.product_id=$1`,
+        `SELECT f.* FROM product_families f JOIN product_family_members m ON m.family_id=f.id WHERE m.product_id=$1`,
         [productId],
       );
       familyId = family.rows[0]?.id ?? null;
       const result = await client.query(
-        `SELECT p.*,md5(to_jsonb(p)::text) AS fingerprint FROM products p WHERE category='smartphones' AND (id=$1 OR ($2::boolean AND id IN (SELECT product_id FROM product_family_members WHERE family_id=$3))) ORDER BY id FOR SHARE`,
+        `SELECT p.*,md5(to_jsonb(p)::text) AS fingerprint FROM products p WHERE (id=$1 OR ($2::boolean AND id IN (SELECT product_id FROM product_family_members WHERE family_id=$3))) ORDER BY id FOR SHARE`,
         [productId, Boolean(family.rows[0]?.smartphone_model_key), familyId],
       );
       if (!result.rows.length) throw new DraftError('not_found', 404);
+      if (familyId) document.family = await readEditorFamily(client, familyId);
+      const featured = (await client.query("SELECT value FROM store_settings WHERE key='featured_product_ids'")).rows[0]?.value ?? [];
       document.entries = [];
       for (const row of result.rows) {
-        const p = mapAdminProduct(row as ProductRow, []);
+        const p = mapAdminProduct(row as ProductRow, Array.isArray(featured) ? featured : []);
         const payload = { ...p, specs: row.specs } as ProductPayload;
+        const experience = (await client.query('SELECT * FROM product_experience_profiles WHERE product_id=$1', [p.id])).rows[0];
+        const profile = sanitizeProductExperienceProfile(experience ? { enabledSections: experience.enabled_sections, packageContents: experience.package_contents, conditionGuide: experience.condition_guide, refurbishmentSteps: experience.refurbishment_steps, trustPoints: experience.trust_points, dimensions: experience.dimensions, comparisonProductIds: experience.comparison_product_ids, bundleProductIds: experience.bundle_product_ids, campaign: experience.campaign } : {});
         if (!document.entries.length) document.shared = { ...payload };
         // Per-product fields live in each entry; identifiers must never become shared defaults.
         for (const key of [
@@ -204,9 +236,7 @@ export const createPhoneDraft = async (
             const entry = newPhoneEntry();
             const urls = variant?.images?.length
               ? variant.images
-              : p.variants.length <= 1
-                ? p.images
-                : [];
+              : p.images;
             return {
               ...entry,
               sourceProductId: p.id,
@@ -232,10 +262,8 @@ export const createPhoneDraft = async (
                 ? row.import_metadata.smartphoneEditor.channels
                 : [...entry.channels],
               details: { ...payload, ...variant },
-              photos: entry.photos.map((photo, i) => ({
-                ...photo,
-                url: urls[i] ?? '',
-              })),
+              experience: profile,
+              photos: Array.from({ length: Math.max(4, urls.length) }, (_, i) => ({ id: entry.photos[i]?.id ?? randomUUID(), url: urls[i] ?? '' })),
             } as PhoneEntry;
           },
         );
@@ -246,9 +274,13 @@ export const createPhoneDraft = async (
           payload,
           entryIds: productEntries.map((e) => e.id),
           variants: Boolean(p.variants.length),
+          experienceFingerprint: await experienceFingerprint(client, p.id),
         };
         document.entries.push(...productEntries);
       }
+    }
+    for (const entry of document.entries) {
+      if (entry.condition === 'new' && document.entries.some(other => other.id !== entry.id && other.color.trim().toLowerCase() === entry.color.trim().toLowerCase() && JSON.stringify(other.photos.map(p => p.url)) !== JSON.stringify(entry.photos.map(p => p.url)))) entry.individualPhotos = true;
     }
     if (document.entries.length > 100) throw new DraftError('invalid_document');
     const result = await client.query(
@@ -423,10 +455,10 @@ export const writeProduct = async (
   for (const unit of units) {
     const result = await client.query(
       `INSERT INTO inventory_skus(product_id,sku,location,on_hand,reserved,safety_buffer,is_active)
-      VALUES($1,$2,'local',$3,0,0,true) ON CONFLICT(sku,location) DO UPDATE SET
-      on_hand=excluded.on_hand+inventory_skus.reserved+inventory_skus.safety_buffer,is_active=true,updated_at=now()
+      VALUES($1,$2,'local',$3,0,0,$4) ON CONFLICT(sku,location) DO UPDATE SET
+      on_hand=excluded.on_hand+inventory_skus.reserved+inventory_skus.safety_buffer,is_active=excluded.is_active,updated_at=now()
       WHERE inventory_skus.product_id=excluded.product_id RETURNING id`,
-      [id, unit.sku, unit.stock ?? p.stock],
+      [id, unit.sku, unit.stock ?? p.stock, p.isActive],
     );
     if (result.rowCount !== 1) throw new DraftError('duplicate_sku');
   }
@@ -441,49 +473,49 @@ const verifyPhotos = async (
   document: PhoneDocument,
   confirmedSharedPhotos: boolean,
 ) => {
-  const ownership = new Map<string, PhoneEntry>();
   const hashes = new Map<string, string[]>();
+  const fileHashes = new Map<string, string>();
+  const owners = new Map<string, PhoneEntry[]>();
   for (const entry of entries) {
     const distinct = new Set<string>();
-    for (const photo of entry.photos) {
+    for (const photo of entry.photos.filter(photo => photo.url)) {
       const file = resolveUploadPath(photo.url);
-      if (!file) throw new DraftError('uploaded_photos_required');
-      let hash: string;
-      try {
-        const pixels = await sharp(file, { limitInputPixels: 40_000_000 })
-          .rotate()
-          .png()
-          .toBuffer();
-        hash = createHash('sha256').update(pixels).digest('hex');
-      } catch {
-        throw new DraftError('photo_missing');
+      if (!file) {
+        // Preserve HTTPS catalog galleries without fetching remote URLs.
+        try { const url = new URL(photo.url); if (url.protocol === 'https:' && !url.username && !url.password) continue; } catch {}
+        throw new DraftError('uploaded_photos_required');
       }
-      // Serialize claims across draft publications, including simultaneous duplicate device uploads.
-      await client.query(
-        `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,
-        [hash],
-      );
-      const claim = (
-        await client.query(
-          `SELECT c.*,p.brand,p.model FROM smartphone_editor_photo_claims c JOIN products p ON p.id=c.product_id WHERE content_hash=$1`,
-          [hash],
-        )
-      ).rows[0];
-      if (claim && claim.product_id !== entry.sourceProductId) {
-        const error = photoReuseError({ ...document.shared, color: entry.color, condition: entry.condition }, claim, confirmedSharedPhotos);
-        if (error) throw new DraftError(error);
+      let hash = fileHashes.get(file);
+      if (!hash) {
+        try {
+          const pixels = await sharp(file, { limitInputPixels: 40_000_000 }).rotate().png().toBuffer();
+          hash = createHash('sha256').update(pixels).digest('hex');
+          fileHashes.set(file, hash);
+        } catch { throw new DraftError('photo_missing'); }
       }
       if (distinct.has(hash)) throw new DraftError('distinct_photos_required');
       distinct.add(hash);
-      const previous = ownership.get(hash);
-      if (previous) {
-        const error = photoReuseError({ ...document.shared, color: entry.color, condition: entry.condition },
-          { ...document.shared, color: previous.color, condition: previous.condition }, confirmedSharedPhotos);
-        if (error) throw new DraftError(error);
-      }
-      ownership.set(hash, entry);
+      owners.set(hash, [...owners.get(hash) ?? [], entry]);
     }
     hashes.set(entry.id, [...distinct]);
+  }
+  // Each shared asset is decoded once and locked once, in a fixed order.
+  const sorted = [...owners.keys()].sort();
+  for (const hash of sorted) await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [hash]);
+  const claims = sorted.length ? (await client.query('SELECT c.*,p.brand,p.model FROM smartphone_editor_photo_claims c JOIN products p ON p.id=c.product_id WHERE content_hash=ANY($1::text[])', [sorted])).rows : [];
+  const claimed = new Map(claims.map(claim => [claim.content_hash, claim]));
+  for (const [hash, offers] of owners) {
+    const prior = claimed.get(hash);
+    for (const entry of offers) {
+      if (prior && prior.product_id !== entry.sourceProductId) {
+        const error = photoReuseError({ ...document.shared, color: entry.color, condition: entry.condition }, prior, confirmedSharedPhotos);
+        if (error) throw new DraftError(error);
+      }
+      if (offers.length > 1) {
+        const error = photoReuseError(entry, offers[0], confirmedSharedPhotos);
+        if (error) throw new DraftError(error);
+      }
+    }
   }
   return hashes;
 };
@@ -499,8 +531,9 @@ export const publishPhoneDraft = async (
   input: PublishRequest,
   actor: string,
   owner: boolean,
-): Promise<PhoneDraft> =>
-  withTransaction(async (client) => {
+): Promise<PhoneDraft> => {
+  const promotions: Array<Parameters<typeof autoPublishProductPromotion>[0]> = [];
+  const response = await withTransaction(async (client) => {
     if (
       !/^[0-9a-f-]{36}$/i.test(input.requestId ?? '') ||
       !Array.isArray(input.entryIds) ||
@@ -527,6 +560,7 @@ export const publishPhoneDraft = async (
     const doc = validateDocument(row.document);
     if (doc.pendingShared) throw new DraftError('review_shared_changes');
     verifySources(doc, row);
+    if (row.family_id) await client.query('SELECT id FROM product_families WHERE id=$1 FOR UPDATE', [row.family_id]);
     const selected = doc.entries.filter((e) => input.entryIds.includes(e.id));
     if (
       selected.length !== input.entryIds.length ||
@@ -548,6 +582,14 @@ export const publishPhoneDraft = async (
         combos.add(combo);
       }
     }
+    let familyId = row.family_id;
+    const needsModelFamily = !familyId && selected.some((e) => !e.sourceProductId) && selected.every(e => e.color.trim() && e.storage.trim());
+    const modelFamilyKey = `${doc.shared.category === 'smartphones' ? '' : `${doc.shared.category}|`}${doc.shared.brand?.trim().toLowerCase() ?? ''}|${(doc.shared.model || doc.shared.title)?.trim().toLowerCase()}`;
+    if (needsModelFamily) {
+      // Match existing-family editors' family-before-photo lock order.
+      const existingFamily = await client.query('SELECT id FROM product_families WHERE smartphone_model_key=$1 FOR UPDATE', [modelFamilyKey]);
+      familyId = existingFamily.rows[0]?.id ?? null;
+    }
     const photoHashes = await verifyPhotos(client, selected, doc, input.confirmedSharedPhotos === true);
     // Lock the live rows in a fixed order; stock changes also invalidate the original snapshot.
     for (const productId of [
@@ -558,11 +600,13 @@ export const publishPhoneDraft = async (
       const source = row.sources[productId];
       if (source.entryIds.some((entryId) => !input.entryIds.includes(entryId)))
         throw new DraftError('select_all_legacy_variants');
+      await client.query("SELECT pg_advisory_xact_lock(hashtextextended('product-experience:' || $1,0))", [productId]);
       const current = await client.query(
         `SELECT md5(to_jsonb(p)::text) AS fingerprint FROM products p WHERE id=$1 FOR UPDATE`,
         [productId],
       );
       if (current.rows[0]?.fingerprint !== source.fingerprint) throw conflict();
+      if (source.experienceFingerprint !== undefined && (await experienceFingerprint(client, productId)) !== source.experienceFingerprint) throw conflict();
       await client.query(
         `SELECT id FROM inventory_skus WHERE product_id=$1 ORDER BY sku FOR UPDATE`,
         [productId],
@@ -573,16 +617,15 @@ export const publishPhoneDraft = async (
       )
         throw conflict();
     }
-    let familyId = row.family_id;
-    if (!familyId && selected.some((e) => !e.sourceProductId)) {
+    if (!familyId && needsModelFamily) {
       familyId = randomUUID();
       const family = await client.query(
         `INSERT INTO product_families(id,name,slug,option_axes,is_active,smartphone_model_key) VALUES($1,$2,$3,'["color","storage","condition"]'::jsonb,true,$4) ON CONFLICT(smartphone_model_key) DO UPDATE SET updated_at=product_families.updated_at RETURNING id`,
         [
           familyId,
-          `${doc.shared.brand} ${doc.shared.model}`,
+          [doc.shared.brand, doc.shared.model || doc.shared.title].filter(Boolean).join(' '),
           `phone-${familyId}`,
-          `${doc.shared.brand?.trim().toLowerCase()}|${doc.shared.model?.trim().toLowerCase()}`,
+          modelFamilyKey,
         ],
       );
       familyId = family.rows[0].id;
@@ -617,6 +660,7 @@ export const publishPhoneDraft = async (
         keys.add(key);
       }
     }
+    const newProductIds = new Set<string>();
     const groups = new Map<string, PhoneEntry[]>();
     selected.forEach((e) => {
       const key = e.sourceProductId ?? e.id;
@@ -631,12 +675,11 @@ export const publishPhoneDraft = async (
         ? row.sources[first.sourceProductId]
         : undefined;
       const productId = first.sourceProductId ?? randomUUID();
+      if (!first.sourceProductId) newProductIds.add(productId);
       const payload = {
         ...source?.payload,
         ...entryPayload(doc, first),
-        isActive:
-          entries.some((e) => e.channels.includes('store')) ||
-          Boolean(source?.payload.isActive),
+        isActive: first.details.isActive ?? entries.some((e) => e.channels.includes('store')),
       };
       if (source && !source.variants) payload.variants = [];
       if (source?.variants) {
@@ -657,6 +700,10 @@ export const publishPhoneDraft = async (
         if (e.channels.includes('store') && !entryReadiness(doc, e).store.ready)
           throw new DraftError('website_incomplete');
       await writeProduct(client, productId, payload, Boolean(source));
+      if (source) await markOpenIntakeRunsStale(productId, 'Unified product editor publication', client);
+      if (first.experience !== undefined) await persistProfile(client, productId, first.experience);
+      if (payload.isHomepageFeatured !== undefined) await syncFeatured(client, productId, payload.isHomepageFeatured);
+
       await client.query(
         `UPDATE products SET import_metadata=jsonb_set(coalesce(import_metadata,'{}'::jsonb),'{smartphoneEditor}',jsonb_build_object('googleSelected',$2::boolean,'channels',$3::jsonb,'conditionNote',$4::text,'defects',$5::text,'accessories',$6::text),true) WHERE id=$1`,
         [
@@ -696,7 +743,7 @@ export const publishPhoneDraft = async (
             }),
           ],
         );
-        await client.query(
+        if (first.experience === undefined) await client.query(
           `INSERT INTO product_experience_profiles(product_id,enabled_sections) VALUES($1,'{"familyConfigurator":true}'::jsonb) ON CONFLICT(product_id) DO UPDATE SET enabled_sections=product_experience_profiles.enabled_sections || excluded.enabled_sections`,
           [productId],
         );
@@ -715,7 +762,7 @@ export const publishPhoneDraft = async (
             continue;
           }
           if (channel === 'store') {
-            statuses.store = 'published';
+            statuses.store = payload.isActive ? 'published' : 'complete';
             continue;
           }
           statuses[channel] = await queueChannel(
@@ -733,7 +780,7 @@ export const publishPhoneDraft = async (
           : undefined;
       }
       const fresh = await client.query(
-        `SELECT md5(to_jsonb(p)::text) AS fingerprint FROM products p WHERE id=$1`,
+        `SELECT md5(to_jsonb(p)::text) AS fingerprint,p.slug FROM products p WHERE id=$1`,
         [productId],
       );
       row.sources[productId] = {
@@ -742,8 +789,21 @@ export const publishPhoneDraft = async (
         payload,
         entryIds: entries.map((e) => e.id),
         variants: Boolean(payload.variants?.length),
+        experienceFingerprint: await experienceFingerprint(client, productId),
       };
+      if (payload.isActive) promotions.push({ id: productId, title: payload.title ?? '', subtitle: payload.subtitle ?? '', description: payload.description ?? '', slug: fresh.rows[0].slug, imageUrl: payload.images?.[0] ?? null, price: payload.price ?? 0, compareAtPrice: payload.compareAtPrice ?? null, locale: 'de' });
     }
+    if (doc.family) {
+      // Keep automatically added versions when the existing family is edited.
+      const added = (await client.query('SELECT product_id,option_values,position,is_active FROM product_family_members WHERE family_id=$1', [familyId])).rows;
+      const automatic = familyId && (await client.query('SELECT smartphone_model_key FROM product_families WHERE id=$1', [familyId])).rows[0]?.smartphone_model_key;
+      const mapped = doc.family.members.map(member => { const entry = automatic ? selected.find(e => e.sourceProductId === member.productId) : undefined; return entry ? { ...member, optionValues: { ...member.optionValues, color: entry.color, storage: entry.storage, condition: entry.condition, device: member.productId } } : member; });
+      const family = { ...doc.family, id: familyId ?? doc.family.id, members: [...mapped, ...added.filter(member => newProductIds.has(member.product_id) && !doc.family!.members.some(m => m.productId === member.product_id)).map(member => ({ productId: member.product_id, optionValues: member.option_values, position: member.position, isActive: member.is_active }))] };
+      familyId = await persistFamily(client, family);
+      doc.family = family;
+    }
+    if (familyId) doc.family = await readEditorFamily(client, familyId);
+    for (const [productId, source] of Object.entries(row.sources)) source.experienceFingerprint = await experienceFingerprint(client, productId);
     const saved = await client.query(
       `UPDATE smartphone_editor_drafts SET document=$2::jsonb,sources=$3::jsonb,results=$4::jsonb,family_id=$5,revision=revision+1,updated_by=$6,updated_at=now() WHERE id=$1 RETURNING *`,
       [
@@ -762,6 +822,11 @@ export const publishPhoneDraft = async (
     );
     return response;
   });
+  // Preserve configured catalog announcements after a successful commit.
+  // A publication retry returns its receipt without enqueuing announcements again.
+  await Promise.allSettled(promotions.map(product => autoPublishProductPromotion(product, product.compareAtPrice && product.compareAtPrice > (product.price ?? 0) ? 'discount' : 'new')));
+  return response;
+};
 
 const queueChannel = async (
   client: TransactionClient,

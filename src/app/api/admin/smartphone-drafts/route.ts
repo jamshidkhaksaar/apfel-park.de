@@ -5,10 +5,12 @@ import {
   listPhoneDrafts,
   searchPhoneModels,
   phoneModelTemplate,
+  editorProductCandidates,
 } from '@/lib/smartphone-editor/repository';
 export const GET = (request: NextRequest) =>
   phoneHandler(request, async () => {
     const params = request.nextUrl.searchParams;
+    if (params.has('candidates')) return { products: await editorProductCandidates() };
     if (params.has('search'))
       return { models: await searchPhoneModels(params.get('search') ?? '') };
     if (params.has('template'))

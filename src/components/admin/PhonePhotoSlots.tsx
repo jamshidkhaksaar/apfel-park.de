@@ -91,13 +91,13 @@ export default function PhonePhotoSlots({
           className="rounded-2xl border border-border bg-surface p-3"
         >
           <p className="mb-2 font-semibold text-foreground">
-            {t.photos[index]}
+            {t.photos[index] ?? `${locale === 'de' ? 'Foto' : 'Photo'} ${index + 1}`}
           </p>
           <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-background">
             {slot.url ? (
               <Image
                 src={slot.url}
-                alt={t.photos[index]}
+                alt={t.photos[index] ?? `Photo ${index + 1}`}
                 fill
                 unoptimized
                 className="object-contain"
@@ -111,7 +111,7 @@ export default function PhonePhotoSlots({
           <label className="block text-sm text-foreground">
             {t.replace}
             <input
-              aria-label={`${t.photos[index]} — ${t.replace}`}
+              aria-label={`${t.photos[index] ?? `Photo ${index + 1}`} — ${t.replace}`}
               type="file"
               accept="image/jpeg,image/png,image/webp"
               disabled={locked}
@@ -195,6 +195,7 @@ export default function PhonePhotoSlots({
           </div>
         </div>
       ))}
+      {slots.length < 40 ? <button type="button" disabled={locked} className="btn-secondary min-h-11 self-start" onClick={() => onChange([...slots, { id: crypto.randomUUID(), url: '' }], coverId)}>{locale === 'de' ? 'Weiteres Foto hinzufügen' : 'Add another photo'}</button> : null}
     </div>
   );
 }

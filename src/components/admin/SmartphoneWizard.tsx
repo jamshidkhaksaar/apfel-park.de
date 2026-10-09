@@ -2,9 +2,12 @@
 
 import { markAdminListsChanged } from '@/lib/admin-list-navigation';
 import { appliedResearchTextFields, normalizeAiTextFields } from '@/lib/product-ai-fields';
-import { photoMembershipChanged } from '@/lib/product-photo-confirmation';
+import { applyEditorResearch } from '@/lib/smartphone-editor/research';
+import { changeEntryColor, setEntryPhotos, sharesColorPhotos } from '@/lib/smartphone-editor/photos';
+import type { ExperienceCandidate } from '@/lib/admin-product-types';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProductPayload } from '@/lib/product-write-payload';
 import {
@@ -13,7 +16,6 @@ import {
   entryImages,
   entryReadiness,
   entryProblems,
-  copyNewPhonePhotos,
   type PhoneDraft,
   type PhoneDocument,
   type PhoneEntry,
@@ -25,6 +27,10 @@ import {
 } from '@/lib/smartphone-editor/i18n';
 import PhonePhotoSlots from './PhonePhotoSlots';
 import AiFillButton from './AiFillButton';
+import VersionOfferFields from './VersionOfferFields';
+import ProductInformationFields from './ProductInformationFields';
+import EditorExperienceFields from './EditorExperienceFields';
+import EditorChannelFields from './EditorChannelFields';
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-foreground';
@@ -77,6 +83,7 @@ export default function SmartphoneWizard({
   locale: 'de' | 'en';
   productId?: string;
 }) {
+  const router = useRouter();
   const t = phoneEditorText[locale];
   const [draft, setDraft] = useState<PhoneDraft | null>(null);
   const [document, setDocument] = useState<PhoneDocument | null>(null);
@@ -94,6 +101,14 @@ export default function SmartphoneWizard({
     { id: string; brand: string; model: string; title: string }[]
   >([]);
   const sharedEdit = document?.pendingShared;
+  const [experienceEntryId, setExperienceEntryId] = useState('');
+  const [candidates, setCandidates] = useState<ExperienceCandidate[]>([]);
+  useEffect(() => {
+    if (!draft?.id) return;
+    let active = true;
+    void call('/api/admin/smartphone-drafts?candidates=1').then(result => { if (active) setCandidates(result.products); }).catch(() => {});
+    return () => { active = false; };
+  }, [draft?.id]);
   const [copyFrom, setCopyFrom] = useState<Record<string, string>>({});
   const current = useRef<PhoneDocument | null>(null);
   const saved = useRef('');
@@ -170,7 +185,6 @@ export default function SmartphoneWizard({
         saved.current = JSON.stringify(snapshot);
         setDraft(result);
         setError('');
-        setNotice('saved');
         setStatus(
           JSON.stringify(current.current) === saved.current
             ? 'saved'
@@ -264,7 +278,9 @@ export default function SmartphoneWizard({
         'hasRealProductPhotos',
         'defects',
         'accessories',
+        'experience',
       ].some((k) => k in patch);
+      const productSettings = Object.fromEntries(Object.entries(patch.details ?? {}).filter(([key]) => ['isActive', 'isHomepageFeatured'].includes(key)));
       return {
         ...doc,
         entries: doc.entries.map((e) =>
@@ -273,7 +289,8 @@ export default function SmartphoneWizard({
             target.variantIndex !== undefined &&
             e.sourceProductId === target.sourceProductId)
             ? { ...e, ...patch }
-            : e,
+            : target.sourceProductId && e.sourceProductId === target.sourceProductId && Object.keys(productSettings).length
+              ? { ...e, details: { ...e.details, ...productSettings } } : e,
         ),
       };
     });
@@ -385,6 +402,15 @@ export default function SmartphoneWizard({
       setBusy(false);
     }
   };
+  const removeProduct = async () => {
+    if (!productId || !window.confirm(locale === 'de' ? 'Dieses Produkt wirklich löschen?' : 'Delete this product?')) return;
+    setBusy(true);
+    try {
+      await call(`/api/admin/products?id=${encodeURIComponent(productId)}`, 'DELETE');
+      markAdminListsChanged();
+      router.push('/admin/products');
+    } catch (e) { setError((e as Error).message); setBusy(false); }
+  };
   if (!draft || !document)
     return (
       <div className="space-y-5">
@@ -400,10 +426,11 @@ export default function SmartphoneWizard({
         </button>
         {productId ? <div className="flex flex-wrap gap-3">
           <button className="btn-secondary" disabled={busy || initializing} onClick={() => void start(3)}>{locale === 'de' ? 'Variantenfotos bearbeiten' : 'Edit variant photos'}</button>
-          <button className="btn-secondary" disabled={busy || initializing} onClick={() => void start(2)}>{t.priceShortcut}</button>
+          <button className="btn-secondary" disabled={busy || initializing} onClick={() => void start(1)}>{t.priceShortcut}</button>
           <p className="w-full text-sm text-muted">{locale === 'de' ? 'Die vorhandenen Varianten werden als Entwurf geladen. Das veröffentlichte Produkt ändert sich erst nach der Prüfung und Veröffentlichung.' : 'Existing versions open as a draft. The live product changes only after review and publication.'}</p>
         </div> : null}
         <h3>{t.resume}</h3>
+        {productId ? <button type="button" className="rounded-lg border border-red-500/30 px-3 py-2 text-sm text-red-400 disabled:opacity-50" disabled={busy} onClick={() => void removeProduct()}>{locale === 'de' ? 'Produkt löschen' : 'Delete product'}</button> : null}
         {drafts.length ? (
           drafts.map((item) => (
             <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-3">
@@ -473,7 +500,7 @@ export default function SmartphoneWizard({
         <button
           className="btn-secondary"
           disabled={busy || uploading}
-          onClick={() => go(2)}
+          onClick={() => go(1)}
         >
           {t.priceShortcut}
         </button>
@@ -543,29 +570,13 @@ export default function SmartphoneWizard({
           <section className="space-y-4 rounded-2xl border border-border p-5">
             <Field label={t.search} value={search} onChange={setSearch} />
             {researchEnabled ? (
-              <AiFillButton locale={locale} query={search}
+              <AiFillButton locale={locale} query={search || [shared.brand, shared.model, shared.title].filter(Boolean).join(' ')}
+                color={document.entries.every(entry => entry.color === document.entries[0]?.color) ? document.entries[0]?.color : undefined}
+                eprelId={shared.eprelId}
                 condition={document.entries.every(entry => entry.condition === document.entries[0]?.condition) ? document.entries[0]?.condition : undefined}
                 onError={setError}
                 onResult={(result) => {
-                    change((d) => ({
-                      ...d,
-                      pendingShared: {
-                        ...d.shared,
-                        title: result.title ?? d.shared.title,
-                        brand: result.brand ?? d.shared.brand,
-                        model: result.model ?? d.shared.model,
-                        description: result.description ?? d.shared.description,
-                        aiGeneratedFields: appliedResearchTextFields(d.shared.aiGeneratedFields, result),
-                        specs: result.specs ?? d.shared.specs,
-                        manufacturer: result.manufacturer ?? d.shared.manufacturer,
-                        euResponsiblePerson: result.euResponsiblePerson ?? d.shared.euResponsiblePerson,
-                        safetyWarnings: result.safetyWarnings ?? d.shared.safetyWarnings,
-                        eprelId: result.eprelId ?? d.shared.eprelId,
-                        energyLabel: result.energyLabel ?? d.shared.energyLabel,
-                        featureBullets: result.features ?? d.shared.featureBullets,
-                        batteryDetails: result.batteryDetails ?? d.shared.batteryDetails,
-                      },
-                    }));
+                    change(d => applyEditorResearch(d, result));
                 }}/>
             ) : null}
             {models.map((m) => (
@@ -583,12 +594,15 @@ export default function SmartphoneWizard({
                 {m.brand} {m.model} · {t.reuse}
               </button>
             ))}
+            <label className="block text-sm">{locale === 'de' ? 'Kategorie' : 'Category'}<select className={inputClass} value={shared.category ?? 'smartphones'} onChange={event => setShared({ category: event.target.value })}>
+              {['smartphones', 'tablets', 'laptops', 'consoles', 'accessories', 'parts'].map(category => <option key={category} value={category}>{{ smartphones: 'Smartphones', tablets: 'Tablets', laptops: 'Laptops', consoles: locale === 'de' ? 'Konsolen' : 'Consoles', accessories: locale === 'de' ? 'Zubehör' : 'Accessories', parts: locale === 'de' ? 'Ersatzteile' : 'Spare parts' }[category]}</option>)}
+            </select></label>
             <div className="grid gap-4 sm:grid-cols-3">
-              {(['brand', 'model', 'title'] as const).map((key) => (
+              {(['brand', 'model', 'title', 'subtitle'] as const).map((key) => (
                 <Field
                   key={key}
                   id={key}
-                  label={key === 'title' ? t.name : t[key]}
+                  label={key === 'title' ? t.name : key === 'subtitle' ? (locale === 'de' ? 'Untertitel' : 'Subtitle') : t[key]}
                   value={shared[key] ?? ''}
                   onChange={(value) => setShared({ [key]: value })}
                 />
@@ -598,6 +612,13 @@ export default function SmartphoneWizard({
         ) : null}
         {document.step === 1 ? (
           <>
+            {document.variantSuggestions?.length ? <section className="rounded-xl border border-border p-4 space-y-3"><h3 className="font-semibold">{locale === 'de' ? 'Versionen aus der KI-Recherche' : 'Versions suggested by AI research'}</h3><p className="text-sm text-muted">{locale === 'de' ? 'Version auswählen und tatsächlichen Bestand, Preis und Zustand eintragen.' : 'Choose a version and enter its actual quantity, price and condition.'}</p><div className="flex flex-wrap gap-2">{document.variantSuggestions.map((suggestion, index) => <button key={index} type="button" className="btn-secondary" onClick={() => change(d => {
+              const donor = d.entries.find(entry => entry.condition === 'new' && entry.color.trim().toLowerCase() === suggestion.color.trim().toLowerCase());
+              if (d.entries.some(item => item.condition === 'new' && item.color === suggestion.color && item.storage === suggestion.storage)) return d;
+              const empty = d.entries.find(item => !item.sourceProductId && !item.color && !item.storage && !item.price && !entryImages(item).length);
+              const entry = empty ? { ...empty, ...suggestion, stock: 0 } : { ...newPhoneEntry(donor ?? d.entries[0]), ...suggestion, stock: 0, price: 0 };
+              return { ...d, entries: empty ? d.entries.map(item => item.id === empty.id ? entry : item) : [...d.entries, entry] };
+            })}>{suggestion.color} · {suggestion.storage}</button>)}</div></section> : null}
             <div className="space-y-4">
               {document.entries.map((e) =>
                 card(
@@ -613,7 +634,6 @@ export default function SmartphoneWizard({
                             updateEntry(e.id, {
                               condition: event.target
                                 .value as PhoneEntry['condition'],
-                              ...(!e.sourceProductId ? { stock: 1 } : {}),
                               hasRealProductPhotos: false,
                             })
                           }
@@ -630,7 +650,7 @@ export default function SmartphoneWizard({
                         label={t.color}
                         value={e.color}
                         onChange={(value) =>
-                          updateEntry(e.id, { color: value })
+                          change(doc => changeEntryColor(doc, e.id, value))
                         }
                       />
                       <Field
@@ -641,7 +661,9 @@ export default function SmartphoneWizard({
                         }
                       />
                     </div>
-                    <div className="mt-4 flex gap-3">
+                    <label className="mt-3 flex gap-2 text-sm"><input type="checkbox" checked={Boolean(e.individualPhotos)} onChange={event => updateEntry(e.id, { individualPhotos: event.target.checked })} />{locale === 'de' ? 'Eigene Fotos für diese Version verwenden' : 'Use separate photos for this version'}</label>
+                    <VersionOfferFields locale={locale} entry={e} onChange={patch => updateEntry(e.id, patch)} />
+                    <div className="mt-4 flex flex-wrap gap-3">
                       <button
                         className="btn-secondary"
                         onClick={() =>
@@ -675,75 +697,19 @@ export default function SmartphoneWizard({
             </div>
           </>
         ) : null}
-        {document.step === 2
-          ? document.entries.map((e) =>
-              card(
-                e,
-                <>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    {(['price', 'stock', 'sku'] as const).map((key) => (
-                      <Field
-                        id={`${e.id}-${key}`}
-                        key={key}
-                        label={t[key]}
-                        value={e[key]}
-                        type={key === 'sku' ? 'text' : 'number'}
-                        onChange={(value) =>
-                          updateEntry(e.id, {
-                            [key]: key === 'sku' ? value : Number(value),
-                          })
-                        }
-                      />
-                    ))}
-                  </div>
-                  {e.condition !== 'new' ? (
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                      <Field
-                        label={t.batteryHealth}
-                        type="number"
-                        value={e.batteryHealth ?? ''}
-                        onChange={(value) =>
-                          updateEntry(e.id, {
-                            batteryHealth: value ? Number(value) : null,
-                          })
-                        }
-                      />
-                      {(
-                        ['conditionNote', 'defects', 'accessories'] as const
-                      ).map((key) => (
-                        <Field
-                          id={`${e.id}-${key}`}
-                          key={key}
-                          label={t[key]}
-                          value={e[key]}
-                          onChange={(value) =>
-                            updateEntry(e.id, { [key]: value })
-                          }
-                        />
-                      ))}
-                      <label className="flex gap-3 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={e.hasRealProductPhotos}
-                          onChange={(event) =>
-                            updateEntry(e.id, {
-                              hasRealProductPhotos: event.target.checked,
-                            })
-                          }
-                        />
-                        {t.hasRealProductPhotos}
-                      </label>
-                    </div>
-                  ) : null}
-                </>,
-              ),
-            )
-          : null}
+        {document.step === 2 ? <section className="space-y-4">
+          <label className="block text-sm">{locale === 'de' ? 'Version für Produktdarstellung' : 'Version for product presentation'}<select className={inputClass} value={document.entries.some(e => e.id === experienceEntryId) ? experienceEntryId : document.entries[0].id} onChange={event => setExperienceEntryId(event.target.value)}>
+            {document.entries.map(e => <option key={e.id} value={e.id}>{entryLabel(e)}</option>)}
+          </select></label>
+          {(() => { const e = document.entries.find(entry => entry.id === experienceEntryId) ?? document.entries[0]; return <EditorExperienceFields key={e.id} locale={locale} value={e.experience} family={document.family} candidates={candidates} onChange={experience => updateEntry(e.id, { experience })} onFamilyChange={family => change(d => ({ ...d, family }))} />; })()}
+        </section> : null}
+        {document.step === 3 && document.researchGallery?.length ? <div className="rounded-xl border border-border p-4 text-sm">{locale === 'de' ? 'Freigegebene Bilder aus der Recherche: Galerie prüfen und für die passende neue Version übernehmen.' : 'Licensed research images: review the gallery and apply it to the matching new version.'}</div> : null}
         {document.step === 3
-          ? document.entries.map((e) =>
+          ? document.entries.filter((e, index, entries) => !sharesColorPhotos(e) || !entries.slice(0, index).some(other => sharesColorPhotos(other) && other.color.trim().toLowerCase() === e.color.trim().toLowerCase())).map((e) =>
               card(
                 e,
                 <>
+                  <p className="mb-3 text-sm text-muted">{sharesColorPhotos(e) ? (locale === 'de' ? `Eine Galerie für alle neuen Versionen in ${e.color || 'dieser Farbe'}. Speicher und Preis bleiben getrennt.` : `One gallery for all new versions in ${e.color || 'this color'}. Storage and prices remain separate.`) : (locale === 'de' ? 'Individuelle Produktfotos' : 'Individual product photos')}</p>
                   <PhonePhotoSlots
                     locale={locale}
                     slots={e.photos}
@@ -751,14 +717,10 @@ export default function SmartphoneWizard({
                     disabled={uploading}
                     onBusy={setUploading}
                     onChange={(photos, coverId) => {
-                      if (e.condition !== 'new' && photoMembershipChanged(e.photos.map(photo => photo.url), photos.map(photo => photo.url))) {
-                        // Confirmation is shared by sibling variants, but their
-                        // photos are not: keep these two updates separate.
-                        updateEntry(e.id, { hasRealProductPhotos: false });
-                      }
-                      updateEntry(e.id, { photos, coverId });
+                      change(d => setEntryPhotos(d, e.id, photos, coverId));
                     }}
                   />
+                  {e.condition === 'new' && document.researchGallery?.length ? <button type="button" className="btn-secondary mt-3" onClick={() => { const photos = [...new Set([...entryImages(e), ...document.researchGallery ?? []])].map(url => ({ id: crypto.randomUUID(), url })); change(d => setEntryPhotos(d, e.id, photos, photos[0].id)); }}>{locale === 'de' ? 'Passende Recherchebilder übernehmen' : 'Apply matching research images'}</button> : null}
                   {e.condition !== 'new' ? (
                     <label className="mt-4 flex items-center gap-2 text-sm">
                       <input
@@ -770,7 +732,8 @@ export default function SmartphoneWizard({
                       {t.hasRealProductPhotos}
                     </label>
                   ) : null}
-                  {e.condition === 'new' ? (
+                  <label className="mt-3 flex gap-2 text-sm"><input type="checkbox" checked={Boolean(e.individualPhotos)} onChange={event => updateEntry(e.id, { individualPhotos: event.target.checked })} />{locale === 'de' ? 'Eigene Fotos für diese Version verwenden' : 'Use separate photos for this version'}</label>
+                  {(
                     <div className="mt-4 space-y-3">
                       <label className="text-sm">
                         {t.source}
@@ -790,10 +753,7 @@ export default function SmartphoneWizard({
                             .filter(
                               (other) =>
                                 other.id !== e.id &&
-                                other.condition === 'new' &&
-                                other.color.trim().toLowerCase() ===
-                                  e.color.trim().toLowerCase() &&
-                                entryImages(other).length === 4,
+                                entryImages(other).length > 0,
                             )
                             .map((other) => (
                               <option key={other.id} value={other.id}>
@@ -810,13 +770,13 @@ export default function SmartphoneWizard({
                             (other) => other.id === copyFrom[e.id],
                           );
                           if (from)
-                            updateEntry(e.id, copyNewPhonePhotos(from, e));
+                            { const photos = entryImages(from).map(url => ({ id: crypto.randomUUID(), url })); change(d => setEntryPhotos(d, e.id, photos, photos[0].id)); }
                         }}
                       >
                         {t.approveCopy}
                       </button>
                     </div>
-                  ) : null}
+                  )}
                 </>,
               ),
             )
@@ -860,6 +820,7 @@ export default function SmartphoneWizard({
                 }}
               />
             </label>
+            <ProductInformationFields locale={locale} value={shared} onChange={setShared} />
             {(['manufacturer', 'euResponsiblePerson'] as const).map((party) => (
               <div key={party}>
                 <h3 className="font-semibold">{t[party]}</h3>
@@ -1029,39 +990,10 @@ export default function SmartphoneWizard({
               card(
                 e,
                 <>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {(['mpn', 'gtin', 'asin', 'ebayEpid'] as const).map(
-                      (key) => (
-                        <Field
-                          key={key}
-                          label={t[key]}
-                          value={e.details[key] ?? ''}
-                          onChange={(value) => editDetails(e, { [key]: value })}
-                        />
-                      ),
-                    )}
-                    <label>
-                      {t.identifierStatus}
-                      <select
-                        className={inputClass}
-                        value={e.details.identifierStatus ?? 'unknown'}
-                        onChange={(event) =>
-                          editDetails(e, {
-                            identifierStatus: event.target.value as
-                              'unknown' | 'assigned' | 'not_applicable',
-                          })
-                        }
-                      >
-                        {(
-                          ['unknown', 'assigned', 'not_applicable'] as const
-                        ).map((v) => (
-                          <option key={v} value={v}>
-                            {t[v]}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                  <div className="grid gap-4 sm:grid-cols-2 mb-4">
+                    {(['mpn', 'gtin'] as const).map(key => <Field key={key} label={t[key]} value={e.details[key] ?? ''} onChange={value => editDetails(e, { [key]: value })} />)}
                   </div>
+                  <EditorChannelFields locale={locale} value={{ ...document.shared, ...e.details, condition: e.condition }} onChange={patch => editDetails(e, patch)} />
                   <div className="mt-5 space-y-3">
                     {channels.map((channel) => {
                       const ready = entryReadiness(document, e)[channel];
@@ -1088,193 +1020,6 @@ export default function SmartphoneWizard({
                             />
                             {t[channel]}
                           </label>
-                          {channel === 'ebay' ? (
-                            <>
-                              <Field
-                                label={t.categoryId}
-                                value={
-                                  e.details.marketplaceCategoryMappings?.ebay_de
-                                    ?.categoryId ?? ''
-                                }
-                                onChange={(value) =>
-                                  editDetails(e, {
-                                    marketplaceCategoryMappings: {
-                                      ...e.details.marketplaceCategoryMappings,
-                                      ebay_de: {
-                                        ...e.details.marketplaceCategoryMappings
-                                          ?.ebay_de,
-                                        categoryId: value,
-                                        requiredAspects: [],
-                                      },
-                                    },
-                                  })
-                                }
-                              />
-                              <button
-                                className="btn-secondary mt-3"
-                                disabled={
-                                  !e.details.marketplaceCategoryMappings
-                                    ?.ebay_de?.categoryId
-                                }
-                                onClick={async () => {
-                                  try {
-                                    const result = await call(
-                                      `/api/admin/marketplaces/ebay/taxonomy?categoryId=${encodeURIComponent(e.details.marketplaceCategoryMappings?.ebay_de?.categoryId ?? '')}`,
-                                    );
-                                    editDetails(e, {
-                                      marketplaceCategoryMappings: {
-                                        ...e.details
-                                          .marketplaceCategoryMappings,
-                                        ebay_de: {
-                                          ...e.details
-                                            .marketplaceCategoryMappings
-                                            ?.ebay_de,
-                                          requiredAspects: (
-                                            result.aspects ?? []
-                                          )
-                                            .filter(
-                                              (a: { required: boolean }) =>
-                                                a.required,
-                                            )
-                                            .map(
-                                              (a: { name: string }) => a.name,
-                                            ),
-                                        },
-                                      },
-                                    });
-                                  } catch (error) {
-                                    setError((error as Error).message);
-                                  }
-                                }}
-                              >
-                                {locale === 'de'
-                                  ? 'Erforderliche Merkmale laden'
-                                  : 'Load required aspects'}
-                              </button>
-                              {(
-                                e.details.marketplaceCategoryMappings?.ebay_de
-                                  ?.requiredAspects ?? []
-                              ).map((aspect) => (
-                                <Field
-                                  key={aspect}
-                                  label={aspect}
-                                  value={(
-                                    e.details.marketplaceAttributes?.ebay_de?.[
-                                      aspect
-                                    ] ?? []
-                                  ).join(', ')}
-                                  onChange={(value) =>
-                                    editDetails(e, {
-                                      marketplaceAttributes: {
-                                        ...e.details.marketplaceAttributes,
-                                        ebay_de: {
-                                          ...e.details.marketplaceAttributes
-                                            ?.ebay_de,
-                                          [aspect]: value
-                                            .split(',')
-                                            .map((v) => v.trim())
-                                            .filter(Boolean),
-                                        },
-                                      },
-                                    })
-                                  }
-                                />
-                              ))}
-                            </>
-                          ) : null}
-                          {channel === 'amazon' ? (
-                            <>
-                              <Field
-                                label={t.productType}
-                                value={
-                                  e.details.marketplaceCategoryMappings
-                                    ?.amazon_de?.productType ?? ''
-                                }
-                                onChange={(value) =>
-                                  editDetails(e, {
-                                    marketplaceCategoryMappings: {
-                                      ...e.details.marketplaceCategoryMappings,
-                                      amazon_de: { productType: value },
-                                    },
-                                  })
-                                }
-                              />
-                              {(
-                                [
-                                  'amazonRenewedApproved',
-                                  'amazonGtinExemption',
-                                ] as const
-                              ).map((key) => (
-                                <label
-                                  className="mt-3 flex gap-2 text-sm"
-                                  key={key}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean(e.details[key])}
-                                    onChange={(event) =>
-                                      editDetails(e, {
-                                        [key]: event.target.checked,
-                                      })
-                                    }
-                                  />
-                                  {t[key]}
-                                </label>
-                              ))}
-                              <label className="mt-3 flex gap-2 text-sm">
-                                <input
-                                  type="checkbox"
-                                  checked={Boolean(
-                                    e.details.batteryDetails?.included,
-                                  )}
-                                  onChange={(event) =>
-                                    editDetails(e, {
-                                      batteryDetails: {
-                                        ...e.details.batteryDetails,
-                                        included: event.target.checked,
-                                      },
-                                    })
-                                  }
-                                />
-                                {t.included}
-                              </label>
-                              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                {(
-                                  [
-                                    'cellComposition',
-                                    'count',
-                                    'wattHours',
-                                    'unNumber',
-                                  ] as const
-                                ).map((key) => (
-                                  <Field
-                                    key={key}
-                                    label={t[key]}
-                                    type={
-                                      key === 'count' || key === 'wattHours'
-                                        ? 'number'
-                                        : 'text'
-                                    }
-                                    value={
-                                      e.details.batteryDetails?.[key] ?? ''
-                                    }
-                                    onChange={(value) =>
-                                      editDetails(e, {
-                                        batteryDetails: {
-                                          ...e.details.batteryDetails,
-                                          [key]:
-                                            key === 'count' ||
-                                            key === 'wattHours'
-                                              ? Number(value)
-                                              : value,
-                                        },
-                                      })
-                                    }
-                                  />
-                                ))}
-                              </div>
-                            </>
-                          ) : null}
                           <ul className="mt-3 list-inside list-disc text-sm text-muted">
                             {ready.errors
                               .filter(
@@ -1356,7 +1101,7 @@ export default function SmartphoneWizard({
                         locale === 'de' ? 'de-DE' : 'en-GB',
                         { style: 'currency', currency: 'EUR' },
                       )}{' '}
-                      · {t.stock}: {e.stock} · {entryImages(e).length}/4{' '}
+                      · {t.stock}: {e.stock} · {entryImages(e).length}{' '}
                       {t.photoCount}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-3">
@@ -1390,6 +1135,10 @@ export default function SmartphoneWizard({
                       {t.hasRealProductPhotos}
                     </label>
                   ) : null}
+                  <div className="flex w-full flex-wrap gap-4 text-sm">
+                    <label className="flex gap-2"><input type="checkbox" checked={e.details.isActive ?? e.channels.includes('store')} onChange={event => editDetails(e, { isActive: event.target.checked })} />{locale === 'de' ? 'Im Shop aktiv' : 'Active in store'}</label>
+                    <label className="flex gap-2"><input type="checkbox" checked={Boolean(e.details.isHomepageFeatured)} onChange={event => editDetails(e, { isHomepageFeatured: event.target.checked })} />{locale === 'de' ? 'Auf der Startseite hervorheben' : 'Feature on homepage'}</label>
+                  </div>
                   <label className="flex gap-2 text-sm">
                     <input
                       type="checkbox"

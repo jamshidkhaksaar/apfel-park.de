@@ -55,7 +55,7 @@ export default function ProductExperiencePanel({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
         <div>
           <h4 className="text-base font-bold text-heading flex items-center gap-2">
-            <span>✨</span> {locale === "de" ? "8. Professionelles Produkt-Erlebnis (reBuy-Tools)" : "8. Professional Product Experience (reBuy-Tools)"}
+            <span>✨</span> {locale === "de" ? "Produktdarstellung" : "Product presentation"}
           </h4>
           <p className="text-xs text-muted mt-0.5">
             {locale === "de"
