@@ -108,7 +108,7 @@ export const generateMetadata = async ({
   const seoProductName = titlePrefix + product.title.replace(/^Apple (?=iPhone\b)/i, "");
   const descriptiveName = [product.title, variantLabel].filter(Boolean).join(" ");
   const titleCondition = product.condition === "used"
-    ? locale === "de" ? "Gebraucht" : "Used"
+    ? "A+"
     : product.condition === "open_box"
       ? "Open Box"
       : "";
@@ -431,7 +431,7 @@ export default async function ProductDetailPage({
                     : null,
                   related.condition !== "new"
                     ? related.condition === "used"
-                      ? locale === "de" ? "Gebraucht A+" : "Used A+"
+                      ? "A+"
                       : "Open-Box"
                     : null,
                 ].filter(Boolean).join(" · "),

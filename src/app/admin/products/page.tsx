@@ -5,6 +5,7 @@ import tableStyles from "@/components/admin/ProductCatalogTable.module.css";
 import ProductDeactivateButton from "@/components/admin/ProductDeactivateButton";
 import AdminFilterForm from "@/components/admin/AdminFilterForm";
 import ProductTipsBadge from "@/components/admin/ProductTipsBadge";
+import { readBatteryHealthRange } from "@/lib/product-offer-options";
 import { productMissingData } from "@/lib/product-missing-data";
 import { inventoryProductDetails } from "@/lib/inventory-product-details";
 import type { ChannelVariantFacts, ProductIdentifierStatus } from '@/lib/product-channel-readiness';
@@ -186,6 +187,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     stock: Number(product.stock ?? 0),
     images: product.images ?? [],
     batteryHealth: product.battery_health ?? "",
+    batteryHealthRange: readBatteryHealthRange(product.import_metadata, product.battery_health == null ? undefined : Number(product.battery_health)),
     manufacturer: product.manufacturer ?? undefined,
     euResponsiblePerson: product.eu_responsible_person ?? undefined,
     isActive: Boolean(product.is_active),
@@ -281,7 +283,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           <select name="brand" defaultValue={brand} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Marken" : "All brands"}</option>{brandOptions.map((item) => (<option key={item.value} value={item.value}>{item.label} ({item.n})</option>))}</select>
           <select name="category" defaultValue={category} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Kategorien" : "All categories"}</option><option value="smartphones">Smartphones</option><option value="tablets">Tablets</option><option value="parts">{locale === "de" ? "Ersatzteile" : "Spare parts"}</option><option value="accessories">Accessories</option><option value="laptops">Laptops</option><option value="consoles">Consoles</option></select>
           <select name="subcategory" defaultValue={subcategory} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Unterkategorien" : "All subcategories"}</option>{subcategoryOptions.map((item) => (<option key={item.value} value={item.value}>{subcategoryLabel(item.value, locale)} ({item.n})</option>))}</select>
-          <select name="condition" defaultValue={condition} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Zustände" : "All conditions"}</option><option value="new">{locale === "de" ? "Neu" : "New"}</option><option value="open_box">Open-box</option><option value="used">{locale === "de" ? "Gebraucht" : "Used"}</option></select>
+          <select name="condition" defaultValue={condition} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Zustände" : "All conditions"}</option><option value="new">{locale === "de" ? "Neu" : "New"}</option><option value="open_box">Open-box</option><option value="used">{"A+"}</option></select>
           <select name="status" defaultValue={status} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Status" : "All statuses"}</option><option value="active">{locale === "de" ? "Aktiv" : "Active"}</option><option value="inactive">{locale === "de" ? "Entwurf" : "Draft"}</option><option value="out-of-stock">{locale === "de" ? "Ausverkauft" : "Out of stock"}</option></select>
           <select name="sort" defaultValue={sort} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="newest">{locale === "de" ? "Zuletzt geändert" : "Recently updated"}</option><option value="oldest">{locale === "de" ? "Älteste" : "Oldest"}</option><option value="title">A–Z</option><option value="price-asc">{locale === "de" ? "Preis aufsteigend" : "Price low-high"}</option><option value="price-desc">{locale === "de" ? "Preis absteigend" : "Price high-low"}</option></select>
           <button className="rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background">{locale === "de" ? "Anwenden" : "Apply"}</button>
@@ -322,7 +324,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                           <span><span className="text-muted">{dict.inventoryCatalog.storage}: </span><span className="font-medium">{details.storage || dict.inventoryCatalog.notSpecified}</span></span>
                         </span>
                       </span></Link></td>
-                      <td data-label={locale === "de" ? "Kategorie" : "Category"} className="px-4 py-3 text-sm text-muted">{product.category}{product.subcategory && product.subcategory !== product.category ? <span className="mt-0.5 block text-xs text-muted/70">{subcategoryLabel(product.subcategory, locale)}</span> : null}</td><td data-label={locale === "de" ? "Zustand" : "Condition"} className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? (locale === "de" ? "Gebraucht" : "Used") : (locale === "de" ? "Neu" : "New")}</td>
+                      <td data-label={locale === "de" ? "Kategorie" : "Category"} className="px-4 py-3 text-sm text-muted">{product.category}{product.subcategory && product.subcategory !== product.category ? <span className="mt-0.5 block text-xs text-muted/70">{subcategoryLabel(product.subcategory, locale)}</span> : null}</td><td data-label={locale === "de" ? "Zustand" : "Condition"} className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? "A+" : (locale === "de" ? "Neu" : "New")}</td>
                       <td data-label="Status" className="px-4 py-3"><ProductDeactivateButton id={product.id} title={product.title} isActive={Boolean(product.is_active)} locale={locale} /></td>
                       <td data-label={locale === "de" ? "Tipps" : "Tips"} className="px-4 py-3"><ProductTipsBadge tips={tipsByProduct.get(product.id)!} locale={locale} /></td>
                       <td data-label={dict.productsWorkspace.aiStatus} className="px-4 py-3 text-sm text-muted">{statusLabel(summaries.get(product.id)?.status ?? "none")}<span className="mt-0.5 block text-xs">{summaries.get(product.id)?.intakeCode ?? "—"}</span></td>

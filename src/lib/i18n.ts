@@ -597,8 +597,8 @@ export const dictionary = {
           answer: "Verbraucher haben bei Online-Käufen grundsätzlich 14 Tage Widerrufsrecht. Die unmittelbaren Rücksendekosten trägt der Kunde; Einzelheiten stehen auf unserer Seite Lieferung & Rückgabe.",
         },
         {
-          question: "Was bedeuten Neu, Open-Box und Gebraucht A+?",
-          answer: "Neu bedeutet versiegelt. Open-Box bezeichnet geöffnete Verpackungen, etwa Ausstellungs- oder Retourenware. Gebraucht A+ wurde bereits genutzt und wird mit konkretem Zustandshinweis angeboten.",
+          question: "Was bedeuten Neu, Open-Box und A+?",
+          answer: "Neu bedeutet versiegelt. Open-Box bezeichnet geöffnete Verpackungen, etwa Ausstellungs- oder Retourenware. A+ wurde bereits genutzt und wird mit konkretem Zustandshinweis angeboten.",
         },
         {
           question: "Sind die angebotenen iPhone 17 versiegelt?",
@@ -725,8 +725,8 @@ export const dictionary = {
           title: "4. Gerätezustand",
           body: [
             "Neu & versiegelt bezeichnet originalverpackte Ware. Open-Box bezeichnet ausgepackte, nicht als gebraucht verkaufte Geräte, etwa Ausstellungs- oder Retourenware.",
-            "Gebraucht A+ bezeichnet geprüfte, zuvor genutzte Geräte in sehr gutem Zustand. Artikelhinweise, echte Produktfotos und bei iPhones die angegebene Batteriekapazität beschreiben den jeweiligen Artikel.",
-            "Geöffnete oder aktivierte Retouren werden niemals als 'Neu & versiegelt' verkauft, sondern ausschließlich als Open-Box oder Gebraucht angeboten.",
+            "A+ bezeichnet geprüfte, zuvor genutzte Geräte in sehr gutem Zustand. Artikelhinweise, echte Produktfotos und bei iPhones die angegebene Batteriekapazität beschreiben den jeweiligen Artikel.",
+            "Geöffnete oder aktivierte Retouren werden niemals als 'Neu & versiegelt' verkauft, sondern ausschließlich als Open-Box oder A+ angeboten.",
           ],
         },
         {
@@ -890,7 +890,7 @@ export const dictionary = {
     home: {
       hero: {
         eyebrow: "Hamburg’s smartphone shop in Wilhelmsburg",
-        title: "iPhones & Smartphones – New, Open Box & Used",
+        title: "iPhones & Smartphones – New, Open Box & A+",
         subtitle:
           "Smart Phone. Smart Service. Smart Price. Tested devices with warranty – pick up today in Hamburg or fast shipping across Germany.",
         primaryCta: "Browse smartphones",
@@ -1325,8 +1325,8 @@ export const dictionary = {
           answer: "Consumers generally have a 14-day right of withdrawal for online purchases. The customer bears the direct return cost; details are on our Delivery & Returns page.",
         },
         {
-          question: "What do New, Open Box and Used A+ mean?",
-          answer: "New means sealed. Open box means the packaging has been opened, for example for a display or return item. Used A+ has been used before and is listed with a specific condition note.",
+          question: "What do New, Open Box and A+ mean?",
+          answer: "New means sealed. Open box means the packaging has been opened, for example for a display or return item. A+ has been used before and is listed with a specific condition note.",
         },
         {
           question: "Are the listed iPhone 17 devices sealed?",
@@ -1453,8 +1453,8 @@ export const dictionary = {
           title: "4. Device condition",
           body: [
             "New & sealed means goods in their original sealed packaging. Open-box means unboxed goods not sold as used, such as display or returned stock.",
-            "Used A+ means inspected, previously used devices in very good condition. Listing notes, real product photos and, for iPhones, stated battery health describe the individual item.",
-            "Opened or activated returns are never sold as 'New & sealed'; they are offered exclusively as Open-box or Used.",
+            "A+ means inspected, previously used devices in very good condition. Listing notes, real product photos and, for iPhones, stated battery health describe the individual item.",
+            "Opened or activated returns are never sold as 'New & sealed'; they are offered exclusively as Open-box or A+.",
           ],
         },
         {
