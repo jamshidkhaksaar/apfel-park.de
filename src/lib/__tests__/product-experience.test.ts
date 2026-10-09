@@ -35,7 +35,7 @@ describe("sanitizeProductExperienceProfile", () => {
 });
 
 describe("getFamilyOptionTarget", () => {
-  it("preserves matching axes when possible and links to a real offer otherwise", () => {
+  it("preserves color for storage choices and keeps downstream selection when changing color", () => {
     const base = { image: "", price: 1, stock: 1 };
     const family = { id: "f", name: "Phone", slug: "phone", optionAxes: ["Storage", "Color"], members: [
       { ...base, productId: "a", slug: "a", title: "A", optionValues: { Storage: "128", Color: "Black" }, selected: true },
@@ -43,7 +43,9 @@ describe("getFamilyOptionTarget", () => {
       { ...base, productId: "c", slug: "c", title: "C", optionValues: { Storage: "256", Color: "Blue" }, selected: false },
     ] };
     expect(getFamilyOptionTarget(family, "Color", "Blue")?.productId).toBe("b");
-    expect(getFamilyOptionTarget(family, "Storage", "256")?.productId).toBe('c');
+    expect(getFamilyOptionTarget(family, "Storage", "256")).toBeNull();
+    const blue = {...family,members:family.members.map(member=>({...member,selected:member.productId==='b'}))};
+    expect(getFamilyOptionTarget(blue,"Storage","256")?.productId).toBe('c');
     expect(getFamilyOptionTarget(family, "Storage", "512")).toBeNull();
   });
   it('prefers the same condition and ignores individual device IDs', () => {
@@ -54,6 +56,19 @@ describe("getFamilyOptionTarget", () => {
       {...base,productId:'white-used',selected:false,optionValues:{color:'Weiß',storage:'128',condition:'used',device:'white-used'}},
     ]};
     expect(getFamilyOptionTarget(family,'color','Weiß')?.productId).toBe('white-used');
+  });
+  it('keeps downstream choices within the selected condition and color',()=>{
+    const offer=(id:string,color:string,storage:string,health:string,stock=1,selected=false)=>({productId:id,slug:id,title:id,image:'',price:399,stock,selected,optionValues:{condition:'used',color,storage,batteryHealth:health}});
+    const family={id:'f',name:'Phone',slug:'phone',optionAxes:['condition','color','storage','batteryHealth'],members:[offer('black','Black','128','95%',1,true),offer('sold','Black','128 GB','100%',0),offer('blue','Blue','256 GB','90%'),offer('large','Black','256GB','90%')]};
+    expect(getFamilyOptionTarget(family,'batteryHealth','90%')).toBeNull();
+    expect(getFamilyOptionTarget(family,'storage','256 GB')?.productId).toBe('large');
+    expect(getFamilyOptionTarget(family,'color','Blue')?.productId).toBe('blue');
+    expect(getFamilyOptionTarget(family,'batteryHealth','100%')?.stock).toBe(0);
+    family.members.push(offer('health','Black','128GB','90%'));
+    expect(getFamilyOptionTarget(family,'batteryHealth','90%')?.productId).toBe('health');
+    const newOnly={...offer('new-only','Gold','128','100%'),optionValues:{condition:'new',color:'Gold',storage:'128',batteryHealth:''}};
+    family.members.push(newOnly);expect(getFamilyOptionTarget(family,'color','Gold')).toBeNull();
+    expect(getFamilyOptionTarget(family,'condition','new')?.productId).toBe('new-only');
   });
 });
 

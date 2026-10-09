@@ -12,7 +12,7 @@ import {
   deletePhoneDrafts,
 } from './repository';
 import { newPhoneEntry, type PhoneDraft, type PhoneEntry } from './model';
-import { sanitizeProductExperienceProfile } from '@/lib/product-experience';
+import { getFamilyOptionTarget, sanitizeProductExperienceProfile } from '@/lib/product-experience';
 import { autoPublishProductPromotion } from '@/lib/marketing';
 import { readOfferPresets, saveOfferPresets } from '@/lib/product-offer-presets-repository';
 import { productDeletionPreview, deleteCatalogProduct } from '@/lib/product-deletion';
@@ -100,6 +100,31 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
     expect(view.family?.members).toHaveLength(2);expect(view.profile.enabledSections.familyConfigurator).toBe(true);
     await query("UPDATE product_experience_profiles SET enabled_sections=jsonb_set(enabled_sections,'{familyConfigurator}','false') WHERE product_id=$1",[result.results[0].productId]);
     expect((await getProductExperienceView(result.results[0].productId,'en')).family?.members).toHaveLength(2);
+  });
+  it('keeps selectors and independent availability after updating existing offers', async () => {
+    const low = await ready('used');
+    const high = await ready('used');
+    low.batteryHealth = 90; low.price = 399; low.stock = 2;
+    high.batteryHealth = 95; high.batteryHealthMax = 100; high.price = 449; high.stock = 3;
+    const published = await publish(await seed([low, high]));
+    const id = published.results[0].productId;
+    const edit = await createPhoneDraft('test-admin', id);
+    expect(edit.document.entries).toHaveLength(2);
+    const entry = edit.document.entries.find(item => item.sourceProductId === id)!;
+    entry.price = 419; entry.stock = 4;
+    entry.experience = sanitizeProductExperienceProfile({ enabledSections: { familyConfigurator: false, packageContents: true }, packageContents: [{ label: { en: 'Case', de: 'Hülle' }, included: true, icon: 'case' }] });
+    await publish(await savePhoneDraft(edit.id, edit.revision, edit.document, 'test-admin'));
+    const view = await getProductExperienceView(id, 'en');
+    expect(view.profile.enabledSections.familyConfigurator).toBe(true);
+    expect(view.profile.packageContents[0].label.en).toBe('Case');
+    expect(view.family?.members).toHaveLength(2);
+    expect(view.family?.members.find(member => member.productId === id)).toMatchObject({ price: 419, stock: 4 });
+    await query('UPDATE inventory_skus SET reserved=on_hand WHERE product_id=$1', [id]);
+    const sold = await getProductFamilyForProduct(id, 'en');
+    expect(sold!.members.find(member => member.productId === id)?.stock).toBe(0);
+    const other = sold!.members.find(member => member.productId !== id)!;
+    expect(other.stock).toBe(3);
+    expect(getFamilyOptionTarget(sold!, 'batteryHealth', other.optionValues.batteryHealth)?.productId).toBe(other.productId);
   });
   it('groups researched offers before pagination while preserving capacity filters', async () => {
     const low=await ready('used');low.storage='128 GB';low.price=399;

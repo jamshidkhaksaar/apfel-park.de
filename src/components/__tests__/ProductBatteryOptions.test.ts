@@ -13,7 +13,21 @@ const family:ProductFamilyView={id:'f',name:'iPhone 15',slug:'iphone15',optionAx
 describe('customer battery selectors and catalog stock summaries',()=>{
   it('shows tier prices and links to their own purchasable offers',()=>{
     const html=renderToStaticMarkup(createElement(ProductFamilyConfigurator,{family,locale:'en'}));
-    expect(html).toContain('Battery health');expect(html).toContain('95%');expect(html).toContain('98–100%');expect(html).toContain('/en/store/high');expect(html).toContain('449');expect(html).not.toContain('85%');
+    expect(html).toContain('Battery health');expect(html).toContain('95%');expect(html).toContain('98–100%');expect(html).toContain('/en/store/high');expect(html).toContain('449');expect(html).toContain('85%');expect(html).toContain('Unavailable with these options');
+  });
+  it('disables missing and sold-out combinations, and explains linked changes',()=>{
+    const sold={...family.members[0],productId:'sold',slug:'sold',stock:0,optionValues:{...family.members[0].optionValues,batteryHealth:'100%'}};
+    const larger={...family.members[0],productId:'large',slug:'large',optionValues:{...family.members[0].optionValues,color:'White',storage:'256 GB',batteryHealth:'90%'},selected:false};
+    const html=renderToStaticMarkup(createElement(ProductFamilyConfigurator,{family:{...family,members:[...family.members,sold,larger]},locale:'en'}));
+    const buttons = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) ?? [];
+    const missingHealth = buttons.find(button => button.includes('85%'));
+    expect(missingHealth).toContain('disabled');
+    expect(missingHealth).toContain('Unavailable with these options');
+    expect(html).toContain('Sold out');expect(html).not.toContain('href="/en/store/sold"');
+    expect(html).toContain('Also selects: 256 GB · 90%');
+    const missingStorage = buttons.find(button => button.includes('256 GB'));
+    expect(missingStorage).toContain('disabled');
+    expect(missingStorage).toContain('Unavailable with these options');
   });
   it('does not show battery selectors for sealed offers',()=>{
     const sealed={...family,members:family.members.map((member,index)=>({...member,selected:index===0,optionValues:{...member.optionValues,condition:'new'}}))};

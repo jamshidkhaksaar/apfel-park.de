@@ -12,7 +12,7 @@ import { formatBatteryHealth, packageItemIcon } from '@/lib/product-offer-option
 import { catalogToolsText } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { shouldBypassImageOptimization } from "@/lib/image";
-import { formatStorageLabel, getFamilyOptionTarget, localizedText, type ExperienceProductSummary, type ProductExperienceProfile, type ProductFamilyView } from "@/lib/product-experience";
+import { formatStorageLabel, familyOptionValue, getFamilyOptionTarget, localizedText, type ExperienceProductSummary, type ProductExperienceProfile, type ProductFamilyView } from "@/lib/product-experience";
 
 const sectionClass = "rounded-2xl border border-border bg-store-card p-5 sm:p-7";
 const WISHLIST_KEY = "apfel-wishlist-v1";
@@ -43,23 +43,33 @@ export function ProductWishlistButton({ productId, title, locale }: { productId:
 }
 
 export function ProductFamilyConfigurator({ family, locale }: { family: ProductFamilyView; locale: Locale }) {
+  const t = catalogToolsText[locale];
   const current = family.members.find(member => member.selected);
-  const axes = family.optionAxes.filter(axis => axis !== 'device' && (axis !== 'batteryHealth' || current?.optionValues.condition === 'used') && family.members.some(member => member.optionValues[axis]));
-  const devices = family.members.filter(member => axes.every(axis => member.optionValues[axis] === current?.optionValues[axis]));
-  const labels: Record<string,string> = locale === 'de' ? {color:'Farbe',storage:'Speicher',condition:'Zustand',new:'Neu',used:'A+',open_box:'Open-Box',batteryHealth:catalogToolsText[locale].batteryHealth,unspecified:catalogToolsText[locale].notSpecified} : {color:'Color',storage:'Storage',condition:'Condition',new:'New',used:'A+',open_box:'Open-box',batteryHealth:catalogToolsText[locale].batteryHealth,unspecified:catalogToolsText[locale].notSpecified};
+  const order: Record<string,number> = {condition:0,color:1,storage:2,batteryhealth:3};
+  const axes = family.optionAxes.filter(axis => axis.toLowerCase() !== 'device' && (axis.toLowerCase() !== 'batteryhealth' || familyOptionValue(current,'condition') === 'used') && family.members.some(member => familyOptionValue(member,axis))).sort((a,b) => (order[a.toLowerCase()] ?? 4)-(order[b.toLowerCase()] ?? 4));
+  const devices = family.members.filter(member => axes.every(axis => familyOptionValue(member,axis) === familyOptionValue(current,axis)));
+  const labels: Record<string,string> = locale === 'de' ? {color:'Farbe',storage:'Speicher',condition:'Zustand',new:'Neu',used:'A+',open_box:'Open-Box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified} : {color:'Color',storage:'Storage',condition:'Condition',new:'New',used:'A+',open_box:'Open-box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified};
+  const labelFor = (axis: string, value: string) => axis.toLowerCase() === 'storage' ? formatStorageLabel(value) : labels[value] ?? value;
   if (axes.length === 0 || family.members.length < 2) return null;
   return <section className="mt-5 rounded-2xl border border-border/60 bg-surface/50 p-4" aria-label={locale === 'de' ? 'Produktvarianten' : 'Product variants'}>
     <p className="text-sm font-semibold text-foreground">{family.name}</p>
-    <div className="mt-4 space-y-4">{axes.map(axis => <div key={axis}><p className="text-xs font-semibold text-muted">{labels[axis] ?? axis}</p><div className="mt-2 flex flex-wrap gap-2">{Array.from(new Set(family.members.filter(member => axis !== 'batteryHealth' || ['condition','color','storage'].every(other => member.optionValues[other] === current?.optionValues[other])).map(member => member.optionValues[axis]).filter(Boolean))).sort((a,b) => axis === 'batteryHealth' ? (Number.parseInt(a) || 0) - (Number.parseInt(b) || 0) : 0).map(value => {
-      const member = getFamilyOptionTarget(family, axis, value);
-      const classes = `min-h-11 rounded-xl border px-4 py-2.5 text-sm ${member?.selected ? 'border-gold bg-gold/10 text-foreground' : 'border-border text-muted'}`;
-      const label = axis.toLowerCase() === 'storage' ? formatStorageLabel(value) : labels[value] ?? value;
-      return member ? <Link key={value} href={`/${locale}/store/${member.slug}`} aria-current={member.selected ? 'page' : undefined} className={classes}>{label}{axis === 'batteryHealth' ? ` · ${formatPrice(locale,member.price)}` : ''}{member.stock <= 0 ? ` · ${locale === 'de' ? 'nicht verfügbar' : 'unavailable'}` : ''}</Link> : <span key={value} aria-disabled="true" className={classes}>{label}</span>;
+    <p className="mt-2 text-xs leading-5 text-muted">{t.chooseOptions}</p>
+    <div className="mt-4 space-y-4">{axes.map(axis => <div key={axis}><p className="text-xs font-semibold text-muted">{labels[axis.toLowerCase()] ?? axis}</p><div className="mt-2 flex flex-wrap gap-2">{Array.from(new Set(family.members.filter(member => axis.toLowerCase() === 'condition' || familyOptionValue(member,'condition') === familyOptionValue(current,'condition')).map(member => familyOptionValue(member,axis)).filter((value): value is string => Boolean(value)))).sort((a,b) => axis.toLowerCase() === 'batteryhealth' ? (Number.parseInt(a) || 0)-(Number.parseInt(b) || 0) : 0).map(value => {
+      const member = getFamilyOptionTarget(family,axis,value);
+      const selected = familyOptionValue(current,axis) === value;
+      const disabled = !member || member.stock <= 0;
+      const reason = member ? t.optionSoldOut : t.optionUnavailable;
+      const changes = member ? ['color','storage','batteryHealth'].filter(other => other.toLowerCase() !== axis.toLowerCase() && familyOptionValue(member,other) && familyOptionValue(member,other) !== familyOptionValue(current,other)).map(other => labelFor(other,familyOptionValue(member,other)!)) : [];
+      const classes = `min-h-11 max-w-full rounded-xl border px-4 py-2.5 text-left text-sm ${selected ? 'border-gold bg-gold/10 text-foreground' : 'border-border text-muted'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`;
+      const label = labelFor(axis,value);
+      const content = <><span>{label}{axis.toLowerCase() === 'batteryhealth' && member ? ` · ${formatPrice(locale,member.price)}` : ''}</span>{disabled ? <span className="mt-1 block text-[11px] leading-4">{reason}</span> : changes.length ? <span className="mt-1 block text-[11px] leading-4">{t.alsoSelects}: {changes.join(' · ')}</span> : null}</>;
+      return disabled ? <button key={value} type="button" disabled aria-pressed={selected} title={reason} className={classes}>{content}</button> : <Link key={value} href={`/${locale}/store/${member.slug}`} aria-current={selected ? 'page' : undefined} className={classes}>{content}</Link>;
     })}</div></div>)}</div>
-    {devices.length > 1 ? <div className="mt-5 grid gap-3 sm:grid-cols-2">{devices.map(device => <Link key={device.productId} href={`/${locale}/store/${device.slug}`} aria-current={device.selected ? 'page' : undefined} className={`flex gap-3 rounded-xl border p-3 ${device.selected ? 'border-gold' : 'border-border'}`}>
-      {device.image ? <Image src={device.image} alt={device.title} width={80} height={100} unoptimized className="h-24 w-20 object-contain" /> : null}
-      <div className="text-sm text-foreground"><p>{formatPrice(locale, device.price)}</p>{formatBatteryHealth(device.batteryHealth, device.batteryHealthRange) ? <p>{locale === 'de' ? 'Akku' : 'Battery'}: {formatBatteryHealth(device.batteryHealth, device.batteryHealthRange)}</p> : null}<p>{device.conditionNote}</p>{device.stock <= 0 ? <p>{locale === 'de' ? 'Nicht verfügbar' : 'Unavailable'}</p> : null}</div>
-    </Link>)}</div> : null}
+    {devices.length > 1 ? <div className="mt-5 grid gap-3 sm:grid-cols-2">{devices.map(device => {
+      const content = <>{device.image ? <Image src={device.image} alt={device.title} width={80} height={100} unoptimized className="h-24 w-20 object-contain" /> : null}<div className="text-sm text-foreground"><p>{formatPrice(locale,device.price)}</p>{formatBatteryHealth(device.batteryHealth,device.batteryHealthRange) ? <p>{locale === 'de' ? 'Akku' : 'Battery'}: {formatBatteryHealth(device.batteryHealth,device.batteryHealthRange)}</p> : null}<p>{device.conditionNote}</p>{device.stock <= 0 ? <p>{t.optionSoldOut}</p> : null}</div></>;
+      const classes = `flex gap-3 rounded-xl border p-3 ${device.selected ? 'border-gold' : 'border-border'} ${device.stock <= 0 ? 'opacity-50' : ''}`;
+      return device.stock > 0 ? <Link key={device.productId} href={`/${locale}/store/${device.slug}`} aria-current={device.selected ? 'page' : undefined} className={classes}>{content}</Link> : <div key={device.productId} aria-disabled="true" className={classes}>{content}</div>;
+    })}</div> : null}
   </section>;
 }
 
