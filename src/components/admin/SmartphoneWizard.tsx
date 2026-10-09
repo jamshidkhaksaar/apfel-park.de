@@ -712,7 +712,7 @@ export default function SmartphoneWizard({
                       >
                         {t.add}
                       </button>
-                      {e.sourceProductId && document.entries.filter(item => item.sourceProductId === e.sourceProductId).length === 1 ? <ProductDeleteButton id={e.sourceProductId} title={`${shared.title || t.title} · ${entryLabel(e)}`} locale={locale} onConfirmDeletion={preview => removePublishedVersion(e.id, preview.fingerprint)}/> : null}
+                      {e.sourceProductId && document.entries.filter(item => item.sourceProductId === e.sourceProductId).length === 1 ? <ProductDeleteButton id={e.sourceProductId} title={`${shared.title || t.title} · ${entryLabel(e)}`} locale={locale} previewUrl={`/api/admin/smartphone-drafts/${draft.id}/remove-product?entryId=${encodeURIComponent(e.id)}`} onConfirmDeletion={preview => removePublishedVersion(e.id, preview.fingerprint)}/> : null}
                       {!e.sourceProductId && (document.entries.length > 1 || document.variantSuggestions?.length) ? (
                         <button
                           className="btn-secondary"

@@ -363,6 +363,14 @@ export const savePhoneDraft = async (
     );
     return view(result.rows[0]);
   });
+export const previewPhoneDraftProductRemoval = async (id: string, entryId: string) => {
+  const row = await withTransaction(client => readRow(client, id));
+  const entry = row.document.entries.find(item => item.id === entryId);
+  if (!entry?.sourceProductId || !row.sources[entry.sourceProductId]) throw new DraftError('not_found', 404);
+  const product = (await query("SELECT id,title,stock,import_metadata,md5(to_jsonb(p)::text) AS fingerprint FROM products p WHERE id=$1", [entry.sourceProductId])).rows[0];
+  if (!product) throw new DraftError('not_found', 404);
+  return { id:product.id, title:product.title, stock:Number(product.import_metadata?.stockAtDeletion ?? product.stock ?? 0), fingerprint:product.fingerprint };
+};
 // Archive a published offer and detach it from this draft in one transaction.
 // Other versions, including unpublished edits, remain exactly as saved.
 export const removePhoneDraftProduct = async (
@@ -371,6 +379,7 @@ export const removePhoneDraftProduct = async (
   actor: string,
 ): Promise<PhoneDraft> => {
   if (!input || !Number.isSafeInteger(input.revision) || input.revision < 1 || typeof input.entryId !== 'string') throw new DraftError('invalid_request');
+  if (input.confirmation !== 'DELETE' || typeof input.fingerprint !== 'string' || !/^[a-f0-9]{32}$/.test(input.fingerprint)) throw new DraftError('confirmation_required');
   try {
     return await withTransaction(async client => {
       const row = await readRow(client, id, true);
@@ -388,7 +397,15 @@ export const removePhoneDraftProduct = async (
       for (const otherId of Object.keys(row.sources).filter(key => key !== productId)) {
         before.set(otherId, await experienceFingerprint(client, otherId));
       }
-      await deleteCatalogProduct(productId, input, actor, client);
+      const product = (await client.query('SELECT p.import_metadata,md5(to_jsonb(p)::text) AS fingerprint FROM products p WHERE id=$1', [productId])).rows[0];
+      if (!product) throw new DraftError('not_found', 404);
+      if (product.fingerprint !== input.fingerprint) throw conflict();
+      if (product.import_metadata?.catalogDeletedAt) {
+        // A product deleted elsewhere may still be present in an open draft.
+        // Detach it without repeating the archive or changing historical stock.
+        const skus = (await client.query('SELECT reserved FROM inventory_skus WHERE product_id=$1 ORDER BY sku FOR UPDATE', [productId])).rows;
+        if (skus.some(sku => Number(sku.reserved) > 0)) throw new DraftError('reservations', 409);
+      } else await deleteCatalogProduct(productId, input, actor, client);
       const document = row.document;
       document.entries = document.entries.filter(item => item.sourceProductId !== productId);
       if (!document.entries.length) document.entries = [newPhoneEntry()];

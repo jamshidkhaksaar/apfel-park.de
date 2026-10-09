@@ -11,6 +11,7 @@ import {
   publishPhoneDraft,
   deletePhoneDrafts,
   removePhoneDraftProduct,
+  previewPhoneDraftProductRemoval,
 } from './repository';
 import { newPhoneEntry, type PhoneDraft, type PhoneEntry } from './model';
 import { getFamilyOptionTarget, sanitizeProductExperienceProfile } from '@/lib/product-experience';
@@ -184,6 +185,22 @@ describe.skipIf(!enabled)('phone editor — real PostgreSQL transactions', () =>
     const preview = await productDeletionPreview(id);
     const removed = await removePhoneDraftProduct(edit.id, {revision:edit.revision,entryId:target.id,fingerprint:preview.fingerprint,confirmation:'DELETE'}, 'test-admin');
     await expect(publish(removed)).rejects.toMatchObject({message:'conflict'});
+  });
+  it('detaches an offer already archived elsewhere without changing its history or new draft versions', async () => {
+    const published = await publish(await seed());
+    const id = published.results[0].productId;
+    const edit = await createPhoneDraft('test-admin', id);
+    const entryId = edit.document.entries[0].id;
+    edit.document.entries.push(await ready('used', 'Blue'));
+    const saved = await savePhoneDraft(edit.id, edit.revision, edit.document, 'test-admin');
+    const preview = await productDeletionPreview(id);
+    await deleteCatalogProduct(id, {confirmation:'DELETE',fingerprint:preview.fingerprint}, 'another-admin');
+    const old = (await query('SELECT import_metadata,updated_at FROM products WHERE id=$1', [id])).rows[0];
+    const draftPreview = await previewPhoneDraftProductRemoval(saved.id, entryId);
+    const removed = await removePhoneDraftProduct(saved.id, {revision:saved.revision,entryId,fingerprint:draftPreview.fingerprint,confirmation:'DELETE'}, 'test-admin');
+    expect(removed.document.entries).toEqual(saved.document.entries.slice(1));
+    expect((await query('SELECT import_metadata,updated_at FROM products WHERE id=$1', [id])).rows[0]).toEqual(old);
+    await expect(publish(removed)).resolves.toBeDefined();
   });
   it('keeps an editable blank starter after removing the last published offer', async () => {
     const published = await publish(await seed());
