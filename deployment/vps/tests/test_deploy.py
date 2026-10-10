@@ -32,6 +32,7 @@ class DeployTests(unittest.TestCase):
         text = SCRIPT.read_text().replace('APP_ROOT=/srv/apfel-park/app', f'APP_ROOT={root}')
         text = text.replace('export PATH=/root/.nvm/versions/node/v24.14.0/bin:$PATH', ': # fixture PATH')
         (root / 'deploy.sh').write_text(text)
+        shutil.copyfile(SCRIPT.with_name('check-deploy-target.sh'), root / 'check-deploy-target.sh')
         mock = r'''#!/usr/bin/env python3
 import os, sys, pathlib, tarfile, io
 root = pathlib.Path(os.environ['FIXTURE_ROOT'])
@@ -46,6 +47,7 @@ if cmd == 'git':
             content = b'#!/usr/bin/env bash\nprintf "owner-migration\\n" >> "$FIXTURE_ROOT/calls"\n'
             info = tarfile.TarInfo('deployment/vps/product-intake/apply-owner-migration.sh')
             info.size = len(content); info.mode = 0o755; t.addfile(info, io.BytesIO(content))
+            t.add(pathlib.Path(os.environ['FIXTURE_SCRIPT_DIR'])/'preserve-static-assets.sh', arcname='deployment/vps/scripts/preserve-static-assets.sh')
     elif '--abbrev-ref' in args: print('main')
     elif '--short' in args: print('abcdef12')
     elif 'rev-parse' in args: print('abcdef1234567890')
@@ -85,7 +87,7 @@ elif cmd == 'node' and '-e' in args:
             p = root / 'bin' / cmd
             p.write_text(mock)
             p.chmod(0o755)
-        result = subprocess.run(['bash', str(root/'deploy.sh'), 'abcdef1234567890'], env={**os.environ, 'PATH': f'{root}/bin:/usr/bin:/bin', 'FIXTURE_ROOT': str(root), 'FAILURE': failure, 'REAL_NODE': shutil.which('node') or ''}, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(['bash', str(root/'deploy.sh'), 'abcdef1234567890'], env={**os.environ, 'PATH': f'{root}/bin:/usr/bin:/bin', 'FIXTURE_ROOT': str(root), 'FIXTURE_SCRIPT_DIR': str(SCRIPT.parent), 'FAILURE': failure, 'REAL_NODE': shutil.which('node') or ''}, capture_output=True, text=True, timeout=30)
         return root, result, (root/'calls').read_text()
 
     def test_retention_protects_previous_and_failed_evidence(self):

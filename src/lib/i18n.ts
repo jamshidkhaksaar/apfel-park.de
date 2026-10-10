@@ -597,8 +597,8 @@ export const dictionary = {
           answer: "Verbraucher haben bei Online-Käufen grundsätzlich 14 Tage Widerrufsrecht. Die unmittelbaren Rücksendekosten trägt der Kunde; Einzelheiten stehen auf unserer Seite Lieferung & Rückgabe.",
         },
         {
-          question: "Was bedeuten Neu, Open-Box und Gebraucht A+?",
-          answer: "Neu bedeutet versiegelt. Open-Box bezeichnet geöffnete Verpackungen, etwa Ausstellungs- oder Retourenware. Gebraucht A+ wurde bereits genutzt und wird mit konkretem Zustandshinweis angeboten.",
+          question: "Was bedeuten Neu, Open-Box und A+?",
+          answer: "Neu bedeutet versiegelt. Open-Box bezeichnet geöffnete Verpackungen, etwa Ausstellungs- oder Retourenware. A+ wurde bereits genutzt und wird mit konkretem Zustandshinweis angeboten.",
         },
         {
           question: "Sind die angebotenen iPhone 17 versiegelt?",
@@ -725,8 +725,8 @@ export const dictionary = {
           title: "4. Gerätezustand",
           body: [
             "Neu & versiegelt bezeichnet originalverpackte Ware. Open-Box bezeichnet ausgepackte, nicht als gebraucht verkaufte Geräte, etwa Ausstellungs- oder Retourenware.",
-            "Gebraucht A+ bezeichnet geprüfte, zuvor genutzte Geräte in sehr gutem Zustand. Artikelhinweise, echte Produktfotos und bei iPhones die angegebene Batteriekapazität beschreiben den jeweiligen Artikel.",
-            "Geöffnete oder aktivierte Retouren werden niemals als 'Neu & versiegelt' verkauft, sondern ausschließlich als Open-Box oder Gebraucht angeboten.",
+            "A+ bezeichnet geprüfte, zuvor genutzte Geräte in sehr gutem Zustand. Artikelhinweise, echte Produktfotos und bei iPhones die angegebene Batteriekapazität beschreiben den jeweiligen Artikel.",
+            "Geöffnete oder aktivierte Retouren werden niemals als 'Neu & versiegelt' verkauft, sondern ausschließlich als Open-Box oder A+ angeboten.",
           ],
         },
         {
@@ -890,7 +890,7 @@ export const dictionary = {
     home: {
       hero: {
         eyebrow: "Hamburg’s smartphone shop in Wilhelmsburg",
-        title: "iPhones & Smartphones – New, Open Box & Used",
+        title: "iPhones & Smartphones – New, Open Box & A+",
         subtitle:
           "Smart Phone. Smart Service. Smart Price. Tested devices with warranty – pick up today in Hamburg or fast shipping across Germany.",
         primaryCta: "Browse smartphones",
@@ -1325,8 +1325,8 @@ export const dictionary = {
           answer: "Consumers generally have a 14-day right of withdrawal for online purchases. The customer bears the direct return cost; details are on our Delivery & Returns page.",
         },
         {
-          question: "What do New, Open Box and Used A+ mean?",
-          answer: "New means sealed. Open box means the packaging has been opened, for example for a display or return item. Used A+ has been used before and is listed with a specific condition note.",
+          question: "What do New, Open Box and A+ mean?",
+          answer: "New means sealed. Open box means the packaging has been opened, for example for a display or return item. A+ has been used before and is listed with a specific condition note.",
         },
         {
           question: "Are the listed iPhone 17 devices sealed?",
@@ -1453,8 +1453,8 @@ export const dictionary = {
           title: "4. Device condition",
           body: [
             "New & sealed means goods in their original sealed packaging. Open-box means unboxed goods not sold as used, such as display or returned stock.",
-            "Used A+ means inspected, previously used devices in very good condition. Listing notes, real product photos and, for iPhones, stated battery health describe the individual item.",
-            "Opened or activated returns are never sold as 'New & sealed'; they are offered exclusively as Open-box or Used.",
+            "A+ means inspected, previously used devices in very good condition. Listing notes, real product photos and, for iPhones, stated battery health describe the individual item.",
+            "Opened or activated returns are never sold as 'New & sealed'; they are offered exclusively as Open-box or A+.",
           ],
         },
         {
@@ -1512,7 +1512,7 @@ export const deviceQuoteCopy = {
     condition: "Zustand",
     conditionNew: "Neu",
     conditionOpenBox: "Open Box",
-    conditionUsed: "Gebraucht",
+    conditionUsed: "A+",
     storage: "Speicher (optional)",
     color: "Farbe (optional)",
     budget: "Bevorzugte Preisspanne (optional)",
@@ -1543,7 +1543,7 @@ export const deviceQuoteCopy = {
     condition: "Condition",
     conditionNew: "New",
     conditionOpenBox: "Open Box",
-    conditionUsed: "Used",
+    conditionUsed: "A+",
     storage: "Storage (optional)",
     color: "Color (optional)",
     budget: "Preferred price range (optional)",
@@ -1615,5 +1615,77 @@ export const googleAddressCopy = {
     applied: 'Address filled in. Please check the details below.',
     invalid: 'Please select a complete German address with a house number or enter your address manually.',
     error: 'Google address search is unavailable. Please enter your address manually.',
+  },
+} as const;
+export const uploadGalleryCopy = {
+  en: {
+    open: 'Choose from gallery', title: 'Uploaded photo gallery', close: 'Close', search: 'Search filenames in this folder…',
+    root: 'Uploads', loading: 'Loading photos…', empty: 'No photos found in this folder.', failed: 'Could not load the gallery. Please try again.',
+    previous: 'Previous', next: 'Next', use: 'Use this photo', selected: 'Selected', photos: 'photos', page: 'Page', retry: 'Retry',
+  },
+  de: {
+    open: 'Aus Galerie wählen', title: 'Galerie hochgeladener Fotos', close: 'Schließen', search: 'Dateinamen in diesem Ordner suchen…',
+    root: 'Uploads', loading: 'Fotos werden geladen…', empty: 'Keine Fotos in diesem Ordner gefunden.', failed: 'Galerie konnte nicht geladen werden. Bitte erneut versuchen.',
+    previous: 'Zurück', next: 'Weiter', use: 'Dieses Foto verwenden', selected: 'Ausgewählt', photos: 'Fotos', page: 'Seite', retry: 'Erneut versuchen',
+  },
+} as const;
+
+export const offerEditorText = {
+  en: {
+    comparePriceOptional: 'Compare-at price (€) — optional', comparePriceHint: 'Leave blank when there is no comparison price. If entered, it must be higher than the selling price.',
+    presets: 'Default condition notes & gifts', presetsHint: 'These presets are shared by all product editors. Existing products keep their saved details.',
+    conditionNotes: 'Condition note presets', giftPresets: 'Gift presets', notePreset: 'Choose a condition note', choose: 'Choose…',
+    defaultNote: 'Default for this condition', addNote: 'Add condition note', addGift: 'Add gift preset', remove: 'Remove', save: 'Save defaults',
+    saving: 'Saving…', saved: 'Defaults saved.', failed: 'Could not save defaults.', conflict: 'Defaults changed in another editor. Reload them before saving.',
+    invalid: 'Add a name and note for each preset.', reload: 'Reload defaults', labelDe: 'Name DE', labelEn: 'Name EN', textDe: 'Note DE', textEn: 'Note EN',
+    condition: 'Condition', new: 'New', open_box: 'Open-Box', used: 'A+', icon: 'Icon',
+    gifts: 'Included gifts & accessories', giftsHint: 'Select what this offer actually includes. Gifts appear with icons on the product page.',
+    manualGift: 'Add a custom included item', add: 'Add included item', customLabel: 'Item name',
+    charger: 'Charger', usb: 'USB cable', 'screen-protector': 'Screen protector', case: 'Case', box: 'Packaging', headphones: 'Headphones', gift: 'Gift',
+    chargerStatus: 'Charger in this offer', unknown: 'Not specified', included: 'Included', excluded: 'Not included',
+    batteryFrom: 'Battery health from (%)', batteryTo: 'Battery health to (%)', batteryHint: 'Use one value, or enter a range such as 95–100%. Leave “to” empty for one value.',
+    batteryInvalid: 'Enter whole battery-health values from 1 to 100; the upper value must be at least the lower value.',
+    batteryRequired: 'A+ iPhones require a battery-health value or range.', conditionRequired: 'Open-Box and A+ offers require condition notes, photos and confirmation of actual product photos.',
+    contents: 'Included items & gifts', chargerIncluded: 'Charger included', chargerExcluded: 'Charger not included', usbSupported: 'USB Power Delivery supported',
+    giftBadge: 'Gift', notIncluded: 'Not included',
+  },
+  de: {
+    comparePriceOptional: 'Streichpreis (€) — optional', comparePriceHint: 'Leer lassen, wenn kein Streichpreis vorhanden ist. Falls angegeben, muss er über dem Verkaufspreis liegen.',
+    presets: 'Standard-Zustandshinweise & Geschenke', presetsHint: 'Diese Vorlagen gelten für alle Produkteditoren. Bestehende Produkte behalten ihre gespeicherten Angaben.',
+    conditionNotes: 'Vorlagen für Zustandshinweise', giftPresets: 'Geschenkvorlagen', notePreset: 'Zustandshinweis auswählen', choose: 'Auswählen…',
+    defaultNote: 'Standard für diesen Zustand', addNote: 'Zustandshinweis hinzufügen', addGift: 'Geschenkvorlage hinzufügen', remove: 'Entfernen', save: 'Standards speichern',
+    saving: 'Wird gespeichert…', saved: 'Standards gespeichert.', failed: 'Standards konnten nicht gespeichert werden.', conflict: 'Die Standards wurden in einem anderen Editor geändert. Vor dem Speichern neu laden.',
+    invalid: 'Für jede Vorlage einen Namen und Hinweis ergänzen.', reload: 'Standards neu laden', labelDe: 'Name DE', labelEn: 'Name EN', textDe: 'Hinweis DE', textEn: 'Hinweis EN',
+    condition: 'Zustand', new: 'Neu', open_box: 'Open-Box', used: 'A+', icon: 'Symbol',
+    gifts: 'Enthaltene Geschenke & Zubehör', giftsHint: 'Auswählen, was dieses Angebot tatsächlich enthält. Geschenke erscheinen mit Symbolen auf der Produktseite.',
+    manualGift: 'Eigenen enthaltenen Artikel hinzufügen', add: 'Enthaltenen Artikel hinzufügen', customLabel: 'Artikelname',
+    charger: 'Ladegerät', usb: 'USB-Kabel', 'screen-protector': 'Displayschutz', case: 'Schutzhülle', box: 'Verpackung', headphones: 'Kopfhörer', gift: 'Geschenk',
+    chargerStatus: 'Ladegerät in diesem Angebot', unknown: 'Nicht angegeben', included: 'Enthalten', excluded: 'Nicht enthalten',
+    batteryFrom: 'Batteriekapazität von (%)', batteryTo: 'Batteriekapazität bis (%)', batteryHint: 'Einzelwert oder Bereich wie 95–100 % eingeben. Für einen Einzelwert „bis“ leer lassen.',
+    batteryInvalid: 'Ganze Werte von 1 bis 100 eingeben; der obere Wert darf nicht kleiner als der untere sein.',
+    batteryRequired: 'Für A+-iPhones ist eine Batteriekapazität als Einzelwert oder Bereich erforderlich.', conditionRequired: 'Für Open-Box- und A+-Angebote sind Zustandshinweise, Fotos und die Bestätigung echter Produktfotos erforderlich.',
+    contents: 'Enthaltene Artikel & Geschenke', chargerIncluded: 'Ladegerät enthalten', chargerExcluded: 'Ladegerät nicht enthalten', usbSupported: 'USB Power Delivery unterstützt',
+    giftBadge: 'Geschenk', notIncluded: 'Nicht enthalten',
+  },
+} as const;
+
+export const catalogToolsText = {
+  en: {
+    versionRemoved: 'Version removed. The other versions were kept.', legacy_version_removal: 'These legacy variants share one product. Delete the complete product from the product list.',
+    step: 'Step', continue: 'Continue', cancel: 'Cancel', typeDelete: 'Type DELETE to confirm', confirmDelete: 'Confirm deletion', deleting: 'Deleting…', loading: 'Loading…', failed: 'Could not delete. Please try again.',
+    deleteProduct: 'Delete product', productDeleteHint: 'Remove this offer from the shop, product catalog and inventory selection. Other versions remain available. Order history and stock records are retained.',
+    deleteDrafts: 'Delete selected drafts', draftDeleteHint: 'Remove these drafts from the workspace. Products already published from them remain available.', selectDraft: 'Select draft', selectAllDrafts: 'Select all shown drafts',
+    conflict: 'This item changed. Close this dialog and reload before deleting.', not_found: 'This item was already removed.', reservations: 'This offer has reserved stock. Complete or release those orders before deleting.', confirmation_required: 'Complete both confirmation steps.',
+    units: 'Units', listings: 'Listings', subtotal: 'Stock value', model: 'Model', searchSummary: 'Stock in these results', total: 'Subtotal',
+    chooseOptions: 'Choose a color, then storage and battery health. Unavailable combinations are disabled.', optionUnavailable: 'Unavailable with these options', optionSoldOut: 'Sold out', alsoSelects: 'Also selects', automaticOptions: 'Storage, color and battery options are enabled automatically for this model.', manualVersion: 'Add a custom version', chooseResearch: 'Choose a researched version above to open its form.', batteryTier: 'Add battery-health option', batteryHealth: 'Battery health', notSpecified: 'Not specified',
+  },
+  de: {
+    versionRemoved: 'Version entfernt. Die anderen Versionen bleiben erhalten.', legacy_version_removal: 'Diese älteren Varianten gehören zu einem gemeinsamen Produkt. Das vollständige Produkt in der Produktliste löschen.',
+    step: 'Schritt', continue: 'Weiter', cancel: 'Abbrechen', typeDelete: 'Zum Bestätigen DELETE eingeben', confirmDelete: 'Löschen bestätigen', deleting: 'Wird gelöscht…', loading: 'Wird geladen…', failed: 'Löschen fehlgeschlagen. Bitte erneut versuchen.',
+    deleteProduct: 'Produkt löschen', productDeleteHint: 'Dieses Angebot aus Shop, Produktkatalog und Lagerauswahl entfernen. Andere Versionen bleiben verfügbar. Bestellhistorie und Bestandsnachweise bleiben erhalten.',
+    deleteDrafts: 'Ausgewählte Entwürfe löschen', draftDeleteHint: 'Diese Entwürfe aus dem Arbeitsbereich entfernen. Bereits daraus veröffentlichte Produkte bleiben verfügbar.', selectDraft: 'Entwurf auswählen', selectAllDrafts: 'Alle angezeigten Entwürfe auswählen',
+    conflict: 'Dieser Eintrag wurde geändert. Dialog schließen und vor dem Löschen neu laden.', not_found: 'Dieser Eintrag wurde bereits entfernt.', reservations: 'Für dieses Angebot ist Bestand reserviert. Die Bestellungen vor dem Löschen abschließen oder freigeben.', confirmation_required: 'Beide Bestätigungsschritte abschließen.',
+    units: 'Stück', listings: 'Angebote', subtotal: 'Bestandswert', model: 'Modell', searchSummary: 'Bestand dieser Ergebnisse', total: 'Zwischensumme',
+    chooseOptions: 'Zuerst Farbe, dann Speicher und Akkuzustand wählen. Nicht verfügbare Kombinationen sind deaktiviert.', optionUnavailable: 'Mit dieser Auswahl nicht verfügbar', optionSoldOut: 'Ausverkauft', alsoSelects: 'Wählt auch', automaticOptions: 'Speicher-, Farb- und Akkuoptionen werden für dieses Modell automatisch angezeigt.', manualVersion: 'Eigene Version hinzufügen', chooseResearch: 'Oben eine recherchierte Version auswählen, um das Formular zu öffnen.', batteryTier: 'Option für Batteriekapazität hinzufügen', batteryHealth: 'Batteriekapazität', notSpecified: 'Nicht angegeben',
   },
 } as const;

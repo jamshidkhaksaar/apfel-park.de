@@ -20,6 +20,7 @@ export default function PriceBlock({
   size = "card",
   align = "start",
   className = "",
+  from = false,
 }: {
   locale: Locale;
   price: number;
@@ -27,6 +28,7 @@ export default function PriceBlock({
   size?: keyof typeof sizes;
   align?: "start" | "end";
   className?: string;
+  from?: boolean;
 }) {
   const scale = sizes[size];
   const discount = discountPercentage(price, compareAtPrice);
@@ -34,7 +36,7 @@ export default function PriceBlock({
 
   return (
     <div className={`flex flex-col gap-0.5 ${align === "end" ? "items-end text-right" : "items-start"} ${className}`}>
-      <p className={`${scale.price} font-bold tabular-nums leading-tight text-foreground`}><span className="sr-only">{isGerman ? "Aktueller Preis: " : "Current price: "}</span>{formatPrice(locale, price)}</p>
+      <p className={`${scale.price} font-bold tabular-nums leading-tight text-foreground`}><span className="sr-only">{isGerman ? "Aktueller Preis: " : "Current price: "}</span>{from ? <span className="mr-1 text-sm font-medium">{isGerman ? "Ab" : "From"}</span> : null}{formatPrice(locale, price)}</p>
       {compareAtPrice && compareAtPrice > price ? (
         <p className={`flex flex-wrap items-center gap-1.5 ${scale.strike} leading-tight`}>
           <span className="font-semibold tabular-nums text-muted-strong line-through"><span className="sr-only">{isGerman ? "Vorheriger Preis: " : "Previous price: "}</span>{formatPrice(locale, compareAtPrice)}</span>

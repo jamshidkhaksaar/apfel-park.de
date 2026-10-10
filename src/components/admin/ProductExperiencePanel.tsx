@@ -3,6 +3,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { AdminLocale } from '@/lib/admin-i18n';
 import type { ExperienceCandidate, ExperienceFamilyState } from '@/lib/admin-product-types';
+import { catalogToolsText } from "@/lib/i18n";
 import { PRODUCT_EXPERIENCE_SECTIONS, type ProductExperienceProfile } from '@/lib/product-experience';
 import { EXPERIENCE_PRESETS } from './product-experience-presets';
 
@@ -55,7 +56,7 @@ export default function ProductExperiencePanel({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
         <div>
           <h4 className="text-base font-bold text-heading flex items-center gap-2">
-            <span>✨</span> {locale === "de" ? "8. Professionelles Produkt-Erlebnis (reBuy-Tools)" : "8. Professional Product Experience (reBuy-Tools)"}
+            <span>✨</span> {locale === "de" ? "Produktdarstellung" : "Product presentation"}
           </h4>
           <p className="text-xs text-muted mt-0.5">
             {locale === "de"
@@ -164,13 +165,14 @@ export default function ProductExperiencePanel({
             </div>
           </div>
 
+          {familyState.automatic ? <p className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-sm text-foreground">{catalogToolsText[locale].automaticOptions}</p> : null}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {PRODUCT_EXPERIENCE_SECTIONS.map((sec) => {
+            {PRODUCT_EXPERIENCE_SECTIONS.filter(section => !familyState.automatic || section !== "familyConfigurator").map((sec) => {
               const active = experienceProfile.enabledSections[sec];
               const labelsMap: Record<string, { de: string; en: string; descDe: string; descEn: string; icon: string }> = {
                 familyConfigurator: { icon: "👨‍👩‍👧", de: "Varianten-Konfigurator", en: "Variant configurator", descDe: "Verbindet Speichervarianten zu einer Produktfamilie", descEn: "Links sibling storage listings into a unified family" },
                 packageContents: { icon: "📦", de: "Lieferumfang (Was ist enthalten?)", en: "Package contents", descDe: "Zeigt Checkliste von Kabel, OVP, Netzteil", descEn: "Shows checklist of cable, packaging, adapter" },
-                conditionGuide: { icon: "🔍", de: "Zustandsvergleich & Fotos", en: "Condition guide", descDe: "Visuelle Erklärung von Neu, Open-Box, Gebraucht", descEn: "Visual guide explaining New, Open Box, Used" },
+                conditionGuide: { icon: "🔍", de: "Zustandsvergleich & Fotos", en: "Condition guide", descDe: "Visuelle Erklärung von Neu, Open-Box, A+", descEn: "Visual guide explaining New, Open Box, A+" },
                 refurbishment: { icon: "🛠️", de: "Aufbereitung & Prüfung", en: "Refurbishment & testing", descDe: "50+ Prüfpunkte & Qualitätsversprechen", descEn: "50+ inspection checkpoints & store guarantee" },
                 sizeComparison: { icon: "📏", de: "Größenvergleich (2D-Silhouetten)", en: "Size comparison (2D)", descDe: "Maßstabsgetreuer 2D-Gerätevergleich", descEn: "Scaled 2D device silhouette comparison" },
                 modelComparison: { icon: "⚖️", de: "Modellvergleich-Tabelle", en: "Model comparison table", descDe: "Vergleichstabelle mit ausgewählten Produkten", descEn: "Spec comparison table with selected products" },
@@ -403,7 +405,7 @@ export default function ProductExperiencePanel({
               {[
                 { key: "new", badge: "✨ Neu & OVP", descFallbackDe: "Originalverpackt und ungeöffnet mit voller Garantie.", descFallbackEn: "Brand new factory sealed in box." },
                 { key: "open_box", badge: "📦 Open-Box", descFallbackDe: "Neuwertig, nur zur Prüfung geöffnet. Keine Gebrauchsspuren.", descFallbackEn: "Like new, unsealed box. Zero wear." },
-                { key: "used", badge: "🔄 Gebraucht A+", descFallbackDe: "Technisch einwandfrei, 50+ Punkte geprüft. Minimale Mikrokratzer.", descFallbackEn: "Technically flawless, 50+ points certified." },
+                { key: "used", badge: "🔄 A+", descFallbackDe: "Technisch einwandfrei, 50+ Punkte geprüft. Minimale Mikrokratzer.", descFallbackEn: "Technically flawless, 50+ points certified." },
               ].map((cond) => {
                 const item = experienceProfile.conditionGuide.find((g) => g.condition === cond.key) ?? {
                   condition: cond.key as "new" | "open_box" | "used",

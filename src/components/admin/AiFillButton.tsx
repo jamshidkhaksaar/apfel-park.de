@@ -5,9 +5,10 @@ import type { ProductResearchResult } from '@/lib/product-research-core';
 import { hasReviewedResearchSources } from '@/lib/product-research-prefill';
 import ResearchEvidencePanel from '@/components/admin/ResearchEvidencePanel';
 
-export default function AiFillButton({ locale, onResult, onError, query, disabled, condition }: {
+export default function AiFillButton({ locale, onResult, onError, query, disabled, condition, color, eprelId }: {
   locale: 'de' | 'en'; onResult: (research: ProductResearchResult) => void; onError: (message: string) => void;
   query?: string; disabled?: boolean; condition?: string;
+  color?: string; eprelId?: string;
 }): React.ReactNode {
   const de = locale === 'de';
   const fileId = useId();
@@ -17,7 +18,7 @@ export default function AiFillButton({ locale, onResult, onError, query, disable
   const [hardwareModel, setHardwareModel] = useState('');
   const [result, setResult] = useState<ProductResearchResult | null>(null);
   const active = useRef<AbortController | null>(null);
-  const signature = JSON.stringify([query?.trim() ?? '', condition, hardwareModel, assetType, photo?.name, photo?.size, photo?.lastModified]);
+  const signature = JSON.stringify([query?.trim() ?? '', condition, color, eprelId, hardwareModel, assetType, photo?.name, photo?.size, photo?.lastModified]);
   const latest = useRef(signature);
   useEffect(() => {
     latest.current = signature;
@@ -40,7 +41,8 @@ export default function AiFillButton({ locale, onResult, onError, query, disable
         body = new FormData();
         body.set('photo', photo); body.set('query', query?.trim() ?? ''); body.set('assetType', assetType);
         body.set('hardwareModel', hardwareModel); if (condition) body.set('condition', condition);
-      } else body = JSON.stringify({ query: query?.trim(), condition, hardwareModel });
+        if (color) body.set('color', color); if (eprelId) body.set('eprelId', eprelId);
+      } else body = JSON.stringify({ query: query?.trim(), condition, hardwareModel, color, eprelId });
       const response = await fetch('/api/admin/products/research', { method: 'POST',
         ...(typeof body === 'string' ? { headers: { 'Content-Type': 'application/json' } } : {}), body,
         signal: AbortSignal.any([controller.signal, AbortSignal.timeout(80000)]),

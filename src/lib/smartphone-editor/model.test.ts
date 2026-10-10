@@ -38,6 +38,17 @@ describe('smartphone workspace rules', () => {
       }
     }
   });
+  it('does not inherit a comparison price hidden in shared product data', () => {
+    const document = newPhoneDocument();
+    document.shared = { title: 'iPhone 15 Pro', compareAtPrice: 749 };
+    const entry = document.entries[0];
+    entry.price = 759;
+    expect(entryPayload(document, entry).compareAtPrice).toBeNull();
+    entry.details.compareAtPrice = 899;
+    expect(entryPayload(document, entry).compareAtPrice).toBe(899);
+    entry.details.compareAtPrice = null;
+    expect(entryPayload(document, entry).compareAtPrice).toBeNull();
+  });
   it('inherits AI origin only from the field source actually used by an entry', () => {
     const document = newPhoneDocument();
     document.shared = { title: 'AI shared title', description: 'AI shared description', aiGeneratedFields: ['title', 'description'] };
@@ -100,12 +111,14 @@ describe('smartphone workspace rules', () => {
     ]);
     expect(e.photos[0].url).toBe('/uploads/0.webp');
   });
-  it('allows an incomplete draft but requires four distinct photos before publication', () => {
+  it('allows an incomplete draft but requires a photo while allowing optional additional views', () => {
     const d = newPhoneDocument();
     expect(validateDocument(d)).toEqual(d);
     expect(
       entryProblems(d, d.entries[0]).some((p) => p.field === 'photos'),
     ).toBe(true);
+    d.entries[0].photos[0].url = '/uploads/one.webp';
+    expect(entryProblems(d, d.entries[0]).some(p => p.field === 'photos')).toBe(false);
     d.entries[0].photos.forEach((p) => (p.url = '/uploads/same.webp'));
     expect(
       entryProblems(d, d.entries[0]).some((p) => p.field === 'photos'),

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { canManageProducts } from "@/lib/admin-auth";
 import { inventoryCatalogFrom, inventoryCatalogWhere } from "@/lib/inventory-catalog";
 import { inventoryDuplicatePredicate } from "@/lib/inventory-duplicates";
+import { inventoryProductDetails, inventoryProductPrice } from "@/lib/inventory-product-details";
 import { query } from "@/lib/db";
 import { readSessionUserFromRequest } from "@/lib/session";
 
@@ -26,7 +27,12 @@ export async function GET(request: NextRequest) {
   const filters = [search, pattern, status, brand, category, condition, stock];
 
   try {
-    const count = await query(`SELECT count(*)::int AS total ${inventoryCatalogFrom} ${inventoryCatalogWhere}`, filters);
+    const locale = request.cookies.get("admin-lang")?.value === "en" ? "en" : "de";
+    const count = await query(`SELECT count(*)::int AS total,
+      coalesce(sum(coalesce(inventory.on_hand, product.stock, 0)), 0) AS on_hand,
+      coalesce(sum(coalesce(inventory.reserved, 0)), 0) AS reserved,
+      coalesce(sum(CASE WHEN inventory.id IS NULL THEN 0 ELSE available_inventory(inventory.on_hand, inventory.reserved, inventory.safety_buffer) END), 0) AS available
+      ${inventoryCatalogFrom} ${inventoryCatalogWhere}`, filters);
     const total = Number(count.rows[0]?.total ?? 0);
     const pages = Math.max(1, Math.ceil(total / limit));
     const page = Math.min(requestedPage, pages);
@@ -41,7 +47,8 @@ export async function GET(request: NextRequest) {
            coalesce(inventory.version, 0) AS version,
            coalesce(inventory.updated_at, product.updated_at, product.created_at) AS updated_at,
            inventory.id IS NOT NULL AS can_adjust,
-           product.id AS product_id, product.title, product.model, product.images, product.brand, product.category, product.condition, product.is_active, product.catalog_enabled
+           product.id AS product_id, product.sku AS product_sku, product.title, product.model, product.images, product.brand, product.category, product.condition, product.is_active, product.catalog_enabled,
+           product.price, product.variants, product.specs, product.import_metadata
          ${inventoryCatalogFrom} ${inventoryCatalogWhere}
          ORDER BY product.title, product.id, inventory.sku
          LIMIT $8 OFFSET $9`,
@@ -88,6 +95,11 @@ export async function GET(request: NextRequest) {
     const duplicateCountByProduct = new Map(duplicateCounts.rows.map((row) => [String(row.product_id), Number(row.duplicate_count)]));
 
     return NextResponse.json({
+      filteredSummary: {
+        onHand: Number(count.rows[0]?.on_hand ?? 0),
+        reserved: Number(count.rows[0]?.reserved ?? 0),
+        available: Number(count.rows[0]?.available ?? 0),
+      },
       pagination: { page, pages, total, limit },
       filterOptions: {
         brands: filterOptions.rows[0]?.brands ?? [],
@@ -95,6 +107,8 @@ export async function GET(request: NextRequest) {
         conditions: filterOptions.rows[0]?.conditions ?? [],
       },
       items: inventory.rows.map((row) => ({
+        ...inventoryProductDetails(row, locale),
+        price: inventoryProductPrice(row),
         sku: String(row.sku),
         productId: String(row.product_id),
         duplicateCount: duplicateCountByProduct.get(String(row.product_id)) ?? 0,

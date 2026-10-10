@@ -1,4 +1,6 @@
 import type { ProductCondition } from "@/lib/products";
+import { offerIcons, type OfferIcon, type BatteryHealthRange } from './product-offer-options';
+import { normalizeStorageValue } from './product-storage';
 
 export type LocalizedText = { de: string; en: string };
 
@@ -18,7 +20,7 @@ export const PRODUCT_EXPERIENCE_SECTIONS = [
 export type ProductExperienceSection = (typeof PRODUCT_EXPERIENCE_SECTIONS)[number];
 export type ProductExperienceFlags = Record<ProductExperienceSection, boolean>;
 
-export type PackageContentItem = { label: LocalizedText; included: boolean };
+export type PackageContentItem = { label: LocalizedText; included: boolean; icon?: OfferIcon; isGift?: boolean; presetId?: string };
 export type ConditionGuideItem = {
   condition: ProductCondition;
   label: LocalizedText;
@@ -55,6 +57,7 @@ export type ProductExperienceProfile = {
 export type ProductFamilyMember = {
   conditionNote?: string;
   batteryHealth?: number;
+  batteryHealthRange?: BatteryHealthRange;
   productId: string;
   slug: string;
   title: string;
@@ -67,6 +70,7 @@ export type ProductFamilyMember = {
 };
 
 export type ProductFamilyView = {
+  automatic?: boolean;
   id: string;
   name: string;
   slug: string;
@@ -129,6 +133,9 @@ export const sanitizeProductExperienceProfile = (value: unknown): ProductExperie
   const packageContents = records(source.packageContents).slice(0, 30).map((entry) => ({
     label: text(entry.label, 120),
     included: entry.included !== false,
+    ...(offerIcons.includes(entry.icon as OfferIcon) ? { icon: entry.icon as OfferIcon } : {}),
+    ...(entry.isGift === true ? { isGift: true } : {}),
+    ...(typeof entry.presetId === 'string' && /^[a-z0-9-]{1,80}$/i.test(entry.presetId) ? { presetId: entry.presetId } : {}),
   })).filter((entry) => validLocalized(entry.label));
 
   const conditionGuide = records(source.conditionGuide).slice(0, 8).map((entry) => {
@@ -178,20 +185,35 @@ export const sanitizeProductExperienceProfile = (value: unknown): ProductExperie
 export const localizedText = (value: LocalizedText, locale: "de" | "en"): string =>
   value[locale] || value[locale === "de" ? "en" : "de"] || "";
 
+const normalizedFamilyValue = (axis: string, value: string): string => axis.toLowerCase() === 'storage'
+  ? normalizeStorageValue(value.trim().replace(/^(\d+)$/, '$1 GB'))?.label ?? value.trim() : value.trim();
+export const familyOptionValue = (member: ProductFamilyMember | undefined, axis: string): string | undefined => {
+  const value = member ? Object.entries(member.optionValues).find(([key]) => key.toLowerCase() === axis.toLowerCase())?.[1] : undefined;
+  return typeof value === 'string' ? normalizedFamilyValue(axis,value) : undefined;
+};
+
 export const getFamilyOptionTarget = (family: ProductFamilyView, axis: string, value: string): ProductFamilyMember | null => {
   const current = family.members.find(member => member.selected);
   if (!current) return null;
-  const others = family.optionAxes.filter(other => other !== axis && other.toLowerCase() !== 'device');
-  const candidates = family.members.filter(member => member.optionValues[axis] === value);
+  const key = axis.toLowerCase();
+  // Upstream choices constrain downstream options. Storage never changes the
+  // color/condition; battery health never changes storage/color/condition.
+  const fixed = key === 'batteryhealth' ? ['condition','color','storage']
+    : key === 'storage' ? ['condition','color'] : key === 'color' ? ['condition'] : [];
+  const candidates = family.members.filter(member => familyOptionValue(member, axis) === normalizedFamilyValue(axis,value)
+    && fixed.every(other => familyOptionValue(member,other) === familyOptionValue(current,other)));
+  const available = candidates.filter(member => member.stock > 0);
+  const others = family.optionAxes.filter(other => other.toLowerCase() !== key && other.toLowerCase() !== 'device');
   const score = (member: ProductFamilyMember): number => others.reduce((total, other) =>
-    total + (member.optionValues[other] === current.optionValues[other]
-      ? other.toLowerCase() === 'condition' ? 100 : 10 : 0), 0);
-  return candidates.sort((a, b) => score(b) - score(a) || Number(b.stock > 0) - Number(a.stock > 0))[0] ?? null;
+    total + (familyOptionValue(member,other) === familyOptionValue(current,other)
+      ? ({condition:1_000,color:100,storage:10,batteryhealth:1}[other.toLowerCase()] ?? 1) : 0), 0);
+  return (available.length ? available : candidates).sort((a,b) => score(b)-score(a)
+    || Number(b.selected)-Number(a.selected) || a.price-b.price || a.productId.localeCompare(b.productId))[0] ?? null;
 };
 
 export const formatStorageLabel = (value: string): string => {
   const trimmed = value.trim();
-  return /^\d+$/.test(trimmed) ? `${trimmed} GB` : trimmed;
+  return normalizedFamilyValue('storage',trimmed).replace(/(GB|TB)$/,' $1');
 };
 
 export const resolveBundleCartSelection = (variants: Array<{ color?: string; storage?: string; stock?: number; isActive?: boolean }>) => variants.length === 0

@@ -6,6 +6,8 @@ import {
   type ProductChannelFacts,
 } from '@/lib/product-channel-readiness';
 import { validateAdminProductCondition } from '@/lib/admin-product-validation';
+import type { ProductExperienceProfile } from '@/lib/product-experience';
+import type { ExperienceFamilyState } from '@/lib/admin-product-types';
 
 export const channels: ChannelKey[] = ['store', 'google', 'ebay', 'amazon'];
 export type PhotoSlot = { id: string; url: string };
@@ -20,6 +22,8 @@ export type PhoneEntry = {
   stock: number;
   sku: string;
   batteryHealth: number | null;
+  batteryHealthMax?: number | null;
+  conditionNotePresetId?: string;
   conditionNote: string;
   defects: string;
   accessories: string;
@@ -27,6 +31,8 @@ export type PhoneEntry = {
   photos: PhotoSlot[];
   coverId: string;
   details: ProductPayload;
+  experience?: ProductExperienceProfile;
+  individualPhotos?: boolean;
   channels: ChannelKey[];
 };
 export type PhoneDocument = {
@@ -35,6 +41,9 @@ export type PhoneDocument = {
   step: number;
   shared: ProductPayload;
   entries: PhoneEntry[];
+  variantSuggestions?: Array<{ color: string; storage: string }>;
+  researchGallery?: string[];
+  family?: ExperienceFamilyState;
 };
 export type ChannelStatus =
   | 'incomplete'
@@ -56,7 +65,7 @@ export type PhoneDraft = {
 };
 export const newPhoneEntry = (source?: PhoneEntry): PhoneEntry => {
   const id = crypto.randomUUID();
-  const photos = Array.from({ length: 4 }, () => ({
+  const photos = Array.from({ length: source?.condition === 'new' ? Math.max(4, source.photos.length) : 4 }, () => ({
     id: crypto.randomUUID(),
     url: '',
   }));
@@ -69,12 +78,15 @@ export const newPhoneEntry = (source?: PhoneEntry): PhoneEntry => {
     stock: 1,
     sku: `AP-${id}`,
     batteryHealth: null,
+    batteryHealthMax: null,
     conditionNote: '',
     defects: '',
     accessories: '',
     hasRealProductPhotos: false,
-    photos,
-    coverId: photos[0].id,
+    photos: source?.condition === 'new' ? photos.map((p, i) => ({ ...p, url: source.photos[i]?.url ?? '' })) : photos,
+    coverId: photos[source?.photos.findIndex(p => p.id === source.coverId) ?? 0]?.id ?? photos[0].id,
+    individualPhotos: source?.individualPhotos ?? false,
+    experience: source?.experience ? structuredClone(source.experience) : undefined,
     details: {},
     channels: [...channels],
   };
@@ -90,6 +102,13 @@ export const newPhoneDocument = (): PhoneDocument => ({
   },
   entries: [newPhoneEntry()],
 });
+/** An untouched initial row stays available internally until a researched option is selected. */
+export const isResearchPlaceholder = (entry: PhoneEntry, shared: ProductPayload = {}): boolean => !entry.sourceProductId && !entry.color && !entry.storage && entry.condition === 'new' && entry.price === 0 && entry.stock === 1 && entry.sku === `AP-${entry.id}` && entry.batteryHealth == null && entry.batteryHealthMax == null && !entry.conditionNote && !entry.defects && !entry.accessories && !entry.hasRealProductPhotos && !entry.photos.some(photo => photo.url) && !Object.entries(entry.details).some(([key,value]) => JSON.stringify(value) !== JSON.stringify(shared[key as keyof ProductPayload])) && !entry.experience?.packageContents.some(item => item.isGift);
+export const newBatteryHealthOffer = (source: PhoneEntry): PhoneEntry => {
+  const entry = newPhoneEntry(source);
+  const photos = source.photos.map(photo => ({ ...photo, id: crypto.randomUUID() }));
+  return { ...entry, stock: 0, conditionNote: source.conditionNote, conditionNotePresetId: source.conditionNotePresetId, defects: source.defects, accessories: source.accessories, details: structuredClone(source.details), photos, coverId: photos[source.photos.findIndex(photo => photo.id === source.coverId)]?.id ?? photos[0].id };
+};
 export const entryImages = (entry: PhoneEntry): string[] =>
   [...entry.photos]
     .sort(
@@ -103,15 +122,18 @@ export const entryPayload = (
 ): ProductPayload => ({
   ...document.shared,
   ...entry.details,
+  // Comparison prices belong to an offer; blank means no comparison price.
+  compareAtPrice: entry.details.compareAtPrice ?? null,
   aiGeneratedFields: (['title', 'description'] as const).filter(field => normalizeAiTextFields(
     Object.prototype.hasOwnProperty.call(entry.details, field) ? entry.details.aiGeneratedFields : document.shared.aiGeneratedFields,
   ).includes(field)),
-  category: 'smartphones',
+  category: document.shared.category ?? 'smartphones',
   condition: entry.condition,
   price: entry.price,
   stock: entry.stock,
   sku: entry.sku,
-  batteryHealth: entry.batteryHealth,
+  batteryHealth: entry.batteryHealthMax != null ? null : entry.batteryHealth,
+  batteryHealthRange: entry.batteryHealthMax != null ? { min: entry.batteryHealth!, max: entry.batteryHealthMax } : null,
   conditionNote: [entry.conditionNote, entry.defects, entry.accessories]
     .filter(Boolean)
     .join('\n'),
@@ -144,8 +166,7 @@ export const entryProblems = (
   const add = (step: number, field: string, en: string, german: string) =>
     problems.push({ step, field, message: de ? german : en });
   if (
-    !document.shared.brand?.trim() ||
-    !document.shared.model?.trim() ||
+    ((document.shared.category ?? 'smartphones') === 'smartphones' && (!document.shared.brand?.trim() || !document.shared.model?.trim())) ||
     !document.shared.title?.trim()
   )
     add(
@@ -154,11 +175,11 @@ export const entryProblems = (
       'Add brand, model and title.',
       'Marke, Modell und Titel ergänzen.',
     );
-  if (!entry.color.trim() || !entry.storage.trim())
+  if (['smartphones', 'tablets', 'laptops', 'consoles'].includes(document.shared.category ?? 'smartphones') && (!entry.color.trim() || !entry.storage.trim()))
     add(1, 'color', 'Add color and storage.', 'Farbe und Speicher ergänzen.');
   if (!(Number.isFinite(entry.price) && entry.price > 0))
     add(
-      2,
+      1,
       'price',
       'Set a price greater than zero.',
       'Preis größer als null eintragen.',
@@ -168,23 +189,22 @@ export const entryProblems = (
     entry.stock < 0
   )
     add(
-      2,
+      1,
       'stock',
       'Enter a whole-number stock quantity of zero or more.',
       'Bestand als ganze Zahl ab null eingeben.',
     );
   if (!entry.sku.trim())
-    add(2, 'sku', 'Add a unique SKU.', 'Eindeutige SKU ergänzen.');
+    add(1, 'sku', 'Add a unique SKU.', 'Eindeutige SKU ergänzen.');
   if (
-    entry.photos.length !== 4 ||
-    entry.photos.some((p) => !p.url) ||
-    new Set(entryImages(entry)).size !== 4
+    entryImages(entry).length === 0 ||
+    new Set(entryImages(entry)).size !== entryImages(entry).length
   )
     add(
       3,
       'photos',
-      'Upload four distinct photos.',
-      'Vier unterschiedliche Fotos hochladen.',
+      'Add at least one product photo; additional views are optional.',
+      'Mindestens ein Produktfoto ergänzen; weitere Ansichten sind optional.',
     );
   if (entry.condition !== 'new' && !entry.hasRealProductPhotos)
     add(6, 'hasRealProductPhotos',
@@ -202,10 +222,11 @@ export const entryProblems = (
     imageCount: entryImages(entry).length,
     batteryHealth:
       entry.batteryHealth == null ? '' : String(entry.batteryHealth),
+    batteryHealthMax: entry.batteryHealthMax == null ? '' : String(entry.batteryHealthMax),
     locale,
   });
   if (conditionError)
-    problems.push({ step: 2, field: 'conditionNote', message: conditionError });
+    problems.push({ step: 1, field: 'conditionNote', message: conditionError });
   if (!document.shared.description?.trim())
     add(
       4,
@@ -264,9 +285,12 @@ export const validateDocument = (value: unknown): PhoneDocument => {
     ids.add(e.id);
     if (
       typeof e.hasRealProductPhotos !== 'boolean' ||
+      (e.individualPhotos !== undefined && typeof e.individualPhotos !== 'boolean') ||
+      (e.conditionNotePresetId !== undefined && (typeof e.conditionNotePresetId !== 'string' || !/^[a-z0-9-]{1,80}$/i.test(e.conditionNotePresetId))) ||
       !Number.isFinite(e.price) ||
       !Number.isFinite(e.stock) ||
       (e.batteryHealth !== null && !Number.isFinite(e.batteryHealth)) ||
+      (e.batteryHealthMax != null && !Number.isFinite(e.batteryHealthMax)) ||
       !['new', 'used', 'open_box'].includes(e.condition) ||
       ![
         'color',
@@ -285,8 +309,8 @@ export const validateDocument = (value: unknown): PhoneDocument => {
       !Array.isArray(e.channels) ||
       e.channels.some((c) => !channels.includes(c)) ||
       !Array.isArray(e.photos) ||
-      e.photos.length !== 4 ||
-      new Set(e.photos.map((p) => p.id)).size !== 4 ||
+      e.photos.length < 1 || e.photos.length > 40 ||
+      new Set(e.photos.map((p) => p.id)).size !== e.photos.length ||
       e.photos.some(
         (p) =>
           typeof p.id !== 'string' ||

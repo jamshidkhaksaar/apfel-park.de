@@ -6,9 +6,9 @@ describe('photo reuse confirmation', () => {
     expect(photoReuseError(offer, offer, false)).toBe('shared_photos_confirmation_required');
     expect(photoReuseError(offer, offer, true)).toBeNull();
   });
-  it('never permits another color or model through confirmation', () => {
+  it('allows reviewed catalog photos without exclusive model or color ownership', () => {
     for (const previous of [{...offer,color:'Weiß'}, {...offer,model:'iPhone 13'}, {...offer,brand:''}])
-      expect(photoReuseError(offer, previous, true)).toBe('device_photo_reused');
+      expect(photoReuseError(offer, previous, true)).toBeNull();
   });
   it('allows existing new-device same-color sharing and normalizes text', () => {
     expect(photoReuseError({...offer,condition:'new'}, {...offer,condition:'new'}, false)).toBeNull();

@@ -64,7 +64,7 @@ describe("DeviceQuoteForm", () => {
     expect(html).toContain("Modell");
     expect(html).toContain("Neu");
     expect(html).toContain("Open Box");
-    expect(html).toContain("Gebraucht");
+    expect(html).toContain("A+");
     expect(html).toContain("Speicher");
     expect(html).toContain("Farbe");
     expect(html).toContain("Bevorzugte Preisspanne");

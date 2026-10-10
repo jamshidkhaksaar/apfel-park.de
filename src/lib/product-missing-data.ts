@@ -1,9 +1,11 @@
 import type { ProductChannelFacts } from "./product-channel-readiness";
+import { validBatteryHealthRange, type BatteryHealthRange } from "./product-offer-options";
 import { evaluateProductChannelReadiness } from "./product-channel-readiness";
 
 export type MissingDataInput = ProductChannelFacts & {
   model?: string;
   batteryHealth?: string | number | null;
+  batteryHealthRange?: BatteryHealthRange;
   isActive?: boolean;
 };
 
@@ -67,14 +69,14 @@ export function productMissingData(input: MissingDataInput): MissingDataChecklis
   }
   if (input.condition === "open_box" || input.condition === "used") {
     if (!input.conditionNote?.trim()) {
-      push({ code: "condition_note_missing", label: "Condition note", severity: "error", channel: "store", aiFillable: false, message: "Condition note required for open-box/used." });
+      push({ code: "condition_note_missing", label: "Condition note", severity: "error", channel: "store", aiFillable: false, message: "Condition note required for Open-Box/A+." });
     }
     if (!input.hasRealProductPhotos) {
       push({ code: "real_photos_missing", label: "Exact-device photos", severity: "error", channel: "store", aiFillable: false, message: "Confirm exact-device photos." });
     }
   }
-  if (input.condition === "used" && /iphone/i.test(`${input.brand} ${input.model} ${input.title}`) && !String(input.batteryHealth ?? "").trim()) {
-    push({ code: "battery_missing", label: "Battery health", severity: "error", channel: "store", aiFillable: true, message: "Battery health required for used iPhones." });
+  if (input.condition === "used" && /iphone/i.test(`${input.brand} ${input.model} ${input.title}`) && !String(input.batteryHealth ?? "").trim() && !validBatteryHealthRange(input.batteryHealthRange)) {
+    push({ code: "battery_missing", label: "Battery health", severity: "error", channel: "store", aiFillable: true, message: "Battery health or a range required for A+ iPhones." });
   }
   if (!input.manufacturer?.name) {
     push({ code: "gpsr_manufacturer", label: "GPSR manufacturer", severity: "warning", channel: "google", aiFillable: true, message: "GPSR manufacturer details incomplete." });

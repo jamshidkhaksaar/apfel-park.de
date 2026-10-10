@@ -7,8 +7,8 @@ export const categoryLabels = {
 } as const satisfies Record<Locale, Record<ProductCategory, string>>;
 
 export const conditionLabels = {
-  de: { new: "Versiegelt", open_box: "Open Box", used: "Gebraucht" },
-  en: { new: "Sealed", open_box: "Open Box", used: "Used" },
+  de: { new: "Versiegelt", open_box: "Open Box", used: "A+" },
+  en: { new: "Sealed", open_box: "Open Box", used: "A+" },
 } as const satisfies Record<Locale, Record<ProductCondition, string>>;
 
 export type StockTone = "out" | "low" | "in";

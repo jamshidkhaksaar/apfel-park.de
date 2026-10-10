@@ -94,10 +94,10 @@ export default function StoreProductCard({
           <p className="hidden line-clamp-2 text-xs leading-4 text-muted sm:block">{product.facts.slice(0, 2).join(" · ")}</p>
         ) : null}
 
-        {variantSummary ? <p className="hidden line-clamp-1 text-xs text-muted-strong sm:block">{variantSummary}</p> : null}
+        {variantSummary ? <p className="line-clamp-2 text-xs text-muted-strong">{variantSummary}</p> : null}
 
         <div className="mt-auto pt-2">
-          <PriceBlock locale={locale} price={product.price} compareAtPrice={product.compareAtPrice} size="card" />
+          <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} size="card" />
           <div className="mt-2 flex items-end justify-between gap-2">
             <div className="min-w-0">
               <p className={`text-[11px] font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
@@ -107,7 +107,8 @@ export default function StoreProductCard({
               onClick={onQuickAdd}
               disabled={isOutOfStock}
               added={added}
-              label={isGerman ? `${product.title} in den Warenkorb` : `Add ${product.title} to cart`}
+              label={product.familyOptions ? (isGerman ? `Optionen für ${product.title} wählen` : `Choose options for ${product.title}`) : isGerman ? `${product.title} in den Warenkorb` : `Add ${product.title} to cart`}
+              options={product.familyOptions}
             />
           </div>
         </div>

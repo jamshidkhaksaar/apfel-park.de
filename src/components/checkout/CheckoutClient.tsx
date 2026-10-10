@@ -589,7 +589,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
                       <span className="block text-sm leading-snug text-foreground">{item.title}</span>
                       {item.condition && item.condition !== "new" ? (
                         <span className="mt-1 inline-block text-[11px] uppercase tracking-[0.12em] text-green-text">
-                          {item.condition === "used" ? (locale === "de" ? "Gebraucht A+" : "Used A+") : "Open-Box"}
+                          {item.condition === "used" ? (locale === "de" ? "A+" : "A+") : "Open-Box"}
                         </span>
                       ) : null}
                     </span>

@@ -10,11 +10,13 @@ export default function AddToCartButton({
   disabled,
   added,
   label,
+  options = false,
 }: {
   onClick: () => void;
   disabled: boolean;
   added: boolean;
   label: string;
+  options?: boolean;
 }) {
   return (
     <button
@@ -28,6 +30,8 @@ export default function AddToCartButton({
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="m5 13 4 4L19 7" />
         </svg>
+      ) : options ? (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="currentColor"/><circle cx="15" cy="17" r="3" fill="currentColor"/></svg>
       ) : (
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="9" cy="20" r="1.4" />

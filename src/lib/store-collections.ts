@@ -294,7 +294,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
         rows: [
           ["Neu & versiegelt", "Wähle diese Zustandsangabe, wenn du ein originalversiegeltes Gerät suchst. Ein Netzteil oder anderes Zubehör ist dadurch nicht automatisch enthalten."],
           ["Open Box", "Die Verpackung wurde geöffnet. Lies die konkrete Zustandsbeschreibung und den Lieferumfang; Open Box allein sagt nichts über Aktivierung oder Akkuzustand aus."],
-          ["Gebraucht", "Vergleiche die Fotos des Geräts, Gebrauchsspuren, Akkuinformationen und bekannte Einschränkungen mit dem Preis."],
+          ["A+", "Vergleiche die Fotos des Geräts, Gebrauchsspuren, Akkuinformationen und bekannte Einschränkungen mit dem Preis."],
           ["SIM oder eSIM", "Prüfe die genaue Modell- und Ländervariante, SIM-Format, eSIM-Unterstützung, Netzkompatibilität und eine mögliche Anbietersperre. Für eine eSIM muss auch dein Tarif geeignet sein."],
           ["Gesamtkosten", "Vergleiche Gerätepreis plus Versand und benötigtes Zubehör. Tarifkosten sind nicht im reinen Gerätekauf enthalten."],
         ],
@@ -335,7 +335,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
         rows: [
           ["New & sealed", "Choose this condition if you want an originally sealed device. This does not automatically mean a charger or other accessories are included."],
           ["Open Box", "The packaging has been opened. Read the specific condition and contents; Open Box alone does not establish activation status or battery health."],
-          ["Used", "Compare the actual device photos, wear, battery information and known limitations against the price."],
+          ["A+", "Compare the actual device photos, wear, battery information and known limitations against the price."],
           ["SIM or eSIM", "Check the exact model and regional variant, SIM format, eSIM support, network compatibility and any carrier lock. Your mobile tariff must also support eSIM."],
           ["Total cost", "Compare device price plus delivery and any accessories needed. Tariff costs are not included in a device-only purchase."],
         ],

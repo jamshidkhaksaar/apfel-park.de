@@ -36,6 +36,7 @@ export type AdminProductRecord = {
   category: string;
   condition: string;
   batteryHealth?: number | null;
+  batteryHealthRange?: import('./product-offer-options').BatteryHealthRange;
   hasRealProductPhotos?: boolean;
   conditionNote?: string;
   brand: string;
@@ -149,4 +150,4 @@ export type ProductFormState = {
 
 export type ExperienceCandidate = { id: string; title: string; brand?: string; model?: string; condition?: string; price: number; stock: number; images?: string[] };
 export type ExperienceFamilyMember = { productId: string; optionValues: Record<string, string>; position: number; isActive: boolean };
-export type ExperienceFamilyState = { id?: string; name: string; slug: string; optionAxes: string[]; isActive: boolean; members: ExperienceFamilyMember[] };
+export type ExperienceFamilyState = { automatic?: boolean; id?: string; name: string; slug: string; optionAxes: string[]; isActive: boolean; members: ExperienceFamilyMember[] };

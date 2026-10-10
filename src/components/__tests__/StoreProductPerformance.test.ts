@@ -6,6 +6,7 @@ import type { CatalogCardModel } from "@/lib/catalog-card";
 import StoreProductCard from "../store/StoreProductCard";
 import StoreProductRow from "../store/StoreProductRow";
 
+vi.mock("next/navigation",()=>({useRouter:()=>({push:vi.fn()})}));
 const drawerRender = vi.hoisted(() => vi.fn(() => null));
 vi.mock("../store/StoreQuickAddDrawer", () => ({ default: drawerRender }));
 const product: CatalogCardModel = {
@@ -23,7 +24,7 @@ describe("catalog initial render budget", () => {
         const html = renderToStaticMarkup(createElement(Component, { product, locale, listName: "Fixture", position: 1 }));
         expect(html).toContain("Fixture Phone");
         expect(html).toContain(`/${locale}/store/fixture-phone`);
-        expect(html).toContain(locale === "de" ? "Gebraucht" : "Used");
+        expect(html).toContain("A+");
         expect(html).toContain(locale === "de" ? "in den Warenkorb" : "Add Fixture Phone to cart");
         expect(drawerRender).not.toHaveBeenCalled();
       });

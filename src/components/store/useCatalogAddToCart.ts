@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { addStoredCartItem } from "@/components/checkout/cart";
@@ -30,6 +31,7 @@ export function useCatalogAddToCart({
   listId?: string;
   position: number;
 }) {
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [added, setAdded] = useState(false);
   const variants = useMemo(() => sellableCatalogVariants(product), [product]);
@@ -101,9 +103,10 @@ export function useCatalogAddToCart({
 
   const onQuickAdd = useCallback(() => {
     if (isOutOfStock) return;
+    if (product.familyOptions) { trackItem("select_item"); router.push(`/${locale}/store/${product.slug}`); return; }
     if (hasVariantChoices) setDrawerOpen(true);
     else add(variants[0]);
-  }, [add, hasVariantChoices, isOutOfStock, variants]);
+  }, [add, hasVariantChoices, isOutOfStock, variants, locale, product, router, trackItem]);
 
   return { added, add, onQuickAdd, drawerOpen, setDrawerOpen, isOutOfStock, trackItem };
 }

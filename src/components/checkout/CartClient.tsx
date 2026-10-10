@@ -212,7 +212,7 @@ export default function CartClient({ locale }: Props) {
                     {line.condition && line.condition !== "new" ? (
                       <span className="rounded-md bg-green/10 px-2 py-0.5 text-xs font-medium text-green-text">
                         {line.condition === "used"
-                          ? locale === "de" ? "Gebraucht A+" : "Used A+"
+                          ? locale === "de" ? "A+" : "A+"
                           : "Open-Box"}
                       </span>
                     ) : null}

@@ -24,7 +24,7 @@ type StoreFilterPanelsProps = {
 const CONDITION_LABELS: Record<string, { de: string; en: string }> = {
   new: { de: "Neu", en: "New" },
   open_box: { de: "Open-Box", en: "Open-Box" },
-  used: { de: "Gebraucht", en: "Used" },
+  used: { de: "A+", en: "A+" },
 };
 
 export default function StoreFilterPanels({

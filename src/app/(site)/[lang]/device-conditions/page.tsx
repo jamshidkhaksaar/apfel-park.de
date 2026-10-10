@@ -44,10 +44,10 @@ export default async function DeviceConditionsPage({ params }: { params: Promise
           ],
         },
         {
-          title: "Gebraucht A+",
+          title: "A+",
           body: [
             "Geprüfte Gebrauchtgeräte in sehr gutem Zustand mit Zustandshinweis auf der Produktseite.",
-            "Bei gebrauchten iPhones geben wir die gemessene Batteriekapazität an.",
+            "Bei A+-iPhones geben wir die Batteriekapazität als Einzelwert oder Bereich an.",
             "Zu jedem Gerät erhalten Sie eine ordnungsgemäße Rechnung; bei Gebrauchtware kann Differenzbesteuerung nach §25a UStG gelten (kein gesonderter USt-Ausweis).",
           ],
         },
@@ -90,10 +90,10 @@ export default async function DeviceConditionsPage({ params }: { params: Promise
           ],
         },
         {
-          title: "Used A+",
+          title: "A+",
           body: [
             "Inspected pre-owned devices in very good condition, with a condition note on the product page.",
-            "For used iPhones we state the measured battery health.",
+            "For A+ iPhones we state battery health as a single value or a range.",
             "You receive a proper invoice with every device; used goods may be sold under the margin scheme (§25a UStG, no separate VAT shown).",
           ],
         },

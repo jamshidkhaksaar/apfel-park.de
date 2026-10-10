@@ -13,6 +13,7 @@ import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
 import { conditionDetailsChanged } from "@/lib/product-condition";
 import { eprelAssetRoutes } from "@/lib/eprel";
 import { buildPayload, validatePayload, getMessages, type ProductPayload } from '@/lib/product-write-payload';
+import { deleteCatalogProduct, ProductDeletionError } from '@/lib/product-deletion';
 class DuplicateSkuError extends Error {}
 
 const hasDiscountPrice = (price: number | null, compareAtPrice: number | null) =>
@@ -36,7 +37,7 @@ const ensureAdmin = async (request: NextRequest) => {
     return { ok: false as const, response: csrf };
   }
 
-  return { ok: true as const, isEnglish, messages };
+  return { ok: true as const, isEnglish, messages, actor: user!.id };
 };
 
 const syncHomepageFeatured = async (productId: string, shouldFeature: boolean) => {
@@ -283,7 +284,7 @@ export async function POST(request: NextRequest) {
         JSON.stringify(product.marketplaceAttributes),
         product.amazonGtinExemption,
         product.amazonRenewedApproved,
-        JSON.stringify({ contentProvenance: buildAiTextProvenance(null, {}, product, product.aiGeneratedFields) }),
+        JSON.stringify({ contentProvenance: buildAiTextProvenance(null, {}, product, product.aiGeneratedFields), ...(product.batteryHealthRange ? { batteryHealthRange: product.batteryHealthRange } : {}) }),
       ],
     );
 
@@ -362,6 +363,7 @@ export async function PATCH(request: NextRequest) {
       .eq("id", payload.id)
       .maybeSingle();
     if (existingError) throw new Error(`Could not load existing product: ${existingError.message}`);
+    if (existing?.import_metadata && typeof existing.import_metadata === "object" && "catalogDeletedAt" in existing.import_metadata) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     // Editing an unrelated field must not remove the mirrored official label
     // or product-information sheets already attached to this EPREL model.
@@ -465,7 +467,7 @@ export async function PATCH(request: NextRequest) {
             THEN "import_metadata" - 'conditionNoteI18n'
           ELSE "import_metadata"
         END,'{}'::jsonb) || jsonb_build_object('contentProvenance',
-          CASE WHEN jsonb_typeof("import_metadata"->'contentProvenance')='object' THEN "import_metadata"->'contentProvenance' ELSE '{}'::jsonb END || $50::jsonb),
+          CASE WHEN jsonb_typeof("import_metadata"->'contentProvenance')='object' THEN "import_metadata"->'contentProvenance' ELSE '{}'::jsonb END || $50::jsonb) || $51::jsonb,
         "updated_at" = now()
        WHERE "id" = $1`,
       [
@@ -519,6 +521,7 @@ export async function PATCH(request: NextRequest) {
         product.amazonRenewedApproved,
         invalidateConditionNoteTranslations,
         JSON.stringify(buildAiTextProvenance(existing?.import_metadata, existing ?? {}, product, product.aiGeneratedFields)),
+        JSON.stringify(payload.batteryHealthRange !== undefined ? { batteryHealthRange: product.batteryHealthRange } : payload.batteryHealth != null ? { batteryHealthRange: null } : {}),
       ],
     );
 
@@ -564,10 +567,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: auth.messages.missingId }, { status: 400 });
     }
 
-    await query('DELETE FROM "products" WHERE "id" = $1', [id]);
-    await syncHomepageFeatured(id, false);
+    const body = await request.json().catch(() => ({}));
+    await deleteCatalogProduct(id, body, auth.actor);
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ProductDeletionError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error("Delete product failed:", error);
     return NextResponse.json({ error: auth.messages.deleteFailed }, { status: 500 });
   }

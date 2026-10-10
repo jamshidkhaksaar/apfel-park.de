@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { adminListReturnTo, withAdminListReturnTo } from "@/lib/admin-list-navigation";
+import { adminListReturnTo } from "@/lib/admin-list-navigation";
 import SmartphoneWizard from "@/components/admin/SmartphoneWizard";
 import { phoneEditorEnabled } from "@/lib/smartphone-editor/http";
 import { notFound } from "next/navigation";
 
 import AdminShell from "@/components/admin/AdminShell";
-import ProductCatalogAdmin from "@/components/admin/ProductCatalogAdmin";
 import ProductLinkedIntakeCard from "@/components/admin/ProductLinkedIntakeCard";
 import ProductTipsCard from "@/components/admin/ProductTipsCard";
 import { productMissingData } from "@/lib/product-missing-data";
@@ -13,16 +12,16 @@ import { mapAdminProduct, type ProductRow } from "@/lib/admin-product-data";
 import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
 import { isProductIntakeOwner } from "@/lib/product-intake/owner";
-import { getPromoPopupSettings } from "@/lib/products";
 import { readSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductEditorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{legacy?:string;step?:string;returnTo?:string}> }) {
-  const [{ id }, locale, promo, user] = await Promise.all([params, getAdminLocale(), getPromoPopupSettings(), readSessionUser()]);
+  const [{ id }, locale, user] = await Promise.all([params, getAdminLocale(), readSessionUser()]);
+  if (!phoneEditorEnabled()) notFound();
   const [productResult, featuredResult] = await Promise.all([
     query(
-      `SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,gtin,identifier_status,asin,ebay_epid,country_of_origin,package_weight_kg,package_length_cm,package_width_cm,package_height_cm,battery_details,charger_included,charging_power_min_w,charging_power_max_w,usb_pd_supported,marketplace_category_mappings,marketplace_attributes,amazon_gtin_exemption,amazon_renewed_approved,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,faq,updated_at,import_metadata FROM products WHERE id = $1 LIMIT 1`,
+      `SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,gtin,identifier_status,asin,ebay_epid,country_of_origin,package_weight_kg,package_length_cm,package_width_cm,package_height_cm,battery_details,charger_included,charging_power_min_w,charging_power_max_w,usb_pd_supported,marketplace_category_mappings,marketplace_attributes,amazon_gtin_exemption,amazon_renewed_approved,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,faq,updated_at,import_metadata FROM products WHERE id = $1 AND import_metadata->>'catalogDeletedAt' IS NULL LIMIT 1`,
       [id],
     ),
     query(`SELECT value FROM store_settings WHERE key = 'featured_product_ids' LIMIT 1`),
@@ -60,19 +59,12 @@ export default async function ProductEditorPage({ params, searchParams }: { para
   const returnHref = adminListReturnTo(editorParams.returnTo);
   const backLabel = returnHref.startsWith("/admin/inventory") ? (locale === "de" ? "Zurück zum Lager" : "Back to inventory") : (locale === "de" ? "Zurück zum Produktkatalog" : "Back to product catalog");
   const backLink = <Link href={returnHref} scroll={false} className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted transition hover:text-gold">← {backLabel}</Link>;
-  if(phoneEditorEnabled() && product.category === "smartphones" && editorParams.legacy !== "1") return <AdminShell title={product.title}>{backLink}{product.energyReviewRequired ? <ProductTipsCard tips={{ ...tips, items: tips.items.filter(item => item.code === "energy_review") }} locale={locale} /> : null}<SmartphoneWizard locale={locale} productId={product.id} researchEnabled={process.env.LEGACY_PRODUCT_RESEARCH_ENABLED === "true"}/><Link className="text-gold" href={withAdminListReturnTo(`/admin/products/${product.id}?legacy=1`, returnHref)}>{locale === "de" ? "Erweiterte Katalog- und Darstellungseinstellungen" : "Advanced catalog and presentation settings"}</Link></AdminShell>;
-
   return (
     <AdminShell title={product.title}>
-      <div className="mx-auto mb-3 w-full max-w-[1500px]">
-        {phoneEditorEnabled() && product.category === "smartphones" ? <Link className="btn-primary mb-4 inline-flex" href={withAdminListReturnTo(`/admin/products/${product.id}`, returnHref)}>{locale === "de" ? "Varianten und Fotos im Smartphone-Editor bearbeiten" : "Edit versions and photos in the smartphone editor"}</Link> : null}
-        {backLink}
-      </div>
+      {backLink}
       <ProductTipsCard tips={tips} locale={locale} />
-      <div id="ai-intake">
-        <ProductLinkedIntakeCard locale={locale} productId={product.id} condition={product.condition} isOwner={isProductIntakeOwner(user)} />
-      </div>
-      <ProductCatalogAdmin locale={locale} products={[product]} promo={promo} editorOnly initialStep={editorParams.step === "pricing" ? "pricing" : undefined} />
+      <div id="ai-intake"><ProductLinkedIntakeCard locale={locale} productId={product.id} condition={product.condition} isOwner={isProductIntakeOwner(user)} /></div>
+      <SmartphoneWizard locale={locale} productId={product.id} researchEnabled={process.env.LEGACY_PRODUCT_RESEARCH_ENABLED === 'true'} />
     </AdminShell>
   );
 }

@@ -38,6 +38,12 @@ describe("product-missing-data", () => {
     expect(codes).toContain("real_photos_missing");
   });
 
+  it("accepts a battery range but keeps the warning for reversed bounds", () => {
+    const offer = { ...base, condition: "used", conditionNote: "A+", hasRealProductPhotos: true, batteryHealth: "" };
+    expect(productMissingData({ ...offer, batteryHealthRange: { min: 95, max: 100 } }).items.map(item => item.code)).not.toContain("battery_missing");
+    expect(productMissingData({ ...offer, batteryHealthRange: { min: 100, max: 95 } }).items.map(item => item.code)).toContain("battery_missing");
+  });
+
   it("returns complete when nothing is missing", () => {
     const tips = productMissingData({ ...base });
     expect(tips.items.filter((item) => item.code === "images_none" || item.code === "gtin_missing" || item.code === "mpn_missing")).toHaveLength(0);

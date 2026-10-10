@@ -13,7 +13,7 @@ export const productConditionLabel = (
   condition: ProductCondition,
 ): string => {
   if (condition === "open_box") return "Open Box";
-  if (condition === "used") return locale === "de" ? "Gebraucht" : "Used";
+  if (condition === "used") return "A+";
   return locale === "de" ? "Neu" : "New";
 };
 

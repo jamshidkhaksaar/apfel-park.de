@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import AdminShell from "@/components/admin/AdminShell";
-import ProductCatalogAdmin from "@/components/admin/ProductCatalogAdmin";
+import ProductPromotionManager from "@/components/admin/ProductPromotionManager";
 import { mapAdminProduct, type ProductRow } from "@/lib/admin-product-data";
 import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
@@ -21,7 +21,7 @@ export default async function ProductPromotionsPage() {
       <div className="mx-auto mb-4 w-full max-w-[1500px]">
         <Link href="/admin/products" className="inline-flex items-center gap-2 text-sm font-medium text-muted transition hover:text-gold">← {locale === "de" ? "Zurück zum Produktkatalog" : "Back to product catalog"}</Link>
       </div>
-      <ProductCatalogAdmin locale={locale} products={products} promo={promo} promotionsOnly />
+      <ProductPromotionManager locale={locale} products={products} promo={promo} />
     </AdminShell>
   );
 }
