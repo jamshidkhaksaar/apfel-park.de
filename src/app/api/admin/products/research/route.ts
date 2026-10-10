@@ -14,6 +14,7 @@ export const runtime = 'nodejs';
 
 const messages: Record<string, [string, string]> = {
   gemini_key_missing: ['Gemini API-Schlüssel ist nicht eingerichtet.', 'Gemini API key is not configured.'],
+  gemini_credits_depleted: ['Das Gemini-Guthaben (Google AI Studio) ist aufgebraucht. Bitte das Projekt unter ai.studio/projects aufladen oder einen neuen API-Schlüssel hinterlegen.', 'Gemini prepayment credits are depleted in Google AI Studio. Please top up your project at ai.studio/projects or configure a new API key.'],
   official_sources_unavailable: ['Keine passende offizielle Quelle konnte aktuell gelesen werden. Modell genauer angeben oder Angaben manuell ergänzen.', 'No matching official source could be read. Refine the model or complete the fields manually.'],
   research_unverified_model: ['Das genaue Modell konnte nicht aus offiziellen Quellen bestätigt werden.', 'The exact model could not be confirmed from official sources.'],
   research_not_german: ['Die Antwort war nicht auf Deutsch und wurde nicht übernommen. Bitte erneut versuchen.', 'The response was not in German and was not applied. Please retry.'],
@@ -73,6 +74,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const key = error instanceof Error && ['AbortError', 'TimeoutError'].includes(error.name) ? 'research_timeout' : error instanceof Error && messages[error.message] ? error.message : 'research_failed';
     const [errorDe, errorEn] = messages[key];
     console.warn('[product research]', { code: key });
-    return NextResponse.json({ error: errorDe, errorEn, code: key }, { status: key.startsWith('photo_') || key === 'research_private_data' ? 422 : key === 'research_rate_limited' ? 429 : 503 });
+    const status = key.startsWith('photo_') || key === 'research_private_data' ? 422
+      : key === 'research_rate_limited' ? 429
+      : key === 'gemini_credits_depleted' ? 402
+      : 503;
+    return NextResponse.json({ error: errorDe, errorEn, code: key }, { status });
   }
 }
