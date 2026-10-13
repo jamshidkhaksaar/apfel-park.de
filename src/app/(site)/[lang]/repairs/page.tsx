@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import PageIntro from "../../../../components/PageIntro";
+import TrackedLink from "../../../../components/TrackedLink";
 import RepairCatalogExplorer from "../../../../components/RepairCatalogExplorer";
 import RepairPriceTable, { catalogueFloorPrices } from "../../../../components/RepairPriceTable";
 import RepairRequestForm from "../../../../components/RepairRequestForm";
@@ -115,6 +116,19 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
         eyebrow={dict.meta.repairs.title}
         compact
       />
+      <nav aria-label={lang === "de" ? "Reparaturkontakt" : "Repair contact"} className="container-page flex flex-wrap justify-center gap-3 pb-8">
+        <TrackedLink
+          href={`tel:${siteInfo.landlineE164}`}
+          className="btn-primary min-h-11 justify-center"
+          eventName="contact_click"
+          eventPayload={{ type: "landline", source: "repairs_intro" }}
+        >
+          {lang === "de" ? "Jetzt im Shop anrufen" : "Call the shop"}
+        </TrackedLink>
+        <Link href="#preise" className="btn-secondary min-h-11 justify-center">
+          {lang === "de" ? "Reparaturpreise ansehen" : "View repair prices"}
+        </Link>
+      </nav>
 
       <section className="section-pad border-b border-border/60">
         <div className="container-page">
@@ -196,7 +210,7 @@ export default async function RepairsPage({ params }: { params: Promise<{ lang: 
       </section>
 
       {/* ── 1. Price finder ─────────────────────────────────────────────── */}
-      <section className="section-pad bg-surface/20">
+      <section id="preise" className="section-pad bg-surface/20">
         <div className="container-page">
           <div className="mb-10 text-center">
             <span className="badge-gold mb-4 inline-flex">
