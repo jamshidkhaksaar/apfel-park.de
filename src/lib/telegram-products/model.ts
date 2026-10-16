@@ -571,7 +571,7 @@ export const renderConversation = (
       buttons = [
         [
           b(t('Neu / versiegelt', 'New / sealed'), 'choose:new'),
-          b('Open-box', 'choose:open_box'),
+          b(t('Open-Box', 'Open box'), 'choose:open_box'),
           b(t('Gebraucht', 'Used'), 'choose:used'),
         ],
       ];
@@ -610,9 +610,13 @@ export const renderConversation = (
             `variant:${start + i}`,
           ),
         ]);
-      if (state.page > 0) buttons.push([b('←', `page:${state.page - 1}`)]);
-      if (start + 8 < Math.max(suggestions.length, doc.entries.length))
-        buttons.push([b('→', `page:${state.page + 1}`)]);
+      {
+        const pager: Button[] = [];
+        if (state.page > 0) pager.push(b('←', `page:${state.page - 1}`));
+        if (start + 8 < Math.max(suggestions.length, doc.entries.length))
+          pager.push(b('→', `page:${state.page + 1}`));
+        if (pager.length) buttons.push(pager);
+      }
       buttons.push([
         b(t('Version manuell hinzufügen', 'Add version manually'), 'add'),
       ]);
@@ -696,17 +700,21 @@ export const renderConversation = (
       buttons = doc.entries
         .slice(state.page * 8, state.page * 8 + 8)
         .map((e) => [b(versionLabel(e) || e.sku, `photoEntry:${e.id}`)]);
-      if (state.page > 0) buttons.push([b('←', `page:${state.page - 1}`)]);
-      if (state.page * 8 + 8 < doc.entries.length)
-        buttons.push([b('→', `page:${state.page + 1}`)]);
+      {
+        const pager: Button[] = [];
+        if (state.page > 0) pager.push(b('←', `page:${state.page - 1}`));
+        if (state.page * 8 + 8 < doc.entries.length)
+          pager.push(b('→', `page:${state.page + 1}`));
+        if (pager.length) buttons.push(pager);
+      }
       buttons.push(
         [
           b(t('Gerätefoto', 'Device photo'), 'photoKind:device'),
           b(t('Karton', 'Box'), 'photoKind:box'),
         ],
         [
-          b('EAN', 'photoKind:barcode_label'),
-          b('About', 'photoKind:about_screen'),
+          b(t('Barcode (EAN)', 'Barcode (EAN)'), 'photoKind:barcode_label'),
+          b(t('Geräteinfos', 'About screen'), 'photoKind:about_screen'),
           b(t('Akku', 'Battery'), 'photoKind:battery_health'),
         ],
         ...entry.photos
@@ -753,9 +761,13 @@ export const renderConversation = (
       buttons = doc.entries
         .slice(state.page * 8, state.page * 8 + 8)
         .map((e) => [b(versionLabel(e) || e.sku, `channelEntry:${e.id}`)]);
-      if (state.page > 0) buttons.push([b('←', `page:${state.page - 1}`)]);
-      if (state.page * 8 + 8 < doc.entries.length)
-        buttons.push([b('→', `page:${state.page + 1}`)]);
+      {
+        const pager: Button[] = [];
+        if (state.page > 0) pager.push(b('←', `page:${state.page - 1}`));
+        if (state.page * 8 + 8 < doc.entries.length)
+          pager.push(b('→', `page:${state.page + 1}`));
+        if (pager.length) buttons.push(pager);
+      }
       buttons.push(
         ...channels.map((c) => [
           b(
@@ -782,7 +794,7 @@ export const renderConversation = (
   if (['color', 'price'].includes(state.stage) && !state.updateOnly)
     buttons.unshift([
       b(t('Neu', 'New'), 'setCondition:new'),
-      b('Open-box', 'setCondition:open_box'),
+      b(t('Open-Box', 'Open box'), 'setCondition:open_box'),
       b(t('Gebraucht', 'Used'), 'setCondition:used'),
     ]);
   if (state.stage === 'configuration') {
