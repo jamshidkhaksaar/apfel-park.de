@@ -8,6 +8,8 @@ poller with the same bot token. Nothing in the application deploy enables it.
 1. Pin and deploy the reviewed commit with the canonical application deploy
    script. The additive `20261016_telegram_product_entry.sql` migration creates
    only new tables/functions; old web releases and workers remain compatible.
+   The canonical owner-migration helper applies it because its foreign key to
+   the existing owner-owned draft table requires REFERENCES permission.
 2. Back up the current bot environment and SQLite state, private submissions,
    application environment, and database. Preserve their permissions. The
    upgraded bot uses a separate `product-callbacks.sqlite`; it never modifies
