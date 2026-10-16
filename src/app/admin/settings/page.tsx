@@ -1,3 +1,7 @@
+import Link from 'next/link';
+import { readSessionUser } from '@/lib/session';
+import { isProductIntakeOwner } from '@/lib/product-intake/owner';
+import { telegramText } from '@/lib/telegram-products/i18n';
 import { createAdminDbClient } from "@/lib/admin-db";
 import { businessAddress, businessIdentity } from '@/lib/business-identity';
 import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
@@ -9,6 +13,7 @@ import { type SettingsData } from "./types";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
+  const owner = isProductIntakeOwner(await readSessionUser());
   const admin = createAdminDbClient();
   const dict = await getAdminDictionary();
   const locale = await getAdminLocale();
@@ -97,6 +102,7 @@ export default async function SettingsPage() {
 
   return (
     <AdminShell title={dict.settingsPage.title}>
+      {owner ? <nav className="mb-6 flex flex-wrap gap-3"><Link className="btn-secondary" href="/admin/settings/telegram">{telegramText[locale].title}</Link><Link className="btn-secondary" href="/admin/settings/ai-providers">{telegramText[locale].providers}</Link></nav> : null}
       <SettingsForm initialSettings={initialSettings} secretStatus={secretStatus} />
     </AdminShell>
   );

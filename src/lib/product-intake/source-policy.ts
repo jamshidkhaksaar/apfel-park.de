@@ -18,6 +18,13 @@ const defaultManufacturerDomains = [
   'samsungmobilepress.com',
   'sony.com',
   'sony.de',
+  'playstation.com',
+  'nintendo.com',
+  'microsoft.com',
+  'logitech.com',
+  'belkin.com',
+  'anker.com',
+  'ugreen.com',
 ];
 
 const configuredDomains = (): string[] => (process.env.PRODUCT_INTAKE_ALLOWED_SOURCE_DOMAINS ?? '')

@@ -13,7 +13,7 @@ beforeEach(() => vi.resetAllMocks());
 
 describe('smartphone draft deletion', () => {
   it('locks the draft and archives it without deleting published products or receipts', async () => {
-    mocks.query.mockResolvedValueOnce({ rows: [{ id, revision: 3 }] }).mockResolvedValue({ rows: [] });
+    mocks.query.mockResolvedValueOnce({ rows: [{ id, revision: 3, document: {} }] }).mockResolvedValue({ rows: [] });
     expect(await deletePhoneDraft(id, 'editor', 3)).toEqual({ success: true });
     expect(mocks.query.mock.calls[0][0]).toContain('deleted_at IS NULL FOR UPDATE');
     expect(mocks.query.mock.calls[1][0]).toContain('SET deleted_at=now()');
@@ -22,13 +22,18 @@ describe('smartphone draft deletion', () => {
     expect(mocks.query.mock.calls.every(([sql]) => !sql.includes('DELETE FROM'))).toBe(true);
   });
   it('rejects a stale revision without changing the draft', async () => {
-    mocks.query.mockResolvedValue({ rows: [{ id, revision: 4 }] });
+    mocks.query.mockResolvedValue({ rows: [{ id, revision: 4, document: {} }] });
     await expect(deletePhoneDraft(id, 'editor', 3)).rejects.toMatchObject({ message: 'conflict', status: 409 });
     expect(mocks.query).toHaveBeenCalledTimes(1);
   });
   it('returns not found for missing or already deleted drafts', async () => {
     mocks.query.mockResolvedValue({ rows: [] });
     await expect(deletePhoneDraft(id, 'editor', 1)).rejects.toMatchObject({ status: 404 });
+    expect(mocks.query).toHaveBeenCalledTimes(1);
+  });
+  it('preserves Telegram submission history instead of silently archiving its draft', async () => {
+    mocks.query.mockResolvedValue({ rows: [{ id, revision: 3, document: { telegramSessionId: id } }] });
+    await expect(deletePhoneDraft(id, 'editor', 3)).rejects.toMatchObject({ message: 'telegram_submission_use_review', status: 409 });
     expect(mocks.query).toHaveBeenCalledTimes(1);
   });
   it('rejects invalid IDs before querying', async () => {

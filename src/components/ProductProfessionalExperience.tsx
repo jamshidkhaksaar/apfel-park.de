@@ -48,7 +48,7 @@ export function ProductFamilyConfigurator({ family, locale }: { family: ProductF
   const order: Record<string,number> = {condition:0,color:1,storage:2,batteryhealth:3};
   const axes = family.optionAxes.filter(axis => axis.toLowerCase() !== 'device' && (axis.toLowerCase() !== 'batteryhealth' || familyOptionValue(current,'condition') === 'used') && family.members.some(member => familyOptionValue(member,axis))).sort((a,b) => (order[a.toLowerCase()] ?? 4)-(order[b.toLowerCase()] ?? 4));
   const devices = family.members.filter(member => axes.every(axis => familyOptionValue(member,axis) === familyOptionValue(current,axis)));
-  const labels: Record<string,string> = locale === 'de' ? {color:'Farbe',storage:'Speicher',condition:'Zustand',new:'Neu',used:'A+',open_box:'Open-Box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified} : {color:'Color',storage:'Storage',condition:'Condition',new:'New',used:'A+',open_box:'Open-box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified};
+  const labels: Record<string,string> = locale === 'de' ? {configuration:'Konfiguration',color:'Farbe',storage:'Speicher',condition:'Zustand',new:'Neu',used:'A+',open_box:'Open-Box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified} : {configuration:'Configuration',color:'Color',storage:'Storage',condition:'Condition',new:'New',used:'A+',open_box:'Open-box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified};
   const labelFor = (axis: string, value: string) => axis.toLowerCase() === 'storage' ? formatStorageLabel(value) : labels[value] ?? value;
   if (axes.length === 0 || family.members.length < 2) return null;
   return <section className="mt-5 rounded-2xl border border-border/60 bg-surface/50 p-4" aria-label={locale === 'de' ? 'Produktvarianten' : 'Product variants'}>
@@ -59,7 +59,7 @@ export function ProductFamilyConfigurator({ family, locale }: { family: ProductF
       const selected = familyOptionValue(current,axis) === value;
       const disabled = !member || member.stock <= 0;
       const reason = member ? t.optionSoldOut : t.optionUnavailable;
-      const changes = member ? ['color','storage','batteryHealth'].filter(other => other.toLowerCase() !== axis.toLowerCase() && familyOptionValue(member,other) && familyOptionValue(member,other) !== familyOptionValue(current,other)).map(other => labelFor(other,familyOptionValue(member,other)!)) : [];
+      const changes = member ? ['color','storage','configuration','batteryHealth'].filter(other => other.toLowerCase() !== axis.toLowerCase() && familyOptionValue(member,other) && familyOptionValue(member,other) !== familyOptionValue(current,other)).map(other => labelFor(other,familyOptionValue(member,other)!)) : [];
       const classes = `min-h-11 max-w-full rounded-xl border px-4 py-2.5 text-left text-sm ${selected ? 'border-gold bg-gold/10 text-foreground' : 'border-border text-muted'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`;
       const label = labelFor(axis,value);
       const content = <><span>{label}{axis.toLowerCase() === 'batteryhealth' && member ? ` · ${formatPrice(locale,member.price)}` : ''}</span>{disabled ? <span className="mt-1 block text-[11px] leading-4">{reason}</span> : changes.length ? <span className="mt-1 block text-[11px] leading-4">{t.alsoSelects}: {changes.join(' · ')}</span> : null}</>;

@@ -3,7 +3,7 @@ import { deviceModelNeedles } from '@/lib/device-model';
 
 export type ResearchSource = { url: string; title: string; retrievedAt: string; text: string };
 
-const manufacturerDomains = ['apple.com','samsung.com','samsungmobilepress.com','mi.com','xiaomi.com','nothing.tech','fairphone.com','hmd.com','nokia.com','honor.com','huawei.com','oneplus.com','oppo.com','realme.com','motorola.com','motorola.de','sony.com','sony.de','asus.com','lenovo.com'];
+const manufacturerDomains = ['apple.com','samsung.com','samsungmobilepress.com','mi.com','xiaomi.com','nothing.tech','fairphone.com','hmd.com','nokia.com','honor.com','huawei.com','oneplus.com','oppo.com','realme.com','motorola.com','motorola.de','sony.com','sony.de','asus.com','lenovo.com','playstation.com','nintendo.com','microsoft.com','logitech.com','belkin.com','anker.com','ugreen.com'];
 const exactGoogleHosts = ['store.google.com','support.google.com','safety.google'];
 
 export const germanManufacturerUrl = (value: string): string => {

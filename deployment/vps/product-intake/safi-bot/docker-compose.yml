@@ -5,6 +5,9 @@ services:
     restart: unless-stopped
     network_mode: host
     env_file: .env
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp]
     volumes:
       - ./data:/data
-      - /srv/apfel-intake/submissions:/srv/apfel-intake/submissions

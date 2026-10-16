@@ -46,7 +46,7 @@ export const finalizeResearchedProduct = (
   ];
   research.researchSources = sources.map(({ url, title, retrievedAt }) => ({ url, title, retrievedAt }));
   research.researchWarnings = warnings;
-  research.variantSuggestions = research.variants?.map(({ color, storage }) => ({ color, storage }));
+  research.variantSuggestions = research.variants?.map(({ color, storage, configuration }) => ({ color, storage, ...(configuration && Object.keys(configuration).length ? { configuration } : {}) }));
   // Manufacturer options are not stock offers, and search results are not licences.
   research.variants = undefined;
   research.gallery = [];

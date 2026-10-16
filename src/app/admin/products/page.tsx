@@ -1,3 +1,5 @@
+import TelegramProductSubmissions, { type TelegramSubmissionView } from '@/components/admin/TelegramProductSubmissions';
+import { listTelegramSubmissions } from '@/lib/telegram-products/repository';
 import CatalogStockSummary from "@/components/admin/CatalogStockSummary";
 import ProductDeleteButton from "@/components/admin/ProductDeleteButton";
 import { catalogStockSummary } from "@/lib/catalog-stock-summary";
@@ -207,6 +209,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   ]);
   const wizardProducts = (wizardResult.rows as Array<{ id: string; title: string; brand: string | null; model: string | null; category: string | null; condition: string | null; sku: string | null; is_active: boolean | null }>);
   const isOwner = isProductIntakeOwner(user);
+  const telegramRows = view === 'catalog' ? [] : JSON.parse(JSON.stringify(await listTelegramSubmissions(view === 'history'))) as TelegramSubmissionView[];
   const liveEnabled = process.env.PRODUCT_INTAKE_LIVE_ENABLED === "true" && process.env.PRODUCT_INTAKE_DEFAULT_MODE === "live";
   const loadedDetail = view === "intake" && intakeRuns[0] ? await getProductIntakeRunDetail(intakeRuns[0].id) : null;
   const secret = process.env.PRODUCT_INTAKE_PREVIEW_SECRET?.trim() ?? "";
@@ -294,6 +297,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           <button className="rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background">{locale === "de" ? "Anwenden" : "Apply"}</button>
         </AdminFilterForm>) : null}
 
+        {view !== "catalog" ? <TelegramProductSubmissions locale={locale} rows={telegramRows} history={view === "history"} isOwner={isOwner}/> : null}
         {view === "intake" ? (
           <>
             <div className={`rounded-2xl border p-4 ${liveEnabled ? "border-red-500/30 bg-red-500/5" : "border-amber-500/25 bg-amber-500/5"}`}>

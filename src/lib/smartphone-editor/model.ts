@@ -15,6 +15,7 @@ export type PhoneEntry = {
   id: string;
   sourceProductId?: string;
   variantIndex?: number;
+  configuration?: Record<string, string>;
   color: string;
   storage: string;
   condition: 'new' | 'open_box' | 'used';
@@ -36,12 +37,14 @@ export type PhoneEntry = {
   channels: ChannelKey[];
 };
 export type PhoneDocument = {
+  telegramSessionId?: string;
+  telegramUpdateOnly?: boolean;
   pendingShared?: ProductPayload;
   pendingSpecsText?: string;
   step: number;
   shared: ProductPayload;
   entries: PhoneEntry[];
-  variantSuggestions?: Array<{ color: string; storage: string }>;
+  variantSuggestions?: Array<{ color: string; storage: string; configuration?: Record<string, string> }>;
   researchGallery?: string[];
   family?: ExperienceFamilyState;
 };
@@ -71,6 +74,7 @@ export const newPhoneEntry = (source?: PhoneEntry): PhoneEntry => {
   }));
   return {
     id,
+    configuration: source?.configuration ? structuredClone(source.configuration) : undefined,
     color: source?.color ?? '',
     storage: source?.storage ?? '',
     condition: source?.condition ?? 'new',
@@ -103,7 +107,7 @@ export const newPhoneDocument = (): PhoneDocument => ({
   entries: [newPhoneEntry()],
 });
 /** An untouched initial row stays available internally until a researched option is selected. */
-export const isResearchPlaceholder = (entry: PhoneEntry, shared: ProductPayload = {}): boolean => !entry.sourceProductId && !entry.color && !entry.storage && entry.condition === 'new' && entry.price === 0 && entry.stock === 1 && entry.sku === `AP-${entry.id}` && entry.batteryHealth == null && entry.batteryHealthMax == null && !entry.conditionNote && !entry.defects && !entry.accessories && !entry.hasRealProductPhotos && !entry.photos.some(photo => photo.url) && !Object.entries(entry.details).some(([key,value]) => JSON.stringify(value) !== JSON.stringify(shared[key as keyof ProductPayload])) && !entry.experience?.packageContents.some(item => item.isGift);
+export const isResearchPlaceholder = (entry: PhoneEntry, shared: ProductPayload = {}): boolean => !entry.sourceProductId && !entry.color && !entry.storage && entry.condition === 'new' && entry.price === 0 && entry.stock === 1 && entry.sku === `AP-${entry.id}` && entry.batteryHealth == null && entry.batteryHealthMax == null && !entry.conditionNote && !entry.defects && !entry.accessories && !entry.hasRealProductPhotos && !entry.photos.some(photo => photo.url) && !Object.entries(entry.details).some(([key,value]) => JSON.stringify(value) !== JSON.stringify(shared[key as keyof ProductPayload])) && !Object.keys(entry.configuration ?? {}).length && !entry.experience?.packageContents.some(item => item.isGift);
 export const newBatteryHealthOffer = (source: PhoneEntry): PhoneEntry => {
   const entry = newPhoneEntry(source);
   const photos = source.photos.map(photo => ({ ...photo, id: crypto.randomUUID() }));
@@ -122,6 +126,10 @@ export const entryPayload = (
 ): ProductPayload => ({
   ...document.shared,
   ...entry.details,
+  ...(Object.keys(entry.configuration ?? {}).length ? {
+    title: entry.sourceProductId ? entry.details.title || document.shared.title : [entry.details.title || document.shared.title, ...Object.values(entry.configuration ?? {})].filter(Boolean).join(' · '),
+    specs: [...(entry.details.specs ?? document.shared.specs ?? []).filter(spec=>!Object.keys(entry.configuration ?? {}).some(key=>key.toLowerCase()===spec.label.toLowerCase())), ...Object.entries(entry.configuration ?? {}).map(([label, value]) => ({ label, value }))],
+  } : {}),
   // Comparison prices belong to an offer; blank means no comparison price.
   compareAtPrice: entry.details.compareAtPrice ?? null,
   aiGeneratedFields: (['title', 'description'] as const).filter(field => normalizeAiTextFields(
@@ -283,6 +291,7 @@ export const validateDocument = (value: unknown): PhoneDocument => {
     )
       throw new Error('invalid_entry');
     ids.add(e.id);
+    if (e.configuration !== undefined && (!e.configuration || typeof e.configuration !== 'object' || Array.isArray(e.configuration) || Object.keys(e.configuration).length > 12 || Object.entries(e.configuration).some(([key, value]) => !key.trim() || key.length > 60 || typeof value !== 'string' || !value.trim() || value.length > 120))) throw new Error('invalid_configuration');
     if (
       typeof e.hasRealProductPhotos !== 'boolean' ||
       (e.individualPhotos !== undefined && typeof e.individualPhotos !== 'boolean') ||
@@ -323,3 +332,7 @@ export const validateDocument = (value: unknown): PhoneDocument => {
   }
   return doc;
 };
+
+export const configurationKey = (configuration?: Record<string, string>): string => JSON.stringify(Object.entries(configuration ?? {}).map(([k,v]) => [k.trim().toLowerCase(),v.trim().toLowerCase()]).sort(([a],[b]) => a.localeCompare(b)));
+
+export const configurationLabel = (configuration?: Record<string,string>): string => Object.entries(configuration ?? {}).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${k}: ${v}`).join(' / ') || 'Standard';

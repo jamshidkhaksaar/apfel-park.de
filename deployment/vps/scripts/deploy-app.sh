@@ -20,6 +20,7 @@ CURRENT="$APP_ROOT/current"
 ENV_FILE="$APP_ROOT/shared/app.env"
 SERVICE=apfel-park-nextjs
 WORKER_SERVICE=apfel-park-marketplace-worker.service
+TELEGRAM_WORKER_SERVICE=apfel-park-telegram-worker.service
 BASE_URL=http://127.0.0.1:3000
 KEEP=3
 
@@ -127,6 +128,8 @@ live_sha="$(cat "$CURRENT/.deployed-sha" 2>/dev/null || true)"
 bash "$TARGET_CHECK" "$SOURCE" "$live_sha" "$sha" || die "live release changed during the build; refusing to overwrite it"
 worker_present=0
 if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then worker_present=1; fi
+telegram_worker_present=0
+if systemctl cat "$TELEGRAM_WORKER_SERVICE" >/dev/null 2>&1; then telegram_worker_present=1; fi
 
 http_code() {
   curl -sS --connect-timeout 3 --max-time 10 -o /dev/null -w '%{http_code}' "$BASE_URL$1"
@@ -145,6 +148,9 @@ services_active() {
   systemctl is-active --quiet "$SERVICE" || return 1
   if [ "$worker_present" = 1 ]; then
     systemctl is-active --quiet "$WORKER_SERVICE" || return 1
+  fi
+  if [ "$telegram_worker_present" = 1 ] && [ -f "$CURRENT/scripts/telegram-product-worker.ts" ]; then
+    systemctl is-active --quiet "$TELEGRAM_WORKER_SERVICE" || return 1
   fi
 }
 
@@ -177,6 +183,13 @@ rollback_on_exit() {
   if [ "$worker_present" = 1 ]; then
     systemctl restart "$WORKER_SERVICE" || rollback_failed=1
   fi
+  if [ "$telegram_worker_present" = 1 ]; then
+    if [ -f "$CURRENT/scripts/telegram-product-worker.ts" ]; then
+      systemctl restart "$TELEGRAM_WORKER_SERVICE" || rollback_failed=1
+    else
+      systemctl stop "$TELEGRAM_WORKER_SERVICE" || rollback_failed=1
+    fi
+  fi
   wait_for_web || rollback_failed=1
   services_active || rollback_failed=1
   if [ "$rollback_failed" = 0 ]; then
@@ -196,6 +209,9 @@ mv -Tf "$CURRENT.tmp" "$CURRENT"
 systemctl restart "$SERVICE"
 if [ "$worker_present" = 1 ]; then
   systemctl restart "$WORKER_SERVICE"
+fi
+if [ "$telegram_worker_present" = 1 ]; then
+  systemctl restart "$TELEGRAM_WORKER_SERVICE"
 fi
 
 log "health check"

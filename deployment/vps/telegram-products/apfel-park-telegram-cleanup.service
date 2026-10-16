@@ -1,0 +1,11 @@
+[Unit]
+Description=Expire private Telegram product evidence
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/apfel-park/app/current
+EnvironmentFile=/srv/apfel-park/app/shared/app.env
+ExecStart=/root/.nvm/versions/node/v24.14.0/bin/node --import=tsx scripts/telegram-product-cleanup.ts
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/srv/apfel-intake/private/telegram
+UMask=0077

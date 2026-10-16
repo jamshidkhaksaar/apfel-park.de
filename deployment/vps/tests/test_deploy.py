@@ -12,7 +12,7 @@ SCRIPT = Path(__file__).resolve().parents[1] / 'scripts/deploy-app.sh'
 
 
 class DeployTests(unittest.TestCase):
-    def run_deploy(self, failure='', previous=True):
+    def run_deploy(self, failure='', previous=True, previous_telegram=False):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         root = Path(temp.name)
@@ -21,6 +21,9 @@ class DeployTests(unittest.TestCase):
         (root / 'shared/app.env').write_text('')
         if previous:
             (root / 'current').symlink_to(root / 'releases/previous')
+        if previous_telegram:
+            (root / 'releases/previous/scripts').mkdir()
+            (root / 'releases/previous/scripts/telegram-product-worker.ts').write_text('export {};')
         if failure == 'retention':
             for index in range(5):
                 (root / f'releases/newer-{index}').mkdir()
@@ -48,6 +51,10 @@ if cmd == 'git':
             info = tarfile.TarInfo('deployment/vps/product-intake/apply-owner-migration.sh')
             info.size = len(content); info.mode = 0o755; t.addfile(info, io.BytesIO(content))
             t.add(pathlib.Path(os.environ['FIXTURE_SCRIPT_DIR'])/'preserve-static-assets.sh', arcname='deployment/vps/scripts/preserve-static-assets.sh')
+            if failure.startswith('telegram-'):
+                info = tarfile.TarInfo('scripts/telegram-product-worker.ts')
+                content = b'export {};'
+                info.size = len(content); t.addfile(info, io.BytesIO(content))
     elif '--abbrev-ref' in args: print('main')
     elif '--short' in args: print('abcdef12')
     elif 'rev-parse' in args: print('abcdef1234567890')
@@ -62,8 +69,10 @@ elif cmd == 'npm':
         pathlib.Path('.next/static/chunks/test.css').write_text('css')
 elif cmd == 'systemctl':
     worker = 'marketplace' in args[-1]
+    telegram = 'telegram-worker' in args[-1]
+    if args[0] == 'cat' and telegram and not failure.startswith('telegram-'): sys.exit(1)
     if args[0] == 'cat' and failure == 'no-worker': sys.exit(1)
-    key = ('worker-' if worker else 'web-') + args[0]
+    key = ('telegram-' if telegram else 'worker-' if worker else 'web-') + args[0]
     if phase == 'new' and failure == key: sys.exit(13)
     if phase == 'old' and failure == 'rollback-restart' and args[0] == 'restart': sys.exit(14)
 elif cmd == 'curl':
@@ -89,6 +98,23 @@ elif cmd == 'node' and '-e' in args:
             p.chmod(0o755)
         result = subprocess.run(['bash', str(root/'deploy.sh'), 'abcdef1234567890'], env={**os.environ, 'PATH': f'{root}/bin:/usr/bin:/bin', 'FIXTURE_ROOT': str(root), 'FIXTURE_SCRIPT_DIR': str(SCRIPT.parent), 'FAILURE': failure, 'REAL_NODE': shutil.which('node') or ''}, capture_output=True, text=True, timeout=30)
         return root, result, (root/'calls').read_text()
+
+    def test_telegram_worker_activation_and_legacy_rollback(self):
+        root, result, calls = self.run_deploy('telegram-ok')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('new systemctl restart apfel-park-telegram-worker.service', calls)
+        self.assertIn('new systemctl is-active --quiet apfel-park-telegram-worker.service', calls)
+        for failure in ['telegram-restart', 'telegram-is-active']:
+            with self.subTest(failure=failure):
+                root, result, calls = self.run_deploy(failure)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual((root/'current').resolve(), root/'releases/previous')
+                self.assertIn('old systemctl stop apfel-park-telegram-worker.service', calls)
+                self.assertIn('rollback verified healthy', result.stdout)
+        root, result, calls = self.run_deploy('telegram-is-active', previous_telegram=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('old systemctl restart apfel-park-telegram-worker.service', calls)
+        self.assertIn('old systemctl is-active --quiet apfel-park-telegram-worker.service', calls)
 
     def test_retention_protects_previous_and_failed_evidence(self):
         root, result, calls = self.run_deploy('retention')

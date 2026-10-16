@@ -13,6 +13,8 @@ import { buildBaseSlug } from '@/lib/product-slug';
 import { resolveUploadPath } from '@/lib/blob';
 import { validateMarketplaceProduct } from '@/lib/marketplaces';
 import {
+  configurationKey,
+  configurationLabel,
   newPhoneDocument,
   newPhoneEntry,
   entryPayload,
@@ -139,6 +141,7 @@ export const deletePhoneDraft = async (id: string, actor: string, revision?: num
   }
   return withTransaction(async (client) => {
     const row = await readRow(client, id, true);
+    if (row.document.telegramSessionId) throw new DraftError('telegram_submission_use_review',409);
     if (revision !== undefined && revision !== row.revision) throw conflict();
     // Keep publication receipts and the original draft for audit history.
     // Published products, inventory, marketplace jobs and shared photos survive.
@@ -155,6 +158,7 @@ export const deletePhoneDrafts = async (input: unknown, actor: string) => {
     const targets = [...input].sort((a, b) => a.id.localeCompare(b.id));
     for (const item of targets) {
       const row = await readRow(client, item.id, true);
+      if (row.document.telegramSessionId) throw new DraftError('telegram_submission_use_review',409);
       if (row.revision !== item.revision) throw conflict();
     }
     await client.query('UPDATE smartphone_editor_drafts SET deleted_at=now(),updated_at=now(),updated_by=$2,revision=revision+1 WHERE id=ANY($1::uuid[])', [targets.map(item => item.id), actor]);
@@ -198,11 +202,15 @@ export const phoneModelTemplate = async (
     faq: p.faq,
   };
 };
-export const createPhoneDraft = async (
+export const createPhoneDraft = async (actor: string, productId?: string): Promise<PhoneDraft> =>
+  withTransaction(client => createPhoneDraftInTransaction(client, actor, productId));
+
+export const createPhoneDraftInTransaction = async (
+  client: TransactionClient,
   actor: string,
   productId?: string,
-): Promise<PhoneDraft> =>
-  withTransaction(async (client) => {
+  singleProduct = false,
+): Promise<PhoneDraft> => {
     const document = newPhoneDocument();
     const sources: Record<string, Source> = {};
     let familyId: string | null = null;
@@ -214,7 +222,7 @@ export const createPhoneDraft = async (
       familyId = family.rows[0]?.id ?? null;
       const result = await client.query(
         `SELECT p.*,md5(to_jsonb(p)::text) AS fingerprint FROM products p WHERE p.import_metadata->>'catalogDeletedAt' IS NULL AND (id=$1 OR ($2::boolean AND id IN (SELECT product_id FROM product_family_members WHERE family_id=$3))) ORDER BY id FOR SHARE`,
-        [productId, Boolean(family.rows[0]?.smartphone_model_key), familyId],
+        [productId, Boolean(family.rows[0]?.smartphone_model_key) && !singleProduct, familyId],
       );
       if (!result.rows.some(row => row.id === productId)) throw new DraftError('not_found', 404);
       if (familyId) document.family = await readEditorFamily(client, familyId);
@@ -253,6 +261,7 @@ export const createPhoneDraft = async (
               : p.images;
             return {
               ...entry,
+              configuration: row.import_metadata?.smartphoneEditor?.configuration,
               sourceProductId: p.id,
               variantIndex: variant ? index : undefined,
               color: variant?.color ?? '',
@@ -304,7 +313,7 @@ export const createPhoneDraft = async (
       [JSON.stringify(document), JSON.stringify(sources), familyId, actor],
     );
     return view(result.rows[0]);
-  });
+};
 const verifySources = (document: PhoneDocument, row: DraftRow) => {
   for (const [id, source] of Object.entries(row.sources)) {
     const entries = document.entries.filter((e) => e.sourceProductId === id);
@@ -352,7 +361,11 @@ export const savePhoneDraft = async (
       throw new DraftError('invalid_document');
     }
     const row = await readRow(client, id, true);
-    if (revision !== row.revision) throw conflict();
+    if (revision !== row.revision || document.telegramSessionId !== row.document.telegramSessionId) throw conflict();
+    if (row.document.telegramSessionId) {
+      const submission=(await client.query('SELECT status FROM telegram_product_sessions WHERE draft_id=$1',[id])).rows[0];
+      if (submission?.status !== 'submitted') throw new DraftError('submission_not_ready',409);
+    }
     verifySources(document, row);
     const changed =
       JSON.stringify({ ...document, step: 0 }) !==
@@ -361,6 +374,7 @@ export const savePhoneDraft = async (
       `UPDATE smartphone_editor_drafts SET document=$2::jsonb,revision=revision+1,updated_by=$3,results=CASE WHEN $4 THEN '[]'::jsonb ELSE results END,updated_at=now() WHERE id=$1 RETURNING *`,
       [id, JSON.stringify(document), actor, changed],
     );
+    if (row.document.telegramSessionId && changed) await client.query("INSERT INTO telegram_product_events(session_id,actor,event_type,details) VALUES($1,$2,'admin_draft_saved',$3)",[row.document.telegramSessionId,actor,JSON.stringify({revision:result.rows[0].revision,documentHash:createHash('sha256').update(JSON.stringify(document)).digest('hex')})]);
     return view(result.rows[0]);
   });
 export const previewPhoneDraftProductRemoval = async (id: string, entryId: string) => {
@@ -494,6 +508,7 @@ export const writeProduct = async (
   id: string,
   payload: ProductPayload,
   existing: boolean,
+  ledger?: { referenceId: string; actor: string },
 ): Promise<void> => {
   const p = buildPayload(payload);
   const error = validatePayload(p, getMessages(true));
@@ -541,11 +556,23 @@ export const writeProduct = async (
     const result = await client.query(
       `INSERT INTO inventory_skus(product_id,sku,location,on_hand,reserved,safety_buffer,is_active)
       VALUES($1,$2,'local',$3,0,0,$4) ON CONFLICT(sku,location) DO UPDATE SET
-      on_hand=excluded.on_hand+inventory_skus.reserved+inventory_skus.safety_buffer,is_active=excluded.is_active,updated_at=now()
+      on_hand=${ledger ? 'inventory_skus.on_hand' : 'excluded.on_hand+inventory_skus.reserved+inventory_skus.safety_buffer'},is_active=excluded.is_active,updated_at=now()
       WHERE inventory_skus.product_id=excluded.product_id RETURNING id`,
-      [id, unit.sku, unit.stock ?? p.stock, p.isActive],
+      [id, unit.sku, ledger ? 0 : unit.stock ?? p.stock, p.isActive],
     );
     if (result.rowCount !== 1) throw new DraftError('duplicate_sku');
+    if (ledger) {
+      const inventory = (await client.query('SELECT on_hand,reserved,safety_buffer FROM inventory_skus WHERE id=$1 FOR UPDATE', [result.rows[0].id])).rows[0];
+      const delta = Number(unit.stock ?? p.stock) - Number(inventory.on_hand);
+      if (Number(unit.stock ?? p.stock) < Number(inventory.reserved) + Number(inventory.safety_buffer)) throw new DraftError('stock_below_reservations');
+      if (delta) {
+        if (p.isActive) await client.query("SELECT * FROM adjust_inventory($1,'correction',$2,'telegram_product',$3,$4,$5::jsonb)", [unit.sku,delta,ledger.referenceId,ledger.actor,JSON.stringify({ totalCount: true })]);
+        else {
+          await client.query('UPDATE inventory_skus SET on_hand=on_hand+$2 WHERE id=$1',[result.rows[0].id,delta]);
+          await client.query("INSERT INTO inventory_adjustments(inventory_sku_id,event_type,quantity_delta,reference_type,reference_id,actor,metadata) VALUES($1,'adjustment',$2,'telegram_product',$3,$4,$5)",[result.rows[0].id,delta,ledger.referenceId,ledger.actor,JSON.stringify({adjustmentType:'correction',totalCount:true})]);
+        }
+      }
+    }
   }
   await client.query(
     `UPDATE inventory_skus SET on_hand=reserved,is_active=false,updated_at=now() WHERE product_id=$1 AND location='local' AND NOT(sku=ANY($2::text[]))`,
@@ -616,6 +643,7 @@ export const publishPhoneDraft = async (
   input: PublishRequest,
   actor: string,
   owner: boolean,
+  telegramOwner = false,
 ): Promise<PhoneDraft> => {
   const promotions: Array<Parameters<typeof autoPublishProductPromotion>[0]> = [];
   const response = await withTransaction(async (client) => {
@@ -631,6 +659,7 @@ export const publishPhoneDraft = async (
       `SELECT request,response FROM smartphone_editor_publications WHERE draft_id=$1 AND request_id=$2`,
       [id, input.requestId],
     );
+    if (row.document.telegramSessionId && !telegramOwner) throw new DraftError('owner_approval_required',403);
     if (prior.rows[0]) {
       if (
         JSON.stringify(prior.rows[0].request.entryIds) !==
@@ -642,6 +671,15 @@ export const publishPhoneDraft = async (
       return prior.rows[0].response as PhoneDraft;
     }
     if (row.revision !== input.revision) throw conflict();
+    let telegramUpdateOnly = false;
+    if (row.document.telegramSessionId) {
+      if (process.env.TELEGRAM_PRODUCTS_ENABLED !== 'true' || process.env.TELEGRAM_PRODUCTS_PUBLISH_ENABLED !== 'true') throw new DraftError('telegram_publication_disabled',403);
+      if (!telegramOwner) throw new DraftError('owner_approval_required',403);
+      const submission=(await client.query('SELECT status,state FROM telegram_product_sessions WHERE draft_id=$1 FOR UPDATE',[id])).rows[0];
+      if (submission?.status !== 'submitted') throw new DraftError('submission_not_ready',409);
+      telegramUpdateOnly = submission.state.updateOnly === true;
+      if (row.document.entries.some(e => input.entryIds.includes(e.id) && !e.hasRealProductPhotos)) throw new DraftError('actual_device_photo_required');
+    }
     const doc = validateDocument(row.document);
     if (doc.pendingShared) throw new DraftError('review_shared_changes');
     verifySources(doc, row);
@@ -661,14 +699,14 @@ export const publishPhoneDraft = async (
         throw new DraftError('duplicate_sku');
       skus.add(entry.sku.toLowerCase());
       if (!entry.sourceProductId && entry.condition === 'new') {
-        const combo = `${entry.color.trim().toLowerCase()}/${entry.storage.trim().toLowerCase()}`;
+        const combo = `${entry.color.trim().toLowerCase()}/${entry.storage.trim().toLowerCase()}/${configurationKey(entry.configuration)}`;
         if (combos.has(combo))
           throw new DraftError('duplicate_new_configuration');
         combos.add(combo);
       }
     }
     let familyId = row.family_id;
-    const needsModelFamily = !familyId && selected.some((e) => !e.sourceProductId) && selected.every(e => e.color.trim() && e.storage.trim());
+    const needsModelFamily = !familyId && selected.some((e) => !e.sourceProductId) && selected.every(e => (e.color.trim() && e.storage.trim()) || Object.keys(e.configuration ?? {}).length);
     const modelFamilyKey = `${doc.shared.category === 'smartphones' ? '' : `${doc.shared.category}|`}${doc.shared.brand?.trim().toLowerCase() ?? ''}|${(doc.shared.model || doc.shared.title)?.trim().toLowerCase()}`;
     if (needsModelFamily) {
       // Match existing-family editors' family-before-photo lock order.
@@ -705,15 +743,21 @@ export const publishPhoneDraft = async (
     if (!familyId && needsModelFamily) {
       familyId = randomUUID();
       const family = await client.query(
-        `INSERT INTO product_families(id,name,slug,option_axes,is_active,smartphone_model_key) VALUES($1,$2,$3,'["color","storage","condition"]'::jsonb,true,$4) ON CONFLICT(smartphone_model_key) DO UPDATE SET updated_at=product_families.updated_at RETURNING id`,
+        `INSERT INTO product_families(id,name,slug,option_axes,is_active,smartphone_model_key) VALUES($1,$2,$3,$5::jsonb,true,$4) ON CONFLICT(smartphone_model_key) DO UPDATE SET updated_at=product_families.updated_at RETURNING id`,
         [
           familyId,
           [doc.shared.brand, doc.shared.model || doc.shared.title].filter(Boolean).join(' '),
           `phone-${familyId}`,
           modelFamilyKey,
+          JSON.stringify([...(selected.every(e=>e.color.trim()) ? ['color'] : []), ...(selected.every(e=>e.storage.trim()) ? ['storage'] : []), 'condition']),
         ],
       );
       familyId = family.rows[0].id;
+    }
+    if (!telegramUpdateOnly && familyId && selected.some(e=>Object.keys(e.configuration ?? {}).length)) {
+      await client.query("UPDATE product_families SET option_axes=CASE WHEN option_axes ? 'configuration' THEN option_axes ELSE option_axes || '[\"configuration\"]'::jsonb END WHERE id=$1",[familyId]);
+      await client.query("UPDATE product_family_members SET option_values=jsonb_set(option_values,'{configuration}',to_jsonb('Standard'::text)) WHERE family_id=$1 AND NOT(option_values ? 'configuration')",[familyId]);
+      if (doc.family && !doc.family.optionAxes.includes('configuration')) doc.family.optionAxes.push('configuration');
     }
     if (familyId) {
       await client.query(
@@ -722,23 +766,24 @@ export const publishPhoneDraft = async (
       );
       const members = (
         await client.query(
-          `SELECT m.product_id,m.option_values FROM product_family_members m JOIN products p ON p.id=m.product_id WHERE m.family_id=$1 AND p.condition='new'`,
+          `SELECT m.product_id,m.option_values,p.import_metadata->'smartphoneEditor'->'configuration' AS configuration FROM product_family_members m JOIN products p ON p.id=m.product_id WHERE m.family_id=$1 AND p.condition='new'`,
           [familyId],
         )
       ).rows;
       const selectedProducts = new Set(selected.map((e) => e.sourceProductId));
       const keys = new Set<string>();
       for (const e of selected.filter((e) => e.condition === 'new')) {
-        const key = `${e.color.trim().toLowerCase()}|${e.storage.trim().toLowerCase()}`;
+        const key = `${e.color.trim().toLowerCase()}|${e.storage.trim().toLowerCase()}|${configurationKey(e.configuration)}`;
         if (
           keys.has(key) ||
           members.some(
             (m) =>
               !selectedProducts.has(m.product_id) &&
-              m.option_values.color?.toLowerCase() ===
+              (m.option_values.color === 'unspecified' ? '' : m.option_values.color?.toLowerCase() ?? '') ===
                 e.color.trim().toLowerCase() &&
-              m.option_values.storage?.toLowerCase() ===
-                e.storage.trim().toLowerCase(),
+              (m.option_values.storage === 'unspecified' ? '' : m.option_values.storage?.toLowerCase() ?? '') ===
+                e.storage.trim().toLowerCase() &&
+              configurationKey(m.configuration) === configurationKey(e.configuration),
           )
         )
           throw new DraftError('duplicate_new_configuration');
@@ -761,15 +806,17 @@ export const publishPhoneDraft = async (
         : undefined;
       const productId = first.sourceProductId ?? randomUUID();
       if (!first.sourceProductId) newProductIds.add(productId);
+      if (telegramUpdateOnly && !source) throw new DraftError('existing_offer_required');
+      if (telegramUpdateOnly && entries.some((entry,index)=>entry.sku!==(source!.payload.variants?.[index]?.sku || source!.payload.sku))) throw new DraftError('existing_offer_price_stock_only');
       const payload = {
         ...source?.payload,
-        ...entryPayload(doc, first),
-        isActive: first.details.isActive ?? entries.some((e) => e.channels.includes('store')),
+        ...(telegramUpdateOnly ? {price:first.price,stock:first.stock} : entryPayload(doc, first)),
+        isActive: telegramUpdateOnly ? source!.payload.isActive : first.details.isActive ?? entries.some((e) => e.channels.includes('store')),
       };
       if (source && !source.variants) payload.variants = [];
       if (source?.variants) {
         payload.variants = entries.map((e, i) => ({
-          ...entryPayload(doc, e).variants![0],
+          ...(telegramUpdateOnly ? {...source.payload.variants?.[i],price:e.price,stock:e.stock} : entryPayload(doc, e).variants![0]),
           isDefault: source.payload.variants?.[i]?.isDefault,
         }));
         payload.stock = entries.reduce((sum, e) => sum + e.stock, 0);
@@ -779,18 +826,18 @@ export const publishPhoneDraft = async (
           ] ?? first;
         payload.price = defaultEntry.price;
         payload.sku = source.payload.sku || defaultEntry.sku;
-        payload.images = entryPayload(doc, defaultEntry).images;
+        payload.images = telegramUpdateOnly ? source.payload.images : entryPayload(doc, defaultEntry).images;
       }
       for (const e of entries)
         if (e.channels.includes('store') && !entryReadiness(doc, e).store.ready)
           throw new DraftError('website_incomplete');
-      await writeProduct(client, productId, payload, Boolean(source));
+      await writeProduct(client, productId, payload, Boolean(source), doc.telegramSessionId ? {referenceId: `${doc.telegramSessionId}:${input.requestId}`, actor} : undefined);
       if (source) await markOpenIntakeRunsStale(productId, 'Unified product editor publication', client);
-      if (first.experience !== undefined) await persistProfile(client, productId, first.experience);
+      if (!telegramUpdateOnly && first.experience !== undefined) await persistProfile(client, productId, first.experience);
       if (payload.isHomepageFeatured !== undefined) await syncFeatured(client, productId, payload.isHomepageFeatured);
 
-      await client.query(
-        `UPDATE products SET import_metadata=jsonb_set(coalesce(import_metadata,'{}'::jsonb),'{smartphoneEditor}',jsonb_build_object('googleSelected',$2::boolean,'channels',$3::jsonb,'conditionNote',$4::text,'defects',$5::text,'accessories',$6::text,'conditionNotePresetId',$7::text),true) WHERE id=$1`,
+      if (!telegramUpdateOnly) await client.query(
+        `UPDATE products SET import_metadata=jsonb_set(coalesce(import_metadata,'{}'::jsonb),'{smartphoneEditor}',jsonb_build_object('googleSelected',$2::boolean,'channels',$3::jsonb,'conditionNote',$4::text,'defects',$5::text,'accessories',$6::text,'conditionNotePresetId',$7::text,'configuration',$8::jsonb),true) WHERE id=$1`,
         [
           productId,
           entries.some((e) => e.channels.includes('google')),
@@ -799,19 +846,21 @@ export const publishPhoneDraft = async (
           first.defects,
           first.accessories,
           first.conditionNotePresetId ?? null,
+          JSON.stringify(first.configuration ?? {}),
         ],
       );
-      if (source && familyId && entries.length === 1)
+      if (!telegramUpdateOnly && source && familyId && entries.length === 1)
         await client.query(
           `UPDATE product_family_members SET option_values=$3::jsonb WHERE family_id=$1 AND product_id=$2 AND EXISTS(SELECT 1 FROM product_families WHERE id=$1 AND smartphone_model_key IS NOT NULL)`,
           [
             familyId,
             productId,
             JSON.stringify({
-              color: first.color,
-              storage: first.storage,
+              color: first.color || 'unspecified',
+              storage: first.storage || 'unspecified',
               condition: first.condition,
               device: productId,
+              configuration: configurationLabel(first.configuration),
             }),
           ],
         );
@@ -822,10 +871,11 @@ export const publishPhoneDraft = async (
             familyId,
             productId,
             JSON.stringify({
-              color: first.color,
-              storage: first.storage,
+              color: first.color || 'unspecified',
+              storage: first.storage || 'unspecified',
               condition: first.condition,
               device: productId,
+              configuration: configurationLabel(first.configuration),
             }),
           ],
         );
@@ -860,7 +910,7 @@ export const publishPhoneDraft = async (
           statuses[channel] = await queueChannel(
             client,
             channel,
-            { ...entryPayload(doc, e), isActive: payload.isActive },
+            { ...(telegramUpdateOnly ? {...payload,sku:e.sku} : entryPayload(doc, e)), isActive: payload.isActive },
             actor,
             owner,
           );
@@ -885,11 +935,11 @@ export const publishPhoneDraft = async (
       };
       if (payload.isActive) promotions.push({ id: productId, title: payload.title ?? '', subtitle: payload.subtitle ?? '', description: payload.description ?? '', slug: fresh.rows[0].slug, imageUrl: payload.images?.[0] ?? null, price: payload.price ?? 0, compareAtPrice: payload.compareAtPrice ?? null, locale: 'de' });
     }
-    if (doc.family) {
+    if (doc.family && !telegramUpdateOnly) {
       // Keep automatically added versions when the existing family is edited.
       const added = (await client.query('SELECT product_id,option_values,position,is_active FROM product_family_members WHERE family_id=$1', [familyId])).rows;
       const automatic = familyId && (await client.query('SELECT smartphone_model_key FROM product_families WHERE id=$1', [familyId])).rows[0]?.smartphone_model_key;
-      const mapped = doc.family.members.map(member => { const entry = automatic ? selected.find(e => e.sourceProductId === member.productId) : undefined; return entry ? { ...member, optionValues: { ...member.optionValues, color: entry.color, storage: entry.storage, condition: entry.condition, device: member.productId } } : member; });
+      const mapped = doc.family.members.map(member => { const entry = automatic ? selected.find(e => e.sourceProductId === member.productId) : undefined; return entry ? { ...member, optionValues: { ...member.optionValues, color: entry.color || 'unspecified', storage: entry.storage || 'unspecified', condition: entry.condition, configuration: configurationLabel(entry.configuration), device: member.productId } } : member; });
       const family = { ...doc.family, id: familyId ?? doc.family.id, members: [...mapped, ...added.filter(member => newProductIds.has(member.product_id) && !doc.family!.members.some(m => m.productId === member.product_id)).map(member => ({ productId: member.product_id, optionValues: member.option_values, position: member.position, isActive: member.is_active }))] };
       familyId = await persistFamily(client, family);
       doc.family = family;
@@ -908,6 +958,11 @@ export const publishPhoneDraft = async (
       ],
     );
     const response = view(saved.rows[0]);
+    if (doc.telegramSessionId) {
+      const allPublished = doc.entries.every(e => results.some(r => r.entryId===e.id && Object.values(r.channels).some(status => status==='published'||status==='pending')));
+      await client.query('UPDATE telegram_product_sessions SET status=$2,submitted_revision=$3,updated_at=now() WHERE draft_id=$1',[id,allPublished?'published':'submitted',response.revision]);
+      await client.query("INSERT INTO telegram_product_events(session_id,actor,event_type,details) VALUES($1,$2,'owner_published',$3)",[doc.telegramSessionId,actor,JSON.stringify({revision:input.revision,requestId:input.requestId,entryIds:input.entryIds,results})]);
+    }
     await client.query(
       `INSERT INTO smartphone_editor_publications(draft_id,request_id,request,response) VALUES($1,$2,$3::jsonb,$4::jsonb)`,
       [id, input.requestId, JSON.stringify(input), JSON.stringify(response)],
