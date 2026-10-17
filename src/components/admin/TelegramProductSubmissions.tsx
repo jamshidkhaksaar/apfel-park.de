@@ -50,6 +50,12 @@ export default function TelegramProductSubmissions({
   const [notes, setNotes] = useState<Record<string, string>>({}),
     [busy, setBusy] = useState(''),
     [error, setError] = useState('');
+  const [page, setPage] = useState(0);
+  const pageSize = 5;
+  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const currentPage = Math.min(page, pages - 1);
+  const visibleRows = history ? rows.slice(currentPage * pageSize, (currentPage + 1) * pageSize) : rows;
+  const Row = history ? 'details' : 'article';
   const decide = async (row: TelegramSubmissionView, action: string) => {
     setBusy(row.id);
     setError('');
@@ -78,28 +84,38 @@ export default function TelegramProductSubmissions({
     }
   };
   return (
-    <section className="space-y-4 rounded-2xl border border-border/60 bg-surface/30 p-4 sm:p-5">
-      <h2 className="text-xl font-semibold">
-        {history ? t.history : t.submissions}
-      </h2>
+    <section className={history ? "space-y-2 rounded-2xl border border-border/60 bg-surface/30 p-3" : "space-y-4 rounded-2xl border border-border/60 bg-surface/30 p-4 sm:p-5"}>
+      <div className="flex items-center gap-2">
+        <h2 className={history ? "text-base font-semibold" : "text-xl font-semibold"}>{history ? t.history : t.submissions}</h2>
+        {history ? <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted">{rows.length}</span> : null}
+      </div>
       {error ? <p role="alert">{error}</p> : null}
       {!rows.length ? (
         <p className="text-sm text-muted">{t.noSubmissions}</p>
       ) : (
-        rows.map((row) => (
-          <article
+        visibleRows.map((row) => (
+          <Row
             key={row.id}
-            className="min-w-0 rounded-xl border border-border p-4 space-y-3"
+            className={history ? "group min-w-0 rounded-xl border border-border" : "min-w-0 rounded-xl border border-border p-4 space-y-3"}
           >
+            {history ? <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl p-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold [&::-webkit-details-marker]:hidden">
+              <span aria-hidden="true" className="text-muted transition-transform group-open:rotate-90">›</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">{row.document.shared.title || t.untitledDraft}</span>
+                <span className="block truncate text-xs text-muted">{row.display_name} · {row.document.entries.length} {t.versions}</span>
+              </span>
+              <span className={row.status === 'published' ? "shrink-0 rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-500" : "shrink-0 rounded-full bg-surface px-2 py-1 text-xs text-muted"}>{t[row.status]}</span>
+            </summary> : null}
+            <div className={history ? "space-y-3 border-t border-border p-3" : "space-y-3"}>
             <div className="flex flex-wrap justify-between gap-3">
-              <div className="min-w-0">
+              {!history ? <div className="min-w-0">
                 <h3 className="font-semibold break-words">
                   {row.document.shared.title}
                 </h3>
                 <p className="text-sm text-muted">
                   {row.display_name} · {t[row.status]} · #{row.revision}
                 </p>
-              </div>
+              </div> : null}
               {row.archived ? <p className="text-sm text-muted">{t.archived}</p> : <div className="flex flex-wrap gap-2">
                 <Link
                   className="btn-secondary"
@@ -271,9 +287,17 @@ export default function TelegramProductSubmissions({
                 ))}
               </ul>
             ) : null}
-          </article>
+            </div>
+          </Row>
         ))
       )}
+      {history && rows.length > pageSize ? <nav aria-label={t.historyPages} className="flex items-center justify-between gap-2 pt-2 text-xs">
+        <p aria-live="polite" className="text-muted">{currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, rows.length)} / {rows.length}</p>
+        <div className="flex gap-2">
+          <button type="button" className="rounded-lg border border-border px-3 py-1.5 disabled:opacity-40" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>{t.previousPage}</button>
+          <button type="button" className="rounded-lg border border-border px-3 py-1.5 disabled:opacity-40" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}>{t.nextPage}</button>
+        </div>
+      </nav> : null}
     </section>
   );
 }
