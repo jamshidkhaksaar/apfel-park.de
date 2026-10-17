@@ -6,7 +6,9 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
+import asyncio
+from types import SimpleNamespace
 
 import httpx
 from telegram import Chat, Message, Update, User
@@ -78,6 +80,30 @@ class TransportTests(unittest.IsolatedAsyncioTestCase):
         canonical = '\n'.join(['APFEL-PRODUCT-INTAKE-V1', bot.KEY_ID, request.headers['x-apfel-intake-timestamp'],
                                'POST', bot.PATH, request.headers['idempotency-key'], hashlib.sha256(request.content).hexdigest()])
         self.assertEqual(request.headers['x-apfel-intake-signature'], hmac.new(bot.SECRET.encode(), canonical.encode(), hashlib.sha256).hexdigest())
+
+    async def test_progress_updates_one_message_and_delivers_completed_view(self):
+        context = SimpleNamespace(bot=SimpleNamespace(send_chat_action=AsyncMock(), edit_message_text=AsyncMock()))
+        pending={'text':'Researching official sources', 'revision':2, 'sessionId':'synthetic', 'pending':True}
+        complete={'text':'Choose a version', 'revision':3, 'sessionId':'synthetic', 'pending':False}
+        markup=bot.InlineKeyboardMarkup([])
+        with patch.object(bot, 'invoke', AsyncMock(side_effect=[pending,complete])), patch.object(bot, 'show', AsyncMock()) as show, patch.object(bot.asyncio, 'sleep', AsyncMock()):
+            await bot.watch(context,123,pending,99,markup)
+        context.bot.send_chat_action.assert_awaited_once()
+        self.assertEqual(context.bot.edit_message_text.await_args.kwargs['message_id'],99)
+        self.assertIn('Researching official sources',context.bot.edit_message_text.await_args_list[0].kwargs['text'])
+        self.assertIsNone(context.bot.edit_message_text.await_args.kwargs['reply_markup'])
+        show.assert_awaited_once_with(context,123,complete)
+
+    async def test_review_gallery_uses_only_signed_previews_and_keeps_owner_submission_buttons(self):
+        context=SimpleNamespace(bot=SimpleNamespace(send_media_group=AsyncMock(),send_message=AsyncMock(return_value=SimpleNamespace(message_id=77))))
+        view={'text':'Full preview', 'revision':4, 'sessionId':'synthetic','buttons':[[{'text':'Submit for owner review','action':'submit'}]],'gallery':[{'id':'asset1','edited':False},{'id':'asset2','edited':True}]}
+        with patch.object(bot,'invoke',AsyncMock(return_value={'data':'c3ludGhldGlj'})) as invoke:
+            await bot.show(context,123,view)
+        self.assertEqual(invoke.await_count,2)
+        self.assertTrue(all(call.args[0]['sessionId']=='synthetic' for call in invoke.await_args_list))
+        context.bot.send_media_group.assert_awaited_once()
+        context.bot.send_message.assert_awaited_once()
+        self.assertEqual(context.bot.send_message.await_args.kwargs['text'],'Full preview')
 
     async def test_provider_errors_are_returned_as_codes(self):
         original = httpx.AsyncClient

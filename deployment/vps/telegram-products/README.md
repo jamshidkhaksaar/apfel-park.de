@@ -120,3 +120,24 @@ python3 -m unittest discover -s deployment/vps/product-intake/safi-bot/tests -v
 The DB runner refuses pre-existing handles and verifies disposal of its own
 database/role. Automated tests use synthetic images and mocked AI/Telegram;
 they do not spend provider credits or publish real products.
+
+## Guided intake (October 2026)
+
+Normal `/new` intake asks category/brand/model and condition once, researches the
+model, then asks quantity, price, iPhone battery health (or explicit unavailable),
+defects and selectable actual accessories. It requests and approves one photo at
+a time: six sides for devices, four accessory views or three part views. Photo
+approval advances the requested view; box photos never advance device evidence.
+The next stop is the complete preview, with an approved-photo album. Adding a
+version is explicit, and Edit details uses the seven admin section names.
+Research/photo jobs show a typing indicator and update the progress message while
+the durable server worker runs. Provider billing/quota failures still need owner
+action and have retry/manual completion options. No credentials reach the bot.
+
+Existing offer updates are an explicit `/update` mode, limited to price and total
+stock. They do not appear among ordinary researched versions. Only one open draft
+per member remains permitted. New conversation metadata is stored in existing JSON;
+no schema migration is required. Old active states are adapted on load. On rollback,
+stop the new poller before reverting the app/worker; drafts in new edit-menu states
+must be resumed on this release or explicitly cancelled with `/cancel` before using
+the older poller. Retain evidence and drafts; never roll back shop transactions.

@@ -137,9 +137,10 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
             entry.experience.packageContents = [];
         row.state.sources = result.researchSources ?? [];
         row.state.warnings = result.researchWarnings ?? [];
-        row.state.stage = 'versions';
+        row.state.stage = row.state.guided && row.state.editing ? 'review' : 'versions';
         delete row.state.researchError;
-        doc.step = 1;
+        doc.step = row.state.stage==='review'?6:1;
+        if(row.state.stage==='review')row.state.editing=false;
         await client.query(
           'UPDATE smartphone_editor_drafts SET document=$2,revision=revision+1,updated_at=now() WHERE id=$1',
           [row.draft_id, JSON.stringify(doc)],

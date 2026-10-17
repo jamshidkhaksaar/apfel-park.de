@@ -25,6 +25,7 @@ describe('shop-floor product conversation', () => {
     const second = structuredClone(document.entries[0]);
     second.id = '00000000-0000-4000-8000-000000000001';
     document.entries.push(second);
+    state.guided=false;
     state.stage = 'information';
     state.entryId = second.id;
     ({ state, document } = transition(state, document, { action: 'next' }));
@@ -45,6 +46,7 @@ describe('shop-floor product conversation', () => {
   });
   it('requires confirmation before grouping multiple used devices', () => {
     const { state, document } = newConversation('en');
+    state.guided=false;
     state.stage = 'stock';
     document.entries[0].condition = 'used';
     document.shared.model = 'iPhone fixture';
@@ -60,6 +62,7 @@ describe('shop-floor product conversation', () => {
     'collects %s without AI inventing stock or price',
     (category) => {
       let { state, document } = newConversation('en');
+      state.guided=false;
       for (const action of [`choose:${category}`, 'choose:Apple'])
         ({ state, document } = transition(state, document, { action }));
       ({ state, document } = transition(state, document, {
@@ -124,6 +127,7 @@ describe('shop-floor product conversation', () => {
   );
   it('keeps used-device battery and condition evidence separate', () => {
     const initial = newConversation('de');
+    initial.state.guided=false;
     initial.state.stage = 'price';
     initial.document.shared.model = 'iPhone 17';
     initial.document.entries[0].condition = 'used';
@@ -202,6 +206,46 @@ describe('shop-floor product conversation', () => {
     ).toBe(false);
     state.locale = 'de';
     expect(renderConversation(state, document, 1).text).toContain('Laden');
+  });
+  it.each(categories)('guides %s from version selection directly through stock, price and accessories to photos', category => {
+    let {state,document}=newConversation('en');
+    document.shared.category=category;document.shared.brand='Apple';document.shared.model=category==='smartphones'?'iPhone 17':'Fixture model';
+    state.stage='versions';state.condition='new';state.conditionChosen=true;
+    document.variantSuggestions=[{color:'Black',storage:'256 GB'}];
+    const apply=(action:string,text?:string)=>{({state,document}=transition(state,document,{action,text}))};
+    apply('variant:0');expect(state.stage).toBe('stock');
+    expect(renderConversation(state,document,1).buttons.flat().some(b=>b.action.startsWith('setCondition:'))).toBe(false);
+    apply('choose:2');expect(state.stage).toBe('price');
+    apply('text','699.90');if(category==='smartphones'){expect(state.stage).toBe('battery');apply('batteryUnknown');}expect(state.stage).toBe('notes');
+    apply('defectNone');expect(state.stage).toBe('accessories');
+    apply('accessory:box');expect(state.stage).toBe('accessories');
+    apply('accessoryDone');expect(state.stage).toBe('photos');
+    expect(document.entries[0]).toMatchObject({stock:2,price:699.9,accessories:'Original box',hasRealProductPhotos:false});
+    expect(renderConversation(state,document,1).text).toContain('1/');
+    expect(validateDocument(document)).toEqual(document);
+  });
+  it('asks used iPhone battery health once and provides a full preview and named edits',()=>{
+    let {state,document}=newConversation('en');document.shared.model='iPhone 17';document.shared.brand='Apple';document.shared.title='Apple iPhone 17';
+    state.condition='used';state.conditionChosen=true;state.stage='versions';document.variantSuggestions=[{color:'Black',storage:'128 GB'}];
+    const apply=(action:string,text?:string)=>{({state,document}=transition(state,document,{action,text}))};
+    apply('variant:0');apply('choose:1');apply('text','399');expect(state.stage).toBe('battery');
+    apply('text','92');apply('defectType');apply('text','Small frame scratch');apply('accessory:usb_c');apply('accessoryDone');
+    expect(state.stage).toBe('photos');expect(document.entries[0]).toMatchObject({batteryHealth:92,defects:'Small frame scratch',accessories:'USB-C cable'});
+    apply('photoUnavailable');expect(state.stage).toBe('review');
+    const view=renderConversation(state,document,1);for(const text of ['92%','Small frame scratch','USB-C cable','Qty: 1','€399.00','Selling channels'])expect(view.text).toContain(text);
+    expect(view.text.length).toBeLessThan(4000);apply('editMenu');expect(renderConversation(state,document,1).buttons.flat().map(b=>b.text)).toContain('1. Choose the product');
+    apply('edit:versions');apply('entry:'+document.entries[0].id);apply('field:price');apply('text','429');
+    expect(state.stage).toBe('review');expect(document.entries[0].price).toBe(429);expect(document.entries).toHaveLength(1);
+    apply('addVersion');expect(state.stage).toBe('versions');
+  });
+  it('re-researches an edited model without asking the confirmed condition again',()=>{
+    const {state,document}=newConversation('en');state.stage='model';state.conditionChosen=true;state.condition='used';
+    const result=transition(state,document,{action:'text',text:'iPhone 17 Pro'});expect(result.research).toBe(true);expect(result.state.stage).toBe('researching');
+  });
+  it('replaces an unfinished version choice when going back instead of creating an empty extra offer',()=>{
+    let {state,document}=newConversation('en');state.stage='versions';document.variantSuggestions=[{color:'Black',storage:'128 GB'},{color:'White',storage:'256 GB'}];
+    ({state,document}=transition(state,document,{action:'variant:0'}));({state,document}=transition(state,document,{action:'back'}));({state,document}=transition(state,document,{action:'variant:1'}));
+    expect(document.entries).toHaveLength(1);expect(document.entries[0].color).toBe('White');expect(state.stage).toBe('stock');
   });
   it('normalizes configuration identity regardless of key order and case', () => {
     expect(configurationKey({ RAM: '16 GB', Connectivity: 'Wi-Fi' })).toBe(

@@ -455,7 +455,7 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
     });
     await runTelegramProductWorkerPass();
     current = await request('6001', 'status', { sessionId: view.sessionId });
-    expect(current.text).toContain('versions');
+    expect(current.buttons.flat().some(button=>button.action==='variant:0')).toBe(true);
     const row = await withTransaction((client) =>
       readSession(client, current.sessionId!),
     );
@@ -532,7 +532,7 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
       await query('SELECT * FROM products ORDER BY created_at LIMIT 1')
     ).rows[0];
     await member('8001');
-    let view = await request('8001', 'new');
+    let view = await request('8001', 'new_update');
     let row = await withTransaction((client) =>
       readSession(client, view.sessionId!),
     );
@@ -702,5 +702,35 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
     await expect(
       request('10001', 'status', { sessionId: row.id }),
     ).rejects.toThrow('membership_required');
+  });  it('completes guided iPhone intake with six individually approved sides, preview and targeted edits', async () => {
+    await member('12001');
+    let view=await request('12001','new');
+    const act=async(action:string,text?:string)=>{view=await request('12001',action,{text,sessionId:view.sessionId,revision:view.revision});return view};
+    await act('choose:smartphones');await act('choose:Apple');await act('text','iPhone Guided Fixture');await act('choose:used');
+    expect(view.pending).toBe(true);expect(view.text).toContain('⏳');
+    provider.research.mockResolvedValueOnce({title:'Apple iPhone Guided Fixture',brand:'Apple',model:'iPhone Guided Fixture',category:'smartphones',description:'Verified synthetic description',variantSuggestions:[{color:'Black',storage:'256 GB'}],researchSources:[]});
+    await runTelegramProductWorkerPass();view=await request('12001','status',{sessionId:view.sessionId});
+    expect(view.buttons.flat().some(button=>button.action.startsWith('existing:'))).toBe(false);
+    await act('variant:0');expect(view.text).toContain('quantity');
+    expect(view.buttons.flat().some(button=>button.action.startsWith('setCondition:'))).toBe(false);
+    await act('choose:1');await act('text','599');await act('text','93');await act('defectNone');await act('accessory:usb_c');await act('accessoryDone');
+    provider.privacy.mockImplementation(async(input:Buffer)=>({bytes:await sharp(input).webp().toBuffer(),hints:{}}));provider.studio.mockImplementation(async(input:Buffer)=>input);
+    for(let side=0;side<6;side++){
+      expect(view.text).toContain(`${side+1}/6`);
+      const bytes=await sharp({create:{width:120,height:160,channels:3,background:{r:80+side*10,g:120,b:150}}}).png().toBuffer();
+      await ingestPhoto({telegramId:'12001',sessionId:view.sessionId!,revision:view.revision,updateId:120000+side*2,data:bytes.toString('base64')});
+      const pending=await request('12001','status',{sessionId:view.sessionId});
+      await expect(ingestPhoto({telegramId:'12001',sessionId:view.sessionId!,revision:pending.revision,updateId:120001+side*2,data:bytes.toString('base64')})).rejects.toThrow('photo_wait_for_review');
+      await runTelegramProductWorkerPass();view=await request('12001','status',{sessionId:view.sessionId});
+      expect(view.photos).toHaveLength(1);await act('assetOriginal:'+view.photos![0].id);
+    }
+    expect(view.text).toContain('Draft preview');expect(view.text).toContain('93%');expect(view.text).toContain('USB-C cable');expect(view.gallery).toHaveLength(6);
+    let row=await withTransaction(client=>readSession(client,view.sessionId!));
+    expect(row.state.stage).toBe('review');expect(row.state.photoAngles?.[row.state.entryId]).toHaveLength(6);expect(row.document.entries[0].photos.filter(photo=>photo.url)).toHaveLength(6);
+    await act('editMenu');expect(view.buttons.flat().some(button=>button.text==='4. Product photos')).toBe(true);
+    await act('edit:versions');await act('entry:'+row.state.entryId);await act('field:price');await act('text','579');
+    expect(view.text).toContain('€579.00');expect(view.text).toContain('Draft preview');
+    await act('submit');row=await withTransaction(client=>readSession(client,view.sessionId!));expect(row.status).toBe('submitted');
   });
+
 });

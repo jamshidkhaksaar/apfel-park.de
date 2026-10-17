@@ -19,7 +19,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, Update
+from telegram.constants import ChatAction
+from telegram.error import TelegramError
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
 BOT_TOKEN = os.environ['BOT_TOKEN']
@@ -85,10 +87,27 @@ def identity(update: Update) -> dict:
 
 
 async def show(context: ContextTypes.DEFAULT_TYPE, user_id: int, view: dict, previews: bool = True) -> None:
+    previous = watchers.get(user_id)
+    if previous and previous is not asyncio.current_task():
+        previous.cancel()
+        watchers.pop(user_id, None)
+    if view.get('gallery'):
+        media = []
+        for photo in view['gallery'][:6]:
+            try:
+                image = await invoke({'telegramId': str(user_id), 'chatId': str(user_id), 'action': 'preview',
+                                      'sessionId': view['sessionId'], 'assetId': photo['id'], 'edited': photo['edited']}, photos=True)
+                media.append(InputMediaPhoto(io.BytesIO(base64.b64decode(image['data'])), caption=photo.get('caption', '')[:200]))
+            except (ValueError, httpx.HTTPError):
+                pass
+        if len(media) > 1:
+            await context.bot.send_media_group(chat_id=user_id, media=media)
+        elif media:
+            await context.bot.send_photo(chat_id=user_id, photo=media[0].media, caption=media[0].caption)
     rows = [[InlineKeyboardButton(b['text'][:60], callback_data=store_callback(user_id, {
         'action': b['action'], 'sessionId': view.get('sessionId'), 'revision': view['revision'],
     })) for b in row] for row in view.get('buttons', [])]
-    await context.bot.send_message(chat_id=user_id, text=view['text'][:4000], reply_markup=InlineKeyboardMarkup(rows))
+    sent = await context.bot.send_message(chat_id=user_id, text=view['text'][:4000], reply_markup=InlineKeyboardMarkup(rows))
     if previews:
         for photo in view.get('photos', [])[:4]:
             for edited in (False, True):
@@ -100,36 +119,52 @@ async def show(context: ContextTypes.DEFAULT_TYPE, user_id: int, view: dict, pre
                 except (ValueError, httpx.HTTPError):
                     pass
     if view.get('pending') and user_id not in watchers:
-        watchers[user_id] = asyncio.create_task(watch(context, user_id, view))
+        watchers[user_id] = asyncio.create_task(watch(context, user_id, view, sent.message_id, InlineKeyboardMarkup(rows)))
 
 
-async def watch(context: ContextTypes.DEFAULT_TYPE, user_id: int, initial: dict) -> None:
+async def watch(context: ContextTypes.DEFAULT_TYPE, user_id: int, initial: dict, message_id: int, markup: InlineKeyboardMarkup) -> None:
+    started = time.monotonic()
+    frames = ['⏳', '⌛']
     try:
-        last_revision = initial['revision']
-        for _ in range(90):
+        for tick in range(90):
             await asyncio.sleep(3)
             async with locks.setdefault(user_id, asyncio.Lock()):
                 view = await invoke({'telegramId': str(user_id), 'chatId': str(user_id), 'sessionId': initial['sessionId'], 'action': 'status'})
-                if view['revision'] != last_revision or not view.get('pending'):
-                    await show(context, user_id, view)
-                    last_revision = view['revision']
                 if not view.get('pending'):
+                    try:
+                        await context.bot.edit_message_text(chat_id=user_id, message_id=message_id, text=('⏹ Neuer Stand unten.' if initial.get('locale') == 'de' else '⏹ Latest result below.'), reply_markup=None)
+                    except TelegramError:
+                        pass
+                    await show(context, user_id, view)
                     return
+                try:
+                    await context.bot.send_chat_action(chat_id=user_id, action=ChatAction.TYPING)
+                    await context.bot.edit_message_text(chat_id=user_id, message_id=message_id,
+                        text=f"{frames[tick % 2]} {int(time.monotonic() - started)} s\n\n{view['text']}"[:4000], reply_markup=markup)
+                except TelegramError:
+                    # Progress delivery must never cancel the durable backend job.
+                    pass
+        await context.bot.send_message(chat_id=user_id, text='Die Verarbeitung läuft weiter. Mit /resume prüfen. / Processing continues. Use /resume to check.')
     except (ValueError, httpx.HTTPError):
         pass
     finally:
-        watchers.pop(user_id, None)
+        if watchers.get(user_id) is asyncio.current_task():
+            watchers.pop(user_id, None)
 
 
 async def failure(update: Update, context: ContextTypes.DEFAULT_TYPE, error: Exception) -> None:
     code = str(error) if isinstance(error, ValueError) else 'connection_failed'
     messages = {
+        'another_draft_is_open': 'Ein Entwurf ist offen. /resume oder /cancel verwenden. / A draft is open. Use /resume or /cancel first.',
         'membership_required': 'Einladung und Inhaberfreigabe erforderlich. / Access needs an invitation and owner approval.',
         'invalid_invite': 'Einladung ungültig oder abgelaufen. / Invitation invalid or expired.',
         'already_enrolled': 'Bereits registriert. Inhaber kontaktieren. / Already registered. Contact the owner.',
         'submission_locked': 'Entwurf zur Prüfung gesendet. / Draft submitted for review.',
         'stale_action': 'Ansicht veraltet. Bitte /resume. / View changed. Use /resume.',
         'private_or_invalid_input': 'Keine IMEI, Seriennummern oder privaten Angaben senden. / Do not send IMEI, serial numbers or private data.',
+        'photo_wait_for_review': 'Bitte zuerst dieses Foto prüfen. Danach folgt die nächste Seite. / Approve this photo first; then send the next side.',
+        'select_accessories_or_none': 'Zubehör auswählen oder Kein Zubehör drücken. / Select accessories or tap No accessories.',
+        'invalid_battery': 'Batteriekapazität von 1 bis 100 eingeben. / Enter battery health from 1 to 100.',
         'photo_invalid': 'JPEG, PNG oder WebP bis 8 MB senden. / Send JPEG, PNG or WebP up to 8 MB.',
         'review_pending_photos': 'Fotovorschauen zuerst prüfen. / Review pending photo previews first.',
         'invalid_price': 'Preis z. B. 699,90 eingeben. / Enter a price such as 699.90.',
@@ -149,7 +184,7 @@ async def command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     async with locks.setdefault(user_id, asyncio.Lock()):
         try:
             name = update.message.text.split()[0].split('@')[0]
-            payload['action'] = {'/new': 'new', '/drafts': 'list', '/cancel': 'cancel'}.get(name, 'resume')
+            payload['action'] = {'/new': 'new', '/update': 'new_update', '/drafts': 'list', '/cancel': 'cancel'}.get(name, 'resume')
             if name == '/start' and context.args:
                 payload.update(action='enroll', token=context.args[0], name=update.effective_user.full_name,
                                locale='en' if update.effective_user.language_code == 'en' else 'de')
@@ -207,7 +242,7 @@ async def error_handler(_update: object, _context: ContextTypes.DEFAULT_TYPE) ->
 
 def main() -> None:
     app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler(['start', 'new', 'resume', 'drafts', 'language', 'cancel'], command, filters=filters.ChatType.PRIVATE))
+    app.add_handler(CommandHandler(['start', 'new', 'update', 'resume', 'drafts', 'language', 'cancel'], command, filters=filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(callback))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE & (filters.PHOTO | filters.Document.IMAGE | (filters.TEXT & ~filters.COMMAND)), message))
     app.add_error_handler(error_handler)

@@ -111,6 +111,11 @@ export const readSession = async (
     )
   )
     row.state.entryId = row.document.entries[0]?.id;
+  if(row.state.guided===undefined && !row.state.updateOnly){
+    row.state.guided=true;
+    row.state.conditionChosen=!['category','brand','model','condition'].includes(row.state.stage);
+    if(row.state.stage==='price' && !row.document.entries.find((entry: {id:string;stock:number})=>entry.id===row.state.entryId)?.stock)row.state.stage='stock';
+  }
   return row as SessionRow;
 };
 export const viewSession = async (
@@ -181,6 +186,10 @@ export const viewSession = async (
         );
       }
     }
+    if(row.state.guided && assets.some(asset=>asset.status==='ready')){
+      view.text=tr(row.state.locale,'🔎 Foto prüfen: Original oder bearbeitete Vorschau wählen. Danach folgt automatisch die nächste Ansicht.','🔎 Review the photo: choose the original or edited preview. The next view follows automatically.');
+      view.buttons=view.buttons.filter(buttons=>buttons.some(button=>button.action.startsWith('asset') || button.action==='save'));
+    }
     view.pending =
       (
         await client.query(
@@ -188,6 +197,15 @@ export const viewSession = async (
           [row.id],
         )
       ).rows.length > 0;
+    if(row.state.guided && view.pending){
+      view.text=tr(row.state.locale,'⏳ Foto wird geprüft und für die Vorschau vorbereitet. Bitte warten…','⏳ Checking the photo and preparing its preview. Please wait…');
+      view.buttons=[[{text:tr(row.state.locale,'💾 Speichern & beenden','💾 Save & exit'),action:'save'}]];
+    }
+  }
+  if(row.state.stage==='review' && row.state.guided){
+    const urls=row.document.entries.flatMap(entry=>entry.photos.map(photo=>photo.url)).filter(Boolean);
+    const assets=(await client.query("SELECT id,status FROM telegram_product_assets WHERE session_id=$1 AND kind='device' AND status IN ('approved','original') AND public_url=ANY($2::text[]) ORDER BY created_at LIMIT 6",[row.id,urls])).rows;
+    view.gallery=assets.map(asset=>({id:asset.id,edited:asset.status==='approved',caption:row.document.shared.title??''}));
   }
   if (row.state.stage === 'model') {
     const models = (
@@ -201,7 +219,7 @@ export const viewSession = async (
     );
   }
   if (
-    row.state.stage === 'versions' &&
+    row.state.stage === 'versions' && (!row.state.guided || row.state.existingMode) &&
     row.document.entries.length === 1 &&
     !row.document.entries[0].price &&
     !row.document.entries[0].photos.some((p) => p.url)
@@ -374,16 +392,20 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
           [member.id],
         )
       ).rows[0]?.id;
-    if (body.action === 'new' && !replay) {
+    if (['new','new_update'].includes(body.action) && !replay) {
       const open = (
         await client.query(
-          `SELECT id FROM telegram_product_sessions WHERE member_id=$1 AND status IN ('collecting','changes_requested')`,
+          `SELECT id,state FROM telegram_product_sessions WHERE member_id=$1 AND status IN ('collecting','changes_requested')`,
           [member.id],
         )
       ).rows[0];
-      if (open) id = open.id;
+      if (open) {
+        if(body.action==='new_update' && !open.state?.existingMode)throw new Error('another_draft_is_open');
+        id = open.id;
+      }
       else {
         const initial = newConversation(locale);
+        if(body.action==='new_update')initial.state.existingMode=true;
         const draft = (
           await client.query(
             'INSERT INTO smartphone_editor_drafts(document,created_by,updated_by) VALUES($1,$2,$2) RETURNING id',
@@ -436,7 +458,7 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
     row.state.locale = locale;
     if (
       replay ||
-      ['new', 'status', 'resume'].includes(body.action) ||
+      ['new', 'new_update', 'status', 'resume'].includes(body.action) ||
       body.action.startsWith('session:')
     )
       return viewSession(client, row);
@@ -459,6 +481,7 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
         ],
       };
     if (body.action.startsWith('existing:')) {
+      if(row.state.guided && !row.state.existingMode)throw new Error('invalid_action');
       if (
         row.state.stage !== 'versions' ||
         row.document.entries.length !== 1 ||

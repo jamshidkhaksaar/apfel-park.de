@@ -6,7 +6,7 @@ import { query, withTransaction, type TransactionClient } from '@/lib/db';
 import { uploadProductImage } from '@/lib/blob';
 import { resolveGeminiKey } from '@/lib/ai-provider-credentials';
 import { findSensitiveDataIssues } from '@/lib/product-intake/redaction';
-import { currentEntry, newPhotoSlot } from './model';
+import { currentEntry, newPhotoSlot, photoGuide } from './model';
 import { readSession, event, digest } from './repository';
 
 const privateRoot = (): string =>
@@ -86,6 +86,7 @@ export const ingestPhoto = async (body: {
       row.revision !== body.revision
     )
       throw new Error('stale_action');
+    if(row.state.guided && (await client.query("SELECT 1 FROM telegram_product_assets WHERE session_id=$1 AND entry_id=$2 AND status IN ('queued','ready') LIMIT 1",[row.id,row.state.entryId])).rows.length)throw new Error('photo_wait_for_review');
     if (
       (
         await client.query(
@@ -304,6 +305,15 @@ export const acceptPhoto = async (
   } else entry.photos.push(slot);
   // Only an actual device photo can satisfy device-photo confirmation.
   if (asset.kind === 'device') entry.hasRealProductPhotos = true;
+  if(row.state.guided){
+    if(asset.kind==='device'){
+      const guide=photoGuide(row.document),angles=row.state.photoAngles??{},done=angles[entry.id]??[],next=guide.find(angle=>!done.includes(angle.key));
+      if(next)angles[entry.id]=[...done,next.key];row.state.photoAngles=angles;
+      if(angles[entry.id]?.length>=guide.length){row.state.stage='review';row.document.step=6;row.state.editing=false;row.state.singleField=false;}
+    }
+    row.state.photoKind='device';
+    await client.query('UPDATE telegram_product_sessions SET state=$2 WHERE id=$1',[row.id,JSON.stringify(row.state)]);
+  }
   await client.query(
     'UPDATE smartphone_editor_drafts SET document=$2,revision=revision+1,updated_at=now(),updated_by=$3 WHERE id=$1',
     [row.draft_id, JSON.stringify(row.document), actor],
