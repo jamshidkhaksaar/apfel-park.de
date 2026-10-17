@@ -67,6 +67,7 @@ const readRow = async (
   client: Pick<TransactionClient, 'query'>,
   id: string,
   lock = false,
+  normalizeOffer = true,
 ): Promise<DraftRow> => {
   const result = await client.query(
     `SELECT * FROM smartphone_editor_drafts WHERE id=$1 AND deleted_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
@@ -74,7 +75,7 @@ const readRow = async (
   );
   if (!result.rows[0]) throw new DraftError('not_found', 404);
   const row=result.rows[0] as DraftRow;
-  if(row.document.telegramSessionId && row.document.entries.some(entry=>entry.telegramOfferContentVersion!==1))
+  if(normalizeOffer && row.document.telegramSessionId && row.document.entries.some(entry=>entry.telegramOfferContentVersion!==1))
     row.document=normalizeTelegramOfferDocument(row.document,await readOfferPresets(client));
   return row;
 };
@@ -176,7 +177,7 @@ export const deletePhoneDraft = async (id: string, actor: string, revision?: num
   }
   return withTransaction(async (client) => {
     if (intakeOwner) await lockDeletionMembers(client, [id]);
-    const row = await readRow(client, id, true);
+    const row = await readRow(client, id, true, false);
     if (row.document.telegramSessionId && !intakeOwner) throw new DraftError('owner_approval_required', 403);
     if (revision !== undefined && revision !== row.revision) throw conflict();
     if (row.document.telegramSessionId) await archiveTelegramDraft(client, row, actor);
@@ -194,7 +195,7 @@ export const deletePhoneDrafts = async (input: unknown, actor: string, intakeOwn
     if (intakeOwner) await lockDeletionMembers(client, targets.map(item => item.id));
     const rows: DraftRow[] = [];
     for (const item of targets) {
-      const row = await readRow(client, item.id, true);
+      const row = await readRow(client, item.id, true, false);
       if (row.document.telegramSessionId && !intakeOwner) throw new DraftError('owner_approval_required', 403);
       if (row.revision !== item.revision) throw conflict();
       rows.push(row);
