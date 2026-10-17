@@ -313,7 +313,11 @@ export const viewSession = async (
   }
   if(row.state.stage==='review' && row.state.guided){
     const urls=row.document.entries.flatMap(entry=>entry.photos.map(photo=>photo.url)).filter(Boolean);
-    const assets=(await client.query("SELECT id,status,kind FROM telegram_product_assets WHERE session_id=$1 AND kind IN ('device','cover') AND status IN ('approved','original') AND public_url=ANY($2::text[]) ORDER BY created_at LIMIT 6",[row.id,urls])).rows;
+    // The seller must be able to see the composed hero cover at the end of
+    // the photo flow. Media groups are capped, so covers come first and the
+    // newest photos win over legacy ones (older sessions can hold more
+    // assets than the cap).
+    const assets=(await client.query("SELECT id,status,kind FROM telegram_product_assets WHERE session_id=$1 AND kind IN ('device','cover') AND status IN ('approved','original') AND public_url=ANY($2::text[]) ORDER BY (kind='cover') DESC, created_at DESC LIMIT 6",[row.id,urls])).rows;
     view.gallery=assets.map(asset=>({id:asset.id,edited:asset.status==='approved'&&asset.kind==='device',caption:row.document.shared.title??''}));
   }
   if (row.state.stage === 'model') {
