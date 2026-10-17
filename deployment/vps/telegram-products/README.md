@@ -141,3 +141,13 @@ no schema migration is required. Old active states are adapted on load. On rollb
 stop the new poller before reverting the app/worker; drafts in new edit-menu states
 must be resumed on this release or explicitly cancelled with `/cancel` before using
 the older poller. Retain evidence and drafts; never roll back shop transactions.
+
+Studio previews decode images from REST `steps[type=model_output].content`, rather
+than relying on the SDK-only `output_image` convenience property. Thought and
+signature blocks are ignored. Only a completed response with valid image bytes
+can become an edited preview; local privacy checks still run before and after AI.
+The bot labels original and studio images separately, requests an edited preview
+only when one exists, and reports editing/delivery failures explicitly. Failed
+comparisons cannot be approved from the new message. Existing failed edits can be
+retried from the photo review with **Retry editing**; no re-upload is necessary.
+The studio prompt preserves the real product and all visible damage and wear.

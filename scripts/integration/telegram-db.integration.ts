@@ -509,6 +509,8 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
     expect(
       view.buttons.flat().some((b) => b.action === `assetUse:${asset.id}`),
     ).toBe(false);
+    expect(view.photos?.[0].edited).toBe(false);
+    expect(view.text).toContain('rate limit');
     await request('7001', `assetOriginal:${asset.id}`, {
       sessionId: row.id,
       revision: view.revision,
@@ -722,7 +724,7 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
       const pending=await request('12001','status',{sessionId:view.sessionId});
       await expect(ingestPhoto({telegramId:'12001',sessionId:view.sessionId!,revision:pending.revision,updateId:120001+side*2,data:bytes.toString('base64')})).rejects.toThrow('photo_wait_for_review');
       await runTelegramProductWorkerPass();view=await request('12001','status',{sessionId:view.sessionId});
-      expect(view.photos).toHaveLength(1);await act('assetOriginal:'+view.photos![0].id);
+      expect(view.photos).toHaveLength(1);expect(view.photos![0].edited).toBe(true);await act('assetOriginal:'+view.photos![0].id);
     }
     expect(view.text).toContain('Draft preview');expect(view.text).toContain('93%');expect(view.text).toContain('USB-C cable');expect(view.gallery).toHaveLength(6);
     let row=await withTransaction(client=>readSession(client,view.sessionId!));

@@ -107,17 +107,25 @@ async def show(context: ContextTypes.DEFAULT_TYPE, user_id: int, view: dict, pre
     rows = [[InlineKeyboardButton(b['text'][:60], callback_data=store_callback(user_id, {
         'action': b['action'], 'sessionId': view.get('sessionId'), 'revision': view['revision'],
     })) for b in row] for row in view.get('buttons', [])]
+    preview_failed = False
     if previews:
         for photo in view.get('photos', [])[:4]:
-            for edited in (False, True):
+            # Older servers omit the flag; preserve compatibility during rollout.
+            for edited in ((False, True) if photo.get('edited', True) else (False,)):
                 try:
                     image = await invoke({'telegramId': str(user_id), 'chatId': str(user_id), 'action': 'preview',
                                           'sessionId': view['sessionId'], 'assetId': photo['id'], 'edited': edited}, photos=True)
                     await context.bot.send_photo(chat_id=user_id, photo=io.BytesIO(base64.b64decode(image['data'])),
-                                                 caption=('Bearbeitet / Edited' if edited else 'Original') + ' · ' + photo['id'][:8])
-                except (ValueError, httpx.HTTPError):
-                    pass
-    sent = await context.bot.send_message(chat_id=user_id, text=view['text'][:4000], reply_markup=InlineKeyboardMarkup(rows))
+                                                 caption=('✨ Studio · Bearbeitet / Edited' if edited else '📷 Original') + ' · ' + photo['id'][:8])
+                except (ValueError, httpx.HTTPError, TelegramError):
+                    preview_failed = True
+    text = view['text']
+    if preview_failed:
+        text = ('⚠️ Fotovorschau konnte nicht geladen werden. Mit /resume erneut öffnen und vor der Auswahl beide Bilder prüfen.\n\n' if view.get('locale') == 'de' else '⚠️ A photo preview could not be loaded. Use /resume to reopen it and inspect both images before choosing.\n\n') + text
+        # Never offer approval for a comparison that could not be delivered.
+        rows = [[button for button in row if not (load_callback(user_id, button.callback_data) or {}).get('action', '').startswith(('assetUse:', 'assetOriginal:'))] for row in rows]
+        rows = [row for row in rows if row]
+    sent = await context.bot.send_message(chat_id=user_id, text=text[:4000], reply_markup=InlineKeyboardMarkup(rows))
     if view.get('pending') and user_id not in watchers:
         watchers[user_id] = asyncio.create_task(watch(context, user_id, view, sent.message_id, InlineKeyboardMarkup(rows)))
 

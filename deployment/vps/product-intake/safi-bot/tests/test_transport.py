@@ -110,10 +110,42 @@ class TransportTests(unittest.IsolatedAsyncioTestCase):
         async def photo(**kwargs):order.append('photo')
         async def message(**kwargs):order.append('controls');return SimpleNamespace(message_id=78)
         context=SimpleNamespace(bot=SimpleNamespace(send_photo=photo,send_message=message))
-        view={'text':'Choose edited or original','revision':5,'sessionId':'synthetic','photos':[{'id':'asset'}],'buttons':[[{'text':'Keep original','action':'assetOriginal:asset'}]]}
+        view={'text':'Choose edited or original','revision':5,'sessionId':'synthetic','photos':[{'id':'asset','edited':True}],'buttons':[[{'text':'Keep original','action':'assetOriginal:asset'}]]}
         with patch.object(bot,'invoke',AsyncMock(return_value={'data':'c3ludGhldGlj'})):
             await bot.show(context,123,view)
         self.assertEqual(order,['photo','photo','controls'])
+
+    async def test_edited_preview_sends_different_bytes_with_the_correct_labels(self):
+        context=SimpleNamespace(bot=SimpleNamespace(send_photo=AsyncMock(),send_message=AsyncMock(return_value=SimpleNamespace(message_id=78))))
+        view={'text':'Compare both images','revision':5,'sessionId':'synthetic','photos':[{'id':'asset','edited':True}],'buttons':[]}
+        with patch.object(bot,'invoke',AsyncMock(side_effect=[{'data':'b3JpZ2luYWw='},{'data':'ZWRpdGVk'}])) as invoke:
+            await bot.show(context,123,view)
+        calls=context.bot.send_photo.await_args_list
+        self.assertEqual([c.kwargs['photo'].getvalue() for c in calls],[b'original',b'edited'])
+        self.assertIn('Original',calls[0].kwargs['caption'])
+        self.assertIn('Studio',calls[1].kwargs['caption'])
+        self.assertEqual([c.args[0]['edited'] for c in invoke.await_args_list],[False,True])
+
+    async def test_failed_edit_only_requests_the_existing_original(self):
+        context=SimpleNamespace(bot=SimpleNamespace(send_photo=AsyncMock(),send_message=AsyncMock(return_value=SimpleNamespace(message_id=78))))
+        view={'text':'Studio editing failed. Retry editing or keep original.','revision':5,'sessionId':'synthetic','photos':[{'id':'asset','edited':False}],'buttons':[]}
+        with patch.object(bot,'invoke',AsyncMock(return_value={'data':'b3JpZ2luYWw='})) as invoke:
+            await bot.show(context,123,view)
+        invoke.assert_awaited_once()
+        self.assertFalse(invoke.await_args.args[0]['edited'])
+        context.bot.send_photo.assert_awaited_once()
+        self.assertIn('Studio editing failed',context.bot.send_message.await_args.kwargs['text'])
+
+    async def test_missing_preview_warns_and_hides_photo_approval(self):
+        context=SimpleNamespace(bot=SimpleNamespace(send_photo=AsyncMock(),send_message=AsyncMock(return_value=SimpleNamespace(message_id=78))))
+        view={'text':'Compare both images','revision':5,'sessionId':'synthetic','photos':[{'id':'asset','edited':True}],'buttons':[[{'text':'Use edited','action':'assetUse:asset'}],[{'text':'Keep original','action':'assetOriginal:asset'}],[{'text':'Retry','action':'assetRetry:asset'}]]}
+        with patch.object(bot,'invoke',AsyncMock(side_effect=[{'data':'b3JpZ2luYWw='},ValueError('asset_not_ready')])):
+            await bot.show(context,123,view)
+        message=context.bot.send_message.await_args.kwargs
+        self.assertIn('could not be loaded',message['text'])
+        self.assertIn('/resume',message['text'])
+        self.assertEqual(len(message['reply_markup'].inline_keyboard),1)
+        self.assertEqual(message['reply_markup'].inline_keyboard[0][0].text,'Retry')
 
     async def test_provider_errors_are_returned_as_codes(self):
         original = httpx.AsyncClient

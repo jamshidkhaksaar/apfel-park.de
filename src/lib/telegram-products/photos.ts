@@ -245,17 +245,32 @@ export const studioPhoto = async (bytes: Buffer): Promise<Buffer> => {
     throw new Error(
       response.status === 429
         ? 'research_rate_limited'
-        : 'photo_provider_failed',
+        : response.status === 402
+          ? 'photo_credits_depleted'
+          : response.status === 401 || response.status === 403
+            ? 'photo_provider_access_denied'
+            : response.status === 404
+              ? 'photo_model_unavailable'
+              : 'photo_provider_failed',
     );
   const result = (await response.json()) as {
+    status?: string;
+    steps?: Array<{ type?: string; content?: Array<{ type?: string; data?: string }> }>;
     output_image?: { data?: string };
     outputs?: Array<{ type?: string; data?: string }>;
   };
+  if (result.status && result.status !== 'completed')
+    throw new Error('photo_provider_incomplete');
+  // Raw REST responses contain model_output steps. output_image is an SDK
+  // convenience property; thought/signature blocks must never become previews.
   const data =
+    result.steps?.filter(step => step.type === 'model_output')
+      .flatMap(step => step.content ?? [])
+      .find(content => content.type === 'image')?.data ??
     result.output_image?.data ??
     result.outputs?.find((o) => o.type === 'image')?.data;
-  if (!data || data.length > 20_000_000)
-    throw new Error('photo_provider_failed');
+  if (typeof data !== 'string' || !data.length || data.length > 20_000_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(data))
+    throw new Error('photo_invalid_response');
   return sharp(Buffer.from(data, 'base64'), { limitInputPixels: 25_000_000 })
     .rotate()
     .resize({ width: 1400, height: 1400, fit: 'inside' })

@@ -82,7 +82,7 @@ export type BotView = {
   revision: number;
   sessionId?: string;
   pending?: boolean;
-  photos?: Array<{ id: string; label: string }>;
+  photos?: Array<{ id: string; label: string; edited: boolean }>;
 };
 export type Action = { action: string; text?: string };
 export const tr = (locale: Locale, de: string, en: string): string =>
