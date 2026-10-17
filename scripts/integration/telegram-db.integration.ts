@@ -44,7 +44,7 @@ const { query } = await import('../../src/lib/db');
 const { createInvite, enroll, handleBotAction, readSession } = await import(
   '../../src/lib/telegram-products/repository'
 );
-const { savePhoneDraft, publishPhoneDraft } = await import(
+const { savePhoneDraft, publishPhoneDraft, deletePhoneDraft, deletePhoneDrafts, loadPhoneDraft, listPhoneDrafts } = await import(
   '../../src/lib/smartphone-editor/repository'
 );
 const { newConversation } = await import(
@@ -363,6 +363,47 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
         )
       ).rows[0].status,
     ).toBe('published');
+  });
+  it('archives active and cancelled Telegram drafts atomically, cancels jobs and preserves evidence', async () => {
+    await member('5901'); await member('5902');
+    const first = await request('5901', 'new');
+    const second = await request('5902', 'new');
+    const a = await withTransaction(client => readSession(client, first.sessionId!));
+    const b = await withTransaction(client => readSession(client, second.sessionId!));
+    expect((await loadPhoneDraft(a.draft_id)).telegramStatus).toBe('collecting');
+    await query("UPDATE telegram_product_sessions SET status='cancelled' WHERE id=$1", [b.id]);
+    await query("INSERT INTO telegram_product_jobs(session_id,kind,payload) VALUES($1,'research','{}')", [a.id]);
+    await expect(deletePhoneDraft(a.draft_id, 'other-admin', a.draft_revision)).rejects.toMatchObject({status:403});
+    await expect(deletePhoneDrafts([{id:a.draft_id,revision:a.draft_revision},{id:b.draft_id,revision:b.draft_revision+1}], 'owner', true)).rejects.toMatchObject({message:'conflict'});
+    expect((await loadPhoneDraft(a.draft_id)).revision).toBe(a.draft_revision);
+    await deletePhoneDrafts([{id:a.draft_id,revision:a.draft_revision},{id:b.draft_id,revision:b.draft_revision}], 'owner', true);
+    expect((await query('SELECT status FROM telegram_product_sessions WHERE id=$1',[a.id])).rows[0].status).toBe('cancelled');
+    expect((await query('SELECT status FROM telegram_product_jobs WHERE session_id=$1',[a.id])).rows[0].status).toBe('cancelled');
+    expect((await query("SELECT count(*)::int AS n FROM telegram_product_events WHERE session_id IN ($1,$2) AND event_type='admin_draft_deleted'",[a.id,b.id])).rows[0].n).toBe(2);
+    await expect(loadPhoneDraft(a.draft_id)).rejects.toMatchObject({status:404});
+    expect((await listPhoneDrafts()).some(draft => draft.id===a.draft_id)).toBe(false);
+    await expect(request('5901', 'status', {sessionId:a.id})).rejects.toThrow('session_not_found');
+    expect((await request('5901', 'new')).sessionId).not.toBe(a.id);
+  });
+  it('discards an in-flight research result when the owner deletes its draft', async () => {
+    await member('5903');
+    const view = await request('5903', 'new');
+    const row = await withTransaction(client => readSession(client, view.sessionId!));
+    row.document.shared.brand='Apple'; row.document.shared.model='Deletion fixture'; row.state.stage='researching';
+    await query('UPDATE smartphone_editor_drafts SET document=$2 WHERE id=$1',[row.draft_id,JSON.stringify(row.document)]);
+    await query('UPDATE telegram_product_sessions SET state=$2 WHERE id=$1',[row.id,JSON.stringify(row.state)]);
+    await query("INSERT INTO telegram_product_jobs(session_id,kind,payload) VALUES($1,'research',$2)",[row.id,JSON.stringify({query:'Apple Deletion fixture',condition:'new',category:'smartphones'})]);
+    let finish: (value: unknown) => void = () => {};
+    let started: () => void = () => {};
+    const began = new Promise<void>(resolve => {started=resolve});
+    provider.research.mockImplementationOnce(() => {started();return new Promise(resolve => {finish=resolve})});
+    const work = runTelegramProductWorkerPass();await began;
+    await deletePhoneDraft(row.draft_id, 'owner', row.draft_revision, true);
+    finish({title:'Must not resurrect deleted draft',brand:'Apple',model:'Deletion fixture',description:'Discarded result'});
+    await work;
+    const stored=(await query('SELECT document,deleted_at FROM smartphone_editor_drafts WHERE id=$1',[row.draft_id])).rows[0];
+    expect(stored.deleted_at).not.toBeNull();expect(stored.document.shared.title).not.toBe('Must not resurrect deleted draft');
+    expect((await query('SELECT status FROM telegram_product_jobs WHERE session_id=$1',[row.id])).rows[0].status).toBe('cancelled');
   });
   it('makes audit events immutable', async () => {
     await expect(

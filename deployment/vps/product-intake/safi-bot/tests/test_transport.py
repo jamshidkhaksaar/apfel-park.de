@@ -63,6 +63,22 @@ class TransportTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(bot.BOT_TOKEN, str(request.headers) + request.content.decode())
         self.assertEqual(json.loads(request.content)['telegramId'], '123')
 
+    async def test_sessionless_callback_omits_null_before_signing(self):
+        original = httpx.AsyncClient
+        captured = []
+        def handle(request):
+            captured.append(request)
+            return httpx.Response(200, json={'revision': 1, 'buttons': []})
+        def client(**kwargs):
+            return original(**kwargs, transport=httpx.MockTransport(handle))
+        with patch.object(bot.httpx, 'AsyncClient', client):
+            await bot.invoke({'telegramId': '123', 'chatId': '123', 'action': 'new', 'sessionId': None, 'revision': 1})
+        request = captured[0]
+        self.assertNotIn('sessionId', json.loads(request.content))
+        canonical = '\n'.join(['APFEL-PRODUCT-INTAKE-V1', bot.KEY_ID, request.headers['x-apfel-intake-timestamp'],
+                               'POST', bot.PATH, request.headers['idempotency-key'], hashlib.sha256(request.content).hexdigest()])
+        self.assertEqual(request.headers['x-apfel-intake-signature'], hmac.new(bot.SECRET.encode(), canonical.encode(), hashlib.sha256).hexdigest())
+
     async def test_provider_errors_are_returned_as_codes(self):
         original = httpx.AsyncClient
         def client(**kwargs):

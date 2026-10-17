@@ -1,5 +1,8 @@
 export const phoneEditorText = {
   en: {
+    telegramDraftReadOnly: 'This Telegram draft is read-only. Staff must submit it for owner review before it can be edited here. You can delete it without removing published products.',
+    owner_approval_required: 'Only the intake owner can delete Telegram drafts.',
+    submission_not_ready: 'This Telegram draft is not awaiting owner review. Reload to view its current status.',
     deleteDraft: 'Delete draft',
     deleteDraftConfirm: 'Delete this draft? Any products already published from it will remain unchanged.',
     draftDeleted: 'Draft deleted.',
@@ -125,6 +128,9 @@ export const phoneEditorText = {
     saveFirst: 'Wait for uploads and saving before publishing.',
   },
   de: {
+    telegramDraftReadOnly: 'Dieser Telegram-Entwurf ist schreibgeschützt. Mitarbeiter müssen ihn vor der Bearbeitung zur Inhaberprüfung einreichen. Beim Löschen bleiben veröffentlichte Produkte erhalten.',
+    owner_approval_required: 'Nur der Intake-Inhaber kann Telegram-Entwürfe löschen.',
+    submission_not_ready: 'Dieser Telegram-Entwurf wartet nicht auf die Inhaberprüfung. Bitte den aktuellen Status neu laden.',
     deleteDraft: 'Entwurf löschen',
     deleteDraftConfirm: 'Diesen Entwurf löschen? Bereits veröffentlichte Produkte bleiben unverändert.',
     draftDeleted: 'Entwurf gelöscht.',

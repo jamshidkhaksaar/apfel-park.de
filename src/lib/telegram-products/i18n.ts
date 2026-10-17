@@ -1,5 +1,7 @@
 export const telegramText = {
   en: {
+    collecting: 'In progress in Telegram',
+    archived: 'Deleted draft · history retained',
     updateOnly:
       'This submission updates only the existing offer’s price and total stock. Make content, identifier, photo or condition changes in a separate product workspace.',
     configuration: 'Configuration (Attribute: Value)',
@@ -87,6 +89,8 @@ export const telegramText = {
     },
   },
   de: {
+    collecting: 'In Telegram in Bearbeitung',
+    archived: 'Entwurf gelöscht · Verlauf bleibt erhalten',
     updateOnly:
       'Diese Einreichung aktualisiert nur Preis und Gesamtbestand des bestehenden Angebots. Inhalt, Kennungen, Fotos oder Zustand bitte in einem separaten Produktarbeitsbereich ändern.',
     configuration: 'Konfiguration (Merkmal: Wert)',

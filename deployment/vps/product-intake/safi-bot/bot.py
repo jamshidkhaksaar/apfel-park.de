@@ -60,6 +60,7 @@ def load_callback(user_id: int, token: str) -> dict | None:
 
 
 async def invoke(payload: dict, photos: bool = False) -> dict:
+    payload = {key: value for key, value in payload.items() if value is not None}
     path = PATH + ('/photos' if photos else '')
     body = json.dumps(payload, separators=(',', ':'), ensure_ascii=False)
     stamp = str(int(time.time()))
@@ -135,6 +136,9 @@ async def failure(update: Update, context: ContextTypes.DEFAULT_TYPE, error: Exc
         'invalid_quantity': 'Ganze Menge ab 0 eingeben. / Enter a whole quantity of zero or more.',
         'invalid_gtin': 'EAN-Prüfziffer ungültig. / Invalid EAN checksum.',
         'configuration_format': 'Je Zeile Merkmal: Wert. / Enter one Attribute: Value per line.',
+        'invalid_input': 'Aktion nicht möglich. Mit /new neu starten. / Action not possible. Start again with /new.',
+        'session_not_found': 'Entwurf nicht gefunden. Mit /new neu starten. / Draft not found. Start again with /new.',
+        'connection_failed': 'Verbindung fehlgeschlagen. Bitte kurz warten und erneut versuchen. / Connection failed. Please wait and retry.',
     }
     await context.bot.send_message(chat_id=update.effective_user.id, text=messages.get(code, 'Eingabe nicht übernommen. /resume und erneut versuchen. / Input was not applied. Use /resume and retry.'))
 

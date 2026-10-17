@@ -104,6 +104,10 @@ const publicClient = { query } as Pick<TransactionClient, 'query'>;
 export const loadPhoneDraft = async (id: string): Promise<PhoneDraft> => {
   const row = await readRow(publicClient, id);
   const result = view(row);
+  if (row.document.telegramSessionId) {
+    const submission = (await query('SELECT status FROM telegram_product_sessions WHERE draft_id=$1', [id])).rows[0];
+    result.telegramStatus = submission?.status ?? 'cancelled';
+  }
   for (const entryResult of result.results) {
     const entry = row.document.entries.find(
       (e) => e.id === entryResult.entryId,
@@ -135,16 +139,42 @@ export const listPhoneDrafts = async (productId?: string) =>
       [productId ?? null],
     )
   ).rows;
-export const deletePhoneDraft = async (id: string, actor: string, revision?: number) => {
+// Match bot/worker lock ordering: member before draft/session/job. This
+// prevents a cancelled job from applying results while an owner deletes drafts.
+const lockDeletionMembers = async (client: TransactionClient, ids: string[]) => {
+  await client.query(
+    `SELECT m.id FROM telegram_product_members m WHERE m.id IN
+      (SELECT s.member_id FROM telegram_product_sessions s WHERE s.draft_id=ANY($1::uuid[]))
+      ORDER BY m.id FOR UPDATE`, [ids],
+  );
+};
+const archiveTelegramDraft = async (client: TransactionClient, row: DraftRow, actor: string) => {
+  const session = (await client.query(
+    'SELECT id,status FROM telegram_product_sessions WHERE draft_id=$1 FOR UPDATE', [row.id],
+  )).rows[0];
+  if (!session || session.id !== row.document.telegramSessionId) throw conflict();
+  // Published receipts and products survive. Unfinished submissions become terminal.
+  if (session.status !== 'published') await client.query(
+    "UPDATE telegram_product_sessions SET status='cancelled',revision=revision+1,updated_at=now() WHERE id=$1", [session.id],
+  );
+  await client.query(
+    "UPDATE telegram_product_jobs SET status='cancelled',lease=null,lease_until=null,updated_at=now() WHERE session_id=$1 AND status IN ('queued','processing')", [session.id],
+  );
+  await client.query(
+    "INSERT INTO telegram_product_events(session_id,actor,event_type,details) VALUES($1,$2,'admin_draft_deleted',$3::jsonb)",
+    [session.id, actor, JSON.stringify({draftId: row.id, revision: row.revision, previousStatus: session.status})],
+  );
+};
+export const deletePhoneDraft = async (id: string, actor: string, revision?: number, intakeOwner = false) => {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
     throw new DraftError('not_found', 404);
   }
   return withTransaction(async (client) => {
+    if (intakeOwner) await lockDeletionMembers(client, [id]);
     const row = await readRow(client, id, true);
-    if (row.document.telegramSessionId) throw new DraftError('telegram_submission_use_review',409);
+    if (row.document.telegramSessionId && !intakeOwner) throw new DraftError('owner_approval_required', 403);
     if (revision !== undefined && revision !== row.revision) throw conflict();
-    // Keep publication receipts and the original draft for audit history.
-    // Published products, inventory, marketplace jobs and shared photos survive.
+    if (row.document.telegramSessionId) await archiveTelegramDraft(client, row, actor);
     await client.query(
       `UPDATE smartphone_editor_drafts SET deleted_at=now(),updated_at=now(),updated_by=$2,revision=revision+1 WHERE id=$1`,
       [id, actor],
@@ -152,15 +182,19 @@ export const deletePhoneDraft = async (id: string, actor: string, revision?: num
     return { success: true };
   });
 };
-export const deletePhoneDrafts = async (input: unknown, actor: string) => {
+export const deletePhoneDrafts = async (input: unknown, actor: string, intakeOwner = false) => {
   if (!Array.isArray(input) || !input.length || input.length > 100 || input.some(item => !item || typeof item.id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id) || !Number.isSafeInteger(item.revision) || item.revision < 1) || new Set(input.map(item => item.id)).size !== input.length) throw new DraftError('invalid_selection');
   return withTransaction(async client => {
     const targets = [...input].sort((a, b) => a.id.localeCompare(b.id));
+    if (intakeOwner) await lockDeletionMembers(client, targets.map(item => item.id));
+    const rows: DraftRow[] = [];
     for (const item of targets) {
       const row = await readRow(client, item.id, true);
-      if (row.document.telegramSessionId) throw new DraftError('telegram_submission_use_review',409);
+      if (row.document.telegramSessionId && !intakeOwner) throw new DraftError('owner_approval_required', 403);
       if (row.revision !== item.revision) throw conflict();
+      rows.push(row);
     }
+    for (const row of rows) if (row.document.telegramSessionId) await archiveTelegramDraft(client, row, actor);
     await client.query('UPDATE smartphone_editor_drafts SET deleted_at=now(),updated_at=now(),updated_by=$2,revision=revision+1 WHERE id=ANY($1::uuid[])', [targets.map(item => item.id), actor]);
     return { success: true };
   });
@@ -375,7 +409,7 @@ export const savePhoneDraft = async (
       [id, JSON.stringify(document), actor, changed],
     );
     if (row.document.telegramSessionId && changed) await client.query("INSERT INTO telegram_product_events(session_id,actor,event_type,details) VALUES($1,$2,'admin_draft_saved',$3)",[row.document.telegramSessionId,actor,JSON.stringify({revision:result.rows[0].revision,documentHash:createHash('sha256').update(JSON.stringify(document)).digest('hex')})]);
-    return view(result.rows[0]);
+    return { ...view(result.rows[0]), ...(row.document.telegramSessionId ? { telegramStatus: 'submitted' } : {}) };
   });
 export const previewPhoneDraftProductRemoval = async (id: string, entryId: string) => {
   const row = await withTransaction(client => readRow(client, id));

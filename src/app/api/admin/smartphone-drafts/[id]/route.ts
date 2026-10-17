@@ -8,13 +8,13 @@ import {
 } from '@/lib/smartphone-editor/repository';
 type Context = { params: Promise<{ id: string }> };
 export const DELETE = (request: NextRequest, context: Context) =>
-  phoneHandler(request, async (actor) => {
+  phoneHandler(request, async (actor, _admin, intakeOwner) => {
     const value = request.nextUrl.searchParams.get('revision');
     const revision = value === null ? undefined : Number(value);
     if (revision !== undefined && (!Number.isSafeInteger(revision) || revision < 1)) {
       throw new DraftError('conflict', 409);
     }
-    return deletePhoneDraft((await context.params).id, actor, revision);
+    return deletePhoneDraft((await context.params).id, actor, revision, intakeOwner);
   });
 export const GET = (request: NextRequest, context: Context) =>
   phoneHandler(request, async () => loadPhoneDraft((await context.params).id));

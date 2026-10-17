@@ -140,6 +140,7 @@ export default function SmartphoneWizard({
   const draftId = useRef('');
   const saving = useRef<Promise<void> | null>(null);
   const deleting = useRef(false);
+  const editable = useRef(true);
   const publishRetry = useRef<{
     requestId: string;
     revision: number;
@@ -148,6 +149,7 @@ export default function SmartphoneWizard({
   } | null>(null);
   const load = useCallback((next: PhoneDraft) => {
     setManualVersion(false); setDraftSelection([]);
+    editable.current = !next.document.telegramSessionId || next.telegramStatus === 'submitted';
     revision.current = next.revision;
     draftId.current = next.id;
     current.current = next.document;
@@ -188,9 +190,9 @@ export default function SmartphoneWizard({
     };
   }, [load, productId]);
   const flush = useCallback(async () => {
-    if (deleting.current) return;
+    if (deleting.current || !editable.current) return;
     if (saving.current) await saving.current;
-    if (deleting.current) return;
+    if (deleting.current || !editable.current) return;
     if (
       !current.current ||
       !draftId.current ||
@@ -232,7 +234,8 @@ export default function SmartphoneWizard({
     if (
       !document ||
       JSON.stringify(document) === saved.current ||
-      error === 'conflict'
+      !editable.current ||
+      Boolean(error)
     )
       return;
     const timer = setTimeout(() => {
@@ -403,10 +406,10 @@ export default function SmartphoneWizard({
     if (!draftDeletion || deleting.current) return;
     deleting.current = true; setBusy(true);
     try {
-      if (saving.current) await saving.current;
+      if (saving.current) await saving.current.catch(() => {});
       const targets = draftDeletion.map(item => item.id === draftId.current ? { ...item, revision: revision.current } : item);
       const response = await fetch('/api/admin/smartphone-drafts/bulk-delete', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ confirmation: 'DELETE', drafts: targets })});
-      const value = await response.json(); if (!response.ok) throw new Error(cleanup[value.error as keyof typeof cleanup] ?? cleanup.failed);
+      const value = await response.json(); if (!response.ok) throw new Error(String(t[value.error as keyof typeof t] ?? cleanup[value.error as keyof typeof cleanup] ?? cleanup.failed));
       if (targets.some(item => item.id === draftId.current)) {
         current.current = null; draftId.current = ''; revision.current = 0; saved.current = 'null'; publishRetry.current = null; setDraft(null); setDocument(null); setSelected([]); setPhotoConfirmation(''); setStatus('saved');
         const navigation = new URL(window.location.href); navigation.searchParams.delete('draft'); if (productId) navigation.searchParams.set('product',productId); window.history.replaceState(null,'',navigation.pathname+navigation.search);
@@ -492,6 +495,20 @@ export default function SmartphoneWizard({
   const versionEntries = document.variantSuggestions?.length && !manualVersion ? document.entries.filter(entry => !isResearchPlaceholder(entry, {...document.shared,...document.pendingShared})) : document.entries;
   const shared = sharedEdit ?? document.shared;
   const readyIds = document.entries.filter(e => entryProblems(document, e, locale).length === 0 && e.channels.length > 0).map(e => e.id);
+  if (document.telegramSessionId && draft.telegramStatus !== 'submitted') return (
+    <section className="space-y-4 rounded-2xl border border-border p-5">
+      {deletionDialog}
+      <h2 className="text-2xl font-semibold">{document.shared.title || t.title}</h2>
+      <p role="status">{t.telegramDraftReadOnly}</p>
+      <p className="text-sm text-muted">{telegramText[locale][draft.telegramStatus as keyof typeof telegramText.en] as string || draft.telegramStatus}</p>
+      <div className="flex flex-wrap gap-3">
+        <button type="button" className="btn-secondary" disabled={busy} onClick={() => void call(`/api/admin/smartphone-drafts/${draft.id}`).then(load).catch(e => setError(e.message))}>{t.refresh}</button>
+        <button type="button" className="btn-secondary" disabled={busy} onClick={() => removeDraft(draft.id, draft.revision)}>{t.deleteDraft}</button>
+        <Link className="btn-secondary" href="/admin/products?view=intake">{telegramText[locale].submissions}</Link>
+      </div>
+      {error ? <p role="alert">{String(errorText(error))}</p> : null}
+    </section>
+  );
   const totalUnits = versionEntries.reduce((total, e) => total + (Number.isInteger(e.stock) && e.stock >= 0 ? e.stock : 0), 0);
   const setShared = (patch: ProductPayload) =>
     change((d) => ({ ...d, pendingShared: { ...shared, ...patch } }));
@@ -555,7 +572,7 @@ export default function SmartphoneWizard({
           <button
             className="btn-secondary mt-2"
             onClick={() => {
-              if (error === 'conflict')
+              if (['conflict', 'submission_not_ready'].includes(error))
                 void call(`/api/admin/smartphone-drafts/${draft.id}`).then(
                   load,
                 );
@@ -565,7 +582,7 @@ export default function SmartphoneWizard({
               }
             }}
           >
-            {error === 'conflict' ? t.refresh : t.save_failed}
+            {['conflict', 'submission_not_ready'].includes(error) ? t.refresh : t.save_failed}
           </button>}
         </div>
       ) : null}

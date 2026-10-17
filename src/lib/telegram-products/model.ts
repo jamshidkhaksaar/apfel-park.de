@@ -579,8 +579,12 @@ export const renderConversation = (
     case 'researching':
       text = state.researchError
         ? t(
-            `Recherche pausiert (${state.researchError}). Eingaben bleiben gespeichert.`,
-            `Research paused (${state.researchError}). Your entries are saved.`,
+            state.researchError === 'gemini_credits_depleted'
+              ? 'Gemini-Guthaben aufgebraucht. Der Inhaber muss Guthaben aufladen oder unter Einstellungen → KI-Anbieter einen Schlüssel mit Guthaben aktivieren. Danach erneut versuchen oder manuell fortfahren. Eingaben bleiben gespeichert.'
+              : `Recherche pausiert (${state.researchError}). Eingaben bleiben gespeichert.`,
+            state.researchError === 'gemini_credits_depleted'
+              ? 'Gemini credits are depleted. Ask the owner to top up billing or activate a funded key in Settings → AI Providers. Then retry, or continue manually. Your entries are saved.'
+              : `Research paused (${state.researchError}). Your entries are saved.`,
           )
         : t(
             'Offizielle Modellinformationen werden recherchiert…',

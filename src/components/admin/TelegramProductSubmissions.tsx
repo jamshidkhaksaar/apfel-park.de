@@ -13,6 +13,7 @@ import type {
 export type TelegramSubmissionView = {
   id: string;
   draft_id: string;
+  archived?: boolean;
   status:
     | 'submitted'
     | 'changes_requested'
@@ -99,7 +100,7 @@ export default function TelegramProductSubmissions({
                   {row.display_name} · {t[row.status]} · #{row.revision}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              {row.archived ? <p className="text-sm text-muted">{t.archived}</p> : <div className="flex flex-wrap gap-2">
                 <Link
                   className="btn-secondary"
                   href={`/admin/products/phone?draft=${row.draft_id}&returnTo=${encodeURIComponent('/admin/products?view=intake')}`}
@@ -114,7 +115,7 @@ export default function TelegramProductSubmissions({
                     {t.preview}
                   </Link>
                 ) : null}
-              </div>
+              </div>}
             </div>
             <ul className="space-y-1 text-sm">
               {row.document.entries.map((e) => (

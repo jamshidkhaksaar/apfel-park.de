@@ -61,6 +61,7 @@ export type PublishResult = {
   channels: Partial<Record<ChannelKey, ChannelStatus>>;
 };
 export type PhoneDraft = {
+  telegramStatus?: string;
   id: string;
   revision: number;
   document: PhoneDocument;

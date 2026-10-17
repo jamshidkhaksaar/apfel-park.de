@@ -12,6 +12,14 @@ import {
 } from '@/lib/smartphone-editor/model';
 
 describe('shop-floor product conversation', () => {
+  it.each(['en', 'de'] as const)('explains depleted Gemini billing in %s and retains retry/manual options', locale => {
+    const {state, document} = newConversation(locale);
+    state.stage = 'researching'; state.researchError = 'gemini_credits_depleted';
+    const view = renderConversation(state, document, 2);
+    expect(view.text).toContain(locale === 'en' ? 'AI Providers' : 'KI-Anbieter');
+    expect(view.text).not.toContain('gemini_credits_depleted');
+    expect(view.buttons.flat().map(button => button.action)).toEqual(expect.arrayContaining(['retry', 'manual']));
+  });
   it('collects identifiers per version and lets staff select selling channels', () => {
     let { state, document } = newConversation('en');
     const second = structuredClone(document.entries[0]);
