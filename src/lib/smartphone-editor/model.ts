@@ -12,6 +12,8 @@ import type { ExperienceFamilyState } from '@/lib/admin-product-types';
 export const channels: ChannelKey[] = ['store', 'google', 'ebay', 'amazon'];
 export type PhotoSlot = { id: string; url: string };
 export type PhoneEntry = {
+  telegramOfferContentVersion?: 1;
+  telegramAccessoriesConfirmed?: boolean;
   id: string;
   sourceProductId?: string;
   variantIndex?: number;
@@ -296,6 +298,8 @@ export const validateDocument = (value: unknown): PhoneDocument => {
     if (
       typeof e.hasRealProductPhotos !== 'boolean' ||
       (e.individualPhotos !== undefined && typeof e.individualPhotos !== 'boolean') ||
+      (e.telegramOfferContentVersion !== undefined && e.telegramOfferContentVersion !== 1) ||
+      (e.telegramAccessoriesConfirmed !== undefined && typeof e.telegramAccessoriesConfirmed !== 'boolean') ||
       (e.conditionNotePresetId !== undefined && (typeof e.conditionNotePresetId !== 'string' || !/^[a-z0-9-]{1,80}$/i.test(e.conditionNotePresetId))) ||
       !Number.isFinite(e.price) ||
       !Number.isFinite(e.stock) ||

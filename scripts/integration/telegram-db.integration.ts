@@ -726,13 +726,45 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
       await runTelegramProductWorkerPass();view=await request('12001','status',{sessionId:view.sessionId});
       expect(view.photos).toHaveLength(1);expect(view.photos![0].edited).toBe(true);await act('assetOriginal:'+view.photos![0].id);
     }
-    expect(view.text).toContain('Draft preview');expect(view.text).toContain('93%');expect(view.text).toContain('USB-C cable');expect(view.gallery).toHaveLength(6);
+    expect(view.text).toContain('Draft preview');expect(view.text).toContain('93%');expect(view.text).toContain('USB-C-Kabel');expect(view.gallery).toHaveLength(6);
     let row=await withTransaction(client=>readSession(client,view.sessionId!));
     expect(row.state.stage).toBe('review');expect(row.state.photoAngles?.[row.state.entryId]).toHaveLength(6);expect(row.document.entries[0].photos.filter(photo=>photo.url)).toHaveLength(6);
     await act('editMenu');expect(view.buttons.flat().some(button=>button.text==='4. Product photos')).toBe(true);
     await act('edit:versions');await act('entry:'+row.state.entryId);await act('field:price');await act('text','579');
     expect(view.text).toContain('€579.00');expect(view.text).toContain('Draft preview');
     await act('submit');row=await withTransaction(client=>readSession(client,view.sessionId!));expect(row.status).toBe('submitted');
+  });
+
+  it('repairs legacy German admin offer fields on load and preserves later owner unchecks',async()=>{
+    await member('13001');const view=await request('13001','new');
+    const raw=(await query('SELECT document FROM smartphone_editor_drafts WHERE id=(SELECT draft_id FROM telegram_product_sessions WHERE id=$1)',[view.sessionId])).rows[0].document;
+    Object.assign(raw.entries[0],{conditionNote:'No visible defects reported.',defects:'No visible defects reported.',accessories:'Charger / power adapter, Screen protector, Case, USB-C cable',experience:{packageContents:[{label:{de:'Case',en:'Case'},included:true}]}});
+    delete raw.entries[0].telegramOfferContentVersion;
+    const draftId=(await query('UPDATE smartphone_editor_drafts SET document=$2 WHERE id=(SELECT draft_id FROM telegram_product_sessions WHERE id=$1) RETURNING id',[view.sessionId,JSON.stringify(raw)])).rows[0].id;
+    await query("UPDATE telegram_product_sessions SET status='submitted' WHERE id=$1",[view.sessionId]);
+    const loaded=await loadPhoneDraft(draftId);
+    expect(loaded.document.entries[0].conditionNote).toBe('Keine sichtbaren Mängel gemeldet.');
+    expect(loaded.document.entries[0].experience?.packageContents.map(item=>item.presetId)).toEqual(['charger','protector','case','usb-cable']);
+    expect(loaded.document.entries[0].details.chargerIncluded).toBe(true);
+    expect((await query('SELECT document FROM smartphone_editor_drafts WHERE id=$1',[draftId])).rows[0].document.entries[0].conditionNote).toBe('No visible defects reported.');
+    loaded.document.entries[0].experience!.packageContents=[];loaded.document.entries[0].details.chargerIncluded=false;
+    await savePhoneDraft(draftId,loaded.revision,loaded.document,'synthetic-owner');
+    const reopened=await loadPhoneDraft(draftId);expect(reopened.document.entries[0].experience?.packageContents).toEqual([]);expect(reopened.document.entries[0].details.chargerIncluded).toBe(false);
+  });
+  it.each([true,false])('research preserves confirmed accessories but clears inferred used-device contents (confirmed=%s)',async confirmed=>{
+    const telegramId=confirmed?'14001':'15001';await member(telegramId);const view=await request(telegramId,'new');
+    const row=await withTransaction(client=>readSession(client,view.sessionId!));
+    row.document.shared.brand='Apple';row.document.shared.model='iPhone Accessory Fixture';row.document.shared.category='smartphones';row.document.entries[0].condition='used';
+    if(confirmed){const {setTelegramAccessories}=await import('../../src/lib/telegram-products/offer-content');setTelegramAccessories(row.document.entries[0],['case']);}
+    row.state.stage='researching';
+    await query('UPDATE smartphone_editor_drafts SET document=$2 WHERE id=$1',[row.draft_id,JSON.stringify(row.document)]);
+    await query('UPDATE telegram_product_sessions SET state=$2 WHERE id=$1',[row.id,JSON.stringify(row.state)]);
+    await query("INSERT INTO telegram_product_jobs(session_id,kind,payload) VALUES($1,'research',$2)",[row.id,JSON.stringify({query:'Apple iPhone Accessory Fixture',condition:'used',category:'smartphones'})]);
+    await query('DELETE FROM telegram_product_research_cache');
+    provider.research.mockResolvedValueOnce({title:'Apple iPhone Accessory Fixture',chargerIncluded:true,packageContents:[{label:{de:'Ladegerät',en:'Charger'},included:true}]});
+    await runTelegramProductWorkerPass();const after=await withTransaction(client=>readSession(client,row.id));
+    expect(after.document.entries[0].experience?.packageContents.map(item=>item.label.de)).toEqual(confirmed?['Hülle']:[]);
+    if(confirmed)expect(after.document.entries[0].details.chargerIncluded).toBe(false);
   });
 
 });

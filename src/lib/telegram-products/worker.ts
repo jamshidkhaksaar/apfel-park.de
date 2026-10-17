@@ -94,7 +94,7 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
   try {
     if (job.kind === 'research') {
       const cacheKey = digest(
-        `${job.payload.query}|${job.payload.condition}|${job.payload.category}|${process.env.GEMINI_RESEARCH_MODEL ?? ''}`,
+        `de-DE-offer-v2|${job.payload.query}|${job.payload.condition}|${job.payload.category}|${process.env.GEMINI_RESEARCH_MODEL ?? ''}`,
       );
       const cached = (
         await query(
@@ -133,7 +133,7 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
         };
         delete doc.pendingShared;
         for (const entry of doc.entries)
-          if (entry.condition !== 'new' && entry.experience)
+          if (entry.condition !== 'new' && entry.experience && !entry.telegramAccessoriesConfirmed)
             entry.experience.packageContents = [];
         row.state.sources = result.researchSources ?? [];
         row.state.warnings = result.researchWarnings ?? [];

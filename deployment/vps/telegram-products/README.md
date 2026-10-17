@@ -151,3 +151,22 @@ only when one exists, and reports editing/delivery failures explicitly. Failed
 comparisons cannot be approved from the new message. Existing failed edits can be
 retried from the photo review with **Retry editing**; no re-upload is necessary.
 The studio prompt preserves the real product and all visible damage and wear.
+
+## German offer copy and actual accessories
+
+Bot UI language is independent of store copy: generated no-defect notes and
+standard accessory summaries are saved in German. Research requests German
+customer-facing copy; explicit bilingual fields keep their respective languages.
+Staff-written custom descriptions are preserved verbatim.
+
+Confirmed bot accessories populate the admin's gift preset IDs, icons, inclusion
+flags and enabled package-contents section, and set the offer's charger status.
+Selecting none explicitly clears contents and excludes the charger. Research
+cannot replace staff-confirmed contents with manufacturer box contents.
+
+Older Telegram documents are normalized on read, with no read-time database
+mutation. The next authorized save persists the repaired document. A per-entry
+version marker prevents a later load from restoring accessories unchecked by the
+owner. Repairs use only saved selections; missing selections remain unknown.
+These optional JSON fields need no schema migration and are ignored by older
+compatible releases.

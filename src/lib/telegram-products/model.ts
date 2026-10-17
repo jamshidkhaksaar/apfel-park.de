@@ -11,6 +11,8 @@ import {
 import { phoneEditorText } from '@/lib/smartphone-editor/i18n';
 import { validatedGtin } from '@/lib/product-identifiers';
 import { findSensitiveDataIssues } from '@/lib/product-intake/redaction';
+import { telegramAccessoryChoices, setTelegramAccessories } from './offer-content';
+import { defaultOfferPresets, type OfferPresets } from '@/lib/product-offer-options';
 
 export const categories = [
   'smartphones',
@@ -171,29 +173,14 @@ export const photoGuide = (doc: PhoneDocument): Array<{key: string; de: string; 
   ];
 };
 export const accessoryOptions = (doc: PhoneDocument) => {
-  const options = [
-    {key:'box',de:'Originalkarton',en:'Original box'},
-    {key:'usb_c',de:'USB-C-Kabel',en:'USB-C cable'},
-    {key:'lightning',de:'Lightning-Kabel',en:'Lightning cable'},
-    {key:'charger',de:'Ladegerät / Netzteil',en:'Charger / power adapter'},
-    {key:'case',de:'Hülle',en:'Case'},
-    {key:'protector',de:'Displayschutz',en:'Screen protector'},
-    {key:'controller',de:'Controller',en:'Controller'},
-    {key:'hdmi',de:'HDMI-Kabel',en:'HDMI cable'},
-    {key:'bag',de:'Tasche',en:'Bag'},
-  ];
+  const options = telegramAccessoryChoices;
   const keys = doc.shared.category==='consoles' ? ['box','controller','hdmi','charger'] : doc.shared.category==='laptops' ? ['box','charger','bag','usb_c'] : ['smartphones','tablets'].includes(doc.shared.category??'') ? ['box','usb_c','lightning','charger','case','protector'] : ['box','usb_c','charger'];
   return options.filter(option=>keys.includes(option.key));
 };
 const needsBattery = (doc: PhoneDocument) => doc.shared.category==='smartphones' && /iphone/i.test(doc.shared.model??'');
 const review = (state: Conversation, document: PhoneDocument) => {state.stage='review';document.step=6;state.editing=false;state.singleField=false;};
 const startPhotos = (state: Conversation, document: PhoneDocument) => {state.stage='photos';document.step=3;state.photoKind='device';state.photoAngles??={};};
-const setAccessories = (state: Conversation, entry: PhoneEntry, document: PhoneDocument) => {
-  const options=accessoryOptions(document);
-  const items=(state.selectedAccessories??[]).map(key=>key.startsWith('custom:')?{de:key.slice(7),en:key.slice(7)}:options.find(option=>option.key===key)).filter((item): item is {de:string;en:string;key?:string}=>Boolean(item));
-  entry.accessories=items.map(item=>item[state.locale]).join(', ');
-  if(entry.experience) entry.experience.packageContents=items.map(item=>({label:{de:item.de,en:item.en},included:true}));
-};
+
 const jumpStages: Stage[] = [
   'basics',
   'versions',
@@ -207,6 +194,7 @@ export const transition = (
   original: Conversation,
   originalDoc: PhoneDocument,
   input: Action,
+  presets: OfferPresets = defaultOfferPresets(),
 ): {
   state: Conversation;
   document: PhoneDocument;
@@ -470,7 +458,7 @@ export const transition = (
       if(state.guided){
         if(input.action==='defectType'){state.stage='defects';break;}
         if(input.action!=='defectNone' && input.action!=='choose:-' && !text)throw new Error('invalid_action');
-        entry.defects=text || tr(state.locale,'Keine sichtbaren Schäden gemeldet.','No visible defects reported.');
+        entry.defects=text || 'Keine sichtbaren Mängel gemeldet.';
         entry.conditionNote=entry.defects;
         state.stage=state.singleField?'review':'accessories';break;
       }
@@ -480,18 +468,18 @@ export const transition = (
     case 'defects':
       if(!text)throw new Error('invalid_input');entry.defects=text;entry.conditionNote=text;state.stage=state.singleField?'review':'accessories';break;
     case 'accessory_custom':
-      if(!text || text.length>120)throw new Error('invalid_input');state.selectedAccessories=[...(state.selectedAccessories??[]).filter(key=>key!=='custom:'+text),'custom:'+text].slice(0,20);state.stage='accessories';setAccessories(state,entry,document);break;
+      if(!text || text.length>120)throw new Error('invalid_input');state.selectedAccessories=[...(state.selectedAccessories??[]).filter(key=>key!=='custom:'+text),'custom:'+text].slice(0,20);state.stage='accessories';setTelegramAccessories(entry,state.selectedAccessories??[],presets);break;
     case 'accessories':
       if(state.guided){
         if(input.action==='accessoryOther'){state.stage='accessory_custom';break;}
         if(input.action.startsWith('accessory:')){
           const key=input.action.slice(10);if(!accessoryOptions(document).some(option=>option.key===key))throw new Error('invalid_action');
-          const chosen=state.selectedAccessories??[];state.selectedAccessories=chosen.includes(key)?chosen.filter(v=>v!==key):[...chosen,key];setAccessories(state,entry,document);break;
+          const chosen=state.selectedAccessories??[];state.selectedAccessories=chosen.includes(key)?chosen.filter(v=>v!==key):[...chosen,key];setTelegramAccessories(entry,state.selectedAccessories??[],presets);break;
         }
         if(input.action==='accessoryNone' || input.action==='choose:-')state.selectedAccessories=[];
         else if(input.action!=='accessoryDone')throw new Error('invalid_action');
         if(input.action==='accessoryDone' && !state.selectedAccessories?.length)throw new Error('select_accessories_or_none');
-        setAccessories(state,entry,document);
+        setTelegramAccessories(entry,state.selectedAccessories??[],presets);
         if(state.singleField)review(state,document);else startPhotos(state,document);break;
       }
       entry.accessories = value === '-' ? '' : value;

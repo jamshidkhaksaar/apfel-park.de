@@ -33,6 +33,8 @@ import { markOpenIntakeRunsStale } from '@/lib/product-intake/stale-runs';
 import { sanitizeProductExperienceProfile } from '@/lib/product-experience';
 import { autoPublishProductPromotion } from '@/lib/marketing';
 import { deleteCatalogProduct, ProductDeletionError } from '@/lib/product-deletion';
+import { normalizeTelegramOfferDocument } from '@/lib/telegram-products/offer-content';
+import { readOfferPresets } from '@/lib/product-offer-presets-repository';
 
 type Source = {
   fingerprint: string;
@@ -71,7 +73,10 @@ const readRow = async (
     [id],
   );
   if (!result.rows[0]) throw new DraftError('not_found', 404);
-  return result.rows[0] as DraftRow;
+  const row=result.rows[0] as DraftRow;
+  if(row.document.telegramSessionId && row.document.entries.some(entry=>entry.telegramOfferContentVersion!==1))
+    row.document=normalizeTelegramOfferDocument(row.document,await readOfferPresets(client));
+  return row;
 };
 const inventoryFingerprint = async (
   client: Pick<TransactionClient, 'query'>,

@@ -16,6 +16,8 @@ import {
 } from './model';
 import { acceptPhoto } from './photos';
 import { createPhoneDraftInTransaction } from '@/lib/smartphone-editor/repository';
+import { normalizeTelegramOfferDocument } from './offer-content';
+import { readOfferPresets } from '@/lib/product-offer-presets-repository';
 
 export const telegramProductsEnabled = (): boolean =>
   process.env.TELEGRAM_PRODUCTS_ENABLED === 'true';
@@ -105,6 +107,8 @@ export const readSession = async (
     )
   ).rows[0];
   if (!row) throw new Error('session_not_found');
+  if (row.document.entries.some((entry: {telegramOfferContentVersion?:number})=>entry.telegramOfferContentVersion!==1))
+    row.document=normalizeTelegramOfferDocument(row.document,await readOfferPresets(client));
   if (
     !row.document.entries.some(
       (entry: { id: string }) => entry.id === row.state.entryId,
@@ -600,7 +604,8 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
       body.action === 'submit'
     )
       throw new Error('review_pending_photos');
-    const result = transition(row.state, row.document, body);
+    const result = transition(row.state, row.document, body,
+      row.state.stage==='accessories' || row.state.stage==='accessory_custom' ? await readOfferPresets(client) : undefined);
     validateDocument(result.document);
     await client.query(
       `UPDATE smartphone_editor_drafts SET document=$2,revision=revision+1,updated_by=$3,updated_at=now() WHERE id=$1`,

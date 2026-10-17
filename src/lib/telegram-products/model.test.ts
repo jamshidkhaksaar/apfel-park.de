@@ -220,7 +220,7 @@ describe('shop-floor product conversation', () => {
     apply('defectNone');expect(state.stage).toBe('accessories');
     apply('accessory:box');expect(state.stage).toBe('accessories');
     apply('accessoryDone');expect(state.stage).toBe('photos');
-    expect(document.entries[0]).toMatchObject({stock:2,price:699.9,accessories:'Original box',hasRealProductPhotos:false});
+    expect(document.entries[0]).toMatchObject({stock:2,price:699.9,accessories:'Originalkarton',hasRealProductPhotos:false});
     expect(renderConversation(state,document,1).text).toContain('1/');
     expect(validateDocument(document)).toEqual(document);
   });
@@ -230,9 +230,9 @@ describe('shop-floor product conversation', () => {
     const apply=(action:string,text?:string)=>{({state,document}=transition(state,document,{action,text}))};
     apply('variant:0');apply('choose:1');apply('text','399');expect(state.stage).toBe('battery');
     apply('text','92');apply('defectType');apply('text','Small frame scratch');apply('accessory:usb_c');apply('accessoryDone');
-    expect(state.stage).toBe('photos');expect(document.entries[0]).toMatchObject({batteryHealth:92,defects:'Small frame scratch',accessories:'USB-C cable'});
+    expect(state.stage).toBe('photos');expect(document.entries[0]).toMatchObject({batteryHealth:92,defects:'Small frame scratch',accessories:'USB-C-Kabel'});
     apply('photoUnavailable');expect(state.stage).toBe('review');
-    const view=renderConversation(state,document,1);for(const text of ['92%','Small frame scratch','USB-C cable','Qty: 1','€399.00','Selling channels'])expect(view.text).toContain(text);
+    const view=renderConversation(state,document,1);for(const text of ['92%','Small frame scratch','USB-C-Kabel','Qty: 1','€399.00','Selling channels'])expect(view.text).toContain(text);
     expect(view.text.length).toBeLessThan(4000);apply('editMenu');expect(renderConversation(state,document,1).buttons.flat().map(b=>b.text)).toContain('1. Choose the product');
     apply('edit:versions');apply('entry:'+document.entries[0].id);apply('field:price');apply('text','429');
     expect(state.stage).toBe('review');expect(document.entries[0].price).toBe(429);expect(document.entries).toHaveLength(1);
