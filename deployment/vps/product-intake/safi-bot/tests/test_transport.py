@@ -105,6 +105,16 @@ class TransportTests(unittest.IsolatedAsyncioTestCase):
         context.bot.send_message.assert_awaited_once()
         self.assertEqual(context.bot.send_message.await_args.kwargs['text'],'Full preview')
 
+    async def test_photo_approval_controls_follow_both_previews(self):
+        order=[]
+        async def photo(**kwargs):order.append('photo')
+        async def message(**kwargs):order.append('controls');return SimpleNamespace(message_id=78)
+        context=SimpleNamespace(bot=SimpleNamespace(send_photo=photo,send_message=message))
+        view={'text':'Choose edited or original','revision':5,'sessionId':'synthetic','photos':[{'id':'asset'}],'buttons':[[{'text':'Keep original','action':'assetOriginal:asset'}]]}
+        with patch.object(bot,'invoke',AsyncMock(return_value={'data':'c3ludGhldGlj'})):
+            await bot.show(context,123,view)
+        self.assertEqual(order,['photo','photo','controls'])
+
     async def test_provider_errors_are_returned_as_codes(self):
         original = httpx.AsyncClient
         def client(**kwargs):

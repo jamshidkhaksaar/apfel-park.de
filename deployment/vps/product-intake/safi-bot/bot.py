@@ -107,7 +107,6 @@ async def show(context: ContextTypes.DEFAULT_TYPE, user_id: int, view: dict, pre
     rows = [[InlineKeyboardButton(b['text'][:60], callback_data=store_callback(user_id, {
         'action': b['action'], 'sessionId': view.get('sessionId'), 'revision': view['revision'],
     })) for b in row] for row in view.get('buttons', [])]
-    sent = await context.bot.send_message(chat_id=user_id, text=view['text'][:4000], reply_markup=InlineKeyboardMarkup(rows))
     if previews:
         for photo in view.get('photos', [])[:4]:
             for edited in (False, True):
@@ -118,6 +117,7 @@ async def show(context: ContextTypes.DEFAULT_TYPE, user_id: int, view: dict, pre
                                                  caption=('Bearbeitet / Edited' if edited else 'Original') + ' · ' + photo['id'][:8])
                 except (ValueError, httpx.HTTPError):
                     pass
+    sent = await context.bot.send_message(chat_id=user_id, text=view['text'][:4000], reply_markup=InlineKeyboardMarkup(rows))
     if view.get('pending') and user_id not in watchers:
         watchers[user_id] = asyncio.create_task(watch(context, user_id, view, sent.message_id, InlineKeyboardMarkup(rows)))
 
