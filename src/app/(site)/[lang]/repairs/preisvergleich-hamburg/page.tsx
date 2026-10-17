@@ -189,11 +189,17 @@ export default async function RepairPriceComparisonPage({ params }: { params: Pr
           <article className="tech-card rounded-3xl p-7">
             <h2 className="text-2xl font-semibold text-foreground">{de ? "Geprüfte Quellen" : "Checked sources"}</h2>
             <ul className="mt-5 space-y-3 text-sm">
-              {Object.values(repairBenchmark.shops).map((shop) => (
+              {Object.entries(repairBenchmark.shops).map(([key, shop]) => (
                 <li key={shop.name}>
-                  <a href={shop.url} target="_blank" rel="noopener noreferrer nofollow" className="text-gold underline-offset-4 hover:underline">
-                    {shop.name}
-                  </a>
+                  {key === "apfelPark" ? (
+                    <Link href={`/${lang}/repairs`} className="text-gold underline-offset-4 hover:underline">
+                      {shop.name}
+                    </Link>
+                  ) : (
+                    <a href={shop.url} target="_blank" rel="noopener noreferrer nofollow" className="text-gold underline-offset-4 hover:underline">
+                      {shop.name}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

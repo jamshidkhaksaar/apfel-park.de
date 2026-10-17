@@ -56,7 +56,9 @@ export default function StoreProductRow({
         onClick={() => trackItem("select_item")}
         className="absolute inset-0 z-10 focus-visible:outline-none"
         aria-label={product.title}
-      />
+      >
+        <span className="sr-only">{product.title}</span>
+      </Link>
 
       <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-white sm:h-32 sm:w-32 lg:h-40 lg:w-40">
         <Image

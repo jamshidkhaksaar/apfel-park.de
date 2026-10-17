@@ -53,7 +53,9 @@ export default function StoreProductCard({
         onClick={() => trackItem("select_item")}
         className="absolute inset-0 z-10 focus-visible:outline-none"
         aria-label={product.title}
-      />
+      >
+        <span className="sr-only">{product.title}</span>
+      </Link>
 
       <div className="relative aspect-square overflow-hidden bg-white">
         <Image
