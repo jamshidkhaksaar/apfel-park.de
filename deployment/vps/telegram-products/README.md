@@ -176,7 +176,7 @@ compatible releases.
 ## Product studio v6 (per-photo retouch and hero cover)
 
 `TELEGRAM_PRODUCTS_STUDIO_N8N_ENABLED=true` routes device photos through the
-imported, inactive `APFPSV6RETOUCH` n8n workflow instead of the in-app Gemini
+active `APFPSV6RETOUCH` n8n workflow instead of the in-app Gemini
 call: one upload per request (`POST /webhook/product-studio-v6-photo`), vision
 decides edited/retake/skipped, and smartphones/tablets finish with a generated
 hero cover composed from the retouched back + front
@@ -187,17 +187,25 @@ lossless WebP, and the cover becomes the entry cover before owner review. The
 deploy applies the additive `20261017_telegram_studio_v6.sql` migration (asset
 `requested_angle`, `retake` status, `cover` kind).
 
-Activation (after the workflow is configured in n8n):
+Activation (workflow side — completed 2026-10-17):
 
-1. Assign the Gemini header credential (header `x-goog-api-key`) to the three
-   HTTP nodes, assign a header-auth credential (e.g. `X-Retouch-Key`) to both
-   webhooks, and activate the workflow.
-2. Add to protected `app/shared/app.env`:
+1. Assign credentials in n8n: `apfGeminiStudio` (header `x-goog-api-key`) on the
+   three HTTP nodes and `apfStudioWebhookKey` (header `X-Retouch-Key`) on both
+   webhooks.
+2. Activate `APFPSV6RETOUCH`. On n8n 2.29 a CLI import is a draft: activation
+   needs the nodes/connections published into `workflow_history` with
+   `workflow_entity.activeVersionId` pointing at that version — a plain
+   `active=1` is skipped at boot.
+3. Add to protected `app/shared/app.env`:
    - `TELEGRAM_PRODUCTS_STUDIO_N8N_ENABLED=true`
    - `TELEGRAM_PRODUCTS_N8N_WEBHOOK_KEY`: the webhook credential value
    - `TELEGRAM_PRODUCTS_N8N_STUDIO_URL`: defaults to `http://127.0.0.1:5678`
-3. Restart the app and the Telegram worker, then run the two curl smoke tests
-   from the workflow README before processing a real device.
+4. Restart the app and the Telegram worker. Live smoke tests passed: back-view
+   retouch `edited`, cover `edited`, extra angle `skipped`, non-supported cover
+   `skipped`. Two live-only workflow defects were fixed and re-imported: the
+   webhook payload envelope (`item.json.body`) and the n8n expression parser
+   ending an `={{ ... }}` expression at the first `}}` (Gemini bodies are now
+   assembled in the code nodes as `gemini_body`).
 
 With the flag unset or `false`, the release keeps the previous in-app retouch
 while asking the same three views; no n8n call is made. Owner review surfaces a
