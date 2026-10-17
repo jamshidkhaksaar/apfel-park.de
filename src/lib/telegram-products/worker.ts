@@ -133,7 +133,7 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
         };
         delete doc.pendingShared;
         for (const entry of doc.entries)
-          if (entry.condition !== 'new' && entry.experience && !entry.telegramAccessoriesConfirmed)
+          if (entry.condition !== 'new' && entry.experience && !entry.telegramAccessoriesConfirmed && !entry.experience.packageContents.some(item=>item.isGift || item.presetId))
             entry.experience.packageContents = [];
         row.state.sources = result.researchSources ?? [];
         row.state.warnings = result.researchWarnings ?? [];

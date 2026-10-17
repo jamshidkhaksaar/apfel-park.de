@@ -751,11 +751,11 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
     await savePhoneDraft(draftId,loaded.revision,loaded.document,'synthetic-owner');
     const reopened=await loadPhoneDraft(draftId);expect(reopened.document.entries[0].experience?.packageContents).toEqual([]);expect(reopened.document.entries[0].details.chargerIncluded).toBe(false);
   });
-  it.each([true,false])('research preserves confirmed accessories but clears inferred used-device contents (confirmed=%s)',async confirmed=>{
-    const telegramId=confirmed?'14001':'15001';await member(telegramId);const view=await request(telegramId,'new');
+  it.each([true,false,'legacy-owner'] as const)('research preserves confirmed accessories but clears inferred used-device contents (confirmed=%s)',async confirmed=>{
+    const telegramId=confirmed==='legacy-owner'?'16001':confirmed?'14001':'15001';await member(telegramId);const view=await request(telegramId,'new');
     const row=await withTransaction(client=>readSession(client,view.sessionId!));
     row.document.shared.brand='Apple';row.document.shared.model='iPhone Accessory Fixture';row.document.shared.category='smartphones';row.document.entries[0].condition='used';
-    if(confirmed){const {setTelegramAccessories}=await import('../../src/lib/telegram-products/offer-content');setTelegramAccessories(row.document.entries[0],['case']);}
+    if(confirmed){const {setTelegramAccessories}=await import('../../src/lib/telegram-products/offer-content');setTelegramAccessories(row.document.entries[0],['case']);if(confirmed==='legacy-owner')delete row.document.entries[0].telegramAccessoriesConfirmed;}
     row.state.stage='researching';
     await query('UPDATE smartphone_editor_drafts SET document=$2 WHERE id=$1',[row.draft_id,JSON.stringify(row.document)]);
     await query('UPDATE telegram_product_sessions SET state=$2 WHERE id=$1',[row.id,JSON.stringify(row.state)]);
