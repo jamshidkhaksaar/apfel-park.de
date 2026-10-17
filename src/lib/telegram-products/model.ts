@@ -165,11 +165,14 @@ export const photoGuide = (doc: PhoneDocument): Array<{key: string; de: string; 
     {key:'front',de:'Vorderseite',en:'Front'}, {key:'back',de:'Rückseite',en:'Back'}, {key:'connector',de:'Anschlüsse / Details',en:'Connectors / details'},
   ];
   if (doc.shared.category === 'accessories') return [
-    {key:'front',de:'Vorderseite',en:'Front'}, {key:'back',de:'Rückseite',en:'Back'}, {key:'side',de:'Seitenansicht',en:'Side'}, {key:'details',de:'Details / Lieferumfang',en:'Details / included items'},
+    {key:'front',de:'Vorderseite',en:'Front'}, {key:'back',de:'Rückseite',en:'Back'}, {key:'details',de:'Details / Lieferumfang',en:'Details / included items'},
   ];
+  // Back first: the hero cover is composed from the retouched back and front,
+  // and the seller works one view at a time until the cover appears.
   return [
+    {key:'back',de:'Rückseite',en:'Back'},
     {key:'front',de:doc.shared.category==='laptops'?'Geöffnetes Gerät / Bildschirm':'Vorderseite / Bildschirm',en:doc.shared.category==='laptops'?'Open device / screen':'Front / screen'},
-    {key:'back',de:'Rückseite',en:'Back'}, {key:'left',de:'Linke Seite',en:'Left side'}, {key:'right',de:'Rechte Seite',en:'Right side'}, {key:'top',de:'Oberseite',en:'Top'}, {key:'bottom',de:'Unterseite',en:'Bottom'},
+    {key:'side',de:'Seitenansicht',en:'Side'},
   ];
 };
 export const accessoryOptions = (doc: PhoneDocument) => {

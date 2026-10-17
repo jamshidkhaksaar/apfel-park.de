@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   categories,
   newConversation,
+  photoGuide,
   transition,
   renderConversation,
   telegramBlockers,
@@ -254,5 +255,33 @@ describe('shop-floor product conversation', () => {
     expect(configurationKey({ connectivity: 'Wi-Fi' })).not.toBe(
       configurationKey({ connectivity: 'Cellular' }),
     );
+  });
+  it('asks device photos back first, then front, then side — one at a time', () => {
+    const { document } = newConversation('de');
+    document.shared.category = 'smartphones';
+    expect(photoGuide(document).map((angle) => angle.key)).toEqual([
+      'back',
+      'front',
+      'side',
+    ]);
+    document.shared.category = 'laptops';
+    expect(photoGuide(document).map((angle) => angle.key)).toEqual([
+      'back',
+      'front',
+      'side',
+    ]);
+    expect(photoGuide(document)[1].de).toContain('Geöffnetes');
+    document.shared.category = 'accessories';
+    expect(photoGuide(document).map((angle) => angle.key)).toEqual([
+      'front',
+      'back',
+      'details',
+    ]);
+    document.shared.category = 'parts';
+    expect(photoGuide(document).map((angle) => angle.key)).toEqual([
+      'front',
+      'back',
+      'connector',
+    ]);
   });
 });

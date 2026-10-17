@@ -18,7 +18,7 @@ vi.mock('@/lib/db', () => ({ query: fixture.query, withTransaction: vi.fn() }));
 vi.mock('@/lib/ai-provider-credentials', () => ({
   resolveGeminiKey: async () => 'synthetic-gemini-key',
 }));
-const { prepareTelegramPhoto, studioPhoto } = await import('./photos');
+const { encodeDraftWebp, n8nCover, n8nRetouchPhoto, prepareTelegramPhoto, studioPhoto } = await import('./photos');
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
@@ -141,4 +141,212 @@ describe('Telegram photo privacy and image API contract', () => {
     await expect(studioPhoto(Buffer.from('synthetic'))).rejects.toThrow(code as string);
   });
 
+});
+describe('Product studio v6 per-photo retouch and cover contract', () => {
+  const image = () =>
+    sharp({ create: { width: 8, height: 8, channels: 3, background: '#123456' } })
+      .png()
+      .toBuffer();
+  it('retouches exactly the requested angle and maps the verdicts', async () => {
+    vi.stubEnv('TELEGRAM_PRODUCTS_N8N_WEBHOOK_KEY', 'synthetic-retouch-key');
+    const png = await image();
+    const fetch = vi.fn().mockResolvedValue(
+      Response.json({
+        status: 'edited',
+        base64_image: png.toString('base64'),
+        mime_type: 'image/png',
+        view: 'back',
+        matches_request: true,
+        usable: true,
+      }),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const edited = await n8nRetouchPhoto({
+      category: 'smartphones',
+      requestedAngle: 'back',
+      bytes: Buffer.from('prepared-webp'),
+      sessionId: 's1',
+      entryId: 'e1',
+    });
+    expect(edited.status).toBe('edited');
+    if (edited.status !== 'edited') throw new Error('unreachable');
+    expect(edited.mimeType).toBe('image/png');
+    expect(edited.bytes.equals(png)).toBe(true);
+    const [url, request] = fetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://127.0.0.1:5678/webhook/product-studio-v6-photo');
+    expect(
+      (request.headers as Record<string, string>)['X-Retouch-Key'],
+    ).toBe('synthetic-retouch-key');
+    expect(JSON.parse(String(request.body))).toMatchObject({
+      category: 'smartphones',
+      requested_angle: 'back',
+      mime_type: 'image/webp',
+      base64_image: Buffer.from('prepared-webp').toString('base64'),
+      force_edit: false,
+      session_id: 's1',
+      entry_id: 'e1',
+    });
+    fetch.mockResolvedValue(Response.json({ status: 'retake', problems: ['blurry', 42, 'wrong side'], view: 'front' }));
+    const retake = await n8nRetouchPhoto({
+      category: 'smartphones',
+      requestedAngle: 'front',
+      bytes: Buffer.from('prepared-webp'),
+      sessionId: 's1',
+      entryId: 'e1',
+    });
+    expect(retake).toEqual({
+      status: 'retake',
+      problems: ['blurry', 'wrong side'],
+      view: 'front',
+    });
+    fetch.mockResolvedValue(Response.json({ status: 'skipped', reason: 'top' }));
+    await expect(
+      n8nRetouchPhoto({
+        category: 'smartphones',
+        requestedAngle: 'top',
+        bytes: Buffer.from('prepared-webp'),
+        sessionId: 's1',
+        entryId: 'e1',
+      }),
+    ).resolves.toEqual({ status: 'skipped', reason: 'top' });
+  });
+  it('forces the retouch of by-design close-up slots only', async () => {
+    vi.stubEnv('TELEGRAM_PRODUCTS_N8N_WEBHOOK_KEY', 'synthetic-retouch-key');
+    const fetch = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(Response.json({ status: 'skipped', reason: 'extra' })),
+      );
+    vi.stubGlobal('fetch', fetch);
+    await n8nRetouchPhoto({
+      category: 'accessories',
+      requestedAngle: 'details',
+      bytes: Buffer.from('x'),
+      sessionId: 's1',
+      entryId: 'e1',
+    });
+    await n8nRetouchPhoto({
+      category: 'parts',
+      requestedAngle: 'connector',
+      bytes: Buffer.from('x'),
+      sessionId: 's1',
+      entryId: 'e1',
+    });
+    await n8nRetouchPhoto({
+      category: 'smartphones',
+      requestedAngle: 'side',
+      bytes: Buffer.from('x'),
+      sessionId: 's1',
+      entryId: 'e1',
+    });
+    expect(
+      fetch.mock.calls.map(
+        (call) => JSON.parse(String((call[1] as RequestInit).body)).force_edit,
+      ),
+    ).toEqual([true, true, false]);
+  });
+  it('composes the cover from the retouched back first and front second', async () => {
+    vi.stubEnv('TELEGRAM_PRODUCTS_N8N_WEBHOOK_KEY', 'synthetic-retouch-key');
+    const png = await image();
+    const fetch = vi.fn().mockResolvedValue(
+      Response.json({
+        status: 'edited',
+        base64_image: png.toString('base64'),
+        mime_type: 'image/png',
+      }),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const cover = await n8nCover({
+      category: 'smartphones',
+      backBytes: Buffer.from('back-bytes'),
+      frontBytes: Buffer.from('front-bytes'),
+      sessionId: 's1',
+      entryId: 'e1',
+    });
+    expect(cover.status).toBe('edited');
+    const [url, request] = fetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://127.0.0.1:5678/webhook/product-studio-v6-cover');
+    expect(JSON.parse(String(request.body))).toMatchObject({
+      category: 'smartphones',
+      mime_back: 'image/webp',
+      mime_front: 'image/webp',
+      base64_back: Buffer.from('back-bytes').toString('base64'),
+      base64_front: Buffer.from('front-bytes').toString('base64'),
+    });
+  });
+  it('fails closed without a configured webhook key and maps transport errors', async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    await expect(
+      n8nRetouchPhoto({
+        category: 'smartphones',
+        requestedAngle: 'back',
+        bytes: Buffer.from('x'),
+        sessionId: 's1',
+        entryId: 'e1',
+      }),
+    ).rejects.toThrow('photo_provider_access_denied');
+    expect(fetch).not.toHaveBeenCalled();
+    vi.stubEnv('TELEGRAM_PRODUCTS_N8N_WEBHOOK_KEY', 'synthetic-retouch-key');
+    fetch.mockResolvedValue(new Response('denied', { status: 403 }));
+    await expect(
+      n8nRetouchPhoto({
+        category: 'smartphones',
+        requestedAngle: 'back',
+        bytes: Buffer.from('x'),
+        sessionId: 's1',
+        entryId: 'e1',
+      }),
+    ).rejects.toThrow('photo_provider_access_denied');
+    fetch.mockResolvedValue(new Response('not json', { status: 200 }));
+    await expect(
+      n8nRetouchPhoto({
+        category: 'smartphones',
+        requestedAngle: 'back',
+        bytes: Buffer.from('x'),
+        sessionId: 's1',
+        entryId: 'e1',
+      }),
+    ).rejects.toThrow('photo_invalid_response');
+    fetch.mockResolvedValue(Response.json({ status: 'mystery' }));
+    await expect(
+      n8nRetouchPhoto({
+        category: 'smartphones',
+        requestedAngle: 'back',
+        bytes: Buffer.from('x'),
+        sessionId: 's1',
+        entryId: 'e1',
+      }),
+    ).rejects.toThrow('photo_provider_failed');
+    fetch.mockRejectedValue(new Error('connection refused'));
+    await expect(
+      n8nRetouchPhoto({
+        category: 'smartphones',
+        requestedAngle: 'back',
+        bytes: Buffer.from('x'),
+        sessionId: 's1',
+        entryId: 'e1',
+      }),
+    ).rejects.toThrow('photo_provider_failed');
+  });
+  it('encodes the final draft image as a lossless WebP', async () => {
+    const width = 24,
+      height = 24,
+      channels = 4,
+      pixels = Buffer.alloc(width * height * channels);
+    for (let index = 0; index < pixels.length; index += 1)
+      pixels[index] = (index * 37) % 256;
+    const png = await sharp(pixels, {
+      raw: { width, height, channels },
+    })
+      .png()
+      .toBuffer();
+    const webp = await encodeDraftWebp(png);
+    expect((await sharp(webp).metadata()).format).toBe('webp');
+    const decoded = await sharp(webp)
+      .ensureAlpha()
+      .raw()
+      .toBuffer();
+    expect(decoded.equals(pixels)).toBe(true);
+  });
 });

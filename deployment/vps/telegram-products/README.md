@@ -126,8 +126,10 @@ they do not spend provider credits or publish real products.
 Normal `/new` intake asks category/brand/model and condition once, researches the
 model, then asks quantity, price, iPhone battery health (or explicit unavailable),
 defects and selectable actual accessories. It requests and approves one photo at
-a time: six sides for devices, four accessory views or three part views. Photo
-approval advances the requested view; box photos never advance device evidence.
+a time: back, front and side for devices, front/back/details for accessories or
+front/back/connectors for parts. Photo approval advances the requested view; box
+photos never advance device evidence. Vision may reject an upload as a retake;
+the seller re-shoots that side instead of approving it.
 The next stop is the complete preview, with an approved-photo album. Adding a
 version is explicit, and Edit details uses the seven admin section names.
 Research/photo jobs show a typing indicator and update the progress message while
@@ -170,3 +172,38 @@ version marker prevents a later load from restoring accessories unchecked by the
 owner. Repairs use only saved selections; missing selections remain unknown.
 These optional JSON fields need no schema migration and are ignored by older
 compatible releases.
+
+## Product studio v6 (per-photo retouch and hero cover)
+
+`TELEGRAM_PRODUCTS_STUDIO_N8N_ENABLED=true` routes device photos through the
+imported, inactive `APFPSV6RETOUCH` n8n workflow instead of the in-app Gemini
+call: one upload per request (`POST /webhook/product-studio-v6-photo`), vision
+decides edited/retake/skipped, and smartphones/tablets finish with a generated
+hero cover composed from the retouched back + front
+(`POST /webhook/product-studio-v6-cover`). Extras are stored untouched;
+accessory `details` and part `connectors` close-ups set `force_edit` so they are
+retouched despite reading as extra. Every accepted draft image is stored as a
+lossless WebP, and the cover becomes the entry cover before owner review. The
+deploy applies the additive `20261017_telegram_studio_v6.sql` migration (asset
+`requested_angle`, `retake` status, `cover` kind).
+
+Activation (after the workflow is configured in n8n):
+
+1. Assign the Gemini header credential (header `x-goog-api-key`) to the three
+   HTTP nodes, assign a header-auth credential (e.g. `X-Retouch-Key`) to both
+   webhooks, and activate the workflow.
+2. Add to protected `app/shared/app.env`:
+   - `TELEGRAM_PRODUCTS_STUDIO_N8N_ENABLED=true`
+   - `TELEGRAM_PRODUCTS_N8N_WEBHOOK_KEY`: the webhook credential value
+   - `TELEGRAM_PRODUCTS_N8N_STUDIO_URL`: defaults to `http://127.0.0.1:5678`
+3. Restart the app and the Telegram worker, then run the two curl smoke tests
+   from the workflow README before processing a real device.
+
+With the flag unset or `false`, the release keeps the previous in-app retouch
+while asking the same three views; no n8n call is made. Owner review surfaces a
+top-right toast for new submissions
+(`/api/admin/telegram-products/notifications`, no email), and publishing a
+Telegram draft messages its member through the transport bot
+(`<model> <color> <storage> veröffentlicht|published`). The bot token is read
+from `TELEGRAM_PRODUCT_BOT_TOKEN` or the bot's protected `.env`; delivery
+failures are logged without blocking publication.

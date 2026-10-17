@@ -7,6 +7,7 @@ import {
 import {
   telegramBlockers,
   newConversation,
+  photoGuide,
   renderConversation,
   transition,
   tr,
@@ -137,11 +138,16 @@ export const viewSession = async (
   if (row.state.stage === 'photos') {
     const assets = (
       await client.query(
-        `SELECT a.id,a.status,a.kind,a.entry_id,a.edited_path IS NOT NULL AS edited,(SELECT e.details->>'editingError' FROM telegram_product_events e WHERE e.session_id=a.session_id AND e.event_type='photo_prepared' AND e.details->>'assetId'=a.id::text ORDER BY e.created_at DESC LIMIT 1) AS editing_error FROM telegram_product_assets a WHERE a.session_id=$1 AND a.entry_id=$2 AND a.status IN ('ready','failed') ORDER BY a.created_at LIMIT 12`,
+        `SELECT a.id,a.status,a.kind,a.entry_id,a.requested_angle,a.edited_path IS NOT NULL AS edited,e.details->>'editingError' AS editing_error,e.details->>'retakeReason' AS retake_reason,e.details->>'skippedReason' AS skipped_reason FROM telegram_product_assets a LEFT JOIN LATERAL (SELECT details FROM telegram_product_events ev WHERE ev.session_id=a.session_id AND ev.event_type='photo_prepared' AND ev.details->>'assetId'=a.id::text ORDER BY ev.created_at DESC LIMIT 1) e ON true WHERE a.session_id=$1 AND a.entry_id=$2 AND a.status IN ('ready','failed','retake') ORDER BY a.created_at DESC LIMIT 12`,
         [row.id, row.state.entryId],
       )
     ).rows;
-    for (const asset of assets) {
+    // The guided flow shows exactly the photo awaiting a decision: retakes and
+    // failed attempts replace each other instead of piling up in the chat.
+    const photoAssets = row.state.guided
+      ? assets.slice(0, 1)
+      : [...assets].reverse();
+    for (const asset of photoAssets) {
       if (asset.status === 'failed')
         view.buttons.unshift([
           {
@@ -153,7 +159,20 @@ export const viewSession = async (
             action: `assetRetry:${asset.id}`,
           },
         ]);
-      else if (asset.kind === 'device' || asset.kind === 'box') {
+      else if (asset.status === 'retake') {
+        view.photos ??= [];
+        view.photos.push({ id: asset.id, label: asset.kind, edited: false });
+        view.buttons.unshift([
+          {
+            text: tr(
+              row.state.locale,
+              'Foto dennoch verwenden',
+              'Use this photo anyway',
+            ),
+            action: `assetOriginal:${asset.id}`,
+          },
+        ]);
+      } else if (asset.kind === 'device' || asset.kind === 'box') {
         view.photos ??= [];
         view.photos.push({ id: asset.id, label: asset.kind, edited: asset.edited });
         view.buttons.unshift(
@@ -190,20 +209,91 @@ export const viewSession = async (
         );
       }
     }
-    if(row.state.guided && assets.some(asset=>asset.status==='ready')){
-      view.text=tr(row.state.locale,'🔎 Foto prüfen: Original oder bearbeitete Vorschau wählen. Danach folgt automatisch die nächste Ansicht.','🔎 Review the photo: choose the original or edited preview. The next view follows automatically.');
-      view.buttons=view.buttons.filter(buttons=>buttons.some(button=>button.action.startsWith('asset') || button.action==='save'));
+    if (row.state.guided) {
+      const newest = photoAssets[0];
+      if (newest?.status === 'retake') {
+        const reason = newest.retake_reason ? ` ${newest.retake_reason}` : '';
+        view.text = tr(
+          row.state.locale,
+          `⚠️ Diese Aufnahme wurde nicht akzeptiert:${reason} Bitte diese Seite erneut fotografieren.`,
+          `⚠️ This photo was not accepted:${reason} Please take this side again.`,
+        );
+        view.buttons = view.buttons.filter((buttons) =>
+          buttons.some(
+            (button) =>
+              button.action.startsWith('asset') || button.action === 'save',
+          ),
+        );
+      } else if (newest?.status === 'ready') {
+        view.text = tr(
+          row.state.locale,
+          '🔎 Foto prüfen: Original oder bearbeitete Vorschau wählen. Danach folgt automatisch die nächste Ansicht.',
+          '🔎 Review the photo: choose the original or edited preview. The next view follows automatically.',
+        );
+        view.buttons = view.buttons.filter((buttons) =>
+          buttons.some(
+            (button) =>
+              button.action.startsWith('asset') || button.action === 'save',
+          ),
+        );
+      }
     }
-    const unedited = assets.find(asset => asset.status === 'ready' && ['device','box'].includes(asset.kind) && !asset.edited);
+    const unedited = photoAssets.find(
+      (asset) =>
+        asset.status === 'ready' &&
+        ['device', 'box'].includes(asset.kind) &&
+        !asset.edited,
+    );
     if (unedited) {
-      const reason = unedited.editing_error === 'research_rate_limited'
-        ? tr(row.state.locale,'Das KI-Limit wurde erreicht.','The AI rate limit was reached.')
-        : unedited.editing_error === 'photo_credits_depleted'
-          ? tr(row.state.locale,'Das KI-Guthaben ist aufgebraucht.','The AI provider credits are depleted.')
-          : ['photo_provider_access_denied','gemini_key_missing','photo_model_unavailable'].includes(unedited.editing_error)
-            ? tr(row.state.locale,'Bitte den KI-Schlüssel und das Bildmodell in den Admin-Einstellungen prüfen.','Please check the AI key and image model in admin settings.')
-            : tr(row.state.locale,'Es wurde kein bearbeitetes Foto erstellt.','No edited photo was created.');
-      view.text = tr(row.state.locale,'⚠️ Studio-Bearbeitung fehlgeschlagen. ','⚠️ Studio editing failed. ') + reason + '\n\n' + tr(row.state.locale,'Du siehst nur das Original. Bearbeitung wiederholen oder Original ausdrücklich behalten.','You are seeing only the original. Retry editing or explicitly keep the original.');
+      if (unedited.skipped_reason) {
+        view.text = tr(
+          row.state.locale,
+          'ℹ️ Diese Aufnahme wurde unverändert gespeichert (Ansicht außerhalb des Studio-Rahmens). Original behalten oder neue Aufnahme senden.',
+          'ℹ️ This photo was stored unchanged (a view outside the studio scope). Keep the original or send a new photo.',
+        );
+      } else {
+        const reason =
+          unedited.editing_error === 'research_rate_limited'
+            ? tr(
+                row.state.locale,
+                'Das KI-Limit wurde erreicht.',
+                'The AI rate limit was reached.',
+              )
+            : unedited.editing_error === 'photo_credits_depleted'
+              ? tr(
+                  row.state.locale,
+                  'Das KI-Guthaben ist aufgebraucht.',
+                  'The AI provider credits are depleted.',
+                )
+              : [
+                    'photo_provider_access_denied',
+                    'gemini_key_missing',
+                    'photo_model_unavailable',
+                  ].includes(unedited.editing_error)
+                ? tr(
+                    row.state.locale,
+                    'Bitte den KI-Schlüssel und das Bildmodell in den Admin-Einstellungen prüfen.',
+                    'Please check the AI key and image model in admin settings.',
+                  )
+                : tr(
+                    row.state.locale,
+                    'Es wurde kein bearbeitetes Foto erstellt.',
+                    'No edited photo was created.',
+                  );
+        view.text =
+          tr(
+            row.state.locale,
+            '⚠️ Studio-Bearbeitung fehlgeschlagen. ',
+            '⚠️ Studio editing failed. ',
+          ) +
+          reason +
+          '\n\n' +
+          tr(
+            row.state.locale,
+            'Du siehst nur das Original. Bearbeitung wiederholen oder Original ausdrücklich behalten.',
+            'You are seeing only the original. Retry editing or explicitly keep the original.',
+          );
+      }
     }
     view.pending =
       (
@@ -213,14 +303,18 @@ export const viewSession = async (
         )
       ).rows.length > 0;
     if(row.state.guided && view.pending){
-      view.text=tr(row.state.locale,'⏳ Foto wird geprüft und für die Vorschau vorbereitet. Bitte warten…','⏳ Checking the photo and preparing its preview. Please wait…');
+      const done=row.state.photoAngles?.[row.state.entryId]??[];
+      const coverPending=photoGuide(row.document).every(angle=>done.includes(angle.key));
+      view.text=coverPending
+        ? tr(row.state.locale,'✨ Titelbild wird erstellt. Bitte warten…','✨ Creating the cover image. Please wait…')
+        : tr(row.state.locale,'⏳ Foto wird geprüft und für die Vorschau vorbereitet. Bitte warten…','⏳ Checking the photo and preparing its preview. Please wait…');
       view.buttons=[[{text:tr(row.state.locale,'💾 Speichern & beenden','💾 Save & exit'),action:'save'}]];
     }
   }
   if(row.state.stage==='review' && row.state.guided){
     const urls=row.document.entries.flatMap(entry=>entry.photos.map(photo=>photo.url)).filter(Boolean);
-    const assets=(await client.query("SELECT id,status FROM telegram_product_assets WHERE session_id=$1 AND kind='device' AND status IN ('approved','original') AND public_url=ANY($2::text[]) ORDER BY created_at LIMIT 6",[row.id,urls])).rows;
-    view.gallery=assets.map(asset=>({id:asset.id,edited:asset.status==='approved',caption:row.document.shared.title??''}));
+    const assets=(await client.query("SELECT id,status,kind FROM telegram_product_assets WHERE session_id=$1 AND kind IN ('device','cover') AND status IN ('approved','original') AND public_url=ANY($2::text[]) ORDER BY created_at LIMIT 6",[row.id,urls])).rows;
+    view.gallery=assets.map(asset=>({id:asset.id,edited:asset.status==='approved'&&asset.kind==='device',caption:row.document.shared.title??''}));
   }
   if (row.state.stage === 'model') {
     const models = (

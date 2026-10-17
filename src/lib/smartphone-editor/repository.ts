@@ -34,6 +34,7 @@ import { sanitizeProductExperienceProfile } from '@/lib/product-experience';
 import { autoPublishProductPromotion } from '@/lib/marketing';
 import { deleteCatalogProduct, ProductDeletionError } from '@/lib/product-deletion';
 import { normalizeTelegramOfferDocument } from '@/lib/telegram-products/offer-content';
+import { notifyPublished, publishedNoticeText } from '@/lib/telegram-products/notify';
 import { readOfferPresets } from '@/lib/product-offer-presets-repository';
 
 type Source = {
@@ -686,6 +687,9 @@ export const publishPhoneDraft = async (
   telegramOwner = false,
 ): Promise<PhoneDraft> => {
   const promotions: Array<Parameters<typeof autoPublishProductPromotion>[0]> = [];
+  // Filled inside the transaction, delivered after commit: the Telegram member
+  // who submitted the draft learns that it went live.
+  const telegramNotices: Array<{ telegramId: string; text: string }> = [];
   const response = await withTransaction(async (client) => {
     if (
       !/^[0-9a-f-]{36}$/i.test(input.requestId ?? '') ||
@@ -1002,6 +1006,26 @@ export const publishPhoneDraft = async (
       const allPublished = doc.entries.every(e => results.some(r => r.entryId===e.id && Object.values(r.channels).some(status => status==='published'||status==='pending')));
       await client.query('UPDATE telegram_product_sessions SET status=$2,submitted_revision=$3,updated_at=now() WHERE draft_id=$1',[id,allPublished?'published':'submitted',response.revision]);
       await client.query("INSERT INTO telegram_product_events(session_id,actor,event_type,details) VALUES($1,$2,'owner_published',$3)",[doc.telegramSessionId,actor,JSON.stringify({revision:input.revision,requestId:input.requestId,entryIds:input.entryIds,results})]);
+      if (allPublished) {
+        const member = (
+          await client.query(
+            'SELECT m.telegram_id::text AS telegram_id,m.locale FROM telegram_product_sessions s JOIN telegram_product_members m ON m.id=s.member_id WHERE s.id=$1',
+            [doc.telegramSessionId],
+          )
+        ).rows[0];
+        if (member)
+          telegramNotices.push({
+            telegramId: member.telegram_id,
+            text: publishedNoticeText(
+              doc.shared.model || doc.shared.title,
+              selected.map((entry) => ({
+                color: entry.color,
+                storage: entry.storage,
+              })),
+              member.locale === 'en' ? 'en' : 'de',
+            ),
+          });
+      }
     }
     await client.query(
       `INSERT INTO smartphone_editor_publications(draft_id,request_id,request,response) VALUES($1,$2,$3::jsonb,$4::jsonb)`,
@@ -1012,6 +1036,13 @@ export const publishPhoneDraft = async (
   // Preserve configured catalog announcements after a successful commit.
   // A publication retry returns its receipt without enqueuing announcements again.
   await Promise.allSettled(promotions.map(product => autoPublishProductPromotion(product, product.compareAtPrice && product.compareAtPrice > (product.price ?? 0) ? 'discount' : 'new')));
+  for (const notice of telegramNotices) {
+    const delivered = await notifyPublished(notice.telegramId, notice.text);
+    if (!delivered)
+      console.error(
+        '[telegram-products] published notification could not be delivered',
+      );
+  }
   return response;
 };
 

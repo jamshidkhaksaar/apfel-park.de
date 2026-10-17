@@ -1,4 +1,5 @@
 import TelegramProductSubmissions, { type TelegramSubmissionView } from '@/components/admin/TelegramProductSubmissions';
+import TelegramSubmissionToasts from '@/components/admin/TelegramSubmissionToasts';
 import { listTelegramSubmissions } from '@/lib/telegram-products/repository';
 import CatalogStockSummary from "@/components/admin/CatalogStockSummary";
 import ProductDeleteButton from "@/components/admin/ProductDeleteButton";
@@ -271,6 +272,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   return (
     <AdminShell title={dict.productsPage.title}>
       <AdminListMemory path="/admin/products" />
+      {isOwner ? <TelegramSubmissionToasts locale={locale} /> : null}
       <ProductsWorkspaceTabs locale={locale} view={view} query={filterQuery}>
       <div className="min-w-0 space-y-4">
         <header className="flex flex-wrap items-end justify-between gap-4">

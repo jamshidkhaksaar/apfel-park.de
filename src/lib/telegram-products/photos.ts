@@ -88,6 +88,19 @@ export const ingestPhoto = async (body: {
     )
       throw new Error('stale_action');
     if(row.state.guided && (await client.query("SELECT 1 FROM telegram_product_assets WHERE session_id=$1 AND entry_id=$2 AND status IN ('queued','ready') LIMIT 1",[row.id,row.state.entryId])).rows.length)throw new Error('photo_wait_for_review');
+    const requestedAngle =
+      row.state.guided && row.state.photoKind === 'device'
+        ? (() => {
+            const done = row.state.photoAngles?.[row.state.entryId] ?? [];
+            const next = photoGuide(row.document).find(
+              (angle) => !done.includes(angle.key),
+            );
+            // Every requested view is already approved: a new upload would have
+            // no angle to retouch (the hero cover is composed at this point).
+            if (!next) throw new Error('photo_wait_for_review');
+            return next.key;
+          })()
+        : null;
     if (
       (
         await client.query(
@@ -112,8 +125,8 @@ export const ingestPhoto = async (body: {
     );
     const asset = (
       await client.query(
-        'INSERT INTO telegram_product_assets(session_id,entry_id,kind,private_path) VALUES($1,$2,$3,$4) RETURNING id',
-        [row.id, row.state.entryId, row.state.photoKind, file],
+        'INSERT INTO telegram_product_assets(session_id,entry_id,kind,private_path,requested_angle) VALUES($1,$2,$3,$4,$5) RETURNING id',
+        [row.id, row.state.entryId, row.state.photoKind, file, requestedAngle],
       )
     ).rows[0];
     await client.query(
@@ -145,12 +158,10 @@ export const prepareTelegramPhoto = async (
   }
   if (!token || token.length < 32) throw new Error('photo_privacy_unavailable');
   const runId = `telegram-${randomUUID()}`,
-    form = new FormData();
+    form = new FormData(),
+    publishKind = kind === 'device' || kind === 'box' || kind === 'cover';
   form.set('run_id', runId);
-  form.set(
-    'asset_type',
-    kind === 'device' ? 'condition_photo' : kind === 'box' ? 'packaging' : kind,
-  );
+  form.set('asset_type', publishKind && kind !== 'box' ? 'condition_photo' : kind === 'box' ? 'packaging' : kind);
   form.set(
     'image',
     new File([new Uint8Array(bytes)], 'photo.jpg', { type: 'image/jpeg' }),
@@ -164,14 +175,10 @@ export const prepareTelegramPhoto = async (
   });
   if (!response.ok) throw new Error('photo_privacy_failed');
   const result = (await response.json()) as Record<string, unknown>;
-  const candidate =
-    kind === 'device' || kind === 'box'
-      ? result.publishPath
-      : result.redactedPath;
-  const expectedHash =
-    kind === 'device' || kind === 'box'
-      ? result.publishSha256
-      : result.redactedSha256;
+  const candidate = publishKind ? result.publishPath : result.redactedPath;
+  const expectedHash = publishKind
+    ? result.publishSha256
+    : result.redactedSha256;
   if (
     result.privacyScanPassed !== true ||
     typeof candidate !== 'string' ||
@@ -279,6 +286,203 @@ export const studioPhoto = async (bytes: Buffer): Promise<Buffer> => {
     .toBuffer();
 };
 
+// ---------------------------------------------------------------------------
+// Product studio v6 (n8n): one photo per call, retouched live while the seller
+// uploads, plus a hero cover composed from the retouched back + front.
+// Gated by TELEGRAM_PRODUCTS_STUDIO_N8N_ENABLED so a deploy never reroutes the
+// live flow before the n8n workflow and its webhook key are assigned.
+// ---------------------------------------------------------------------------
+
+export const n8nStudioEnabled = (): boolean =>
+  process.env.TELEGRAM_PRODUCTS_STUDIO_N8N_ENABLED === 'true';
+
+export const coverEligibleCategory = (category: string | undefined): boolean =>
+  category === 'smartphones' || category === 'tablets';
+
+const n8nStudioBase = (): string =>
+  (
+    process.env.TELEGRAM_PRODUCTS_N8N_STUDIO_URL?.trim() ||
+    'http://127.0.0.1:5678'
+  ).replace(/\/+$/, '');
+
+const n8nWebhookKey = async (): Promise<string> => {
+  let key = process.env.TELEGRAM_PRODUCTS_N8N_WEBHOOK_KEY?.trim();
+  if (!key) {
+    try {
+      const config = await readFile('/etc/apfel-intake-n8n.env', 'utf8');
+      key = config
+        .match(/^TELEGRAM_PRODUCTS_N8N_WEBHOOK_KEY=(.*)$/m)?.[1]
+        ?.trim()
+        .replace(/^(['"])(.*)\1$/, '$2');
+    } catch {
+      key = undefined;
+    }
+  }
+  if (!key || key.length < 16) throw new Error('photo_provider_access_denied');
+  return key;
+};
+
+const postN8n = async (
+  url: string,
+  body: Record<string, unknown>,
+): Promise<Record<string, unknown>> => {
+  const key = await n8nWebhookKey();
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Retouch-Key': key },
+      redirect: 'error',
+      signal: AbortSignal.timeout(120_000),
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error('photo_provider_failed');
+  }
+  if (!response.ok)
+    throw new Error(
+      response.status === 401 || response.status === 403
+        ? 'photo_provider_access_denied'
+        : 'photo_provider_failed',
+    );
+  try {
+    return (await response.json()) as Record<string, unknown>;
+  } catch {
+    throw new Error('photo_invalid_response');
+  }
+};
+
+const studioImageBytes = (value: unknown): Buffer => {
+  const raw = typeof value === 'string' ? value.replace(/\s+/g, '') : '';
+  if (
+    !raw.length ||
+    raw.length > 20_000_000 ||
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(raw)
+  )
+    throw new Error('photo_invalid_response');
+  const bytes = Buffer.from(raw, 'base64');
+  if (!bytes.length || bytes.length > 20_000_000)
+    throw new Error('photo_invalid_response');
+  return bytes;
+};
+
+const studioProblems = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value
+        .filter((problem): problem is string => typeof problem === 'string')
+        .map((problem) => problem.slice(0, 200))
+        .slice(0, 6)
+    : [];
+
+export type StudioRetouchResult =
+  | { status: 'edited'; bytes: Buffer; mimeType: string; view?: string }
+  | { status: 'retake'; problems: string[]; view?: string }
+  | { status: 'skipped'; reason: string };
+
+export const n8nRetouchPhoto = async (input: {
+  category: string;
+  requestedAngle: string | null;
+  bytes: Buffer;
+  sessionId: string;
+  entryId: string;
+}): Promise<StudioRetouchResult> => {
+  const result = await postN8n(
+    `${n8nStudioBase()}/webhook/product-studio-v6-photo`,
+    {
+      category: input.category,
+      requested_angle: input.requestedAngle ?? 'extra',
+      mime_type: 'image/webp',
+      base64_image: input.bytes.toString('base64'),
+      // By-design close-up slots are retouched even though the classifier reads
+      // them as "extra"; a badly shot photo still bounces to retake.
+      force_edit:
+        input.requestedAngle === 'details' || input.requestedAngle === 'connector',
+      session_id: input.sessionId,
+      entry_id: input.entryId,
+    },
+  );
+  const view = typeof result.view === 'string' ? result.view : undefined;
+  if (result.status === 'edited')
+    return {
+      status: 'edited',
+      bytes: studioImageBytes(result.base64_image),
+      mimeType:
+        typeof result.mime_type === 'string' && result.mime_type
+          ? result.mime_type
+          : 'image/png',
+      view,
+    };
+  if (result.status === 'retake')
+    return { status: 'retake', problems: studioProblems(result.problems), view };
+  if (result.status === 'skipped')
+    return {
+      status: 'skipped',
+      reason:
+        typeof result.reason === 'string' && result.reason
+          ? result.reason.slice(0, 120)
+          : 'extra_view',
+    };
+  throw new Error('photo_provider_failed');
+};
+
+export type StudioCoverResult =
+  | { status: 'edited'; bytes: Buffer; mimeType: string }
+  | { status: 'skipped'; reason: string };
+
+export const n8nCover = async (input: {
+  category: string;
+  backBytes: Buffer;
+  frontBytes: Buffer;
+  sessionId: string;
+  entryId: string;
+}): Promise<StudioCoverResult> => {
+  const result = await postN8n(
+    `${n8nStudioBase()}/webhook/product-studio-v6-cover`,
+    {
+      category: input.category,
+      mime_back: 'image/webp',
+      base64_back: input.backBytes.toString('base64'),
+      mime_front: 'image/webp',
+      base64_front: input.frontBytes.toString('base64'),
+      session_id: input.sessionId,
+      entry_id: input.entryId,
+    },
+  );
+  if (result.status === 'edited')
+    return {
+      status: 'edited',
+      bytes: studioImageBytes(result.base64_image),
+      mimeType:
+        typeof result.mime_type === 'string' && result.mime_type
+          ? result.mime_type
+          : 'image/png',
+    };
+  if (result.status === 'skipped')
+    return {
+      status: 'skipped',
+      reason:
+        typeof result.reason === 'string' && result.reason
+          ? result.reason.slice(0, 120)
+          : 'cover_unsupported',
+    };
+  throw new Error('photo_provider_failed');
+};
+
+// The final draft image is a lossless WebP: no quality step is lost between
+// the retouch and the published draft. Only a pathological source falls back
+// to a near-lossless encode so the upload limits stay satisfiable.
+export const encodeDraftWebp = async (bytes: Buffer): Promise<Buffer> => {
+  const lossless = await sharp(bytes, { limitInputPixels: 25_000_000 })
+    .rotate()
+    .webp({ lossless: true, effort: 4 })
+    .toBuffer();
+  if (lossless.length <= 8 * 1024 * 1024) return lossless;
+  return sharp(bytes, { limitInputPixels: 25_000_000 })
+    .rotate()
+    .webp({ quality: 95 })
+    .toBuffer();
+};
+
 export const acceptPhoto = async (
   client: TransactionClient,
   sessionId: string,
@@ -295,17 +499,14 @@ export const acceptPhoto = async (
   ).rows[0];
   if (
     !asset ||
-    asset.status !== 'ready' ||
+    !['ready', 'retake'].includes(asset.status) ||
     !['device', 'box'].includes(asset.kind)
   )
     throw new Error('asset_not_ready');
   const selected = edited ? asset.edited_path : asset.safe_path;
   if (!selected) throw new Error('photo_edit_unavailable');
   const bytes = await readPrivatePhoto(selected);
-  const safe = await sharp(bytes, { limitInputPixels: 25_000_000 })
-    .rotate()
-    .webp({ quality: 90 })
-    .toBuffer();
+  const safe = await encodeDraftWebp(bytes);
   const image = await uploadProductImage(
     new File([new Uint8Array(safe)], `${randomUUID()}.webp`, {
       type: 'image/webp',
@@ -323,9 +524,25 @@ export const acceptPhoto = async (
   if (asset.kind === 'device') entry.hasRealProductPhotos = true;
   if(row.state.guided){
     if(asset.kind==='device'){
-      const guide=photoGuide(row.document),angles=row.state.photoAngles??{},done=angles[entry.id]??[],next=guide.find(angle=>!done.includes(angle.key));
-      if(next)angles[entry.id]=[...done,next.key];row.state.photoAngles=angles;
-      if(angles[entry.id]?.length>=guide.length){row.state.stage='review';row.document.step=6;row.state.editing=false;row.state.singleField=false;}
+      const guide=photoGuide(row.document),angles=row.state.photoAngles??{},done=angles[entry.id]??[];
+      const stored=asset.requested_angle && guide.some(item=>item.key===asset.requested_angle)
+        ? asset.requested_angle as string
+        : guide.find(item=>!done.includes(item.key))?.key;
+      if(stored && !done.includes(stored))angles[entry.id]=[...done,stored];
+      row.state.photoAngles=angles;
+      if((angles[entry.id]?.length??0)>=guide.length){
+        if(coverEligibleCategory(row.document.shared.category) && n8nStudioEnabled()){
+          // The hero cover is composed from the approved back + front retouches
+          // (n8n PROMPT B). The photos stage stays open as "pending" until the
+          // cover job finishes and moves the draft to review.
+          await client.query(
+            `INSERT INTO telegram_product_jobs(session_id,kind,payload) VALUES($1,'photo',$2)`,
+            [row.id,JSON.stringify({cover:true,entryId:entry.id})],
+          );
+        }else{
+          row.state.stage='review';row.document.step=6;row.state.editing=false;row.state.singleField=false;
+        }
+      }
     }
     row.state.photoKind='device';
     await client.query('UPDATE telegram_product_sessions SET state=$2 WHERE id=$1',[row.id,JSON.stringify(row.state)]);

@@ -1,15 +1,21 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { query, withTransaction, type TransactionClient } from '@/lib/db';
+import { uploadProductImage } from '@/lib/blob';
 import { researchProductFromOfficialPages } from '@/lib/product-research-service';
 import { applyEditorResearch } from '@/lib/smartphone-editor/research';
 import type { ProductResearchResult } from '@/lib/product-research-core';
 import {
   applyPhotoHints,
+  encodeDraftWebp,
+  n8nCover,
+  n8nRetouchPhoto,
+  n8nStudioEnabled,
   prepareTelegramPhoto,
   readPrivatePhoto,
   studioPhoto,
   writePrivatePhoto,
 } from './photos';
+import { newPhotoSlot, photoGuide } from './model';
 import {
   digest,
   event,
@@ -26,6 +32,8 @@ type Job = {
     condition?: string;
     category?: string;
     assetId?: string;
+    cover?: boolean;
+    entryId?: string;
   };
   lease: string;
   attempts: number;
@@ -57,6 +65,104 @@ const activeJob = async (
     ).rows.length > 0;
   return lease && member?.status === 'active';
 };
+// Hero cover (product studio v6, smartphones + tablets only): compose the final
+// draft cover from the retouched back + front, publish it as a lossless WebP
+// draft image, and mark it as the entry cover.
+const processHeroCover = async (job: Job): Promise<void> => {
+  const entryId = job.payload.entryId ?? '';
+  if (!entryId) throw new Error('job_cancelled');
+  const session = (
+    await query(
+      'SELECT s.id,d.document FROM telegram_product_sessions s JOIN smartphone_editor_drafts d ON d.id=s.draft_id WHERE s.id=$1',
+      [job.session_id],
+    )
+  ).rows[0];
+  if (!session) throw new Error('job_cancelled');
+  const category = session.document?.shared?.category as string | undefined;
+  const sources = (
+    await query(
+      `SELECT requested_angle,CASE WHEN status='approved' THEN edited_path ELSE safe_path END AS path FROM telegram_product_assets WHERE session_id=$1 AND entry_id=$2 AND requested_angle IN ('back','front') AND status IN ('approved','original') ORDER BY created_at DESC`,
+      [job.session_id, entryId],
+    )
+  ).rows as Array<{ requested_angle: string; path: string | null }>;
+  const back = sources.find((asset) => asset.requested_angle === 'back'),
+    front = sources.find((asset) => asset.requested_angle === 'front');
+  let failure: string | null = null,
+    made: { file: string; url: string; sha256: string } | null = null;
+  if (!back?.path || !front?.path) failure = 'cover_source_missing';
+  else {
+    try {
+      const result = await n8nCover({
+        category: category ?? '',
+        backBytes: await readPrivatePhoto(back.path),
+        frontBytes: await readPrivatePhoto(front.path),
+        sessionId: job.session_id,
+        entryId,
+      });
+      if (result.status === 'edited') {
+        const checked = await prepareTelegramPhoto(result.bytes, 'cover');
+        const lossless = await encodeDraftWebp(checked.bytes);
+        const file = await writePrivatePhoto(lossless);
+        const image = await uploadProductImage(
+          new File([new Uint8Array(lossless)], `${randomUUID()}.webp`, {
+            type: 'image/webp',
+          }),
+        );
+        made = {
+          file,
+          url: image.url,
+          sha256: createHash('sha256').update(checked.bytes).digest('hex'),
+        };
+      } else failure = `cover_${result.reason}`;
+    } catch (error) {
+      failure = safeError(error);
+    }
+  }
+  await withTransaction(async (client) => {
+    if (!(await activeJob(client, job))) throw new Error('job_cancelled');
+    const row = await readSession(client, job.session_id, true);
+    if (!['collecting', 'changes_requested'].includes(row.status))
+      throw new Error('job_cancelled');
+    const entry = row.document.entries.find((item) => item.id === entryId);
+    // If the seller restarted the photos in the meantime, the cover is stale:
+    // keep it out of the draft and leave the photos stage untouched.
+    const anglesDone =
+      (row.state.photoAngles?.[entryId]?.length ?? 0) >=
+      photoGuide(row.document).length;
+    if (made && entry && anglesDone) {
+      const slot = newPhotoSlot(made.url);
+      entry.photos.push(slot);
+      entry.coverId = slot.id;
+      await client.query(
+        `INSERT INTO telegram_product_assets(session_id,entry_id,kind,private_path,safe_path,sha256,status,public_url) VALUES($1,$2,'cover',$3,$3,$4,'approved',$5)`,
+        [job.session_id, entryId, made.file, made.sha256, made.url],
+      );
+    }
+    if (anglesDone) {
+      row.state.stage = 'review';
+      row.document.step = 6;
+      row.state.editing = false;
+      row.state.singleField = false;
+      row.state.photoKind = 'device';
+      await client.query(
+        'UPDATE smartphone_editor_drafts SET document=$2,revision=revision+1,updated_at=now() WHERE id=$1',
+        [row.draft_id, JSON.stringify(row.document)],
+      );
+      await client.query(
+        'UPDATE telegram_product_sessions SET state=$2,revision=revision+1,updated_at=now() WHERE id=$1',
+        [row.id, JSON.stringify(row.state)],
+      );
+    }
+    await event(
+      client,
+      row.id,
+      'worker',
+      made && anglesDone ? 'cover_created' : 'cover_failed',
+      made && anglesDone ? { entryId, url: made.url } : { entryId, failure },
+    );
+  });
+};
+
 export const runTelegramProductWorkerPass = async (): Promise<void> => {
   if (!telegramProductsEnabled()) return;
   const exhausted = (
@@ -153,6 +259,8 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
           sources: row.state.sources,
         });
       });
+    } else if (job.payload.cover) {
+      await processHeroCover(job);
     } else {
       const asset = (
         await query(
@@ -167,14 +275,47 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
       );
       const safePath = await writePrivatePhoto(prepared.bytes);
       let editedPath: string | null = null,
-        editingError: string | null = null;
+        editingError: string | null = null,
+        assetStatus: 'ready' | 'retake' = 'ready',
+        retakeReason: string | null = null,
+        skippedReason: string | null = null;
       if (['device', 'box'].includes(asset.kind)) {
-        try {
-          const edited = await studioPhoto(prepared.bytes);
-          const checked = await prepareTelegramPhoto(edited, asset.kind);
-          editedPath = await writePrivatePhoto(checked.bytes);
-        } catch (error) {
-          editingError = safeError(error);
+        if (asset.kind === 'device' && n8nStudioEnabled()) {
+          // Product studio v6: the angle stored at upload time decides how the
+          // upload is retouched (or rejected) by the n8n workflow.
+          const document = (
+            await query(
+              'SELECT d.document FROM telegram_product_sessions s JOIN smartphone_editor_drafts d ON d.id=s.draft_id WHERE s.id=$1',
+              [job.session_id],
+            )
+          ).rows[0]?.document;
+          const result = await n8nRetouchPhoto({
+            category: document?.shared?.category ?? '',
+            requestedAngle: asset.requested_angle ?? null,
+            bytes: prepared.bytes,
+            sessionId: job.session_id,
+            entryId: asset.entry_id,
+          });
+          if (result.status === 'edited') {
+            const checked = await prepareTelegramPhoto(result.bytes, asset.kind);
+            editedPath = await writePrivatePhoto(checked.bytes);
+          } else if (result.status === 'retake') {
+            assetStatus = 'retake';
+            retakeReason = (
+              result.problems.join(' · ') || 'photo_retake'
+            ).slice(0, 300);
+          } else {
+            // Extras and other out-of-scope views are kept untouched.
+            skippedReason = result.reason;
+          }
+        } else {
+          try {
+            const edited = await studioPhoto(prepared.bytes);
+            const checked = await prepareTelegramPhoto(edited, asset.kind);
+            editedPath = await writePrivatePhoto(checked.bytes);
+          } catch (error) {
+            editingError = safeError(error);
+          }
         }
       }
       await withTransaction(async (client) => {
@@ -189,7 +330,7 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
             safePath,
             editedPath,
             createHash('sha256').update(prepared.bytes).digest('hex'),
-            ['device', 'box'].includes(asset.kind) ? 'ready' : 'original',
+            ['device', 'box'].includes(asset.kind) ? assetStatus : 'original',
           ],
         );
         applyPhotoHints(row, prepared.hints);
@@ -204,6 +345,9 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
         await event(client, row.id, 'worker', 'photo_prepared', {
           assetId: asset.id,
           editingError,
+          requestedAngle: asset.requested_angle ?? null,
+          retakeReason,
+          skippedReason,
         });
       });
     }
@@ -229,7 +373,7 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
           [row.id, JSON.stringify(row.state)],
         );
       }
-      if (job.kind === 'photo')
+      if (job.kind === 'photo' && job.payload.assetId)
         await client.query(
           `UPDATE telegram_product_assets SET status='failed' WHERE id=$1 AND status='queued'`,
           [job.payload.assetId],
