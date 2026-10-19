@@ -569,6 +569,21 @@ export const dictionary = {
       heroSubtitle: "Antworten rund um Service, Reparatur und Zubehör.",
       items: [
         {
+          question: "Was kostet eine Handy-Reparatur?",
+          answer:
+            "Die Kosten hängen von Modell, Bauteil und gewählter Qualitätsstufe ab. Der öffentliche Preisfinder nennt den Preis für dein konkretes Modell; verbindlich wird er vor Beginn der kostenpflichtigen Reparatur bestätigt.",
+        },
+        {
+          question: "Wie komme ich zu Apfel Park und wo kann ich parken?",
+          answer:
+            "Das Ladengeschäft liegt im LunaCenter am Wilhelm-Strauß-Weg 2b, 21109 Hamburg. Der Eingang und die Parkmöglichkeiten am LunaCenter sind barrierefrei zugänglich.",
+        },
+        {
+          question: "Wann hat Apfel Park geöffnet?",
+          answer:
+            "Das Ladengeschäft in Hamburg-Wilhelmsburg ist Montag bis Samstag von 09:30 bis 20:00 Uhr geöffnet. Sonntags bleibt es geschlossen.",
+        },
+        {
           question: "Wie schnell ist eine Reparatur?",
           answer:
             "Nach der Diagnose nennen wir dir den voraussichtlichen Zeitrahmen. Die Dauer hängt von Gerät, Schaden, Ersatzteilverfügbarkeit und Auslastung ab.",
@@ -1296,6 +1311,21 @@ export const dictionary = {
       heroTitle: "Frequently asked",
       heroSubtitle: "Answers about service, repairs and accessories.",
       items: [
+        {
+          question: "What does a phone repair cost?",
+          answer:
+            "The cost depends on the model, the part and the quality grade you choose. The public price finder lists the price for your specific model; it is confirmed before any paid repair begins.",
+        },
+        {
+          question: "How do I get to Apfel Park and where can I park?",
+          answer:
+            "The store is inside the LunaCenter at Wilhelm-Strauß-Weg 2b, 21109 Hamburg. The entrance and the parking at the LunaCenter are step-free and accessible.",
+        },
+        {
+          question: "When is Apfel Park open?",
+          answer:
+            "The store in Hamburg-Wilhelmsburg is open Monday to Saturday from 09:30 to 20:00. It is closed on Sundays.",
+        },
         {
           question: "How fast is a repair?",
           answer:
