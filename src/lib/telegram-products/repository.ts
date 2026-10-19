@@ -19,6 +19,8 @@ import { acceptPhoto } from './photos';
 import { createPhoneDraftInTransaction } from '@/lib/smartphone-editor/repository';
 import { normalizeTelegramOfferDocument } from './offer-content';
 import { readOfferPresets } from '@/lib/product-offer-presets-repository';
+import { confirmPhotoCorrection, handleWorkChat } from './chat';
+import { telegramPhotoBlockers } from './photo-policy';
 
 export const telegramProductsEnabled = (): boolean =>
   process.env.TELEGRAM_PRODUCTS_ENABLED === 'true';
@@ -134,6 +136,7 @@ export const viewSession = async (
     row.status,
   );
   view.sessionId = row.id;
+  view.workflowStage = row.state.stage;
   if (row.review_note) view.text = `${row.review_note}\n\n${view.text}`;
   if (row.state.stage === 'photos') {
     const assets = (
@@ -396,6 +399,7 @@ export const validateBotRequest = (input: unknown): BotRequest => {
   return b;
 };
 export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
+  if (body.action === 'chat') return handleWorkChat(body);
   if (body.action === 'enroll') {
     await enroll(
       body.telegramId,
@@ -593,6 +597,12 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
           [{ text: tr(locale, 'Meine Entwürfe', 'My drafts'), action: 'list' }],
         ],
       };
+    if (body.action.startsWith('photoFix:')) {
+      const proposal = body.action.slice(9);
+      if (!/^[a-f0-9-]{36}$/i.test(proposal)) throw new Error('invalid_action');
+      await confirmPhotoCorrection(client, row, proposal, `telegram:${body.telegramId}`);
+      return viewSession(client, await readSession(client, row.id));
+    }
     if (body.action.startsWith('existing:')) {
       if(row.state.guided && !row.state.existingMode)throw new Error('invalid_action');
       if (
@@ -770,11 +780,11 @@ export const listTelegramSubmissions = async (history = false) => {
   if (!telegramProductsEnabled()) return [];
   const rows = (
     await query(
-      `SELECT s.id,s.draft_id,s.status,s.review_note,s.updated_at,s.state,d.deleted_at IS NOT NULL AS archived,m.display_name,m.telegram_id::text,d.revision,d.document,d.results,coalesce((SELECT jsonb_agg(jsonb_build_object('id',a.id,'kind',a.kind,'edited',a.edited_path IS NOT NULL)) FROM telegram_product_assets a WHERE a.session_id=s.id AND a.safe_path IS NOT NULL),'[]'::jsonb) AS assets,coalesce((SELECT jsonb_agg(e) FROM (SELECT event_type,actor,created_at FROM telegram_product_events WHERE session_id=s.id ORDER BY created_at DESC LIMIT 20) e),'[]'::jsonb) AS events FROM telegram_product_sessions s JOIN telegram_product_members m ON m.id=s.member_id JOIN smartphone_editor_drafts d ON d.id=s.draft_id WHERE ${history ? "s.status IN ('published','rejected','cancelled')" : "d.deleted_at IS NULL AND s.status IN ('submitted','changes_requested')"} ORDER BY s.updated_at DESC LIMIT 100`,
+      `SELECT s.id,s.draft_id,s.status,s.review_note,s.updated_at,s.state,d.deleted_at IS NOT NULL AS archived,m.display_name,m.telegram_id::text,d.revision,d.document,d.results,coalesce((SELECT jsonb_agg(jsonb_build_object('id',a.id,'kind',a.kind,'edited',a.edited_path IS NOT NULL,'sourceType',a.source_type,'photoPolicyVersion',a.photo_policy_version,'publicUrl',a.public_url)) FROM telegram_product_assets a WHERE a.session_id=s.id AND a.safe_path IS NOT NULL),'[]'::jsonb) AS assets,coalesce((SELECT jsonb_agg(e) FROM (SELECT event_type,actor,created_at FROM telegram_product_events WHERE session_id=s.id ORDER BY created_at DESC LIMIT 20) e),'[]'::jsonb) AS events FROM telegram_product_sessions s JOIN telegram_product_members m ON m.id=s.member_id JOIN smartphone_editor_drafts d ON d.id=s.draft_id WHERE ${history ? "s.status IN ('published','rejected','cancelled')" : "d.deleted_at IS NULL AND s.status IN ('submitted','changes_requested')"} ORDER BY s.updated_at DESC LIMIT 100`,
     )
   ).rows;
   return rows.map((row) => ({
     ...row,
-    blockers: telegramBlockers(row.document, row.state.locale),
+    blockers: [...telegramBlockers(row.document, row.state.locale), ...telegramPhotoBlockers(row.document, row.assets, row.state.locale)],
   }));
 };

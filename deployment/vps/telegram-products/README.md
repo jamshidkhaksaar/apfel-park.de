@@ -1,5 +1,15 @@
 # Telegram product entry rollout
 
+## Photo safety and work chat (2026-10-19)
+
+- `/chat <question>` and `/ask <question>` use Gemini 3.8 Flash through the signed application transport; keys never enter the bot.
+- Clear conversational requests and messages during photo/review steps route to work-only chat. Ordinary price, quantity and identifier answers remain wizard inputs.
+- Chat is advice-only. Photo corrections are per-draft audit proposals; a separate confirmation reprocesses the current version from retained private originals. Submitted drafts require the existing owner request-changes action first. Global prompts cannot be changed through chat.
+- n8n retouches use the evidence-preserving prompt and claimed product context. The application separately rejects changed identity, geometry, color, wear, hidden screens or artifacts. Provider/validation failure cannot produce an approved edit.
+- Covers are composed with Sharp from actual approved photographs, not regenerated. The legacy n8n cover endpoint is fail-closed. Patch the exact exported `APFPSV6RETOUCH` workflow with `patch-studio-workflow.py`, import and publish it with n8n's official CLI, then restart only after verifying no running executions. Never edit its live SQLite database directly.
+- The additive photo-quality migration labels legacy AI covers accurately and prevents linked unreviewed legacy Telegram images from being published. Existing source files and published catalog products are not modified.
+- Back up PostgreSQL, n8n with SQLite's backup API (including its WAL state), the vision service and bot data/image before cutover. Keep the previous release and credential configuration intact.
+
 This is an opt-in upgrade of the Safi bot. Do not run this bot and an older
 poller with the same bot token. Nothing in the application deploy enables it.
 

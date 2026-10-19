@@ -373,6 +373,10 @@ export const phoneErrorText = (code: string, locale: 'de' | 'en'): string => {
       'Complete the selected entries before publishing.',
       'Die ausgewählten Einträge vor der Veröffentlichung vervollständigen.',
     ],
+    photo_quality_required: [
+      'Photo safety review required. Reprocess legacy Telegram photos from originals or replace them with verified shop photos before publishing.',
+      'Foto-Sicherheitsprüfung erforderlich. Alte Telegram-Fotos aus den Originalen neu verarbeiten oder vor Veröffentlichung durch geprüfte eigene Fotos ersetzen.',
+    ],
     invalid_selection: [
       'Select entries and at least one channel for each.',
       'Einträge und mindestens einen Kanal pro Eintrag auswählen.',

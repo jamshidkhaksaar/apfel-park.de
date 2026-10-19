@@ -723,6 +723,8 @@ export const publishPhoneDraft = async (
       if (submission?.status !== 'submitted') throw new DraftError('submission_not_ready',409);
       telegramUpdateOnly = submission.state.updateOnly === true;
       if (row.document.entries.some(e => input.entryIds.includes(e.id) && !e.hasRealProductPhotos)) throw new DraftError('actual_device_photo_required');
+      const selectedPhotoUrls = row.document.entries.filter(entry => input.entryIds.includes(entry.id)).flatMap(entry => entry.photos.map(photo => photo.url)).filter(Boolean);
+      if ((await client.query("SELECT id FROM telegram_product_assets WHERE session_id=$1 AND public_url=ANY($2::text[]) AND (photo_policy_version<1 OR source_type='ai_composed_legacy') LIMIT 1", [row.document.telegramSessionId, selectedPhotoUrls])).rows.length) throw new DraftError('photo_quality_required');
     }
     const doc = validateDocument(row.document);
     if (doc.pendingShared) throw new DraftError('review_shared_changes');

@@ -77,6 +77,8 @@ export type Conversation = {
 };
 export type Button = { text: string; action: string };
 export type BotView = {
+  workChat?: boolean;
+  workflowStage?: Stage;
   locale?: Locale;
   gallery?: Array<{ id: string; edited: boolean; caption: string }>;
   text: string;

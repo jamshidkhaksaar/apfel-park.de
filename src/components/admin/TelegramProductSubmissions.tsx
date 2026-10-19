@@ -30,7 +30,7 @@ export type TelegramSubmissionView = {
     sources: Array<{ title: string; url: string; retrievedAt: string }>;
     warnings: string[];
   };
-  assets: Array<{ id: string; kind: string; edited: boolean }>;
+  assets: Array<{ id: string; kind: string; edited: boolean; sourceType?: string; photoPolicyVersion?: number }>;
   events: Array<{ event_type: string; actor: string; created_at: string }>;
   blockers: string[];
 };
@@ -202,10 +202,10 @@ export default function TelegramProductSubmissions({
                   {row.assets.map((asset) => (
                     <div key={asset.id} className="space-y-2">
                       <p className="text-xs text-muted">
-                        {asset.kind} · {t.original}
+                        {asset.kind} · {asset.kind === 'cover' ? (asset.sourceType === 'composed_photos' ? t.composedPhotos : t.legacyCover) : t.privacyChecked}
                       </p>
                       <Image
-                        alt={t.original}
+                        alt={asset.kind === 'cover' ? (asset.sourceType === 'composed_photos' ? t.composedPhotos : t.legacyCover) : t.privacyChecked}
                         src={`/api/admin/telegram-products/assets/${asset.id}`}
                         unoptimized
                         width={320}

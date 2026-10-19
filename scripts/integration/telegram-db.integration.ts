@@ -26,6 +26,8 @@ const provider = vi.hoisted(() => ({
   research: vi.fn(),
   privacy: vi.fn(),
   studio: vi.fn(),
+  quality: vi.fn(),
+  chat: vi.fn(),
 }));
 vi.mock('@/lib/product-research-service', () => ({
   researchProductFromOfficialPages: provider.research,
@@ -36,7 +38,9 @@ vi.mock('@/lib/telegram-products/photos', async (importOriginal) => ({
   >()),
   prepareTelegramPhoto: provider.privacy,
   studioPhoto: provider.studio,
+  verifyPhotoIdentity: provider.quality,
 }));
+vi.mock('@/lib/telegram-products/gemini', () => ({ telegramGeminiJson: provider.chat }));
 const fileRoot = await mkdtemp(path.join(tmpdir(), 'apfel-telegram-db-'));
 process.env.UPLOADS_DIR = path.join(fileRoot, 'uploads');
 process.env.TELEGRAM_PRODUCT_PRIVATE_DIR = path.join(fileRoot, 'private');
@@ -47,7 +51,7 @@ const { createInvite, enroll, handleBotAction, readSession } = await import(
 const { savePhoneDraft, publishPhoneDraft, deletePhoneDraft, deletePhoneDrafts, loadPhoneDraft, listPhoneDrafts } = await import(
   '../../src/lib/smartphone-editor/repository'
 );
-const { newConversation } = await import(
+  const { newConversation, photoGuide } = await import(
   '../../src/lib/telegram-products/model'
 );
 const { withTransaction } = await import('../../src/lib/db');
@@ -57,6 +61,8 @@ const { runTelegramProductWorkerPass } = await import(
 const { ingestPhoto } = await import('../../src/lib/telegram-products/photos');
 
 beforeAll(async () => {
+  provider.quality.mockResolvedValue({ sameDevice: true, geometryPreserved: true, colorPreserved: true, conditionPreserved: true, screenPreserved: true, noArtifacts: true, confident: true, identityConflict: false });
+  provider.chat.mockResolvedValue({ inScope: true, reply: 'Synthetic work guidance.', photoCorrection: null });
   expect((await query('SELECT current_database() AS db')).rows[0].db).toBe(
     'apfel_telegram_test',
   );
@@ -148,8 +154,38 @@ beforeAll(async () => {
     '20260907_smartphone_editor_drafts.sql',
     '20261008_smartphone_draft_deletion.sql',
     '20261016_telegram_product_entry.sql',
+    '20261017_telegram_studio_v6.sql',
+    '20261019_telegram_photo_quality.sql',
   ])
     await query(await readFile(`supabase/migrations/${migration}`, 'utf8'));
+});
+
+it('work chat is idempotent and correction confirmation changes only its own draft', async () => {
+    const telegramId='19001'; await member(telegramId); const view=await request(telegramId,'new');
+    const row=await withTransaction(client=>readSession(client,view.sessionId!));
+    row.document.shared.brand='Apple'; row.document.shared.model='iPhone QA Fixture';
+    const entry=row.document.entries[0]; entry.photos[0].url='/uploads/previous.webp';
+    await query('UPDATE smartphone_editor_drafts SET document=$2 WHERE id=$1',[row.draft_id,JSON.stringify(row.document)]);
+    await query("INSERT INTO telegram_product_assets(session_id,entry_id,kind,requested_angle,private_path,safe_path,status,public_url) VALUES($1,$2,'device','back','/synthetic/retained.jpg','/synthetic/previous.webp','original','/uploads/previous.webp')",[row.id,entry.id]);
+    provider.chat.mockResolvedValueOnce({inScope:true,reply:'Review before reprocessing.',photoCorrection:'Preserve the exact camera panel and actual wear.'});
+    const chatBody={telegramId,chatId:telegramId,updateId:sequence++,action:'chat',text:'Please fix the photo without changing its camera panel.',sessionId:row.id};
+    const answer=await handleBotAction(chatBody);
+    expect(await handleBotAction(chatBody)).toEqual(answer);
+    expect((await query('SELECT document FROM smartphone_editor_drafts WHERE id=$1',[row.draft_id])).rows[0].document.entries[0].photos[0].url).toBe('/uploads/previous.webp');
+    const action=answer.buttons.flat().find(button=>button.action.startsWith('photoFix:'))!.action;
+    await query("UPDATE telegram_product_sessions SET status='submitted' WHERE id=$1",[row.id]);
+    await expect(request(telegramId,action,{sessionId:row.id,revision:answer.revision})).rejects.toThrow('submission_locked');
+    await query("UPDATE telegram_product_sessions SET status='changes_requested' WHERE id=$1",[row.id]);
+    const confirmBody={telegramId,chatId:telegramId,updateId:sequence++,action,sessionId:row.id,revision:answer.revision};
+    await handleBotAction(confirmBody); await handleBotAction(confirmBody);
+    const jobs=(await query("SELECT payload FROM telegram_product_jobs WHERE session_id=$1 AND kind='photo'",[row.id])).rows;
+    expect(jobs).toHaveLength(1); expect(jobs[0].payload.feedback).toContain('camera panel');
+    expect((await query('SELECT private_path FROM telegram_product_assets WHERE session_id=$1',[row.id])).rows[0].private_path).toBe('/synthetic/retained.jpg');
+    expect((await query("SELECT count(*)::int AS n FROM telegram_product_events WHERE session_id=$1 AND event_type='photo_correction_confirmed'",[row.id])).rows[0].n).toBe(1);
+    expect((await withTransaction(client=>readSession(client,row.id))).state.stage).toBe('photos');
+    // Do not leave this synthetic photo job ahead of subsequent worker tests.
+    await query("UPDATE telegram_product_jobs SET status='cancelled' WHERE session_id=$1",[row.id]);
+    await query("UPDATE telegram_product_sessions SET status='cancelled' WHERE id=$1",[row.id]);
 });
 afterAll(async () => {
   await rm(fileRoot, { recursive: true, force: true });
@@ -326,6 +362,10 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
       row.draft_id,
       JSON.stringify(doc),
     ]);
+    const legacyAsset = (await query("INSERT INTO telegram_product_assets(session_id,entry_id,kind,private_path,public_url,photo_policy_version) VALUES($1,$2,'device','/synthetic/legacy-private.webp',$3,0) RETURNING id", [row.id,doc.entries[0].id,doc.entries[0].photos[0].url])).rows[0];
+    await expect(publishPhoneDraft(row.draft_id,publish,'owner',true,true)).rejects.toThrow('photo_quality_required');
+    expect((await query('SELECT count(*)::int AS n FROM products')).rows[0].n).toBe(0);
+    await query('UPDATE telegram_product_assets SET photo_policy_version=1 WHERE id=$1',[legacyAsset.id]);
     const published = await publishPhoneDraft(
       row.draft_id,
       publish,
@@ -704,7 +744,7 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
     await expect(
       request('10001', 'status', { sessionId: row.id }),
     ).rejects.toThrow('membership_required');
-  });  it('completes guided iPhone intake with six individually approved sides, preview and targeted edits', async () => {
+  });  it('completes guided iPhone intake with every individually approved side, preview and targeted edits', async () => {
     await member('12001');
     let view=await request('12001','new');
     const act=async(action:string,text?:string)=>{view=await request('12001',action,{text,sessionId:view.sessionId,revision:view.revision});return view};
@@ -717,8 +757,9 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
     expect(view.buttons.flat().some(button=>button.action.startsWith('setCondition:'))).toBe(false);
     await act('choose:1');await act('text','599');await act('text','93');await act('defectNone');await act('accessory:usb_c');await act('accessoryDone');
     provider.privacy.mockImplementation(async(input:Buffer)=>({bytes:await sharp(input).webp().toBuffer(),hints:{}}));provider.studio.mockImplementation(async(input:Buffer)=>input);
-    for(let side=0;side<6;side++){
-      expect(view.text).toContain(`${side+1}/6`);
+    const guideLength = photoGuide((await withTransaction(client=>readSession(client,view.sessionId!))).document).length;
+    for(let side=0;side<guideLength;side++){
+      expect(view.text).toContain(`${side+1}/${guideLength}`);
       const bytes=await sharp({create:{width:120,height:160,channels:3,background:{r:80+side*10,g:120,b:150}}}).png().toBuffer();
       await ingestPhoto({telegramId:'12001',sessionId:view.sessionId!,revision:view.revision,updateId:120000+side*2,data:bytes.toString('base64')});
       const pending=await request('12001','status',{sessionId:view.sessionId});
@@ -726,9 +767,9 @@ describe('Telegram intake PostgreSQL lifecycle', () => {
       await runTelegramProductWorkerPass();view=await request('12001','status',{sessionId:view.sessionId});
       expect(view.photos).toHaveLength(1);expect(view.photos![0].edited).toBe(true);await act('assetOriginal:'+view.photos![0].id);
     }
-    expect(view.text).toContain('Draft preview');expect(view.text).toContain('93%');expect(view.text).toContain('USB-C-Kabel');expect(view.gallery).toHaveLength(6);
+    expect(view.text).toContain('Draft preview');expect(view.text).toContain('93%');expect(view.text).toContain('USB-C-Kabel');expect(view.gallery).toHaveLength(guideLength);
     let row=await withTransaction(client=>readSession(client,view.sessionId!));
-    expect(row.state.stage).toBe('review');expect(row.state.photoAngles?.[row.state.entryId]).toHaveLength(6);expect(row.document.entries[0].photos.filter(photo=>photo.url)).toHaveLength(6);
+    expect(row.state.stage).toBe('review');expect(row.state.photoAngles?.[row.state.entryId]).toHaveLength(guideLength);expect(row.document.entries[0].photos.filter(photo=>photo.url)).toHaveLength(guideLength);
     await act('editMenu');expect(view.buttons.flat().some(button=>button.text==='4. Product photos')).toBe(true);
     await act('edit:versions');await act('entry:'+row.state.entryId);await act('field:price');await act('text','579');
     expect(view.text).toContain('€579.00');expect(view.text).toContain('Draft preview');

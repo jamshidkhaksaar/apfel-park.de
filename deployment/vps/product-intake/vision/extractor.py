@@ -100,6 +100,14 @@ def decode_barcodes(
                 classification = classify_numeric_identifier(digits)
                 format_name = str(item.format).split(".")[-1]
                 gtin_symbology = any(name in format_name.upper() for name in ("EAN", "UPC", "ITF"))
+                # GS1 DataBar can false-positive on sharpened chassis edges. A
+                # retail GTIN is public product data, not a private identifier.
+                # Keep DataBar suggestions manual-only; never paint its long,
+                # diagonal detection polygon onto a device photograph.
+                public_retail_gtin = (
+                    (gtin_symbology or "DATABAR" in format_name.upper())
+                    and raw.isdigit() and len(digits) in {8, 12, 13, 14}
+                )
                 key = (raw, format_name)
                 if classification == "gtin":
                     safe_polygon = unrotate_polygon(barcode_polygon(item), rotation, width, height)
@@ -132,8 +140,11 @@ def decode_barcodes(
                         "confidence": 1.0,
                         "autoAccept": False,
                         "localDecoder": True,
+                        "_polygons": [unrotate_polygon(barcode_polygon(item), rotation, width, height)],
                     })
                     seen.add(key)
+                if public_retail_gtin:
+                    continue
                 polygon = tuple(unrotate_polygon(barcode_polygon(item), rotation, width, height))
                 if polygon not in masked_polygons:
                     masks.append(list(polygon))
@@ -337,6 +348,10 @@ def extract(source: Path, asset_type: str, redacted_target: Path) -> dict[str, A
         candidate for candidate in ocr_candidates
         if not any(existing["value"] == candidate["value"] and existing["extractionMethod"] == candidate["extractionMethod"] for existing in barcode_candidates)
     ]
+    # Condition photographs establish appearance, not manufacturer identifiers.
+    # Use the dedicated barcode/About evidence flow for identifier suggestions.
+    if asset_type == "condition_photo":
+        gtin_candidates = []
     redacted = redact_sensitive(image, tokens, barcode_masks)
     if asset_type in {"about_screen", "battery_health"}:
         redacted = minimize_device_screen(redacted, tokens)

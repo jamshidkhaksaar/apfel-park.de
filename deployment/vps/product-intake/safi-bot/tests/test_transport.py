@@ -155,6 +155,34 @@ class TransportTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaisesRegex(ValueError, 'membership_required'):
                 await bot.invoke({'telegramId': '123', 'chatId': '123', 'action': 'status'})
 
+    async def test_chat_command_keeps_session_and_update_identity(self):
+        user=User(123,'Synthetic',False)
+        update=Update(43,message=Message(1,datetime.now(timezone.utc),Chat(123,'private'),from_user=user,text='/chat Fix the photo'))
+        context=SimpleNamespace(args=['Fix','the','photo'])
+        with patch.object(bot,'invoke',AsyncMock(side_effect=[{'sessionId':'synthetic','revision':4},{'workChat':True,'text':'Proposal','buttons':[],'revision':4}])) as invoke, patch.object(bot,'show',AsyncMock()):
+            await bot.command(update,context)
+        self.assertEqual(invoke.await_args.args[0]['action'],'chat')
+        self.assertEqual(invoke.await_args.args[0]['sessionId'],'synthetic')
+        self.assertEqual(invoke.await_args.args[0]['updateId'],43)
+
+    async def test_photo_conversation_routes_to_chat_but_price_remains_a_form_answer(self):
+        user=User(123,'Synthetic',False)
+        for stage,text,expected in [('photos','Keep the actual camera panel','chat'),('price','599','text')]:
+            update=Update(44,message=Message(1,datetime.now(timezone.utc),Chat(123,'private'),from_user=user,text=text))
+            with patch.object(bot,'invoke',AsyncMock(side_effect=[{'sessionId':'synthetic','revision':4,'workflowStage':stage},{'text':'Reply','buttons':[],'revision':4}])) as invoke, patch.object(bot,'show',AsyncMock()):
+                await bot.message(update,SimpleNamespace())
+            self.assertEqual(invoke.await_args.args[0]['action'],expected)
+
+    async def test_chat_reply_does_not_cancel_pending_workflow_watcher(self):
+        pending=SimpleNamespace(cancel=lambda: self.fail('Chat cancelled the progress watcher'))
+        bot.watchers[123]=pending
+        context=SimpleNamespace(bot=SimpleNamespace(send_message=AsyncMock(return_value=SimpleNamespace(message_id=77))))
+        try:
+            await bot.show(context,123,{'workChat':True,'text':'Advice','revision':4,'buttons':[]},previews=False)
+            self.assertIs(bot.watchers[123],pending)
+        finally:
+            bot.watchers.pop(123,None)
+
 
 if __name__ == '__main__':
     unittest.main()

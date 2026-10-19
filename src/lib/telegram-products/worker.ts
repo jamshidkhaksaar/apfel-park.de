@@ -7,15 +7,17 @@ import type { ProductResearchResult } from '@/lib/product-research-core';
 import {
   applyPhotoHints,
   encodeDraftWebp,
-  n8nCover,
+  composePhotoCover,
   n8nRetouchPhoto,
   n8nStudioEnabled,
   prepareTelegramPhoto,
   readPrivatePhoto,
   studioPhoto,
   writePrivatePhoto,
+  verifyPhotoIdentity,
 } from './photos';
 import { newPhotoSlot, photoGuide } from './model';
+import { photoIdentityContext } from './photo-policy';
 import {
   digest,
   event,
@@ -34,6 +36,7 @@ type Job = {
     assetId?: string;
     cover?: boolean;
     entryId?: string;
+    feedback?: string;
   };
   lease: string;
   attempts: number;
@@ -81,7 +84,7 @@ const processHeroCover = async (job: Job): Promise<void> => {
   const category = session.document?.shared?.category as string | undefined;
   const sources = (
     await query(
-      `SELECT requested_angle,CASE WHEN status='approved' THEN edited_path ELSE safe_path END AS path FROM telegram_product_assets WHERE session_id=$1 AND entry_id=$2 AND requested_angle IN ('back','front') AND status IN ('approved','original') ORDER BY created_at DESC`,
+      `SELECT requested_angle,CASE WHEN status='approved' THEN edited_path ELSE safe_path END AS path FROM telegram_product_assets WHERE session_id=$1 AND entry_id=$2 AND requested_angle IN ('back','front') AND status IN ('approved','original') AND photo_policy_version=1 ORDER BY created_at DESC`,
       [job.session_id, entryId],
     )
   ).rows as Array<{ requested_angle: string; path: string | null }>;
@@ -92,15 +95,9 @@ const processHeroCover = async (job: Job): Promise<void> => {
   if (!back?.path || !front?.path) failure = 'cover_source_missing';
   else {
     try {
-      const result = await n8nCover({
-        category: category ?? '',
-        backBytes: await readPrivatePhoto(back.path),
-        frontBytes: await readPrivatePhoto(front.path),
-        sessionId: job.session_id,
-        entryId,
-      });
-      if (result.status === 'edited') {
-        const checked = await prepareTelegramPhoto(result.bytes, 'cover');
+      if (category === 'smartphones' || category === 'tablets') {
+        const coverBytes = await composePhotoCover(await readPrivatePhoto(back.path), await readPrivatePhoto(front.path));
+        const checked = await prepareTelegramPhoto(coverBytes, 'cover');
         const lossless = await encodeDraftWebp(checked.bytes);
         const file = await writePrivatePhoto(lossless);
         const image = await uploadProductImage(
@@ -113,7 +110,7 @@ const processHeroCover = async (job: Job): Promise<void> => {
           url: image.url,
           sha256: createHash('sha256').update(checked.bytes).digest('hex'),
         };
-      } else failure = `cover_${result.reason}`;
+      } else failure = 'cover_unsupported';
     } catch (error) {
       failure = safeError(error);
     }
@@ -134,7 +131,7 @@ const processHeroCover = async (job: Job): Promise<void> => {
       entry.photos.push(slot);
       entry.coverId = slot.id;
       await client.query(
-        `INSERT INTO telegram_product_assets(session_id,entry_id,kind,private_path,safe_path,sha256,status,public_url) VALUES($1,$2,'cover',$3,$3,$4,'approved',$5)`,
+        `INSERT INTO telegram_product_assets(session_id,entry_id,kind,private_path,safe_path,sha256,status,public_url,source_type,photo_policy_version) VALUES($1,$2,'cover',$3,$3,$4,'approved',$5,'composed_photos',1)`,
         [job.session_id, entryId, made.file, made.sha256, made.url],
       );
     }
@@ -279,25 +276,26 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
         assetStatus: 'ready' | 'retake' = 'ready',
         retakeReason: string | null = null,
         skippedReason: string | null = null;
+      let qualityVerdict: import('./photo-policy').PhotoVerdict | null = null;
+      const document = (await query('SELECT d.document FROM telegram_product_sessions s JOIN smartphone_editor_drafts d ON d.id=s.draft_id WHERE s.id=$1', [job.session_id])).rows[0]?.document;
+      const productEntry = document?.entries?.find((item: { id: string }) => item.id === asset.entry_id);
+      const photoContext = { brand: document?.shared?.brand, model: document?.shared?.model, color: productEntry?.color, condition: productEntry?.condition, feedback: job.payload.feedback };
       if (['device', 'box'].includes(asset.kind)) {
         if (asset.kind === 'device' && n8nStudioEnabled()) {
+          try {
           // Product studio v6: the angle stored at upload time decides how the
           // upload is retouched (or rejected) by the n8n workflow.
-          const document = (
-            await query(
-              'SELECT d.document FROM telegram_product_sessions s JOIN smartphone_editor_drafts d ON d.id=s.draft_id WHERE s.id=$1',
-              [job.session_id],
-            )
-          ).rows[0]?.document;
           const result = await n8nRetouchPhoto({
             category: document?.shared?.category ?? '',
             requestedAngle: asset.requested_angle ?? null,
             bytes: prepared.bytes,
             sessionId: job.session_id,
             entryId: asset.entry_id,
+            context: photoContext,
           });
           if (result.status === 'edited') {
             const checked = await prepareTelegramPhoto(result.bytes, asset.kind);
+            qualityVerdict = await verifyPhotoIdentity(prepared.bytes, checked.bytes, photoContext);
             editedPath = await writePrivatePhoto(checked.bytes);
           } else if (result.status === 'retake') {
             assetStatus = 'retake';
@@ -308,10 +306,15 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
             // Extras and other out-of-scope views are kept untouched.
             skippedReason = result.reason;
           }
+          } catch (error) {
+            // Reject the candidate, not the preserved privacy-checked source.
+            editingError = safeError(error);
+          }
         } else {
           try {
-            const edited = await studioPhoto(prepared.bytes);
+            const edited = await studioPhoto(prepared.bytes, photoContext);
             const checked = await prepareTelegramPhoto(edited, asset.kind);
+            qualityVerdict = await verifyPhotoIdentity(prepared.bytes, checked.bytes, photoContext);
             editedPath = await writePrivatePhoto(checked.bytes);
           } catch (error) {
             editingError = safeError(error);
@@ -323,14 +326,18 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
         const row = await readSession(client, job.session_id, true);
         if (!['collecting', 'changes_requested'].includes(row.status))
           throw new Error('job_cancelled');
+        const freshEntry = row.document.entries.find(item => item.id === asset.entry_id);
+        const freshContext = photoIdentityContext({ brand: row.document.shared.brand, model: row.document.shared.model, color: freshEntry?.color, condition: freshEntry?.condition });
+        if (JSON.stringify(freshContext) !== JSON.stringify(photoIdentityContext(photoContext))) throw new Error('job_cancelled');
         await client.query(
-          'UPDATE telegram_product_assets SET safe_path=$2,edited_path=$3,sha256=$4,status=$5 WHERE id=$1',
+          'UPDATE telegram_product_assets SET safe_path=$2,edited_path=$3,sha256=$4,status=$5,photo_policy_version=1,quality_verdict=$6::jsonb WHERE id=$1',
           [
             asset.id,
             safePath,
             editedPath,
             createHash('sha256').update(prepared.bytes).digest('hex'),
             ['device', 'box'].includes(asset.kind) ? assetStatus : 'original',
+            JSON.stringify(qualityVerdict ? { ...qualityVerdict, identityContext: photoIdentityContext(photoContext) } : null),
           ],
         );
         applyPhotoHints(row, prepared.hints);

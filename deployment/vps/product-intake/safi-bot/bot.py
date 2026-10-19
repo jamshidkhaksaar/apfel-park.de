@@ -12,6 +12,7 @@ import io
 import json
 import logging
 import os
+import re
 import secrets
 import sqlite3
 import time
@@ -88,7 +89,7 @@ def identity(update: Update) -> dict:
 
 async def show(context: ContextTypes.DEFAULT_TYPE, user_id: int, view: dict, previews: bool = True) -> None:
     previous = watchers.get(user_id)
-    if previous and previous is not asyncio.current_task():
+    if previous and previous is not asyncio.current_task() and not view.get('workChat'):
         previous.cancel()
         watchers.pop(user_id, None)
     if view.get('gallery'):
@@ -182,6 +183,10 @@ async def failure(update: Update, context: ContextTypes.DEFAULT_TYPE, error: Exc
         'invalid_input': 'Aktion nicht möglich. Mit /new neu starten. / Action not possible. Start again with /new.',
         'session_not_found': 'Entwurf nicht gefunden. Mit /new neu starten. / Draft not found. Start again with /new.',
         'connection_failed': 'Verbindung fehlgeschlagen. Bitte kurz warten und erneut versuchen. / Connection failed. Please wait and retry.',
+        'research_rate_limited': 'Gemini ist momentan ausgelastet. Bitte die Frage später erneut senden. / Gemini is rate limited. Please retry your question later.',
+        'photo_quality_unavailable': 'KI-Antwort konnte nicht sicher geprüft werden. Es wurde nichts geändert. / The AI reply could not be verified. Nothing was changed.',
+        'photo_identity_rejected': 'Bearbeitung verändert das Gerät oder enthält Artefakte. Bitte Original prüfen oder erneut verarbeiten. / Editing changed the device or introduced artifacts. Review the original or reprocess.',
+        'photo_source_missing': 'Originalfotos fehlen. Bitte erneut hochladen. / Original photos are unavailable. Please upload them again.',
     }
     await context.bot.send_message(chat_id=update.effective_user.id, text=messages.get(code, 'Eingabe nicht übernommen. /resume und erneut versuchen. / Input was not applied. Use /resume and retry.'))
 
@@ -192,6 +197,14 @@ async def command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     async with locks.setdefault(user_id, asyncio.Lock()):
         try:
             name = update.message.text.split()[0].split('@')[0]
+            if name in {'/chat', '/ask'}:
+                text = ' '.join(context.args).strip()
+                if not text:
+                    await context.bot.send_message(chat_id=user_id, text='/chat Frage zum Produkt oder zur Fotokorrektur / question about this product or a photo correction')
+                    return
+                view = await invoke({**payload, 'action': 'status'})
+                await show(context, user_id, await invoke({**payload, 'action': 'chat', 'text': text, 'sessionId': view.get('sessionId')}), previews=False)
+                return
             payload['action'] = {'/new': 'new', '/update': 'new_update', '/drafts': 'list', '/cancel': 'cancel'}.get(name, 'resume')
             if name == '/start' and context.args:
                 payload.update(action='enroll', token=context.args[0], name=update.effective_user.full_name,
@@ -238,7 +251,9 @@ async def message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 data = await (await context.bot.get_file(media.file_id)).download_as_bytearray()
                 view = await invoke({**payload, 'action': 'upload', 'data': base64.b64encode(data).decode()}, photos=True)
             else:
-                view = await invoke({**payload, 'action': 'text', 'text': update.message.text})
+                text = update.message.text or ''
+                conversational = view.get('workflowStage') in {'photos', 'review', 'researching', 'edit_menu'} or bool(re.match(r'^(?:please\b|can you\b|could you\b|why\b|how\b|help\b|fix\b|correct\b|redo\b|remember\b|learn\b|bitte\b|kannst\b|warum\b|wie\b|hilfe\b|korrigier|verbesser|merke\b)', text.strip(), re.I))
+                view = await invoke({**payload, 'action': 'chat' if conversational else 'text', 'text': text})
             await show(context, user_id, view)
         except (ValueError, httpx.HTTPError) as error:
             await failure(update, context, error)
@@ -250,7 +265,7 @@ async def error_handler(_update: object, _context: ContextTypes.DEFAULT_TYPE) ->
 
 def main() -> None:
     app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler(['start', 'new', 'update', 'resume', 'drafts', 'language', 'cancel'], command, filters=filters.ChatType.PRIVATE))
+    app.add_handler(CommandHandler(['start', 'new', 'update', 'resume', 'drafts', 'language', 'cancel', 'chat', 'ask'], command, filters=filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(callback))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE & (filters.PHOTO | filters.Document.IMAGE | (filters.TEXT & ~filters.COMMAND)), message))
     app.add_error_handler(error_handler)
