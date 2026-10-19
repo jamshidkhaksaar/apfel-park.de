@@ -14,6 +14,7 @@ type Props = {
   batteryHealth?: number;
   batteryHealthRange?: BatteryHealthRange;
   hasRealProductPhotos: boolean;
+  category?: string;
 };
 
 export default function ProductPurchaseFacts({
@@ -25,11 +26,15 @@ export default function ProductPurchaseFacts({
   batteryHealth,
   batteryHealthRange,
   hasRealProductPhotos,
+  category,
 }: Props) {
   const isGerman = locale === "de";
   const signals = getProductPageSignals({ locale, condition, stock, batteryHealth, batteryHealthRange, hasRealProductPhotos });
   const safeConditionNote = getSafeConditionNote({ condition, model, note: conditionNote });
   const hasTransparency = condition !== "new" || safeConditionNote || signals.batteryLabel || signals.realPhotosLabel;
+  // Repair is only offered for devices we service; accessories and parts would
+  // make the promise untrue.
+  const showRepairLink = category === "smartphones" || category === "tablets";
 
   return (
     <div className="mt-4 sm:mt-5">
@@ -54,6 +59,16 @@ export default function ProductPurchaseFacts({
           ) : null}
 
         </div>
+      ) : null}
+      {showRepairLink ? (
+        <p className="mt-3 text-xs leading-5 text-muted">
+          {isGerman
+            ? "Display oder Akku defekt? Wir reparieren Smartphones und Tablets in Hamburg-Wilhelmsburg:"
+            : "Cracked screen or weak battery? We repair phones and tablets in Hamburg-Wilhelmsburg:"}{" "}
+          <Link href={`/${locale}/repairs`} className="font-medium text-foreground underline underline-offset-2 hover:text-gold">
+            {isGerman ? "Reparatur ansehen" : "view repairs"}
+          </Link>
+        </p>
       ) : null}
     </div>
   );

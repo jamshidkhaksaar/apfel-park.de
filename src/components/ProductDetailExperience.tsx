@@ -363,6 +363,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             batteryHealth={product.batteryHealth}
             batteryHealthRange={product.batteryHealthRange}
             hasRealProductPhotos={product.hasRealProductPhotos}
+            category={product.category}
           />
           <ProductOfferContents locale={locale} items={experience?.profile.packageContents} chargerIncluded={product.charging?.chargerIncluded} usbPdSupported={product.charging?.usbPdSupported}/>
 
