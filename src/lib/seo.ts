@@ -300,6 +300,30 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
   return [...staticEntries, ...repairServiceEntries, ...repairComparisonEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...tradeInEntries, ...productEntries];
 };
 
+/**
+ * AI answer engines and assistants. These are listed explicitly so the public
+ * catalogue, prices and repair facts stay citable in AI answers and so the
+ * policy does not silently regress if the "*" group is ever tightened.
+ */
+const AI_CRAWLERS = [
+  "GPTBot", // OpenAI crawler (ChatGPT)
+  "OAI-SearchBot", // OpenAI search index
+  "ChatGPT-User", // ChatGPT browsing on a user's request
+  "ClaudeBot", // Anthropic crawler
+  "Claude-User", // Claude browsing on a user's request
+  "anthropic-ai", // Anthropic training
+  "PerplexityBot", // Perplexity index
+  "Perplexity-User", // Perplexity browsing on a user's request
+  "Google-Extended", // Gemini / Vertex grounding
+  "Applebot-Extended", // Apple Intelligence
+  "CCBot", // Common Crawl corpora
+  "Bytespider", // ByteDance
+  "Amazonbot", // Amazon
+  "meta-externalagent", // Meta AI
+  "DuckAssistBot", // DuckDuckGo AI
+  "cohere-ai", // Cohere
+] as const;
+
 export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
   const settings = await getSeoSettings();
   const common = {
@@ -316,14 +340,21 @@ export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
     };
   }
 
+  // Longest-match wins, so the specific /api/meta allow overrides the broader
+  // /api/ disallow. Every named group repeats both lists: a named group
+  // replaces the "*" group for that crawler rather than extending it.
+  const allow = ["/", "/api/meta/catalog.csv", "/google-merchant.xml", "/google-local-inventory.txt", "/llms.txt"];
+  const disallow = ["/admin", "/api/"];
+
   return {
     ...common,
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/api/meta/catalog.csv", "/google-merchant.xml", "/google-local-inventory.txt", "/llms.txt"],
-        disallow: ["/admin", "/api/"],
+        allow,
+        disallow,
       },
+      ...AI_CRAWLERS.map((userAgent) => ({ userAgent, allow, disallow })),
     ],
   };
 };

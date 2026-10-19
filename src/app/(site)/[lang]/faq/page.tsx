@@ -5,6 +5,8 @@ import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getFaqContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
+import { safeJsonStringify } from "@/lib/security";
+import { siteInfo } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -30,9 +32,28 @@ export default async function FaqPage({ params }: { params: Promise<{ lang: stri
   const dict = getDictionary(lang);
   const faq = await getFaqContent(lang);
 
+  const pageUrl = `${siteInfo.url}/${lang}/faq`;
+  const webPage = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: dict.meta.faq.title,
+    description: dict.meta.faq.description,
+    about: { "@id": `${siteInfo.url}/#store` },
+    isPartOf: { "@id": `${siteInfo.url}/#website` },
+    inLanguage: lang === "de" ? "de-DE" : "en-DE",
+    // Marks the question/answer blocks as self-contained passage excerpts so
+    // answer engines can lift them without surrounding page context.
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: [".faq-question", ".faq-answer"],
+    },
+  };
 
   return (
     <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(webPage) }} />
 
       <PageIntro
         title={faq.heroTitle}
@@ -49,8 +70,8 @@ export default async function FaqPage({ params }: { params: Promise<{ lang: stri
                   {index + 1}
                 </span>
                 <div>
-                  <h2 className="font-semibold text-foreground">{item.question}</h2>
-                  <p className="mt-2 text-sm text-muted">{item.answer}</p>
+                  <h2 className="faq-question font-semibold text-foreground">{item.question}</h2>
+                  <p className="faq-answer mt-2 text-sm text-muted">{item.answer}</p>
                 </div>
               </div>
             </div>

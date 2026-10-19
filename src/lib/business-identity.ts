@@ -53,6 +53,7 @@ export const businessSchemaIdentity = {
   name: businessIdentity.tradingName,
   legalName: businessIdentity.legalOwner,
   url: businessIdentity.website,
+  description: 'Apfel Park ist ein Smartphone-Fachgeschäft mit Reparaturwerkstatt im LunaCenter in Hamburg-Wilhelmsburg. Das Unternehmen verkauft neue, Open-Box- und gebrauchte Smartphones, Tablets, Laptops und Zubehör und repariert iPhone-, Samsung-Galaxy- und weitere Smartphone-Modelle zu modellbezogenen Preisen.',
   telephone: businessIdentity.phones.legalBusiness.e164,
   email: businessIdentity.email,
   vatID: businessIdentity.vatId,
@@ -63,6 +64,16 @@ export const businessSchemaIdentity = {
     addressLocality: businessIdentity.address.city,
     addressCountry: businessIdentity.address.countryCode,
   },
+  // Building-level coordinates for the storefront address, taken from the
+  // OpenStreetMap entry for the LunaCenter at Wilhelm-Strauß-Weg 2b.
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: 53.4982725,
+    longitude: 10.0086705,
+  },
+  knowsLanguage: ['de', 'en'],
+  priceRange: '€€',
+  paymentAccepted: 'Kreditkarte, Apple Pay, Klarna, Barzahlung, Debitkarte',
   contactPoint: [businessIdentity.phones.customerService, businessIdentity.phones.store].map(phone => ({
     '@type': 'ContactPoint',
     telephone: phone.e164,

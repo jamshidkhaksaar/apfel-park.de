@@ -1,9 +1,29 @@
 import { businessAddress, businessIdentity } from './business-identity';
 
+const site = businessIdentity.website;
+
+/** Machine-readable index entry, in the markdown-link form AI crawlers expect. */
+const link = (title: string, path: string, description: string): string =>
+  `- [${title}](${site}${path}): ${description}`;
+
 /** Public text endpoint; generated from the same identity as the legal pages. */
 export const buildLlmsText = (): string => `# ${businessIdentity.tradingName} — Smartphone-Shop und Reparaturwerkstatt in Hamburg-Wilhelmsburg
 
 > ${businessIdentity.tradingName} ist ein lokales Einzelunternehmen für Smartphone-Verkauf, Zubehör und Reparaturen am ${businessAddress('de', false)}. Deutsch ist die Hauptsprache; englische Informationen sind ebenfalls verfügbar.
+
+## Kurzantworten
+
+Jede Antwort steht für sich und kann unverändert zitiert werden.
+
+- **Was ist Apfel Park?** Apfel Park ist ein Smartphone-Fachgeschäft mit Reparaturwerkstatt im LunaCenter in Hamburg-Wilhelmsburg. Das Unternehmen verkauft neue, Open-Box- und gebrauchte Smartphones, Tablets, Laptops und Zubehör und repariert iPhone-, Samsung-Galaxy- und weitere Smartphone-Modelle.
+- **Wo befindet sich Apfel Park?** ${businessAddress('de')}. Das Ladengeschäft liegt im LunaCenter im Hamburger Stadtteil Wilhelmsburg.
+- **Wann hat Apfel Park geöffnet?** Montag bis Samstag von 09:30 bis 20:00 Uhr. Sonntags ist geschlossen.
+- **Was kostet der Versand?** Der versicherte Standardversand innerhalb Deutschlands kostet 6,90 €. Die Zustellung erfolgt in der Regel in 1–3 Werktagen nach Zahlungseingang. Die Abholung im Ladengeschäft ist kostenlos.
+- **Wie lange gilt das Widerrufsrecht?** Bei Online-Käufen haben Verbraucher 14 Tage Widerrufsrecht. Die unmittelbaren Rücksendekosten trägt der Kunde.
+- **Welche Zahlungsarten gibt es?** Online sind Kreditkarte (Visa, Mastercard), Apple Pay und Klarna möglich. Im Geschäft ist Zahlung mit Bargeld sowie mit Karten- und Debitkarten möglich.
+- **Was bedeuten die Zustandsangaben?** Neu bedeutet versiegelt. Open-Box bezeichnet geöffnete Verpackungen, etwa Ausstellungs- oder Retourenware. A+ wurde bereits genutzt und wird mit konkretem Zustandshinweis angeboten.
+- **Welche Marken repariert Apfel Park?** Repariert werden alle gängigen Marken, unter anderem Apple, Samsung, Huawei, Xiaomi und Google Pixel.
+- **Braucht man einen Termin für die Reparatur?** Nein. Eine Sofort-Diagnose ist ohne Termin möglich. Bei hoher Auslastung werden kurzfristige Termine vergeben.
 
 ## Geschäftsdaten
 
@@ -32,42 +52,48 @@ Häufige Reparaturen:
 
 Displayqualitäten werden abhängig vom Modell als Standard, Premium oder Original/Genuine ausgewiesen. Premium kann beispielsweise Soft-OLED beim Display oder OEM-Qualität beim Akku bezeichnen. Ein Rückcover-Preis gilt nur für die beim Modell beschriebene Rückglas-Reparatur und nicht automatisch für einen vollständigen Gehäuserahmen. Der konkrete Preis und Reparaturumfang werden vor kostenpflichtigen Arbeiten bestätigt.
 
-Aktuelle Reparaturpreise und unterstützte Modelle:
-${businessIdentity.website}/de/repairs
-
-Datierter Hamburger Preisvergleich für ausgewählte iPhone-Modelle:
-${businessIdentity.website}/de/repairs/preisvergleich-hamburg
-
 Im veröffentlichten Preischeck vom 29.08.2026 hatte Apfel Park bei den aufgeführten vergleichbaren Display-, OEM/Premium-Akku- und Rückglaspreisen den niedrigsten öffentlich gelisteten Wert unter Apfel Park, iSmart Repair, My Mobile Repair und PhoneHelden. Diese Aussage gilt nur für die auf der Vergleichsseite genannten Modelle, Leistungen, Qualitätsbezeichnungen, Quellen und den Prüftag; sie ist kein allgemeiner Anspruch, der günstigste Reparaturbetrieb Hamburgs zu sein.
 
-Englische Reparaturseite:
-${businessIdentity.website}/en/repairs
+${link('Reparaturpreise und unterstützte Modelle', '/de/repairs', 'Modellbezogene Preise für Display, Akku und Rückglas mit Angabe der Displayqualität.')}
+${link('Hamburger Preisvergleich (Stand 29.08.2026)', '/de/repairs/preisvergleich-hamburg', 'Datierter Vergleich ausgewählter iPhone-Reparaturpreise mit iSmart Repair, My Mobile Repair und PhoneHelden inklusive Quellen.')}
+${link('Repair prices (English)', '/en/repairs', 'English-language repair overview with model-specific pricing.')}
 
 ## Verkauf und Sortiment
 
 Apfel Park verkauft verfügbare Smartphones, Tablets, Laptops und Zubehör. Der Zustand eines Produkts wird als Neu, Open Box oder Gebraucht ausgewiesen. Verfügbarkeit, Preis, Speicher, Varianten und weitere Produktdetails stehen auf der jeweiligen Produktseite.
 
-- Online-Shop: ${businessIdentity.website}/de/store
-- Smartphones: ${businessIdentity.website}/de/smartphones
-- Gebrauchte Handys: ${businessIdentity.website}/de/gebrauchte-handys
-- Open-Box-Geräte: ${businessIdentity.website}/de/open-box
-- Zubehör: ${businessIdentity.website}/de/accessories
+${link('Online-Shop', '/de/store', 'Gesamtes Sortiment mit aktueller Verfügbarkeit und Preisen.')}
+${link('Smartphones', '/de/smartphones', 'Übersicht der angebotenen Smartphone-Modelle und Marken.')}
+${link('Gebrauchte Handys', '/de/gebrauchte-handys', 'Gebrauchte Geräte mit konkretem Zustandshinweis je Gerät.')}
+${link('Gebrauchte iPhones', '/de/gebrauchte-iphones', 'Gebrauchte iPhone-Modelle mit Zustandsangabe.')}
+${link('Open-Box-Geräte', '/de/open-box', 'Geöffnete Verpackungen, etwa Ausstellungs- oder Retourenware.')}
+${link('Tablets', '/de/tablets', 'iPads und weitere Tablets, auch zur Ansicht im Ladengeschäft.')}
+${link('Samsung-Handys', '/de/samsung-handys', 'Samsung-Galaxy-Modelle im Sortiment.')}
+${link('Zubehör', '/de/accessories', 'Hüllen, Ladegeräte, Kopfhörer und weiteres Zubehör.')}
+${link('Zustandsangaben erklärt', '/de/device-conditions', 'Bedeutung von Neu, Open Box, A+ und Gebraucht.')}
 
-## Lieferung und Kontakt
+## Lieferung, Zahlung und Kontakt
 
 Online-Bestellungen können abhängig vom Produkt innerhalb Deutschlands versendet oder im Geschäft in Hamburg-Wilhelmsburg abgeholt werden. Die jeweils gültigen Liefer-, Zahlungs- und Rückgabebedingungen stehen auf der Website.
 
-- Kontakt und Anfahrt: ${businessIdentity.website}/de/contact
-- Impressum: ${businessIdentity.website}/de/impressum
-- Legal Notice: ${businessIdentity.website}/en/impressum
-- Lieferung und Rückgabe: ${businessIdentity.website}/de/delivery-returns
-- Widerruf: ${businessIdentity.website}/de/withdrawal
-- Datenschutz: ${businessIdentity.website}/de/privacy
-- Sitemap: ${businessIdentity.website}/sitemap.xml
+${link('Kontakt und Anfahrt', '/de/contact', 'Adresse, Öffnungszeiten und Anfahrt zum Ladengeschäft im LunaCenter.')}
+${link('Lieferung und Rückgabe', '/de/delivery-returns', 'Versandkosten, Lieferzeit und Rückgabebedingungen.')}
+${link('Widerrufsbelehrung', '/de/withdrawal', 'Widerrufsrecht und Rücksendekosten.')}
+${link('Häufige Fragen', '/de/faq', 'Antworten zu Reparaturdauer, Garantie, Versand, Widerruf und Zahlung.')}
+${link('Smartphone länger nutzen', '/de/ratgeber/smartphone-laenger-nutzen', 'Ratgeber zu Akku, Speicher und Wiederverwendung.')}
+${link('Handy-Shop Hamburg-Wilhelmsburg', '/de/handy-shop-hamburg-wilhelmsburg', 'Lokale Übersicht zu Laden, Anfahrt und Leistungen in Wilhelmsburg.')}
+${link('Ankauf und Inzahlungnahme', '/de/trade-in', 'Möglichkeiten zum Ankauf oder zur Inzahlungnahme von Geräten.')}
+${link('Über Apfel Park', '/de/about', 'Hintergrund zum Unternehmen und zum Ladengeschäft.')}
+${link('Impressum', '/de/impressum', 'Anbieterkennzeichnung nach § 5 DDG.')}
+${link('Legal Notice', '/en/impressum', 'Provider identification in English.')}
+${link('Datenschutz', '/de/privacy', 'Informationen zur Verarbeitung personenbezogener Daten.')}
+${link('Sitemap', '/sitemap.xml', 'Vollständige Liste aller indexierbaren Seiten.')}
 
 ## English summary
 
 Apfel Park is a local smartphone shop and repair workshop in Hamburg-Wilhelmsburg. Its public repair finder lists model-specific display, battery and back-cover prices, with Standard, Premium and Original/Genuine options where available. Prices and repair scope are confirmed before paid work begins.
 
-Last updated: 2026-09-08
+${link('Frequently asked questions (English)', '/en/faq', 'Answers on repair times, warranty, shipping, returns and payment.')}
+
+Last updated: 2026-10-19
 `;
