@@ -35,6 +35,12 @@ export const businessIdentity = {
   vatId: 'DE345074336',
 } as const satisfies BusinessIdentity;
 
+/**
+ * The verified Google Business Profile listing. The CID form is the stable
+ * public URL: it survives Maps redesigns, unlike the /maps/place/ URL.
+ */
+export const googleBusinessProfileUrl = 'https://maps.google.com/?cid=18022836003772936884';
+
 export const businessAddress = (lang: 'de' | 'en', country = true): string => {
   const a = businessIdentity.address;
   return `${a.street}, ${a.postalCode} ${a.city}${country ? `, ${lang === 'de' ? a.countryDe : a.countryEn}` : ''}`;
@@ -64,12 +70,14 @@ export const businessSchemaIdentity = {
     addressLocality: businessIdentity.address.city,
     addressCountry: businessIdentity.address.countryCode,
   },
-  // Building-level coordinates for the storefront address, taken from the
-  // OpenStreetMap entry for the LunaCenter at Wilhelm-Strauß-Weg 2b.
+  // Coordinates of the verified Google Business Profile listing, read from
+  // the Maps place URL. These must match the profile pin, so they are not
+  // derived from OpenStreetMap: the LunaCenter building centroid sat about
+  // 60 m away from the pin Google actually serves.
   geo: {
     '@type': 'GeoCoordinates',
-    latitude: 53.4982725,
-    longitude: 10.0086705,
+    latitude: 53.4978489,
+    longitude: 10.009244,
   },
   knowsLanguage: ['de', 'en'],
   priceRange: '€€',

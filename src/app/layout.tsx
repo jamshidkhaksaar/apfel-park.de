@@ -9,7 +9,7 @@ import { safeJsonStringify } from "@/lib/security";
 import { merchantReturnPolicy, organizationShippingService } from "@/lib/schema";
 import { getSeoSettings, splitKeywords } from "@/lib/seo";
 import { siteInfo } from "@/lib/site";
-import { businessSchemaIdentity } from '@/lib/business-identity';
+import { businessSchemaIdentity, googleBusinessProfileUrl } from '@/lib/business-identity';
 import { canBootstrapPublicAnalytics, isPrivateAnalyticsPath } from "@/lib/analytics-url";
 import { getMarketingIntegrations, getSiteSocialLinks, getWhatsAppWidgetSettings } from "@/lib/site-settings-server";
 
@@ -142,7 +142,9 @@ export default async function RootLayout({
           name: "Hamburg",
         },
         hasMap: siteInfo.map.linkUrl,
-        sameAs: Object.values(socialLinks),
+        // The Google Business Profile is the strongest public corroboration of
+        // this entity, so it belongs in sameAs alongside the social profiles.
+        sameAs: [...new Set([googleBusinessProfileUrl, ...Object.values(socialLinks)])],
       },
       {
         "@type": "WebSite",
