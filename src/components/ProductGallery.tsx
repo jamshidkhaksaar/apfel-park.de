@@ -166,7 +166,7 @@ export default function ProductGallery({ title, images, locale }: Props) {
               <div className="relative aspect-square">
                 <Image
                   src={image}
-                  alt=""
+                  alt={`${title} – ${imagePosition(index)}`}
                   fill
                   className={`object-contain p-2 transition-opacity duration-200 ${activeIndex === index ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
                   sizes="(max-width: 639px) 72px, 96px"
