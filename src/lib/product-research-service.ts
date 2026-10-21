@@ -68,6 +68,10 @@ const gemini = async (system: string, prompt: string, signal: AbortSignal, photo
   const key = await resolveGeminiKey();
   const model = process.env.GEMINI_RESEARCH_MODEL?.trim() || 'gemini-3.7-flash';
   if (!/^gemini-[a-z0-9.-]+$/.test(model)) throw new Error('gemini_model_invalid');
+  // Default thinking can consume the shared deadline (and output-token budget)
+  // before either of these factual extraction tasks returns usable JSON.
+  const thinkingConfig = /^gemini-3[.-]/.test(model) ? { thinkingLevel: 'LOW' }
+    : /^gemini-2\.5[.-]/.test(model) ? { thinkingBudget: 1024 } : undefined;
 
   let lastStatus = 0;
   let lastErr = '';
@@ -77,7 +81,13 @@ const gemini = async (system: string, prompt: string, signal: AbortSignal, photo
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] },
         contents: [{ parts: [{ text: prompt }, ...(photo ? [{ inlineData: { mimeType: photo.mime, data: photo.data } }] : [])] }],
-        ...(search ? { tools: [{ google_search: {} }] } : {}), generationConfig: { temperature: 0.1, maxOutputTokens: 6000 },
+        ...(search ? { tools: [{ google_search: {} }] } : {}),
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: search ? 2048 : 8192,
+          ...(thinkingConfig ? { thinkingConfig } : {}),
+          ...(!search ? { responseMimeType: 'application/json' } : {}),
+        },
       }),
     });
     if (response.ok) {

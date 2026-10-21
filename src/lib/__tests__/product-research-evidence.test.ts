@@ -197,9 +197,51 @@ describe('fresh source generation pipeline', () => {
     expect(finalRequest.body).toContain('sourcePages');
     expect(finalRequest.body).not.toContain('Discard invented discovery facts');
     expect(JSON.parse(finalRequest.body!).tools).toBeUndefined();
+    // Both expensive calls must bound reasoning; otherwise a healthy provider
+    // spends the interactive request deadline thinking instead of returning data.
+    const payloads = requests.filter(request => request.body).map(request => JSON.parse(request.body!));
+    expect(payloads[0].generationConfig).toMatchObject({ thinkingConfig: { thinkingLevel: 'LOW' }, maxOutputTokens: 2048 });
+    expect(payloads[1].generationConfig).toMatchObject({ thinkingConfig: { thinkingLevel: 'LOW' }, maxOutputTokens: 8192, responseMimeType: 'application/json' });
     expect(result.description).toBe(raw().description);
     expect(result.researchSources?.[0].url).toBe('https://support.apple.com/de-de/125091');
     expect(requests.every(request => !request.url.includes('synthetic-test-key'))).toBe(true);
+  });
+  it.each([
+    ['gemini-3.8-flash', { thinkingLevel: 'LOW' }],
+    ['gemini-2.5-flash', { thinkingBudget: 1024 }],
+    ['gemini-2.0-flash', undefined],
+  ])('uses reasoning controls compatible with the configured model %s', async (model, thinkingConfig) => {
+    vi.stubEnv('GEMINI_API_KEY', 'synthetic-test-key');
+    vi.stubEnv('GEMINI_RESEARCH_MODEL', model);
+    const payloads: Array<{ generationConfig: Record<string, unknown> }> = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {
+      if (String(url).startsWith('https://generativelanguage.googleapis.com/')) {
+        payloads.push(JSON.parse(String(options?.body)));
+        const value = payloads.length === 1 ? { brand: 'Apple', model: 'iPhone 17 Pro Max', urls: [source.url] }
+          : { ...raw(), specs: [{ label: 'Display', value: 'OLED' }] };
+        return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(value) }] } }] });
+      }
+      return new Response(`<title>iPhone 17 Pro Max - Technische Daten</title><main>${source.text}</main>`, { headers: { 'content-type': 'text/html' } });
+    }));
+    const result = await researchProductFromOfficialPages({ query: 'iPhone 17 Pro Max' });
+    expect(result.specs).toEqual([{ label: 'Display', value: 'OLED' }]);
+    expect(payloads).toHaveLength(2);
+    expect(payloads.every(payload => JSON.stringify(payload.generationConfig.thinkingConfig) === JSON.stringify(thinkingConfig))).toBe(true);
+  });
+  it('rejects token-truncated output instead of applying a partial or unverified draft', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'synthetic-test-key');
+    let generations = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).startsWith('https://generativelanguage.googleapis.com/')) {
+        generations += 1;
+        const value = generations === 1 ? { brand: 'Apple', model: 'iPhone 17 Pro Max', urls: [source.url] }
+          : { ...raw(), specs: [{ label: 'Display', value: 'OLED' }] };
+        return Response.json({ candidates: [{ finishReason: generations === 1 ? 'STOP' : 'MAX_TOKENS', content: { parts: [{ text: JSON.stringify(value) }] } }] });
+      }
+      return new Response(`<title>iPhone 17 Pro Max - Technische Daten</title><main>${source.text}</main>`, { headers: { 'content-type': 'text/html' } });
+    }));
+    await expect(researchProductFromOfficialPages({ query: 'iPhone 17 Pro Max' })).rejects.toThrow('research_incomplete');
+    expect(generations).toBe(2);
   });
   it('fails closed without generating a final draft if official pages cannot be read', async () => {
     vi.stubEnv('GEMINI_API_KEY', 'synthetic-test-key');
