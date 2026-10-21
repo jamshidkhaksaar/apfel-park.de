@@ -55,12 +55,17 @@ const getDefaultVariant = (variants: ProductVariant[]) =>
 
 export default function ProductDetailExperience({ locale, product, ratingSummary, initialVariantToken, experience, paypalEnabled = false }: Props) {
   const router = useRouter();
+  const availableVariants = useMemo(
+    () => product.variants.filter(variant => (variant.stock ?? product.stock ?? 0) > 0),
+    [product.variants, product.stock],
+  );
   const requestedVariant = initialVariantToken
     ? product.variants.find((variant) =>
         variant.sku === initialVariantToken || `${variant.color} ${variant.storage}`.trim() === initialVariantToken,
       )
     : undefined;
-  const defaultVariant = requestedVariant ?? getDefaultVariant(product.variants);
+  // Explicit sold-variant links must retain their identity and sold-out state.
+  const defaultVariant = requestedVariant ?? getDefaultVariant(availableVariants) ?? getDefaultVariant(product.variants);
   const [selectedColor, setSelectedColor] = useState(defaultVariant?.color ?? "");
   const [selectedStorage, setSelectedStorage] = useState(defaultVariant?.storage ?? "");
   const [added, setAdded] = useState(false);
@@ -73,14 +78,14 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
   }, [added]);
 
   const colors = useMemo(
-    () => Array.from(new Set(product.variants.map((variant) => variant.color))).filter(Boolean),
-    [product.variants],
+    () => Array.from(new Set(availableVariants.map((variant) => variant.color))).filter(Boolean),
+    [availableVariants],
   );
 
   const colorScopedVariants = useMemo(() => {
-    if (!selectedColor) return product.variants;
-    return product.variants.filter((variant) => variant.color === selectedColor);
-  }, [product.variants, selectedColor]);
+    if (!selectedColor) return availableVariants;
+    return availableVariants.filter((variant) => variant.color === selectedColor);
+  }, [availableVariants, selectedColor]);
 
   const storageOptions = useMemo(
     () => Array.from(new Set(colorScopedVariants.map((variant) => variant.storage))).filter(Boolean),
@@ -267,7 +272,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                         aria-pressed={(selectedColor || defaultVariant?.color) === color}
                         onClick={() => {
                           setSelectedColor(color);
-                          const fallbackStorage = product.variants.find((variant) => variant.color === color)?.storage ?? "";
+                          const fallbackStorage = availableVariants.find((variant) => variant.color === color)?.storage ?? "";
                           setSelectedStorage(fallbackStorage);
                         }}
                         className={`rounded-full border px-4 py-2 text-sm font-medium transition ${

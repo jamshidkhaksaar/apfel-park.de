@@ -46,6 +46,24 @@ describe("catalog card facts", () => {
     expect(model).not.toHaveProperty("images");
   });
 
+  it('advertises only in-stock color and storage choices', () => {
+    const model = toCatalogCardModel(phone({ variants: [
+      { color: 'Cosmic Orange', storage: '512 GB', stock: 0, isDefault: true },
+      { color: 'Tiefblau', storage: '256 GB', stock: 3 },
+    ] }));
+    expect(model.colors).toEqual(['Tiefblau']);
+    expect(model.storages).toEqual(['256 GB']);
+    expect(sellableCatalogVariants(model)).toEqual([expect.objectContaining({ color: 'Tiefblau', stock: 3 })]);
+    expect(model.variants).toHaveLength(2); // Retain sold records for the quick-add availability guard.
+  });
+
+  it('does not advertise a sold-only capacity in card facts', () => {
+    expect(catalogCardFacts(phone({ variants: [
+      { color: 'Orange', storage: '512 GB', stock: 0 },
+      { color: 'Blue', storage: '256 GB', stock: 3 },
+    ] }))[0]).toBe('256 GB');
+  });
+
   it("calculates genuine discounts only", () => {
     expect(discountPercentage(999, 1099)).toBe(9);
     expect(discountPercentage(999, 999)).toBeNull();

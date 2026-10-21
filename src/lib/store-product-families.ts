@@ -35,8 +35,8 @@ export const groupStoreProducts = (products: readonly Product[]): Product[] => {
     const unique = (values: Array<string | undefined>) => [...new Set(values.filter((value): value is string => Boolean(value?.trim())))];
     return { ...representative, title: representative.catalogFamily!.name, storeFamily: {
       offerCount: group.length, stock: group.reduce((sum,p) => sum+Math.max(0,p.stock ?? 0),0), pickupStock: group.reduce((sum,p) => sum+Math.max(0,p.pickupStock ?? 0),0),
-      colors: unique(group.map(p => p.catalogFamily?.color)),
-      storages: unique(group.map(p => normalizeStorageValue(p.catalogFamily?.storage ?? '')?.label)).sort((a,b) => normalizeStorageValue(a)!.gb-normalizeStorageValue(b)!.gb),
+      colors: unique(available.map(p => p.catalogFamily?.color)),
+      storages: unique(available.map(p => normalizeStorageValue(p.catalogFamily?.storage ?? '')?.label)).sort((a,b) => normalizeStorageValue(a)!.gb-normalizeStorageValue(b)!.gb),
       productIds: group.map(p => p.id), priceVaries: (available.length ? available : group).some(p => p.price !== representative.price),
       newest: group.map(p => p.createdAt).filter((value): value is string => Boolean(value)).sort().at(-1),
     } };

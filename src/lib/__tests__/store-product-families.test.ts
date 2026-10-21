@@ -18,6 +18,12 @@ describe('store model families',()=>{
  it('uses an available offer rather than an unavailable cheaper configuration',()=>{
   expect(groupStoreProducts([offer('sold','128 GB',299,0),offer('available','256 GB',499)])[0]).toMatchObject({id:'available',price:499,stock:2});
  });
+ it('counts only available family colors and capacities on catalog cards',()=>{
+  const sold=offer('sold','512 GB',299,0);sold.catalogFamily={...sold.catalogFamily!,color:'Cosmic Orange'};
+  const available=offer('available','256 GB',499,3);available.catalogFamily={...available.catalogFamily!,color:'Tiefblau'};
+  const card=toCatalogCardModel(groupStoreProducts([sold,available])[0]);
+  expect(card.colors).toEqual(['Tiefblau']);expect(card.storages).toEqual(['256GB']);expect(card.stock).toBe(3);
+ });
  it('does not combine standalone items or distinct model families',()=>{
   const one=offer('one'),two=offer('two');delete one.catalogFamily;delete two.catalogFamily;
   expect(groupStoreProducts([one,two,offer('family')])).toHaveLength(3);
