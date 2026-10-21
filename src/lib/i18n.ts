@@ -517,6 +517,11 @@ export const dictionary = {
         title: "Unsere Geschichte",
         content: `In unserem Geschäft am ${businessIdentity.address.street} kannst du Smartphones und Zubehör ansehen, Bestellungen abholen und Reparaturen besprechen. Online zeigen wir Preis, Verfügbarkeit, Gerätezustand und die wichtigsten Produktdetails, damit du vor dem Kauf vergleichen kannst.`,
       },
+      reviews: {
+        text: "Mehr über unsere Kundenerfahrungen erfahren Sie auf unserer separaten Bewertungswebsite",
+        linkLabel: "Apfel Park Bewertungen",
+        disclosure: "Diese Bewertungswebsite wird von Apfel Park selbst betrieben und ist kein unabhängiges Bewertungsportal.",
+      },
       features: [
         {
           title: "Klare Produktangaben",
@@ -1259,6 +1264,11 @@ export const dictionary = {
       story: {
         title: "Our Story",
         content: `At ${businessIdentity.address.street} you can view smartphones and accessories, collect orders and discuss repairs. Online we show price, availability, device condition and key product details so you can compare before buying.`,
+      },
+      reviews: {
+        text: "You can read more about our customer experiences on our separate review website,",
+        linkLabel: "Apfel Park customer reviews",
+        disclosure: "That review website is operated by Apfel Park itself and is not an independent review portal.",
       },
       features: [
         {
