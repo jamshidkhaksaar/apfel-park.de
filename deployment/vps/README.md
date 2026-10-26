@@ -174,6 +174,31 @@ failure.
 
 To stop the hourly probe: `systemctl disable --now apfel-park-public-surface-probe.timer`.
 
+## AEO markdown twins
+
+`/de/about.md`, and `Accept: text/markdown` on `/de/about`, are served by the app:
+`src/proxy.ts` rewrites to the markdown handler and `src/lib/md/` renders it.
+Content negotiation, bot detection and the response headers follow the AEO
+Specification v1.0 through `@dualmark/core`, and `probe-public-surface.sh`
+checks the twins on every deploy and every hour.
+
+Two headers the spec requires on the **HTML** response are set by nginx rather
+than by the app. Next.js writes `Vary` itself on page responses and rebuilds
+`Link` for its own preloads, so a header set in the middleware is gone before
+the response leaves the app -- verified at the origin, not through the CDN.
+`nginx/apfel-park.conf` therefore carries two `map` blocks that produce
+`Vary: Accept, Accept-Encoding` and the `Link` alternate.
+
+That vhost is not applied by `deploy-app.sh`; after editing it:
+
+    cp deployment/vps/nginx/apfel-park.conf /etc/nginx/sites-available/apfel-park.conf
+    nginx -t && systemctl reload nginx
+
+The `$aeo_md_alternate` map excludes the paths that have no twin --
+`PRIVATE_PREFIXES` and `markdownSkips` in `src/lib/md/routes.ts` -- because
+advertising a twin that answers 404 is worse than not advertising one. When
+those two lists change, change the map with them.
+
 ## Database migrations
 
 `supabase/migrations/*.sql` are plain SQL applied by `scripts/migrate.mjs`.

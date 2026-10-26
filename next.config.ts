@@ -164,10 +164,11 @@ const nextConfig: NextConfig = {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN'
           },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
+          // X-Content-Type-Options is deliberately not set here. nginx already
+          // adds it with `always` to every response it serves, proxied ones
+          // included, and two copies of the header on one response is what the
+          // AEO spec's nosniff check reads as "got nosniff, nosniff" instead of
+          // a pass.
           {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin'

@@ -1,6 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { markdownBackendPath, prefersMarkdown, stripMarkdownSuffix } from '@/lib/md/accept';
+import { markdownBackendPath, stripMarkdownSuffix } from '@/lib/md/accept';
+import {
+  appendHeaderToken,
+  decideRepresentation,
+  markdownAlternateLink,
+  markdownTwinPath,
+  notAcceptableResponse,
+} from '@/lib/md/negotiation';
 import { hasMarkdownRoute } from '@/lib/md/routes';
 import { internalMissingProductUrl } from '@/lib/product-route-resolution';
 
@@ -48,16 +55,7 @@ const createPublicRedirect = (scope: "site" | "store") =>
  * only takes over URLs that actually have a twin, so a browser asking for
  * markdown on an unrelated page still gets its HTML.
  */
-const markdownTwins = (request: NextRequest): NextResponse | null => {
-  if (request.method !== "GET" && request.method !== "HEAD") return null;
-
-  const pathname = request.nextUrl.pathname;
-  const stripped = stripMarkdownSuffix(pathname);
-  if (stripped === null && !prefersMarkdown(request.headers.get("accept"))) return null;
-
-  const htmlPath = stripped ?? pathname;
-  if (stripped === null && !hasMarkdownRoute(htmlPath)) return null;
-
+const markdownRewrite = (htmlPath: string, vary: string): NextResponse => {
   // The destination has to name this app at the address Next itself serves,
   // which is not the public one: behind the TLS-terminating proxy the request
   // looks like https://apfel-park.de/<path>.md while Next resolves a middleware
@@ -69,12 +67,37 @@ const markdownTwins = (request: NextRequest): NextResponse | null => {
   // that works in both dev and production. INTERNAL_APP_URL is the same knob
   // the maintenance and product-route calls below already use.
   const internalAppUrl = process.env.INTERNAL_APP_URL ?? "http://127.0.0.1:3000";
-  const response = NextResponse.rewrite(
-    new URL(markdownBackendPath(htmlPath), internalAppUrl),
-  );
-  // The same URL still serves HTML, so shared caches must key on Accept.
-  response.headers.set("Vary", "Accept");
+  const response = NextResponse.rewrite(new URL(markdownBackendPath(htmlPath), internalAppUrl));
+  // The same URL still serves HTML, so shared caches must key on Accept; §5
+  // adds User-Agent when a bot user-agent is what selected markdown.
+  response.headers.set("Vary", vary);
   return response;
+};
+const markdownTwins = (request: NextRequest): NextResponse | Response | null => {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+
+  const pathname = request.nextUrl.pathname;
+  const stripped = stripMarkdownSuffix(pathname);
+
+  // A `.md` URL is a markdown request whether or not a twin exists: the handler
+  // answers with markdown either way, including its own 404, never with HTML.
+  if (stripped !== null) return markdownRewrite(stripped, "Accept");
+
+  // Negotiation only applies where a renderer exists, so a browser asking for
+  // markdown on an unrelated page still gets that page.
+  if (!hasMarkdownRoute(pathname)) return null;
+
+  const decision = decideRepresentation({
+    accept: request.headers.get("accept"),
+    userAgent: request.headers.get("user-agent"),
+    hasTwin: true,
+  });
+
+  // §4: neither representation is acceptable, so say so rather than picking one.
+  if (decision.representation === "not-acceptable") return notAcceptableResponse();
+  if (decision.representation === "markdown") return markdownRewrite(pathname, decision.vary);
+
+  return null;
 };
 
 export async function proxy(request: NextRequest) {
@@ -157,10 +180,24 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // Pages with a markdown twin answer in two representations on one URL, so a
-  // shared cache has to key them on Accept. Next adds its own vary tokens for
-  // RSC requests; this line is appended, never overwriting them.
-  if (hasMarkdownRoute(pathname)) response.headers.append("Vary", "Accept");
+  // A page with a markdown twin answers in two representations on one URL, so a
+  // shared cache has to key it on Accept (§3) and the HTML response has to
+  // advertise the twin (§6).
+  //
+  // These two lines are not what fixes the live site: Next overwrites Vary on
+  // page responses and rebuilds Link for its own preloads, so a header set on
+  // this `next()` never reaches the client. nginx therefore forces the combined
+  // Vary value and adds the Link alternate for the public host (see
+  // deployment/vps/nginx/apfel-park.conf). Keeping them here covers `next dev`
+  // and any deployment that does not sit behind that proxy.
+  if (hasMarkdownRoute(pathname)) {
+    appendHeaderToken(response.headers, "Vary", "Accept");
+    appendHeaderToken(
+      response.headers,
+      "Link",
+      markdownAlternateLink(redirectUrl(markdownTwinPath(pathname)).toString()),
+    );
+  }
 
   return response;
 }

@@ -1,3 +1,5 @@
+import { AEO_SPEC_VERSION } from '@dualmark/core';
+
 import { absoluteUrl, approximateTokens, blocks, escapeMarkdown, heading, markdownLink } from './format';
 
 /**
@@ -52,6 +54,9 @@ export const markdownHeaders = ({
     'Content-Type': 'text/markdown; charset=utf-8',
     // The HTML page stays the indexed surface; this is an alternate rendering.
     'X-Robots-Tag': 'noindex, follow',
+    // AEO Spec v1.0 §4: advertise the version this server implements, so a
+    // conformance runner can tell a 1.0 twin from an unknown one.
+    'X-AEO-Version': AEO_SPEC_VERSION,
     'Content-Location': absoluteUrl(canonicalPath),
     Link: `<${absoluteUrl(canonicalPath)}>; rel="canonical"`,
     Vary: 'Accept',
