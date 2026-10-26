@@ -113,6 +113,13 @@ elif cmd == 'curl':
             print('HTTP/2 200')
             print('content-type: text/markdown; charset=utf-8' if markdown
                   else 'content-type: text/html; charset=utf-8')
+            if markdown:
+                print('cache-control: public, s-maxage=3600, stale-while-revalidate=86400')
+                print('vary: rsc, next-router-state-tree, Accept-Encoding' if failure == 'vary-missing'
+                      else 'vary: rsc, next-router-state-tree, Accept, Accept-Encoding')
+            else:
+                print('cache-control: private, no-cache, no-store, max-age=0, must-revalidate')
+                print('vary: rsc, next-router-state-tree, Accept-Encoding')
             if failure == 'rewrite-leak' and markdown:
                 print('x-middleware-rewrite: http://localhost:3000/api/md/de/about')
     elif '-w' not in args:
@@ -230,11 +237,15 @@ elif cmd == 'node' and '-e' in args:
         self.assertIn('/de/about.md -> text/markdown; charset=utf-8', result.stdout)
         self.assertIn('/de/about -> text/html; charset=utf-8, and text/markdown; charset=utf-8 for Accept: text/markdown', result.stdout)
         self.assertIn('expose no x-middleware-rewrite', result.stdout)
+        # The plain HTML response is no-store, so only the two markdown
+        # responses are held to the Vary rule.
+        self.assertIn('2 shared-cacheable response(s) list Accept in Vary', result.stdout)
 
         for failure, expected in [
             ('md-not-markdown', 'is not markdown'),
             ('no-negotiation', 'did not negotiate to markdown'),
             ('rewrite-leak', 'leaks the internal rewrite target'),
+            ('vary-missing', 'Vary does not list Accept'),
         ]:
             with self.subTest(failure=failure):
                 root, result, calls = self.run_deploy(failure)

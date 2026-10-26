@@ -365,6 +365,37 @@ leaked="$(origin_header "$twin_md" x-middleware-rewrite)"
 [ -z "$leaked" ] || die "$twin_md leaks the internal rewrite target: $leaked"
 leaked="$(origin_header "$twin_html" x-middleware-rewrite -H 'Accept: text/markdown')"
 [ -z "$leaked" ] || die "$twin_html leaks the internal rewrite target: $leaked"
+
+# 4. One URL carries two representations, so a response a shared cache may store
+#    has to list Accept in Vary; without it a CDN cannot tell them apart and
+#    hands markdown to a browser (or HTML to an agent) that asked for the other.
+#    Responses that forbid shared caching (no-store/private) are exempt, which
+#    is why the plain HTML page carries no token today.
+vary_checked=0
+require_accept_vary() {
+  local path=$1 cache_control vary token
+  shift
+  cache_control="$(origin_header "$path" cache-control "$@")"
+  case "$cache_control" in
+    *no-store*|*private*) return 0 ;;
+  esac
+  vary_checked=$((vary_checked + 1))
+  vary="$(origin_header "$path" vary "$@")"
+  # Compare tokens, not substrings: Accept-Encoding must not pass for Accept.
+  for token in $(printf '%s' "$vary" | tr ',' ' ' | tr 'A-Z' 'a-z'); do
+    [ "$token" = "accept" ] && return 0
+  done
+  die "$path is cacheable (${cache_control:-no cache-control}) but Vary does not list Accept: ${vary:-no vary}"
+}
+
+require_accept_vary "$twin_md"
+require_accept_vary "$twin_html"
+require_accept_vary "$twin_html" -H 'Accept: text/markdown'
+if [ "$vary_checked" -eq 0 ]; then
+  log "  WARNING: no probed response is shared-cacheable; the Vary rule checked nothing"
+else
+  log "  $vary_checked shared-cacheable response(s) list Accept in Vary"
+fi
 log "  $twin_md -> ${md_type:-?}"
 log "  $twin_html -> ${html_type:-?}, and ${negotiated_type:-?} for Accept: text/markdown"
 log "  $twin_md and $twin_html expose no x-middleware-rewrite"
