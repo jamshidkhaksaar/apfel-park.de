@@ -94,10 +94,17 @@ elif cmd == 'curl':
     targets = {'db': '/api/public/product-route/', 'product': '/de/store/fixture-product', 'cart': '/en/cart', 'checkout': '/de/checkout', 'auth': '/admin', 'public-asset': 'https://apfel-park.de/_next/static/'}
     if phase == 'new' and failure in targets and targets[failure] in url: code = '500'
     if 'deploy-probe-' in url: code = '404'
+    if '/no-twin-' in url: code = '200' if failure == 'no-twin-200' else '404'
     if phase == 'new' and failure == 'stale-asset' and '/_next/static/build-fixture/' in url: code = '404'
     if '-D' in args:
         # Header probe: status line plus the headers the guards inspect.
-        if 'deploy-probe-' in url:
+        if '/no-twin-' in url:
+            print('HTTP/2 404')
+            print('content-type: text/html; charset=utf-8' if failure == 'html-404'
+                  else 'content-type: text/markdown; charset=utf-8')
+            print('cache-control: public, max-age=2592000' if failure == 'cached-404'
+                  else 'cache-control: no-store')
+        elif 'deploy-probe-' in url:
             print('HTTP/2 404')
             if failure == 'immutable-404':
                 print('cache-control: public, max-age=2592000, immutable')
@@ -240,12 +247,16 @@ elif cmd == 'node' and '-e' in args:
         # The plain HTML response is no-store, so only the two markdown
         # responses are held to the Vary rule.
         self.assertIn('2 shared-cacheable response(s) list Accept in Vary', result.stdout)
+        self.assertIn('/de/no-twin-abcdef12.md -> 404 markdown, no-store', result.stdout)
 
         for failure, expected in [
             ('md-not-markdown', 'is not markdown'),
             ('no-negotiation', 'did not negotiate to markdown'),
             ('rewrite-leak', 'leaks the internal rewrite target'),
             ('vary-missing', 'Vary does not list Accept'),
+            ('no-twin-200', 'expected 404'),
+            ('html-404', 'is not a markdown response'),
+            ('cached-404', 'is cacheable'),
         ]:
             with self.subTest(failure=failure):
                 root, result, calls = self.run_deploy(failure)

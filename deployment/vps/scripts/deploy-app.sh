@@ -396,9 +396,29 @@ if [ "$vary_checked" -eq 0 ]; then
 else
   log "  $vary_checked shared-cacheable response(s) list Accept in Vary"
 fi
+
+# 5. A .md URL with no twin must answer a markdown 404 that no cache may keep.
+#    An agent asking for markdown would otherwise get an HTML error page, and a
+#    cached 404 outlives the release that caused it -- a page whose twin lands in
+#    the next deploy would stay broken at the edge until the cache expired.
+no_twin="/de/no-twin-$short.md"
+no_twin_status="$(origin_https -o /dev/null -w '%{http_code}' "https://apfel-park.de$no_twin" || true)"
+[ "$no_twin_status" = 404 ] || die "$no_twin returned $no_twin_status, expected 404"
+no_twin_type="$(origin_header "$no_twin" content-type)"
+case "$no_twin_type" in
+  *text/markdown*) ;;
+  *) die "$no_twin is not a markdown response: ${no_twin_type:-no content-type}" ;;
+esac
+no_twin_cache="$(origin_header "$no_twin" cache-control)"
+case "$no_twin_cache" in
+  *no-store*) ;;
+  *) die "$no_twin is cacheable (${no_twin_cache:-no cache-control}); a cached 404 outlives the release that caused it" ;;
+esac
+
 log "  $twin_md -> ${md_type:-?}"
 log "  $twin_html -> ${html_type:-?}, and ${negotiated_type:-?} for Accept: text/markdown"
 log "  $twin_md and $twin_html expose no x-middleware-rewrite"
+log "  $no_twin -> 404 markdown, no-store"
 
 # Activation is committed only after every critical check. Optional indexing
 # and retention failures must not undo an already healthy release.
