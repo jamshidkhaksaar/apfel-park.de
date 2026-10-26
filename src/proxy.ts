@@ -184,12 +184,13 @@ export async function proxy(request: NextRequest) {
   // shared cache has to key it on Accept (§3) and the HTML response has to
   // advertise the twin (§6).
   //
-  // These two lines are not what fixes the live site: Next overwrites Vary on
-  // page responses and rebuilds Link for its own preloads, so a header set on
-  // this `next()` never reaches the client. nginx therefore forces the combined
-  // Vary value and adds the Link alternate for the public host (see
-  // deployment/vps/nginx/apfel-park.conf). Keeping them here covers `next dev`
-  // and any deployment that does not sit behind that proxy.
+  // The Link below is the live advertisement in production, not only in dev:
+  // Next appends its preload links as separate header lines and leaves this one
+  // in place, so nginx must not add a second copy. Vary is the header Next does
+  // replace on page responses, which is why nginx rewrites Vary as the single
+  // last writer (see deployment/vps/nginx/apfel-park.conf). Both lines here
+  // also cover `next dev` and any deployment that does not sit behind that
+  // proxy.
   if (hasMarkdownRoute(pathname)) {
     appendHeaderToken(response.headers, "Vary", "Accept");
     appendHeaderToken(

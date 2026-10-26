@@ -212,22 +212,24 @@ Content negotiation, bot detection and the response headers follow the AEO
 Specification v1.0 through `@dualmark/core`, and `probe-public-surface.sh`
 checks the twins on every deploy and every hour.
 
-Two headers the spec requires on the **HTML** response are set by nginx rather
-than by the app. Next.js writes `Vary` itself on page responses and rebuilds
-`Link` for its own preloads, so a header set in the middleware is gone before
-the response leaves the app -- verified at the origin, not through the CDN.
-`nginx/apfel-park.conf` therefore carries two `map` blocks that produce
-`Vary: Accept, Accept-Encoding` and the `Link` alternate.
+One header the spec requires on the **HTML** response is set by nginx rather
+than by the app: `Vary`. Next.js writes its own `Vary` on page responses,
+without `Accept`, replacing whatever the middleware set -- verified at the
+origin, not through the CDN. `nginx/apfel-park.conf` therefore carries one
+`map` block that produces single-valued `Vary: Accept, Accept-Encoding`.
 
 That vhost is not applied by `deploy-app.sh`; after editing it:
 
     cp deployment/vps/nginx/apfel-park.conf /etc/nginx/sites-available/apfel-park.conf
     nginx -t && systemctl reload nginx
 
-The `$aeo_md_alternate` map excludes the paths that have no twin --
-`PRIVATE_PREFIXES` and `markdownSkips` in `src/lib/md/routes.ts` -- because
-advertising a twin that answers 404 is worse than not advertising one. When
-those two lists change, change the map with them.
+The `Link` alternate is the app's: `src/proxy.ts` advertises the twin on every
+page that has one, and Next appends its preload links as separate header lines
+without replacing that header, so it reaches the client as written. nginx used
+to add a second copy from a path map whose exclusions mirrored
+`PRIVATE_PREFIXES` and `markdownSkips` in `src/lib/md/routes.ts` and had to be
+kept in sync by hand; that map made every response advertise its twin twice,
+once absolute and once relative. It is gone, and the app is the single source.
 
 ## Database migrations
 
