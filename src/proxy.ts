@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { markdownBackendPath, prefersMarkdown, stripMarkdownSuffix } from '@/lib/md/accept';
+import { hasMarkdownRoute } from '@/lib/md/routes';
 import { internalMissingProductUrl } from '@/lib/product-route-resolution';
 
 const isPublicStorePath = (pathname: string) => {
@@ -36,6 +38,34 @@ const redirectUrl = (path: string) => {
 
 const createPublicRedirect = (scope: "site" | "store") =>
   NextResponse.redirect(redirectUrl(`/maintenance?scope=${scope}`));
+
+/**
+ * Markdown twins.
+ *
+ * `/de/faq.md` and `Accept: text/markdown` on `/de/faq` both reach the markdown
+ * handler at /api/md, which never returns HTML. A `.md` path with no twin is
+ * left to the handler so it can answer with a markdown 404, while negotiation
+ * only takes over URLs that actually have a twin, so a browser asking for
+ * markdown on an unrelated page still gets its HTML.
+ */
+const markdownTwins = (request: NextRequest): NextResponse | null => {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+
+  const pathname = request.nextUrl.pathname;
+  const stripped = stripMarkdownSuffix(pathname);
+  if (stripped === null && !prefersMarkdown(request.headers.get("accept"))) return null;
+
+  const htmlPath = stripped ?? pathname;
+  if (stripped === null && !hasMarkdownRoute(htmlPath)) return null;
+
+  // Same-origin rewrite: the markdown handler lives in this app, so the target
+  // must follow the origin the request arrived on rather than a fixed
+  // internal port, which differs between dev and the production release.
+  const response = NextResponse.rewrite(new URL(markdownBackendPath(htmlPath), request.url));
+  // The same URL still serves HTML, so shared caches must key on Accept.
+  response.headers.set("Vary", "Accept");
+  return response;
+};
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -75,6 +105,9 @@ export async function proxy(request: NextRequest) {
       // Fail open if maintenance settings cannot be read.
     }
 
+    const markdown = markdownTwins(request);
+    if (markdown) return markdown;
+
     const productPath = publicProductPath(pathname);
     if (productPath) {
       try {
@@ -108,11 +141,18 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+
+  // Pages with a markdown twin answer in two representations on one URL, so a
+  // shared cache has to key them on Accept. Next adds its own vary tokens for
+  // RSC requests; this line is appended, never overwriting them.
+  if (hasMarkdownRoute(pathname)) response.headers.append("Vary", "Accept");
+
+  return response;
 }
 
 export const config = {

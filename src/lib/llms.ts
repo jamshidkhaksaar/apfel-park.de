@@ -89,11 +89,19 @@ ${link('Legal Notice', '/en/impressum', 'Provider identification in English.')}
 ${link('Datenschutz', '/de/privacy', 'Informationen zur Verarbeitung personenbezogener Daten.')}
 ${link('Sitemap', '/sitemap.xml', 'Vollständige Liste aller indexierbaren Seiten.')}
 
+## Maschinenlesbare Versionen
+
+Jede der oben verlinkten Seiten existiert zusätzlich als Markdown unter derselben Adresse mit der Endung .md – zum Beispiel /de/repairs.md. Die Markdown-Fassung enthält denselben Inhalt wie die HTML-Seite, ohne Navigation und ohne Skripte, und verweist im Feld Canonical auf die HTML-Adresse. Clients, die im HTTP-Header Accept den Wert text/markdown senden, erhalten die Markdown-Fassung direkt unter der HTML-Adresse.
+
+${link('Gesamter Inhalt in einer Datei', '/llms-full.txt', 'Alle Seiten aus dieser Liste hintereinander, durch dieselbe Renderer-Registry erzeugt.')}
+${link('Katalog aller Markdown-Adressen', '/api/md/_catalog', 'JSON-Liste der Markdown-Adressen mit HTML-Pfad und Seitentyp.')}
+${link('Nutzungshinweise für KI-Systeme', '/ai.txt', 'Erlaubte Nutzung, Zitierweise und ausgeschlossene Bereiche.')}
+
 ## English summary
 
 Apfel Park is a local smartphone shop and repair workshop in Hamburg-Wilhelmsburg. Its public repair finder lists model-specific display, battery and back-cover prices, with Standard, Premium and Original/Genuine options where available. Prices and repair scope are confirmed before paid work begins.
 
 ${link('Frequently asked questions (English)', '/en/faq', 'Answers on repair times, warranty, shipping, returns and payment.')}
 
-Last updated: 2026-10-19
+Last updated: 2026-10-26
 `;

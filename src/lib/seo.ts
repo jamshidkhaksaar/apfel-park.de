@@ -343,7 +343,19 @@ export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
   // Longest-match wins, so the specific /api/meta allow overrides the broader
   // /api/ disallow. Every named group repeats both lists: a named group
   // replaces the "*" group for that crawler rather than extending it.
-  const allow = ["/", "/api/meta/catalog.csv", "/google-merchant.xml", "/google-local-inventory.txt", "/llms.txt"];
+  // The machine-readable surface is deliberately open to every crawler,
+  // including the AI agents that cite the shop in answers: robots.txt, the
+  // markdown twins, llms.txt / llms-full.txt and ai.txt. Keep this list in
+  // sync with src/lib/llms.ts and src/app/ai.txt/route.ts.
+  const allow = [
+    "/",
+    "/api/meta/catalog.csv",
+    "/google-merchant.xml",
+    "/google-local-inventory.txt",
+    "/llms.txt",
+    "/llms-full.txt",
+    "/ai.txt",
+  ];
   const disallow = ["/admin", "/api/"];
 
   return {
