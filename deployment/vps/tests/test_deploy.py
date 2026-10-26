@@ -56,6 +56,9 @@ if cmd == 'git':
             info = tarfile.TarInfo('deployment/vps/product-intake/apply-owner-migration.sh')
             info.size = len(content); info.mode = 0o755; t.addfile(info, io.BytesIO(content))
             t.add(pathlib.Path(os.environ['FIXTURE_SCRIPT_DIR'])/'preserve-static-assets.sh', arcname='deployment/vps/scripts/preserve-static-assets.sh')
+            routes = b"export const markdownRoutes = [\n  { pattern: '', kind: 'content', id: 'home' },\n  { pattern: '/about', kind: 'content', id: 'about' },\n];\n"
+            info = tarfile.TarInfo('src/lib/md/routes.ts')
+            info.size = len(routes); t.addfile(info, io.BytesIO(routes))
             if failure.startswith('telegram-'):
                 info = tarfile.TarInfo('scripts/telegram-product-worker.ts')
                 content = b'export {};'
@@ -93,11 +96,25 @@ elif cmd == 'curl':
     if 'deploy-probe-' in url: code = '404'
     if phase == 'new' and failure == 'stale-asset' and '/_next/static/build-fixture/' in url: code = '404'
     if '-D' in args:
-        # Header probe: a real asset is immutable, a missing one must not be.
-        is_missing_probe = 'deploy-probe-' in url
-        print('HTTP/2 404' if is_missing_probe else 'HTTP/2 200')
-        if not is_missing_probe or failure == 'immutable-404':
-            print('cache-control: public, max-age=2592000, immutable')
+        # Header probe: status line plus the headers the guards inspect.
+        if 'deploy-probe-' in url:
+            print('HTTP/2 404')
+            if failure == 'immutable-404':
+                print('cache-control: public, max-age=2592000, immutable')
+        else:
+            accept = ''
+            for index, arg in enumerate(args):
+                if arg == '-H' and index + 1 < len(args): accept = args[index + 1].lower()
+            wants_markdown = 'text/markdown' in accept
+            is_markdown_url = url.endswith('.md')
+            markdown = is_markdown_url or wants_markdown
+            if failure == 'md-not-markdown' and is_markdown_url: markdown = False
+            if failure == 'no-negotiation' and wants_markdown: markdown = False
+            print('HTTP/2 200')
+            print('content-type: text/markdown; charset=utf-8' if markdown
+                  else 'content-type: text/html; charset=utf-8')
+            if failure == 'rewrite-leak' and markdown:
+                print('x-middleware-rewrite: http://localhost:3000/api/md/de/about')
     elif '-w' not in args:
         print('<a href="/de/store/fixture-product">Product</a>')
     else:
@@ -197,6 +214,27 @@ elif cmd == 'node' and '-e' in args:
         for failure, expected in [
             ('stale-asset', 'no longer serves'),
             ('immutable-404', 'served as immutable'),
+        ]:
+            with self.subTest(failure=failure):
+                root, result, calls = self.run_deploy(failure)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stderr)
+                self.assertEqual((root/'current').resolve(), root/'releases/previous')
+                self.assertIn('rollback verified healthy', result.stdout)
+
+    def test_markdown_twins_and_no_rewrite_leak_are_enforced(self):
+        # Happy path: a .md URL is markdown, the HTML URL negotiates, no leak.
+        root, result, calls = self.run_deploy('')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('markdown twins', result.stdout)
+        self.assertIn('/de/about.md -> text/markdown; charset=utf-8', result.stdout)
+        self.assertIn('/de/about -> text/html; charset=utf-8, and text/markdown; charset=utf-8 for Accept: text/markdown', result.stdout)
+        self.assertIn('expose no x-middleware-rewrite', result.stdout)
+
+        for failure, expected in [
+            ('md-not-markdown', 'is not markdown'),
+            ('no-negotiation', 'did not negotiate to markdown'),
+            ('rewrite-leak', 'leaks the internal rewrite target'),
         ]:
             with self.subTest(failure=failure):
                 root, result, calls = self.run_deploy(failure)

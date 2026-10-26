@@ -313,6 +313,62 @@ for max_age in $(printf '%s' "$missing_cache_control" | grep -oE 'max-age=[0-9]+
 done
 log "  $missing_path -> 404, no long-lived caching"
 
+# The markdown twins are what crawlers and AI agents read instead of the HTML,
+# and they are also the URLs Next rewrites internally: it copies the rewrite
+# destination onto the response as x-middleware-rewrite, so a regression here
+# either serves HTML to an agent or publishes http://localhost:3000/api/md/...
+# to the world. Probed on the origin for the same reason as the assets above.
+origin_header() {
+  local path=$1 name=$2
+  shift 2
+  origin_https -o /dev/null -D - "$@" "https://apfel-park.de$path" \
+    | tr -d '\r' | grep -i "^$name:" | head -n1 \
+    | sed -E "s/^[^:]*:[[:space:]]*//" || true
+}
+
+log "markdown twins"
+# Take the probe path from the route table the app itself ships, so renaming a
+# page cannot turn this check into a false failure.
+twin_path="$(grep -oE "pattern: '/[a-z0-9-]+', kind: 'content'" "$release/src/lib/md/routes.ts" \
+  | head -n1 | sed -E "s/pattern: '([^']*)'.*/\1/" || true)"
+[ -n "$twin_path" ] \
+  || die "could not derive a content markdown twin from $release/src/lib/md/routes.ts"
+twin_md="/de$twin_path.md"
+twin_html="/de$twin_path"
+
+# 1. The .md URL is markdown, whatever the client says it accepts.
+md_status="$(origin_https -o /dev/null -w '%{http_code}' "https://apfel-park.de$twin_md" || true)"
+[ "$md_status" = 200 ] || die "$twin_md returned $md_status, expected 200"
+md_type="$(origin_header "$twin_md" content-type)"
+case "$md_type" in
+  *text/markdown*) ;;
+  *) die "$twin_md is not markdown: ${md_type:-no content-type}" ;;
+esac
+
+# 2. The same URL still serves HTML, and swaps to markdown only for a client
+#    that asks with a strictly higher q-value than text/html.
+html_status="$(origin_https -o /dev/null -w '%{http_code}' "https://apfel-park.de$twin_html" || true)"
+[ "$html_status" = 200 ] || die "$twin_html returned $html_status, expected 200"
+html_type="$(origin_header "$twin_html" content-type)"
+case "$html_type" in
+  *text/html*) ;;
+  *) die "$twin_html is not HTML: ${html_type:-no content-type}" ;;
+esac
+negotiated_type="$(origin_header "$twin_html" content-type -H 'Accept: text/markdown')"
+case "$negotiated_type" in
+  *text/markdown*) ;;
+  *) die "$twin_html did not negotiate to markdown for Accept: text/markdown (${negotiated_type:-no content-type})" ;;
+esac
+
+# 3. Neither markdown response may name the internal upstream.
+leaked="$(origin_header "$twin_md" x-middleware-rewrite)"
+[ -z "$leaked" ] || die "$twin_md leaks the internal rewrite target: $leaked"
+leaked="$(origin_header "$twin_html" x-middleware-rewrite -H 'Accept: text/markdown')"
+[ -z "$leaked" ] || die "$twin_html leaks the internal rewrite target: $leaked"
+log "  $twin_md -> ${md_type:-?}"
+log "  $twin_html -> ${html_type:-?}, and ${negotiated_type:-?} for Accept: text/markdown"
+log "  $twin_md and $twin_html expose no x-middleware-rewrite"
+
 # Activation is committed only after every critical check. Optional indexing
 # and retention failures must not undo an already healthy release.
 activation_pending=0
