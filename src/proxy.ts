@@ -58,10 +58,20 @@ const markdownTwins = (request: NextRequest): NextResponse | null => {
   const htmlPath = stripped ?? pathname;
   if (stripped === null && !hasMarkdownRoute(htmlPath)) return null;
 
-  // Same-origin rewrite: the markdown handler lives in this app, so the target
-  // must follow the origin the request arrived on rather than a fixed
-  // internal port, which differs between dev and the production release.
-  const response = NextResponse.rewrite(new URL(markdownBackendPath(htmlPath), request.url));
+  // The destination has to name this app at the address Next itself serves,
+  // which is not the public one: behind the TLS-terminating proxy the request
+  // looks like https://apfel-park.de/<path>.md while Next resolves a middleware
+  // rewrite against its own origin (https://localhost:3000 with
+  // x-forwarded-proto=https). A destination on any other origin is therefore an
+  // external hop that Next fetches with https against a plain-HTTP server,
+  // which fails with EPROTO and turns every markdown twin into a 500. Router
+  // rewrites reject relative URLs, so the internal address is the only target
+  // that works in both dev and production. INTERNAL_APP_URL is the same knob
+  // the maintenance and product-route calls below already use.
+  const internalAppUrl = process.env.INTERNAL_APP_URL ?? "http://127.0.0.1:3000";
+  const response = NextResponse.rewrite(
+    new URL(markdownBackendPath(htmlPath), internalAppUrl),
+  );
   // The same URL still serves HTML, so shared caches must key on Accept.
   response.headers.set("Vary", "Accept");
   return response;
