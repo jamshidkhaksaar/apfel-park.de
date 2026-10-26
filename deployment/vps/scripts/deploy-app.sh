@@ -260,6 +260,59 @@ for extension in js css; do
   [ "$code" = 200 ] || die "public $extension asset returned $code"
 done
 
+# Older builds' hashed assets must keep resolving, and a missing asset must
+# never be advertised as cacheable. Both are properties of the proxy in front of
+# the app, and both fail silently from outside: the CDN answers from its own
+# cache, and `add_header Cache-Control ... always` once made a transient 404
+# "public, max-age=2592000, immutable", which the edge then served for a month.
+# Probe the origin directly (--resolve) so cached edge responses cannot hide a
+# broken nginx, exactly as they did when the /_next/static alias was changed to
+# point at the current release and every older asset 404ed behind a warm cache.
+origin_https() {
+  curl -sS --resolve apfel-park.de:443:127.0.0.1 --connect-timeout 3 --max-time 10 "$@"
+}
+
+log "older release asset continuity"
+probed_releases=0
+for old in "$RELEASES"/*/; do
+  old="${old%/}"
+  [ -d "$old" ] || continue
+  # The release being activated is covered by the probes above.
+  if [ "$(readlink -f "$old")" = "$release" ]; then continue; fi
+  # A failed release never served traffic and is kept for inspection only.
+  if [ -f "$old/.deploy-failed" ]; then continue; fi
+  old_asset="$(find "$old/.next/static" -type f -name '_buildManifest.js' -print -quit 2>/dev/null || true)"
+  [ -n "$old_asset" ] \
+    || old_asset="$(find "$old/.next/static" -type f -name '*.js' -print -quit 2>/dev/null || true)"
+  if [ -z "$old_asset" ]; then
+    log "  $(basename "$old"): no static assets to probe"
+    continue
+  fi
+  old_path="/_next/static/${old_asset#"$old/.next/static/"}"
+  code="$(origin_https -o /dev/null -w '%{http_code}' "https://apfel-park.de$old_path" || true)"
+  [ "$code" = 200 ] || die "older release $(basename "$old") no longer serves $old_path ($code); the /_next/static alias must keep serving the shared archive"
+  probed_releases=$((probed_releases + 1))
+  log "  $(basename "$old") -> $old_path 200"
+done
+if [ "$probed_releases" -eq 0 ]; then
+  log "  WARNING: no retained release with assets to probe"
+fi
+
+log "missing asset caching"
+missing_path="/_next/static/deploy-probe-$short-missing.js"
+missing_code="$(origin_https -o /dev/null -w '%{http_code}' "https://apfel-park.de$missing_path" || true)"
+[ "$missing_code" = 404 ] || die "missing asset $missing_path returned $missing_code, expected 404"
+missing_cache_control="$(origin_https -o /dev/null -D - "https://apfel-park.de$missing_path" | tr -d '\r' | grep -i '^cache-control:' || true)"
+if printf '%s' "$missing_cache_control" | grep -qi 'immutable'; then
+  die "missing asset $missing_path is served as immutable: $missing_cache_control"
+fi
+for max_age in $(printf '%s' "$missing_cache_control" | grep -oE 'max-age=[0-9]+' | cut -d= -f2 || true); do
+  if [ "$max_age" -ge 86400 ]; then
+    die "missing asset $missing_path is cached for ${max_age}s: $missing_cache_control"
+  fi
+done
+log "  $missing_path -> 404, no long-lived caching"
+
 # Activation is committed only after every critical check. Optional indexing
 # and retention failures must not undo an already healthy release.
 activation_pending=0

@@ -21,6 +21,11 @@ class DeployTests(unittest.TestCase):
         (root / 'shared/app.env').write_text('')
         if previous:
             (root / 'current').symlink_to(root / 'releases/previous')
+            # A retained previous release with real assets, so the older-asset
+            # continuity probe has something to check.
+            fixture_assets = root / 'releases/previous/.next/static/build-fixture'
+            fixture_assets.mkdir(parents=True)
+            (fixture_assets / '_buildManifest.js').write_text('manifest')
         if previous_telegram:
             (root / 'releases/previous/scripts').mkdir()
             (root / 'releases/previous/scripts/telegram-product-worker.ts').write_text('export {};')
@@ -85,7 +90,15 @@ elif cmd == 'curl':
     if phase == 'new' and failure == 'locale' and url.endswith('/xx'): code = '500'
     targets = {'db': '/api/public/product-route/', 'product': '/de/store/fixture-product', 'cart': '/en/cart', 'checkout': '/de/checkout', 'auth': '/admin', 'public-asset': 'https://apfel-park.de/_next/static/'}
     if phase == 'new' and failure in targets and targets[failure] in url: code = '500'
-    if '-w' not in args:
+    if 'deploy-probe-' in url: code = '404'
+    if phase == 'new' and failure == 'stale-asset' and '/_next/static/build-fixture/' in url: code = '404'
+    if '-D' in args:
+        # Header probe: a real asset is immutable, a missing one must not be.
+        is_missing_probe = 'deploy-probe-' in url
+        print('HTTP/2 404' if is_missing_probe else 'HTTP/2 200')
+        if not is_missing_probe or failure == 'immutable-404':
+            print('cache-control: public, max-age=2592000, immutable')
+    elif '-w' not in args:
         print('<a href="/de/store/fixture-product">Product</a>')
     else:
         print(code, end='')
@@ -169,6 +182,28 @@ elif cmd == 'node' and '-e' in args:
                 self.assertTrue((root/'current/.next/standalone/public/uploads').is_symlink())
                 self.assertIn('/_next/static/chunks/test.js?dpl=abcdef1234567890', calls)
                 self.assertIn('/_next/static/chunks/test.css?dpl=abcdef1234567890', calls)
+
+    def test_older_asset_continuity_and_uncached_404_are_enforced(self):
+        # Happy path: the probe runs, finds the retained release, and the 404 is
+        # served without long-lived caching.
+        root, result, calls = self.run_deploy('')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('older release asset continuity', result.stdout)
+        self.assertIn('-> /_next/static/build-fixture/_buildManifest.js 200', result.stdout)
+        self.assertIn('/_next/static/deploy-probe-abcdef12-missing.js -> 404', result.stdout)
+        # Both probes must hit the origin, not the CDN, or a cached answer hides it.
+        self.assertIn('--resolve apfel-park.de:443:127.0.0.1', calls)
+
+        for failure, expected in [
+            ('stale-asset', 'no longer serves'),
+            ('immutable-404', 'served as immutable'),
+        ]:
+            with self.subTest(failure=failure):
+                root, result, calls = self.run_deploy(failure)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stderr)
+                self.assertEqual((root/'current').resolve(), root/'releases/previous')
+                self.assertIn('rollback verified healthy', result.stdout)
 
     def test_post_switch_failures_restore_previous_and_verify_health(self):
         for failure in ['web-restart', 'worker-restart', 'web-is-active', 'worker-is-active', 'http']:
