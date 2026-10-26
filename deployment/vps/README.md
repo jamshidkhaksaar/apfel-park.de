@@ -122,6 +122,12 @@ calls it and so does `.github/workflows/ci.yml`, so a check added for one
 applies to both, and it runs anywhere node runs -- a laptop or this VPS --
 without waiting on CI to be able to start a job.
 
+Every gate except the build runs with the ambient environment, exactly as it
+does in CI. Only the build reads the release environment: the deploy passes
+`CI_CHECK_BUILD_ENV_FILE` and the script sources that file for the build step
+alone. Sourcing it for the whole gate is what made a test that asserts on an
+unset webhook key pass everywhere but here, where the release env has one.
+
 The deploy keeps its environment-specific steps after it: assembling
 `.next/standalone`, database migrations, the image-upload regression against a
 standalone server, the activation health check, and the origin-side surface

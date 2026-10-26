@@ -70,10 +70,12 @@ npm ci --no-audit --no-fund --include=dev
 # script the GitHub workflow runs -- so this gate cannot check less than a pull
 # request does. It runs before anything touches the `current` symlink, so a
 # failure leaves production untouched.
+# The production build reads the release environment (SITE_URL and friends) and
+# nothing else does: sourcing it for the whole gate made an env-sensitive test
+# fail only here, where the release env exists. The script sources it for the
+# build step alone.
 log "npm run ci:check"
-# The production build reads the release environment (SITE_URL and friends).
-set -a; . "$ENV_FILE"; set +a
-npm run ci:check
+CI_CHECK_BUILD_ENV_FILE="$ENV_FILE" npm run ci:check
 
 # Use an isolated standalone process and temporary upload directory to verify
 # images added after startup. A symlink alone only covers pre-existing files.

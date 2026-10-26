@@ -26,6 +26,14 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
+// The production build needs the release environment on the deploy host; the
+// rest of the gates must not see it. A test that reads a production secret
+// passes everywhere except the VPS, which is the opposite of useful -- it makes
+// the gate report on the machine rather than on the commit. The deploy therefore
+// hands its env file to this one gate through CI_CHECK_BUILD_ENV_FILE, and it is
+// shell-sourced there so the values are parsed exactly as they always were.
+const buildEnvFile = process.env.CI_CHECK_BUILD_ENV_FILE?.trim();
+
 const gates = [
   { name: 'lint', command: ['run', 'lint'], covers: 'ESLint over the source tree' },
   { name: 'typecheck', command: ['run', 'typecheck'], covers: 'tsc --noEmit' },
@@ -44,14 +52,26 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const startedAt = Date.now();
 
 console.log(`[ci:check] gates, in order: ${gates.map((gate) => gate.name).join(', ')}`);
+if (buildEnvFile) console.log(`[ci:check] the build alone reads ${buildEnvFile}`);
 
 for (const gate of gates) {
   console.log(`[ci:check] ${gate.name} -- ${gate.covers}`);
-  const result = spawnSync(npm, gate.command, {
-    stdio: 'inherit',
+
+  const env = {
+    ...process.env,
     // The build writes telemetry otherwise; CI used to set this per step.
-    env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
-  });
+    NEXT_TELEMETRY_DISABLED: '1',
+  };
+  const withReleaseEnv = gate.name === 'build' && buildEnvFile;
+
+  const result = withReleaseEnv
+    ? spawnSync(
+        'bash',
+        // $1 is the env file; the rest of the arguments are the build command.
+        ['-c', 'set -a; . "$1"; set +a; shift; exec "$@"', 'ci-check', buildEnvFile, npm, ...gate.command],
+        { stdio: 'inherit', env },
+      )
+    : spawnSync(npm, gate.command, { stdio: 'inherit', env });
 
   if (result.error) {
     console.error(`[ci:check] could not run ${gate.name}: ${result.error.message}`);
