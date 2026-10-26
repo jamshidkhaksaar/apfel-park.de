@@ -1,0 +1,16 @@
+[Unit]
+Description=Probe the public Apfel Park surface (older assets, markdown twins) on the origin
+After=network-online.target
+# The probe ships inside the release, so this skips instead of failing until a
+# release that contains it is deployed. It cannot mask a broken release: the
+# deploy gate runs the same script from the release it is activating and dies
+# if it is missing.
+ConditionPathExists=/srv/apfel-park/app/current/deployment/vps/scripts/probe-public-surface.sh
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /srv/apfel-park/app/current/deployment/vps/scripts/probe-public-surface.sh /srv/apfel-park/app scheduled
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true

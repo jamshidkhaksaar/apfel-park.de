@@ -9,39 +9,9 @@ import tempfile
 import unittest
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts/deploy-app.sh'
+PROBE = SCRIPT.with_name('probe-public-surface.sh')
 
-
-class DeployTests(unittest.TestCase):
-    def run_deploy(self, failure='', previous=True, previous_telegram=False):
-        temp = tempfile.TemporaryDirectory()
-        self.addCleanup(temp.cleanup)
-        root = Path(temp.name)
-        for directory in ['source/.git', 'shared', 'releases/previous', 'bin']:
-            (root / directory).mkdir(parents=True)
-        (root / 'shared/app.env').write_text('')
-        if previous:
-            (root / 'current').symlink_to(root / 'releases/previous')
-            # A retained previous release with real assets, so the older-asset
-            # continuity probe has something to check.
-            fixture_assets = root / 'releases/previous/.next/static/build-fixture'
-            fixture_assets.mkdir(parents=True)
-            (fixture_assets / '_buildManifest.js').write_text('manifest')
-        if previous_telegram:
-            (root / 'releases/previous/scripts').mkdir()
-            (root / 'releases/previous/scripts/telegram-product-worker.ts').write_text('export {};')
-        if failure == 'retention':
-            for index in range(5):
-                (root / f'releases/newer-{index}').mkdir()
-            (root / 'releases/failed-evidence').mkdir()
-            (root / 'releases/failed-evidence/.deploy-failed').touch()
-            os.utime(root / 'releases/previous', (1, 1))
-            os.utime(root / 'releases/failed-evidence', (1, 1))
-        # Rewrite only fixed deployment root and Node PATH on a fixture copy.
-        text = SCRIPT.read_text().replace('APP_ROOT=/srv/apfel-park/app', f'APP_ROOT={root}')
-        text = text.replace('export PATH=/root/.nvm/versions/node/v24.14.0/bin:$PATH', ': # fixture PATH')
-        (root / 'deploy.sh').write_text(text)
-        shutil.copyfile(SCRIPT.with_name('check-deploy-target.sh'), root / 'check-deploy-target.sh')
-        mock = r'''#!/usr/bin/env python3
+MOCK_SCRIPT = r'''#!/usr/bin/env python3
 import os, sys, pathlib, tarfile, io
 root = pathlib.Path(os.environ['FIXTURE_ROOT'])
 cmd = pathlib.Path(sys.argv[0]).name
@@ -56,6 +26,7 @@ if cmd == 'git':
             info = tarfile.TarInfo('deployment/vps/product-intake/apply-owner-migration.sh')
             info.size = len(content); info.mode = 0o755; t.addfile(info, io.BytesIO(content))
             t.add(pathlib.Path(os.environ['FIXTURE_SCRIPT_DIR'])/'preserve-static-assets.sh', arcname='deployment/vps/scripts/preserve-static-assets.sh')
+            t.add(pathlib.Path(os.environ['FIXTURE_SCRIPT_DIR'])/'probe-public-surface.sh', arcname='deployment/vps/scripts/probe-public-surface.sh')
             routes = b"export const markdownRoutes = [\n  { pattern: '', kind: 'content', id: 'home' },\n  { pattern: '/about', kind: 'content', id: 'about' },\n];\n"
             info = tarfile.TarInfo('src/lib/md/routes.ts')
             info.size = len(routes); t.addfile(info, io.BytesIO(routes))
@@ -136,6 +107,40 @@ elif cmd == 'curl':
 elif cmd == 'node' and '-e' in args:
     os.execv(os.environ['REAL_NODE'], ['node'] + args)
 '''
+
+
+
+class DeployTests(unittest.TestCase):
+    def run_deploy(self, failure='', previous=True, previous_telegram=False):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        root = Path(temp.name)
+        for directory in ['source/.git', 'shared', 'releases/previous', 'bin']:
+            (root / directory).mkdir(parents=True)
+        (root / 'shared/app.env').write_text('')
+        if previous:
+            (root / 'current').symlink_to(root / 'releases/previous')
+            # A retained previous release with real assets, so the older-asset
+            # continuity probe has something to check.
+            fixture_assets = root / 'releases/previous/.next/static/build-fixture'
+            fixture_assets.mkdir(parents=True)
+            (fixture_assets / '_buildManifest.js').write_text('manifest')
+        if previous_telegram:
+            (root / 'releases/previous/scripts').mkdir()
+            (root / 'releases/previous/scripts/telegram-product-worker.ts').write_text('export {};')
+        if failure == 'retention':
+            for index in range(5):
+                (root / f'releases/newer-{index}').mkdir()
+            (root / 'releases/failed-evidence').mkdir()
+            (root / 'releases/failed-evidence/.deploy-failed').touch()
+            os.utime(root / 'releases/previous', (1, 1))
+            os.utime(root / 'releases/failed-evidence', (1, 1))
+        # Rewrite only fixed deployment root and Node PATH on a fixture copy.
+        text = SCRIPT.read_text().replace('APP_ROOT=/srv/apfel-park/app', f'APP_ROOT={root}')
+        text = text.replace('export PATH=/root/.nvm/versions/node/v24.14.0/bin:$PATH', ': # fixture PATH')
+        (root / 'deploy.sh').write_text(text)
+        shutil.copyfile(SCRIPT.with_name('check-deploy-target.sh'), root / 'check-deploy-target.sh')
+        mock = MOCK_SCRIPT
         for cmd in ['git', 'npm', 'systemctl', 'curl', 'sleep', 'node']:
             p = root / 'bin' / cmd
             p.write_text(mock)
@@ -275,6 +280,77 @@ elif cmd == 'node' and '-e' in args:
                 self.assertIn('old curl ', calls)
                 self.assertIn('old systemctl is-active', calls)
                 self.assertEqual(len(list((root/'releases').iterdir())), 2)
+
+
+class PublicSurfaceProbeTests(unittest.TestCase):
+    """The probe also runs from a timer, so it must work outside a deploy."""
+
+    def run_probe(self, failure='', args=None):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        root = Path(temp.name)
+        assets = root / 'releases/previous/.next/static/build-fixture'
+        assets.mkdir(parents=True)
+        (assets / '_buildManifest.js').write_text('manifest')
+        routes = root / 'releases/live/src/lib/md'
+        routes.mkdir(parents=True)
+        (routes / 'routes.ts').write_text(
+            "export const markdownRoutes = [\n  { pattern: '/about', kind: 'content' },\n];\n")
+        (root / 'current').symlink_to(root / 'releases/live')
+        (root / 'bin').mkdir()
+        for command in ['curl', 'sleep']:
+            stub = root / 'bin' / command
+            stub.write_text(MOCK_SCRIPT)
+            stub.chmod(0o755)
+        argv = args if args is not None else [str(root), 'abcdef12']
+        result = subprocess.run(
+            ['bash', str(PROBE)] + argv,
+            env={**os.environ, 'PATH': f'{root}/bin:/usr/bin:/bin', 'FIXTURE_ROOT': str(root),
+                 'FAILURE': failure, 'REAL_NODE': ''},
+            capture_output=True, text=True, timeout=30)
+        return root, result
+
+    def test_probe_reports_every_check_and_exits_zero(self):
+        root, result = self.run_probe()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for line in [
+            '[probe] older release asset continuity',
+            'previous -> /_next/static/build-fixture/_buildManifest.js 200',
+            '[probe] missing asset caching',
+            '[probe] markdown twins',
+            '2 shared-cacheable response(s) list Accept in Vary',
+            '/de/no-twin-abcdef12.md -> 404 markdown, no-store',
+            '[probe] public surface OK',
+        ]:
+            with self.subTest(line=line):
+                self.assertIn(line, result.stdout)
+
+    def test_probe_exits_nonzero_and_names_the_failing_check(self):
+        for failure, expected in [
+            ('stale-asset', 'no longer serves'),
+            ('immutable-404', 'immutable'),
+            ('md-not-markdown', 'is not markdown'),
+            ('no-negotiation', 'did not negotiate to markdown'),
+            ('rewrite-leak', 'leaks the internal rewrite target'),
+            ('vary-missing', 'Vary does not list Accept'),
+            ('no-twin-200', 'expected 404'),
+            ('html-404', 'is not a markdown response'),
+            ('cached-404', 'is cacheable'),
+        ]:
+            with self.subTest(failure=failure):
+                root, result = self.run_probe(failure)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('[probe] ERROR:', result.stderr)
+                self.assertIn(expected, result.stderr)
+
+    def test_probe_rejects_missing_or_wrong_arguments(self):
+        root, result = self.run_probe(args=[])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('usage: probe-public-surface.sh', result.stderr)
+
+        root, result = self.run_probe(args=['/tmp/definitely-not-an-app-root', 'x'])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('missing releases directory', result.stderr)
 
 
 if __name__ == '__main__':

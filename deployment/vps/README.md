@@ -19,6 +19,7 @@ This folder captures the production server layout needed to rebuild or migrate t
 
 - `nginx/apfel-park.conf`: production nginx reverse proxy and static upload/static asset mapping.
 - `systemd/apfel-park-nextjs.service`: production Next.js standalone service.
+- `systemd/apfel-park-public-surface-probe.service` and `.timer`: hourly origin-side probe of the public surface, running the same checks a deploy gates on.
 - `mail/compose.yaml`: production Roundcube and docker-mailserver compose file.
 - `mail/mail.env.example`: sanitized docker-mailserver environment template.
 - `mail/roundcube.env.example`: sanitized Roundcube environment template.
@@ -26,7 +27,7 @@ This folder captures the production server layout needed to rebuild or migrate t
 - `mail/config/fail2ban-jail.cf`: mail fail2ban override.
 - `mail/roundcube/*`: Roundcube branding/template files.
 - `app/app.env.example`: sanitized application environment template.
-- `scripts/*`: backup and certificate helper scripts.
+- `scripts/*`: backup and certificate helper scripts, plus `probe-public-surface.sh` (see Public surface probe).
 - `postgres/*`: database initialization SQL from the VPS infra folder.
 - `dns-checklist.txt`: DNS records/checklist used for mail and web setup.
 
@@ -49,8 +50,8 @@ Create replacement values from the `.example` files during migration, then resto
 2. Clone the repository to `/srv/apfel-park/app/source`.
 3. Create `/srv/apfel-park/app/shared/app.env` from `deployment/vps/app/app.env.example`.
 4. Copy `deployment/vps/nginx/apfel-park.conf` to `/etc/nginx/sites-available/apfel-park.conf` and enable it.
-5. Copy `deployment/vps/systemd/apfel-park-nextjs.service` and `deployment/vps/systemd/apfel-park-marketplace-worker.service` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
-6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then enable and start `apfel-park-nextjs.service` and `apfel-park-marketplace-worker.service`.
+5. Copy `deployment/vps/systemd/apfel-park-nextjs.service`, `deployment/vps/systemd/apfel-park-marketplace-worker.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.service` and `deployment/vps/systemd/apfel-park-public-surface-probe.timer` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
+6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then enable and start `apfel-park-nextjs.service` and `apfel-park-marketplace-worker.service`, and `systemctl enable --now apfel-park-public-surface-probe.timer`.
 7. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
 8. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
 9. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.
@@ -76,7 +77,7 @@ The script fetches origin, exports the commit with `git archive` into a fresh
 the `current` symlink atomically, restarts the service, health-checks it, and
 prunes all but the newest 3 releases.
 
-Six things it enforces, each learned the hard way:
+Seven things it enforces, each learned the hard way:
 
 - **It refuses any commit not reachable from an origin branch.** Releases used
   to be made by copying the previous release dir and editing in place, which
@@ -101,8 +102,43 @@ Six things it enforces, each learned the hard way:
 - **It health-checks and rolls back.** If `/de` does not return 200 within 40s
   the symlink is restored to the previous release and the service restarted.
   It also warns if `/xx` stops returning 404, which regressed into 500s before.
+- **It probes the public surface on the origin.** `scripts/probe-public-surface.sh`
+  checks that older builds' assets still resolve, that a missing asset or
+  markdown twin is not served with long-lived caching, that the markdown twins
+  answer and negotiate correctly and do not leak the internal rewrite target,
+  and that any response a shared cache may keep varies on `Accept`. A failure
+  rolls this release back, exactly like the health check.
 
 Never edit files inside a `releases/` directory. Commit, push, then deploy.
+
+## Public surface probe
+
+    /srv/apfel-park/app/current/deployment/vps/scripts/probe-public-surface.sh \
+      /srv/apfel-park/app "$(date -u +%H%M%S)"
+
+Probes `apfel-park.de` on the origin (`--resolve ... 127.0.0.1`), never through
+the CDN: a warm edge answers 200 for an asset the origin no longer has, which is
+how a broken `/_next/static` alias stayed invisible. It exits non-zero with the
+first failure on stderr and prints one line per check.
+
+`deploy-app.sh` runs it after activation, so a failure rolls the release back.
+`apfel-park-public-surface-probe.timer` runs it hourly, so a vhost or header
+change between deploys is noticed within the hour instead of at the next release:
+
+    systemctl list-timers apfel-park-public-surface-probe.timer
+    systemctl start apfel-park-public-surface-probe.service   # run it now
+    journalctl -u apfel-park-public-surface-probe.service -n 40
+
+The second argument is a probe token. It names the throwaway URLs the checks
+request (`/_next/static/deploy-probe-<token>-missing.js`, `/de/no-twin-<token>.md`)
+so a probe can never collide with a real page; the deploy passes the commit sha.
+
+The service has `ConditionPathExists=` on the probe in `current`, so enabling the
+timer before the first release containing the script is deployed skips the run
+instead of failing hourly. Once such a release is live it runs every hour and
+fails only on a real regression.
+
+To stop the hourly probe: `systemctl disable --now apfel-park-public-surface-probe.timer`.
 
 ## Database migrations
 
