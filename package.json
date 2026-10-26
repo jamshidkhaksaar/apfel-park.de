@@ -25,7 +25,8 @@
     "dev:product-intake-ui-fixture": "tsx scripts/product-intake-ui-fixture.tsx",
     "branding:favicons": "node scripts/generate-favicons.mjs",
     "seo:indexnow": "node scripts/indexnow.mjs",
-    "audit:unused": "node scripts/audit-unused-source.mjs"
+    "audit:unused": "node scripts/audit-unused-source.mjs",
+    "ci:check": "node scripts/ci-check.mjs"
   },
   "dependencies": {
     "@dualmark/core": "^0.11.0",

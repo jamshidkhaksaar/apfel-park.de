@@ -66,26 +66,14 @@ log "npm ci"
 # devDependencies, which silently removes vitest and fails the test gate.
 npm ci --no-audit --no-fund --include=dev
 
-# Gate the release on the test suite. This runs before anything touches the
-# `current` symlink, so a failure leaves production untouched.
-log "npm test"
-npm test
-
-log "npm run lint"
-npm run lint
-
-log "npm run typecheck"
-npm run typecheck
-
-log "npm run audit:unused"
-npm run audit:unused
-
-log "npm audit --audit-level=high"
-npm audit --audit-level=high
-
-log "npm run build"
+# Gate the release on the shared check list in scripts/ci-check.mjs -- the same
+# script the GitHub workflow runs -- so this gate cannot check less than a pull
+# request does. It runs before anything touches the `current` symlink, so a
+# failure leaves production untouched.
+log "npm run ci:check"
+# The production build reads the release environment (SITE_URL and friends).
 set -a; . "$ENV_FILE"; set +a
-npm run build
+npm run ci:check
 
 # Use an isolated standalone process and temporary upload directory to verify
 # images added after startup. A symlink alone only covers pre-existing files.

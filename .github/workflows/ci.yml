@@ -29,22 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Type check
-        run: npm run typecheck
-
-      - name: Unused source audit
-        run: npm run audit:unused
-
-      - name: Unit and integration tests
-        run: npm test
-
-      - name: Dependency audit
-        run: npm audit --audit-level=high
-
-      - name: Production build
-        env:
-          NEXT_TELEMETRY_DISABLED: "1"
-        run: npm run build
+      # One list of gates, shared with the release gate in
+      # deployment/vps/scripts/deploy-app.sh and runnable anywhere node runs:
+      # lint, typecheck, the unused-source audit, the test suite, the dependency
+      # audit and the production build. Add a check there, not here.
+      - name: Commit checks and production build
+        run: npm run ci:check

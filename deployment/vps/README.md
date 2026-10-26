@@ -72,8 +72,8 @@ After successful verification, fast-forward the clean source checkout and its tr
 branch to the deployed commit; never reset away another contributor's changes.
 
 The script fetches origin, exports the commit with `git archive` into a fresh
-`releases/<timestamp>-<sha>` directory, runs `npm ci`, `npm test` and
-`npm run build`, flips
+`releases/<timestamp>-<sha>` directory, runs `npm ci` and then the shared check
+gate (`npm run ci:check`), flips
 the `current` symlink atomically, restarts the service, health-checks it, and
 prunes all but the newest 3 releases.
 
@@ -86,8 +86,9 @@ Seven things it enforces, each learned the hard way:
 - **It copies `.next/static` and `public/` into `.next/standalone/`.**
   `next build` does not do this. Skip it and the site returns 200 with no CSS
   and no JS -- there is no error anywhere, it just looks broken.
-- **It runs the test suite before touching the symlink.** A failing test
-  aborts the deploy with production still on the previous release.
+- **It runs the shared check gate before touching the symlink.** A failing
+  lint, typecheck, unused-source audit, test, dependency audit or production
+  build aborts the deploy with production still on the previous release.
 - **It symlinks `shared/uploads` into `.next/standalone/public/`.** Uploads
   live outside releases and are served by nginx via `alias`, but `next/image`
   resolves local paths inside Next. The symlink covers existing files;
@@ -108,6 +109,23 @@ Seven things it enforces, each learned the hard way:
   answer and negotiate correctly and do not leak the internal rewrite target,
   and that any response a shared cache may keep varies on `Accept`. A failure
   rolls this release back, exactly like the health check.
+
+### The shared check gate
+
+    npm ci          # once, in the checkout being checked
+    npm run ci:check
+
+`scripts/ci-check.mjs` runs lint, typecheck, the unused-source audit, the test
+suite, the dependency audit and the production build, in that order, and stops
+at the first gate that fails with that gate's own exit code. `deploy-app.sh`
+calls it and so does `.github/workflows/ci.yml`, so a check added for one
+applies to both, and it runs anywhere node runs -- a laptop or this VPS --
+without waiting on CI to be able to start a job.
+
+The deploy keeps its environment-specific steps after it: assembling
+`.next/standalone`, database migrations, the image-upload regression against a
+standalone server, the activation health check, and the origin-side surface
+probe. Those need a release directory, so they are not part of the shared list.
 
 Never edit files inside a `releases/` directory. Commit, push, then deploy.
 
