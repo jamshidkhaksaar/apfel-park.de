@@ -128,6 +128,12 @@ does in CI. Only the build reads the release environment: the deploy passes
 alone. Sourcing it for the whole gate is what made a test that asserts on an
 unset webhook key pass everywhere but here, where the release env has one.
 
+`deploy-app.sh` then sources `shared/app.env` in its own shell right after the
+gate (`set -a; . shared/app.env; set +a`), so its remaining steps keep the
+environment they had when the build sourced it in this shell. The owner
+migration and `db:migrate` read `DATABASE_URL`; without it the first deploy of
+the extracted gate stopped with `DATABASE_URL is not exported`.
+
 The deploy keeps its environment-specific steps after it: assembling
 `.next/standalone`, database migrations, the image-upload regression against a
 standalone server, the activation health check, and the origin-side surface

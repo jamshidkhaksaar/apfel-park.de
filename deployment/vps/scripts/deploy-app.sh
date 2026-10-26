@@ -70,12 +70,21 @@ npm ci --no-audit --no-fund --include=dev
 # script the GitHub workflow runs -- so this gate cannot check less than a pull
 # request does. It runs before anything touches the `current` symlink, so a
 # failure leaves production untouched.
-# The production build reads the release environment (SITE_URL and friends) and
-# nothing else does: sourcing it for the whole gate made an env-sensitive test
-# fail only here, where the release env exists. The script sources it for the
-# build step alone.
+# The gate runs with the ambient environment on purpose: one test asserts that
+# an unset webhook key fails closed, and this host's release env sets one, so
+# sourcing the env around the tests made that test pass only where the release
+# env exists. ci-check.mjs gives the release env to the production build alone,
+# which is the step inside the gate that needs it.
 log "npm run ci:check"
 CI_CHECK_BUILD_ENV_FILE="$ENV_FILE" npm run ci:check
+
+# Export the release env for this script's own steps after the gate. They are
+# not part of the shared list and read what the running app reads: the owner
+# migration and db:migrate need DATABASE_URL. Sourcing it here is what the
+# build used to do in this shell before the gate was extracted; without it the
+# first deploy of the extracted gate stopped at "DATABASE_URL is not exported".
+log "exporting release env for deploy steps"
+set -a; . "$ENV_FILE"; set +a
 
 # Use an isolated standalone process and temporary upload directory to verify
 # images added after startup. A symlink alone only covers pre-existing files.
