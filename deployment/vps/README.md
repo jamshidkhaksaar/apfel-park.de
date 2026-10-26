@@ -231,6 +231,17 @@ to add a second copy from a path map whose exclusions mirrored
 kept in sync by hand; that map made every response advertise its twin twice,
 once absolute and once relative. It is gone, and the app is the single source.
 
+A twin selected by the User-Agent alone -- a registry bot that did not ask for
+markdown -- is served `Cache-Control: private, no-store` instead of the
+`public, s-maxage=3600` every other twin gets. That representation depends on a
+header no cache key on this stack carries: Next drops `User-Agent` from `Vary`,
+and the edge rewrites `Vary` to `Accept, Accept-Encoding`, so a shared cache
+could store the markdown and later hand it to a browser sending `Accept: */*`.
+Markdown selected by `Accept` stays cacheable, because there the representation
+depends only on `Accept`, which is in the key. The markdown handler applies the
+policy, not `src/proxy.ts`: a `Cache-Control` set on the middleware's rewrite is
+discarded, because the rewritten response sets that header itself.
+
 ## Database migrations
 
 `supabase/migrations/*.sql` are plain SQL applied by `scripts/migrate.mjs`.

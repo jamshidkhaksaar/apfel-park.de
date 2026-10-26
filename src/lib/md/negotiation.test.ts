@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   decideRepresentation,
   markdownAlternateLink,
+  markdownCacheControl,
   markdownTwinPath,
   notAcceptableResponse,
   VARY_ACCEPT,
@@ -125,5 +126,24 @@ describe('twin URL and the 406 response (§4, §6)', () => {
     expect(response.headers.get('Content-Type')).toBe('text/plain; charset=utf-8');
     expect(response.headers.get('X-AEO-Version')).toBe('1.0');
     expect(await response.text()).toContain('text/html, text/markdown');
+  });
+});
+
+describe('shared-cache policy for a twin (§3, §5)', () => {
+  it('keeps a twin out of shared caches when only the user-agent selected it', () => {
+    expect(markdownCacheControl('*/*', GPTBOT)).toBe('private, no-store');
+    expect(markdownCacheControl(null, GPTBOT)).toBe('private, no-store');
+    expect(markdownCacheControl('', GPTBOT)).toBe('private, no-store');
+  });
+
+  it('leaves the cacheable policy in place when Accept selected markdown', () => {
+    expect(markdownCacheControl('text/markdown', GPTBOT)).toBeUndefined();
+    expect(markdownCacheControl('text/markdown', BROWSER)).toBeUndefined();
+    expect(markdownCacheControl('text/markdown,text/html;q=0.5', BROWSER)).toBeUndefined();
+  });
+
+  it('imposes nothing where markdown was not the negotiated representation', () => {
+    expect(markdownCacheControl('text/html', GPTBOT)).toBeUndefined();
+    expect(markdownCacheControl(BROWSER_ACCEPT, BROWSER)).toBeUndefined();
   });
 });

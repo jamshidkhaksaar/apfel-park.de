@@ -74,6 +74,28 @@ export const decideRepresentation = ({
   return { representation: 'html', vary: VARY_ACCEPT };
 };
 
+/**
+ * §3 and §5: `Cache-Control` for a markdown response. A twin that only the
+ * user-agent selected must stay out of shared caches, because no cache key on
+ * this stack carries `User-Agent`: Next rebuilds `Vary` without it, and the edge
+ * rewrites `Vary` to `Accept, Accept-Encoding`, so a stored copy could reach a
+ * client that asked for no type in particular. `undefined` leaves the ordinary
+ * policy to the document layer, which is right for `Accept`-selected markdown --
+ * its key has `Accept` -- and for a direct `.md` fetch, whose URL has one
+ * representation no header can switch. The handler cannot tell those entry
+ * routes apart, so a bot fetching `.md` is kept out too: one cache miss for a
+ * crawler, one rule to reason about.
+ */
+export const markdownCacheControl = (
+  accept: string | null,
+  userAgent: string | null,
+): string | undefined => {
+  const decision = decideRepresentation({ accept, userAgent, hasTwin: true });
+  return decision.representation === 'markdown' && decision.reason === 'bot'
+    ? NO_SHARED_CACHE
+    : undefined;
+};
+
 /** §6: `/de/about` -> `/de/about.md`, and the root page -> `/index.md`. */
 export const markdownTwinPath = (htmlPath: string): string => toMarkdownPath(htmlPath);
 

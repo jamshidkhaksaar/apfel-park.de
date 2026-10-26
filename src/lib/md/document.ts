@@ -41,6 +41,12 @@ export type MarkdownResponseOptions = {
   lastModified?: string;
   /** Long-lived for static copy, shorter for catalogue pages that move often. */
   cacheSeconds?: number;
+  /**
+   * Replaces the ordinary policy when the representation must not be stored by
+   * a shared cache -- a twin that only the user-agent selected; see
+   * `markdownCacheControl` in ./negotiation.
+   */
+  cacheControl?: string;
   status?: number;
 };
 
@@ -48,6 +54,7 @@ export const markdownHeaders = ({
   canonicalPath,
   lastModified,
   cacheSeconds = 3600,
+  cacheControl,
   status = 200,
 }: MarkdownResponseOptions): Headers => {
   const headers = new Headers({
@@ -66,7 +73,10 @@ export const markdownHeaders = ({
   });
 
   if (status === 200) {
-    headers.set('Cache-Control', `public, s-maxage=${cacheSeconds}, stale-while-revalidate=86400`);
+    headers.set(
+      'Cache-Control',
+      cacheControl ?? `public, s-maxage=${cacheSeconds}, stale-while-revalidate=86400`,
+    );
   } else {
     headers.set('Cache-Control', 'no-store');
   }
