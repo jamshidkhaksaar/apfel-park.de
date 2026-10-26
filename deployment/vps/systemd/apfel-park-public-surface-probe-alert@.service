@@ -1,0 +1,18 @@
+[Unit]
+Description=Email the owner that %i failed
+
+[Service]
+Type=oneshot
+# The unit instance is the failed unit, so the notifier reads its journal and
+# names it in the mail. app.env carries the mail configuration the app already
+# uses (SMTP_*, ADMIN_EMAILS), so an alert needs no separate credentials.
+WorkingDirectory=/srv/apfel-park/app/current
+EnvironmentFile=/srv/apfel-park/app/shared/app.env
+Environment=PATH=/root/.nvm/versions/node/v24.14.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=SURFACE_PROBE_ALERT_STATE=/srv/apfel-park/app/shared/public-surface-alert-state.json
+ExecStart=/root/.nvm/versions/node/v24.14.0/bin/node --import=tsx /srv/apfel-park/app/current/scripts/notify-surface-probe-failure.ts %i
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/srv/apfel-park/app/shared

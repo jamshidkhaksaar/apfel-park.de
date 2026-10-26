@@ -6,6 +6,8 @@ After=network-online.target
 # deploy gate runs the same script from the release it is activating and dies
 # if it is missing.
 ConditionPathExists=/srv/apfel-park/app/current/deployment/vps/scripts/probe-public-surface.sh
+# A failed run has to reach a person, not only the journal.
+OnFailure=apfel-park-public-surface-probe-alert@%n.service
 
 [Service]
 Type=oneshot

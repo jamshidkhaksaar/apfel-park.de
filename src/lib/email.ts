@@ -244,6 +244,21 @@ const sendTransactionalEmail = async (email: OutboundEmail): Promise<EmailSendRe
 export const sendShippingStatusEmail = async (to: string, content: { subject: string; text: string; html: string }): Promise<EmailSendResult> =>
   sendTransactionalEmail({ to, ...content, identity: 'noreply', replyTo: 'info@apfel-park.de' });
 
+/**
+ * Operational alert to the owner (a failed deployment probe, a broken surface).
+ * Plain text in a <pre> so the journal excerpt stays readable and nothing from
+ * the journal is interpreted as markup.
+ */
+export const sendOpsAlertEmail = async (to: string, content: { subject: string; text: string }): Promise<EmailSendResult> =>
+  sendTransactionalEmail({
+    to,
+    subject: content.subject,
+    text: content.text,
+    html: `<pre style="font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap">${escapeHtml(content.text)}</pre>`,
+    identity: 'noreply',
+    replyTo: 'info@apfel-park.de',
+  });
+
 export const sendOfferSubscriptionConfirmationEmail = async (data: {
   email: string;
   locale: "de" | "en";

@@ -353,5 +353,46 @@ class PublicSurfaceProbeTests(unittest.TestCase):
         self.assertIn('missing releases directory', result.stderr)
 
 
+class ProbeAlertWiringTests(unittest.TestCase):
+    """The alert path is unit wiring, so guard the text that makes it work."""
+
+    SYSTEMD = SCRIPT.parents[1] / 'systemd'
+    REPO = SCRIPT.parents[3]
+
+    def test_the_probe_service_alerts_when_it_fails(self):
+        service = (self.SYSTEMD / 'apfel-park-public-surface-probe.service').read_text()
+        self.assertIn('OnFailure=apfel-park-public-surface-probe-alert@%n.service', service)
+        self.assertIn('ConditionPathExists=', service)
+
+    def test_the_alert_unit_can_reach_the_notifier_and_its_state(self):
+        alert = (self.SYSTEMD / 'apfel-park-public-surface-probe-alert@.service').read_text()
+        # The mail configuration the app already uses, so no second credentials.
+        self.assertIn('EnvironmentFile=/srv/apfel-park/app/shared/app.env', alert)
+        self.assertIn('WorkingDirectory=/srv/apfel-park/app/current', alert)
+        self.assertIn('--import=tsx', alert)
+        self.assertIn('notify-surface-probe-failure.ts %i', alert)
+        # The suppression state lives outside the release, which is read-only.
+        self.assertIn('SURFACE_PROBE_ALERT_STATE=/srv/apfel-park/app/shared/public-surface-alert-state.json', alert)
+        self.assertIn('ReadWritePaths=/srv/apfel-park/app/shared', alert)
+
+    def test_the_alert_can_be_test_sent_without_consuming_suppression(self):
+        notifier = (self.REPO / 'scripts/notify-surface-probe-failure.ts').read_text()
+        self.assertIn("'--test'", notifier)
+        # A hand-sent test is labelled, is never itself suppressed, and must not
+        # record itself as the failure that was already reported.
+        self.assertIn('test: testMode', notifier)
+        self.assertIn('!testMode && !shouldNotify', notifier)
+        self.assertIn('if (!testMode) writeState', notifier)
+
+    def test_the_notifier_exists_and_uses_the_application_mailer(self):
+        notifier = (self.REPO / 'scripts/notify-surface-probe-failure.ts').read_text()
+        self.assertIn("'../src/lib/email'", notifier)
+        self.assertIn('sendOpsAlertEmail', notifier)
+        # One place owns SMTP credentials: a second transport here would drift.
+        self.assertNotIn('nodemailer', notifier)
+        self.assertTrue((self.REPO / 'src/lib/ops/probe-alert.ts').is_file())
+        self.assertTrue((self.REPO / 'src/lib/ops/probe-alert.test.ts').is_file())
+
+
 if __name__ == '__main__':
     unittest.main()

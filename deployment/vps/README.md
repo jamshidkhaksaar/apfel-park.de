@@ -19,7 +19,7 @@ This folder captures the production server layout needed to rebuild or migrate t
 
 - `nginx/apfel-park.conf`: production nginx reverse proxy and static upload/static asset mapping.
 - `systemd/apfel-park-nextjs.service`: production Next.js standalone service.
-- `systemd/apfel-park-public-surface-probe.service` and `.timer`: hourly origin-side probe of the public surface, running the same checks a deploy gates on.
+- `systemd/apfel-park-public-surface-probe.service`, `.timer` and `-alert@.service`: hourly origin-side probe of the public surface (the same checks a deploy gates on) and an emailed alert when it fails.
 - `mail/compose.yaml`: production Roundcube and docker-mailserver compose file.
 - `mail/mail.env.example`: sanitized docker-mailserver environment template.
 - `mail/roundcube.env.example`: sanitized Roundcube environment template.
@@ -50,7 +50,7 @@ Create replacement values from the `.example` files during migration, then resto
 2. Clone the repository to `/srv/apfel-park/app/source`.
 3. Create `/srv/apfel-park/app/shared/app.env` from `deployment/vps/app/app.env.example`.
 4. Copy `deployment/vps/nginx/apfel-park.conf` to `/etc/nginx/sites-available/apfel-park.conf` and enable it.
-5. Copy `deployment/vps/systemd/apfel-park-nextjs.service`, `deployment/vps/systemd/apfel-park-marketplace-worker.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.service` and `deployment/vps/systemd/apfel-park-public-surface-probe.timer` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
+5. Copy `deployment/vps/systemd/apfel-park-nextjs.service`, `deployment/vps/systemd/apfel-park-marketplace-worker.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.timer` and `deployment/vps/systemd/apfel-park-public-surface-probe-alert@.service` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
 6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then enable and start `apfel-park-nextjs.service` and `apfel-park-marketplace-worker.service`, and `systemctl enable --now apfel-park-public-surface-probe.timer`.
 7. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
 8. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
@@ -137,6 +137,40 @@ The service has `ConditionPathExists=` on the probe in `current`, so enabling th
 timer before the first release containing the script is deployed skips the run
 instead of failing hourly. Once such a release is live it runs every hour and
 fails only on a real regression.
+
+### Alerting
+
+A failed hourly run is emailed to the owner. The probe service declares
+`OnFailure=apfel-park-public-surface-probe-alert@%n.service`, and that unit runs
+`scripts/notify-surface-probe-failure.ts`, which reads the failing run out of the
+journal and sends it through the application's own mail configuration (`SMTP_*`,
+`ADMIN_EMAILS` in `shared/app.env`). The mail names the failed check, quotes the
+journal tail, and prints the command that shows the rest.
+
+The same failure is not emailed more than once every six hours
+(`SURFACE_PROBE_ALERT_WINDOW_MS`), recorded in
+`shared/public-surface-alert-state.json`; deleting that file forces a re-send. A
+failure that never named a check -- a crash, a missing script -- is fingerprinted
+from the journal tail instead, so it is suppressed only when that tail repeats
+unchanged; the mail itself then reports the newest line about the failure, never
+a line that only says an invocation was skipped.
+
+To check the alert path without mailing anyone:
+
+    cd /srv/apfel-park/app/current
+    set -a; . /srv/apfel-park/app/shared/app.env; set +a
+    node --import=tsx scripts/notify-surface-probe-failure.ts \
+      apfel-park-public-surface-probe.service --dry-run
+
+To send one real test through the same path -- how to check that delivery
+itself works, after a migration for instance:
+
+    node --import=tsx scripts/notify-surface-probe-failure.ts \
+      apfel-park-public-surface-probe.service --test
+
+The mail is prefixed `[TEST]` and opens by saying nothing is broken. A test send
+neither reads nor writes the suppression state, so it cannot hide the first real
+failure.
 
 To stop the hourly probe: `systemctl disable --now apfel-park-public-surface-probe.timer`.
 
