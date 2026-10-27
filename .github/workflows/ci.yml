@@ -31,7 +31,8 @@ jobs:
 
       # One list of gates, shared with the release gate in
       # deployment/vps/scripts/deploy-app.sh and runnable anywhere node runs:
-      # lint, typecheck, the unused-source audit, the test suite, the dependency
-      # audit and the production build. Add a check there, not here.
+      # lint, typecheck, the unused-source audit, the test suite, the notify
+      # bridge suite (the one gate that needs python3), the dependency audit and
+      # the production build. Add a check there, not here.
       - name: Commit checks and production build
         run: npm run ci:check

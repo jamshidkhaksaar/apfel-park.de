@@ -39,6 +39,7 @@ const gates = [
   { name: 'typecheck', command: ['run', 'typecheck'], covers: 'tsc --noEmit' },
   { name: 'audit:unused', command: ['run', 'audit:unused'], covers: 'source files nothing reaches' },
   { name: 'test', command: ['test'], covers: 'the vitest suite' },
+  { name: 'test:notify-bridge', command: ['run', 'test:notify-bridge'], covers: 'the notify bridge handler (python3)' },
   { name: 'audit', command: ['audit', '--audit-level=high'], covers: 'high-severity advisories' },
   { name: 'build', command: ['run', 'build'], covers: 'the production build' },
 ];

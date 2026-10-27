@@ -108,8 +108,9 @@ Seven things it enforces, each learned the hard way:
   `next build` does not do this. Skip it and the site returns 200 with no CSS
   and no JS -- there is no error anywhere, it just looks broken.
 - **It runs the shared check gate before touching the symlink.** A failing
-  lint, typecheck, unused-source audit, test, dependency audit or production
-  build aborts the deploy with production still on the previous release.
+  lint, typecheck, unused-source audit, test, bridge test, dependency audit or
+  production build aborts the deploy with production still on the previous
+  release.
 - **It symlinks `shared/uploads` into `.next/standalone/public/`.** Uploads
   live outside releases and are served by nginx via `alias`, but `next/image`
   resolves local paths inside Next. The symlink covers existing files;
@@ -137,8 +138,11 @@ Seven things it enforces, each learned the hard way:
     npm run ci:check
 
 `scripts/ci-check.mjs` runs lint, typecheck, the unused-source audit, the test
-suite, the dependency audit and the production build, in that order, and stops
-at the first gate that fails with that gate's own exit code. `deploy-app.sh`
+suite, the notify bridge suite, the dependency audit and the production build,
+in that order, and stops at the first gate that fails with that gate's own exit
+code. The bridge suite is the one gate that needs more than node: `python3` runs
+`deployment/vps/tests/test_notify_bridge.py`, which the deploy host and CI both
+have. `deploy-app.sh`
 calls it and so does `.github/workflows/ci.yml`, so a check added for one
 applies to both, and it runs anywhere node runs -- a laptop or this VPS --
 without waiting on CI to be able to start a job.
