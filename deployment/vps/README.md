@@ -15,12 +15,16 @@ This folder captures the production server layout needed to rebuild or migrate t
 - Nginx site: `/etc/nginx/sites-available/apfel-park.conf`
 - App service: `/etc/systemd/system/apfel-park-nextjs.service`
 - Omnichannel worker: `/etc/systemd/system/apfel-park-marketplace-worker.service`
+- Hermes agent gateway: `/etc/systemd/system/hermes-gateway.service`, its drop-ins in `/etc/systemd/system/hermes-gateway.service.d/` and its resource caps in `/etc/systemd/system.control/hermes-gateway.service.d/` (see Hermes agent gateway)
 
 ## What is included
 
 - `nginx/apfel-park.conf`: production nginx reverse proxy and static upload/static asset mapping.
 - `systemd/apfel-park-nextjs.service`: production Next.js standalone service.
 - `systemd/apfel-park-public-surface-probe.service`, `.timer` and `-alert@.service`: hourly origin-side probe of the public surface (the same checks a deploy gates on) and an emailed alert when it fails.
+- `systemd/hermes-gateway.service` and `systemd/hermes-gateway.service.d/*`: the Hermes agent gateway unit, its sandbox boundary and its emergency-stop and restart-policy drop-ins.
+- `systemd/hermes-gateway.service.control.d/50-*.conf`: the gateway's resource caps. These install to `/etc/systemd/system.control/`, not `/etc/systemd/system/`, which is why they are kept in their own folder.
+- `HERMES-GATEWAY.md`: how to restore those units and how to engage, re-engage and resume the gateway's emergency stop.
 - `mail/compose.yaml`: production Roundcube and docker-mailserver compose file.
 - `mail/mail.env.example`: sanitized docker-mailserver environment template.
 - `mail/roundcube.env.example`: sanitized Roundcube environment template.
@@ -53,11 +57,12 @@ Create replacement values from the `.example` files during migration, then resto
 4. Copy `deployment/vps/nginx/apfel-park.conf` to `/etc/nginx/sites-available/apfel-park.conf` and enable it.
 5. Copy `deployment/vps/systemd/apfel-park-nextjs.service`, `deployment/vps/systemd/apfel-park-marketplace-worker.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.timer` and `deployment/vps/systemd/apfel-park-public-surface-probe-alert@.service` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
 6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then enable and start `apfel-park-nextjs.service` and `apfel-park-marketplace-worker.service`, and `systemctl enable --now apfel-park-public-surface-probe.timer`.
-7. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
-8. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
-9. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.
-10. Recreate mail users with docker-mailserver `setup.sh email add/update`; do not reuse committed placeholder hashes as passwords.
-11. Restore latest mailbox and PostgreSQL backups separately, then verify DNS, SSL, SMTP, IMAP, Roundcube, and the app checkout flow.
+7. Copy `deployment/vps/systemd/hermes-gateway.service` and `deployment/vps/systemd/hermes-gateway.service.d/*` to `/etc/systemd/system/`, and `deployment/vps/systemd/hermes-gateway.service.control.d/*` to `/etc/systemd/system.control/hermes-gateway.service.d/`, then run `systemctl daemon-reload` and `systemctl enable hermes-gateway`. Do not start it until `/root/.hermes` exists, `user@0.service` runs and the emergency stop is known to be absent (see Hermes agent gateway).
+8. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
+9. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
+10. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.
+11. Recreate mail users with docker-mailserver `setup.sh email add/update`; do not reuse committed placeholder hashes as passwords.
+12. Restore latest mailbox and PostgreSQL backups separately, then verify DNS, SSL, SMTP, IMAP, Roundcube, and the app checkout flow.
 
 ## Deploying
 
@@ -214,6 +219,28 @@ neither reads nor writes the suppression state, so it cannot hide the first real
 failure.
 
 To stop the hourly probe: `systemctl disable --now apfel-park-public-surface-probe.timer`.
+
+## Hermes agent gateway
+
+`hermes-gateway.service` runs the Hermes agent gateway. Its unit, its safety
+drop-ins and its `systemctl set-property` resource caps live only on the VPS and
+have no installer, so the capture in `systemd/hermes-gateway.service*` and
+`HERMES-GATEWAY.md` is what a rebuild restores them from.
+
+Two of those settings are load-bearing rather than cosmetic.
+`systemd/hermes-gateway.service.d/95-freeze.conf` gates every start on the
+text-based emergency stop, `!/root/.hermes/ESTOP`, so an engaged stop keeps the
+gateway down across reboots, and it replaces the unit's own unbounded retry loop
+(`Restart=always`, `RestartSec=5`, `StartLimitIntervalSec=0`) with three starts
+per fifteen minutes, thirty seconds apart. After that burst the unit stays
+`failed` until an operator runs `systemctl reset-failed hermes-gateway`.
+`systemd/hermes-gateway.service.d/90-safety.conf` is the sandbox boundary that
+keeps the gateway out of the deploy tooling, the system control sockets, the
+build runner and the production secret files. It is not to be removed without a
+reviewed replacement.
+
+Engaging, re-engaging and resuming the emergency stop, and the full install
+mapping, are in `HERMES-GATEWAY.md`.
 
 ## AEO markdown twins
 
