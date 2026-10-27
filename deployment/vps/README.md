@@ -15,7 +15,7 @@ This folder captures the production server layout needed to rebuild or migrate t
 - Nginx site: `/etc/nginx/sites-available/apfel-park.conf`
 - App service: `/etc/systemd/system/apfel-park-nextjs.service`
 - Omnichannel worker: `/etc/systemd/system/apfel-park-marketplace-worker.service`
-- Hermes agent gateway: `/etc/systemd/system/hermes-gateway.service`, its drop-ins in `/etc/systemd/system/hermes-gateway.service.d/` and its resource caps in `/etc/systemd/system.control/hermes-gateway.service.d/` (see Hermes agent gateway)
+- Hermes host services: `/etc/systemd/system/hermes-gateway.service` and `/etc/systemd/system/hermes-notify-bridge.service`, with the gateway's drop-ins in `/etc/systemd/system/hermes-gateway.service.d/` and both units' resource caps in `/etc/systemd/system.control/<unit>.d/` (see Hermes host services)
 
 ## What is included
 
@@ -24,7 +24,9 @@ This folder captures the production server layout needed to rebuild or migrate t
 - `systemd/apfel-park-public-surface-probe.service`, `.timer` and `-alert@.service`: hourly origin-side probe of the public surface (the same checks a deploy gates on) and an emailed alert when it fails.
 - `systemd/hermes-gateway.service` and `systemd/hermes-gateway.service.d/*`: the Hermes agent gateway unit, its sandbox boundary and its emergency-stop and restart-policy drop-ins.
 - `systemd/hermes-gateway.service.control.d/50-*.conf`: the gateway's resource caps. These install to `/etc/systemd/system.control/`, not `/etc/systemd/system/`, which is why they are kept in their own folder.
-- `HERMES-GATEWAY.md`: how to restore those units and how to engage, re-engage and resume the gateway's emergency stop.
+- `systemd/hermes-notify-bridge.service` and `systemd/hermes-notify-bridge.service.control.d/50-*.conf`: the n8n to hermes send bridge and its (uncapped-by-default) resource limits.
+- `systemd/hermes-notify-bridge.env.example`: sanitized template for the bridge's token file. The real `/etc/hermes-notify-bridge.env` is a secret and is not committed.
+- `HERMES-SERVICES.md`: how to restore both Hermes host services, and how to engage, re-engage and resume the gateway's emergency stop.
 - `mail/compose.yaml`: production Roundcube and docker-mailserver compose file.
 - `mail/mail.env.example`: sanitized docker-mailserver environment template.
 - `mail/roundcube.env.example`: sanitized Roundcube environment template.
@@ -44,6 +46,7 @@ Do not commit these files directly:
 - `/srv/apfel-park/mail/.env`
 - `/srv/apfel-park/mail/roundcube.env`
 - `/srv/apfel-park/mail/docker-data/config/postfix-accounts.cf`
+- `/etc/hermes-notify-bridge.env` (the bridge's shared token; create it from `deployment/vps/systemd/hermes-notify-bridge.env.example`)
 - TLS private keys under `/etc/letsencrypt`
 - Mailbox data, logs, PostgreSQL dumps, and backup archives
 
@@ -57,12 +60,13 @@ Create replacement values from the `.example` files during migration, then resto
 4. Copy `deployment/vps/nginx/apfel-park.conf` to `/etc/nginx/sites-available/apfel-park.conf` and enable it.
 5. Copy `deployment/vps/systemd/apfel-park-nextjs.service`, `deployment/vps/systemd/apfel-park-marketplace-worker.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.timer` and `deployment/vps/systemd/apfel-park-public-surface-probe-alert@.service` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
 6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then enable and start `apfel-park-nextjs.service` and `apfel-park-marketplace-worker.service`, and `systemctl enable --now apfel-park-public-surface-probe.timer`.
-7. Copy `deployment/vps/systemd/hermes-gateway.service` and `deployment/vps/systemd/hermes-gateway.service.d/*` to `/etc/systemd/system/`, and `deployment/vps/systemd/hermes-gateway.service.control.d/*` to `/etc/systemd/system.control/hermes-gateway.service.d/`, then run `systemctl daemon-reload` and `systemctl enable hermes-gateway`. Do not start it until `/root/.hermes` exists, `user@0.service` runs and the emergency stop is known to be absent (see Hermes agent gateway).
-8. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
-9. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
-10. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.
-11. Recreate mail users with docker-mailserver `setup.sh email add/update`; do not reuse committed placeholder hashes as passwords.
-12. Restore latest mailbox and PostgreSQL backups separately, then verify DNS, SSL, SMTP, IMAP, Roundcube, and the app checkout flow.
+7. Copy `deployment/vps/systemd/hermes-gateway.service` and `deployment/vps/systemd/hermes-gateway.service.d/*` to `/etc/systemd/system/`, and `deployment/vps/systemd/hermes-gateway.service.control.d/*` to `/etc/systemd/system.control/hermes-gateway.service.d/`, then run `systemctl daemon-reload` and `systemctl enable hermes-gateway`. Do not start it until `/root/.hermes` exists, `user@0.service` runs and the emergency stop is known to be absent (see Hermes host services).
+8. Copy `deployment/vps/systemd/hermes-notify-bridge.service` to `/etc/systemd/system/` and `deployment/vps/systemd/hermes-notify-bridge.service.control.d/*` to `/etc/systemd/system.control/hermes-notify-bridge.service.d/`, create `/etc/hermes-notify-bridge.env` from `deployment/vps/systemd/hermes-notify-bridge.env.example` with the real token and mode 0600, restore the `ExecStart` script, then `systemctl daemon-reload` and `systemctl enable --now hermes-notify-bridge`.
+9. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
+10. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
+11. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.
+12. Recreate mail users with docker-mailserver `setup.sh email add/update`; do not reuse committed placeholder hashes as passwords.
+13. Restore latest mailbox and PostgreSQL backups separately, then verify DNS, SSL, SMTP, IMAP, Roundcube, and the app checkout flow.
 
 ## Deploying
 
@@ -220,12 +224,14 @@ failure.
 
 To stop the hourly probe: `systemctl disable --now apfel-park-public-surface-probe.timer`.
 
-## Hermes agent gateway
+## Hermes host services
 
-`hermes-gateway.service` runs the Hermes agent gateway. Its unit, its safety
-drop-ins and its `systemctl set-property` resource caps live only on the VPS and
-have no installer, so the capture in `systemd/hermes-gateway.service*` and
-`HERMES-GATEWAY.md` is what a rebuild restores them from.
+`hermes-gateway.service` runs the Hermes agent gateway and
+`hermes-notify-bridge.service` is the n8n to hermes send bridge. Both units,
+their `systemctl set-property` resource caps and the gateway's safety drop-ins
+live only on the VPS and have no installer, so the capture in
+`systemd/hermes-*.service*` and `HERMES-SERVICES.md` is what a rebuild restores
+them from.
 
 Two of those settings are load-bearing rather than cosmetic.
 `systemd/hermes-gateway.service.d/95-freeze.conf` gates every start on the
@@ -239,8 +245,16 @@ keeps the gateway out of the deploy tooling, the system control sockets, the
 build runner and the production secret files. It is not to be removed without a
 reviewed replacement.
 
-Engaging, re-engaging and resuming the emergency stop, and the full install
-mapping, are in `HERMES-GATEWAY.md`.
+The bridge has none of that machinery: no `/etc` drop-ins, no emergency stop,
+and no sandbox -- its containment is its resource caps (`MemoryMax=128MiB`,
+`CPUQuota=20%`, `TasksMax=64`) and the fact that it listens only on loopback and
+the Docker bridge addresses. It does require a secret: `BRIDGE_TOKEN` in
+`/etc/hermes-notify-bridge.env`, the same value the n8n container holds as
+`NOTIFY_BRIDGE_TOKEN`. Rotate both sides together or every notify call fails
+with an auth error.
+
+Engaging, re-engaging and resuming the emergency stop, the install mapping for
+both services and the bridge's secret handling are in `HERMES-SERVICES.md`.
 
 ## AEO markdown twins
 

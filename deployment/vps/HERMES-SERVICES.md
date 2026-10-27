@@ -1,17 +1,23 @@
-# Hermes agent gateway
+# Hermes host services
 
-`hermes-gateway.service` runs the Hermes agent gateway on the VPS. Its unit, its
-safety drop-ins and its resource caps live only in `/etc/systemd/system` and
-`/etc/systemd/system.control`, so they are captured here: a rebuilt VPS would
-otherwise come back without the sandbox boundary, without the emergency-stop
-gate and with the unit's own unlimited restart loop.
+Two services in the Hermes stack live only on the VPS and are captured here:
+`hermes-gateway.service`, the agent gateway, and `hermes-notify-bridge.service`,
+the n8n to hermes send bridge.
 
-The gateway's binary and state are outside this repository and are not captured
-here: `/usr/local/lib/hermes-agent/.hermes/bin/hermes` and `/root/.hermes`.
-`hermes-notify-bridge.service` and its `EnvironmentFile=/etc/hermes-notify-bridge.env`
-are a separate unit and a secret; they are not part of this capture either.
+Their units and both units' `systemctl set-property` resource caps exist only in
+`/etc/systemd/system` and `/etc/systemd/system.control`, so a rebuilt VPS would
+otherwise come back without the gateway's sandbox boundary, without its
+emergency-stop gate, with the gateway's own unlimited restart loop still in
+force, and with the bridge running uncapped.
 
-## Files and where they install
+Neither service's program is in this repository: the gateway install lives at
+`/usr/local/lib/hermes-agent`, and the bridge's `ExecStart` script at
+`/usr/local/bin/hermes-notify-bridge.py`. Restore both out of band before
+starting their units (see the prerequisites in each section).
+
+## Hermes agent gateway
+
+### Files and where they install
 
 | In this folder | On the VPS |
 | --- | --- |
@@ -47,7 +53,7 @@ Do not start the gateway as part of the restore. Check the emergency stop first
 (below): with the stop engaged a start is skipped, and `systemctl start` still
 exits 0.
 
-## Restart policy
+### Restart policy
 
 The unit file is written for a supervised child: `Restart=always`, `RestartSec=5`,
 `SuccessExitStatus=75`, `RestartForceExitStatus=75` (restart me) and
@@ -80,7 +86,7 @@ by a condition:
 Diagnose before resetting: three failures in fifteen minutes is a crash loop,
 not a blip, and `journalctl -u hermes-gateway -n 100` should name the cause.
 
-## Emergency stop
+### Emergency stop
 
 `95-freeze.conf` gates every start on the marker being absent:
 
@@ -140,7 +146,7 @@ that caused it had been bounded by `95-freeze.conf`; its record is preserved
 outside this repository. Copy the record into the incident notes, and leave
 `NRestarts=0` as the healthy baseline for a fresh start.
 
-## Sandbox boundary
+### Sandbox boundary
 
 `90-safety.conf` is the gateway's containment: `ProtectSystem=strict` with four
 writable state paths under `/root`, `/srv/apfel-park` read-only, and
@@ -151,19 +157,96 @@ production secret files and the root SSH material. It applies on the next
 authorized start; editing it does not disturb a running process. Do not remove
 it without a reviewed replacement.
 
+## Hermes notify bridge
+
+The bridge is a small HTTP service that the n8n instance calls to send a Hermes
+message. It binds port 8722 on loopback and on the Docker bridge addresses
+(`BIND_ADDRS=127.0.0.1,172.23.0.1,172.17.0.1`), so the n8n container reaches it
+without any public listener.
+
+### Files and where they install
+
+| In this folder | On the VPS |
+| --- | --- |
+| `systemd/hermes-notify-bridge.service` | `/etc/systemd/system/hermes-notify-bridge.service` |
+| `systemd/hermes-notify-bridge.service.control.d/50-*.conf` | `/etc/systemd/system.control/hermes-notify-bridge.service.d/50-*.conf` |
+| `systemd/hermes-notify-bridge.env.example` | `/etc/hermes-notify-bridge.env` (fill in the real value) |
+
+Restore:
+
+    install -D -m 0644 deployment/vps/systemd/hermes-notify-bridge.service \
+      /etc/systemd/system/hermes-notify-bridge.service
+    install -D -m 0644 deployment/vps/systemd/hermes-notify-bridge.service.control.d/*.conf \
+      -t /etc/systemd/system.control/hermes-notify-bridge.service.d/
+    install -m 0600 deployment/vps/systemd/hermes-notify-bridge.env.example \
+      /etc/hermes-notify-bridge.env
+    systemctl daemon-reload
+    systemctl enable hermes-notify-bridge
+
+Unlike the gateway, this unit has no `hermes-notify-bridge.service.d/`: there
+are no `/etc` drop-ins, and the sandbox in `90-safety.conf` applies to the
+gateway only. The bridge's containment is its resource caps and its bind
+addresses.
+
+### Restart policy and resource caps
+
+The unit carries `Restart=always` and `RestartSec=5` and leaves systemd's rate
+limiter at its defaults, so a crash loop stops after five starts in ten seconds
+without any override. The caps from `systemctl set-property` are
+`MemoryHigh=96MiB`, `MemoryMax=128MiB`, `CPUQuota=20%`, `CPUWeight=25` and
+`TasksMax=64`: the bridge is a forwarder, not a worker, and the hard limit is
+there so a wedged listener cannot spend the gateway's memory instead.
+
+After a failed run that exhausted that limiter:
+
+    systemctl reset-failed hermes-notify-bridge
+    systemctl start hermes-notify-bridge
+    journalctl -u hermes-notify-bridge -n 50
+
+### The secret environment file
+
+The unit reads `EnvironmentFile=/etc/hermes-notify-bridge.env`, which is not in
+this repository and must not be. The template next to the unit documents the
+single variable it provides:
+
+- `BRIDGE_TOKEN` is the shared secret the bridge requires. The n8n container
+  holds the same value under a second name, `NOTIFY_BRIDGE_TOKEN`, and sends it
+  as the `X-Bridge-Token` header (see
+  `product-intake/n8n/build_workflows.py`). Rotating it means changing both
+  sides: rewrite `/etc/hermes-notify-bridge.env`, restart the bridge, restart
+  n8n, then check that a notify call succeeds -- a stale value on either side
+  fails every call with an auth error.
+
+`EnvironmentFile` is read when the unit starts, so a value change needs
+`systemctl restart hermes-notify-bridge`; `daemon-reload` is not enough and not
+required.
+
+### Program
+
+`ExecStart` runs `/usr/local/bin/hermes-notify-bridge.py` (3261 bytes, sha256
+`690ad7f099846d8479c6658380fc5193ca9d3f623fd92f01d198c6864516d03e` when
+captured). It is not tracked in this repository, so a rebuild has to restore it
+out of band before the unit can start; a unit installed without it fails with
+`status=203/EXEC`.
+
 ## Verification
 
 The capture is faithful when the installed files and these copies are identical:
 
     sha256sum deployment/vps/systemd/hermes-gateway.service \
       deployment/vps/systemd/hermes-gateway.service.d/*.conf \
-      deployment/vps/systemd/hermes-gateway.service.control.d/*.conf
+      deployment/vps/systemd/hermes-gateway.service.control.d/*.conf \
+      deployment/vps/systemd/hermes-notify-bridge.service \
+      deployment/vps/systemd/hermes-notify-bridge.service.control.d/*.conf
     sha256sum /etc/systemd/system/hermes-gateway.service \
       /etc/systemd/system/hermes-gateway.service.d/*.conf \
-      /etc/systemd/system.control/hermes-gateway.service.d/*.conf
+      /etc/systemd/system.control/hermes-gateway.service.d/*.conf \
+      /etc/systemd/system/hermes-notify-bridge.service \
+      /etc/systemd/system.control/hermes-notify-bridge.service.d/*.conf
 
-`systemctl cat hermes-gateway` prints the fragments systemd loaded in order: the
-unit, the five `system.control` caps, then the three `/etc` drop-ins. Nine
-fragments is the complete set, and a fragment missing after a restore is exactly
-what this check is for. `systemd-analyze verify` on the unit in this folder
-checks the syntax of the captured set before it is installed.
+`systemctl cat` prints the fragments systemd loaded in order: for the gateway the
+unit, the five `system.control` caps and the three `/etc` drop-ins (nine
+fragments), for the bridge the unit and its five caps (six fragments). Those
+counts are the complete sets, and a fragment missing after a restore is exactly
+what this check is for. `systemd-analyze verify` on the units in this folder
+checks the syntax of the captured sets before they are installed.
