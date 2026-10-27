@@ -36,12 +36,20 @@ if cmd == 'git':
                 info.size = len(content); t.addfile(info, io.BytesIO(content))
     elif '--abbrev-ref' in args: print('main')
     elif '--short' in args: print('abcdef12')
-    elif 'rev-parse' in args: print('abcdef1234567890')
+    elif 'rev-parse' in args:
+        # The fake remote has exactly one branch; anything else has no origin/<ref> name.
+        revision = next((arg for arg in args if '^{commit}' in arg), '')
+        if revision.startswith('origin/') and revision != 'origin/main^{commit}': sys.exit(1)
+        print('abcdef1234567890')
     elif 'branch' in args: print('origin/main')
 elif cmd == 'npm':
     if failure == 'migration' and args == ['run', 'db:migrate']: sys.exit(12)
-    if failure == 'build' and args == ['run', 'build']: sys.exit(12)
-    if args == ['run', 'build']:
+    # The production build is a step of the shared check list, so the deploy
+    # reaches it through `npm run ci:check` (ci-check.mjs runs `npm run build`
+    # itself). Both spellings have to leave the build output behind, or every
+    # fixture dies at the static-asset copy before it ever switches releases.
+    if args in (['run', 'build'], ['run', 'ci:check']):
+        if failure == 'build': sys.exit(12)
         for p in ['.next/static/chunks', '.next/standalone/.next', '.next/standalone/public', 'public']:
             pathlib.Path(p).mkdir(parents=True, exist_ok=True)
         pathlib.Path('.next/static/chunks/test.js').write_text('js')
@@ -111,7 +119,7 @@ elif cmd == 'node' and '-e' in args:
 
 
 class DeployTests(unittest.TestCase):
-    def run_deploy(self, failure='', previous=True, previous_telegram=False):
+    def run_deploy(self, failure='', previous=True, previous_telegram=False, ref='abcdef1234567890'):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         root = Path(temp.name)
@@ -145,8 +153,24 @@ class DeployTests(unittest.TestCase):
             p = root / 'bin' / cmd
             p.write_text(mock)
             p.chmod(0o755)
-        result = subprocess.run(['bash', str(root/'deploy.sh'), 'abcdef1234567890'], env={**os.environ, 'PATH': f'{root}/bin:/usr/bin:/bin', 'FIXTURE_ROOT': str(root), 'FIXTURE_SCRIPT_DIR': str(SCRIPT.parent), 'FAILURE': failure, 'REAL_NODE': shutil.which('node') or ''}, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(['bash', str(root/'deploy.sh'), ref], env={**os.environ, 'PATH': f'{root}/bin:/usr/bin:/bin', 'FIXTURE_ROOT': str(root), 'FIXTURE_SCRIPT_DIR': str(SCRIPT.parent), 'FAILURE': failure, 'REAL_NODE': shutil.which('node') or ''}, capture_output=True, text=True, timeout=30)
         return root, result, (root/'calls').read_text()
+
+    def test_a_branch_ref_resolves_from_origin_not_a_stale_local_branch(self):
+        root, result, calls = self.run_deploy(ref='main')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        lookups = [line for line in calls.splitlines() if 'main^{commit}' in line]
+        # One lookup, and it is the origin one: a source clone whose local main
+        # has fallen behind must never be what gets deployed.
+        self.assertEqual(len(lookups), 1, lookups)
+        self.assertTrue(lookups[0].endswith('origin/main^{commit}'), lookups[0])
+
+    def test_a_commit_sha_resolves_as_itself_without_an_origin_ref(self):
+        # The mock remote has no origin/<sha>, so this exercises the fallback:
+        # a failure there would abort with 'ref not found' instead of deploying.
+        root, result, calls = self.run_deploy()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('deploying abcdef1234567890 (abcdef12)', result.stdout)
 
     def test_telegram_worker_activation_and_legacy_rollback(self):
         root, result, calls = self.run_deploy('telegram-ok')
