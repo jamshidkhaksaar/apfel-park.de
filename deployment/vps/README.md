@@ -5,6 +5,7 @@ This folder captures the production server layout needed to rebuild or migrate t
 ## Runtime layout
 
 - Git source clone (deploys build from here): `/srv/apfel-park/app/source`
+- Deploy tooling checkout (runs the deploy, detached at `origin/main`): `/srv/apfel-park/app/deploy`
 - Built releases: `/srv/apfel-park/app/releases/<timestamp>-<sha>`
 - Active app symlink: `/srv/apfel-park/app/current`
 - Shared app env/uploads: `/srv/apfel-park/app/shared`
@@ -47,7 +48,7 @@ Create replacement values from the `.example` files during migration, then resto
 ## Migration outline
 
 1. Provision an Ubuntu VPS with Docker, Nginx, Node.js 24.x, PostgreSQL if used locally, and Certbot.
-2. Clone the repository to `/srv/apfel-park/app/source`.
+2. Clone the repository to `/srv/apfel-park/app/source`, then create the deploy tooling checkout with `git -C /srv/apfel-park/app/source worktree add --detach /srv/apfel-park/app/deploy origin/main`.
 3. Create `/srv/apfel-park/app/shared/app.env` from `deployment/vps/app/app.env.example`.
 4. Copy `deployment/vps/nginx/apfel-park.conf` to `/etc/nginx/sites-available/apfel-park.conf` and enable it.
 5. Copy `deployment/vps/systemd/apfel-park-nextjs.service`, `deployment/vps/systemd/apfel-park-marketplace-worker.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.timer` and `deployment/vps/systemd/apfel-park-public-surface-probe-alert@.service` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
@@ -60,7 +61,14 @@ Create replacement values from the `.example` files during migration, then resto
 
 ## Deploying
 
-    /srv/apfel-park/app/source/deployment/vps/scripts/deploy-app.sh <ref>
+    /srv/apfel-park/app/deploy/deployment/vps/scripts/deploy-app.sh <ref>
+
+The script runs from its own checkout, detached at `origin/main`, so what
+deploys cannot be an older copy of the tooling from a branch that happens to be
+checked out in the source clone. Refresh that checkout before deploying:
+
+    git -C /srv/apfel-park/app/deploy fetch origin main
+    git -C /srv/apfel-park/app/deploy checkout --detach origin/main
 
 An explicit committed, pushed ref is required; omitting it fails before fetching.
 A branch ref resolves from `origin`, so `main` means the pushed `main` even when

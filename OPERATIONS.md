@@ -8,6 +8,9 @@ has **not been deployed** by this work.
 
 - Editable clone: `/srv/apfel-park/app/source`. Isolated development worktrees:
   `/srv/apfel-park/app/worktrees/<name>`; wave1 is `audit-hardening-wave1`.
+- Deploy tooling checkout: `/srv/apfel-park/app/deploy`, a linked worktree kept
+  detached at `origin/main`. Deploys run the script from there, so the copy in
+  the editable clone -- whichever branch it is on -- never deploys anything.
 - Immutable built releases: `/srv/apfel-park/app/releases/<UTC stamp>-<short SHA>`.
   `/srv/apfel-park/app/current` selects the live release. Never edit a release,
   generated `.next/standalone`, or the current symlink during development.
@@ -71,11 +74,15 @@ as an automatic rollback.
 
 ## Approved pinned deployment
 
-After approval, substitute the reviewed full SHA (not the placeholder):
+After approval, substitute the reviewed full SHA (not the placeholder). Refresh
+the deploy tooling checkout first: it is the copy that runs, and it is detached
+at `origin/main` on purpose so no branch checked out in the editable clone can
+change it.
 
 ```bash
-cd /srv/apfel-park/app/source
-bash deployment/vps/scripts/deploy-app.sh <FULL_REVIEWED_PUSHED_SHA>
+git -C /srv/apfel-park/app/deploy fetch origin main
+git -C /srv/apfel-park/app/deploy checkout --detach origin/main
+/srv/apfel-park/app/deploy/deployment/vps/scripts/deploy-app.sh <FULL_REVIEWED_PUSHED_SHA>
 ```
 
 The script fetches origin, archives the commit into a new release, installs dev
