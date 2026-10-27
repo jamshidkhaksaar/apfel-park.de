@@ -4,6 +4,9 @@
 #   deploy-app.sh <ref>    # explicit committed, pushed ref required
 #   ALLOW_NON_FORWARD_DEPLOY=1 deploy-app.sh <ref>  # intentional rollback only
 #
+# A branch name is resolved from origin, so a source clone whose local branch
+# has fallen behind cannot ship an older commit than the one that was pushed.
+#
 # Why this exists: releases used to be made by copying the previous release
 # directory and editing it in place. Every release dir ended up a dirty git
 # checkout, and on 2026-08-03 that had stranded ~2 weeks of work (141 files)
@@ -39,7 +42,15 @@ log "fetching origin"
 git -C "$SOURCE" fetch origin --prune --tags --quiet
 
 ref="$1"
-sha="$(git -C "$SOURCE" rev-parse --verify "$ref^{commit}" 2>/dev/null)" \
+# Resolve a branch from origin, not from the source clone: a local `main` is
+# only as new as the last time somebody pulled it, so `deploy-app.sh main` used
+# to be able to ship the previous commit while origin/main had already moved on
+# -- and nothing caught it, because that commit was still a legitimate ancestor
+# on origin, so the forward-release check passed and the release it wrote was a
+# duplicate of the one already live. A tag or a commit sha has no origin/<ref>
+# name and resolves as itself.
+sha="$(git -C "$SOURCE" rev-parse --verify --quiet "origin/$ref^{commit}" \
+  || git -C "$SOURCE" rev-parse --verify "$ref^{commit}" 2>/dev/null)" \
   || die "ref not found: $ref"
 export DEPLOYMENT_VERSION="$sha"
 live_sha="$(cat "$CURRENT/.deployed-sha" 2>/dev/null || true)"

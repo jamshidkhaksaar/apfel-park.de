@@ -63,6 +63,9 @@ Create replacement values from the `.example` files during migration, then resto
     /srv/apfel-park/app/source/deployment/vps/scripts/deploy-app.sh <ref>
 
 An explicit committed, pushed ref is required; omitting it fails before fetching.
+A branch ref resolves from `origin`, so `main` means the pushed `main` even when
+the source clone's local branch has fallen behind; a tag or a full sha resolves
+as itself.
 The target must include the currently deployed commit (or equal it). The script
 checks again before activation, so a newer live release cannot be silently overwritten
 by an older or divergent build. For a deliberate operator-approved rollback only,
