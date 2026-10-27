@@ -166,6 +166,32 @@ probe. Those need a release directory, so they are not part of the shared list.
 
 Never edit files inside a `releases/` directory. Commit, push, then deploy.
 
+### Free space for a deploy
+
+A deploy builds the new release in place while the retained ones stay, so the
+disk has to hold both at once. Measured on 2026-10-27:
+
+- one release is ~1.15 GB (dependencies ~680 MB, `.next` ~390 MB, `public/`)
+- `KEEP=3` holds three of them, ~3.4 GB, and the prune always skips the current
+  and the previous release, so the rollback copy survives it
+- the build is the transient peak: `npm ci` and `next build` write into the
+  release under construction, roughly its final size again
+
+Keep at least 2 GB free before starting a deploy, and 5 GB when the npm or
+Docker cache has just been cleared, because the next install refills them. The
+shared check gate alone is not small: on 2026-10-27 a gate run in a fresh
+worktree took this host from 2.3 GB to 1.2 GB free.
+
+When space is tight, these are safe to reclaim, largest first:
+
+    docker builder prune -f   # ~5.0 GB of build cache; keeps images and rollback tags
+    docker image prune -f     # dangling images only; -a would also drop rollback tags
+    npm cache clean --force   # ~1.0 GB; refills on the next install
+    git -C /srv/apfel-park/app/source worktree remove <path>   # branch refs are kept
+
+`/srv/apfel-park/backups` (mail, postgres) grows on the backup scripts'
+schedule and is not a reclaim target; neither is `/var/backups`.
+
 ## Public surface probe
 
     /srv/apfel-park/app/current/deployment/vps/scripts/probe-public-surface.sh \
