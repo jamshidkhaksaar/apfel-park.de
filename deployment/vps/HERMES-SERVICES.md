@@ -10,10 +10,11 @@ otherwise come back without the gateway's sandbox boundary, without its
 emergency-stop gate, with the gateway's own unlimited restart loop still in
 force, and with the bridge running uncapped.
 
-Neither service's program is in this repository: the gateway install lives at
-`/usr/local/lib/hermes-agent`, and the bridge's `ExecStart` script at
-`/usr/local/bin/hermes-notify-bridge.py`. Restore both out of band before
-starting their units (see the prerequisites in each section).
+The gateway's program is not captured: it is an install at
+`/usr/local/lib/hermes-agent`. The bridge's program is captured
+(`hermes-notify-bridge/hermes-notify-bridge.py`), but the `hermes` shim it calls
+belongs to that same gateway install. Restore the install out of band before
+starting either unit (see the prerequisites in each section).
 
 ## Hermes agent gateway
 
@@ -178,6 +179,8 @@ Restore:
       /etc/systemd/system/hermes-notify-bridge.service
     install -D -m 0644 deployment/vps/systemd/hermes-notify-bridge.service.control.d/*.conf \
       -t /etc/systemd/system.control/hermes-notify-bridge.service.d/
+    install -D -m 0644 deployment/vps/hermes-notify-bridge/hermes-notify-bridge.py \
+      /usr/local/bin/hermes-notify-bridge.py
     install -m 0600 deployment/vps/systemd/hermes-notify-bridge.env.example \
       /etc/hermes-notify-bridge.env
     systemctl daemon-reload
@@ -223,11 +226,31 @@ required.
 
 ### Program
 
-`ExecStart` runs `/usr/local/bin/hermes-notify-bridge.py` (3261 bytes, sha256
-`690ad7f099846d8479c6658380fc5193ca9d3f623fd92f01d198c6864516d03e` when
-captured). It is not tracked in this repository, so a rebuild has to restore it
-out of band before the unit can start; a unit installed without it fails with
+`ExecStart` runs `/usr/local/bin/hermes-notify-bridge.py`, captured here as
+`hermes-notify-bridge/hermes-notify-bridge.py` (3261 bytes, 80 lines, sha256
+`690ad7f099846d8479c6658380fc5193ca9d3f623fd92f01d198c6864516d03e`). It uses
+only the standard library, so `python3` is the whole runtime requirement, and it
+has to be installed before the unit starts: a unit without the script fails with
 `status=203/EXEC`.
+
+The script is a small HTTP wrapper over the hermes CLI, and what it depends on is
+worth knowing before a rebuild is called complete:
+
+- `/usr/local/bin/hermes` must exist; the bridge runs it as
+  `hermes send --to <target> --json`. On this host that path is a two-line shim,
+  `exec /usr/local/lib/hermes-agent/.hermes/bin/hermes "$@"`, so the bridge
+  inherits the gateway's prerequisite: the `/usr/local/lib/hermes-agent`
+  install.
+- `BRIDGE_TOKEN` must be set, which the unit does through its `EnvironmentFile`.
+- Attachments are accepted only from `/srv/n8n/media`, matched on the resolved
+  path; anything outside it is refused with a 400 instead of being forwarded.
+- It listens on port 8722 on the addresses in `BIND_ADDRS` and answers 401 when
+  the `X-Bridge-Token` header does not match, which is how a rebuild can be
+  checked without sending a message:
+
+      curl -sS -o /dev/null -w '%{http_code}\n' -X POST \
+        -H 'X-Bridge-Token: wrong' -H 'Content-Type: application/json' \
+        -d '{"text":"x"}' http://172.17.0.1:8722/send   # expect 401
 
 ## Verification
 

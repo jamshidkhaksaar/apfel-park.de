@@ -26,6 +26,7 @@ This folder captures the production server layout needed to rebuild or migrate t
 - `systemd/hermes-gateway.service.control.d/50-*.conf`: the gateway's resource caps. These install to `/etc/systemd/system.control/`, not `/etc/systemd/system/`, which is why they are kept in their own folder.
 - `systemd/hermes-notify-bridge.service` and `systemd/hermes-notify-bridge.service.control.d/50-*.conf`: the n8n to hermes send bridge and its (uncapped-by-default) resource limits.
 - `systemd/hermes-notify-bridge.env.example`: sanitized template for the bridge's token file. The real `/etc/hermes-notify-bridge.env` is a secret and is not committed.
+- `hermes-notify-bridge/hermes-notify-bridge.py`: the bridge's program, a stdlib-only HTTP wrapper over the `hermes` CLI, installed to `/usr/local/bin/`.
 - `HERMES-SERVICES.md`: how to restore both Hermes host services, and how to engage, re-engage and resume the gateway's emergency stop.
 - `mail/compose.yaml`: production Roundcube and docker-mailserver compose file.
 - `mail/mail.env.example`: sanitized docker-mailserver environment template.
@@ -61,7 +62,7 @@ Create replacement values from the `.example` files during migration, then resto
 5. Copy `deployment/vps/systemd/apfel-park-nextjs.service`, `deployment/vps/systemd/apfel-park-marketplace-worker.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.timer` and `deployment/vps/systemd/apfel-park-public-surface-probe-alert@.service` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
 6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then enable and start `apfel-park-nextjs.service` and `apfel-park-marketplace-worker.service`, and `systemctl enable --now apfel-park-public-surface-probe.timer`.
 7. Copy `deployment/vps/systemd/hermes-gateway.service` and `deployment/vps/systemd/hermes-gateway.service.d/*` to `/etc/systemd/system/`, and `deployment/vps/systemd/hermes-gateway.service.control.d/*` to `/etc/systemd/system.control/hermes-gateway.service.d/`, then run `systemctl daemon-reload` and `systemctl enable hermes-gateway`. Do not start it until `/root/.hermes` exists, `user@0.service` runs and the emergency stop is known to be absent (see Hermes host services).
-8. Copy `deployment/vps/systemd/hermes-notify-bridge.service` to `/etc/systemd/system/` and `deployment/vps/systemd/hermes-notify-bridge.service.control.d/*` to `/etc/systemd/system.control/hermes-notify-bridge.service.d/`, create `/etc/hermes-notify-bridge.env` from `deployment/vps/systemd/hermes-notify-bridge.env.example` with the real token and mode 0600, restore the `ExecStart` script, then `systemctl daemon-reload` and `systemctl enable --now hermes-notify-bridge`.
+8. Copy `deployment/vps/systemd/hermes-notify-bridge.service` to `/etc/systemd/system/` and `deployment/vps/systemd/hermes-notify-bridge.service.control.d/*` to `/etc/systemd/system.control/hermes-notify-bridge.service.d/`, install `deployment/vps/hermes-notify-bridge/hermes-notify-bridge.py` to `/usr/local/bin/hermes-notify-bridge.py`, create `/etc/hermes-notify-bridge.env` from `deployment/vps/systemd/hermes-notify-bridge.env.example` with the real token and mode 0600, then `systemctl daemon-reload` and `systemctl enable --now hermes-notify-bridge`.
 9. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
 10. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
 11. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.
@@ -248,7 +249,8 @@ reviewed replacement.
 The bridge has none of that machinery: no `/etc` drop-ins, no emergency stop,
 and no sandbox -- its containment is its resource caps (`MemoryMax=128MiB`,
 `CPUQuota=20%`, `TasksMax=64`) and the fact that it listens only on loopback and
-the Docker bridge addresses. It does require a secret: `BRIDGE_TOKEN` in
+the Docker bridge addresses. Unlike the gateway, its program is small enough to
+capture, and it is. It does require a secret: `BRIDGE_TOKEN` in
 `/etc/hermes-notify-bridge.env`, the same value the n8n container holds as
 `NOTIFY_BRIDGE_TOKEN`. Rotate both sides together or every notify call fails
 with an auth error.
