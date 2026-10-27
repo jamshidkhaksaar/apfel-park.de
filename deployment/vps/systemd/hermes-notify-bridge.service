@@ -1,0 +1,16 @@
+[Unit]
+Description=Hermes Notify Bridge (n8n -> hermes send)
+After=network.target docker.service
+
+[Service]
+Type=simple
+User=root
+Environment="HOME=/root"
+Environment="BIND_ADDRS=127.0.0.1,172.23.0.1,172.17.0.1"
+EnvironmentFile=/etc/hermes-notify-bridge.env
+ExecStart=/usr/bin/python3 /usr/local/bin/hermes-notify-bridge.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

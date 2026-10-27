@@ -21,6 +21,7 @@
     "db:baseline": "node scripts/migrate.mjs baseline",
     "test": "vitest run",
     "test:image-uploads": "node scripts/image-upload-regression.mjs",
+    "test:notify-bridge": "python3 deployment/vps/tests/test_notify_bridge.py",
     "test:watch": "vitest",
     "dev:product-intake-ui-fixture": "tsx scripts/product-intake-ui-fixture.tsx",
     "branding:favicons": "node scripts/generate-favicons.mjs",

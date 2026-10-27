@@ -15,12 +15,19 @@ This folder captures the production server layout needed to rebuild or migrate t
 - Nginx site: `/etc/nginx/sites-available/apfel-park.conf`
 - App service: `/etc/systemd/system/apfel-park-nextjs.service`
 - Omnichannel worker: `/etc/systemd/system/apfel-park-marketplace-worker.service`
+- Hermes host services: `/etc/systemd/system/hermes-gateway.service` and `/etc/systemd/system/hermes-notify-bridge.service`, with the gateway's drop-ins in `/etc/systemd/system/hermes-gateway.service.d/` and both units' resource caps in `/etc/systemd/system.control/<unit>.d/` (see Hermes host services)
 
 ## What is included
 
 - `nginx/apfel-park.conf`: production nginx reverse proxy and static upload/static asset mapping.
 - `systemd/apfel-park-nextjs.service`: production Next.js standalone service.
 - `systemd/apfel-park-public-surface-probe.service`, `.timer` and `-alert@.service`: hourly origin-side probe of the public surface (the same checks a deploy gates on) and an emailed alert when it fails.
+- `systemd/hermes-gateway.service` and `systemd/hermes-gateway.service.d/*`: the Hermes agent gateway unit, its sandbox boundary and its emergency-stop and restart-policy drop-ins.
+- `systemd/hermes-gateway.service.control.d/50-*.conf`: the gateway's resource caps. These install to `/etc/systemd/system.control/`, not `/etc/systemd/system/`, which is why they are kept in their own folder.
+- `systemd/hermes-notify-bridge.service` and `systemd/hermes-notify-bridge.service.control.d/50-*.conf`: the n8n to hermes send bridge and its (uncapped-by-default) resource limits.
+- `systemd/hermes-notify-bridge.env.example`: sanitized template for the bridge's token file. The real `/etc/hermes-notify-bridge.env` is a secret and is not committed.
+- `hermes-notify-bridge/hermes-notify-bridge.py`: the bridge's program, a stdlib-only HTTP wrapper over the `hermes` CLI, installed to `/usr/local/bin/`.
+- `HERMES-SERVICES.md`: how to restore both Hermes host services, and how to engage, re-engage and resume the gateway's emergency stop.
 - `mail/compose.yaml`: production Roundcube and docker-mailserver compose file.
 - `mail/mail.env.example`: sanitized docker-mailserver environment template.
 - `mail/roundcube.env.example`: sanitized Roundcube environment template.
@@ -40,6 +47,7 @@ Do not commit these files directly:
 - `/srv/apfel-park/mail/.env`
 - `/srv/apfel-park/mail/roundcube.env`
 - `/srv/apfel-park/mail/docker-data/config/postfix-accounts.cf`
+- `/etc/hermes-notify-bridge.env` (the bridge's shared token; create it from `deployment/vps/systemd/hermes-notify-bridge.env.example`)
 - TLS private keys under `/etc/letsencrypt`
 - Mailbox data, logs, PostgreSQL dumps, and backup archives
 
@@ -53,11 +61,13 @@ Create replacement values from the `.example` files during migration, then resto
 4. Copy `deployment/vps/nginx/apfel-park.conf` to `/etc/nginx/sites-available/apfel-park.conf` and enable it.
 5. Copy `deployment/vps/systemd/apfel-park-nextjs.service`, `deployment/vps/systemd/apfel-park-marketplace-worker.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.service`, `deployment/vps/systemd/apfel-park-public-surface-probe.timer` and `deployment/vps/systemd/apfel-park-public-surface-probe-alert@.service` to `/etc/systemd/system/`, then run `systemctl daemon-reload`.
 6. Deploy the app with `deployment/vps/scripts/deploy-app.sh` (see Deploying below), then enable and start `apfel-park-nextjs.service` and `apfel-park-marketplace-worker.service`, and `systemctl enable --now apfel-park-public-surface-probe.timer`.
-7. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
-8. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
-9. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.
-10. Recreate mail users with docker-mailserver `setup.sh email add/update`; do not reuse committed placeholder hashes as passwords.
-11. Restore latest mailbox and PostgreSQL backups separately, then verify DNS, SSL, SMTP, IMAP, Roundcube, and the app checkout flow.
+7. Copy `deployment/vps/systemd/hermes-gateway.service` and `deployment/vps/systemd/hermes-gateway.service.d/*` to `/etc/systemd/system/`, and `deployment/vps/systemd/hermes-gateway.service.control.d/*` to `/etc/systemd/system.control/hermes-gateway.service.d/`, then run `systemctl daemon-reload` and `systemctl enable hermes-gateway`. Do not start it until `/root/.hermes` exists, `user@0.service` runs and the emergency stop is known to be absent (see Hermes host services).
+8. Copy `deployment/vps/systemd/hermes-notify-bridge.service` to `/etc/systemd/system/` and `deployment/vps/systemd/hermes-notify-bridge.service.control.d/*` to `/etc/systemd/system.control/hermes-notify-bridge.service.d/`, install `deployment/vps/hermes-notify-bridge/hermes-notify-bridge.py` to `/usr/local/bin/hermes-notify-bridge.py`, create `/etc/hermes-notify-bridge.env` from `deployment/vps/systemd/hermes-notify-bridge.env.example` with the real token and mode 0600, then `systemctl daemon-reload` and `systemctl enable --now hermes-notify-bridge`.
+9. Create `/srv/apfel-park/mail/.env` from `deployment/vps/mail/mail.env.example`.
+10. Create `/srv/apfel-park/mail/roundcube.env` from `deployment/vps/mail/roundcube.env.example`.
+11. Copy `deployment/vps/mail/compose.yaml` to `/srv/apfel-park/mail/compose.yaml` and start it with `docker compose up -d`.
+12. Recreate mail users with docker-mailserver `setup.sh email add/update`; do not reuse committed placeholder hashes as passwords.
+13. Restore latest mailbox and PostgreSQL backups separately, then verify DNS, SSL, SMTP, IMAP, Roundcube, and the app checkout flow.
 
 ## Deploying
 
@@ -98,8 +108,9 @@ Seven things it enforces, each learned the hard way:
   `next build` does not do this. Skip it and the site returns 200 with no CSS
   and no JS -- there is no error anywhere, it just looks broken.
 - **It runs the shared check gate before touching the symlink.** A failing
-  lint, typecheck, unused-source audit, test, dependency audit or production
-  build aborts the deploy with production still on the previous release.
+  lint, typecheck, unused-source audit, test, bridge test, dependency audit or
+  production build aborts the deploy with production still on the previous
+  release.
 - **It symlinks `shared/uploads` into `.next/standalone/public/`.** Uploads
   live outside releases and are served by nginx via `alias`, but `next/image`
   resolves local paths inside Next. The symlink covers existing files;
@@ -127,8 +138,11 @@ Seven things it enforces, each learned the hard way:
     npm run ci:check
 
 `scripts/ci-check.mjs` runs lint, typecheck, the unused-source audit, the test
-suite, the dependency audit and the production build, in that order, and stops
-at the first gate that fails with that gate's own exit code. `deploy-app.sh`
+suite, the notify bridge suite, the dependency audit and the production build,
+in that order, and stops at the first gate that fails with that gate's own exit
+code. The bridge suite is the one gate that needs more than node: `python3` runs
+`deployment/vps/tests/test_notify_bridge.py`, which the deploy host and CI both
+have. `deploy-app.sh`
 calls it and so does `.github/workflows/ci.yml`, so a check added for one
 applies to both, and it runs anywhere node runs -- a laptop or this VPS --
 without waiting on CI to be able to start a job.
@@ -151,6 +165,32 @@ standalone server, the activation health check, and the origin-side surface
 probe. Those need a release directory, so they are not part of the shared list.
 
 Never edit files inside a `releases/` directory. Commit, push, then deploy.
+
+### Free space for a deploy
+
+A deploy builds the new release in place while the retained ones stay, so the
+disk has to hold both at once. Measured on 2026-10-27:
+
+- one release is ~1.15 GB (dependencies ~680 MB, `.next` ~390 MB, `public/`)
+- `KEEP=3` holds three of them, ~3.4 GB, and the prune always skips the current
+  and the previous release, so the rollback copy survives it
+- the build is the transient peak: `npm ci` and `next build` write into the
+  release under construction, roughly its final size again
+
+Keep at least 2 GB free before starting a deploy, and 5 GB when the npm or
+Docker cache has just been cleared, because the next install refills them. The
+shared check gate alone is not small: on 2026-10-27 a gate run in a fresh
+worktree took this host from 2.3 GB to 1.2 GB free.
+
+When space is tight, these are safe to reclaim, largest first:
+
+    docker builder prune -f   # ~5.0 GB of build cache; keeps images and rollback tags
+    docker image prune -f     # dangling images only; -a would also drop rollback tags
+    npm cache clean --force   # ~1.0 GB; refills on the next install
+    git -C /srv/apfel-park/app/source worktree remove <path>   # branch refs are kept
+
+`/srv/apfel-park/backups` (mail, postgres) grows on the backup scripts'
+schedule and is not a reclaim target; neither is `/var/backups`.
 
 ## Public surface probe
 
@@ -214,6 +254,39 @@ neither reads nor writes the suppression state, so it cannot hide the first real
 failure.
 
 To stop the hourly probe: `systemctl disable --now apfel-park-public-surface-probe.timer`.
+
+## Hermes host services
+
+`hermes-gateway.service` runs the Hermes agent gateway and
+`hermes-notify-bridge.service` is the n8n to hermes send bridge. Both units,
+their `systemctl set-property` resource caps and the gateway's safety drop-ins
+live only on the VPS and have no installer, so the capture in
+`systemd/hermes-*.service*` and `HERMES-SERVICES.md` is what a rebuild restores
+them from.
+
+Two of those settings are load-bearing rather than cosmetic.
+`systemd/hermes-gateway.service.d/95-freeze.conf` gates every start on the
+text-based emergency stop, `!/root/.hermes/ESTOP`, so an engaged stop keeps the
+gateway down across reboots, and it replaces the unit's own unbounded retry loop
+(`Restart=always`, `RestartSec=5`, `StartLimitIntervalSec=0`) with three starts
+per fifteen minutes, thirty seconds apart. After that burst the unit stays
+`failed` until an operator runs `systemctl reset-failed hermes-gateway`.
+`systemd/hermes-gateway.service.d/90-safety.conf` is the sandbox boundary that
+keeps the gateway out of the deploy tooling, the system control sockets, the
+build runner and the production secret files. It is not to be removed without a
+reviewed replacement.
+
+The bridge has none of that machinery: no `/etc` drop-ins, no emergency stop,
+and no sandbox -- its containment is its resource caps (`MemoryMax=128MiB`,
+`CPUQuota=20%`, `TasksMax=64`) and the fact that it listens only on loopback and
+the Docker bridge addresses. Unlike the gateway, its program is small enough to
+capture, and it is. It does require a secret: `BRIDGE_TOKEN` in
+`/etc/hermes-notify-bridge.env`, the same value the n8n container holds as
+`NOTIFY_BRIDGE_TOKEN`. Rotate both sides together or every notify call fails
+with an auth error.
+
+Engaging, re-engaging and resuming the emergency stop, the install mapping for
+both services and the bridge's secret handling are in `HERMES-SERVICES.md`.
 
 ## AEO markdown twins
 
