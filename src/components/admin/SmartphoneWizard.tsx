@@ -624,6 +624,7 @@ export default function SmartphoneWizard({
             <Field label={t.search} value={search} onChange={setSearch} />
             {researchEnabled ? (
               <AiFillButton locale={locale} query={search || [shared.brand, shared.model, shared.title].filter(Boolean).join(' ')}
+                category={shared.category}
                 color={document.entries.every(entry => entry.color === document.entries[0]?.color) ? document.entries[0]?.color : undefined}
                 eprelId={shared.eprelId}
                 condition={document.entries.every(entry => entry.condition === document.entries[0]?.condition) ? document.entries[0]?.condition : undefined}

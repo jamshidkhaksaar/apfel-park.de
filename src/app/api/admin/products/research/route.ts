@@ -48,6 +48,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const hardwareModel = typeof body.hardwareModel === 'string' ? body.hardwareModel.trim() : '';
     const eprelId = typeof body.eprelId === 'string' ? body.eprelId.trim() : '';
     const color = typeof body.color === 'string' ? body.color.trim() : '';
+    const category = typeof body.category === 'string' ? body.category.trim() : undefined;
     const file = form?.get('photo');
     if (query.length > 200 || hardwareModel.length > 100 || eprelId.length > 16 || color.length > 80
         || (condition && !['new','open_box','used'].includes(condition)) || (!query && !(file instanceof File))) {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (findSensitiveDataIssues({ query, hardwareModel, eprelId, color }).length) return NextResponse.json({ error: 'Query contains sensitive identifiers', code: 'private_input' }, { status: 400 });
     const signal = AbortSignal.any([request.signal, AbortSignal.timeout(75000)]);
     const photo = file instanceof File ? await prepareResearchPhoto(file, typeof body.assetType === 'string' ? body.assetType : 'barcode_label') : undefined;
-    const research = await researchProductFromOfficialPages({ query, condition, photo, hardwareModel }, signal);
+    const research = await researchProductFromOfficialPages({ query, condition, photo, hardwareModel, category }, signal);
     research.skuSuggestion = `AP-${randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase()}`;
     try {
       const eprel = await researchExactEprel({ brand: research.brand!, model: research.model!, hardwareModel, eprelId }, signal);

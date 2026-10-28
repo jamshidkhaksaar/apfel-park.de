@@ -3,7 +3,78 @@ import { deviceModelNeedles } from '@/lib/device-model';
 
 export type ResearchSource = { url: string; title: string; retrievedAt: string; text: string };
 
-const manufacturerDomains = ['apple.com','samsung.com','samsungmobilepress.com','mi.com','xiaomi.com','nothing.tech','fairphone.com','hmd.com','nokia.com','honor.com','huawei.com','oneplus.com','oppo.com','realme.com','motorola.com','motorola.de','sony.com','sony.de','asus.com','lenovo.com','playstation.com','nintendo.com','microsoft.com','logitech.com','belkin.com','anker.com','ugreen.com'];
+const manufacturerDomains = [
+  'apple.com',
+  'samsung.com',
+  'samsungmobilepress.com',
+  'mi.com',
+  'xiaomi.com',
+  'nothing.tech',
+  'fairphone.com',
+  'hmd.com',
+  'nokia.com',
+  'honor.com',
+  'huawei.com',
+  'oneplus.com',
+  'oppo.com',
+  'realme.com',
+  'motorola.com',
+  'motorola.de',
+  'sony.com',
+  'sony.de',
+  'asus.com',
+  'lenovo.com',
+  'playstation.com',
+  'nintendo.com',
+  'nintendo.de',
+  'xbox.com',
+  'microsoft.com',
+  'dell.com',
+  'hp.com',
+  'acer.com',
+  'razer.com',
+  'msi.com',
+  'lg.com',
+  'vivo.com',
+  'ztedevices.com',
+  'tcl.com',
+  'logitech.com',
+  'belkin.com',
+  'anker.com',
+  'ugreen.com',
+  'baseus.com',
+  'bose.com',
+  'bose.de',
+  'jbl.com',
+  'jbl.de',
+  'sennheiser.com',
+  'sennheiser-hearing.com',
+  'celly.com',
+  'celly.it',
+  'spigen.com',
+  'spigen.de',
+  'otterbox.com',
+  'otterbox.de',
+  'rhinoshield.de',
+  'rhinoshield.io',
+  'torraslife.com',
+  'esrgear.com',
+  'uag.com',
+  'urbanarmorgear.com',
+  'pitaka.com',
+  'ipitaka.com',
+  'caseologycases.com',
+  'dbrand.com',
+  'mous.co',
+  'panzerglass.com',
+  'panzerglass.de',
+  'idealofsweden.com',
+  'idealofsweden.de',
+  'soundcore.com',
+  'zagg.com',
+  'sandisk.com',
+  'kingston.com',
+];
 const exactGoogleHosts = ['store.google.com','support.google.com','safety.google'];
 
 export const germanManufacturerUrl = (value: string): string => {
@@ -106,7 +177,7 @@ export const sourceMatchesModel = (text: string, model: string): boolean => {
 };
 
 const readBounded = async (response: Response): Promise<string> => {
-  const limit = 2_000_000;
+  const limit = 6_000_000;
   if (Number(response.headers.get('content-length') ?? 0) > limit || !response.body) throw new Error('source_size');
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
