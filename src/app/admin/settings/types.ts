@@ -1,4 +1,8 @@
 export type SettingsData = {
+  /** Admin control for the seasonal campaign; `auto` follows env + calendar. */
+  campaign: {
+    mode: "auto" | "on" | "off";
+  };
   general: {
     shopName: string;
     owner: string;

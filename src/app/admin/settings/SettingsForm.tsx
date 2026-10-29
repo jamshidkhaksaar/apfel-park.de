@@ -7,10 +7,16 @@ import { useAdmin } from "@/lib/admin-context";
 import { saveSettings } from "./actions";
 import { type SettingsData } from "./types";
 
-type SettingsTab = "general" | "operations" | "whatsapp" | "integrations";
+type SettingsTab = "general" | "operations" | "campaign" | "whatsapp" | "integrations";
 type SecretStatus = {
   facebookPageAccessToken: boolean;
   instagramAccessToken: boolean;
+};
+type CampaignStatus = {
+  mode: SettingsData["campaign"]["mode"];
+  phase: "off" | "before" | "live" | "after";
+  themeActive: boolean;
+  source: "admin" | "env" | "calendar";
 };
 
 const tabButtonClass = (active: boolean) =>
@@ -30,9 +36,11 @@ const statusPillClass = (active: boolean) =>
 export default function SettingsForm({
   initialSettings,
   secretStatus = { facebookPageAccessToken: false, instagramAccessToken: false },
+  campaignStatus,
 }: {
   initialSettings: SettingsData;
   secretStatus?: SecretStatus;
+  campaignStatus: CampaignStatus;
 }) {
   const router = useRouter();
   const { dict, lang } = useAdmin();
@@ -54,6 +62,17 @@ export default function SettingsForm({
   );
   const publishingReady = facebookPublishingReady || instagramPublishingReady;
   const autoPublishEnabled = settings.integrations.autoPublishNewProducts || settings.integrations.autoPublishDiscountProducts;
+  const campaignPhaseLabel = {
+    before: dict.settingsForm.campaignPhaseBefore,
+    live: dict.settingsForm.campaignPhaseLive,
+    after: dict.settingsForm.campaignPhaseAfter,
+    off: dict.settingsForm.campaignPhaseOff,
+  }[campaignStatus.phase];
+  const campaignSourceLabel = {
+    admin: dict.settingsForm.campaignSourceAdmin,
+    env: dict.settingsForm.campaignSourceEnv,
+    calendar: dict.settingsForm.campaignSourceCalendar,
+  }[campaignStatus.source];
 
   const handleChange = (section: keyof SettingsData, field: string, value: string | boolean | number) => {
     setSettings((prev) => ({
@@ -126,6 +145,10 @@ export default function SettingsForm({
           <button type="button" onClick={() => setActiveTab("operations")} className={tabButtonClass(activeTab === "operations")}>
             <div className="text-sm font-semibold">{dict.settingsForm.tabs.operations}</div>
             <div className="mt-1 text-xs text-muted">{dict.settingsForm.tabs.operationsDesc}</div>
+          </button>
+          <button type="button" onClick={() => setActiveTab("campaign")} className={tabButtonClass(activeTab === "campaign")}>
+            <div className="text-sm font-semibold">{dict.settingsForm.tabs.campaign}</div>
+            <div className="mt-1 text-xs text-muted">{dict.settingsForm.tabs.campaignDesc}</div>
           </button>
           <button type="button" onClick={() => setActiveTab("whatsapp")} className={tabButtonClass(activeTab === "whatsapp")}>
             <div className="text-sm font-semibold">{dict.settingsForm.tabs.whatsapp}</div>
@@ -308,6 +331,84 @@ export default function SettingsForm({
                   <p className="text-xs text-muted/60">{dict.settingsForm.minScoreHint}</p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "campaign" && (
+          <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+            <div className="glass-panel rounded-3xl p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">{dict.settingsForm.campaignTitle}</h2>
+                  <p className="mt-2 text-sm text-muted">{dict.settingsForm.campaignDesc}</p>
+                </div>
+                <span className={statusPillClass(campaignStatus.themeActive)}>
+                  {campaignStatus.themeActive ? dict.settingsForm.active : dict.settingsForm.inactive}
+                </span>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                {(
+                  [
+                    ["auto", dict.settingsForm.campaignModeAuto, dict.settingsForm.campaignModeAutoDesc],
+                    ["on", dict.settingsForm.campaignModeOn, dict.settingsForm.campaignModeOnDesc],
+                    ["off", dict.settingsForm.campaignModeOff, dict.settingsForm.campaignModeOffDesc],
+                  ] as const
+                ).map(([mode, title, description]) => {
+                  const selected = settings.campaign.mode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => handleChange("campaign", "mode", mode)}
+                      className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition ${
+                        selected ? "border-gold/50 bg-gold/10" : "border-border bg-black/20 hover:border-gold/30"
+                      }`}
+                    >
+                      <span className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border ${selected ? "border-gold" : "border-muted"}`}>
+                        {selected ? <span className="size-2 rounded-full bg-gold" /> : null}
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold text-foreground">{title}</span>
+                        <span className="mt-0.5 block text-xs text-muted">{description}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="mt-5 rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-xs text-muted">
+                {dict.settingsForm.campaignNote}
+              </p>
+            </div>
+
+            <div className="glass-panel rounded-3xl p-6">
+              <h2 className="text-lg font-semibold text-foreground">{dict.settingsForm.campaignStatusTitle}</h2>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted">{dict.settingsForm.campaignStatusTheme}</dt>
+                  <dd className="font-semibold text-foreground">
+                    {campaignStatus.themeActive ? dict.settingsForm.active : dict.settingsForm.inactive}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted">{dict.settingsForm.campaignStatusPage}</dt>
+                  <dd className="font-semibold text-foreground">{campaignPhaseLabel}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted">{dict.settingsForm.campaignStatusSource}</dt>
+                  <dd className="text-right font-semibold text-foreground">{campaignSourceLabel}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted">{dict.settingsForm.campaignStatusWindow}</dt>
+                  <dd className="text-right font-semibold text-foreground">
+                    {dict.settingsForm.campaignStatusWindowValue}
+                  </dd>
+                </div>
+              </dl>
+              <p className="mt-5 text-xs text-muted">{dict.settingsForm.campaignSaveHint}</p>
             </div>
           </div>
         )}

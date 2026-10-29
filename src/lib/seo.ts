@@ -6,6 +6,8 @@ import { accessoryCollectionSlugs, getAccessoryCollection } from "@/lib/accessor
 import { countActiveSubcategoryProducts, getProducts } from "@/lib/products";
 import { isRepairBenchmarkPublished } from "@/lib/repair-price-benchmark";
 import { repairServiceSlugs } from "@/lib/repair-services";
+import { blackFriday } from "@/lib/black-friday";
+import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
 import { showcasePages, type ShowcaseSlug } from "@/lib/showcase-pages";
 import {
   buildDefaultSeoSettings,
@@ -286,6 +288,25 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
       }))
     : [];
 
+  // The campaign page is listed from the teaser window on: it is a real page
+  // with dates and answers. Outside that window it 404s, so it must not be in
+  // the sitemap then.
+  const { phase: campaignPhase } = await getEffectiveCampaign();
+  const campaignListed = campaignPhase === "before" || campaignPhase === "live";
+  const seasonalEntries = campaignListed
+    ? locales.map((locale) => ({
+        url: `${siteInfo.url}/${locale}${blackFriday.href}`,
+        lastModified: new Date(),
+        alternates: {
+          languages: {
+            de: `${siteInfo.url}/de${blackFriday.href}`,
+            en: `${siteInfo.url}/en${blackFriday.href}`,
+            "x-default": `${siteInfo.url}/de${blackFriday.href}`,
+          },
+        },
+      }))
+    : [];
+
   const tradeInEntries = locales.map((locale) => ({
     url: `${siteInfo.url}/${locale}/trade-in`,
     alternates: {
@@ -297,7 +318,7 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     },
   }));
 
-  return [...staticEntries, ...repairServiceEntries, ...repairComparisonEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...tradeInEntries, ...productEntries];
+  return [...staticEntries, ...seasonalEntries, ...repairServiceEntries, ...repairComparisonEntries, ...accessoryCollectionEntries, ...catalogEntries, ...guideEntries, ...tradeInEntries, ...productEntries];
 };
 
 /**

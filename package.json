@@ -22,6 +22,7 @@
     "test": "vitest run",
     "test:image-uploads": "node scripts/image-upload-regression.mjs",
     "test:watch": "vitest",
+    "qa:black-friday": "node scripts/black-friday-qa.mjs",
     "dev:product-intake-ui-fixture": "tsx scripts/product-intake-ui-fixture.tsx",
     "branding:favicons": "node scripts/generate-favicons.mjs",
     "seo:indexnow": "node scripts/indexnow.mjs",

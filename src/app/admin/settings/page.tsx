@@ -5,6 +5,7 @@ import { telegramText } from '@/lib/telegram-products/i18n';
 import { createAdminDbClient } from "@/lib/admin-db";
 import { businessAddress, businessIdentity } from '@/lib/business-identity';
 import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
+import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
 
 import AdminShell from "../../../components/admin/AdminShell";
 import SettingsForm from "./SettingsForm";
@@ -27,6 +28,7 @@ export default async function SettingsPage() {
     acc[curr.key] = curr.value;
     return acc;
   }, {} as Partial<Record<keyof SettingsData, SettingsData[keyof SettingsData]>>);
+  const campaignState = await getEffectiveCampaign();
   const general = (settingsMap.general ?? {}) as SettingsData["general"];
   const hours = (settingsMap.hours ?? {}) as SettingsData["hours"];
   const maintenance = (settingsMap.maintenance ?? {}) as SettingsData["maintenance"];
@@ -35,6 +37,9 @@ export default async function SettingsPage() {
 
   // Default values fallback
   const initialSettings = {
+    campaign: {
+      mode: campaignState.mode,
+    },
     general: {
       shopName: general.shopName || businessIdentity.tradingName,
       owner: general.owner || businessIdentity.legalOwner,
@@ -103,7 +108,16 @@ export default async function SettingsPage() {
   return (
     <AdminShell title={dict.settingsPage.title}>
       {owner ? <nav className="mb-6 flex flex-wrap gap-3"><Link className="btn-secondary" href="/admin/settings/telegram">{telegramText[locale].title}</Link><Link className="btn-secondary" href="/admin/settings/ai-providers">{telegramText[locale].providers}</Link></nav> : null}
-      <SettingsForm initialSettings={initialSettings} secretStatus={secretStatus} />
+      <SettingsForm
+        initialSettings={initialSettings}
+        secretStatus={secretStatus}
+        campaignStatus={{
+          mode: campaignState.mode,
+          phase: campaignState.phase,
+          themeActive: Boolean(campaignState.theme),
+          source: campaignState.source,
+        }}
+      />
     </AdminShell>
   );
 }

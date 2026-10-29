@@ -134,7 +134,7 @@ export default function StoreCatalogClient({
   }, param, value);
 
   const clearAll = () => pushParams((next) => {
-    for (const key of ["q", "brand", "storage", "condition", "atype", "stock", "pmin", "pmax"]) next.delete(key);
+    for (const key of ["q", "brand", "storage", "condition", "atype", "stock", "deals", "pmin", "pmax"]) next.delete(key);
   }, "clear_all", "all");
 
   const chips: Array<{ key: string; label: string; remove: () => void }> = [];
@@ -147,6 +147,7 @@ export default function StoreCatalogClient({
   for (const condition of activeFilters.conditions) chips.push({ key: `condition-${condition}`, label: conditionLabels[lang][condition], remove: () => removeMulti("condition", condition) });
   for (const type of activeFilters.accessoryTypes) chips.push({ key: `type-${type}`, label: accessoryTypeLabels[type]?.[lang] ?? type, remove: () => removeMulti("atype", type) });
   if (activeFilters.inStockOnly) chips.push({ key: "stock", label: isGerman ? "Sofort verfügbar" : "In stock", remove: () => pushParams((next) => next.delete("stock"), "stock", "all") });
+  if (activeFilters.dealsOnly) chips.push({ key: "deals", label: isGerman ? "Nur Deals" : "Deals only", remove: () => pushParams((next) => next.delete("deals"), "deals", "off") });
   if (activeFilters.priceMin !== undefined || activeFilters.priceMax !== undefined) chips.push({
     key: "price",
     label: `${activeFilters.priceMin ?? facets.priceMin} € – ${activeFilters.priceMax ?? facets.priceMax} €`,
@@ -184,9 +185,29 @@ export default function StoreCatalogClient({
 
         <div className="min-w-0 flex-1">
           <div className={`z-[100] mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-store-ground/95 py-3 backdrop-blur lg:sticky ${STICKY_TOP}`}>
-            <p className="text-sm text-muted">
-              <span className="font-bold tabular-nums text-foreground">{total}</span> {isGerman ? "Produkte" : "products"}
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-muted">
+                <span className="font-bold tabular-nums text-foreground">{total}</span> {isGerman ? "Produkte" : "products"}
+              </p>
+              <button
+                type="button"
+                onClick={() => pushParams((next) => {
+                  if (activeFilters.dealsOnly) next.delete("deals");
+                  else next.set("deals", "1");
+                }, "deals", activeFilters.dealsOnly ? "off" : "on")}
+                aria-pressed={Boolean(activeFilters.dealsOnly)}
+                className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[11px] font-bold uppercase tracking-[0.08em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-store-ground ${
+                  activeFilters.dealsOnly
+                    ? "border-signal/60 bg-signal text-[#08080a]"
+                    : "border-gold/40 text-gold hover:bg-gold/10"
+                }`}
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3" aria-hidden="true">
+                  <path d="M12 2c.6 3.2-1.4 4.6-2.9 6.2C7.4 10 6 11.6 6 14a6 6 0 0 0 12 0c0-2.7-1.5-4.6-3.1-6.2C13.4 6.2 12 4.8 12 2Zm0 17.5a2.9 2.9 0 0 1-2.9-2.9c0-1.2.7-2 1.6-2.9.6-.6 1.1-1.2 1.3-1.9.5.8 2.9 2.6 2.9 4.8a2.9 2.9 0 0 1-2.9 2.9Z" />
+                </svg>
+                {isGerman ? "Nur Deals" : "Deals only"}
+              </button>
+            </div>
             <div className="flex items-center gap-2">
               <Link href={`/${lang}/store/catalog`} className="hidden min-h-11 items-center rounded-xl border border-border px-3 text-xs font-semibold text-foreground transition hover:border-gold lg:inline-flex">A–Z</Link>
 

@@ -96,7 +96,7 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "", variant = "c
   };
 
   return (
-    <Wrapper className={isHeader ? "shrink-0" : "border-y border-border bg-gold/5 py-6"} aria-labelledby={isHeader ? undefined : `device-quote-heading-${id}`}>
+    <Wrapper className={isHeader ? "min-w-0" : "border-y border-border bg-gold/5 py-6"} aria-labelledby={isHeader ? undefined : `device-quote-heading-${id}`}>
       <div className={isHeader ? "" : "container-page flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"}>
         {!isHeader && <div>
           <h2 id={`device-quote-heading-${id}`} className="scroll-mt-24 text-lg font-semibold text-foreground">{text.badge}</h2>
@@ -105,7 +105,7 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "", variant = "c
         <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-controls={`device-quote-dialog-${id}`}
           onClick={() => dialogRef.current?.showModal()}
           className={isHeader
-            ? "group inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gold/40 bg-gold/10 px-2.5 text-xs font-semibold text-gold shadow-sm shadow-gold/10 transition-colors hover:border-gold/70 hover:bg-gold/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:px-3 sm:text-sm"
+            ? "group inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-2.5 text-xs font-semibold text-gold shadow-sm shadow-gold/10 transition-colors hover:border-gold/70 hover:bg-gold/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:px-3 sm:text-sm"
             : "btn-primary shrink-0 justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"}>
           {isHeader && (
             <span aria-hidden="true" className="hidden size-6 shrink-0 items-center justify-center rounded-lg bg-gold/15 transition-colors group-hover:bg-gold/25 min-[380px]:flex">

@@ -9,6 +9,7 @@ export default function ThemeToggle() {
 
   return (
     <div
+      data-theme-toggle
       role="radiogroup"
       aria-label="Darstellung / Theme"
       onKeyDown={(event) => {

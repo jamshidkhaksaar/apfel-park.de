@@ -35,6 +35,9 @@
   --red: #c35b5b;
   --red-text: #e27f7f;
   --sale: #a94444;
+  /* Campaign signal colour. Scoped to seasonal themes; the base site keeps
+     using --sale for discount badges. */
+  --signal: #d94436;
   --blue: #5a7fb7;
   --blue-text: #7fa2d6;
 
@@ -137,6 +140,7 @@
   --color-red: var(--red);
   --color-red-text: var(--red-text);
   --color-sale: var(--sale);
+  --color-signal: var(--signal);
   --color-blue: var(--blue);
   --color-blue-text: var(--blue-text);
   --color-border: var(--border);
@@ -161,6 +165,9 @@
     color: var(--foreground);
     font-family: var(--font-sans);
     min-height: 100vh;
+    /* Long German compounds only break when a box is narrower than the word,
+       which is what 200% text does at phone and tablet widths. */
+    overflow-wrap: break-word;
   }
 
   [data-theme="mono"] body {
@@ -912,6 +919,12 @@
   min-height: var(--nav-bar-height-scrolled);
 }
 
+/* When 200% text makes the header several rows tall, pinning it would cover a
+   large part of the viewport. Let it scroll away; sub-navs then stick at 0. */
+html[data-header-reflowed] .site-header {
+  position: static;
+}
+
 .navbar-logo-slot {
   width: var(--nav-bar-height);
   height: var(--nav-bar-height);
@@ -1360,5 +1373,229 @@
 
 .animate-ai-sparkle {
   animation: ai-sparkle-float 3.5s ease-out forwards;
+}
+
+/* ========================================
+   SEASONAL THEME — APFEL PARK BLACK WEEK
+   Layered on top of the dark theme through data-season on <html>. Tokens
+   repaint every page; the bf-* utilities carry the campaign art direction.
+   ======================================== */
+[data-season="black-friday"] {
+  /* Campaign palette: ink, warm bone, one signal red and a brass hairline
+     borrowed from the logo. The existing gold token names are remapped
+     deliberately — every component that already paints an accent inherits the
+     campaign red instead of drifting warm; brass is a separate token so the
+     structural rules can stay metallic without turning red. */
+  --background: #08080a;
+  --background-alt: #0d0d10;
+  --store-ground: #070709;
+  --store-card: #121215;
+  --foreground: #f2ede4;
+  --heading: #fffdf7;
+  --surface: #121215;
+  --surface-strong: #0b0b0d;
+  --muted: #c9c2b6;
+  --muted-strong: #948d81;
+
+  --brass: #c9a96a;
+  --brass-soft: #e4ce9f;
+  --paper: #f2ece2;
+
+  --gold: #e4142c;
+  --gold-text: #ff5a67;
+  --gold-soft: #ff3348;
+  --gold-deep: #a90c1e;
+  --gold-glow: rgba(228, 20, 44, 0.42);
+  --gold-pulse: rgba(228, 20, 44, 0.2);
+
+  --amber: #ff3348;
+  --orange: #d40f27;
+  --bronze: #8d0a19;
+
+  --sale: #e8172c;
+  --signal: #e8172c;
+
+  --border: rgba(255, 255, 255, 0.13);
+  --shadow: rgba(0, 0, 0, 0.78);
+
+  --bg-gradient: radial-gradient(85% 60% at 82% -10%, rgba(228, 20, 44, 0.18), transparent 62%);
+  --glow-gold: 0 0 30px rgba(228, 20, 44, 0.3);
+  --glow-gold-soft: 0 0 18px rgba(228, 20, 44, 0.2);
+}
+
+/* Red button text has to stay white; the light-theme adaptive contrast token
+   resolves to black, which fails here. */
+[data-season="black-friday"] .btn-primary,
+[data-season="black-friday"] .text-contrast-adaptive {
+  color: #fff;
+}
+
+/* The campaign palette always sits on the dark tokens; a light toggle would
+   break the art direction, so the control is hidden while it runs. */
+[data-season="black-friday"] [data-theme-toggle] {
+  display: none;
+}
+
+/* The default header is 40% black + blur, which is fine over the site's own
+   dark surfaces but lets white product plates read through while a deal grid
+   scrolls underneath. The campaign grid scrolls through the header on the
+   landing page, so the bars become effectively opaque. */
+[data-season="black-friday"] .top-bar,
+[data-season="black-friday"] .navbar-shell {
+  background-color: #070709;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Sale badges keep white text on red in the campaign palette. */
+[data-season="black-friday"] .bg-sale {
+  color: #ffffff;
+}
+
+@layer utilities {
+  .bf-surface {
+    background:
+      radial-gradient(72% 62% at 86% -14%, rgba(228, 20, 44, 0.17), transparent 62%),
+      radial-gradient(46% 44% at 2% 2%, rgba(201, 169, 106, 0.08), transparent 66%),
+      linear-gradient(180deg, #0b0b0e 0%, #070709 70%);
+  }
+
+  .bf-grid {
+    background-image:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 88px 88px, 88px 88px;
+    -webkit-mask-image: radial-gradient(120% 100% at 62% 0%, #000 22%, transparent 76%);
+    mask-image: radial-gradient(120% 100% at 62% 0%, #000 22%, transparent 76%);
+  }
+
+  .bf-noise {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E");
+  }
+
+  .bf-display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    line-height: 0.84;
+    letter-spacing: -0.045em;
+  }
+
+  .bf-outline {
+    color: #ffffff;
+  }
+
+  @supports (-webkit-text-stroke: 1px #000) {
+    .bf-outline {
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .bf-outline {
+      -webkit-text-stroke-width: 1px;
+    }
+  }
+
+  .bf-outline-red {
+    color: var(--signal);
+  }
+
+  @supports (-webkit-text-stroke: 1px #000) {
+    .bf-outline-red {
+      color: transparent;
+      -webkit-text-stroke: 1.5px var(--signal);
+    }
+  }
+
+  .bf-seal {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  .bf-rule {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.14) 0 1px,
+      transparent 1px 9px
+    );
+  }
+
+  .bf-marquee {
+    display: flex;
+    width: max-content;
+    animation: bf-marquee 46s linear infinite;
+  }
+
+  .bf-marquee:hover,
+  .bf-marquee:focus-within {
+    animation-play-state: paused;
+  }
+
+  .bf-float-slow {
+    animation: bf-float 7.5s ease-in-out infinite;
+  }
+
+  .bf-float-slower {
+    animation: bf-float 10s ease-in-out infinite reverse;
+  }
+
+  .bf-spin-slow {
+    animation: bf-spin 22s linear infinite;
+  }
+
+  .bf-seal-ticks {
+    transform-origin: 60px 60px;
+    animation: bf-spin 40s linear infinite;
+  }
+
+  .bf-pip {
+    animation: bf-pip 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+
+  .bf-sheen {
+    animation: bf-sheen 5.5s ease-in-out infinite;
+  }
+}
+
+@keyframes bf-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes bf-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(var(--bf-tilt, 0deg)); }
+  50% { transform: translate3d(0, -14px, 0) rotate(var(--bf-tilt, 0deg)); }
+}
+
+@keyframes bf-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bf-mark-swing {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(5deg); }
+}
+
+@keyframes bf-pip {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  45% { opacity: 0.55; transform: scale(0.82); }
+}
+
+@keyframes bf-sheen {
+  0%, 55% { transform: translateX(-120%) skewX(-18deg); }
+  85%, 100% { transform: translateX(220%) skewX(-18deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-marquee,
+  .bf-float-slow,
+  .bf-float-slower,
+  .bf-spin-slow,
+  .bf-seal-ticks,
+  .bf-pip,
+  .bf-sheen {
+    animation: none !important;
+  }
 }
 
