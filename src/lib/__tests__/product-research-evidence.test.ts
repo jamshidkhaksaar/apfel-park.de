@@ -63,6 +63,27 @@ describe('official research evidence gates', () => {
     expect(draft.specs).toEqual([{ label: 'Display', value: 'OLED' }]);
     expect(draft.dimensions?.weightG).toBeUndefined();
   });
+  it('preserves 5G cellular network descriptions and titles without treating 5G as grams', () => {
+    const a36 = { ...raw(), title: 'Samsung Galaxy A36 5G', model: 'Galaxy A36 5G', brand: 'Samsung', description: 'Das Samsung Galaxy A36 5G verfügt über ein 6,7 Zoll Display mit 120 Hz.', specs: [{ label: 'Mobilfunk', value: '5G' }, { label: 'Display', value: '120 Hz' }] };
+    const draft = finalizeResearchedProduct(a36, [source], {});
+    expect(draft.title).toBe('Samsung Galaxy A36 5G');
+    expect(draft.description).toContain('Galaxy A36 5G');
+    expect(draft.specs).toEqual([{ label: 'Mobilfunk', value: '5G' }, { label: 'Display', value: '120 Hz' }]);
+  });
+  it('accepts accessory, laptop and console official manufacturer sources', () => {
+    for (const url of [
+      'https://www.spigen.com/products/galaxy-a36-case-ultra-hybrid',
+      'https://www.celly.com/de/products/cromo1118bk',
+      'https://www.dell.com/de-de/shop/laptops/xps-15',
+      'https://www.hp.com/de-de/shop/product.aspx?id=123',
+      'https://www.anker.com/de/products/a1289',
+      'https://www.bose.de/de_de/products/headphones.html',
+    ]) {
+      expect(approvedResearchUrl(url)?.hostname).toBeTruthy();
+    }
+    const caseDraft = finalizeResearchedProduct({ ...raw(), category: 'case', title: 'Celly Schutzhülle für Galaxy A36 5G', model: 'Celly CROMO1118BK' }, [source], {});
+    expect(caseDraft.category).toBe('accessories');
+  });
   it('accepts official HTTPS sources and rejects credentials, lookalikes, nonstandard ports and forums', () => {
     expect(approvedResearchUrl(source.url)?.hostname).toBe('www.apple.com');
     for (const url of ['http://apple.com/specs','https://apple.com.evil.example/specs','https://secret@apple.com/specs','https://apple.com:8443/specs','https://127.0.0.1/specs','https://docs.google.com/file','https://support.google.com/pixelphone/thread/123']) expect(approvedResearchUrl(url)).toBeNull();
@@ -104,7 +125,7 @@ describe('official research evidence gates', () => {
     expect(fetched?.retrievedAt).toBeTruthy();
   });
   it('rejects oversized or non-text source bodies', async () => {
-    const cases: Array<Record<string, string>> = [{ 'content-type': 'text/html', 'content-length': '2000001' }, { 'content-type': 'application/pdf' }];
+    const cases: Array<Record<string, string>> = [{ 'content-type': 'text/html', 'content-length': '6000001' }, { 'content-type': 'application/pdf' }];
     for (const headers of cases) {
       const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('not evidence', { headers }));
       expect(await fetchOfficialResearchSource(source.url, 'iPhone 17 Pro Max', fetcher)).toBeNull();

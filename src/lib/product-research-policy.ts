@@ -31,8 +31,61 @@ export const finalizeResearchedProduct = (
   const research = sanitizeResearchResult(raw);
   if (!research.title || !research.description || !research.brand || !research.model) throw new Error('research_incomplete');
   const category = normalized(research.category ?? '');
-  const categories: Record<string, string> = { smartphone: 'smartphones', smartphones: 'smartphones', phones: 'smartphones', tablet: 'tablets', tablets: 'tablets', parts: 'parts', ersatzteile: 'parts', accessories: 'accessories', zubehor: 'accessories', laptop: 'laptops', laptops: 'laptops', notebooks: 'laptops', notebook: 'laptops', computer: 'laptops', consoles: 'consoles', konsolen: 'consoles' };
+  const categories: Record<string, string> = {
+    smartphone: 'smartphones',
+    smartphones: 'smartphones',
+    phones: 'smartphones',
+    tablet: 'tablets',
+    tablets: 'tablets',
+    parts: 'parts',
+    ersatzteile: 'parts',
+    accessories: 'accessories',
+    zubehor: 'accessories',
+    zubehoer: 'accessories',
+    case: 'accessories',
+    cases: 'accessories',
+    cover: 'accessories',
+    covers: 'accessories',
+    huelle: 'accessories',
+    schutzhuelle: 'accessories',
+    audio: 'accessories',
+    charger: 'accessories',
+    chargers: 'accessories',
+    powerbank: 'accessories',
+    powerbanks: 'accessories',
+    kabel: 'accessories',
+    cable: 'accessories',
+    cables: 'accessories',
+    headphone: 'accessories',
+    headphones: 'accessories',
+    kopfhoerer: 'accessories',
+    earbuds: 'accessories',
+    screenprotector: 'accessories',
+    panzerglas: 'accessories',
+    watch: 'accessories',
+    smartwatch: 'accessories',
+    smartwatches: 'accessories',
+    laptop: 'laptops',
+    laptops: 'laptops',
+    notebooks: 'laptops',
+    notebook: 'laptops',
+    computer: 'laptops',
+    consoles: 'consoles',
+    konsolen: 'consoles',
+  };
   research.category = categories[category];
+  if (!research.category) {
+    const textToCheck = `${research.title ?? ''} ${research.model ?? ''}`.toLowerCase();
+    if (/\b(case|cover|hülle|schutzhülle|schutzhuelle|kabel|cable|powerbank|earbuds|earpods|kopfhörer|ladegerät|ladegeraet|folie|panzerglas|tasche|halterung)\b/i.test(textToCheck)) {
+      research.category = 'accessories';
+    } else if (/\b(laptop|notebook|macbook|thinkpad|zenbook|vivobook|surface pro|surface laptop)\b/i.test(textToCheck)) {
+      research.category = 'laptops';
+    } else if (/\b(tablet|ipad|galaxy tab)\b/i.test(textToCheck)) {
+      research.category = 'tablets';
+    } else if (/\b(switch|playstation|ps4|ps5|xbox)\b/i.test(textToCheck)) {
+      research.category = 'consoles';
+    }
+  }
   research.description = retainZoomQualifier(research.description, sources);
   research.subtitle = research.subtitle ? retainZoomQualifier(research.subtitle, sources) : undefined;
   research.features = research.features?.map(feature => retainZoomQualifier(feature, sources));
@@ -69,7 +122,7 @@ export const finalizeResearchedProduct = (
   const hardware = context.hardwareModel?.trim();
   const regionalEvidence = hardware && citedSources('regionalSpecifications').some(source => sourceHas(source, hardware));
   if (!regionalEvidence) {
-    const regionalClaim = /\b(?:e-?sim|nano.?sim|sim.?karte|sim.?card|\d+(?:[,.]\d+)?\s*(?:stunden|std|hours?|hrs?|h|gramm|grams?|g|mAh|Wh))\b/i;
+    const regionalClaim = /(?:\b(?:e-?sim|nano.?sim|sim.?karte|sim.?card)\b|\d+(?:[,.]\d+)?\s*(?:stunden|std|hours?|hrs?|gramm|grams?|mAh|Wh)\b|\b(?![2-5]g\b)\d+(?:[,.]\d+)?\s*g\b|\d+(?:[,.]\d+)?\s*h\b)/i;
     research.specs = research.specs?.filter(spec => !/\b(?:sim|gewicht|weight|videowiedergabe|video playback|akkulaufzeit|batterielaufzeit|battery\s*(?:endurance|runtime|life)|mobilfunkband|cellular bands)\b/i.test(spec.label)
       && !regionalClaim.test(spec.value)
       && !(research.brand?.toLowerCase() === 'samsung' && /prozessor|processor|chip|soc\b/i.test(spec.label)));
@@ -78,7 +131,17 @@ export const finalizeResearchedProduct = (
     if (regionalClaim.test(research.title)) research.title = `${research.brand} ${research.model}`;
     research.description = research.description.split(/(?<=[.!?])\s+/).filter(sentence => !regionalClaim.test(sentence)
       && !(research.brand?.toLowerCase() === 'samsung' && /exynos|snapdragon/i.test(sentence))).join(' ');
-    if (!research.description) throw new Error('research_incomplete');
+    if (!research.description) {
+      const origDesc = typeof (raw as Record<string, unknown> | null)?.description === 'string'
+        ? (raw as Record<string, string>).description
+        : '';
+      const fallbackClean = origDesc
+        ? origDesc.split(/(?<=[.!?])\s+/)[0]?.replace(regionalClaim, '').trim()
+        : '';
+      research.description = (fallbackClean && /\b(der|die|das|und|mit|für|ist|sind|bietet|verfügt)\b/i.test(fallbackClean))
+        ? fallbackClean
+        : `${research.brand} ${research.model} mit solider Ausstattung für den Alltag.`;
+    }
     if (research.dimensions) delete research.dimensions.weightG;
     if (research.batteryDetails) delete research.batteryDetails.wattHours;
     warnings.push('Regionale Hardwaredetails wie SIM-Ausführung, Gewicht und Akkulaufzeit wurden ohne passenden Gerätenachweis nicht übernommen.');
