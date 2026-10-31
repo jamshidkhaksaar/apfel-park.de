@@ -282,6 +282,27 @@ replaces the four trust ticks with a store block built from `siteInfo`. The
 homepage keeps the trust ticks and the short lede. Dates in the right-hand meta
 line are hidden below `sm`, where the ribbon already carries them.
 
+## Hero deck and header sting
+
+The masthead's right column is `BlackFridayDealDeck`: a three-card window over
+the campaign list. Only the front card is interactive. Every 5.2 s it lifts
+forward, drops onto the back of the pile and the next deal rises; the same
+motion runs manually through the previous/next buttons. Auto-advance stops on
+hover, focus, a hidden tab and when the deck is off-screen. With
+`prefers-reduced-motion` it swaps instantly and the pause control disappears.
+The pause button is the WCAG 2.2.2 control; the hairline above the dots shows
+the dwell.
+
+`BlackWeekSting` plays once per session on the first page view above 1280 px: a
+hand slides out of the logo and taps the campaign pill, then a BLACK WEEK
+wordmark wipes out from behind the logo and retracts. It lives in a clipped
+layer inside the navbar shell, so it cannot widen the header; it never receives
+pointer events and is hidden entirely at 200% text and with reduced motion. The
+session key is `apfel-bf-sting`.
+
+`scripts/black-friday-qa.mjs` covers both: rotation, pause, reduced motion,
+sting order, the campaign-pill hit test and a reload that must not replay.
+
 ## Before enabling
 
 1. `npm run typecheck`

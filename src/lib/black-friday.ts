@@ -78,6 +78,18 @@ type BlackFridayCopy = {
     live: string;
     detailCta: string;
     priceNote: string;
+    deck: {
+      region: string;
+      carousel: string;
+      positionControl: string;
+      position: (current: number, total: number) => string;
+      previous: string;
+      next: string;
+      pause: string;
+      play: string;
+      goTo: (current: number, total: number) => string;
+      all: (total: number) => string;
+    };
   };
   section: {
     eyebrow: string;
@@ -186,6 +198,18 @@ const de: BlackFridayCopy = {
     live: "Live",
     detailCta: "Deal ansehen",
     priceNote: "inkl. MwSt.",
+    deck: {
+      region: "Black Week Angebote",
+      carousel: "Karussell",
+      positionControl: "Angebot wählen",
+      position: (current, total) => `Angebot ${current} von ${total}`,
+      previous: "Vorheriges Angebot",
+      next: "Nächstes Angebot",
+      pause: "Karussell anhalten",
+      play: "Karussell weiterlaufen lassen",
+      goTo: (current, total) => `Angebot ${current} von ${total} anzeigen`,
+      all: (total) => `Alle ${total} Angebote`,
+    },
   },
   section: {
     eyebrow: "Black Week",
@@ -345,6 +369,18 @@ const en: BlackFridayCopy = {
     live: "Live",
     detailCta: "View deal",
     priceNote: "incl. VAT",
+    deck: {
+      region: "Black Week deals",
+      carousel: "carousel",
+      positionControl: "Choose a deal",
+      position: (current, total) => `Deal ${current} of ${total}`,
+      previous: "Previous deal",
+      next: "Next deal",
+      pause: "Pause carousel",
+      play: "Resume carousel",
+      goTo: (current, total) => `Show deal ${current} of ${total}`,
+      all: (total) => `All ${total} offers`,
+    },
   },
   section: {
     eyebrow: "Black Week",
