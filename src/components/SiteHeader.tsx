@@ -14,6 +14,7 @@ import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import TrackedLink from "./TrackedLink";
 import { BlackFridayMark } from "./black-friday/BlackFridayMotion";
+import BlackWeekSting from "./black-friday/BlackWeekSting";
 
 type SiteHeaderProps = {
   lang: Locale;
@@ -170,6 +171,7 @@ export default function SiteHeader({
             {campaignBefore ? (
               <Link
                 href={`/${lang}${campaign.href}`}
+                data-campaign-target="mobile"
                 aria-label={campaign.ariaLabel}
                 className="group flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] text-red-text transition hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:hidden"
               >
@@ -250,6 +252,7 @@ export default function SiteHeader({
                     <Link
                       key={item.path}
                       href={fullPath}
+                      data-campaign-target="nav"
                       aria-current={isExactMatch ? "page" : undefined}
                       aria-label={campaign?.ariaLabel}
                       className={`group relative mx-1 flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-black uppercase tracking-[0.1em] transition active:translate-y-px 2xl:px-3 ${
@@ -305,6 +308,7 @@ export default function SiteHeader({
             {campaignBefore && campaign ? (
               <Link
                 href={`/${lang}${campaign.href}`}
+                data-campaign-target="compact"
                 aria-label={campaign.ariaLabel}
                 aria-current={campaignActive ? "page" : undefined}
                 className={`hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] transition md:inline-flex xl:hidden ${
@@ -390,6 +394,7 @@ export default function SiteHeader({
               </svg>
             </button>
           </div>
+          {campaign ? <BlackWeekSting label={campaign.label} date={campaign.date} /> : null}
         </div>
       </div>
 

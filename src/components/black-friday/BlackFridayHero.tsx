@@ -1,134 +1,13 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { blackFriday, blackFridayCopy } from "@/lib/black-friday";
 import type { CatalogCardModel } from "@/lib/catalog-card";
-import { discountPercentage } from "@/lib/catalog-card";
-import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
-import { shouldBypassImageOptimization } from "@/lib/image";
 import { siteInfo } from "@/lib/site";
-import { conditionLabels, deliveryLabel, stockLabel, stockTone, stockToneClass } from "@/components/store/store-labels";
 
+import BlackFridayDealDeck from "./BlackFridayDealDeck";
 import Countdown from "./Countdown";
 import { BlackFridayDealTicker, BlackFridayScene, BlackWeekSeal } from "./BlackFridayMotion";
-
-const SMALL_CARD_SIZES = "(max-width: 1023px) 45vw, 220px";
-
-function SmallDeal({ deal, lang, index }: { deal: CatalogCardModel; lang: Locale; index: number }) {
-  const discount = discountPercentage(deal.price, deal.compareAtPrice);
-
-  return (
-    <Link
-      href={`/${lang}/store/${deal.slug}`}
-      className="group flex min-w-0 gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-2.5 transition hover:border-[color:var(--brass)]/50 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-    >
-      <span className="relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg bg-[#f2ece2] sm:w-20">
-        <Image
-          src={deal.image}
-          alt={deal.title}
-          fill
-          sizes={SMALL_CARD_SIZES}
-          className="object-contain p-1.5 transition-transform duration-500 group-hover:scale-[1.04]"
-          unoptimized={shouldBypassImageOptimization(deal.image)}
-        />
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-white/30">
-          <span>{String(index).padStart(2, "0")}</span>
-          {discount ? <span className="font-bold text-[color:var(--signal)]">−{discount}%</span> : null}
-        </span>
-        <span className="mt-1 truncate text-[9px] font-bold uppercase tracking-[0.16em] text-[color:var(--brass)]">
-          {deal.brand ?? (lang === "de" ? "Angebot" : "Offer")}
-        </span>
-        <span className="mt-0.5 line-clamp-2 text-xs font-semibold leading-4 text-white">{deal.title}</span>
-        <span className="mt-auto pt-1.5 text-sm font-bold tabular-nums text-white">{formatPrice(lang, deal.price)}</span>
-      </span>
-    </Link>
-  );
-}
-
-function LeadDeal({ deal, lang, isBefore }: { deal: CatalogCardModel; lang: Locale; isBefore: boolean }) {
-  const copy = blackFridayCopy[lang].hero;
-  const discount = discountPercentage(deal.price, deal.compareAtPrice);
-  const tone = stockTone(deal.stock, deal.stock <= 0);
-
-  return (
-    <Link
-      href={`/${lang}/store/${deal.slug}`}
-      className="group relative block overflow-hidden rounded-2xl border border-white/15 bg-[#0b0b0e] transition hover:border-[color:var(--brass)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#08080a]"
-    >
-      <span className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
-        <span className="font-mono text-[9px] font-bold uppercase tracking-[0.26em] text-[color:var(--brass)]">
-          {isBefore ? copy.currentPick : copy.topDeal} · 01
-        </span>
-        <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-white/40">
-          <span aria-hidden="true" className="relative flex size-1.5">
-            {isBefore ? null : (
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-[color:var(--signal)] opacity-70" />
-            )}
-            <span className="relative inline-flex size-1.5 rounded-full bg-[color:var(--signal)]" />
-          </span>
-          {isBefore ? copy.shopBadge : copy.live}
-        </span>
-      </span>
-
-      <span className="relative block aspect-[16/11] w-full overflow-hidden bg-[#f2ece2]">
-        <Image
-          src={deal.image}
-          alt={deal.title}
-          fill
-          priority
-          sizes="(max-width: 1023px) 92vw, 560px"
-          className="object-contain p-6 transition-transform duration-700 group-hover:scale-[1.03] md:p-8"
-          unoptimized={shouldBypassImageOptimization(deal.image)}
-        />
-        {discount ? (
-          <span className="absolute right-3 top-3 rounded-sm bg-[color:var(--signal)] px-2 py-1 text-xs font-black tabular-nums text-white shadow-sm">
-            −{discount}%
-          </span>
-        ) : null}
-        <span className="absolute bottom-3 left-3 rounded-full bg-[#08080a]/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-sm">
-          {conditionLabels[lang][deal.condition]}
-        </span>
-      </span>
-
-      <span className="block px-4 pb-4 pt-3.5 md:px-5">
-        <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-[color:var(--brass)]">
-          {deal.brand ?? (lang === "de" ? "Angebot" : "Offer")}
-        </span>
-        <span className="mt-1 block line-clamp-2 text-base font-semibold leading-snug text-white md:text-lg">
-          {deal.title}
-        </span>
-
-        <span className="mt-3 flex items-end justify-between gap-4">
-          <span className="flex items-baseline gap-2.5">
-            <span className="text-2xl font-extrabold tabular-nums leading-none text-white">
-              {formatPrice(lang, deal.price)}
-            </span>
-            {deal.compareAtPrice ? (
-              <span className="text-xs font-medium tabular-nums text-white/35 line-through">
-                {formatPrice(lang, deal.compareAtPrice)}
-              </span>
-            ) : null}
-          </span>
-          <span className="text-right text-[9px] uppercase tracking-[0.12em] text-white/30">{copy.priceNote}</span>
-        </span>
-
-        <span className="mt-3 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
-          <span className="min-w-0 text-[11px] leading-4">
-            <span className={`block font-semibold ${stockToneClass[tone]}`}>{stockLabel(lang, deal.stock, tone)}</span>
-            <span className="block text-white/35">{deliveryLabel(lang, deal.pickupStock)}</span>
-          </span>
-          <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold text-[color:var(--signal)]">
-            {isBefore ? copy.viewCta : copy.detailCta}
-            <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
-          </span>
-        </span>
-      </span>
-    </Link>
-  );
-}
 
 /**
  * Campaign masthead. The right-hand column is a live deal dossier rather than
@@ -159,8 +38,6 @@ export default function BlackFridayHero({
   const copy = blackFridayCopy[lang].hero;
   const isLanding = variant === "landing";
   const isBefore = phase === "before";
-  const [lead, ...rest] = deals;
-  const sideDeals = rest.slice(0, 2);
   const tickerLabel = isBefore
     ? lang === "de" ? "Aktuell im Shop" : "In the store now"
     : lang === "de" ? "Alle aktuellen Black-Week-Angebote" : "All current Black Week offers";
@@ -342,33 +219,18 @@ export default function BlackFridayHero({
           <div className="relative mx-auto w-full max-w-[33rem] lg:mr-0">
             <div aria-hidden="true" className="pointer-events-none absolute -inset-3 rounded-[1.9rem] border border-[color:var(--brass)]/20 md:-inset-4" />
 
-            {lead ? (
-              <LeadDeal deal={lead} lang={lang} isBefore={isBefore} />
+            {deals.length > 0 ? (
+              <BlackFridayDealDeck
+                deals={deals.slice(0, 6)}
+                lang={lang}
+                isBefore={isBefore}
+                total={total}
+              />
             ) : (
               <div className="flex aspect-[4/3] items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] text-center text-sm text-muted">
                 {lang === "de" ? "Neue Angebote in Kürze" : "New offers shortly"}
               </div>
             )}
-
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              {sideDeals.map((deal, index) => (
-                <SmallDeal key={deal.id} deal={deal} lang={lang} index={index + 2} />
-              ))}
-              {sideDeals.length < 2 ? (
-                <Link
-                  href={`/${lang}/black-friday`}
-                  className="group flex min-h-24 flex-col justify-between rounded-xl border border-[color:var(--brass)]/35 bg-[color:var(--brass)]/[0.06] p-3 text-white transition hover:bg-[color:var(--brass)]/[0.12]"
-                >
-                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/50">
-                    {lang === "de" ? "Alle Angebote" : "All offers"}
-                  </span>
-                  <span className="flex items-end justify-between gap-2">
-                    <span className="text-xl font-extrabold tabular-nums">{total}</span>
-                    <span aria-hidden="true" className="text-[color:var(--brass)] transition-transform group-hover:translate-x-1">→</span>
-                  </span>
-                </Link>
-              ) : null}
-            </div>
           </div>
         </div>
       </div>

@@ -46,8 +46,8 @@ const browser = await chromium.launch({
   ...(process.env.CHROMIUM_EXECUTABLE ? { executablePath: process.env.CHROMIUM_EXECUTABLE } : {}),
 });
 
-async function open(width, lang, path = `/${lang}`) {
-  const context = await browser.newContext({ viewport: { width, height: 900 } });
+async function open(width, lang, path = `/${lang}`, options = {}) {
+  const context = await browser.newContext({ viewport: { width, height: 900 }, ...options });
   await context.addInitScript(() => {
     localStorage.setItem("apfel-theme", "mono");
     document.cookie = "apfel-theme=mono; path=/";
@@ -266,6 +266,130 @@ for (const width of [1440, 1280, 1024, 768, 390]) await checkPageOverflow("/en/b
   check(m.position === "sticky", "390 menu: header stays sticky", m.position);
   check(m.shellOverflow <= 1, "390 menu: shell not clipped", `overflow ${m.shellOverflow}`);
   check(errors.length === 0, "390 menu: no page errors", errors.join("; "));
+  await context.close();
+}
+
+// Hero deck: the front deal must rotate on its own, only the front card may be
+// tabbed to, and the pause control must hold the stack still.
+const deckState = () => {
+  const deck = document.querySelector("[data-deal-deck]");
+  if (!deck) return null;
+  const front = deck.querySelector('[data-slot="front"]');
+  return {
+    frontId: front?.getAttribute("data-deal-id") ?? null,
+    cards: deck.querySelectorAll(".bf-deck-card").length,
+    tabbable: [...deck.querySelectorAll(".bf-deck-card a")].filter((link) => link.tabIndex >= 0).length,
+    hasPause: Boolean(deck.querySelector('[data-deck-action="pause"]')),
+  };
+};
+
+{
+  const { context, page, errors } = await open(1440, "de");
+  const first = await page.evaluate(deckState);
+  await page.waitForTimeout(6200);
+  const second = await page.evaluate(deckState);
+  check(Boolean(first?.frontId), "deck: front card present", String(first?.frontId));
+  check(second?.frontId !== first?.frontId, "deck: front deal advances on its own", `${first?.frontId} -> ${second?.frontId}`);
+  check(first?.cards >= 2, "deck: renders a stack", String(first?.cards));
+  check(first?.tabbable === 1, "deck: only the front card is tabbable", String(first?.tabbable));
+  check(errors.length === 0, "deck: no page errors", errors.join("; "));
+  await context.close();
+}
+
+{
+  const { context, page } = await open(1440, "de");
+  await page.click('[data-deck-action="pause"]');
+  await page.mouse.move(4, 4);
+  const paused = await page.locator('[data-deck-action="pause"]').getAttribute("aria-pressed");
+  const before = await page.evaluate(deckState);
+  await page.waitForTimeout(6500);
+  const after = await page.evaluate(deckState);
+  check(paused === "true", "deck: pause reports its state", String(paused));
+  check(before?.frontId === after?.frontId, "deck: pause holds the front deal", `${before?.frontId} -> ${after?.frontId}`);
+  await context.close();
+}
+
+{
+  const { context, page } = await open(1440, "de", "/de", { reducedMotion: "reduce" });
+  const first = await page.evaluate(deckState);
+  await page.waitForTimeout(6500);
+  const second = await page.evaluate(deckState);
+  check(first?.frontId === second?.frontId, "deck: reduced motion stays still", `${first?.frontId} -> ${second?.frontId}`);
+  check(first?.hasPause === false, "deck: reduced motion hides the pause control");
+  await context.close();
+}
+
+// Header sting: hand first, wordmark second, one showing per session, and the
+// campaign pill must remain the element the pointer hits.
+{
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await context.addInitScript(() => {
+    localStorage.setItem("apfel-theme", "mono");
+    document.cookie = "apfel-theme=mono; path=/";
+    localStorage.setItem("apfel-consent", "necessary");
+    document.cookie = "apfel-consent=necessary; path=/";
+  });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto(`${baseUrl}/de`, { waitUntil: "domcontentloaded" });
+
+  const handShown = await page
+    .waitForFunction(
+      () => {
+        const hand = document.querySelector("[data-bf-sting-hand]");
+        return Boolean(hand) && Number(getComputedStyle(hand).opacity) > 0.5;
+      },
+      null,
+      { timeout: 8000 },
+    )
+    .then(() => true)
+    .catch(() => false);
+  check(handShown, "sting: hand appears from the logo");
+
+  const wordWaits = await page.evaluate(() => {
+    const word = document.querySelector("[data-bf-sting-word]");
+    return Boolean(word) && Number(getComputedStyle(word).opacity) < 0.2;
+  });
+  check(wordWaits, "sting: wordmark waits while the hand points");
+
+  const targetHit = await page.evaluate(() => {
+    const pill = [...document.querySelectorAll("[data-campaign-target]")].find(
+      (element) => element.getClientRects().length > 0,
+    );
+    if (!pill) return false;
+    const rect = pill.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + 6, rect.top + rect.height / 2);
+    return Boolean(hit?.closest("[data-campaign-target]"));
+  });
+  check(targetHit, "sting: campaign pill stays hittable");
+
+  const wordShown = await page
+    .waitForFunction(
+      () => {
+        const word = document.querySelector("[data-bf-sting-word]");
+        return Boolean(word) && Number(getComputedStyle(word).opacity) > 0.5;
+      },
+      null,
+      { timeout: 6000 },
+    )
+    .then(() => true)
+    .catch(() => false);
+  check(wordShown, "sting: wordmark follows the hand");
+
+  const cleared = await page
+    .waitForFunction(() => !document.querySelector("[data-bf-sting-hand]"), null, { timeout: 9000 })
+    .then(() => true)
+    .catch(() => false);
+  check(cleared, "sting: layer clears after the sequence");
+  const flagged = await page.evaluate(() => sessionStorage.getItem("apfel-bf-sting") === "1");
+  check(flagged, "sting: recorded for the session");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(2600);
+  const replay = await page.evaluate(() => Boolean(document.querySelector("[data-bf-sting-hand]")));
+  check(!replay, "sting: does not replay in the same session");
+  check(errors.length === 0, "sting: no page errors", errors.join("; "));
   await context.close();
 }
 
