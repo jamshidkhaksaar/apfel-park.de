@@ -77,7 +77,7 @@ as itself.
 
 ### Scheduled in-shop sales reports
 
-`deploy-app.sh` applies the ledger migration but does not install the report timer. After the first deploy that includes it:
+`deploy-app.sh` applies the ledger migration and, after a successful health check, installs and enables the report units from the deployed release (service and `.timer.example`, copied to `/etc/systemd/system/apfel-park-operations-report.timer`). A unit problem only logs a warning, so it cannot roll back an otherwise healthy release. To install them by hand on a host that has not deployed this version:
 
     install -m 0644 /srv/apfel-park/app/current/deployment/vps/systemd/apfel-park-operations-report.service /etc/systemd/system/
     install -m 0644 /srv/apfel-park/app/current/deployment/vps/systemd/apfel-park-operations-report.timer.example /etc/systemd/system/apfel-park-operations-report.timer

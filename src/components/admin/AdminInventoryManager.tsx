@@ -73,7 +73,7 @@ function InventoryThumbnail({ src, title, fallback }: { src: string | null; titl
   </span>;
 }
 
-export default function AdminInventoryManager({ locale, canManage = true, canPrintLabels = false }: { locale: "de" | "en"; canManage?: boolean; canPrintLabels?: boolean }) {
+export default function AdminInventoryManager({ locale, canManage = true, canPrintLabels = false, canViewReports = false }: { locale: "de" | "en"; canManage?: boolean; canPrintLabels?: boolean; canViewReports?: boolean }) {
   const searchParams = useSearchParams();
   const urlQuery = searchParams.toString();
   const request = useRef<AbortController | null>(null);
@@ -343,6 +343,9 @@ export default function AdminInventoryManager({ locale, canManage = true, canPri
               ? "Verfügbarkeit = physischer Bestand minus Reservierungen und Sicherheitspuffer. Jede Änderung wird mit Mitarbeiter und Zeit protokolliert."
               : "Availability equals on-hand stock minus reservations and safety buffer. Every change records the staff member and timestamp."}
           </p>
+          {canViewReports ? <Link href="/admin/kasse-lager?view=reports" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-gold/40 px-3.5 py-2 text-sm font-semibold text-gold transition hover:bg-gold/10">
+            {locale === "de" ? "Ladenverkäufe: Tages-, Wochen- und Monatsbericht" : "In-shop sales: daily, weekly and monthly report"}
+          </Link> : null}
         </div>
         <form onSubmit={submitSearch} className="flex w-full max-w-lg gap-2 sm:w-auto">
           <input

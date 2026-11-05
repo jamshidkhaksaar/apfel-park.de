@@ -16,6 +16,7 @@ export default async function InventoryPage() {
         locale={locale}
         canManage={canManageProducts(user)}
         canPrintLabels={Boolean(access?.owner)}
+        canViewReports={Boolean(access?.owner)}
       />
     </AdminShell>
   );
