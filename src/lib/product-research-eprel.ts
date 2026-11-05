@@ -17,7 +17,7 @@ export const selectExactEprelMatch = (
 ): EprelRow | null => {
   const identity = normalizeEprelIdentifier(input.hardwareModel || input.model);
   const brand = input.brand.toLowerCase().trim();
-  const supplierNames = ['poco','redmi'].includes(brand) ? ['xiaomi'] : ['nokia','hmd'].includes(brand) ? ['nokia','hmd'] : [brand];
+  const supplierNames = ['poco','redmi'].includes(brand) ? ['xiaomi'] : ['oneplus'].includes(brand) ? ['oneplus','oneplus technology','guangdong'] : ['nokia','hmd'].includes(brand) ? ['nokia','hmd'] : [brand];
   if (identity.length < 3 || brand.length < 2) return null;
   const matches = rows.filter(row => normalizeEprelIdentifier(row.model_identifier) === identity
     && (!input.eprelId || row.registration_number === input.eprelId)

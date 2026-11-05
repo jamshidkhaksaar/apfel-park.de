@@ -15,15 +15,28 @@ const deviceModelFamily = (model: string): string | null => {
 export const modelSpecificResearchSource = (source: ResearchSource, model: string, brand = ''): boolean => {
   const brandToken = modelToken(brand);
   const fullModel = modelToken(model);
+  const modelCombined = brandToken && !fullModel.startsWith(brandToken) ? `${brandToken}${fullModel}` : fullModel;
   const needle = brandToken && fullModel.startsWith(brandToken) ? modelToken(fullModel.slice(brandToken.length)) : fullModel;
-  const needles = [needle, ...deviceModelNeedles(model).map(modelToken)].filter(n => n.length >= 3);
+  const needles = [
+    fullModel,
+    modelCombined,
+    needle,
+    ...deviceModelNeedles(model).map(modelToken),
+    ...(brand ? deviceModelNeedles(`${brand} ${model}`).map(modelToken) : []),
+  ].filter(n => n.length >= 3);
   const titleToken = modelToken(source.title);
   if (knownResearchModelConflict(model, source.title)) return false;
   if (needles.some(n => titleToken.includes(n))) return true;
+  let urlToken = '';
   try {
-    const urlToken = modelToken(new URL(source.url).pathname);
+    urlToken = modelToken(new URL(source.url).pathname);
     if (needles.some(n => urlToken.includes(n))) return true;
   } catch {}
+  if (needle.length >= 2 && brandToken.length >= 3) {
+    if ((titleToken.includes(brandToken) || urlToken.includes(brandToken)) && (titleToken.includes(needle) || urlToken.includes(needle))) {
+      return true;
+    }
+  }
   const family = deviceModelFamily(model);
   if (family && titleToken.includes(modelToken(family)) && /technischedaten|techspecs|specifications/i.test(titleToken)) {
     return true;
@@ -43,6 +56,46 @@ export const preferredResearchUrls = (brand: string, model: string): string[] =>
       ];
     }
     return [];
+  }
+  if (brandName === 'oneplus') {
+    const token = modelToken(model).replace(/^oneplus/, '');
+    if (token === '7t') return ['https://www.oneplus.com/global/7t/specs', 'https://www.oneplus.com/at/7t/specs'];
+    if (token === '7pro') return ['https://www.oneplus.com/global/7-pro/specs'];
+    if (token === '8') return ['https://www.oneplus.com/global/8/specs'];
+    if (token === '8pro') return ['https://www.oneplus.com/global/8-pro/specs'];
+    if (token === '8t') return ['https://www.oneplus.com/de/8t/specs', 'https://www.oneplus.com/global/8t/specs'];
+    if (token === '9') return ['https://www.oneplus.com/de/9/specs', 'https://www.oneplus.com/global/9/specs'];
+    if (token === '9pro') return ['https://www.oneplus.com/de/9-pro/specs', 'https://www.oneplus.com/global/9-pro/specs'];
+    if (token === '10pro') return ['https://www.oneplus.com/global/10-pro/specs'];
+    if (token === '10t') return ['https://www.oneplus.com/global/10t/specs'];
+    if (token === '11') return ['https://www.oneplus.com/global/11/specs'];
+    if (token === '12') return ['https://www.oneplus.com/de/12/specs', 'https://www.oneplus.com/global/12/specs'];
+    if (token === '12r') return ['https://www.oneplus.com/de/12r/specs', 'https://www.oneplus.com/global/12r/specs'];
+    if (token === 'open') return ['https://www.oneplus.com/de/open/specs', 'https://www.oneplus.com/global/open/specs'];
+    if (token === 'nord4') return ['https://www.oneplus.com/de/nord-4/specs'];
+    return [];
+  }
+  if (brandName === 'poco') {
+    const token = modelToken(model).replace(/^poco/, '');
+    if (token.startsWith('x6pro')) return ['https://www.po.co/global/product/poco-x6-pro/specs/', 'https://www.po.co/de/product/poco-x6-pro-5g/specs/'];
+    if (token === 'x6') return ['https://www.po.co/global/product/poco-x6/specs/'];
+    if (token.startsWith('f6pro')) return ['https://www.po.co/global/product/poco-f6-pro/specs/'];
+    if (token === 'f6') return ['https://www.po.co/global/product/poco-f6/specs/'];
+    if (token.startsWith('m6pro')) return ['https://www.po.co/global/product/poco-m6-pro/specs/'];
+    if (token === 'c65') return ['https://www.po.co/global/product/poco-c65/specs/'];
+    return [];
+  }
+  if (brandName === 'xbyte') {
+    const token = modelToken(model).replace(/^xbyte/, '');
+    if (token.includes('4021')) return ['https://apfel-park.de/store/xbyte-xb-4021-kfz-ladegeraet-52-5w-usb-c-pd-30w-usb-a-qc-22-5w-neu-f1ace7b2'];
+    if (token.includes('4022')) return ['https://apfel-park.de/store/xbyre-xbyte-xb-4022-kfz-ladegeraet-38w-usb-c-pd-20w-usb-a-qc-18w-neu-c64f60b6'];
+    if (token.includes('4026')) return ['https://apfel-park.de/store/xbyte-xb-4026-usb-c-auf-hdmi-kabel-8k-60hz-2m-tpe-grau-neu-630c8a7b'];
+    if (token.includes('4824')) return ['https://apfel-park.de/store/xbyte-xb-4824-true-wireless-earbuds-neu-217c8ddf'];
+    if (token.includes('6823') || token.includes('exclusivegenius') || token.includes('mini')) return ['https://apfel-park.de/store/xbyte-exclusive-genius-mini-powerbank-10000mah-22-5w-super-fast-charge-neu'];
+    if (token.includes('4943')) return ['https://apfel-park.de/store/xbyte-magnetische-powerbank-10000mah-22-5w-schnelles-laden-15w-wireless-neu'];
+    if (token.includes('pb225')) return ['https://apfel-park.de/store/xbyte-super-charging-powerbank-22-5w-tragbarer-externer-akku-mit-led-neu'];
+    if (token.includes('20k') || token.includes('20000')) return ['https://apfel-park.de/store/xbyte-byte-exclusive-genius-20000-mah-powerbank-neu'];
+    return ['https://xbyte-mobile.com'];
   }
   if (brandName !== 'apple') return [];
   const token = modelToken(model).replace(/^apple/, '');
@@ -137,17 +190,17 @@ export const researchProductFromOfficialPages = async (
   signal: AbortSignal = AbortSignal.timeout(65000),
 ): Promise<ProductResearchResult> => {
   const now = new Date().toISOString().slice(0, 10);
-  const discovery = await gemini(`${DISCOVERY}\nPrefer German/EU product and support pages. If an exact hardware model is supplied, find sources for that variant rather than assuming a regional version. For Lenovo, prefer lenovo.com web store product pages (lenovo.com/de/de/p/laptops/...) over psref.lenovo.com.`, JSON.stringify({ date: now, category: input.category, query: input.query, market: 'Germany', hardwareModel: input.hardwareModel, observedPublicFields: input.photo?.hints ?? {} }), signal, input.photo, true);
+  const discovery = await gemini(`${DISCOVERY}\nPrefer German/EU product and support pages. If an exact hardware model is supplied, find sources for that variant rather than assuming a regional version. For Lenovo, prefer lenovo.com web store product pages (lenovo.com/de/de/p/laptops/...) over psref.lenovo.com. For Poco, search po.co (e.g. po.co/global/product/... or po.co/de/product/...) or mi.com. For OnePlus, prefer official specification pages on oneplus.com (including /global/ or /de/). For accessories (such as Xbyte, Anker, Ugreen, Celly, Spigen, CG Mobile), locate the official brand, manufacturer, or verified shop specification page (including xbyte-mobile.com, apfel-park.de, cgmobile.com, celly.com, spigen.com, anker.com). For Xbyte accessories, if the manufacturer site has no dedicated specification page, use the product page on apfel-park.de.`, JSON.stringify({ date: now, category: input.category, query: input.query, market: 'Germany', hardwareModel: input.hardwareModel, observedPublicFields: input.photo?.hints ?? {} }), signal, input.photo, true);
   const brand = typeof discovery.value.brand === 'string' ? discovery.value.brand.trim().slice(0, 100) : '';
   const model = typeof discovery.value.model === 'string' ? discovery.value.model.trim().slice(0, 160) : '';
-  if (!brand || model.length < 3) throw new Error('research_unverified_model');
+  if (!brand || model.length < 1 || `${brand} ${model}`.length < 4) throw new Error('research_unverified_model');
   if (knownResearchModelConflict(input.query, model)) throw new Error('research_unverified_model');
   const photographedModel = input.photo?.hints.modelName;
   if (typeof photographedModel === 'string' && knownResearchModelConflict(photographedModel, model)) throw new Error('photo_identity_conflict');
   const rawUrls = Array.isArray(discovery.value.urls) ? discovery.value.urls : [];
   const groundingUrls = discovery.candidate.groundingMetadata?.groundingChunks?.map(chunk => chunk.web?.uri).filter(Boolean) ?? [];
   const urls = [...new Set([...preferredResearchUrls(brand, model), ...rawUrls, ...groundingUrls].filter((url): url is string => Boolean(approvedResearchUrl(url, true))))].slice(0, 6);
-  const fetched = await Promise.all(urls.map(url => fetchOfficialResearchSource(url, model)));
+  const fetched = await Promise.all(urls.map(url => fetchOfficialResearchSource(url, model, fetch, brand)));
   const sources = [...new Map(fetched.filter((source): source is ResearchSource => Boolean(source) && modelSpecificResearchSource(source!, model, brand)).map(source => [source.url, source])).values()].slice(0, 3);
   if (!sources.length) throw new Error('official_sources_unavailable');
   if (signal.aborted) throw new Error('research_timeout');

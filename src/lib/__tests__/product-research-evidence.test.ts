@@ -32,6 +32,14 @@ describe('official research evidence gates', () => {
     ]);
     expect(modelSpecificResearchSource({ ...source, title: 'ThinkPad T14 Gen 6 (Intel) | Lenovo Deutschland' }, 'Lenovo ThinkPad T14 G6', 'Lenovo')).toBe(true);
     expect(modelSpecificResearchSource({ ...source, title: 'ThinkPad T14 Gen 5 (Intel) | Lenovo Deutschland' }, 'Lenovo ThinkPad T14 G6', 'Lenovo')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, title: 'OnePlus 7T - Specs - OnePlus (Deutschland)' }, 'OnePlus 7T', 'OnePlus')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: 'OnePlus 7T - Specs' }, '7T', 'OnePlus')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: 'OnePlus 7 Pro - Specs' }, 'OnePlus 7T', 'OnePlus')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, title: 'POCO X6 Pro 5G - Specs' }, 'POCO X6 Pro', 'Poco')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: 'POCO X6 - Specs' }, 'POCO X6 Pro', 'Poco')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, url: 'https://xbyte-mobile.com/en/product/powerbank-xb-4944', title: 'X-byte company' }, 'XB-4944', 'XBYTE')).toBe(true);
+    expect(preferredResearchUrls('OnePlus', 'OnePlus 7T')).toEqual(['https://www.oneplus.com/global/7t/specs', 'https://www.oneplus.com/at/7t/specs']);
+    expect(preferredResearchUrls('Poco', 'Poco X6 Pro')).toEqual(['https://www.po.co/global/product/poco-x6-pro/specs/', 'https://www.po.co/de/product/poco-x6-pro-5g/specs/']);
   });
   it('retains an optical-quality qualification backed by the source', () => {
     const optics = { ...source, text: '8x Tele-Zoom in optischer Qualität. 4x optischer Zoom.' };
@@ -78,6 +86,9 @@ describe('official research evidence gates', () => {
       'https://www.hp.com/de-de/shop/product.aspx?id=123',
       'https://www.anker.com/de/products/a1289',
       'https://www.bose.de/de_de/products/headphones.html',
+      'https://www.po.co/global/product/poco-x6-pro/specs/',
+      'https://xbyte-mobile.com/en/product/xb-4944',
+      'https://www.cgmobile.com/products/guess-case',
     ]) {
       expect(approvedResearchUrl(url)?.hostname).toBeTruthy();
     }
@@ -110,6 +121,9 @@ describe('official research evidence gates', () => {
     expect(sourceMatchesModel('13" iPad Pro (M4) mit Apple M4 Chip', 'iPad Pro 11-inch (M4)')).toBe(false);
     expect(sourceMatchesModel('ThinkPad T14 Gen 6 (Intel)', 'Lenovo ThinkPad T14 G6')).toBe(true);
     expect(sourceMatchesModel('ThinkPad T14 Gen 6 (Intel)', 'ThinkPad T14 Gen 6')).toBe(true);
+    expect(sourceMatchesModel('OnePlus 7T Fluid AMOLED 90Hz Display', '7T', 'OnePlus')).toBe(true);
+    expect(sourceMatchesModel('POCO X6 Pro 5G Dimensity 8300-Ultra', 'X6 Pro', 'Poco')).toBe(true);
+    expect(sourceMatchesModel('XBYTE Exclusive Genius Mini-Powerbank 10000mAh', 'Exclusive Genius', 'XBYTE')).toBe(true);
 
     const spaHtml = '<head><meta name="Processor" content="Bis zu Intel Core Ultra 7"><meta name="memory" content="Bis zu 32 GB LPDDR5x"></head><main><div>ThinkPad T14 Gen 6</div></main>';
     const spaText = officialPageText(spaHtml);

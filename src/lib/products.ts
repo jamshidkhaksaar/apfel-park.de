@@ -762,7 +762,12 @@ export const normalizeProductBrand = (brand?: string): string | null => {
   if (/^apple(?:\s+iphone)?$/i.test(value)) return "Apple";
   if (/^samsung/i.test(value)) return "Samsung";
   if (/^(xiaomi|redmi)/i.test(value)) return "Xiaomi";
+  if (/^poco$/i.test(value)) return "Poco";
+  if (/^one\s*plus$/i.test(value)) return "OnePlus";
   if (/^google/i.test(value)) return "Google";
+  if (/^x[-]?byt[er]$/i.test(value)) return "XByte";
+  if (/^guess$/i.test(value)) return "Guess";
+  if (/^4smarts$/i.test(value)) return "4smarts";
   if (/^bmw\s*m$/i.test(value)) return "BMW M";
   if (/^bmw$/i.test(value)) return "BMW";
   if (/^audi\s+sport$/i.test(value)) return "Audi Sport";
@@ -779,7 +784,7 @@ export const isXiaomiRedmiPhone = (product: Product): boolean => {
     && (brand === "Xiaomi" || brand === "Poco");
 };
 
-const BRAND_PRIORITY = ["Apple", "Samsung", "Google", "Xiaomi", "Motorola", "Huawei", "Nokia"];
+const BRAND_PRIORITY = ["Apple", "Samsung", "Google", "Xiaomi", "OnePlus", "Poco", "Motorola", "Huawei", "Nokia"];
 
 const compareProductBrands = (left: string, right: string): number => {
   const leftPriority = BRAND_PRIORITY.indexOf(left);
