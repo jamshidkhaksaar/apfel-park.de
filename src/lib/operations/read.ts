@@ -55,19 +55,19 @@ export const readOperationsAssetPage=async(access:OperationsAccess,branchId:stri
   if(filter && !['missing_details','missing_costs'].includes(filter)) throw new Error('invalid_filter');
   if(!access.owner && filter==='missing_costs') throw new Error('owner_required');
   const where=`WHERE ($1::uuid IS NULL OR a.branch_id=$1) AND ($3::boolean OR (a.state='available' AND p.is_active AND i.is_active))
-    AND ($5='' OR a.state=$5) AND ($6='' OR ($6='missing_details' AND (a.color='' OR a.storage='')) OR ($6='missing_costs' AND a.cost_gross_cents IS NULL))
-    AND ($7='' OR p.brand=$7) AND ($8='' OR p.category=$8) AND ($9='' OR p.condition=$9)
+    AND ($4='' OR a.state=$4) AND ($5='' OR ($5='missing_details' AND (a.color='' OR a.storage='')) OR ($5='missing_costs' AND a.cost_gross_cents IS NULL))
+    AND ($6='' OR p.brand=$6) AND ($7='' OR p.category=$7) AND ($8='' OR p.condition=$8)
     AND ($2='' OR p.title ILIKE '%'||$2||'%' OR i.sku ILIKE '%'||$2||'%' OR 'APF-'||lpad(a.label_number::text,8,'0')=upper($2))`;
   const from=`FROM ops_assets a JOIN inventory_skus i ON i.id=a.inventory_id JOIN products p ON p.id=i.product_id
     LEFT JOIN LATERAL(SELECT value FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p.variants)='array' THEN p.variants ELSE '[]'::jsonb END)
       WHERE value->>'sku'=i.sku LIMIT 1) v ON true`;
-  const params=[branchId,q,access.owner,(boundedPage(page)-1)*40,status,filter,brand,category,condition];
+  const params=[branchId,q,access.owner,status,filter,brand,category,condition,(boundedPage(page)-1)*40];
   const [result,count,optionsResult]=await Promise.all([
     query(`SELECT a.id,a.label_number,a.inventory_id,a.branch_id,a.state,a.color,a.storage,a.battery_health,a.created_at,a.updated_at,p.title,i.sku,
       coalesce(nullif(v.value->'images'->>0,''),p.images[(CASE WHEN v.value->>'imageIndex'~'^[0-9]+$' THEN (v.value->>'imageIndex')::int ELSE 0 END)+1],p.images[1]) AS image
       ${access.owner ? ',a.cost_gross_cents,a.cost_net_cents,(a.serial_encrypted IS NOT NULL OR a.imei_encrypted IS NOT NULL) AS identifier_recorded':''}
-      ${from} ${where} ORDER BY a.created_at DESC,a.label_number DESC LIMIT 40 OFFSET $4`,params),
-    query(`SELECT count(*)::int AS total ${from} ${where}`,params),
+      ${from} ${where} ORDER BY a.created_at DESC,a.label_number DESC LIMIT 40 OFFSET $9`,params),
+    query(`SELECT count(*)::int AS total ${from} ${where}`,params.slice(0,8)),
     query(`SELECT array_agg(DISTINCT p.brand ORDER BY p.brand) FILTER (WHERE coalesce(p.brand,'')<>'') AS brands,
       array_agg(DISTINCT p.category ORDER BY p.category) FILTER (WHERE coalesce(p.category,'')<>'') AS categories,
       array_agg(DISTINCT p.condition ORDER BY p.condition) FILTER (WHERE coalesce(p.condition,'')<>'') AS conditions
