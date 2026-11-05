@@ -24,6 +24,7 @@ OWNER_MIGRATIONS=(
   20261016_telegram_product_entry.sql
   20261017_telegram_studio_v6.sql
   20261019_telegram_photo_quality.sql
+  20261105_operations_shop_sales_reports.sql
 )
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RELEASE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
