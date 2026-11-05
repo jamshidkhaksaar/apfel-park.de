@@ -45,6 +45,13 @@ export const canManageProducts = (user: User | null): boolean => {
   return role === "manager" || role === "product_editor";
 };
 
+/** Cashiers may record an in-shop sale, which changes stock and the sales ledger only. */
+export const canRecordShopSale = (user: User | null): boolean => {
+  if (!user) return false;
+  if (canManageProducts(user)) return true;
+  return getUserRole(user) === "cashier";
+};
+
 /** Catalog and stock are readable by cashiers, but only managers/editors may mutate them. */
 export const canViewCatalog = (user: User | null): boolean => {
   if (!user) return false;

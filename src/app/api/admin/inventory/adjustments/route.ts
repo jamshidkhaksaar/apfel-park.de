@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { canManageProducts } from "@/lib/admin-auth";
+import { canManageProducts, canRecordShopSale } from "@/lib/admin-auth";
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
 import { query } from "@/lib/db";
 import { adjustInventory, type InventoryAdjustmentType } from "@/lib/marketplaces/inventory";
@@ -18,7 +18,7 @@ type AdjustmentPayload = {
 
 export async function POST(request: NextRequest) {
   const user = await readSessionUserFromRequest(request);
-  if (!canManageProducts(user)) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const csrf = rejectCrossSiteAdminMutation(request);
@@ -35,6 +35,14 @@ export async function POST(request: NextRequest) {
 
     if (!sku || !type || !supportedTypes.has(type)) {
       return NextResponse.json({ error: "A valid SKU and adjustment type are required" }, { status: 400 });
+    }
+    // Cashiers may only record a single in-shop sale; every other movement and
+    // any multi-unit stock change stays with managers, editors and admins.
+    if (!(type === "shop_sale" ? canRecordShopSale(user) : canManageProducts(user))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (type === "shop_sale" && !canManageProducts(user) && quantity !== 1) {
+      return NextResponse.json({ error: "Shop sales are recorded one unit at a time" }, { status: 400 });
     }
     if (!Number.isSafeInteger(quantity) || quantity === 0 || (type !== "correction" && quantity < 1)) {
       return NextResponse.json(

@@ -65,6 +65,16 @@ export async function GET(request: NextRequest) {
                 adjustment.created_at
            FROM inventory_adjustments adjustment
            JOIN inventory_skus inventory ON inventory.id = adjustment.inventory_sku_id
+          WHERE NOT (
+            -- Shop sales booked before the sales ledger existed are not part of
+            -- the in-shop reporting workflow, so the movement list starts fresh
+            -- with the first sale recorded after the ledger migration.
+            coalesce(adjustment.metadata ->> 'adjustmentType', adjustment.event_type) = 'shop_sale'
+            AND adjustment.created_at < coalesce(
+              (SELECT applied_at FROM schema_migrations WHERE filename = '20261105_operations_shop_sales_reports.sql'),
+              '-infinity'::timestamptz
+            )
+          )
           ORDER BY adjustment.created_at DESC
           LIMIT 20`,
       ),

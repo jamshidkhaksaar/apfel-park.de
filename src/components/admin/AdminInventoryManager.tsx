@@ -73,7 +73,7 @@ function InventoryThumbnail({ src, title, fallback }: { src: string | null; titl
   </span>;
 }
 
-export default function AdminInventoryManager({ locale, canManage = true, canPrintLabels = false, canViewReports = false }: { locale: "de" | "en"; canManage?: boolean; canPrintLabels?: boolean; canViewReports?: boolean }) {
+export default function AdminInventoryManager({ locale, canManage = true, canPrintLabels = false, canViewReports = false, canSellInShop = false }: { locale: "de" | "en"; canManage?: boolean; canPrintLabels?: boolean; canViewReports?: boolean; canSellInShop?: boolean }) {
   const searchParams = useSearchParams();
   const urlQuery = searchParams.toString();
   const request = useRef<AbortController | null>(null);
@@ -462,9 +462,9 @@ export default function AdminInventoryManager({ locale, canManage = true, canPri
                   <td className="px-3 py-3 text-right font-mono tabular-nums">{item.safetyBuffer}</td>
                   <td className={`px-3 py-3 text-right font-mono font-semibold tabular-nums ${item.available === 0 ? "text-red-500" : item.available <= 3 ? "text-amber-500" : "text-emerald-500"}`}>{item.available}</td>
                   <td className="px-3 py-3 font-mono text-xs text-muted">{item.canAdjust ? `v${item.version}` : <span className="font-sans">{text.noStockRecord}</span>}</td>
-                  <td className="px-4 py-3 text-right">{canManage ? <div className="flex flex-col items-end gap-1.5">
-                    <button type="button" disabled={!item.canAdjust || item.available < 1 || Boolean(busySku) || Boolean(busyProduct)} onClick={() => quickSale(item)} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-40">{locale === "de" ? "1× Vor Ort verkauft" : "Sell 1 in shop"}</button>
-                    {canPrintLabels && item.inventoryId ? <a href={`/admin/kasse-lager/labels?inventory=${item.inventoryId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold underline underline-offset-2">{locale === "de" ? "Etikett drucken" : "Print label"}</a> : null}
+                  <td className="px-4 py-3 text-right">{canSellInShop || canManage ? <div className="flex flex-col items-end gap-1.5">
+                    {canSellInShop ? <button type="button" disabled={!item.canAdjust || item.available < 1 || Boolean(busySku) || Boolean(busyProduct)} onClick={() => quickSale(item)} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-40">{locale === "de" ? "1× Vor Ort verkauft" : "Sell 1 in shop"}</button> : null}
+                    {canManage && canPrintLabels && item.inventoryId ? <a href={`/admin/kasse-lager/labels?inventory=${item.inventoryId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold underline underline-offset-2">{locale === "de" ? "Etikett drucken" : "Print label"}</a> : null}
                   </div> : <span className="text-xs text-muted">—</span>}</td>
                 </tr>
                 {expandedRowKey === `${item.productId}:${item.sku}` ? <tr id={`similar-${item.productId}-${encodeURIComponent(item.sku)}`} className="bg-amber-500/[0.04]"><td colSpan={9} className="px-4 py-4">

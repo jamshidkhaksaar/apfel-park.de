@@ -1,6 +1,6 @@
 import AdminShell from "@/components/admin/AdminShell";
 import AdminInventoryManager from "@/components/admin/AdminInventoryManager";
-import { canManageProducts } from "@/lib/admin-auth";
+import { canManageProducts, canRecordShopSale } from "@/lib/admin-auth";
 import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { getOperationsAccess } from "@/lib/operations/access";
 import { readSessionUser } from "@/lib/session";
@@ -17,6 +17,7 @@ export default async function InventoryPage() {
         canManage={canManageProducts(user)}
         canPrintLabels={Boolean(access?.owner)}
         canViewReports={Boolean(access?.owner)}
+        canSellInShop={canRecordShopSale(user)}
       />
     </AdminShell>
   );

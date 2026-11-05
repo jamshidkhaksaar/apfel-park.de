@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { canAccessAdminPath, canManageCampaigns, canViewCatalog } from "../admin-auth";
+import { canAccessAdminPath, canManageCampaigns, canRecordShopSale, canViewCatalog } from "../admin-auth";
 import type { User } from "../auth-types";
 
 const user = (role: string): User => ({
@@ -45,6 +45,14 @@ describe("admin page path authorization", () => {
     expect(canViewCatalog(cashier)).toBe(true);
     expect(canViewCatalog(user("manager"))).toBe(true);
     expect(canViewCatalog(user("unknown"))).toBe(false);
+  });
+
+  it("lets cashiers record in-shop sales without granting stock or catalog edits", () => {
+    expect(canRecordShopSale(user("cashier"))).toBe(true);
+    expect(canRecordShopSale(user("admin"))).toBe(true);
+    expect(canRecordShopSale(user("manager"))).toBe(true);
+    expect(canRecordShopSale(user("unknown"))).toBe(false);
+    expect(canRecordShopSale(null)).toBe(false);
   });
 });
 
