@@ -50,24 +50,38 @@ export const readOperationsStock=async(access:OperationsAccess,branchId:string|n
 
 export const readOperationsAssetPage=async(access:OperationsAccess,branchId:string|null,search:string,page:number,options:ListOptions={}) => {
   const q=safeSearch(search);const status=options.status ?? '';const filter=options.filter ?? '';
+  const brand=options.brand ?? '';const category=options.category ?? '';const condition=options.condition ?? '';
   if(status && !['available','reserved','sold','inspection','faulty','transit','written_off'].includes(status)) throw new Error('invalid_status');
   if(filter && !['missing_details','missing_costs'].includes(filter)) throw new Error('invalid_filter');
   if(!access.owner && filter==='missing_costs') throw new Error('owner_required');
   const where=`WHERE ($1::uuid IS NULL OR a.branch_id=$1) AND ($3::boolean OR (a.state='available' AND p.is_active AND i.is_active))
     AND ($5='' OR a.state=$5) AND ($6='' OR ($6='missing_details' AND (a.color='' OR a.storage='')) OR ($6='missing_costs' AND a.cost_gross_cents IS NULL))
+    AND ($7='' OR p.brand=$7) AND ($8='' OR p.category=$8) AND ($9='' OR p.condition=$9)
     AND ($2='' OR p.title ILIKE '%'||$2||'%' OR i.sku ILIKE '%'||$2||'%' OR 'APF-'||lpad(a.label_number::text,8,'0')=upper($2))`;
-  const from='FROM ops_assets a JOIN inventory_skus i ON i.id=a.inventory_id JOIN products p ON p.id=i.product_id';
-  const [result,count]=await Promise.all([
-    query(`SELECT a.id,a.label_number,a.inventory_id,a.branch_id,a.state,a.color,a.storage,a.battery_health,a.updated_at,p.title,i.sku
+  const from=`FROM ops_assets a JOIN inventory_skus i ON i.id=a.inventory_id JOIN products p ON p.id=i.product_id
+    LEFT JOIN LATERAL(SELECT value FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p.variants)='array' THEN p.variants ELSE '[]'::jsonb END)
+      WHERE value->>'sku'=i.sku LIMIT 1) v ON true`;
+  const params=[branchId,q,access.owner,(boundedPage(page)-1)*40,status,filter,brand,category,condition];
+  const [result,count,optionsResult]=await Promise.all([
+    query(`SELECT a.id,a.label_number,a.inventory_id,a.branch_id,a.state,a.color,a.storage,a.battery_health,a.created_at,a.updated_at,p.title,i.sku,
+      coalesce(nullif(v.value->'images'->>0,''),p.images[(CASE WHEN v.value->>'imageIndex'~'^[0-9]+$' THEN (v.value->>'imageIndex')::int ELSE 0 END)+1],p.images[1]) AS image
       ${access.owner ? ',a.cost_gross_cents,a.cost_net_cents,(a.serial_encrypted IS NOT NULL OR a.imei_encrypted IS NOT NULL) AS identifier_recorded':''}
-      ${from} ${where} ORDER BY a.label_number DESC,a.id DESC LIMIT 40 OFFSET $4`,[branchId,q,access.owner,(boundedPage(page)-1)*40,status,filter]),
-    query(`SELECT count(*)::int AS total ${from} ${where}`.replaceAll('$5','$4').replaceAll('$6','$5'),[branchId,q,access.owner,status,filter]),
+      ${from} ${where} ORDER BY a.created_at DESC,a.label_number DESC LIMIT 40 OFFSET $4`,params),
+    query(`SELECT count(*)::int AS total ${from} ${where}`,params),
+    query(`SELECT array_agg(DISTINCT p.brand ORDER BY p.brand) FILTER (WHERE coalesce(p.brand,'')<>'') AS brands,
+      array_agg(DISTINCT p.category ORDER BY p.category) FILTER (WHERE coalesce(p.category,'')<>'') AS categories,
+      array_agg(DISTINCT p.condition ORDER BY p.condition) FILTER (WHERE coalesce(p.condition,'')<>'') AS conditions
+      FROM ops_assets a JOIN inventory_skus i ON i.id=a.inventory_id JOIN products p ON p.id=i.product_id
+      WHERE ($1::uuid IS NULL OR a.branch_id=$1)`,[branchId]),
   ]);
   const assets=result.rows.map(r=>({id:String(r.id),label:assetLabel(r.label_number),inventoryId:String(r.inventory_id),branchId:String(r.branch_id),
-    title:String(r.title),sku:String(r.sku),state:String(r.state),color:String(r.color),storage:String(r.storage),batteryHealth:r.battery_health===null ? null:Number(r.battery_health),
+    title:String(r.title),sku:String(r.sku),state:String(r.state),color:String(r.color),storage:String(r.storage),
+    image:typeof r.image==='string' ? r.image:null,createdAt:new Date(r.created_at).toISOString(),
+    batteryHealth:r.battery_health===null ? null:Number(r.battery_health),
     updatedAt:new Date(r.updated_at).toISOString(),...(access.owner ? {costGrossCents:r.cost_gross_cents===null ? null:Number(r.cost_gross_cents),
     costNetCents:r.cost_net_cents===null ? null:Number(r.cost_net_cents),identifierRecorded:Boolean(r.identifier_recorded)}:{})})) as Asset[];
-  return {assets,total:Number(count.rows[0].total),page:boundedPage(page),asOf:new Date().toISOString()};
+  return {assets,total:Number(count.rows[0].total),page:boundedPage(page),asOf:new Date().toISOString(),
+    filterOptions:{brands:optionsResult.rows[0]?.brands ?? [],categories:optionsResult.rows[0]?.categories ?? [],conditions:optionsResult.rows[0]?.conditions ?? []}};
 };
 export const readOperationsAssets=async(access:OperationsAccess,branchId:string|null,search:string,page:number) => (await readOperationsAssetPage(access,branchId,search,page)).assets;
 

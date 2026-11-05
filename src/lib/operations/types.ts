@@ -9,6 +9,7 @@ export type StockItem = {
 };
 export type Asset = { id: string; label: string; inventoryId: string; branchId: string; title: string; sku: string;
   state: string; color: string; storage: string; batteryHealth: number | null;
+  image?: string | null; createdAt?: string;
   costGrossCents?: number | null; costNetCents?: number | null; identifierRecorded?: boolean; updatedAt?: string };
 export type BasketItem = { inventoryId: string; quantity: number; assetId?: string };
 export type TillLine = BasketItem & { title: string; sku: string; unitCents: number; totalCents: number; condition: string };
@@ -36,7 +37,7 @@ export type ShopSalesSummary = { units: number; sales: number; grossCents: numbe
 export type OperationsReport = { asOf: string; currentStock: StockSummary; summary: Overview; previous: Overview;
   shop: ShopSalesSummary; shopPrevious: ShopSalesSummary;
   attribution: { knownOrders: number; unassignedOrders: number }; refundBasis: 'selected_sales_cohort'; shopRevenueAvailable: boolean };
-export type ListOptions = { page?: number; kind?: string; status?: string; from?: string; to?: string; q?: string; filter?: string; category?: string };
+export type ListOptions = { page?: number; kind?: string; status?: string; from?: string; to?: string; q?: string; filter?: string; category?: string; brand?: string; condition?: string };
 export type OperationPreview = { token: string; expiresAt: string; branchName: string; action: string;
   changes: Array<{ field: string; before: string | number | null; after: string | number | null }>;
   totalCents?: number; lines?: TillLine[]; alreadyApplied?: boolean };

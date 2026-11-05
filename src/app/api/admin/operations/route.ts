@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const pageInput=Number(params.get('page') ?? 1);
     const page=Number.isSafeInteger(pageInput) && pageInput>0 && pageInput<=10000 ? pageInput : 1;
     const view=params.get('view') ?? 'bootstrap';
-    const options={page,kind:params.get('kind') ?? '',status:params.get('status') ?? '',from:params.get('from') ?? '',to:params.get('to') ?? '',filter:params.get('filter') ?? '',q:params.get('q') ?? '',category:params.get('category') ?? ''};
+    const options={page,kind:params.get('kind') ?? '',status:params.get('status') ?? '',from:params.get('from') ?? '',to:params.get('to') ?? '',filter:params.get('filter') ?? '',q:params.get('q') ?? '',category:params.get('category') ?? '',brand:params.get('brand') ?? '',condition:params.get('condition') ?? ''};
     let data: unknown;
     if (view==='bootstrap') data={branches:await operationsBranches(access),owner:access.owner,branchId:access.branchId,settings:await readOperationsSettings(access)};
     else if (view==='stock') data=await readOperationsStock(access,branchId,options.q,page,options);
