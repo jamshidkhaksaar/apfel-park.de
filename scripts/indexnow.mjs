@@ -5,16 +5,22 @@
  * The verification key file has been sitting in public/ since July, correctly
  * served, but nothing ever submitted anything to it. This closes that gap.
  *
- *   node scripts/indexnow.mjs                  submit every sitemap URL (skips if unchanged)
- *   node scripts/indexnow.mjs --force          submit even if the sitemap is unchanged
+ *   node scripts/indexnow.mjs                  submit only URLs changed since the last run
+ *   node scripts/indexnow.mjs --force          submit every sitemap URL regardless
  *   node scripts/indexnow.mjs --dry-run        show what would be sent, send nothing
  *   node scripts/indexnow.mjs <url> [url...]   submit specific URLs only
+ *
+ * Bing reviews the submission pattern per site and flags whole-sitemap POSTs as
+ * "IndexNow is in batch mode" — it asks for smaller groups sent as changes
+ * occur. So a run now submits the difference instead of all ~500 URLs:
+ * products diff on sitemap lastmod, and static pages (which carry no lastmod)
+ * are re-sent only when the deployed release changes, since their copy only
+ * moves with a build.
  *
  * api.indexnow.org fans out to every participating engine, so one POST covers
  * all of them. Google does not participate — it has its own crawl scheduling.
  */
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
-import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -42,51 +48,68 @@ const findKey = () => {
   return key;
 };
 
-const sitemapUrls = async () => {
+/** One entry per <url> block, keeping lastmod so a run can diff against the last one. */
+const sitemapEntries = async () => {
   const res = await fetch(`${ORIGIN}/sitemap.xml`, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`sitemap.xml returned ${res.status}`);
   const xml = await res.text();
-  const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
-    .map((m) => m[1].trim())
-    .filter((u) => u.startsWith(ORIGIN));
-  // Last-modified changes matter even when the set of product URLs is stable.
-  const revisions = [...xml.matchAll(/<(loc|lastmod)>([^<]+)<\/(?:loc|lastmod)>/g)]
-    .map((m) => `${m[1]}:${m[2]}`).join("\n");
-  return { urls, revisions };
+  return xml
+    .split("<url>")
+    .slice(1)
+    .map((block) => {
+      const loc = /<loc>([^<]+)<\/loc>/.exec(block);
+      if (!loc) return null;
+      const lastmod = /<lastmod>([^<]+)<\/lastmod>/.exec(block);
+      return { url: loc[1].trim(), lastmod: lastmod ? lastmod[1].trim() : "" };
+    })
+    .filter((entry) => entry && entry.url.startsWith(ORIGIN));
 };
 
 const key = findKey();
-const sitemap = explicitUrls.length ? null : await sitemapUrls();
-const urls = explicitUrls.length ? explicitUrls : [...new Set(sitemap.urls)];
+const entries = explicitUrls.length ? [] : await sitemapEntries();
 
-if (urls.length === 0) {
+if (!explicitUrls.length && entries.length === 0) {
   console.error("no URLs to submit");
   process.exit(1);
+}
+
+// Static pages carry no lastmod, so their copy can only move with a build:
+// re-send them when .deployed-sha changes. Products diff on lastmod.
+const releaseFile = join(ROOT, ".deployed-sha");
+const release = existsSync(releaseFile) ? readFileSync(releaseFile, "utf8").trim() : "";
+
+const readState = () => {
+  try {
+    return JSON.parse(readFileSync(STATE, "utf8"));
+  } catch {
+    return null; // Unreadable state is not a reason to skip submitting.
+  }
+};
+
+const selectUrls = () => {
+  if (explicitUrls.length) return explicitUrls;
+  if (force) return entries.map((entry) => entry.url);
+  const previous = readState();
+  if (!previous?.urls) return entries.map((entry) => entry.url); // first run: everything
+  return entries
+    .filter((entry) => {
+      const seen = previous.urls[entry.url];
+      if (seen === undefined) return true; // URL is new since the last run
+      return entry.lastmod ? seen !== entry.lastmod : previous.release !== release;
+    })
+    .map((entry) => entry.url);
+};
+
+const urls = [...new Set(selectUrls())];
+
+if (urls.length === 0) {
+  console.log(`nothing changed since ${readState()?.submittedAt ?? "the last run"} — skipping`);
+  console.log("use --force to submit every sitemap URL");
+  process.exit(0);
 }
 if (urls.length > MAX_URLS) {
   console.error(`${urls.length} URLs exceeds the ${MAX_URLS} per-request limit`);
   process.exit(1);
-}
-
-// Include the release as static-page copy can change without a sitemap lastmod.
-const releaseFile = join(ROOT, ".deployed-sha");
-const release = existsSync(releaseFile) ? readFileSync(releaseFile, "utf8").trim() : "";
-const fingerprint = createHash("sha256")
-  .update(urls.slice().sort().join("\n"))
-  .update(sitemap?.revisions ?? "")
-  .update(release)
-  .digest("hex");
-if (!explicitUrls.length && !force && existsSync(STATE)) {
-  try {
-    const previous = JSON.parse(readFileSync(STATE, "utf8"));
-    if (previous.fingerprint === fingerprint) {
-      console.log(`unchanged since ${previous.submittedAt} (${urls.length} URLs) — skipping`);
-      console.log("use --force to submit anyway");
-      process.exit(0);
-    }
-  } catch {
-    // Unreadable state file is not a reason to skip submitting.
-  }
 }
 
 const payload = {
@@ -96,7 +119,7 @@ const payload = {
   urlList: urls,
 };
 
-console.log(`IndexNow: ${urls.length} URLs, key ${key.slice(0, 8)}…`);
+console.log(`IndexNow: ${urls.length} URL(s) to submit, key ${key.slice(0, 8)}…`);
 if (dryRun) {
   console.log("--dry-run, nothing sent. First 5:");
   for (const u of urls.slice(0, 5)) console.log("  " + u);
@@ -115,7 +138,10 @@ const body = await res.text().catch(() => "");
 if (res.status === 200 || res.status === 202) {
   console.log(`submitted OK (HTTP ${res.status})`);
   if (!explicitUrls.length) {
-    writeFileSync(STATE, JSON.stringify({ fingerprint, count: urls.length, submittedAt: new Date().toISOString() }, null, 2));
+    // Record every sitemap lastmod, not just the ones sent, so the next run
+    // diffs against the whole site rather than a partial list.
+    const sitemapState = Object.fromEntries(entries.map((entry) => [entry.url, entry.lastmod]));
+    writeFileSync(STATE, JSON.stringify({ release, count: entries.length, urls: sitemapState, submittedAt: new Date().toISOString() }, null, 2));
   }
   process.exit(0);
 }

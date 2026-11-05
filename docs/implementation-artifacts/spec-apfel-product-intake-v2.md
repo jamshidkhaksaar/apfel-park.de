@@ -66,6 +66,14 @@ context:
 
 ## Spec Change Log
 
+- 2026-10-16: Owner requested a separate Telegram flow using the current seven-step
+  product workspace, one final owner publication approval, invite/approval-based
+  staff membership, and optional Gemini studio photo previews approved by staff.
+  These decisions supersede the two-approval and no-Nano-Banana requirements only
+  for this new workspace flow. Legacy intake runs retain their existing rules.
+  All Telegram offers, including sealed devices, require actual device photos;
+  box-only submissions remain incomplete. See `deployment/vps/telegram-products/README.md`.
+
 ## Design Notes
 
 Keep n8n stateless and short-running; the application database owns business state. Use ZXing checksum-backed results as authoritative, OCR as evidence, and Sol vision only for label/context association. Store intended inventory in inactive SKU rows for drafts; activate and queue channels only at publication.

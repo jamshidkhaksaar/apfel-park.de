@@ -15,6 +15,9 @@ const ProductPromoPopup = dynamic(() => import("./ProductPromoPopup"), { ssr: fa
 type AppWrapperProps = {
   children: React.ReactNode;
   lang: "de" | "en";
+  /** The seasonal campaign is its own offer surface; a discount popup on top of
+   *  it would present a second, competing promotion. */
+  campaign?: boolean;
   promo: {
     enabled: boolean;
     title: { de: string; en: string };
@@ -46,9 +49,13 @@ type AppWrapperProps = {
   };
 };
 
-export default function AppWrapper({ children, lang, promo, discountedProducts, marketing, whatsapp }: AppWrapperProps) {
+export default function AppWrapper({ children, lang, campaign = false, promo, discountedProducts, marketing, whatsapp }: AppWrapperProps) {
   const pathname = usePathname();
   const privateTrackingPage = !pathname || isPrivateAnalyticsPath(pathname);
+  // The campaign landing page is its own offer surface, including in the teaser
+  // phase before the site-wide theme is active. A discount popup on top of the
+  // countdown would present a second, competing promotion.
+  const campaignSurface = campaign || Boolean(pathname && /^\/(de|en)\/black-friday\/?$/.test(pathname));
   const effectiveLang = pathname?.startsWith("/en") ? "en" : pathname?.startsWith("/de") ? "de" : lang;
 
   useEffect(() => {
@@ -131,7 +138,9 @@ export default function AppWrapper({ children, lang, promo, discountedProducts, 
       <div className="relative z-10">{children}</div>
       <MarketingConsentScripts {...marketing} />
       {!privateTrackingPage ? <>
-        <ProductPromoPopup lang={effectiveLang} promo={promo} discountedProducts={discountedProducts} />
+        {campaignSurface ? null : (
+          <ProductPromoPopup lang={effectiveLang} promo={promo} discountedProducts={discountedProducts} />
+        )}
         <ChatWidget lang={effectiveLang} whatsapp={whatsapp} />
         {siteInfo.googleReviewsBadge ? (
           <GoogleReviewsBadge merchantId={siteInfo.googleMerchantId} locale={effectiveLang} />

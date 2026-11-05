@@ -51,6 +51,9 @@ export function ThemeScript() {
   const script = `
     (function() {
       try {
+        // A seasonal campaign locks the palette; do not overwrite it from a
+        // stored preference or write the forced value back to the cookie.
+        if (document.documentElement.getAttribute('data-season')) return;
         var existing = document.documentElement.getAttribute('data-theme');
         var source = document.documentElement.getAttribute('data-theme-source');
         var stored = localStorage.getItem('${THEME_STORAGE_KEY}');
@@ -88,9 +91,12 @@ export function ThemeScript() {
 export default function ThemeProvider({
   children,
   initialTheme,
+  locked = false,
 }: {
   children: React.ReactNode;
   initialTheme: Theme;
+  /** A seasonal campaign owns the palette; skip the stored-preference sync. */
+  locked?: boolean;
 }) {
   const theme = useSyncExternalStore(
     themeStore.subscribe,
@@ -100,6 +106,7 @@ export default function ThemeProvider({
   
   // Initialize theme from localStorage on mount (only once)
   useEffect(() => {
+    if (locked) return;
     try {
       const attr = document.documentElement.getAttribute("data-theme") as Theme | null;
       const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
@@ -119,7 +126,7 @@ export default function ThemeProvider({
     } catch {
       document.documentElement.setAttribute("data-theme", DEFAULT_THEME);
     }
-  }, []);
+  }, [locked]);
 
   const setTheme = useCallback((newTheme: Theme) => {
     // Update DOM first so getSnapshot reads the new value immediately

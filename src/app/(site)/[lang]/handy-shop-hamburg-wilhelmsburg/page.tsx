@@ -204,6 +204,14 @@ export default async function HamburgWilhelmsburgStorePage({
         <Link href="#angebote" className="btn-primary min-h-11 justify-center">
           {locale === 'de' ? 'Smartphones vergleichen' : 'Compare smartphones'}
         </Link>
+        <TrackedLink
+          href={`tel:${siteInfo.landlineE164}`}
+          className="btn-secondary min-h-11 justify-center"
+          eventName="contact_click"
+          eventPayload={{ type: "landline", source: "wilhelmsburg_intro" }}
+        >
+          {content.call}
+        </TrackedLink>
         <Link href={`/${locale}/samsung-handys`} className="btn-secondary min-h-11 justify-center">
           {locale === 'de' ? 'Samsung-Handys ansehen' : 'Browse Samsung phones'}
         </Link>

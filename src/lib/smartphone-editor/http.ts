@@ -3,11 +3,12 @@ import { createAdminServerClient } from '@/lib/admin-auth-server';
 import { canManageProducts, isAdminUser } from '@/lib/admin-auth';
 import { rejectCrossSiteAdminMutation } from '@/lib/admin-csrf';
 import { DraftError } from './repository';
+import { isProductIntakeOwner } from '@/lib/product-intake/owner';
 export const phoneEditorEnabled = () =>
   process.env.SMARTPHONE_EDITOR_ENABLED === 'true';
 export const phoneHandler = async (
   request: NextRequest,
-  work: (actor: string, owner: boolean) => Promise<unknown>,
+  work: (actor: string, owner: boolean, intakeOwner: boolean) => Promise<unknown>,
 ) => {
   if (!phoneEditorEnabled())
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
@@ -22,7 +23,7 @@ export const phoneHandler = async (
     if (denied) return denied;
   }
   try {
-    return NextResponse.json(await work(user!.id, isAdminUser(user)));
+    return NextResponse.json(await work(user!.id, isAdminUser(user), isProductIntakeOwner(user)));
   } catch (error) {
     if (error instanceof DraftError)
       return NextResponse.json(

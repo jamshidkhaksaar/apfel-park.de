@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import StoreCommerceHeader from "@/components/store/StoreCommerceHeader";
 import StoreGrid from "@/components/store/StoreGrid";
+import { businessAddress } from "@/lib/business-identity";
 import { getDictionary } from "@/lib/i18n";
 import { createMetadata } from "@/lib/metadata";
 import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "@/lib/products";
@@ -140,6 +141,41 @@ export default async function TabletsPage({
                 <p className="mt-2 text-sm leading-6 text-muted">
                   {locale === "de" ? "Details zu Widerruf, Rückgabe und gesetzlichen Rechten stehen in den verlinkten Bedingungen." : "Details about withdrawal, returns and statutory rights are provided in the linked terms."}
                 </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-14 border-t border-border/60 pt-10">
+            <h2 className="text-2xl font-semibold text-foreground">
+              {locale === "de" ? "Wo kann ich ein Tablet oder iPad in Hamburg kaufen?" : "Where can I buy a tablet or iPad in Hamburg?"}
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">
+              {locale === "de"
+                ? "Bei Apfel Park im LunaCenter in Hamburg-Wilhelmsburg. Dort kannst du iPads und weitere Tablets ansehen, vergleichen und verfügbare Geräte direkt mitnehmen. Online bestellte Tablets kannst du ebenfalls im Laden abholen."
+                : "At Apfel Park in the LunaCenter in Hamburg-Wilhelmsburg. You can view and compare iPads and other tablets there and take available devices with you directly. Tablets ordered online can also be collected in store."}
+            </p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="tech-card rounded-2xl p-5">
+                <h3 className="font-semibold text-foreground">{locale === "de" ? "Adresse und Öffnungszeiten" : "Address and opening hours"}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {businessAddress(locale, false)}
+                  <br />
+                  {locale === "de" ? "Montag bis Samstag 09:30–20:00 Uhr, Sonntag geschlossen." : "Monday to Saturday 09:30–20:00, closed on Sunday."}
+                </p>
+                <Link href={`/${locale}/handy-shop-hamburg-wilhelmsburg`} className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-gold hover:text-gold-soft">
+                  {locale === "de" ? "Anfahrt und Abholung ansehen" : "See directions and collection"}
+                </Link>
+              </div>
+              <div className="tech-card rounded-2xl p-5">
+                <h3 className="font-semibold text-foreground">{locale === "de" ? "Altgerät und Reparatur" : "Trade-in and repairs"}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {locale === "de"
+                    ? "Du kannst ein vorhandenes Tablet in Zahlung geben oder ein defektes Gerät vor Ort prüfen lassen. Beides geht direkt im Laden in Wilhelmsburg."
+                    : "You can trade in an existing tablet or have a faulty device checked on site. Both are handled directly in the Wilhelmsburg store."}
+                </p>
+                <Link href={`/${locale}/trade-in`} className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-gold hover:text-gold-soft">
+                  {locale === "de" ? "Altgerät verkaufen" : "Sell your old device"}
+                </Link>
               </div>
             </div>
           </div>

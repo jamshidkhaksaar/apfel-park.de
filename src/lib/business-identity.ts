@@ -35,6 +35,12 @@ export const businessIdentity = {
   vatId: 'DE345074336',
 } as const satisfies BusinessIdentity;
 
+/**
+ * The verified Google Business Profile listing. The CID form is the stable
+ * public URL: it survives Maps redesigns, unlike the /maps/place/ URL.
+ */
+export const googleBusinessProfileUrl = 'https://maps.google.com/?cid=18022836003772936884';
+
 export const businessAddress = (lang: 'de' | 'en', country = true): string => {
   const a = businessIdentity.address;
   return `${a.street}, ${a.postalCode} ${a.city}${country ? `, ${lang === 'de' ? a.countryDe : a.countryEn}` : ''}`;
@@ -53,6 +59,7 @@ export const businessSchemaIdentity = {
   name: businessIdentity.tradingName,
   legalName: businessIdentity.legalOwner,
   url: businessIdentity.website,
+  description: 'Apfel Park ist ein Smartphone-Fachgeschäft mit Reparaturwerkstatt im LunaCenter in Hamburg-Wilhelmsburg. Das Unternehmen verkauft neue, Open-Box- und gebrauchte Smartphones, Tablets, Laptops und Zubehör und repariert iPhone-, Samsung-Galaxy- und weitere Smartphone-Modelle zu modellbezogenen Preisen.',
   telephone: businessIdentity.phones.legalBusiness.e164,
   email: businessIdentity.email,
   vatID: businessIdentity.vatId,
@@ -63,6 +70,18 @@ export const businessSchemaIdentity = {
     addressLocality: businessIdentity.address.city,
     addressCountry: businessIdentity.address.countryCode,
   },
+  // Coordinates of the verified Google Business Profile listing, read from
+  // the Maps place URL. These must match the profile pin, so they are not
+  // derived from OpenStreetMap: the LunaCenter building centroid sat about
+  // 60 m away from the pin Google actually serves.
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: 53.4978489,
+    longitude: 10.009244,
+  },
+  knowsLanguage: ['de', 'en'],
+  priceRange: '€€',
+  paymentAccepted: 'Kreditkarte, Apple Pay, Klarna, Barzahlung, Debitkarte',
   contactPoint: [businessIdentity.phones.customerService, businessIdentity.phones.store].map(phone => ({
     '@type': 'ContactPoint',
     telephone: phone.e164,

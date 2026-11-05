@@ -21,7 +21,7 @@ export const applyEditorResearch = (doc: PhoneDocument, result: ProductResearchR
     pendingShared: { ...current, ...patch, aiGeneratedFields: appliedResearchTextFields(current.aiGeneratedFields, result) },
     pendingSpecsText: result.specs?.length ? undefined : doc.pendingSpecsText,
     researchGallery: result.gallery?.length ? result.gallery : doc.researchGallery,
-    variantSuggestions: result.variantSuggestions ?? result.variants?.map(({ color, storage }) => ({ color, storage })) ?? doc.variantSuggestions,
+    variantSuggestions: result.variantSuggestions ?? result.variants?.map(({ color, storage, configuration }) => ({ color, storage, configuration })) ?? doc.variantSuggestions,
     entries: doc.entries.map(entry => {
       const profile = sanitizeProductExperienceProfile(entry.experience);
       return {

@@ -31,7 +31,9 @@ use `app/worktrees/<name>` for isolated work. `app/current` points to an immutab
 built release; do not edit generated output. Node >=24.14.0 <25 and npm >=11.12.0
 <12 are required by `package.json`; explicitly select the correct PATH.
 Deployment requires approval and a pinned pushed SHA through
-`deployment/vps/scripts/deploy-app.sh`, not a build plus restart. Automatic code
+`/srv/apfel-park/app/deploy/deployment/vps/scripts/deploy-app.sh` (the deploy
+tooling checkout from `OPERATIONS.md`, not the editable clone), not a build plus
+restart. Automatic code
 rollback cannot undo schema changes; maintain old web/worker compatibility.
 No production config/service changes belong in an isolated hardening task.
 

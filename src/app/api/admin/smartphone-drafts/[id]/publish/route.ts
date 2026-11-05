@@ -5,11 +5,12 @@ export const POST = (
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) =>
-  phoneHandler(request, async (actor, owner) =>
+  phoneHandler(request, async (actor, owner, intakeOwner) =>
     publishPhoneDraft(
       (await context.params).id,
       await request.json(),
       actor,
       owner,
+      intakeOwner,
     ),
   );

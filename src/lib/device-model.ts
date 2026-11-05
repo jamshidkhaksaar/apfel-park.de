@@ -88,6 +88,30 @@ const MODEL_PATTERNS: Array<(text: string) => ModelMatch | null> = [
     const note = match[1] ? "note " : "";
     return { needle: collapse(`redmi ${note}${match[2]}`) };
   },
+  (text) => {
+    const match = /\b(?:oneplus|one\s*plus)(?:\s*(?:oneplus|one\s*plus))*\s*(pad(?:\s*pro|\s*\d+)?|open|nord(?:\s*ce)?(?:\s*\d+[a-z]*(?:\s*(?:lite|pro))?)?|\d{1,2}[a-z]*)(?:\s*(pro\s*xl|pro|plus|ultra|r|t|fe|lite))?\b/i.exec(text);
+    if (!match) return null;
+    const model = match[1] ? match[1].toLowerCase().replace(/\s+/g, " ") : "";
+    const suffix = match[2] ? ` ${match[2].toLowerCase()}` : "";
+    if (!model) return null;
+    const full = `oneplus ${model}${suffix}`.replace(/\s+/g, " ").trim();
+    const variants = [full];
+    const spaced = full.replace(/(\d+)([a-z]+)/g, "$1 $2");
+    if (spaced !== full) variants.push(spaced);
+    return { needle: full, variants };
+  },
+  (text) => {
+    const match = /\b(?:poco|xiaomi\s*poco)(?:\s*(?:poco|xiaomi\s*poco))*\s*(pad|f\d{1,2}[a-z]*|x\d{1,2}[a-z]*|m\d{1,2}[a-z]*|c\d{1,2}[a-z]*|[a-z]\d{1,2}[a-z]*)(?:\s*(pro\s*plus|pro|gt|ultra|nfc|plus))?\b/i.exec(text);
+    if (!match) return null;
+    const model = match[1] ? match[1].toLowerCase().replace(/\s+/g, " ") : "";
+    const suffix = match[2] ? ` ${match[2].toLowerCase()}` : "";
+    if (!model) return null;
+    const full = `poco ${model}${suffix}`.replace(/\s+/g, " ").trim();
+    const variants = [full];
+    const spaced = full.replace(/([a-z])(\d+)/g, "$1 $2");
+    if (spaced !== full) variants.push(spaced);
+    return { needle: full, variants };
+  },
 ];
 
 export const deviceModelNeedles = (text: string): string[] => {

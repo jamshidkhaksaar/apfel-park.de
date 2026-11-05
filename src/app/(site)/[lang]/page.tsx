@@ -22,8 +22,15 @@ import GalaxyFoldBanner from "@/components/banner/GalaxyFoldBanner";
 import PixelBanner from "@/components/banner/PixelBanner";
 import TrusmiPartner from '@/components/TrusmiPartner';
 
-import { getFeaturedProducts } from "../../../lib/products";
+import { getBlackFridayDeals, getFeaturedProducts } from "../../../lib/products";
+import { discountPercentage, toCatalogCardModel } from "../../../lib/catalog-card";
+import { blackFriday, blackFridayCopy } from "../../../lib/black-friday";
+import { secondsRemaining } from "../../../lib/seasonal-theme";
+import { getEffectiveCampaign } from "../../../lib/seasonal-theme-server";
+import BlackFridayHero from "../../../components/black-friday/BlackFridayHero";
+import BlackFridayDealsSection from "../../../components/black-friday/BlackFridayDealsSection";
 import AnimatedSection from "../../../components/AnimatedSection";
+import TrackedLink from "../../../components/TrackedLink";
 
 import { getHeroMediaSettings } from "../../../lib/site-settings-server";
 
@@ -56,6 +63,18 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const home = await getHomeContent(lang);
   const featuredProducts = await getFeaturedProducts(lang);
   const heroMedia = await getHeroMediaSettings();
+  const { theme: season, phase: campaignPhase } = await getEffectiveCampaign();
+  const campaignIsBefore = campaignPhase === "before";
+  const campaignCopy = blackFridayCopy[lang];
+  const blackFridayDeals = season ? await getBlackFridayDeals(lang, 48, "hero") : [];
+  const blackFridayCards = blackFridayDeals.map((product) => toCatalogCardModel(product));
+  const maxDiscount = blackFridayDeals.reduce<number | null>((highest, product) => {
+    const value = discountPercentage(product.price, product.compareAtPrice);
+    if (!value) return highest;
+    return highest === null ? value : Math.max(highest, value);
+  }, null);
+  const campaignTargetAt = campaignIsBefore ? blackFriday.startsAt : blackFriday.endsAt;
+  const blackFridaySeconds = secondsRemaining(campaignTargetAt);
   const tabletCard = lang === "de"
     ? {
         title: "Tablets & iPads",
@@ -112,8 +131,21 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   return (
     <div className="page-surface text-foreground">
 
-      {/* Hero Slider */}
-      <HeroSlider lang={lang} media={heroMedia} hero={home.hero} />
+      {/* Campaign weeks replace the managed slider: two competing heroes would
+          bury the deals and split the page's single call to action. */}
+      {season ? (
+        <BlackFridayHero
+          lang={lang}
+          targetAt={campaignTargetAt}
+          phase={campaignIsBefore ? "before" : "live"}
+          initialSeconds={blackFridaySeconds}
+          deals={blackFridayCards}
+          total={blackFridayDeals.length}
+          maxDiscount={maxDiscount}
+        />
+      ) : (
+        <HeroSlider lang={lang} media={heroMedia} hero={home.hero} />
+      )}
 
       {/* Brands Bar */}
       <section className="border-y border-border bg-surface-strong py-4 md:py-7">
@@ -144,6 +176,23 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
         </div>
       </section>
+
+      {season ? (
+        <BlackFridayDealsSection
+          lang={lang}
+          products={blackFridayCards.slice(0, 8)}
+          total={blackFridayCards.length}
+          showAllHref={`/${lang}/black-friday`}
+          eyebrow={campaignIsBefore ? campaignCopy.page.teaserDealsEyebrow : undefined}
+          title={campaignIsBefore ? campaignCopy.page.teaserDealsTitle : undefined}
+          description={campaignIsBefore ? campaignCopy.page.teaserDealsNote : undefined}
+          showAllLabel={
+            campaignIsBefore
+              ? lang === "de" ? "Alle Geräte ansehen" : "See all devices"
+              : lang === "de" ? "Alle Deals ansehen" : "See all deals"
+          }
+        />
+      ) : null}
 
       {/* iPhone 18 Showcase Banner */}
       <div className="container-page py-6 md:py-8">
@@ -178,7 +227,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             {/* Left: Compact Timeline */}
-            <div className="relative space-y-12">
+            <div className="relative min-w-0 space-y-12">
               {/* Vertical Connection Line */}
               <div className="absolute left-7 top-10 h-[calc(100%-80px)] w-px bg-gradient-to-b from-gold/70 via-gold/40 to-transparent" />
               
@@ -199,7 +248,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 ];
                 
                 return (
-                <div key={step.title} className="relative flex items-start gap-6">
+                <div key={step.title} className="relative flex min-w-0 items-start gap-6">
                   {/* Step Icon */}
                   <div className="process-step-icon relative z-10 flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl shadow-lg">
                     {stepIcons[index]}
@@ -207,7 +256,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                   </div>
                   
                   {/* Content */}
-                  <div className="pt-1">
+                  <div className="min-w-0 pt-1">
                     <h3 className="text-lg font-semibold text-foreground md:text-xl">{step.title}</h3>
                     <p className="mt-2 text-sm text-muted leading-relaxed">{step.description}</p>
                     
@@ -313,8 +362,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       {/* Services Grid */}
       <AnimatedSection as="section" animation="fade-up" delay={100} className="section-pad bg-surface-strong">
         <div className="container-page">
-          <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-            <div>
+          <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:flex-wrap md:items-end">
+            <div className="min-w-0 max-w-full">
               <span className="badge-gold mb-4 inline-flex">
                 {lang === "de" ? "Unsere Services" : "Our Services"}
               </span>
@@ -341,7 +390,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               ];
               
               return (
-                <div key={item.title} className="tech-card-hover rounded-2xl p-6">
+                <div key={item.title} className="tech-card-hover min-w-0 rounded-2xl p-6">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gold/15 text-gold">
                     {icons[index]}
                   </div>
@@ -616,15 +665,17 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               </div>
               
               <div className="flex flex-wrap justify-center gap-4">
-                <Link
+                <TrackedLink
                   href={`tel:${siteInfo.phoneE164}`}
                   className="btn-primary"
+                  eventName="contact_click"
+                  eventPayload={{ type: "phone", source: "home_cta" }}
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                   <span>{home.cta.primary}</span>
-                </Link>
+                </TrackedLink>
                 <Link href={`/${lang}/contact`} className="btn-secondary">
                   {home.cta.secondary}
                 </Link>

@@ -24,6 +24,7 @@ describe("store catalog filters", () => {
       conditions: ["new", "used"],
       accessoryTypes: ["cases", "cables"],
       inStockOnly: true,
+      dealsOnly: false,
       priceMin: 100,
       priceMax: 900,
     });
@@ -44,6 +45,12 @@ describe("store catalog filters", () => {
   it("only enables availability for the supported URL value", () => {
     expect(parseStoreCatalogFilters({ stock: "available" }).inStockOnly).toBe(true);
     expect(parseStoreCatalogFilters({ stock: "all" }).inStockOnly).toBe(false);
+  });
+
+  it("only narrows to discounted products for the campaign flag", () => {
+    expect(parseStoreCatalogFilters({ deals: "1" }).dealsOnly).toBe(true);
+    expect(parseStoreCatalogFilters({ deals: "all" }).dealsOnly).toBe(false);
+    expect(parseStoreCatalogFilters({}).dealsOnly).toBe(false);
   });
 });
 
@@ -101,6 +108,12 @@ describe("storefront brand labels", () => {
     ["Apple iPhone", "Apple"],
     ["samsung electronics", "Samsung"],
     ["redmi", "Xiaomi"],
+    ["poco", "Poco"],
+    ["POCO", "Poco"],
+    ["oneplus", "OnePlus"],
+    ["One plus", "OnePlus"],
+    ["xbyte", "XByte"],
+    ["XBYTE", "XByte"],
     ["bmw m", "BMW M"],
     ["ccit", "CCIT"],
     ["trusmi", "TRUSMI"],

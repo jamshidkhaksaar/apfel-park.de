@@ -517,6 +517,11 @@ export const dictionary = {
         title: "Unsere Geschichte",
         content: `In unserem Geschäft am ${businessIdentity.address.street} kannst du Smartphones und Zubehör ansehen, Bestellungen abholen und Reparaturen besprechen. Online zeigen wir Preis, Verfügbarkeit, Gerätezustand und die wichtigsten Produktdetails, damit du vor dem Kauf vergleichen kannst.`,
       },
+      reviews: {
+        text: "Mehr über unsere Kundenerfahrungen erfahren Sie auf unserer separaten Bewertungswebsite",
+        linkLabel: "Apfel Park Bewertungen",
+        disclosure: "Diese Bewertungswebsite wird von Apfel Park selbst betrieben und ist kein unabhängiges Bewertungsportal.",
+      },
       features: [
         {
           title: "Klare Produktangaben",
@@ -568,6 +573,21 @@ export const dictionary = {
       heroTitle: "Häufige Fragen",
       heroSubtitle: "Antworten rund um Service, Reparatur und Zubehör.",
       items: [
+        {
+          question: "Was kostet eine Handy-Reparatur?",
+          answer:
+            "Die Kosten hängen von Modell, Bauteil und gewählter Qualitätsstufe ab. Der öffentliche Preisfinder nennt den Preis für dein konkretes Modell; verbindlich wird er vor Beginn der kostenpflichtigen Reparatur bestätigt.",
+        },
+        {
+          question: "Wie komme ich zu Apfel Park und wo kann ich parken?",
+          answer:
+            "Das Ladengeschäft liegt im LunaCenter am Wilhelm-Strauß-Weg 2b, 21109 Hamburg. Der Eingang und die Parkmöglichkeiten am LunaCenter sind barrierefrei zugänglich.",
+        },
+        {
+          question: "Wann hat Apfel Park geöffnet?",
+          answer:
+            "Das Ladengeschäft in Hamburg-Wilhelmsburg ist Montag bis Samstag von 09:30 bis 20:00 Uhr geöffnet. Sonntags bleibt es geschlossen.",
+        },
         {
           question: "Wie schnell ist eine Reparatur?",
           answer:
@@ -1245,6 +1265,11 @@ export const dictionary = {
         title: "Our Story",
         content: `At ${businessIdentity.address.street} you can view smartphones and accessories, collect orders and discuss repairs. Online we show price, availability, device condition and key product details so you can compare before buying.`,
       },
+      reviews: {
+        text: "You can read more about our customer experiences on our separate review website,",
+        linkLabel: "Apfel Park customer reviews",
+        disclosure: "That review website is operated by Apfel Park itself and is not an independent review portal.",
+      },
       features: [
         {
           title: "Clear Product Information",
@@ -1296,6 +1321,21 @@ export const dictionary = {
       heroTitle: "Frequently asked",
       heroSubtitle: "Answers about service, repairs and accessories.",
       items: [
+        {
+          question: "What does a phone repair cost?",
+          answer:
+            "The cost depends on the model, the part and the quality grade you choose. The public price finder lists the price for your specific model; it is confirmed before any paid repair begins.",
+        },
+        {
+          question: "How do I get to Apfel Park and where can I park?",
+          answer:
+            "The store is inside the LunaCenter at Wilhelm-Strauß-Weg 2b, 21109 Hamburg. The entrance and the parking at the LunaCenter are step-free and accessible.",
+        },
+        {
+          question: "When is Apfel Park open?",
+          answer:
+            "The store in Hamburg-Wilhelmsburg is open Monday to Saturday from 09:30 to 20:00. It is closed on Sundays.",
+        },
         {
           question: "How fast is a repair?",
           answer:

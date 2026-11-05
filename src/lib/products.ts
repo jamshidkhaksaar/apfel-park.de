@@ -16,6 +16,7 @@ import { classifyAccessoryTypes, hasExplicitBluetoothEvidence } from '@/lib/prod
 import { selectTrendingProducts } from '@/lib/trending-products';
 import { readDescriptionAiHashes } from '@/lib/product-text-provenance';
 import { readBatteryHealthRange, type BatteryHealthRange } from './product-offer-options';
+import { getBlackFridaySelection } from './black-friday-selection';
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "parts" | "consoles" | "laptops";
 
@@ -701,6 +702,8 @@ export type StoreCatalogFilters = {
   conditions: ProductCondition[];
   accessoryTypes: string[];
   inStockOnly: boolean;
+  /** Seasonal campaign view: only offers with a real saving. */
+  dealsOnly?: boolean;
   priceMin?: number;
   priceMax?: number;
 };
@@ -759,7 +762,12 @@ export const normalizeProductBrand = (brand?: string): string | null => {
   if (/^apple(?:\s+iphone)?$/i.test(value)) return "Apple";
   if (/^samsung/i.test(value)) return "Samsung";
   if (/^(xiaomi|redmi)/i.test(value)) return "Xiaomi";
+  if (/^poco$/i.test(value)) return "Poco";
+  if (/^one\s*plus$/i.test(value)) return "OnePlus";
   if (/^google/i.test(value)) return "Google";
+  if (/^x[-]?byt[er]$/i.test(value)) return "XByte";
+  if (/^guess$/i.test(value)) return "Guess";
+  if (/^4smarts$/i.test(value)) return "4smarts";
   if (/^bmw\s*m$/i.test(value)) return "BMW M";
   if (/^bmw$/i.test(value)) return "BMW";
   if (/^audi\s+sport$/i.test(value)) return "Audi Sport";
@@ -776,7 +784,7 @@ export const isXiaomiRedmiPhone = (product: Product): boolean => {
     && (brand === "Xiaomi" || brand === "Poco");
 };
 
-const BRAND_PRIORITY = ["Apple", "Samsung", "Google", "Xiaomi", "Motorola", "Huawei", "Nokia"];
+const BRAND_PRIORITY = ["Apple", "Samsung", "Google", "Xiaomi", "OnePlus", "Poco", "Motorola", "Huawei", "Nokia"];
 
 const compareProductBrands = (left: string, right: string): number => {
   const leftPriority = BRAND_PRIORITY.indexOf(left);
@@ -887,6 +895,7 @@ export const parseStoreCatalogFilters = (
       (ACCESSORY_TYPES as readonly string[]).includes(v),
     ),
     inStockOnly: get("stock") === "available",
+    dealsOnly: get("deals") === "1",
     priceMin: pricesAreReversed ? rawPriceMax : rawPriceMin,
     priceMax: pricesAreReversed ? rawPriceMin : rawPriceMax,
   };
@@ -1001,7 +1010,7 @@ export const filterCatalogWithFacets = (
   scoped: readonly Product[],
   filters?: StoreCatalogFilters,
 ): { filtered: Product[]; facets: StoreCatalogFacets } => {
-  type Group = 'brand' | 'storage' | 'condition' | 'type' | 'stock' | 'price';
+  type Group = 'brand' | 'storage' | 'condition' | 'type' | 'stock' | 'price' | 'deal';
   const activeBrands = new Set((filters?.brands ?? []).map(value => value.toLowerCase()));
   const activeStorages = new Set((filters?.storages ?? []).map(value=>normalizeStorageValue(value)?.label).filter((value):value is string=>Boolean(value)));
   const activeConditions = new Set(filters?.conditions ?? []);
@@ -1034,6 +1043,7 @@ export const filterCatalogWithFacets = (
     if (activeConditions.size && !activeConditions.has(product.condition)) failed.push('condition');
     if (activeTypes.size && !types.some(value => activeTypes.has(value))) failed.push('type');
     if (filters?.inStockOnly && !storageAvailable) failed.push('stock');
+    if (filters?.dealsOnly && !product.hasDiscount) failed.push('deal');
     if ((filters?.priceMin !== undefined && product.price < filters.priceMin)
       || (filters?.priceMax !== undefined && product.price > filters.priceMax)) failed.push('price');
     if (!failed.length) filtered.push(product);
@@ -1459,6 +1469,45 @@ export async function getRelatedProducts(product: Product, limit = 4, locale: Lo
   }
 
   return hydrateProductsWithInventory(collected.slice(0, limit));
+}
+
+/**
+ * Campaign deals: grouped, in-stock offers with a real saving, biggest saving
+ * first. Grouping matters here because a colour/storage family would otherwise
+ * fill the campaign grid with the same phone eight times.
+ */
+export async function getBlackFridayDeals(
+  locale: Locale = "de",
+  limit = 48,
+  placement: "page" | "hero" = "page",
+): Promise<Product[]> {
+  const [products, memberships, selection] = await Promise.all([
+    getProducts(undefined, undefined, locale),
+    getStoreFamilyMemberships(),
+    getBlackFridaySelection(),
+  ]);
+  const grouped = groupStoreProducts(
+    products.map((product) => memberships.has(product.id)
+      ? { ...product, catalogFamily: memberships.get(product.id) }
+      : product),
+  );
+  const curated = placement === "hero"
+    ? [...selection.heroIds, ...selection.pageIds]
+    : selection.pageIds;
+  const rank = new Map(curated.map((id, index) => [id, index] as const));
+  const curatedSet = new Set(curated);
+
+  return grouped
+    .filter((product) => (product.hasDiscount || curatedSet.has(product.id))
+      && (product.storeFamily?.stock ?? product.stock ?? 0) > 0)
+    .sort((left, right) => {
+      const rankDelta = (rank.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(right.id) ?? Number.MAX_SAFE_INTEGER);
+      if (rankDelta !== 0) return rankDelta;
+      const rightDiscount = computeDiscountPercentage(right.price, right.compareAtPrice) ?? 0;
+      const leftDiscount = computeDiscountPercentage(left.price, left.compareAtPrice) ?? 0;
+      return rightDiscount - leftDiscount || left.price - right.price;
+    })
+    .slice(0, Math.max(1, limit));
 }
 
 export async function getPromoProducts(pinnedIds?: string[], locale: Locale = "de"): Promise<Product[]> {

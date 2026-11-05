@@ -9,7 +9,7 @@ export default function TrusmiPartner({ locale, wholesale = false }: { locale: L
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
         <a href="https://trusmi.net/" target="_blank" rel="noopener noreferrer"
           aria-label={de ? 'TRUSMI Herstellerwebsite öffnen (neuer Tab)' : 'Open the TRUSMI manufacturer website (new tab)'}
-          className="flex min-h-28 w-full shrink-0 items-center justify-center rounded-xl bg-white p-5 ring-1 ring-black/5 transition-shadow hover:ring-2 hover:ring-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold md:w-64">
+          className="flex min-h-28 w-full shrink-0 items-center justify-center rounded-xl bg-white p-5 ring-1 ring-black/5 transition-shadow hover:ring-2 hover:ring-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold md:w-64 md:max-w-[45%]">
           <Image src="/partners/trusmi-logo.webp" alt="TRUSMI" width={900} height={316} sizes="224px" unoptimized className="h-auto w-56 max-w-full object-contain" />
         </a>
         <div className="min-w-0 flex-1">

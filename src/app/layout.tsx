@@ -9,9 +9,10 @@ import { safeJsonStringify } from "@/lib/security";
 import { merchantReturnPolicy, organizationShippingService } from "@/lib/schema";
 import { getSeoSettings, splitKeywords } from "@/lib/seo";
 import { siteInfo } from "@/lib/site";
-import { businessSchemaIdentity } from '@/lib/business-identity';
+import { businessSchemaIdentity, googleBusinessProfileUrl } from '@/lib/business-identity';
 import { canBootstrapPublicAnalytics, isPrivateAnalyticsPath } from "@/lib/analytics-url";
 import { getMarketingIntegrations, getSiteSocialLinks, getWhatsAppWidgetSettings } from "@/lib/site-settings-server";
+import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
 
 import "./globals.css";
 import AppWrapper from "../components/AppWrapper";
@@ -107,9 +108,13 @@ export default async function RootLayout({
     : langCookie?.value === "en"
       ? "en"
       : "de";
+  const { theme: season } = await getEffectiveCampaign();
   const themeCookie = cookieStore.get("apfel-theme");
   const hasThemeCookie = themeCookie?.value === "dark" || themeCookie?.value === "mono";
-  const theme: "dark" | "mono" = themeCookie?.value === "dark" ? "dark" : "mono";
+  // A campaign art direction needs the dark token set. The cookie is left
+  // untouched, so the customer's own choice returns when the window closes.
+  const theme: "dark" | "mono" = season?.forcedTheme
+    ?? (themeCookie?.value === "dark" ? "dark" : "mono");
   const [branding, promo, marketing, whatsapp, socialLinks] = await Promise.all([
     getBrandingAssets(),
     getPromoPopupSettings(),
@@ -142,7 +147,9 @@ export default async function RootLayout({
           name: "Hamburg",
         },
         hasMap: siteInfo.map.linkUrl,
-        sameAs: Object.values(socialLinks),
+        // The Google Business Profile is the strongest public corroboration of
+        // this entity, so it belongs in sameAs alongside the social profiles.
+        sameAs: [...new Set([googleBusinessProfileUrl, ...Object.values(socialLinks)])],
       },
       {
         "@type": "WebSite",
@@ -159,13 +166,14 @@ export default async function RootLayout({
     <html
       lang={lang}
       data-theme={theme}
-      data-theme-source={hasThemeCookie ? "cookie" : "default"}
+      data-theme-source={season ? "season" : hasThemeCookie ? "cookie" : "default"}
+      data-season={season?.id}
       data-scroll-behavior="smooth"
       translate="no"
       suppressHydrationWarning
     >
       <head>
-        <meta id="apfel-theme-color" name="theme-color" content={theme === "dark" ? "#0b0b0c" : "#ffffff"} />
+        <meta id="apfel-theme-color" name="theme-color" content={season ? "#070709" : theme === "dark" ? "#0b0b0c" : "#ffffff"} />
         <ThemeScript />
         {publicAnalyticsDocument ? <script
           id="ahrefs-web-analytics"
@@ -182,10 +190,11 @@ export default async function RootLayout({
         className={`${inter.variable} ${soraDisplay.variable} bg-background font-sans text-foreground antialiased`}
       >
         <BrandingProvider branding={branding}>
-          <ThemeProvider initialTheme={theme}>
+          <ThemeProvider initialTheme={theme} locked={Boolean(season)}>
             <LanguageTransitionProvider>
               <AppWrapper
                 lang={lang as "de" | "en"}
+                campaign={Boolean(season)}
                 promo={promo}
                 discountedProducts={promoProducts.map((product) => ({
                   id: product.id,

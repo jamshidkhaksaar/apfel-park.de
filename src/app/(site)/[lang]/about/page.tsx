@@ -124,6 +124,19 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
                 <p className="mt-6 text-muted leading-relaxed">
                   {about.story.content}
                 </p>
+                <p className="mt-4 text-muted leading-relaxed">
+                  {about.reviews.text}{" "}
+                  <a
+                    href="https://apfelparkbewertungen.de/"
+                    className="text-gold underline underline-offset-2"
+                  >
+                    {about.reviews.linkLabel}
+                  </a>
+                  .
+                </p>
+                <p className="mt-2 text-sm text-muted">
+                  {about.reviews.disclosure}
+                </p>
               </div>
             </div>
           </div>

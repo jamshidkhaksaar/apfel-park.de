@@ -1,0 +1,7 @@
+[Unit]
+Description=Daily cleanup of expired Telegram product evidence
+[Timer]
+OnCalendar=daily
+Persistent=true
+[Install]
+WantedBy=timers.target

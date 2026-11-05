@@ -69,6 +69,6 @@ describe('smartphone draft authentication and rollout gate', () => {
       },
     );
     expect((await phoneHandler(request, work)).status).toBe(200);
-    expect(work).toHaveBeenCalledWith('editor', false);
+    expect(work).toHaveBeenCalledWith('editor', false, false);
   });
 });

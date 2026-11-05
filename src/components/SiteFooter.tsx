@@ -28,7 +28,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
     <footer className="footer-top relative border-t-2 border-border bg-surface">
       <div className="container-page">
         {/* Main Footer Content */}
-        <div className="grid gap-6 py-10 lg:gap-12 lg:py-16 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
+        <div className="grid gap-6 py-10 lg:gap-12 lg:py-16 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)]">
           {/* Brand Column */}
           <div className="space-y-6">
             <Link href={`/${lang}`} className="group inline-flex max-w-full flex-wrap items-center gap-5 sm:flex-nowrap">
@@ -295,7 +295,7 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
             <p className="text-sm font-medium text-muted">
               {lang === "de" ? "Sicher bezahlen mit" : "Pay securely with"}
             </p>
-            <PaymentBrandIcons iconClassName="h-8 w-auto" includePayPal={isPayPalConfigured()} />
+            <PaymentBrandIcons iconClassName="h-8 w-auto" includePayPal={isPayPalConfigured()} className="flex-wrap justify-center" />
           </div>
 
           <OfferSubscription lang={lang} />

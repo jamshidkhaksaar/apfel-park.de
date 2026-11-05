@@ -1,5 +1,8 @@
 'use client';
 
+import { configurationKey } from '@/lib/smartphone-editor/model';
+import { telegramText } from '@/lib/telegram-products/i18n';
+
 import { markAdminListsChanged } from '@/lib/admin-list-navigation';
 import { appliedResearchTextFields, normalizeAiTextFields } from '@/lib/product-ai-fields';
 import { applyEditorResearch } from '@/lib/smartphone-editor/research';
@@ -137,6 +140,7 @@ export default function SmartphoneWizard({
   const draftId = useRef('');
   const saving = useRef<Promise<void> | null>(null);
   const deleting = useRef(false);
+  const editable = useRef(true);
   const publishRetry = useRef<{
     requestId: string;
     revision: number;
@@ -145,6 +149,7 @@ export default function SmartphoneWizard({
   } | null>(null);
   const load = useCallback((next: PhoneDraft) => {
     setManualVersion(false); setDraftSelection([]);
+    editable.current = !next.document.telegramSessionId || next.telegramStatus === 'submitted';
     revision.current = next.revision;
     draftId.current = next.id;
     current.current = next.document;
@@ -185,9 +190,9 @@ export default function SmartphoneWizard({
     };
   }, [load, productId]);
   const flush = useCallback(async () => {
-    if (deleting.current) return;
+    if (deleting.current || !editable.current) return;
     if (saving.current) await saving.current;
-    if (deleting.current) return;
+    if (deleting.current || !editable.current) return;
     if (
       !current.current ||
       !draftId.current ||
@@ -229,7 +234,8 @@ export default function SmartphoneWizard({
     if (
       !document ||
       JSON.stringify(document) === saved.current ||
-      error === 'conflict'
+      !editable.current ||
+      Boolean(error)
     )
       return;
     const timer = setTimeout(() => {
@@ -400,10 +406,10 @@ export default function SmartphoneWizard({
     if (!draftDeletion || deleting.current) return;
     deleting.current = true; setBusy(true);
     try {
-      if (saving.current) await saving.current;
+      if (saving.current) await saving.current.catch(() => {});
       const targets = draftDeletion.map(item => item.id === draftId.current ? { ...item, revision: revision.current } : item);
       const response = await fetch('/api/admin/smartphone-drafts/bulk-delete', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ confirmation: 'DELETE', drafts: targets })});
-      const value = await response.json(); if (!response.ok) throw new Error(cleanup[value.error as keyof typeof cleanup] ?? cleanup.failed);
+      const value = await response.json(); if (!response.ok) throw new Error(String(t[value.error as keyof typeof t] ?? cleanup[value.error as keyof typeof cleanup] ?? cleanup.failed));
       if (targets.some(item => item.id === draftId.current)) {
         current.current = null; draftId.current = ''; revision.current = 0; saved.current = 'null'; publishRetry.current = null; setDraft(null); setDocument(null); setSelected([]); setPhotoConfirmation(''); setStatus('saved');
         const navigation = new URL(window.location.href); navigation.searchParams.delete('draft'); if (productId) navigation.searchParams.set('product',productId); window.history.replaceState(null,'',navigation.pathname+navigation.search);
@@ -485,10 +491,24 @@ export default function SmartphoneWizard({
       </div>
     );
   const entryLabel = (e: PhoneEntry) =>
-    `${t[e.condition]} · ${e.color || '—'} · ${e.storage || '—'}${e.condition === 'used' && e.batteryHealth != null ? ` · ${formatBatteryHealth(e.batteryHealth, e.batteryHealthMax != null ? {min:e.batteryHealth,max:e.batteryHealthMax} : undefined)}` : ''} · #${e.sku.slice(-8)}`;
+    `${t[e.condition]} · ${e.color || '—'} · ${e.storage || '—'}${Object.values(e.configuration??{}).length ? ` · ${Object.values(e.configuration??{}).join(' · ')}` : ''}${e.condition === 'used' && e.batteryHealth != null ? ` · ${formatBatteryHealth(e.batteryHealth, e.batteryHealthMax != null ? {min:e.batteryHealth,max:e.batteryHealthMax} : undefined)}` : ''} · #${e.sku.slice(-8)}`;
   const versionEntries = document.variantSuggestions?.length && !manualVersion ? document.entries.filter(entry => !isResearchPlaceholder(entry, {...document.shared,...document.pendingShared})) : document.entries;
   const shared = sharedEdit ?? document.shared;
   const readyIds = document.entries.filter(e => entryProblems(document, e, locale).length === 0 && e.channels.length > 0).map(e => e.id);
+  if (document.telegramSessionId && draft.telegramStatus !== 'submitted') return (
+    <section className="space-y-4 rounded-2xl border border-border p-5">
+      {deletionDialog}
+      <h2 className="text-2xl font-semibold">{document.shared.title || t.title}</h2>
+      <p role="status">{t.telegramDraftReadOnly}</p>
+      <p className="text-sm text-muted">{telegramText[locale][draft.telegramStatus as keyof typeof telegramText.en] as string || draft.telegramStatus}</p>
+      <div className="flex flex-wrap gap-3">
+        <button type="button" className="btn-secondary" disabled={busy} onClick={() => void call(`/api/admin/smartphone-drafts/${draft.id}`).then(load).catch(e => setError(e.message))}>{t.refresh}</button>
+        <button type="button" className="btn-secondary" disabled={busy} onClick={() => removeDraft(draft.id, draft.revision)}>{t.deleteDraft}</button>
+        <Link className="btn-secondary" href="/admin/products?view=intake">{telegramText[locale].submissions}</Link>
+      </div>
+      {error ? <p role="alert">{String(errorText(error))}</p> : null}
+    </section>
+  );
   const totalUnits = versionEntries.reduce((total, e) => total + (Number.isInteger(e.stock) && e.stock >= 0 ? e.stock : 0), 0);
   const setShared = (patch: ProductPayload) =>
     change((d) => ({ ...d, pendingShared: { ...shared, ...patch } }));
@@ -512,6 +532,7 @@ export default function SmartphoneWizard({
   );
   return (
     <div className="mx-auto max-w-[1500px] space-y-5 pb-24">
+      {document.telegramUpdateOnly ? <p className="rounded-xl border border-gold/40 p-4 text-sm">{telegramText[locale].updateOnly}</p> : null}
       {deletionDialog}
       <style>{`@keyframes phone-notice-in{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
       {!error && notice ? <div role="status" className="fixed right-4 top-20 z-[100] w-[calc(100%-2rem)] max-w-sm rounded-xl border border-gold bg-background p-4 shadow-xl motion-safe:animate-[phone-notice-in_200ms_ease-out]">
@@ -551,7 +572,7 @@ export default function SmartphoneWizard({
           <button
             className="btn-secondary mt-2"
             onClick={() => {
-              if (error === 'conflict')
+              if (['conflict', 'submission_not_ready'].includes(error))
                 void call(`/api/admin/smartphone-drafts/${draft.id}`).then(
                   load,
                 );
@@ -561,7 +582,7 @@ export default function SmartphoneWizard({
               }
             }}
           >
-            {error === 'conflict' ? t.refresh : t.save_failed}
+            {['conflict', 'submission_not_ready'].includes(error) ? t.refresh : t.save_failed}
           </button>}
         </div>
       ) : null}
@@ -603,6 +624,7 @@ export default function SmartphoneWizard({
             <Field label={t.search} value={search} onChange={setSearch} />
             {researchEnabled ? (
               <AiFillButton locale={locale} query={search || [shared.brand, shared.model, shared.title].filter(Boolean).join(' ')}
+                category={shared.category}
                 color={document.entries.every(entry => entry.color === document.entries[0]?.color) ? document.entries[0]?.color : undefined}
                 eprelId={shared.eprelId}
                 condition={document.entries.every(entry => entry.condition === document.entries[0]?.condition) ? document.entries[0]?.condition : undefined}
@@ -647,12 +669,12 @@ export default function SmartphoneWizard({
             <OfferPresetManager key={`${presets.revision}-${presets.conditionNotes.length}-${presets.gifts.length}`} locale={locale} value={presets} onReload={reloadPresets} onSave={async value => { const result = await call('/api/admin/products/offer-presets', 'PATCH', value); setPresets(result.presets); setNotice(offerEditorText[locale].saved); }}/>
             {document.variantSuggestions?.length ? <section className="rounded-xl border border-border p-4 space-y-3"><h3 className="font-semibold">{locale === 'de' ? 'Versionen aus der KI-Recherche' : 'Versions suggested by AI research'}</h3><p className="text-sm text-muted">{locale === 'de' ? 'Version auswählen und tatsächlichen Bestand, Preis und Zustand eintragen.' : 'Choose a version and enter its actual quantity, price and condition.'}</p><div className="flex flex-wrap gap-2">{document.variantSuggestions.map((suggestion, index) => <button key={index} type="button" className="btn-secondary" disabled={document.entries.length >= 100 && !document.entries.some(entry => isResearchPlaceholder(entry, {...document.shared,...document.pendingShared}))} onClick={() => change(d => {
               const donor = d.entries.find(entry => entry.condition === 'new' && entry.color.trim().toLowerCase() === suggestion.color.trim().toLowerCase());
-              if (d.entries.some(item => item.condition === 'new' && item.color === suggestion.color && item.storage === suggestion.storage)) return d;
+              if (d.entries.some(item => item.condition === 'new' && item.color === suggestion.color && item.storage === suggestion.storage && configurationKey(item.configuration) === configurationKey(suggestion.configuration))) return d;
               const empty = d.entries.find(entry => isResearchPlaceholder(entry, {...d.shared,...d.pendingShared}));
               if (!empty && d.entries.length >= 100) return d;
               const entry = empty ? { ...empty, ...suggestion, stock: 0 } : { ...newPhoneEntry(donor ?? d.entries[0]), ...suggestion, stock: 0, price: 0 };
               return { ...d, entries: empty ? d.entries.map(item => item.id === empty.id ? entry : item) : [...d.entries, entry] };
-            })}>{suggestion.color} · {suggestion.storage}</button>)}</div></section> : null}
+            })}>{suggestion.color} · {suggestion.storage}{Object.values(suggestion.configuration??{}).length ? ` · ${Object.values(suggestion.configuration??{}).join(' · ')}` : ''}</button>)}</div></section> : null}
             {document.variantSuggestions?.length ? <div className="flex flex-wrap items-center gap-3"><button type="button" className="btn-secondary" disabled={document.entries.length >= 100} onClick={() => { setManualVersion(true); if (!document.entries.some(entry => isResearchPlaceholder(entry, {...document.shared,...document.pendingShared}))) change(d => ({...d,entries:[...d.entries,newPhoneEntry()]})); }}>{cleanup.manualVersion}</button>{!versionEntries.length ? <p className="text-sm text-muted">{cleanup.chooseResearch}</p> : null}</div> : null}
             <div className="space-y-4">
               {versionEntries.map((e) =>
@@ -697,6 +719,7 @@ export default function SmartphoneWizard({
                         }
                       />
                     </div>
+                    {e.configuration && Object.keys(e.configuration).length ? <dl className="mt-3 text-sm"><dt className="text-muted">{telegramText[locale].configuration}</dt>{Object.entries(e.configuration).map(([key,value])=><div key={key} className="flex flex-wrap justify-between gap-2"><dt>{key}</dt><dd>{value}</dd></div>)}</dl> : null}
                     <label className="mt-3 flex gap-2 text-sm"><input type="checkbox" checked={Boolean(e.individualPhotos)} onChange={event => updateEntry(e.id, { individualPhotos: event.target.checked })} />{locale === 'de' ? 'Eigene Fotos für diese Version verwenden' : 'Use separate photos for this version'}</label>
                     <VersionOfferFields locale={locale} entry={e} presets={presets} chargerIncluded={Object.prototype.hasOwnProperty.call(e.details, 'chargerIncluded') ? e.details.chargerIncluded : shared.chargerIncluded} onChange={patch => updateEntry(e.id, patch)} />
                     <div className="mt-4 flex flex-wrap gap-3">
@@ -759,7 +782,7 @@ export default function SmartphoneWizard({
                     }}
                   />
                   {e.condition === 'new' && document.researchGallery?.length ? <button type="button" className="btn-secondary mt-3" onClick={() => { const photos = [...new Set([...entryImages(e), ...document.researchGallery ?? []])].map(url => ({ id: crypto.randomUUID(), url })); change(d => setEntryPhotos(d, e.id, photos, photos[0].id)); }}>{locale === 'de' ? 'Passende Recherchebilder übernehmen' : 'Apply matching research images'}</button> : null}
-                  {e.condition !== 'new' ? (
+                  {e.condition !== 'new' || document.telegramSessionId ? (
                     <label className="mt-4 flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
@@ -767,7 +790,7 @@ export default function SmartphoneWizard({
                         disabled={uploading}
                         onChange={(event) => updateEntry(e.id, { hasRealProductPhotos: event.target.checked })}
                       />
-                      {t.hasRealProductPhotos}
+                      {document.telegramSessionId ? telegramText[locale].deviceConfirmation : t.hasRealProductPhotos}
                     </label>
                   ) : null}
                   <label className="mt-3 flex gap-2 text-sm"><input type="checkbox" checked={Boolean(e.individualPhotos)} onChange={event => updateEntry(e.id, { individualPhotos: event.target.checked })} />{locale === 'de' ? 'Eigene Fotos für diese Version verwenden' : 'Use separate photos for this version'}</label>
@@ -1164,13 +1187,13 @@ export default function SmartphoneWizard({
                       ))}
                     </div>
                   </div>
-                  {e.condition !== 'new' ? (
+                  {e.condition !== 'new' || document.telegramSessionId ? (
                     <label id={`${e.id}-hasRealProductPhotos`} tabIndex={-1}
                       className={`flex w-full items-start gap-3 rounded-xl border p-4 text-sm ${e.hasRealProductPhotos ? 'border-border' : 'border-gold bg-gold/5'}`}>
                       <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-gold"
                         checked={e.hasRealProductPhotos} disabled={uploading || entryImages(e).length === 0}
                         onChange={event => updateEntry(e.id, { hasRealProductPhotos: event.target.checked })} />
-                      {t.hasRealProductPhotos}
+                      {document.telegramSessionId ? telegramText[locale].deviceConfirmation : t.hasRealProductPhotos}
                     </label>
                   ) : null}
                   <div className="flex w-full flex-wrap gap-4 text-sm">

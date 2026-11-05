@@ -3,7 +3,96 @@ import { deviceModelNeedles } from '@/lib/device-model';
 
 export type ResearchSource = { url: string; title: string; retrievedAt: string; text: string };
 
-const manufacturerDomains = ['apple.com','samsung.com','samsungmobilepress.com','mi.com','xiaomi.com','nothing.tech','fairphone.com','hmd.com','nokia.com','honor.com','huawei.com','oneplus.com','oppo.com','realme.com','motorola.com','motorola.de','sony.com','sony.de','asus.com','lenovo.com'];
+const manufacturerDomains = [
+  'apple.com',
+  'samsung.com',
+  'samsungmobilepress.com',
+  'mi.com',
+  'xiaomi.com',
+  'nothing.tech',
+  'fairphone.com',
+  'hmd.com',
+  'nokia.com',
+  'honor.com',
+  'huawei.com',
+  'oneplus.com',
+  'oppo.com',
+  'realme.com',
+  'motorola.com',
+  'motorola.de',
+  'sony.com',
+  'sony.de',
+  'asus.com',
+  'lenovo.com',
+  'playstation.com',
+  'nintendo.com',
+  'nintendo.de',
+  'xbox.com',
+  'microsoft.com',
+  'dell.com',
+  'hp.com',
+  'acer.com',
+  'razer.com',
+  'msi.com',
+  'lg.com',
+  'vivo.com',
+  'ztedevices.com',
+  'tcl.com',
+  'logitech.com',
+  'belkin.com',
+  'anker.com',
+  'ugreen.com',
+  'baseus.com',
+  'bose.com',
+  'bose.de',
+  'jbl.com',
+  'jbl.de',
+  'sennheiser.com',
+  'sennheiser-hearing.com',
+  'celly.com',
+  'celly.it',
+  'spigen.com',
+  'spigen.de',
+  'otterbox.com',
+  'otterbox.de',
+  'rhinoshield.de',
+  'rhinoshield.io',
+  'torraslife.com',
+  'esrgear.com',
+  'uag.com',
+  'urbanarmorgear.com',
+  'pitaka.com',
+  'ipitaka.com',
+  'caseologycases.com',
+  'dbrand.com',
+  'mous.co',
+  'panzerglass.com',
+  'panzerglass.de',
+  'idealofsweden.com',
+  'idealofsweden.de',
+  'soundcore.com',
+  'zagg.com',
+  'sandisk.com',
+  'kingston.com',
+  'po.co',
+  'poco.net',
+  'xbyte-mobile.com',
+  'xbyte.de',
+  'x-byte.de',
+  'xbyte.com',
+  'cgmobile.com',
+  'trusmi.com',
+  '4smarts.com',
+  'nevox.de',
+  'hama.com',
+  'hama.de',
+  'tech21.com',
+  'twelvesouth.com',
+  'araree.com',
+  'beatsbydre.com',
+  'mophie.com',
+  'apfel-park.de',
+];
 const exactGoogleHosts = ['store.google.com','support.google.com','safety.google'];
 
 export const germanManufacturerUrl = (value: string): string => {
@@ -91,22 +180,29 @@ export const officialPageText = (html: string): string => {
 
 const UNIT_WORDS = new Set(['inch', 'inches', 'zoll', 'modell', 'generation', 'gen']);
 
-export const sourceMatchesModel = (text: string, model: string): boolean => {
+export const sourceMatchesModel = (text: string, model: string, brand = ''): boolean => {
   const normalize = (value: string): string => value.toLocaleLowerCase('de-DE').normalize('NFKD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').trim();
   const target = normalize(model);
-  if (target.length < 4) return false;
+  const combined = brand ? normalize(`${brand} ${model}`) : '';
   const haystack = ` ${normalize(text)} `;
-  if (haystack.includes(` ${target} `)) return true;
+  if (target.length >= 4 && haystack.includes(` ${target} `)) return true;
+  if (combined.length >= 4 && haystack.includes(` ${combined} `)) return true;
   const cleanTarget = target.split(/\s+/).filter(t => !UNIT_WORDS.has(t)).join(' ');
   if (cleanTarget.length >= 4 && haystack.includes(` ${cleanTarget} `)) return true;
-  const candidates = [target, cleanTarget, ...deviceModelNeedles(model).map(normalize)].filter(n => n.length >= 4);
+  const candidates = [
+    target,
+    cleanTarget,
+    combined,
+    ...deviceModelNeedles(model).map(normalize),
+    ...(brand ? deviceModelNeedles(`${brand} ${model}`).map(normalize) : []),
+  ].filter(n => n.length >= 4);
   if (candidates.some(needle => haystack.includes(` ${needle} `))) return true;
   const tokens = cleanTarget.split(/\s+/);
   return tokens.length > 0 && tokens.every(t => haystack.includes(` ${t} `));
 };
 
 const readBounded = async (response: Response): Promise<string> => {
-  const limit = 2_000_000;
+  const limit = 6_000_000;
   if (Number(response.headers.get('content-length') ?? 0) > limit || !response.body) throw new Error('source_size');
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -127,6 +223,7 @@ export const fetchOfficialResearchSource = async (
   candidate: string,
   model: string,
   fetcher: typeof fetch = fetch,
+  brand = '',
 ): Promise<ResearchSource | null> => {
   let target = approvedResearchUrl(candidate, true);
   if (!target) return null;
@@ -135,7 +232,15 @@ export const fetchOfficialResearchSource = async (
   const signal = AbortSignal.timeout(9000);
   try {
     for (let hop = 0; hop < 4; hop += 1) {
-      const response = await fetcher(target.toString(), { redirect: 'manual', signal, headers: { 'User-Agent': 'ApfelPark-ProductResearch/1.0', Accept: 'text/html,text/plain;q=0.9', 'Accept-Language': 'de-DE,de;q=0.9,en;q=0.5' } });
+      let response = await fetcher(target.toString(), { redirect: 'manual', signal, headers: { 'User-Agent': 'ApfelPark-ProductResearch/1.0', Accept: 'text/html,text/plain;q=0.9', 'Accept-Language': 'de-DE,de;q=0.9,en;q=0.5' } });
+      if (response.status === 404 && target.hostname.endsWith('oneplus.com') && target.pathname.startsWith('/de/')) {
+        const globalTarget = approvedResearchUrl(target.toString().replace('/de/', '/global/'), true)
+          ?? approvedResearchUrl(target.toString().replace('/de/', '/at/'), true);
+        if (globalTarget) {
+          target = globalTarget;
+          response = await fetcher(target.toString(), { redirect: 'manual', signal, headers: { 'User-Agent': 'ApfelPark-ProductResearch/1.0', Accept: 'text/html,text/plain;q=0.9', 'Accept-Language': 'de-DE,de;q=0.9,en;q=0.5' } });
+        }
+      }
       if ([301,302,303,307,308].includes(response.status)) {
         const location = response.headers.get('location');
         await response.body?.cancel();
@@ -150,7 +255,7 @@ export const fetchOfficialResearchSource = async (
       }
       const raw = await readBounded(response);
       const text = officialPageText(raw).slice(0, 45_000);
-      if (text.length < 200 || !sourceMatchesModel(text, model)) return null;
+      if (text.length < 200 || !sourceMatchesModel(text, model, brand)) return null;
       const title = he.decode(raw.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? target.hostname).replace(/\s+/g, ' ').trim().slice(0, 180);
       return { url: target.toString(), title, retrievedAt: new Date().toISOString(), text };
     }

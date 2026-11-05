@@ -26,6 +26,15 @@ describe("deviceModelNeedles", () => {
     ["Lenovo ThinkPad T14 G6", ["thinkpad t14 gen 6", "thinkpad t14 g6", "t14 gen 6", "t14 g6"]],
     ["ThinkPad T14 Gen 6 Intel", ["thinkpad t14 gen 6", "thinkpad t14 g6", "t14 gen 6", "t14 g6"]],
     ["Lenovo ThinkPad X1 Carbon Gen 12", ["thinkpad x1 carbon gen 12", "thinkpad x1 carbon g12", "x1 carbon gen 12", "x1 carbon g12"]],
+    ["OnePlus 7T 128 GB", ["oneplus 7t", "oneplus 7 t"]],
+    ["One plus One plus 7t", ["oneplus 7t", "oneplus 7 t"]],
+    ["OnePlus 12 512GB Grün", ["oneplus 12"]],
+    ["OnePlus Nord 4 5G 256GB", ["oneplus nord 4"]],
+    ["OnePlus Open 512GB", ["oneplus open"]],
+    ["Poco X6 Pro 5G 256 GB", ["poco x6 pro", "poco x 6 pro"]],
+    ["POCO F6 512 GB Schwarz", ["poco f6", "poco f 6"]],
+    ["Poco M6 Pro 256GB", ["poco m6 pro", "poco m 6 pro"]],
+    ["Xiaomi Poco C65 128GB", ["poco c65", "poco c 65"]],
   ])("%s -> %j", (title, expected) => {
     expect(deviceModelNeedles(title)).toEqual(expected);
   });

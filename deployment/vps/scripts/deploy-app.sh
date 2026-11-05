@@ -4,6 +4,9 @@
 #   deploy-app.sh <ref>    # explicit committed, pushed ref required
 #   ALLOW_NON_FORWARD_DEPLOY=1 deploy-app.sh <ref>  # intentional rollback only
 #
+# A branch name is resolved from origin, so a source clone whose local branch
+# has fallen behind cannot ship an older commit than the one that was pushed.
+#
 # Why this exists: releases used to be made by copying the previous release
 # directory and editing it in place. Every release dir ended up a dirty git
 # checkout, and on 2026-08-03 that had stranded ~2 weeks of work (141 files)
@@ -20,6 +23,7 @@ CURRENT="$APP_ROOT/current"
 ENV_FILE="$APP_ROOT/shared/app.env"
 SERVICE=apfel-park-nextjs
 WORKER_SERVICE=apfel-park-marketplace-worker.service
+TELEGRAM_WORKER_SERVICE=apfel-park-telegram-worker.service
 BASE_URL=http://127.0.0.1:3000
 KEEP=3
 
@@ -38,7 +42,15 @@ log "fetching origin"
 git -C "$SOURCE" fetch origin --prune --tags --quiet
 
 ref="$1"
-sha="$(git -C "$SOURCE" rev-parse --verify "$ref^{commit}" 2>/dev/null)" \
+# Resolve a branch from origin, not from the source clone: a local `main` is
+# only as new as the last time somebody pulled it, so `deploy-app.sh main` used
+# to be able to ship the previous commit while origin/main had already moved on
+# -- and nothing caught it, because that commit was still a legitimate ancestor
+# on origin, so the forward-release check passed and the release it wrote was a
+# duplicate of the one already live. A tag or a commit sha has no origin/<ref>
+# name and resolves as itself.
+sha="$(git -C "$SOURCE" rev-parse --verify --quiet "origin/$ref^{commit}" \
+  || git -C "$SOURCE" rev-parse --verify "$ref^{commit}" 2>/dev/null)" \
   || die "ref not found: $ref"
 export DEPLOYMENT_VERSION="$sha"
 live_sha="$(cat "$CURRENT/.deployed-sha" 2>/dev/null || true)"
@@ -65,26 +77,25 @@ log "npm ci"
 # devDependencies, which silently removes vitest and fails the test gate.
 npm ci --no-audit --no-fund --include=dev
 
-# Gate the release on the test suite. This runs before anything touches the
-# `current` symlink, so a failure leaves production untouched.
-log "npm test"
-npm test
+# Gate the release on the shared check list in scripts/ci-check.mjs -- the same
+# script the GitHub workflow runs -- so this gate cannot check less than a pull
+# request does. It runs before anything touches the `current` symlink, so a
+# failure leaves production untouched.
+# The gate runs with the ambient environment on purpose: one test asserts that
+# an unset webhook key fails closed, and this host's release env sets one, so
+# sourcing the env around the tests made that test pass only where the release
+# env exists. ci-check.mjs gives the release env to the production build alone,
+# which is the step inside the gate that needs it.
+log "npm run ci:check"
+CI_CHECK_BUILD_ENV_FILE="$ENV_FILE" npm run ci:check
 
-log "npm run lint"
-npm run lint
-
-log "npm run typecheck"
-npm run typecheck
-
-log "npm run audit:unused"
-npm run audit:unused
-
-log "npm audit --audit-level=high"
-npm audit --audit-level=high
-
-log "npm run build"
+# Export the release env for this script's own steps after the gate. They are
+# not part of the shared list and read what the running app reads: the owner
+# migration and db:migrate need DATABASE_URL. Sourcing it here is what the
+# build used to do in this shell before the gate was extracted; without it the
+# first deploy of the extracted gate stopped at "DATABASE_URL is not exported".
+log "exporting release env for deploy steps"
 set -a; . "$ENV_FILE"; set +a
-npm run build
 
 # Use an isolated standalone process and temporary upload directory to verify
 # images added after startup. A symlink alone only covers pre-existing files.
@@ -127,6 +138,8 @@ live_sha="$(cat "$CURRENT/.deployed-sha" 2>/dev/null || true)"
 bash "$TARGET_CHECK" "$SOURCE" "$live_sha" "$sha" || die "live release changed during the build; refusing to overwrite it"
 worker_present=0
 if systemctl cat "$WORKER_SERVICE" >/dev/null 2>&1; then worker_present=1; fi
+telegram_worker_present=0
+if systemctl cat "$TELEGRAM_WORKER_SERVICE" >/dev/null 2>&1; then telegram_worker_present=1; fi
 
 http_code() {
   curl -sS --connect-timeout 3 --max-time 10 -o /dev/null -w '%{http_code}' "$BASE_URL$1"
@@ -145,6 +158,9 @@ services_active() {
   systemctl is-active --quiet "$SERVICE" || return 1
   if [ "$worker_present" = 1 ]; then
     systemctl is-active --quiet "$WORKER_SERVICE" || return 1
+  fi
+  if [ "$telegram_worker_present" = 1 ] && [ -f "$CURRENT/scripts/telegram-product-worker.ts" ]; then
+    systemctl is-active --quiet "$TELEGRAM_WORKER_SERVICE" || return 1
   fi
 }
 
@@ -177,6 +193,13 @@ rollback_on_exit() {
   if [ "$worker_present" = 1 ]; then
     systemctl restart "$WORKER_SERVICE" || rollback_failed=1
   fi
+  if [ "$telegram_worker_present" = 1 ]; then
+    if [ -f "$CURRENT/scripts/telegram-product-worker.ts" ]; then
+      systemctl restart "$TELEGRAM_WORKER_SERVICE" || rollback_failed=1
+    else
+      systemctl stop "$TELEGRAM_WORKER_SERVICE" || rollback_failed=1
+    fi
+  fi
   wait_for_web || rollback_failed=1
   services_active || rollback_failed=1
   if [ "$rollback_failed" = 0 ]; then
@@ -196,6 +219,9 @@ mv -Tf "$CURRENT.tmp" "$CURRENT"
 systemctl restart "$SERVICE"
 if [ "$worker_present" = 1 ]; then
   systemctl restart "$WORKER_SERVICE"
+fi
+if [ "$telegram_worker_present" = 1 ]; then
+  systemctl restart "$TELEGRAM_WORKER_SERVICE"
 fi
 
 log "health check"
@@ -243,6 +269,14 @@ for extension in js css; do
   code="$(curl -sS --connect-timeout 3 --max-time 10 -o /dev/null -w '%{http_code}' "https://apfel-park.de$asset_path" || true)"
   [ "$code" = 200 ] || die "public $extension asset returned $code"
 done
+
+# The origin-level surface checks (older builds' assets, uncached 404s, the
+# markdown twins and the hidden rewrite target) live in their own script so the
+# same checks can also run on a timer between deploys, instead of only here. It
+# exits non-zero on the first failure, which rolls this release back.
+log "public surface probe"
+bash "$release/deployment/vps/scripts/probe-public-surface.sh" "$APP_ROOT" "$short" \
+  || die "public surface probe failed"
 
 # Activation is committed only after every critical check. Optional indexing
 # and retention failures must not undo an already healthy release.

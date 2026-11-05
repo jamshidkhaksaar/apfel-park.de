@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { locales as allLocales, type Locale } from "./i18n";
+import { hasMarkdownRoute } from "./md/routes";
 import { getSeoRouteIdByPath, getSeoSettings, splitKeywords } from "./seo";
 import { siteInfo } from "./site";
 
@@ -81,10 +82,17 @@ export const createMetadata = async (
     languageAlternates["x-default"] = `${siteInfo.url}/de${normalizedPath}${canonicalSuffix}`;
   }
 
+  // Agents are told where the markdown twin is, and given a one-line summary
+  // written for a model that has already fetched the page.
+  const markdownAlternate = hasMarkdownRoute(pathWithLocale)
+    ? `${siteInfo.url}${pathWithLocale}.md`
+    : undefined;
+
   return {
     title: resolvedTitle,
     description: resolvedDescription,
     keywords,
+    other: { 'ai-summary': resolvedDescription },
     robots: {
       index,
       // noindex, follow -- a page we do not want indexed should still pass
@@ -95,6 +103,7 @@ export const createMetadata = async (
     alternates: {
       canonical,
       languages: languageAlternates,
+      types: markdownAlternate ? { 'text/markdown': markdownAlternate } : undefined,
     },
     openGraph: {
       title: resolvedTitle,

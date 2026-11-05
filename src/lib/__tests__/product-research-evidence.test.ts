@@ -32,6 +32,14 @@ describe('official research evidence gates', () => {
     ]);
     expect(modelSpecificResearchSource({ ...source, title: 'ThinkPad T14 Gen 6 (Intel) | Lenovo Deutschland' }, 'Lenovo ThinkPad T14 G6', 'Lenovo')).toBe(true);
     expect(modelSpecificResearchSource({ ...source, title: 'ThinkPad T14 Gen 5 (Intel) | Lenovo Deutschland' }, 'Lenovo ThinkPad T14 G6', 'Lenovo')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, title: 'OnePlus 7T - Specs - OnePlus (Deutschland)' }, 'OnePlus 7T', 'OnePlus')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: 'OnePlus 7T - Specs' }, '7T', 'OnePlus')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: 'OnePlus 7 Pro - Specs' }, 'OnePlus 7T', 'OnePlus')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, title: 'POCO X6 Pro 5G - Specs' }, 'POCO X6 Pro', 'Poco')).toBe(true);
+    expect(modelSpecificResearchSource({ ...source, title: 'POCO X6 - Specs' }, 'POCO X6 Pro', 'Poco')).toBe(false);
+    expect(modelSpecificResearchSource({ ...source, url: 'https://xbyte-mobile.com/en/product/powerbank-xb-4944', title: 'X-byte company' }, 'XB-4944', 'XBYTE')).toBe(true);
+    expect(preferredResearchUrls('OnePlus', 'OnePlus 7T')).toEqual(['https://www.oneplus.com/global/7t/specs', 'https://www.oneplus.com/at/7t/specs']);
+    expect(preferredResearchUrls('Poco', 'Poco X6 Pro')).toEqual(['https://www.po.co/global/product/poco-x6-pro/specs/', 'https://www.po.co/de/product/poco-x6-pro-5g/specs/']);
   });
   it('retains an optical-quality qualification backed by the source', () => {
     const optics = { ...source, text: '8x Tele-Zoom in optischer Qualität. 4x optischer Zoom.' };
@@ -63,6 +71,30 @@ describe('official research evidence gates', () => {
     expect(draft.specs).toEqual([{ label: 'Display', value: 'OLED' }]);
     expect(draft.dimensions?.weightG).toBeUndefined();
   });
+  it('preserves 5G cellular network descriptions and titles without treating 5G as grams', () => {
+    const a36 = { ...raw(), title: 'Samsung Galaxy A36 5G', model: 'Galaxy A36 5G', brand: 'Samsung', description: 'Das Samsung Galaxy A36 5G verfügt über ein 6,7 Zoll Display mit 120 Hz.', specs: [{ label: 'Mobilfunk', value: '5G' }, { label: 'Display', value: '120 Hz' }] };
+    const draft = finalizeResearchedProduct(a36, [source], {});
+    expect(draft.title).toBe('Samsung Galaxy A36 5G');
+    expect(draft.description).toContain('Galaxy A36 5G');
+    expect(draft.specs).toEqual([{ label: 'Mobilfunk', value: '5G' }, { label: 'Display', value: '120 Hz' }]);
+  });
+  it('accepts accessory, laptop and console official manufacturer sources', () => {
+    for (const url of [
+      'https://www.spigen.com/products/galaxy-a36-case-ultra-hybrid',
+      'https://www.celly.com/de/products/cromo1118bk',
+      'https://www.dell.com/de-de/shop/laptops/xps-15',
+      'https://www.hp.com/de-de/shop/product.aspx?id=123',
+      'https://www.anker.com/de/products/a1289',
+      'https://www.bose.de/de_de/products/headphones.html',
+      'https://www.po.co/global/product/poco-x6-pro/specs/',
+      'https://xbyte-mobile.com/en/product/xb-4944',
+      'https://www.cgmobile.com/products/guess-case',
+    ]) {
+      expect(approvedResearchUrl(url)?.hostname).toBeTruthy();
+    }
+    const caseDraft = finalizeResearchedProduct({ ...raw(), category: 'case', title: 'Celly Schutzhülle für Galaxy A36 5G', model: 'Celly CROMO1118BK' }, [source], {});
+    expect(caseDraft.category).toBe('accessories');
+  });
   it('accepts official HTTPS sources and rejects credentials, lookalikes, nonstandard ports and forums', () => {
     expect(approvedResearchUrl(source.url)?.hostname).toBe('www.apple.com');
     for (const url of ['http://apple.com/specs','https://apple.com.evil.example/specs','https://secret@apple.com/specs','https://apple.com:8443/specs','https://127.0.0.1/specs','https://docs.google.com/file','https://support.google.com/pixelphone/thread/123']) expect(approvedResearchUrl(url)).toBeNull();
@@ -89,6 +121,9 @@ describe('official research evidence gates', () => {
     expect(sourceMatchesModel('13" iPad Pro (M4) mit Apple M4 Chip', 'iPad Pro 11-inch (M4)')).toBe(false);
     expect(sourceMatchesModel('ThinkPad T14 Gen 6 (Intel)', 'Lenovo ThinkPad T14 G6')).toBe(true);
     expect(sourceMatchesModel('ThinkPad T14 Gen 6 (Intel)', 'ThinkPad T14 Gen 6')).toBe(true);
+    expect(sourceMatchesModel('OnePlus 7T Fluid AMOLED 90Hz Display', '7T', 'OnePlus')).toBe(true);
+    expect(sourceMatchesModel('POCO X6 Pro 5G Dimensity 8300-Ultra', 'X6 Pro', 'Poco')).toBe(true);
+    expect(sourceMatchesModel('XBYTE Exclusive Genius Mini-Powerbank 10000mAh', 'Exclusive Genius', 'XBYTE')).toBe(true);
 
     const spaHtml = '<head><meta name="Processor" content="Bis zu Intel Core Ultra 7"><meta name="memory" content="Bis zu 32 GB LPDDR5x"></head><main><div>ThinkPad T14 Gen 6</div></main>';
     const spaText = officialPageText(spaHtml);
@@ -104,7 +139,7 @@ describe('official research evidence gates', () => {
     expect(fetched?.retrievedAt).toBeTruthy();
   });
   it('rejects oversized or non-text source bodies', async () => {
-    const cases: Array<Record<string, string>> = [{ 'content-type': 'text/html', 'content-length': '2000001' }, { 'content-type': 'application/pdf' }];
+    const cases: Array<Record<string, string>> = [{ 'content-type': 'text/html', 'content-length': '6000001' }, { 'content-type': 'application/pdf' }];
     for (const headers of cases) {
       const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('not evidence', { headers }));
       expect(await fetchOfficialResearchSource(source.url, 'iPhone 17 Pro Max', fetcher)).toBeNull();
@@ -197,9 +232,51 @@ describe('fresh source generation pipeline', () => {
     expect(finalRequest.body).toContain('sourcePages');
     expect(finalRequest.body).not.toContain('Discard invented discovery facts');
     expect(JSON.parse(finalRequest.body!).tools).toBeUndefined();
+    // Both expensive calls must bound reasoning; otherwise a healthy provider
+    // spends the interactive request deadline thinking instead of returning data.
+    const payloads = requests.filter(request => request.body).map(request => JSON.parse(request.body!));
+    expect(payloads[0].generationConfig).toMatchObject({ thinkingConfig: { thinkingLevel: 'LOW' }, maxOutputTokens: 2048 });
+    expect(payloads[1].generationConfig).toMatchObject({ thinkingConfig: { thinkingLevel: 'LOW' }, maxOutputTokens: 8192, responseMimeType: 'application/json' });
     expect(result.description).toBe(raw().description);
     expect(result.researchSources?.[0].url).toBe('https://support.apple.com/de-de/125091');
     expect(requests.every(request => !request.url.includes('synthetic-test-key'))).toBe(true);
+  });
+  it.each([
+    ['gemini-3.8-flash', { thinkingLevel: 'LOW' }],
+    ['gemini-2.5-flash', { thinkingBudget: 1024 }],
+    ['gemini-2.0-flash', undefined],
+  ])('uses reasoning controls compatible with the configured model %s', async (model, thinkingConfig) => {
+    vi.stubEnv('GEMINI_API_KEY', 'synthetic-test-key');
+    vi.stubEnv('GEMINI_RESEARCH_MODEL', model);
+    const payloads: Array<{ generationConfig: Record<string, unknown> }> = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {
+      if (String(url).startsWith('https://generativelanguage.googleapis.com/')) {
+        payloads.push(JSON.parse(String(options?.body)));
+        const value = payloads.length === 1 ? { brand: 'Apple', model: 'iPhone 17 Pro Max', urls: [source.url] }
+          : { ...raw(), specs: [{ label: 'Display', value: 'OLED' }] };
+        return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(value) }] } }] });
+      }
+      return new Response(`<title>iPhone 17 Pro Max - Technische Daten</title><main>${source.text}</main>`, { headers: { 'content-type': 'text/html' } });
+    }));
+    const result = await researchProductFromOfficialPages({ query: 'iPhone 17 Pro Max' });
+    expect(result.specs).toEqual([{ label: 'Display', value: 'OLED' }]);
+    expect(payloads).toHaveLength(2);
+    expect(payloads.every(payload => JSON.stringify(payload.generationConfig.thinkingConfig) === JSON.stringify(thinkingConfig))).toBe(true);
+  });
+  it('rejects token-truncated output instead of applying a partial or unverified draft', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'synthetic-test-key');
+    let generations = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).startsWith('https://generativelanguage.googleapis.com/')) {
+        generations += 1;
+        const value = generations === 1 ? { brand: 'Apple', model: 'iPhone 17 Pro Max', urls: [source.url] }
+          : { ...raw(), specs: [{ label: 'Display', value: 'OLED' }] };
+        return Response.json({ candidates: [{ finishReason: generations === 1 ? 'STOP' : 'MAX_TOKENS', content: { parts: [{ text: JSON.stringify(value) }] } }] });
+      }
+      return new Response(`<title>iPhone 17 Pro Max - Technische Daten</title><main>${source.text}</main>`, { headers: { 'content-type': 'text/html' } });
+    }));
+    await expect(researchProductFromOfficialPages({ query: 'iPhone 17 Pro Max' })).rejects.toThrow('research_incomplete');
+    expect(generations).toBe(2);
   });
   it('fails closed without generating a final draft if official pages cannot be read', async () => {
     vi.stubEnv('GEMINI_API_KEY', 'synthetic-test-key');

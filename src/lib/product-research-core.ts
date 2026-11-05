@@ -6,7 +6,7 @@ import { findSensitiveDataIssues } from './product-intake/redaction';
 export type ProductResearchResult = {
   researchSources?: Array<{ url: string; title: string; retrievedAt: string }>;
   researchWarnings?: string[];
-  variantSuggestions?: Array<{ color: string; storage: string }>;
+  variantSuggestions?: Array<{ color: string; storage: string; configuration?: Record<string, string> }>;
   hardwareModelSuggestion?: string;
   title?: string;
   subtitle?: string;
@@ -18,7 +18,7 @@ export type ProductResearchResult = {
   eprelId?: string | null;
   specs?: Array<{ label: string; value: string }>;
   features?: string[];
-  variants?: Array<{ color: string; storage: string; sku?: string; images?: string[] }>;
+  variants?: Array<{ color: string; storage: string; configuration?: Record<string, string>; sku?: string; images?: string[] }>;
   gallery?: string[];
   batteryDetails?: { included?: boolean; wattHours?: number };
   chargerIncluded?: boolean;
@@ -87,12 +87,13 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
         .map((entry) => ({
           color: String(entry.color ?? "").trim().slice(0, 80),
           storage: String(entry.storage ?? "").trim().slice(0, 80),
+          ...(entry.configuration && typeof entry.configuration === 'object' && !Array.isArray(entry.configuration) ? { configuration: Object.fromEntries(Object.entries(entry.configuration).filter(([k,v])=>k.length<=60 && typeof v==='string' && v.length<=120 && !sensitiveText(k) && !sensitiveText(v)).slice(0,12)) as Record<string,string> } : {}),
           sku: String(entry.sku ?? "").trim().slice(0, 80) || undefined,
           images: Array.isArray(entry.images)
             ? (entry.images as unknown[]).filter((url): url is string => typeof url === "string" && Boolean(url.trim()))
             : undefined,
         }))
-        .filter((entry) => entry.color && entry.storage)
+        .filter((entry) => (entry.color && entry.storage) || Object.keys(entry.configuration ?? {}).length > 0)
         .slice(0, 20)
     : undefined;
   const gallery = strings("gallery", 2048)?.map((url) => {
