@@ -260,25 +260,37 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                     {locale === "de" ? "Farbe" : "Color"}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {colors.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        aria-pressed={(selectedColor || defaultVariant?.color) === color}
-                        onClick={() => {
-                          setSelectedColor(color);
-                          const fallbackStorage = product.variants.find((variant) => variant.color === color)?.storage ?? "";
-                          setSelectedStorage(fallbackStorage);
-                        }}
-                        className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                          (selectedColor || defaultVariant?.color) === color
-                            ? "border-gold/60 bg-gold/10 text-foreground"
-                            : "border-border/60 bg-background/40 text-muted hover:border-gold/30 hover:text-foreground"
-                        }`}
-                      >
-                        {color}
-                      </button>
-                    ))}
+                    {colors.map((color) => {
+                      const colorVariants = product.variants.filter((variant) => variant.color === color);
+                      const colorOutOfStock = colorVariants.length > 0 && colorVariants.every((variant) => (variant.stock ?? product.stock ?? 0) <= 0);
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          aria-pressed={(selectedColor || defaultVariant?.color) === color}
+                          onClick={() => {
+                            setSelectedColor(color);
+                            // Prefer an available capacity so a sold-out colour does not hide the in-stock option.
+                            const fallback = colorVariants.find((variant) => (variant.stock ?? product.stock ?? 0) > 0) ?? colorVariants[0];
+                            setSelectedStorage(fallback?.storage ?? "");
+                          }}
+                          className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                            (selectedColor || defaultVariant?.color) === color
+                              ? "border-gold/60 bg-gold/10 text-foreground"
+                              : colorOutOfStock
+                                ? "border-border/40 bg-background/20 text-muted/70 hover:border-gold/30 hover:text-foreground"
+                                : "border-border/60 bg-background/40 text-muted hover:border-gold/30 hover:text-foreground"
+                          }`}
+                        >
+                          {color}
+                          {colorOutOfStock ? (
+                            <span className="mt-1 block text-[10px] uppercase tracking-wider text-red">
+                              {locale === "de" ? "Ausverkauft" : "Sold out"}
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}
@@ -295,7 +307,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                           (!selectedColor || v.color === selectedColor) &&
                           v.storage === storage,
                       );
-                      const isVariantOos = matchedVariant?.stock !== undefined && matchedVariant.stock <= 0;
+                      const isVariantOos = matchedVariant ? (matchedVariant.stock ?? product.stock ?? 0) <= 0 : false;
                       const isSelected = (selectedStorage || defaultVariant?.storage) === storage;
                       const variantPrice = matchedVariant?.price;
 
@@ -333,6 +345,13 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
                 </div>
               ) : null}
             </div>
+          ) : null}
+
+          {selectedVariant ? (
+            <p className="mt-3 text-xs leading-5 text-muted">
+              {locale === "de" ? "Ausgewählte Variante" : "Selected variant"}:{" "}
+              <span className="font-semibold text-foreground">{activeVariantLabel}</span>
+            </p>
           ) : null}
 
           <div className="mt-5 rounded-2xl border border-border bg-surface-strong p-4 sm:mt-6">

@@ -1,13 +1,13 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-const mocks = vi.hoisted(() => ({ query: vi.fn(), canManage: vi.fn() }));
+const mocks = vi.hoisted(() => ({ query: vi.fn(), canView: vi.fn() }));
 vi.mock('@/lib/db', () => ({ query: mocks.query }));
-vi.mock('@/lib/admin-auth', () => ({ canManageProducts: mocks.canManage }));
+vi.mock('@/lib/admin-auth', () => ({ canViewCatalog: mocks.canView }));
 vi.mock('@/lib/session', () => ({ readSessionUserFromRequest: async () => ({ role: 'admin' }) }));
 import { GET } from './route';
 const run = (params = '') => GET(new NextRequest(`https://apfel-park.de/api/admin/inventory?${params}`));
 beforeEach(() => {
-  vi.resetAllMocks(); mocks.canManage.mockReturnValue(true);
+  vi.resetAllMocks(); mocks.canView.mockReturnValue(true);
   mocks.query.mockImplementation(async (sql: string) => {
     if (sql.startsWith('SELECT count(*)')) return { rows: [{ total: 75 }] };
     if (sql.includes('product.id AS product_id')) return { rows: [{ sku: 'TEST', product_id: '1', title: 'Test phone', images: ['', '/uploads/phone.jpg'], updated_at: '2026-09-07', on_hand: 0, reserved: 0, safety_buffer: 0, available: 0, version: 0 }] };
@@ -17,7 +17,7 @@ beforeEach(() => {
   });
 });
 it('rejects unauthorized requests without reading inventory', async () => {
-  mocks.canManage.mockReturnValue(false); expect((await run()).status).toBe(401); expect(mocks.query).not.toHaveBeenCalled();
+  mocks.canView.mockReturnValue(false); expect((await run()).status).toBe(401); expect(mocks.query).not.toHaveBeenCalled();
 });
 it('applies combined filters to count and rows before paging and includes images and options', async () => {
   const response = await run('q=phone&status=inventory&brand=Apple&category=smartphones&condition=used&stock=out&page=2');

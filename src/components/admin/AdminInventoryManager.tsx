@@ -11,6 +11,7 @@ import { adminDictionary } from "@/lib/admin-i18n";
 
 type InventoryRow = {
   sku: string;
+  inventoryId: string | null;
   productId: string;
   duplicateCount: number;
   title: string;
@@ -72,7 +73,7 @@ function InventoryThumbnail({ src, title, fallback }: { src: string | null; titl
   </span>;
 }
 
-export default function AdminInventoryManager({ locale }: { locale: "de" | "en" }) {
+export default function AdminInventoryManager({ locale, canManage = true, canPrintLabels = false }: { locale: "de" | "en"; canManage?: boolean; canPrintLabels?: boolean }) {
   const searchParams = useSearchParams();
   const urlQuery = searchParams.toString();
   const request = useRef<AbortController | null>(null);
@@ -399,7 +400,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
         </fieldset>
       </section>
 
-      <section className="glass-panel rounded-2xl p-5">
+      {canManage ? <section className="glass-panel rounded-2xl p-5">
         <h2 className="text-lg font-semibold">{locale === "de" ? "Bestand buchen" : "Record inventory movement"}</h2>
         <form onSubmit={submitAdjustment} className="mt-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_190px_120px_minmax(220px,1fr)_auto]">
           <select value={selectedSku} onChange={(event) => setSelectedSku(event.target.value)} className="min-w-0 max-w-full rounded-xl border border-border/60 bg-surface px-3 py-2.5 text-sm">
@@ -415,7 +416,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
           </button>
         </form>
         {type === "correction" ? <p className="mt-2 text-xs text-muted">{locale === "de" ? "Positive Menge erhöht, negative Menge reduziert den physischen Bestand." : "A positive quantity raises stock; a negative quantity reduces it."}</p> : null}
-      </section>
+      </section> : null}
 
       <section className="glass-panel overflow-hidden rounded-2xl">
         <p className="border-b border-border/60 p-4 text-sm text-muted">{text.explanation}</p>
@@ -435,7 +436,7 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                         <div className="flex gap-1"><dt className="text-muted">{text.color}:</dt><dd className="font-medium">{item.color || text.notSpecified}</dd></div>
                         <div className="flex gap-1"><dt className="text-muted">{text.storage}:</dt><dd className="font-medium">{item.storage || text.notSpecified}</dd></div>
                       </dl>
-                      {item.duplicateCount > 0 ? <button type="button" aria-expanded={expandedRowKey === `${item.productId}:${item.sku}`} aria-controls={`similar-${item.productId}-${encodeURIComponent(item.sku)}`} onClick={() => void toggleSimilar(item)} className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-left text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-300">{text.possibleDuplicates}: {item.duplicateCount} · {text.viewDuplicates} {expandedRowKey === `${item.productId}:${item.sku}` ? "↑" : "→"}</button> : null}
+                      {canManage && item.duplicateCount > 0 ? <button type="button" aria-expanded={expandedRowKey === `${item.productId}:${item.sku}`} aria-controls={`similar-${item.productId}-${encodeURIComponent(item.sku)}`} onClick={() => void toggleSimilar(item)} className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-left text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-300">{text.possibleDuplicates}: {item.duplicateCount} · {text.viewDuplicates} {expandedRowKey === `${item.productId}:${item.sku}` ? "↑" : "→"}</button> : null}
                     </div>
                   </div></td>
                   <td className="px-4 py-3">
@@ -443,13 +444,13 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                       <span className={`rounded-md px-2 py-1 text-xs font-medium ${item.active ? 'bg-emerald-500/10 text-emerald-600' : item.catalogEnabled ? 'bg-gold/10 text-gold' : 'bg-surface text-muted'}`}>
                         {item.active ? text.published : item.catalogEnabled ? text.draft : text.inventoryOnly}
                       </span>
-                      <button type="button" role="switch" aria-checked={item.catalogEnabled} aria-label={`${text.enable}: ${item.title}`}
+                      {canManage ? <button type="button" role="switch" aria-checked={item.catalogEnabled} aria-label={`${text.enable}: ${item.title}`}
                         disabled={Boolean(busyProduct) || Boolean(busySku) || loading} onClick={() => void toggleCatalog(item)}
                         className="flex min-h-9 items-center gap-2 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:border-gold/50 disabled:opacity-50">
                         <span aria-hidden="true" className={`flex h-5 w-9 items-center rounded-full p-0.5 ${item.catalogEnabled ? 'justify-end bg-gold' : 'justify-start bg-muted/30'}`}><span className="h-4 w-4 rounded-full bg-white shadow" /></span>
                         {item.catalogEnabled ? text.disable : text.enable}
-                      </button>
-                      {item.catalogEnabled ? <Link href={editorHref(item.productId, true)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-gold">{text.edit} →</Link> : null}
+                      </button> : null}
+                      {canManage && item.catalogEnabled ? <Link href={editorHref(item.productId, true)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-gold">{text.edit} →</Link> : null}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-right font-semibold tabular-nums">{item.price === null ? text.notSpecified : priceFormat.format(item.price)}</td>
@@ -458,7 +459,10 @@ export default function AdminInventoryManager({ locale }: { locale: "de" | "en" 
                   <td className="px-3 py-3 text-right font-mono tabular-nums">{item.safetyBuffer}</td>
                   <td className={`px-3 py-3 text-right font-mono font-semibold tabular-nums ${item.available === 0 ? "text-red-500" : item.available <= 3 ? "text-amber-500" : "text-emerald-500"}`}>{item.available}</td>
                   <td className="px-3 py-3 font-mono text-xs text-muted">{item.canAdjust ? `v${item.version}` : <span className="font-sans">{text.noStockRecord}</span>}</td>
-                  <td className="px-4 py-3 text-right"><button type="button" disabled={!item.canAdjust || item.available < 1 || Boolean(busySku) || Boolean(busyProduct)} onClick={() => quickSale(item)} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-40">{locale === "de" ? "1× Vor Ort verkauft" : "Sell 1 in shop"}</button></td>
+                  <td className="px-4 py-3 text-right">{canManage ? <div className="flex flex-col items-end gap-1.5">
+                    <button type="button" disabled={!item.canAdjust || item.available < 1 || Boolean(busySku) || Boolean(busyProduct)} onClick={() => quickSale(item)} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-40">{locale === "de" ? "1× Vor Ort verkauft" : "Sell 1 in shop"}</button>
+                    {canPrintLabels && item.inventoryId ? <a href={`/admin/kasse-lager/labels?inventory=${item.inventoryId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold underline underline-offset-2">{locale === "de" ? "Etikett drucken" : "Print label"}</a> : null}
+                  </div> : <span className="text-xs text-muted">—</span>}</td>
                 </tr>
                 {expandedRowKey === `${item.productId}:${item.sku}` ? <tr id={`similar-${item.productId}-${encodeURIComponent(item.sku)}`} className="bg-amber-500/[0.04]"><td colSpan={9} className="px-4 py-4">
                   <div className="rounded-xl border border-amber-500/30 bg-surface p-4">

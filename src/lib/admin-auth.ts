@@ -45,6 +45,12 @@ export const canManageProducts = (user: User | null): boolean => {
   return role === "manager" || role === "product_editor";
 };
 
+/** Catalog and stock are readable by cashiers, but only managers/editors may mutate them. */
+export const canViewCatalog = (user: User | null): boolean => {
+  if (!user) return false;
+  return canManageProducts(user) || getUserRole(user) === "cashier";
+};
+
 export const canManageOrders = (user: User | null): boolean => {
   if (!user) return false;
   if (isAdminUser(user)) return true;
@@ -103,7 +109,7 @@ export const getAuthorizedPaths = (user: User | null): string[] => {
   } else if (role === "product_editor") {
     paths.push("/admin/products", "/admin/inventory");
   } else if (role === "cashier") {
-    return ["/admin/kasse-lager"];
+    return ["/admin/kasse-lager", "/admin/inventory", "/admin/products"];
   }
 
   if (role === "manager") paths.push("/admin/kasse-lager");
@@ -115,7 +121,10 @@ export const canAccessAdminPath = (user: User | null, pathname: string): boolean
   if (!user || !pathname.startsWith("/admin")) return false;
   if (isAdminUser(user)) return true;
   const role = getUserRole(user);
-  if (role !== "manager" && role !== "product_editor" && role !== "cashier") return false;
+  if (role === "cashier") {
+    return pathname === "/admin/kasse-lager" || pathname === "/admin/inventory" || pathname === "/admin/products";
+  }
+  if (role !== "manager" && role !== "product_editor") return false;
   return getAuthorizedPaths(user).some(
     (allowed) => pathname === allowed || (allowed !== "/admin" && pathname.startsWith(`${allowed}/`)),
   );

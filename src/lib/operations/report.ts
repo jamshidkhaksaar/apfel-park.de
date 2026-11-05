@@ -2,6 +2,7 @@ import type { TransactionClient } from '@/lib/db';
 import { requireOperationsOwner } from './access';
 import { readSnapshot } from './snapshot';
 import { readStockSummary } from './stock-summary';
+import { readShopSalesSummary } from './shop-report';
 import type { OperationsAccess, OperationsReport, OperationsOverview, Overview, StockSummary, ListOptions } from './types';
 
 export const berlinDay = (): string => new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -92,7 +93,9 @@ export const readOperationsReport=async(access:OperationsAccess,branchId:string|
     const currentStock=await readStockSummary(client,branchId);
     const summary=await readPeriod(client,branchId,from,to,currentStock,asOf);
     const previous=await readPeriod(client,branchId,previousDates.from,previousDates.to,currentStock,asOf);
-    return {asOf,currentStock,summary,previous,attribution:{knownOrders:summary.orders-summary.unassignedOrders,unassignedOrders:summary.unassignedOrders},refundBasis:'selected_sales_cohort',shopRevenueAvailable:false};
+    const shop=await readShopSalesSummary(client,branchId,from,to);
+    const shopPrevious=await readShopSalesSummary(client,branchId,previousDates.from,previousDates.to);
+    return {asOf,currentStock,summary,previous,shop,shopPrevious,attribution:{knownOrders:summary.orders-summary.unassignedOrders,unassignedOrders:summary.unassignedOrders},refundBasis:'selected_sales_cohort',shopRevenueAvailable:true};
   });
 };
 export const readOperationsDashboard=async(access:OperationsAccess,branchId:string|null):Promise<OperationsOverview> => {

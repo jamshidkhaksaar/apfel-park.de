@@ -299,15 +299,17 @@ export default function AdminShell({
 
   const isAdmin = user?.role === "admin";
 
-  const baseItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
-    ...(user?.role === "cashier" ? [] : [
-    { label: dict.sidebar.dashboard, path: '/admin', icon: 'dashboard' },
-    { label: dict.sidebar.products,  path: '/admin/products', icon: 'products' },
+  const baseItems: Array<{ label: string; path: string; icon: string; badge?: number }> = user?.role === "cashier" ? [
+    { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments' },
+    { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
     { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory' },
-    ]),
-    ...(user?.role === "admin" || user?.role === "manager" || user?.role === "cashier" ? [
+  ] : [
+    { label: dict.sidebar.dashboard, path: '/admin', icon: 'dashboard' },
+    ...(user?.role === "admin" || user?.role === "manager" ? [
       { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments' },
     ] : []),
+    { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
+    { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory' },
   ];
 
   const managerItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [

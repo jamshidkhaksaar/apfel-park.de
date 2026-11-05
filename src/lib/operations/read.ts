@@ -31,7 +31,8 @@ export const readOperationsStock=async(access:OperationsAccess,branchId:string|n
   const from=`FROM ops_balances s JOIN inventory_skus i ON i.id=s.inventory_id JOIN products p ON p.id=i.product_id JOIN ops_branches b ON b.id=s.branch_id
     LEFT JOIN LATERAL(SELECT value FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p.variants)='array' THEN p.variants ELSE '[]' END) WHERE value->>'sku'=i.sku LIMIT 1) v ON true`;
   const [items,count]=await Promise.all([
-    query(`SELECT i.id AS inventory_id,i.product_id,i.sku,i.version,p.title,p.category,p.condition,to_jsonb(p.images)->>0 AS image,
+    query(`SELECT i.id AS inventory_id,i.product_id,i.sku,i.version,p.title,p.category,p.condition,
+      coalesce(nullif(v.value->'images'->>0,''),to_jsonb(p.images)->>coalesce(v.value->>'imageIndex','0')) AS image,
       round(coalesce(nullif(v.value->>'price','')::numeric,p.price)*100)::bigint AS price_cents,
       v.value->>'color' AS color,v.value->>'storage' AS storage,s.branch_id,b.name AS branch_name,s.on_hand,s.reserved,s.minimum,s.target,
       p.is_active AND b.active AS active,${available} AS available ${access.owner ? ','+missingCostSql+' AS missing_costs':''}

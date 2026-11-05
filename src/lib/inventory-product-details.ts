@@ -25,6 +25,20 @@ export const inventoryProductPrice = (row: Record<string, unknown>): number | nu
 };
 
 /** Inventory variants describe the row's SKU, even when its quantity is zero. */
+/** Prefer the exact variant photo for the SKU, including zero-stock rows. */
+export const inventoryProductImage = (row: Record<string, unknown>): string | null => {
+  const productImages = (Array.isArray(row.images) ? row.images : [])
+    .filter((image): image is string => typeof image === 'string' && Boolean(image.trim()));
+  const variants = (Array.isArray(row.variants) ? row.variants : []).map(object);
+  const variant = variants.find(value => text(value.sku) && text(value.sku) === text(row.sku));
+  const own = (Array.isArray(variant?.images) ? variant.images : [])
+    .filter((image): image is string => typeof image === 'string' && Boolean(image.trim()));
+  if (own.length) return own[0];
+  const index = typeof variant?.imageIndex === 'number' ? Math.max(0, Math.floor(variant.imageIndex)) : null;
+  if (index !== null && productImages[index]) return productImages[index];
+  return productImages[0] ?? null;
+};
+
 export const inventoryProductDetails = (row: Record<string, unknown>, locale: 'de' | 'en', scope: 'sku' | 'product' = 'sku'): { color: string | null; storage: string | null } => {
   const variants: ProductVariant[] = (Array.isArray(row.variants) ? row.variants : []).map(value => {
     const variant = object(value);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { canAccessAdminPath, canManageCampaigns } from "../admin-auth";
+import { canAccessAdminPath, canManageCampaigns, canViewCatalog } from "../admin-auth";
 import type { User } from "../auth-types";
 
 const user = (role: string): User => ({
@@ -31,6 +31,20 @@ describe("admin page path authorization", () => {
   it("allows administrators and rejects unknown roles", () => {
     expect(canAccessAdminPath(user("admin"), "/admin/settings")).toBe(true);
     expect(canAccessAdminPath(user("unknown"), "/admin")).toBe(false);
+  });
+
+  it("gives cashiers read-only till, inventory and catalog pages", () => {
+    const cashier = user("cashier");
+    expect(canAccessAdminPath(cashier, "/admin/kasse-lager")).toBe(true);
+    expect(canAccessAdminPath(cashier, "/admin/inventory")).toBe(true);
+    expect(canAccessAdminPath(cashier, "/admin/products")).toBe(true);
+    expect(canAccessAdminPath(cashier, "/admin/products/abc")).toBe(false);
+    expect(canAccessAdminPath(cashier, "/admin/products/new")).toBe(false);
+    expect(canAccessAdminPath(cashier, "/admin/kasse-lager/labels")).toBe(false);
+    expect(canAccessAdminPath(cashier, "/admin/orders")).toBe(false);
+    expect(canViewCatalog(cashier)).toBe(true);
+    expect(canViewCatalog(user("manager"))).toBe(true);
+    expect(canViewCatalog(user("unknown"))).toBe(false);
   });
 });
 

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { canManageProducts } from "@/lib/admin-auth";
+import { canViewCatalog } from "@/lib/admin-auth";
 import { inventoryCatalogFrom, inventoryCatalogWhere } from "@/lib/inventory-catalog";
 import { inventoryDuplicatePredicate } from "@/lib/inventory-duplicates";
-import { inventoryProductDetails, inventoryProductPrice } from "@/lib/inventory-product-details";
+import { inventoryProductDetails, inventoryProductImage, inventoryProductPrice } from "@/lib/inventory-product-details";
 import { query } from "@/lib/db";
 import { readSessionUserFromRequest } from "@/lib/session";
 
@@ -11,7 +11,7 @@ const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status
 
 export async function GET(request: NextRequest) {
   const user = await readSessionUserFromRequest(request);
-  if (!canManageProducts(user)) return unauthorized();
+  if (!canViewCatalog(user)) return unauthorized();
 
   const search = request.nextUrl.searchParams.get("q")?.trim().slice(0, 100) ?? "";
   const limit = Math.min(100, Math.max(1, Number.parseInt(request.nextUrl.searchParams.get("limit") ?? "50", 10) || 50));
@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const [inventory, adjustments, summary, filterOptions] = await Promise.all([
       query(
         `SELECT
+           inventory.id AS inventory_id,
            coalesce(inventory.sku, product.sku, '') AS sku,
            coalesce(inventory.on_hand, product.stock, 0) AS on_hand,
            coalesce(inventory.reserved, 0) AS reserved,
@@ -110,11 +111,12 @@ export async function GET(request: NextRequest) {
         ...inventoryProductDetails(row, locale),
         price: inventoryProductPrice(row),
         sku: String(row.sku),
+        inventoryId: row.inventory_id ? String(row.inventory_id) : null,
         productId: String(row.product_id),
         duplicateCount: duplicateCountByProduct.get(String(row.product_id)) ?? 0,
         title: String(row.title),
         model: row.model ? String(row.model) : null,
-        image: Array.isArray(row.images) ? row.images.find((image: unknown) => typeof image === "string" && image.trim()) ?? null : null,
+        image: inventoryProductImage(row),
         brand: row.brand ? String(row.brand) : null,
         category: row.category ? String(row.category) : null,
         condition: row.condition ? String(row.condition) : null,

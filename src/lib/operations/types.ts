@@ -29,8 +29,13 @@ export type Overview = {
 export type StockSummary = { physicalUnits: number; inactiveUnits: number; transitUnits: number; availableUnits: number;
   reservedUnits: number; lowStock: number; outOfStock: number; missingCosts: number; missingDeviceDetails: number; stockValueCents: number };
 export type OperationsOverview = { asOf: string; stock: StockSummary; today: Overview; pendingTransfers: number };
+export type ShopSalesBreakdown = { key: string; label: string; units: number; grossCents: number; netCents: number; vatCents: number };
+export type ShopSalesSummary = { units: number; sales: number; grossCents: number; netCents: number; vatCents: number;
+  byBranch: Array<ShopSalesBreakdown & { branchId: string }>; byCategory: ShopSalesBreakdown[]; byCondition: ShopSalesBreakdown[];
+  topProducts: Array<{ title: string; sku: string; quantity: number; grossCents: number }> };
 export type OperationsReport = { asOf: string; currentStock: StockSummary; summary: Overview; previous: Overview;
-  attribution: { knownOrders: number; unassignedOrders: number }; refundBasis: 'selected_sales_cohort'; shopRevenueAvailable: false };
+  shop: ShopSalesSummary; shopPrevious: ShopSalesSummary;
+  attribution: { knownOrders: number; unassignedOrders: number }; refundBasis: 'selected_sales_cohort'; shopRevenueAvailable: boolean };
 export type ListOptions = { page?: number; kind?: string; status?: string; from?: string; to?: string; q?: string; filter?: string; category?: string };
 export type OperationPreview = { token: string; expiresAt: string; branchName: string; action: string;
   changes: Array<{ field: string; before: string | number | null; after: string | number | null }>;

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the Apfel Park in-shop sales report every day at 21:00 Hamburg time
+
+[Timer]
+OnCalendar=*-*-* 21:00:00 Europe/Berlin
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

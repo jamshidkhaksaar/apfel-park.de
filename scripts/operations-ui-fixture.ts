@@ -22,6 +22,12 @@ const main=async()=>{
   const documents:Record<string,unknown>[]=[];
   const summary={...overview,asOf:new Date().toISOString(),completenessReasons:['purchase_costs','tax_rules_unconfirmed'],unassignedOrders:1};
   const stockSummary={physicalUnits:13,inactiveUnits:1,transitUnits:0,availableUnits:12,reservedUnits:1,lowStock:1,outOfStock:0,missingCosts:1,missingDeviceDetails:1,stockValueCents:55000};
+  const shop={units:7,sales:5,grossCents:119000,netCents:100000,vatCents:19000,
+    byBranch:[{branchId:branches[0].id,key:branches[0].id,label:branches[0].name,units:7,grossCents:119000,netCents:100000,vatCents:19000}],
+    byCategory:[{key:'smartphones',label:'smartphones',units:2,grossCents:100000,netCents:84034,vatCents:15966}],
+    byCondition:[{key:'used',label:'used',units:2,grossCents:100000,netCents:84034,vatCents:15966}],
+    topProducts:[{title:stock[0].title,sku:stock[0].sku,quantity:2,grossCents:100000}]};
+  const shopPrevious={...shop,grossCents:59500,netCents:50000,vatCents:9500,units:3,sales:2};
   const server=createServer(async(req,res)=>{
     const url=new URL(req.url ?? '/','http://127.0.0.1');
     if(url.pathname==='/fixture.js'){res.setHeader('Content-Type','text/javascript');res.end(bundle.outputFiles[0].text);return;}
@@ -51,7 +57,7 @@ const main=async()=>{
       const data=view==='bootstrap' ? {owner:true,branches,settings:{users:[{id:'00000000-0000-4000-8000-000000000003',email:'staff@example.invalid',role:'cashier'}],members:[],identifierStorageReady:true}} :
         view==='stock' ? {items:stock.filter(s=>!q || q==='ambiguous' || (s.title+' '+s.sku).toLowerCase().includes(q)),total:2,asOf:new Date().toISOString()} :
         view==='overview' ? {asOf:new Date().toISOString(),stock:stockSummary,today:summary,pendingTransfers:1} :
-        view==='reports' ? {asOf:new Date().toISOString(),currentStock:stockSummary,summary,previous:{...summary,capturedCents:20000,windowStart:'2026-09-25',windowEnd:'2026-09-30'},attribution:{knownOrders:0,unassignedOrders:1},refundBasis:'selected_sales_cohort',shopRevenueAvailable:false} :
+        view==='reports' ? {asOf:new Date().toISOString(),currentStock:stockSummary,summary,previous:{...summary,capturedCents:20000,windowStart:'2026-09-25',windowEnd:'2026-09-30'},shop,shopPrevious,attribution:{knownOrders:0,unassignedOrders:1},refundBasis:'selected_sales_cohort',shopRevenueAvailable:true} :
         view==='health' ? {branchMismatches:0,assetMismatches:0,checkedAt:new Date().toISOString()} :
         view==='documents' ? {documents,total:documents.length,asOf:new Date().toISOString()} : view==='orders' || view==='expenses' ? {orders:[],items:[],total:0,asOf:new Date().toISOString()} :
         view==='assets' ? {total:1,asOf:new Date().toISOString(),assets:[{id:'00000000-0000-4000-8000-000000000014',label:'APF-00000024',inventoryId:stock[0].inventoryId,branchId:branches[0].id,title:stock[0].title,sku:stock[0].sku,state:'available',color:'Schwarz',storage:'128 GB',batteryHealth:88,costGrossCents:null,costNetCents:null,identifierRecorded:false}]} : {asset:null};

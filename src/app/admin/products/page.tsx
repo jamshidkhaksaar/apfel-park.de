@@ -3,6 +3,7 @@ import ProductDeleteButton from "@/components/admin/ProductDeleteButton";
 import { catalogStockSummary } from "@/lib/catalog-stock-summary";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import tableStyles from "@/components/admin/ProductCatalogTable.module.css";
 import ProductDeactivateButton from "@/components/admin/ProductDeactivateButton";
@@ -19,6 +20,7 @@ import { withAdminListReturnTo } from "@/lib/admin-list-navigation";
 import ProductIntakeWizard from "@/components/admin/ProductIntakeWizard";
 import ProductsHistoryPanel from "@/components/admin/ProductsHistoryPanel";
 import ProductsWorkspaceTabs from "@/components/admin/ProductsWorkspaceTabs";
+import { canManageProducts } from "@/lib/admin-auth";
 import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
 import { isProductIntakeOwner } from "@/lib/product-intake/owner";
@@ -91,7 +93,12 @@ const money = (locale: "de" | "en", value: string | number) =>
   new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-US", { style: "currency", currency: "EUR" }).format(Number(value));
 
 export default async function ProductsPage({ searchParams }: { searchParams: SearchParams }) {
-  const [dict, locale, params] = await Promise.all([getAdminDictionary(), getAdminLocale(), searchParams]);
+  const [dict, locale, params, user] = await Promise.all([
+    getAdminDictionary(),
+    getAdminLocale(),
+    searchParams,
+    readSessionUser(),
+  ]);
   const q = valueOf(params.q).trim().slice(0, 100);
   const category = valueOf(params.category);
   const condition = valueOf(params.condition);
@@ -101,6 +108,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const sort = valueOf(params.sort) || "newest";
   const requestedPage = Math.max(1, Number.parseInt(valueOf(params.page) || "1", 10) || 1);
   const view = workspaceViewFromParam(valueOf(params.view));
+  const canManage = canManageProducts(user);
+  // Cashiers get a read-only catalog; never load intake/history workspaces for them.
+  if (!canManage && view !== "catalog") redirect("/admin/products");
 
   const CATEGORIES = ["smartphones", "tablets", "accessories", "parts", "consoles", "laptops"];
   const SUBCATEGORIES = [...new Set([...ACCESSORY_SUBCATEGORIES, ...PART_SUBCATEGORIES, ...CATEGORIES])] as readonly string[];
@@ -196,8 +206,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     euResponsiblePerson: product.eu_responsible_person ?? undefined,
     isActive: Boolean(product.is_active),
   })]));
-  const [user, intakeRuns, revisions, summaries, wizardResult] = await Promise.all([
-    readSessionUser(),
+  const [intakeRuns, revisions, summaries, wizardResult] = await Promise.all([
     view === "catalog" ? Promise.resolve([]) : listProductIntakeRuns(200),
     view === "history" ? listRecentProductRevisions(80) : Promise.resolve([]),
     catalogSummariesForProducts(products.map((product) => product.id), new Map()),
@@ -268,18 +277,18 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   return (
     <AdminShell title={dict.productsPage.title}>
       <AdminListMemory path="/admin/products" />
-      <ProductsWorkspaceTabs locale={locale} view={view} query={filterQuery}>
+      <ProductsWorkspaceTabs locale={locale} view={view} query={filterQuery} canManage={canManage}>
       <div className="min-w-0 space-y-4">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold tracking-[0.16em] text-muted">{locale === "de" ? "PRODUKTKATALOG" : "PRODUCT CATALOG"}</p>
-            <h1 className="mt-1 text-2xl font-semibold text-foreground">{locale === "de" ? "Produkte verwalten" : "Manage products"}</h1>
+            <h1 className="mt-1 text-2xl font-semibold text-foreground">{canManage ? (locale === "de" ? "Produkte verwalten" : "Manage products") : (locale === "de" ? "Produktkatalog" : "Product catalog")}</h1>
             <p className="mt-1 text-sm text-muted">{total} {locale === "de" ? "Produkte" : "products"}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          {canManage ? <div className="flex flex-wrap gap-2">
             <Link href="/admin/products/promotions" className="rounded-xl border border-border/60 px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-gold/40 hover:text-gold">{locale === "de" ? "Popup-Aktion" : "Promotion"}</Link>
             <Link href="/admin/products/new" className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-gold-deep">{locale === "de" ? "Neues Produkt" : "New product"}</Link>
-          </div>
+          </div> : null}
         </header>
 
         {view === "catalog" ? <CatalogStockSummary summary={stockSummary} locale={locale} expanded={Boolean(q)}/> : null}
@@ -323,17 +332,17 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                     const details = inventoryProductDetails(product, locale, 'product');
                     return (
                     <tr key={product.id} className={`group transition hover:bg-gold/[0.04] ${justEdited ? "bg-gold/[0.05]" : ""}`}>
-                      <td className={`${tableStyles.titleCell} px-4 py-3`}><Link href={editorHref(product.id)} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><span className="break-words text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block break-words text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span>
+                      <td className={`${tableStyles.titleCell} px-4 py-3`}><Link href={canManage ? editorHref(product.id) : buildHref(page)} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><span className="break-words text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block break-words text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span>
                         <span className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
                           <span><span className="text-muted">{dict.inventoryCatalog.color}: </span><span className="font-medium">{details.color || dict.inventoryCatalog.notSpecified}</span></span>
                           <span><span className="text-muted">{dict.inventoryCatalog.storage}: </span><span className="font-medium">{details.storage || dict.inventoryCatalog.notSpecified}</span></span>
                         </span>
                       </span></Link></td>
                       <td data-label={locale === "de" ? "Kategorie" : "Category"} className="px-4 py-3 text-sm text-muted">{product.category}{product.subcategory && product.subcategory !== product.category ? <span className="mt-0.5 block text-xs text-muted/70">{subcategoryLabel(product.subcategory, locale)}</span> : null}</td><td data-label={locale === "de" ? "Zustand" : "Condition"} className="px-4 py-3 text-sm text-muted">{product.condition === "open_box" ? "Open-box" : product.condition === "used" ? "A+" : (locale === "de" ? "Neu" : "New")}</td>
-                      <td data-label="Status" className="px-4 py-3"><ProductDeactivateButton id={product.id} title={product.title} isActive={Boolean(product.is_active)} locale={locale} /></td>
+                      <td data-label="Status" className="px-4 py-3">{canManage ? <ProductDeactivateButton id={product.id} title={product.title} isActive={Boolean(product.is_active)} locale={locale} /> : <span className="text-sm text-muted">{product.is_active ? (locale === "de" ? "Aktiv" : "Active") : (locale === "de" ? "Entwurf" : "Draft")}</span>}</td>
                       <td data-label={locale === "de" ? "Tipps" : "Tips"} className="px-4 py-3"><ProductTipsBadge tips={tipsByProduct.get(product.id)!} locale={locale} /></td>
                       <td data-label={dict.productsWorkspace.aiStatus} className="px-4 py-3 text-sm text-muted">{statusLabel(summaries.get(product.id)?.status ?? "none")}<span className="mt-0.5 block text-xs">{summaries.get(product.id)?.intakeCode ?? "—"}</span></td>
-                      <td data-label={dict.productsWorkspace.latestCode} className="px-4 py-3"><Link href={editorHref(product.id, "#ai-intake")} prefetch={false} className="text-sm font-semibold text-gold">{dict.productsWorkspace.aiUpdate}</Link></td>
+                      <td data-label={dict.productsWorkspace.latestCode} className="px-4 py-3">{canManage ? <Link href={editorHref(product.id, "#ai-intake")} prefetch={false} className="text-sm font-semibold text-gold">{dict.productsWorkspace.aiUpdate}</Link> : <span className="text-sm text-muted">—</span>}</td>
                       <td data-label={locale === "de" ? "Preis" : "Price"} className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{money(locale, product.price)}</td><td data-label={locale === "de" ? "Lager" : "Stock"} className={`px-4 py-3 text-right text-sm tabular-nums ${(product.stock ?? 0) <= 0 ? "font-medium text-red-500" : "text-muted"}`}>{product.stock ?? 0}</td>
                       <td data-label={locale === "de" ? "Geändert" : "Updated"} className={`${tableStyles.updatedCell} px-4 py-3 text-sm text-muted`}>
                         {product.updated_at ? <div className="space-y-1.5">
@@ -341,7 +350,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                           {justEdited ? <span className="inline-flex flex-wrap items-center gap-1.5 rounded-md bg-gold/15 px-2 py-1 text-xs font-medium text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}<span className="font-normal opacity-70">{sinceEdit(locale, product.edited_minutes_ago ?? 0)}</span></span> : null}
                         </div> : "—"}
                       </td>
-                      <td className={`${tableStyles.editCell} px-4 py-3`}><Link href={editorHref(product.id)} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link><ProductDeleteButton id={product.id} title={product.title} locale={locale}/></td>
+                      <td className={`${tableStyles.editCell} px-4 py-3`}>{canManage ? <><Link href={editorHref(product.id)} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link><ProductDeleteButton id={product.id} title={product.title} locale={locale}/></> : null}</td>
                     </tr>
                     );
                   })}

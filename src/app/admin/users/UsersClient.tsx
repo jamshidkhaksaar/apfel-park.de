@@ -24,7 +24,7 @@ export default function UsersClient({ users: initialUsers }: { users: UserPublic
     return [
       { value: "admin" as UserRole, label: d.roles.admin, desc: d.roleDescriptions.admin },
       { value: "manager" as UserRole, label: d.roles.manager, desc: d.roleDescriptions.manager },
-      { value: "cashier" as UserRole, label: lang === "de" ? "Kassenmitarbeiter" : "Cashier", desc: lang === "de" ? "Nur Kasse & Lager; Filialzugriff anschließend dort zuweisen." : "Till only; assign branch access in Till & Inventory." },
+      { value: "cashier" as UserRole, label: lang === "de" ? "Kassenmitarbeiter" : "Cashier", desc: lang === "de" ? "Kasse, Lager und Produktkatalog (nur Ansicht); Filialzugriff anschließend dort zuweisen." : "Till, inventory and product catalog (view only); assign branch access in Till & Inventory." },
       {
         value: "product_editor" as UserRole,
         label: d.roles.product_editor,

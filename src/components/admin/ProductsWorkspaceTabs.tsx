@@ -8,11 +8,13 @@ export default function ProductsWorkspaceTabs({
   locale,
   view,
   query,
+  canManage = true,
   children,
 }: {
   locale: "de" | "en";
   view: ProductIntakeWorkspaceView;
   query: string;
+  canManage?: boolean;
   children: ReactNode;
 }) {
   const copy = adminDictionary[locale].productsWorkspace;
@@ -25,8 +27,10 @@ export default function ProductsWorkspaceTabs({
   };
   const tabs: Array<{ id: ProductIntakeWorkspaceView; label: string }> = [
     { id: "catalog", label: copy.catalogTab },
-    { id: "intake", label: copy.intakeTab },
-    { id: "history", label: copy.historyTab },
+    ...(canManage ? [
+      { id: "intake" as const, label: copy.intakeTab },
+      { id: "history" as const, label: copy.historyTab },
+    ] : []),
   ];
   return (
     <div className="mx-auto w-full max-w-[1500px] space-y-4">

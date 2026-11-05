@@ -244,6 +244,22 @@ const sendTransactionalEmail = async (email: OutboundEmail): Promise<EmailSendRe
 export const sendShippingStatusEmail = async (to: string, content: { subject: string; text: string; html: string }): Promise<EmailSendResult> =>
   sendTransactionalEmail({ to, ...content, identity: 'noreply', replyTo: 'info@apfel-park.de' });
 
+/** Scheduled in-shop sales reports use the sales identity and a shop reply-to. */
+export const sendOperationsReportEmail = async (email: {
+  to: string[];
+  subject: string;
+  text: string;
+  html: string;
+}): Promise<EmailSendResult> =>
+  sendTransactionalEmail({
+    to: email.to,
+    subject: email.subject,
+    text: email.text,
+    html: email.html,
+    identity: 'sales',
+    replyTo: 'info@apfel-park.de',
+  });
+
 export const sendOfferSubscriptionConfirmationEmail = async (data: {
   email: string;
   locale: "de" | "en";

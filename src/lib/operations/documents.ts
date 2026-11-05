@@ -9,17 +9,33 @@ export const renderAssetBarcode = (label: string): string => {
   if(!/^(APF|APS)-\d{8,18}$/.test(label)) throw new Error('invalid_label');
   return bwipjs.toSVG({bcid:'code128',text:label,scale:2,height:12,paddingwidth:10,includetext:true,textxalign:'center',backgroundcolor:'FFFFFF'});
 };
+export type PrintableItem = { id:string; label:string; title:string; sku:string; color:string; storage:string;
+  category:string; condition:string; priceCents:number|null };
 export const getPrintableStock = async (access:OperationsAccess, ids:string[]) => {
   if(!access.owner) throw new Error('owner_required');
-  const result=await query(`SELECT i.id,i.sku,p.title,l.label_number FROM ops_item_labels l
-    JOIN inventory_skus i ON i.id=l.inventory_id JOIN products p ON p.id=i.product_id WHERE i.id=ANY($1::uuid[]) ORDER BY l.label_number`,[ids]);
-  return result.rows.map(row=>({id:String(row.id),label:`APS-${String(row.label_number).padStart(8,'0')}`,title:String(row.title),sku:String(row.sku),color:'',storage:''}));
+  const result=await query(`SELECT i.id,i.sku,p.title,p.category,p.condition,
+    round(coalesce(nullif(v.value->>'price','')::numeric,p.price)*100)::bigint AS price_cents,
+    coalesce(v.value->>'color','') AS color,coalesce(v.value->>'storage','') AS storage,l.label_number
+    FROM ops_item_labels l JOIN inventory_skus i ON i.id=l.inventory_id JOIN products p ON p.id=i.product_id
+    LEFT JOIN LATERAL(SELECT value FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p.variants)='array' THEN p.variants ELSE '[]'::jsonb END)
+      WHERE value->>'sku'=i.sku LIMIT 1) v ON true
+    WHERE i.id=ANY($1::uuid[]) ORDER BY l.label_number`,[ids]);
+  return result.rows.map((row):PrintableItem=>({id:String(row.id),label:`APS-${String(row.label_number).padStart(8,'0')}`,title:String(row.title),
+    sku:String(row.sku),color:String(row.color ?? ''),storage:String(row.storage ?? ''),category:String(row.category ?? ''),
+    condition:String(row.condition ?? ''),priceCents:row.price_cents===null ? null:Number(row.price_cents)}));
 };
 export const getPrintableAssets = async (access:OperationsAccess, ids:string[]) => {
   if(!access.owner) throw new Error('owner_required');
-  const result=await query(`SELECT a.id,a.label_number,a.color,a.storage,p.title,i.sku FROM ops_assets a
-    JOIN inventory_skus i ON i.id=a.inventory_id JOIN products p ON p.id=i.product_id WHERE a.id=ANY($1::uuid[]) ORDER BY a.label_number`,[ids]);
-  return result.rows.map(row=>({id:String(row.id),label:assetLabel(row.label_number),title:String(row.title),sku:String(row.sku),color:String(row.color),storage:String(row.storage)}));
+  const result=await query(`SELECT a.id,a.label_number,coalesce(nullif(a.color,''),v.value->>'color','') AS color,
+    coalesce(nullif(a.storage,''),v.value->>'storage','') AS storage,p.title,p.category,p.condition,i.sku,
+    round(coalesce(nullif(v.value->>'price','')::numeric,p.price)*100)::bigint AS price_cents
+    FROM ops_assets a JOIN inventory_skus i ON i.id=a.inventory_id JOIN products p ON p.id=i.product_id
+    LEFT JOIN LATERAL(SELECT value FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p.variants)='array' THEN p.variants ELSE '[]'::jsonb END)
+      WHERE value->>'sku'=i.sku LIMIT 1) v ON true
+    WHERE a.id=ANY($1::uuid[]) ORDER BY a.label_number`,[ids]);
+  return result.rows.map((row):PrintableItem=>({id:String(row.id),label:assetLabel(row.label_number),title:String(row.title),sku:String(row.sku),
+    color:String(row.color ?? ''),storage:String(row.storage ?? ''),
+    category:String(row.category ?? ''),condition:String(row.condition ?? ''),priceCents:row.price_cents===null ? null:Number(row.price_cents)}));
 };
 export const readTrainingDocument = async (access:OperationsAccess, documentId:string) => {
   const result=await query(`SELECT * FROM ops_documents WHERE id=$1 AND kind='training_sale'

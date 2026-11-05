@@ -56,6 +56,32 @@ export default function ReportsPanel({branchId,revision,copy,locale,busy,mutate,
       <p className="text-xs text-muted">{copy.cohortRefundNote}</p>
       <Section title={copy.currentStock}><div className="flex flex-wrap gap-5 text-sm"><span>{copy.physical}: {data.currentStock.physicalUnits}</span><span>{copy.units}: {data.currentStock.availableUnits}</span><span>{copy.inactive}: {data.currentStock.inactiveUnits}</span><span>{copy.stockValue}: {money(data.currentStock.stockValueCents,locale)}</span></div>
         <p className="mt-3 text-xs text-muted">{copy.updated}: {new Date(data.asOf).toLocaleString(locale==='de'?'de-DE':'en-GB',{timeZone:'Europe/Berlin'})}</p></Section>
+      <Section title={copy.shopSales}>
+        <div className="grid gap-3 min-[360px]:grid-cols-2 xl:grid-cols-4">{[{
+          label:copy.shopGross,value:data.shop.grossCents,previous:data.shopPrevious.grossCents,isMoney:true,
+        },{
+          label:copy.shopNet,value:data.shop.netCents,previous:data.shopPrevious.netCents,isMoney:true,
+        },{
+          label:copy.shopVat,value:data.shop.vatCents,previous:data.shopPrevious.vatCents,isMoney:true,
+        },{
+          label:copy.shopUnits,value:data.shop.units,previous:data.shopPrevious.units,isMoney:false,
+        }].map(metric=><div key={metric.label} className="min-w-0 rounded-xl border border-border bg-background p-4">
+          <span className="block text-xs leading-relaxed text-muted">{metric.label}</span>
+          <strong className="mt-2 block break-words text-xl tabular-nums">{metric.isMoney ? money(metric.value,locale):metric.value}</strong>
+          <span className="mt-2 block text-xs text-muted">{copy.previousPeriod}: {metric.isMoney ? money(metric.previous,locale):metric.previous}</span>
+        </div>)}</div>
+        {data.shop.sales ? <>
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            <div><h3 className="text-sm font-semibold">{copy.shopByBranch}</h3><ul className="mt-2 space-y-2 text-sm">
+              {data.shop.byBranch.map(branch=><li key={branch.branchId} className="flex flex-wrap justify-between gap-2 border-b border-border py-2"><span>{branch.label} · {branch.units}</span><span className="tabular-nums">{money(branch.grossCents,locale)}</span></li>)}
+            </ul></div>
+            <div><h3 className="text-sm font-semibold">{copy.shopTopProducts}</h3><ul className="mt-2 space-y-2 text-sm">
+              {data.shop.topProducts.map(product=><li key={`${product.sku}:${product.title}`} className="flex flex-wrap justify-between gap-2 border-b border-border py-2"><span className="min-w-0 break-words">{product.quantity} × {product.title}</span><span className="tabular-nums">{money(product.grossCents,locale)}</span></li>)}
+            </ul></div>
+          </div>
+          <p className="mt-3 text-xs text-muted">{copy.shopLedgerNote}</p>
+        </> : <p className="mt-4 text-sm text-muted">{copy.shopNoSales}</p>}
+      </Section>
     </>:null}
     <Section title={copy.details}><div className="mb-4 flex flex-wrap gap-2">{(['orders','purchases','expenses'] as const).map(view=><button type="button" key={view} className={opsQuietButton} aria-pressed={detail===view} onClick={()=>setDetail(view)}>{view==='orders' ? copy.captured:view==='purchases' ? copy.purchases:copy.expense}</button>)}</div>
       <ReportsDetails key={`${branchId}:${from}:${to}:${detail}`} view={detail} params={params} revision={revision} copy={copy} locale={locale}/></Section>

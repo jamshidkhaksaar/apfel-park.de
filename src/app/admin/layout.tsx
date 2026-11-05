@@ -23,10 +23,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   if (!canAccessAdmin(user)) redirect("/login?error=forbidden");
   const pathname = (await headers()).get("x-apfel-pathname") ?? "/admin";
-  if (getUserRoleString(user) === "cashier" && !pathname.startsWith("/admin/kasse-lager")) redirect("/admin/kasse-lager?view=till");
-  if (!canAccessAdminPath(user, pathname)) redirect("/admin?error=forbidden");
   const role = getUserRoleString(user);
   if (!role) redirect("/login?error=forbidden");
+  if (role === "cashier" && pathname === "/admin") redirect("/admin/kasse-lager?view=till");
+  if (!canAccessAdminPath(user, pathname)) {
+    redirect(role === "cashier" ? "/admin/kasse-lager?view=till" : "/admin?error=forbidden");
+  }
 
   return (
     <AdminProvider user={{ email: user.email, role }}>
