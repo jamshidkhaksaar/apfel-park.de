@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { canManageProducts, canRecordShopSale } from "@/lib/admin-auth";
 import { rejectCrossSiteAdminMutation } from "@/lib/admin-csrf";
-import { TILL_INVENTORY_UNDER_CONSTRUCTION } from "@/lib/admin-maintenance";
+import { SHOP_SALES_DISABLED } from "@/lib/admin-maintenance";
 import { query } from "@/lib/db";
 import { adjustInventory, type InventoryAdjustmentType } from "@/lib/marketplaces/inventory";
 import { readSessionUserFromRequest } from "@/lib/session";
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     // The workspace is under construction. Refuse in-shop sales for every role
     // before touching stock, so no adjustment, ledger row or notification is
     // created even from a tab that was left open before this deploy.
-    if (type === "shop_sale" && TILL_INVENTORY_UNDER_CONSTRUCTION) {
+    if (type === "shop_sale" && SHOP_SALES_DISABLED) {
       return NextResponse.json({ error: "shop_sale_disabled" }, { status: 409 });
     }
     // Cashiers may only record a single in-shop sale; every other movement and

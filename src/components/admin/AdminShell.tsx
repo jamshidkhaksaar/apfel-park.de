@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { type ReactNode, useState, useEffect, useRef } from "react";
 
 import { useAdminSidebar } from "@/lib/admin-sidebar";
-import { TILL_INVENTORY_UNDER_CONSTRUCTION, maintenanceLabel } from "@/lib/admin-maintenance";
+import { INVENTORY_UNDER_CONSTRUCTION, TILL_UNDER_CONSTRUCTION, maintenanceLabel } from "@/lib/admin-maintenance";
 
 import { createAdminBrowserClient } from "@/lib/admin-auth-client";
 import { useAdmin } from "@/lib/admin-context";
@@ -303,16 +303,16 @@ export default function AdminShell({
   const isAdmin = user?.role === "admin";
 
   const baseItems: NavItem[] = user?.role === "cashier" ? [
-    { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments', disabled: TILL_INVENTORY_UNDER_CONSTRUCTION },
+    { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments', disabled: TILL_UNDER_CONSTRUCTION },
     { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
-    { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: TILL_INVENTORY_UNDER_CONSTRUCTION },
+    { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: INVENTORY_UNDER_CONSTRUCTION },
   ] : [
     { label: dict.sidebar.dashboard, path: '/admin', icon: 'dashboard' },
     ...(user?.role === "admin" || user?.role === "manager" ? [
-      { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments', disabled: TILL_INVENTORY_UNDER_CONSTRUCTION },
+      { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments', disabled: TILL_UNDER_CONSTRUCTION },
     ] : []),
     { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
-    { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: TILL_INVENTORY_UNDER_CONSTRUCTION },
+    { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: INVENTORY_UNDER_CONSTRUCTION },
   ];
 
   const managerItems: NavItem[] = [

@@ -1,12 +1,14 @@
 /**
- * Temporary stop for the till and inventory workspace.
+ * Temporary maintenance switches.
  *
- * While this is true the two menu entries are shown as "under construction",
- * their pages render a notice instead of the workspace, and the in-shop sale
- * endpoint refuses every request, so a stale open tab cannot record stock,
- * ledger rows or anything else. Flip it to false to bring the workspace back.
+ * The till stays under construction; the inventory menu is available again so
+ * stock can be managed. In-shop sales remain blocked at the API so no stock
+ * movement, ledger row or notification can be created from a stale open tab.
+ * Flip a flag to false to bring that part back.
  */
-export const TILL_INVENTORY_UNDER_CONSTRUCTION = true;
+export const TILL_UNDER_CONSTRUCTION = true;
+export const INVENTORY_UNDER_CONSTRUCTION = false;
+export const SHOP_SALES_DISABLED = true;
 
 export const maintenanceLabel = (lang: 'de' | 'en'): string =>
   lang === 'de' ? 'Im Aufbau' : 'Under construction';
@@ -15,11 +17,11 @@ export const maintenanceNotice = (lang: 'de' | 'en') =>
   lang === 'de'
     ? {
         eyebrow: 'Hinweis',
-        title: 'Bereich im Aufbau',
-        body: 'Kasse & Lager sowie die Lagerverwaltung sind vorübergehend deaktiviert. Es werden derzeit keine Verkäufe, Lagerbewegungen oder Berichte erfasst.',
+        title: 'Kasse im Aufbau',
+        body: 'Die Kassenfunktion ist vorübergehend deaktiviert. Es werden keine Verkäufe oder Kassenbelege erfasst.',
       }
     : {
         eyebrow: 'Notice',
-        title: 'Under construction',
-        body: 'Till & Inventory and stock management are temporarily disabled. No sales, stock movements or reports are being recorded right now.',
+        title: 'Till under construction',
+        body: 'The till is temporarily disabled. No sales or receipts are being recorded.',
       };

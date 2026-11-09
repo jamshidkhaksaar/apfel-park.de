@@ -75,22 +75,9 @@ A branch ref resolves from `origin`, so `main` means the pushed `main` even when
 the source clone's local branch has fallen behind; a tag or a full sha resolves
 as itself.
 
-### Scheduled in-shop sales reports
+### In-shop sales reports
 
-`deploy-app.sh` applies the ledger migration and, after a successful health check, installs and enables the report units from the deployed release (service and `.timer.example`, copied to `/etc/systemd/system/apfel-park-operations-report.timer`). A unit problem only logs a warning, so it cannot roll back an otherwise healthy release. To install them by hand on a host that has not deployed this version:
-
-    install -m 0644 /srv/apfel-park/app/current/deployment/vps/systemd/apfel-park-operations-report.service /etc/systemd/system/
-    install -m 0644 /srv/apfel-park/app/current/deployment/vps/systemd/apfel-park-operations-report.timer.example /etc/systemd/system/apfel-park-operations-report.timer
-    systemctl daemon-reload
-    systemctl enable --now apfel-park-operations-report.timer
-
-The timer runs daily at 21:00 Europe/Berlin (after the 20:00 shop close). On Saturday the same run also sends the Sunday–Saturday week; on the 1st it also sends the previous calendar month. Each period is claimed once, so a retry does not email a sent report twice.
-
-Recipients come from `OPERATIONS_REPORT_RECIPIENTS` in `shared/app.env` (comma-separated), then `reportRecipients` in the `operations_settings` JSON, then `info@apfel-park.de`. Preview without emailing:
-
-    cd /srv/apfel-park/app/current
-    set -a; . /srv/apfel-park/app/shared/app.env; set +a
-    node_modules/.bin/tsx scripts/operations-report.ts --dry-run
+The scheduled report units were removed. The ledger and reporting views remain in the app, and reports can be generated manually with `scripts/operations-report.ts` when needed.
 
 The target must include the currently deployed commit (or equal it). The script
 checks again before activation, so a newer live release cannot be silently overwritten

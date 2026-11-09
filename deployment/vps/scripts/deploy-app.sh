@@ -228,23 +228,6 @@ log "health check"
 wait_for_web || die "web health check failed"
 services_active || die "service is not active after deployment"
 
-# Keep the scheduled report units in sync with the deployed release. They are
-# tracked in the repo but nothing else installs them, so a rebuilt host would
-# silently lose the daily/weekly/monthly reports. Non-fatal on purpose: a unit
-# problem must not roll back an otherwise healthy release, but it is logged.
-if [ -f "$release/deployment/vps/systemd/apfel-park-operations-report.service" ] \
-   && [ -f "$release/deployment/vps/systemd/apfel-park-operations-report.timer.example" ]; then
-  log "operations report timer"
-  if install -m 0644 "$release/deployment/vps/systemd/apfel-park-operations-report.service" /etc/systemd/system/ \
-     && install -m 0644 "$release/deployment/vps/systemd/apfel-park-operations-report.timer.example" /etc/systemd/system/apfel-park-operations-report.timer \
-     && systemctl daemon-reload \
-     && systemctl enable apfel-park-operations-report.timer \
-     && systemctl restart apfel-park-operations-report.timer; then
-    log "  timer active, next run: $(systemctl show apfel-park-operations-report.timer --property=NextElapseUSecRealtime --value)"
-  else
-    log "  WARNING: could not install the operations report timer"
-  fi
-fi
 
 # GET-only critical smoke: no login, cart mutation, order, or payment request.
 expect_http() {

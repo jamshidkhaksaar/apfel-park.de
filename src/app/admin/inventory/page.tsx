@@ -5,13 +5,13 @@ import { canManageProducts, canRecordShopSale } from "@/lib/admin-auth";
 import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { getOperationsAccess } from "@/lib/operations/access";
 import { readSessionUser } from "@/lib/session";
-import { TILL_INVENTORY_UNDER_CONSTRUCTION } from "@/lib/admin-maintenance";
+import { INVENTORY_UNDER_CONSTRUCTION, SHOP_SALES_DISABLED, TILL_UNDER_CONSTRUCTION } from "@/lib/admin-maintenance";
 
 export const dynamic = "force-dynamic";
 
 export default async function InventoryPage() {
   const locale = await getAdminLocale();
-  if (TILL_INVENTORY_UNDER_CONSTRUCTION) {
+  if (INVENTORY_UNDER_CONSTRUCTION) {
     return (
       <AdminShell title={locale === "de" ? "Lager" : "Inventory"}>
         <UnderConstruction locale={locale} />
@@ -26,8 +26,8 @@ export default async function InventoryPage() {
         locale={locale}
         canManage={canManageProducts(user)}
         canPrintLabels={Boolean(access?.owner)}
-        canViewReports={Boolean(access?.owner)}
-        canSellInShop={canRecordShopSale(user)}
+        canViewReports={Boolean(access?.owner) && !TILL_UNDER_CONSTRUCTION}
+        canSellInShop={canRecordShopSale(user) && !SHOP_SALES_DISABLED}
       />
     </AdminShell>
   );
