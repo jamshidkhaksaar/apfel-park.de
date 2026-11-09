@@ -29,26 +29,22 @@ beforeEach(() => {
   mocks.query.mockResolvedValue({ rows: [] });
 });
 
-it("lets a cashier record a single in-shop sale", async () => {
+it("refuses a cashier shop sale while the workspace is under construction", async () => {
   const response = await post({ sku: "SKU-1", type: "shop_sale", quantity: 1, idempotencyKey: "cashier-sale-1" });
-  expect(response.status).toBe(200);
-  expect(mocks.adjust).toHaveBeenCalledTimes(1);
+  expect(response.status).toBe(409);
+  expect((await response.json()).error).toBe("shop_sale_disabled");
+  expect(mocks.adjust).not.toHaveBeenCalled();
+});
+
+it("refuses a manager shop sale as well", async () => {
+  mocks.session.mockResolvedValue(user("manager"));
+  const response = await post({ sku: "SKU-1", type: "shop_sale", quantity: 1, idempotencyKey: "manager-sale-1" });
+  expect(response.status).toBe(409);
+  expect(mocks.adjust).not.toHaveBeenCalled();
 });
 
 it("denies a cashier every other stock movement", async () => {
   const response = await post({ sku: "SKU-1", type: "restock", quantity: 1, idempotencyKey: "cashier-restock-1" });
   expect(response.status).toBe(401);
   expect(mocks.adjust).not.toHaveBeenCalled();
-});
-
-it("limits a cashier shop sale to one unit", async () => {
-  const response = await post({ sku: "SKU-1", type: "shop_sale", quantity: 3, idempotencyKey: "cashier-sale-3" });
-  expect(response.status).toBe(400);
-  expect(mocks.adjust).not.toHaveBeenCalled();
-});
-
-it("keeps multi-unit shop sales available to managers", async () => {
-  mocks.session.mockResolvedValue(user("manager"));
-  const response = await post({ sku: "SKU-1", type: "shop_sale", quantity: 3, idempotencyKey: "manager-sale-3" });
-  expect(response.status).toBe(200);
 });

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { type ReactNode, useState, useEffect, useRef } from "react";
 
 import { useAdminSidebar } from "@/lib/admin-sidebar";
+import { TILL_INVENTORY_UNDER_CONSTRUCTION, maintenanceLabel } from "@/lib/admin-maintenance";
 
 import { createAdminBrowserClient } from "@/lib/admin-auth-client";
 import { useAdmin } from "@/lib/admin-context";
@@ -39,6 +40,8 @@ type AdminBadgeCounts = {
   repairs: number;
   orders: number;
 };
+
+type NavItem = { label: string; path: string; icon: string; badge?: number; disabled?: boolean };
 
 const NavIcon = ({ type }: { type: string }) => {
   const icons: Record<string, ReactNode> = {
@@ -299,20 +302,20 @@ export default function AdminShell({
 
   const isAdmin = user?.role === "admin";
 
-  const baseItems: Array<{ label: string; path: string; icon: string; badge?: number }> = user?.role === "cashier" ? [
-    { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments' },
+  const baseItems: NavItem[] = user?.role === "cashier" ? [
+    { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments', disabled: TILL_INVENTORY_UNDER_CONSTRUCTION },
     { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
-    { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory' },
+    { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: TILL_INVENTORY_UNDER_CONSTRUCTION },
   ] : [
     { label: dict.sidebar.dashboard, path: '/admin', icon: 'dashboard' },
     ...(user?.role === "admin" || user?.role === "manager" ? [
-      { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments' },
+      { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments', disabled: TILL_INVENTORY_UNDER_CONSTRUCTION },
     ] : []),
     { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
-    { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory' },
+    { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: TILL_INVENTORY_UNDER_CONSTRUCTION },
   ];
 
-  const managerItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
+  const managerItems: NavItem[] = [
     { label: dict.sidebar.orders,    path: '/admin/orders',   icon: 'orders',  badge: badges.orders },
     { label: lang === 'de' ? 'Rechnungen' : 'Invoices', path: '/admin/invoices', icon: 'orders' },
     { label: 'Marketplaces', path: '/admin/marketplaces', icon: 'marketplaces' },
@@ -328,7 +331,7 @@ export default function AdminShell({
     { label: lang === 'de' ? 'Aktionsbanner' : 'Promotion banner', path: '/admin/promotion-banner', icon: 'branding' },
   ];
 
-  const adminItems: Array<{ label: string; path: string; icon: string; badge?: number }> = [
+  const adminItems: NavItem[] = [
     { label: dict.sidebar.users,     path: '/admin/users',    icon: 'users' },
     { label: dict.sidebar.mail,      path: '/admin/mail',     icon: 'mail' },
     { label: lang === 'de' ? 'Abonnenten' : 'Subscribers', path: '/admin/subscribers', icon: 'mail' },
@@ -354,7 +357,7 @@ export default function AdminShell({
     ? { catalog: "Katalog", ops: "Betrieb", system: "System" }
     : { catalog: "Catalog", ops: "Operations", system: "System" };
   const commandItems: CommandItem[] = [
-    ...baseItems.map((item) => ({ ...item, group: groupLabels.catalog })),
+    ...baseItems.filter((item) => !item.disabled).map((item) => ({ ...item, group: groupLabels.catalog })),
     ...(canManage ? managerItems.map((item) => ({ ...item, group: groupLabels.ops })) : []),
     ...(isAdmin ? adminItems.map((item) => ({ ...item, group: groupLabels.system })) : []),
     ...(userRole === "cashier" ? [] : [{ label: lang === "de" ? "Produkt anlegen" : "New product", path: "/admin/products/new", group: groupLabels.catalog, keywords: "neu new create add artikel" }]),
@@ -513,6 +516,21 @@ export default function AdminShell({
             </p>
             <ul className="space-y-0.5">
               {navItems.map((item) => {
+                if (item.disabled) {
+                  return (
+                    <li key={item.path}>
+                      <div
+                        aria-disabled="true"
+                        title={`${item.label} — ${maintenanceLabel(lang)}`}
+                        className={`flex cursor-not-allowed items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/40 lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
+                      >
+                        <span className="shrink-0"><NavIcon type={item.icon} /></span>
+                        <span className={`min-w-0 flex-1 break-words leading-snug font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                        {!sidebarCollapsed ? <span className="ml-auto shrink-0 rounded bg-gold/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gold/80">{maintenanceLabel(lang)}</span> : null}
+                      </div>
+                    </li>
+                  );
+                }
                 const isActive =
                   item.path === '/admin'
                     ? pathname === item.path
