@@ -168,7 +168,7 @@ export default function StoreCatalogClient({
               <p className="px-2 pb-1 pt-1 text-xs font-bold uppercase tracking-[0.12em] text-muted">{isGerman ? "Kategorien" : "Categories"}</p>
               {categoryOrder.filter((category) => category === "all" || counts[category] > 0).map((category) => (
                 <Link key={category} href={buildHref({ category, page: 1 })} scroll={false} aria-current={activeCategory === category ? "page" : undefined} className={`flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 text-sm transition ${activeCategory === category ? "bg-gold/15 font-bold text-foreground" : "text-muted hover:bg-surface-strong hover:text-foreground"}`}>
-                  <span>{categoryLabels[lang][category]}</span><span className={`text-xs tabular-nums ${activeCategory === category ? "text-foreground" : "text-muted"}`}>{counts[category]}</span>
+                  <span>{categoryLabels[lang][category]}</span>
                 </Link>
               ))}
             </nav>
