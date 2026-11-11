@@ -6,14 +6,12 @@ import type { FacetOption } from "../../lib/products";
 
 export function FilterSection({
   title,
-  count,
   active = false,
   activeLabel = "Active",
   defaultOpen = true,
   children,
 }: {
   title: string;
-  count?: number;
   active?: boolean;
   activeLabel?: string;
   defaultOpen?: boolean;
@@ -43,7 +41,6 @@ export function FilterSection({
           ) : null}
         </span>
         <span className="flex items-center gap-2">
-          {count !== undefined ? <span className="text-xs text-muted">{count}</span> : null}
           <svg
             className={`h-4 w-4 text-muted transition-transform duration-200 group-hover:text-foreground ${open ? "rotate-180" : ""}`}
             fill="none"
@@ -70,7 +67,6 @@ export function Checklist({
   initialVisible = 8,
   showMoreLabel,
   showLessLabel,
-  countsCurrent = true,
 }: {
   options: FacetOption[];
   active: Set<string>;
@@ -80,7 +76,6 @@ export function Checklist({
   initialVisible?: number;
   showMoreLabel: string;
   showLessLabel: string;
-  countsCurrent?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const ordered = [...options].sort((a,b) => Number(active.has(normalizeValue(b.value))) - Number(active.has(normalizeValue(a.value))));
@@ -126,9 +121,6 @@ export function Checklist({
             </span>
             <span className={`flex-1 truncate text-sm ${checked ? "font-semibold text-foreground" : "text-muted"}`}>
               {renderLabel(option.value)}
-            </span>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] tabular-nums ${checked ? "bg-gold/15 text-gold" : "bg-surface-strong/60 text-muted"}`}>
-              {countsCurrent ? option.count : '…'}
             </span>
           </label>
         );

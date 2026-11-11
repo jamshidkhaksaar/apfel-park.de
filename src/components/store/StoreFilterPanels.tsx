@@ -102,12 +102,10 @@ export default function StoreFilterPanels({
 
       <FilterSection
         title={isGerman ? "Verfügbarkeit" : "Availability"}
-        count={countsCurrent ? facets.inStock : undefined}
         active={activeFilters.inStockOnly}
         activeLabel={activeLabel}
       >
         <Checklist
-          countsCurrent={countsCurrent}
           options={[{ value: "available", count: facets.inStock }]}
           active={activeAvailabilitySet}
           renderLabel={() => isGerman ? "Sofort verfügbar" : "In stock now"}
@@ -133,12 +131,10 @@ export default function StoreFilterPanels({
       {facets.brands.length > 0 ? (
         <FilterSection
           title={isGerman ? "Marke" : "Brand"}
-          count={countsCurrent ? facets.brands.length : undefined}
           active={activeFilters.brands.length > 0}
           activeLabel={activeLabel}
         >
           <Checklist
-            countsCurrent={countsCurrent}
             options={facets.brands}
             active={activeBrandSet}
             renderLabel={(value) => value}
@@ -154,12 +150,10 @@ export default function StoreFilterPanels({
       {facets.conditions.length > 1 || activeFilters.conditions.length > 0 ? (
         <FilterSection
           title={isGerman ? "Zustand" : "Condition"}
-          count={countsCurrent ? facets.conditions.length : undefined}
           active={activeFilters.conditions.length > 0}
           activeLabel={activeLabel}
         >
           <Checklist
-            countsCurrent={countsCurrent}
             options={facets.conditions}
             active={activeConditionSet}
             renderLabel={conditionLabel}
@@ -173,12 +167,10 @@ export default function StoreFilterPanels({
       {facets.storages.length > 0 ? (
         <FilterSection
           title={isGerman ? "Speicher" : "Storage"}
-          count={countsCurrent ? facets.storages.length : undefined}
           active={activeFilters.storages.length > 0}
           activeLabel={activeLabel}
         >
           <Checklist
-            countsCurrent={countsCurrent}
             options={facets.storages}
             active={activeStorageSet}
             renderLabel={(value) => value}
@@ -192,13 +184,11 @@ export default function StoreFilterPanels({
       {facets.accessoryTypes.length > 0 ? (
         <FilterSection
           title={isGerman ? "Zubehör-Typ" : "Accessory type"}
-          count={countsCurrent ? facets.accessoryTypes.length : undefined}
           active={activeFilters.accessoryTypes.length > 0}
           activeLabel={activeLabel}
           defaultOpen={facets.brands.length === 0 || activeFilters.accessoryTypes.length > 0}
         >
           <Checklist
-            countsCurrent={countsCurrent}
             options={facets.accessoryTypes}
             active={activeAccessoryTypeSet}
             renderLabel={accessoryTypeLabel}
