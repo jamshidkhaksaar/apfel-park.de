@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { auditUnusedSource } from '../../../scripts/lib/audit-unused-source-core.mjs';
+import { auditHealthProblems, auditUnusedSource } from '../../../scripts/lib/audit-unused-source-core.mjs';
 
 // Guards the path handling in the audit: on Windows a naive comparison reported
 // every file as unreachable, and the tempting "fix" -- normalizing until nothing
@@ -18,9 +18,9 @@ const write = (root: string, relative: string, contents: string) => {
   writeFileSync(file, contents);
 };
 
-type FixtureOptions = { alias?: boolean };
+type FixtureOptions = { alias?: boolean; dead?: boolean };
 
-const createFixture = ({ alias = false }: FixtureOptions = {}) => {
+const createFixture = ({ alias = false, dead = true }: FixtureOptions = {}) => {
   const root = mkdtempSync(path.join(tmpdir(), 'apfel-audit-'));
   write(root, 'tsconfig.json', JSON.stringify({
     compilerOptions: {
@@ -33,15 +33,18 @@ const createFixture = ({ alias = false }: FixtureOptions = {}) => {
     },
   }, null, 2));
   write(root, 'src/lib/used.ts', 'export const used = "used";\n');
-  write(root, 'src/lib/dead.ts', 'export const dead = "nothing imports this";\n');
   write(root, 'src/app/page.tsx', alias
     ? 'import { used } from "../lib/used";\nimport { aliased } from "@/lib/aliased";\n\nexport default function Page() {\n  return used + aliased;\n}\n'
     : 'import { used } from "../lib/used";\n\nexport default function Page() {\n  return used;\n}\n');
   if (alias) write(root, 'src/lib/aliased.ts', 'export const aliased = "reached only through the alias";\n');
+  if (dead) write(root, 'src/lib/dead.ts', 'export const dead = "nothing imports this";\n');
   return root;
 };
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+const cliPath = path.join(repoRoot, 'scripts/audit-unused-source.mjs');
+const runCli = (root: string, env: Record<string, string | undefined> = {}) =>
+  spawnSync(process.execPath, [cliPath, '--root', root], { encoding: 'utf8', env: { ...process.env, ...env } });
 
 describe('unused-source audit', () => {
   it('flags the unreferenced file and spares the reachable ones, with normalized paths', () => {
@@ -73,12 +76,32 @@ describe('unused-source audit', () => {
   it('exits non-zero so the commit gate fails when a dead file exists', () => {
     const root = createFixture();
     try {
-      const run = spawnSync(process.execPath, [path.join(repoRoot, 'scripts/audit-unused-source.mjs'), '--root', root], {
-        encoding: 'utf8',
-      });
+      const run = runCli(root);
       expect(run.status).toBe(1);
       expect(run.stdout).toContain('REVIEW src/lib/dead.ts');
       expect(run.stdout).toContain('1 unreachable source-file candidate');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // A tree where nothing resolves and nothing is flagged is the dangerous state:
+  // it looks like a clean audit. It has to fail instead.
+  it('fails loudly when almost no imports resolve, even with nothing flagged', () => {
+    const root = createFixture({ dead: false });
+    try {
+      expect(auditHealthProblems({ checked: 4, edges: 2857, minChecked: 500, minEdges: 1000 })[0])
+        .toContain('only 4 source/script files were found');
+
+      const clean = runCli(root);
+      expect(clean.status).toBe(0);
+      expect(clean.stdout).toContain('0 unreachable source-file candidates');
+
+      const starved = runCli(root, { AUDIT_MIN_EDGES: '9999' });
+      expect(starved.status).toBe(1);
+      expect(starved.stdout).toContain('0 unreachable source-file candidates');
+      expect(starved.stderr).toContain('resolver health check failed');
+      expect(starved.stderr).toContain('module resolution is likely broken');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

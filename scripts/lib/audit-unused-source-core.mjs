@@ -12,6 +12,21 @@ import ts from 'typescript';
 // would be worse than the bug, because nothing would be flagged ever again.
 const fileKey = (file) => file.split(path.sep).join('/');
 
+// The audit can only report dead files if it actually resolved imports. When it
+// resolves almost none, every file looks like a candidate (loud) or -- if the
+// entry detection is too broad at the same time -- nothing does (silent). These
+// floors make that state an error instead of a pass.
+export const auditHealthProblems = ({ checked, edges, minChecked, minEdges }) => {
+  const problems = [];
+  if (checked < minChecked) {
+    problems.push(`only ${checked} source/script files were found, floor is ${minChecked}: the walk is likely looking at the wrong tree`);
+  }
+  if (edges < minEdges) {
+    problems.push(`only ${edges} internal imports resolved, floor is ${minEdges}: module resolution is likely broken, so "nothing is unreachable" means only that nothing was followed`);
+  }
+  return problems;
+};
+
 export const auditUnusedSource = ({ root }) => {
   const relativeTo = (file) => fileKey(path.relative(root, file));
 
@@ -55,19 +70,23 @@ export const auditUnusedSource = ({ root }) => {
     || /^src\/(proxy|middleware|instrumentation|instrumentation-client)\./.test(key)
     || (key.startsWith('src/app/') && /\/(page|route|layout|template|loading|error|not-found|global-error|default|sitemap|robots|manifest|icon|apple-icon|opengraph-image|twitter-image)\.[jt]sx?$/.test(key));
 
+  const entryKeys = files.filter((file) => isEntry(relativeTo(file))).map(fileKey);
   const visited = new Set();
   const visit = (key) => {
     if (visited.has(key)) return;
     visited.add(key);
     for (const dependency of graph.get(key) ?? []) visit(dependency);
   };
-  files.filter((file) => isEntry(relativeTo(file))).map(fileKey).forEach(visit);
+  entryKeys.forEach(visit);
 
   const candidates = files.filter((file) => relativeTo(file).startsWith('src/')
     && !file.endsWith('.d.ts') && !visited.has(fileKey(file)));
+  const edges = [...graph.values()].reduce((total, dependencies) => total + dependencies.length, 0);
 
   return {
     checked: files.length,
+    entries: entryKeys.length,
+    edges,
     candidates: candidates.map(relativeTo),
     computedImports: [...new Set(computedImports)],
   };
