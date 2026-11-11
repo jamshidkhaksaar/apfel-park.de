@@ -4,6 +4,7 @@ export type AuditUnusedSourceResult = {
   edges: number;
   candidates: string[];
   computedImports: string[];
+  unresolvedAliases: string[];
 };
 
 export type AuditHealthInput = {

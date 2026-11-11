@@ -19,12 +19,20 @@ const root = rootFlag === -1
   ? fileURLToPath(new URL('../', import.meta.url))
   : path.resolve(process.argv[rootFlag + 1] ?? '');
 
-const { checked, edges, candidates, computedImports } = auditUnusedSource({ root });
+const { checked, edges, candidates, computedImports, unresolvedAliases } = auditUnusedSource({ root });
 
 console.log(`${checked} source/script files checked; ${candidates.length} unreachable source-file candidate${candidates.length === 1 ? '' : 's'}; ${edges} internal imports resolved.`);
 for (const file of candidates) console.log(`  REVIEW ${file}`);
 if (computedImports.length) console.log(`Computed module loading requires manual review in: ${computedImports.join(', ')}`);
 console.log('This audit does not classify HTTP endpoints, public assets, CSS, or individual exports as unused.');
+
+// An @/ import that resolves to nothing is broken regardless of the graph, and a
+// partial alias breakage can stay above the edge floor. Stylesheets are excluded
+// in the core because TypeScript never resolves them.
+for (const entry of unresolvedAliases) console.error(`  ALIAS ${entry}`);
+if (unresolvedAliases.length) {
+  console.error(`[audit:unused] ${unresolvedAliases.length} unresolvable @/ import(s): fix the specifier or the paths mapping, or these files will look unreachable.`);
+}
 
 // Fixture trees are tiny by design, so the floors apply to the real tree -- or
 // when a test sets them explicitly.
@@ -36,4 +44,5 @@ for (const problem of healthProblems) console.error(`  HEALTH ${problem}`);
 if (healthProblems.length) {
   console.error('[audit:unused] resolver health check failed: this audit followed too little of the tree to trust a clean result.');
 }
-process.exitCode = candidates.length || healthProblems.length ? 1 : 0;
+
+process.exitCode = candidates.length || healthProblems.length || unresolvedAliases.length ? 1 : 0;

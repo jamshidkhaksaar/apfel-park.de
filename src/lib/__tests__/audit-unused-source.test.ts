@@ -18,10 +18,11 @@ const write = (root: string, relative: string, contents: string) => {
   writeFileSync(file, contents);
 };
 
-type FixtureOptions = { alias?: boolean; dead?: boolean };
+type FixtureOptions = { alias?: boolean; dead?: boolean; brokenAlias?: boolean; cssAlias?: boolean };
 
-const createFixture = ({ alias = false, dead = true }: FixtureOptions = {}) => {
+const createFixture = ({ alias = false, dead = true, brokenAlias = false, cssAlias = false }: FixtureOptions = {}) => {
   const root = mkdtempSync(path.join(tmpdir(), 'apfel-audit-'));
+  const usesAlias = alias || brokenAlias || cssAlias;
   write(root, 'tsconfig.json', JSON.stringify({
     compilerOptions: {
       module: 'esnext',
@@ -29,15 +30,24 @@ const createFixture = ({ alias = false, dead = true }: FixtureOptions = {}) => {
       jsx: 'preserve',
       strict: true,
       // Same shape as the project tsconfig: paths declared without baseUrl.
-      ...(alias ? { paths: { '@/*': ['./src/*'] } } : {}),
+      ...(usesAlias ? { paths: { '@/*': ['./src/*'] } } : {}),
     },
   }, null, 2));
   write(root, 'src/lib/used.ts', 'export const used = "used";\n');
-  write(root, 'src/app/page.tsx', alias
-    ? 'import { used } from "../lib/used";\nimport { aliased } from "@/lib/aliased";\n\nexport default function Page() {\n  return used + aliased;\n}\n'
-    : 'import { used } from "../lib/used";\n\nexport default function Page() {\n  return used;\n}\n');
   if (alias) write(root, 'src/lib/aliased.ts', 'export const aliased = "reached only through the alias";\n');
   if (dead) write(root, 'src/lib/dead.ts', 'export const dead = "nothing imports this";\n');
+  const page = [
+    'import { used } from "../lib/used";',
+    ...(alias ? ['import { aliased } from "@/lib/aliased";'] : []),
+    ...(brokenAlias ? ['import { missing } from "@/lib/missing";'] : []),
+    ...(cssAlias ? ['import styles from "@/styles/panel.module.css";'] : []),
+    '',
+    'export default function Page() {',
+    `  return [used${alias ? ', aliased' : ''}${brokenAlias ? ', missing' : ''}${cssAlias ? ', styles' : ''}].join(" ");`,
+    '}',
+    '',
+  ].join('\n');
+  write(root, 'src/app/page.tsx', page);
   return root;
 };
 
@@ -102,6 +112,26 @@ describe('unused-source audit', () => {
       expect(starved.stdout).toContain('0 unreachable source-file candidates');
       expect(starved.stderr).toContain('resolver health check failed');
       expect(starved.stderr).toContain('module resolution is likely broken');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // The edge floor cannot see a partial alias breakage, so a dangling @/ import
+  // fails on its own. Stylesheets resolve in Next but never in TypeScript, and
+  // this repository has one, so asset specifiers must not be reported.
+  it('fails on an unresolvable @/ import and ignores stylesheet aliases', () => {
+    const root = createFixture({ dead: false, brokenAlias: true, cssAlias: true });
+    try {
+      const result = auditUnusedSource({ root });
+      expect(result.unresolvedAliases).toEqual(['src/app/page.tsx -> @/lib/missing']);
+
+      const run = runCli(root);
+      expect(run.status).toBe(1);
+      expect(run.stdout).toContain('0 unreachable source-file candidates');
+      expect(run.stderr).toContain('ALIAS src/app/page.tsx -> @/lib/missing');
+      expect(run.stderr).toContain('unresolvable @/ import');
+      expect(run.stderr).not.toContain('panel.module.css');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
