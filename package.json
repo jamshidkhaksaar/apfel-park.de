@@ -29,7 +29,8 @@
     "audit:unused": "node scripts/audit-unused-source.mjs",
     "ci:check": "node scripts/ci-check.mjs",
     "prepush": "node scripts/ci-check.mjs",
-    "hooks:install": "git config core.hooksPath .githooks"
+    "prepare": "node scripts/install-git-hooks.mjs",
+    "hooks:install": "node scripts/install-git-hooks.mjs"
   },
   "dependencies": {
     "@dualmark/core": "^0.11.0",

@@ -51,11 +51,12 @@ gate: lint, typecheck, audit:unused, the test suite, the dependency audit and
 the production build. The GitHub workflow and `deploy-app.sh` both call it, so
 none of them can check less than the others.
 
-Install the matching pre-push hook once per clone:
-
-```bash
-npm run hooks:install   # git config core.hooksPath .githooks
-```
+The matching pre-push hook installs itself: `prepare` runs
+`scripts/install-git-hooks.mjs` on `npm install` and `npm ci`, pointing
+`core.hooksPath` at `.githooks` when nothing else has claimed it. A bare clone
+that was never installed runs no npm scripts at all, so install once before the
+first push (`npm install`, or `npm run hooks:install` on its own). An existing
+custom hooks path is left alone; the installer prints how to opt in.
 
 The hook runs that same list before a push lands, which keeps commits verified
 when GitHub Actions is unavailable (for example an account-level billing lock,
