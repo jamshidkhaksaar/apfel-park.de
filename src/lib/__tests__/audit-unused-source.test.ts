@@ -18,7 +18,9 @@ const write = (root: string, relative: string, contents: string) => {
   writeFileSync(file, contents);
 };
 
-const createFixture = () => {
+type FixtureOptions = { alias?: boolean };
+
+const createFixture = ({ alias = false }: FixtureOptions = {}) => {
   const root = mkdtempSync(path.join(tmpdir(), 'apfel-audit-'));
   write(root, 'tsconfig.json', JSON.stringify({
     compilerOptions: {
@@ -26,11 +28,16 @@ const createFixture = () => {
       moduleResolution: 'bundler',
       jsx: 'preserve',
       strict: true,
+      // Same shape as the project tsconfig: paths declared without baseUrl.
+      ...(alias ? { paths: { '@/*': ['./src/*'] } } : {}),
     },
   }, null, 2));
-  write(root, 'src/app/page.tsx', 'import { used } from "../lib/used";\n\nexport default function Page() {\n  return used;\n}\n');
   write(root, 'src/lib/used.ts', 'export const used = "used";\n');
   write(root, 'src/lib/dead.ts', 'export const dead = "nothing imports this";\n');
+  write(root, 'src/app/page.tsx', alias
+    ? 'import { used } from "../lib/used";\nimport { aliased } from "@/lib/aliased";\n\nexport default function Page() {\n  return used + aliased;\n}\n'
+    : 'import { used } from "../lib/used";\n\nexport default function Page() {\n  return used;\n}\n');
+  if (alias) write(root, 'src/lib/aliased.ts', 'export const aliased = "reached only through the alias";\n');
   return root;
 };
 
@@ -45,6 +52,19 @@ describe('unused-source audit', () => {
       expect(candidates.some((file) => file.includes('\\'))).toBe(false);
       expect(candidates).not.toContain('src/lib/used.ts');
       expect(candidates).not.toContain('src/app/page.tsx');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // Almost every real import resolves through the tsconfig alias, so an alias
+  // that stops resolving would mark most of src/ as dead at once.
+  it('treats a file reached only through the @/ alias as reachable', () => {
+    const root = createFixture({ alias: true });
+    try {
+      const { candidates } = auditUnusedSource({ root });
+      expect(candidates).not.toContain('src/lib/aliased.ts');
+      expect(candidates).toEqual(['src/lib/dead.ts']);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
