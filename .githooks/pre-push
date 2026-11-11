@@ -1,0 +1,32 @@
+#!/bin/sh
+# Local pre-push gate: the same six checks the GitHub workflow and the VPS
+# release run. scripts/ci-check.mjs is the single definition of that list, so
+# this hook cannot drift from the gate that guards production.
+#
+# Install once per clone:
+#
+#   npm run hooks:install        # git config core.hooksPath .githooks
+#
+# Useful while GitHub Actions is unavailable (for example an account-level
+# billing lock, when pushes still succeed but no workflow ever runs).
+#
+# Bypass deliberately rather than habitually:
+#
+#   SKIP_CI_CHECK=1 git push     # or: git push --no-verify
+
+set -eu
+
+if [ "${SKIP_CI_CHECK:-0}" = "1" ]; then
+  echo "[pre-push] SKIP_CI_CHECK=1: commit gate skipped"
+  exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)"
+
+if [ ! -d node_modules ]; then
+  echo "[pre-push] node_modules is missing; run npm ci before pushing" >&2
+  exit 1
+fi
+
+echo "[pre-push] running the commit gate (scripts/ci-check.mjs)"
+exec node scripts/ci-check.mjs

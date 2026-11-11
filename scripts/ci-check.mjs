@@ -51,6 +51,13 @@ if (!existsSync(new URL('../node_modules', import.meta.url))) {
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const startedAt = Date.now();
 
+// Windows cannot execute a `.cmd` shim without a shell. Passing one command
+// string avoids Node warning about shell:true combined with an args array
+// (DEP0190); the gate commands are fixed, so nothing here needs quoting.
+const runNpm = (command, env) => process.platform === 'win32'
+  ? spawnSync(`${npm} ${command.join(' ')}`, { stdio: 'inherit', env, shell: true })
+  : spawnSync(npm, command, { stdio: 'inherit', env });
+
 console.log(`[ci:check] gates, in order: ${gates.map((gate) => gate.name).join(', ')}`);
 if (buildEnvFile) console.log(`[ci:check] the build alone reads ${buildEnvFile}`);
 
@@ -71,7 +78,7 @@ for (const gate of gates) {
         ['-c', 'set -a; . "$1"; set +a; shift; exec "$@"', 'ci-check', buildEnvFile, npm, ...gate.command],
         { stdio: 'inherit', env },
       )
-    : spawnSync(npm, gate.command, { stdio: 'inherit', env });
+    : runNpm(gate.command, env);
 
   if (result.error) {
     console.error(`[ci:check] could not run ${gate.name}: ${result.error.message}`);

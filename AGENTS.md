@@ -43,7 +43,24 @@ npm test              # Vitest suite (src/**/*.test.ts)
 npm run typecheck     # strict TypeScript, including unused locals/parameters
 npm run audit:unused  # review unreachable source files
 npm run lint
+npm run ci:check      # all six commit gates, in the order CI and the deploy run them
 ```
+
+`npm run ci:check` (scripts/ci-check.mjs) is the single definition of the commit
+gate: lint, typecheck, audit:unused, the test suite, the dependency audit and
+the production build. The GitHub workflow and `deploy-app.sh` both call it, so
+none of them can check less than the others.
+
+Install the matching pre-push hook once per clone:
+
+```bash
+npm run hooks:install   # git config core.hooksPath .githooks
+```
+
+The hook runs that same list before a push lands, which keeps commits verified
+when GitHub Actions is unavailable (for example an account-level billing lock,
+where pushes still succeed but no workflow ever starts). Skip it deliberately
+rather than habitually: `SKIP_CI_CHECK=1 git push` or `git push --no-verify`.
 
 Browser regression scripts live in `scripts/`. They use synthetic data and accept
 `PLAYWRIGHT_MODULE` where documented. Integration tests that need an isolated
