@@ -1,0 +1,66 @@
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { describe, expect, it } from 'vitest';
+
+import { auditUnusedSource } from '../../../scripts/lib/audit-unused-source-core.mjs';
+
+// Guards the path handling in the audit: on Windows a naive comparison reported
+// every file as unreachable, and the tempting "fix" -- normalizing until nothing
+// is flagged -- would leave the gate passing while detecting nothing. A fixture
+// with one genuinely dead file has to keep failing.
+const write = (root: string, relative: string, contents: string) => {
+  const file = path.join(root, relative);
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, contents);
+};
+
+const createFixture = () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'apfel-audit-'));
+  write(root, 'tsconfig.json', JSON.stringify({
+    compilerOptions: {
+      module: 'esnext',
+      moduleResolution: 'bundler',
+      jsx: 'preserve',
+      strict: true,
+    },
+  }, null, 2));
+  write(root, 'src/app/page.tsx', 'import { used } from "../lib/used";\n\nexport default function Page() {\n  return used;\n}\n');
+  write(root, 'src/lib/used.ts', 'export const used = "used";\n');
+  write(root, 'src/lib/dead.ts', 'export const dead = "nothing imports this";\n');
+  return root;
+};
+
+const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+
+describe('unused-source audit', () => {
+  it('flags the unreferenced file and spares the reachable ones, with normalized paths', () => {
+    const root = createFixture();
+    try {
+      const { candidates } = auditUnusedSource({ root });
+      expect(candidates).toEqual(['src/lib/dead.ts']);
+      expect(candidates.some((file) => file.includes('\\'))).toBe(false);
+      expect(candidates).not.toContain('src/lib/used.ts');
+      expect(candidates).not.toContain('src/app/page.tsx');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('exits non-zero so the commit gate fails when a dead file exists', () => {
+    const root = createFixture();
+    try {
+      const run = spawnSync(process.execPath, [path.join(repoRoot, 'scripts/audit-unused-source.mjs'), '--root', root], {
+        encoding: 'utf8',
+      });
+      expect(run.status).toBe(1);
+      expect(run.stdout).toContain('REVIEW src/lib/dead.ts');
+      expect(run.stdout).toContain('1 unreachable source-file candidate');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
