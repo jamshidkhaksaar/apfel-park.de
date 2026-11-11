@@ -17,6 +17,10 @@ const fileKey = (file) => file.split(path.sep).join('/');
 // one (a .module.css import), which is why the check skips them.
 const ASSET_SPECIFIER = /\.(css|scss|sass|less|styl|svg|png|jpe?g|gif|webp|avif|ico|mp4|webm|woff2?|ttf|otf|pdf)$/i;
 
+// Specifiers this audit is responsible for resolving: the @/ alias and explicit
+// relative paths. Package imports are someone else's resolution problem.
+const LOCAL_SPECIFIER = /^(?:@\/|\.{1,2}\/)/;
+
 // The audit can only report dead files if it actually resolved imports. When it
 // resolves almost none, every file looks like a candidate (loud) or -- if the
 // entry detection is too broad at the same time -- nothing does (silent). These
@@ -47,7 +51,7 @@ export const auditUnusedSource = ({ root }) => {
   const fileSet = new Set(files.map(fileKey));
   const graph = new Map();
   const computedImports = [];
-  const unresolvedAliases = [];
+  const unresolvedImports = [];
 
   for (const file of files) {
     const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
@@ -65,11 +69,11 @@ export const auditUnusedSource = ({ root }) => {
         const resolved = ts.resolveModuleName(specifier.text, file, options, ts.sys).resolvedModule?.resolvedFileName;
         if (resolved) {
           if (fileSet.has(fileKey(resolved))) dependencies.push(fileKey(resolved));
-        } else if (specifier.text.startsWith('@/') && !ASSET_SPECIFIER.test(specifier.text)) {
-          // An alias that resolves to nothing is a broken import no matter what
-          // the reachability graph looks like, and the edge floor cannot see it:
-          // relative imports keep the total high while the alias silently rots.
-          unresolvedAliases.push(`${relativeTo(file)} -> ${specifier.text}`);
+        } else if (LOCAL_SPECIFIER.test(specifier.text) && !ASSET_SPECIFIER.test(specifier.text)) {
+          // A local specifier that resolves to nothing is a broken import no
+          // matter what the graph looks like, and the edge floor cannot see it:
+          // the remaining imports keep the total high while the module rots.
+          unresolvedImports.push(`${relativeTo(file)} -> ${specifier.text}`);
         }
       }
       ts.forEachChild(node, visit);
@@ -102,6 +106,6 @@ export const auditUnusedSource = ({ root }) => {
     edges,
     candidates: candidates.map(relativeTo),
     computedImports: [...new Set(computedImports)],
-    unresolvedAliases: [...new Set(unresolvedAliases)].sort(),
+    unresolvedImports: [...new Set(unresolvedImports)].sort(),
   };
 };
