@@ -106,7 +106,7 @@ export const siteKeywords = {
     "Apfel Park Hamburg",
     "buy iPhone Hamburg",
     "buy smartphone Hamburg",
-    "refurbished iPhone Hamburg",
+    "Open Box iPhone Hamburg",
     "open box iPhone",
     "sell phone Hamburg",
     "smartphone repair Hamburg",
@@ -189,16 +189,16 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "weekly",
     defaultTitle: {
-      de: "Handy kaufen Hamburg – iPhone & Samsung im LunaCenter",
-      en: "Buy a phone in Hamburg – iPhone & Samsung at LunaCenter",
+      de: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen",
+      en: "Buy new, Open Box & used (Grade A+) smartphones",
     },
     defaultDescription: {
-      de: "iPhones, Samsung Galaxy und weitere Smartphones bei Apfel Park im LunaCenter in Hamburg-Wilhelmsburg: sofort abholbar oder versichert innerhalb Deutschlands geliefert.",
-      en: "iPhones, Samsung Galaxy and other smartphones from Apfel Park in the LunaCenter, Hamburg-Wilhelmsburg: collect in store or get insured delivery across Germany.",
+      de: "Smartphones von Apple, Samsung und Xiaomi: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+) – Abholung im LunaCenter Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
+      en: "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or tested pre-owned (Grade A+) – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
     },
     defaultKeywords: {
-      de: "Handy kaufen Hamburg, Smartphones Hamburg, iPhone kaufen Hamburg, Samsung kaufen Hamburg, gebrauchte Smartphones Hamburg, Handy Abholung LunaCenter",
-      en: "buy phone Hamburg, smartphones Hamburg, buy iPhone Hamburg, buy Samsung Hamburg, refurbished phones Hamburg, phone pickup LunaCenter",
+      de: "Handy kaufen Hamburg, Smartphones Hamburg, iPhone kaufen Hamburg, Samsung kaufen Hamburg, Open Box Handy Hamburg, Zustand A+ Smartphone, Handy Abholung LunaCenter",
+      en: "buy phone Hamburg, smartphones Hamburg, buy iPhone Hamburg, buy Samsung Hamburg, Open Box phone Hamburg, Grade A+ smartphone, phone pickup LunaCenter",
     },
   },
   {
@@ -573,16 +573,16 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Handy kaufen Hamburg – Abholung im LunaCenter",
-      en: "Buy a phone in Hamburg – collect at LunaCenter",
+      de: "Smartphones & Tablets kaufen – neu, Open Box, Zustand A+",
+      en: "Buy smartphones & tablets – new, Open Box, Grade A+",
     },
     defaultDescription: {
-      de: "Smartphones, iPhones und Zubehör bei Apfel Park im LunaCenter, Wilhelm-Strauß-Weg 2b, kaufen: sofort abholbar in Hamburg-Wilhelmsburg oder versichert innerhalb Deutschlands geliefert.",
-      en: "Buy smartphones, iPhones and accessories from Apfel Park in the LunaCenter, Wilhelm-Strauß-Weg 2b: collect in Hamburg-Wilhelmsburg or get insured delivery across Germany.",
+      de: "Smartphones, Tablets und Zubehör bei Apfel Park: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+). Abholung im LunaCenter Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
+      en: "Smartphones, tablets and accessories at Apfel Park: new sealed, Open Box or tested pre-owned (Grade A+). Collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
     },
     defaultKeywords: {
-      de: "Online Shop Hamburg, Smartphones kaufen Hamburg, iPhone online kaufen, Zubehör online Hamburg",
-      en: "online store Hamburg, buy smartphones Hamburg, buy iPhone online, accessories online Hamburg",
+      de: "Online Shop Hamburg, Smartphones kaufen Hamburg, Open Box iPhone, Zustand A+ Handy, Zubehör online Hamburg",
+      en: "online store Hamburg, buy smartphones Hamburg, Open Box iPhone, Grade A+ phone, accessories online Hamburg",
     },
   },
   {

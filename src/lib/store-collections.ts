@@ -415,14 +415,14 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       introTitle: "Gebrauchtes iPhone passend zu deinem Budget wählen",
       intro: [
         "Auf dieser Seite findest du die aktuell verfügbaren gebrauchten und Open-Box-iPhones von Apfel Park. Vergleiche Modelle, Speichergrößen, Preise und den individuell beschriebenen Gerätezustand, ohne dich durch neue Angebote suchen zu müssen.",
-        "Wir kennzeichnen Gebraucht und Open Box getrennt direkt am Produkt und bezeichnen ein Gerät nicht automatisch als generalüberholt. Bestellungen sind mit Versand innerhalb Deutschlands oder zur Abholung in Hamburg-Wilhelmsburg möglich.",
+        "Wir kennzeichnen Gebraucht und Open Box getrennt direkt am Produkt und beschreiben den Zustand jedes Geräts einzeln. Bestellungen sind mit Versand innerhalb Deutschlands oder zur Abholung in Hamburg-Wilhelmsburg möglich.",
         "Prüfe zuerst, wie viel Speicher deine Fotos, Videos und Apps heute belegen, und plane Platz für die weitere Nutzung ein. Vergleiche danach Geräte mit ähnlichem Speicher und Zustand. Ein niedrigerer Preis kann mit mehr Gebrauchsspuren oder einem anderen Lieferumfang verbunden sein.",
       ],
       comparison: {
         heading: "Checkliste vor dem Kauf eines gebrauchten iPhone",
         columns: ["Prüfpunkt", "Was du wissen solltest"],
         rows: [
-          ["Zustand & Fotos", "Gebraucht bedeutet zuvor genutzt, Open Box bedeutet geöffnet. Refurbished beziehungsweise generalüberholt ist eine zusätzliche Aufbereitungsangabe, die ausdrücklich beschrieben sein muss. Prüfe Display, Rahmen und Rückseite anhand der Fotos und Zustandsnotiz."],
+          ["Zustand & Fotos", "Gebraucht bedeutet zuvor genutzt, Open Box bedeutet geöffnet und unbenutzt. Eine zusätzliche Aufbereitung sagen wir nicht pauschal zu. Prüfe Display, Rahmen und Rückseite anhand der Fotos und Zustandsnotiz."],
           ["Batterie", "Vergleiche die angegebene maximale Kapazität und Hinweise auf Servicebedarf. Ein fehlender Wert ist kein Nachweis für einen guten Akku. Ein neuer Akku oder Mindestwert gilt nur bei ausdrücklicher Zusage im Angebot."],
           ["Aktivierungssperre", "Das Gerät muss sich ohne den Apple Account des Vorbesitzers einrichten lassen. Kaufe kein iPhone mit aktiver Aktivierungssperre; lass Unklarheiten vor der Bestellung klären."],
           ["Teile- und Serviceprotokoll", "Je nach Modell, iOS-Version und Reparaturhistorie gibt es unter Einstellungen > Allgemein > Info Teilehinweise. Frage nach bekannten Reparaturen und Meldungen zu unbekannten Bauteilen. Ein fehlender Eintrag belegt nicht allein, dass nie repariert wurde."],
@@ -442,7 +442,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
         { title: "Transparent einkaufen", text: "Individueller Zustand, Preis und Produktbilder direkt im Angebot." },
       ],
       faq: [
-        { question: "Sind gebrauchte iPhones generalüberholt?", answer: "Nicht automatisch. Wir bezeichnen ein Gerät nur dann als generalüberholt, wenn dies ausdrücklich im Produktangebot steht. Ansonsten gilt die transparente Zustandsangabe Gebraucht." },
+        { question: "Sind gebrauchte iPhones aufbereitet?", answer: "Nicht pauschal. Jedes Gerät wird geprüft und mit der Zustandsangabe Gebraucht – Zustand A+ verkauft. Eine Aufbereitung wird nur zugesagt, wenn sie im Produktangebot ausdrücklich steht." },
         { question: "Welche günstigeren iPhone-Modelle sind verfügbar?", answer: "Die Produktliste wird direkt aus unserem aktuellen Bestand erzeugt und zeigt derzeit angebotene gebrauchte und Open-Box-iPhones." },
         { question: "Kann ich ein gebrauchtes iPhone in Hamburg abholen?", answer: "Ja. Du kannst verfügbare Geräte online auswählen und bei Apfel Park in Hamburg-Wilhelmsburg abholen." },
         { question: "Worauf sollte ich beim Akkuzustand achten?", answer: "Vergleiche die für das konkrete iPhone angegebenen Akkuwerte und Hinweise. Fehlt ein Wert, frage nach; ein bestimmter Mindestwert oder ein neuer Akku gilt nur, wenn dies im Angebot ausdrücklich zugesagt wird." },
@@ -459,14 +459,14 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       introTitle: "Find the right iPhone at a better price",
       intro: [
         "This page lists the used and open-box iPhones currently available from Apfel Park. Compare models, storage, prices and individually described condition without searching through new offers.",
-        "Used and Open Box are labeled separately on every product, and a device is not automatically described as refurbished. Order for delivery in Germany or collect from Hamburg-Wilhelmsburg.",
+        "Used and Open Box are labeled separately on every product, with the condition of each device described individually. Order for delivery in Germany or collect from Hamburg-Wilhelmsburg.",
         "Start with the space your photos, videos and apps use today, allowing room for continued use. Then compare devices with similar storage and condition. A lower price may come with more wear or different included accessories.",
       ],
       comparison: {
         heading: "Checklist before buying a used iPhone",
         columns: ["Check", "What you need to know"],
         rows: [
-          ["Condition & photos", "Used means previously used; Open Box means opened. Refurbished is a separate reconditioning claim that must be explicitly described. Check the display, frame and back in the photos and condition note."],
+          ["Condition & photos", "Used means previously used; Open Box means opened and unused. We do not promise reconditioning as standard. Check the display, frame and back in the photos and condition note."],
           ["Battery", "Compare the stated maximum capacity and service warnings. A missing value is not evidence of a healthy battery. A replacement battery or minimum value is only promised when explicitly stated in the offer."],
           ["Activation Lock", "You must be able to set up the device without the previous owner's Apple Account. Do not buy an iPhone with Activation Lock enabled; resolve uncertainty before ordering."],
           ["Parts and service history", "Depending on model, iOS version and repair history, parts information may appear in Settings > General > About. Ask about known repairs and unknown-part notices. No entry alone does not prove the device has never been repaired."],
@@ -486,7 +486,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
         { title: "Buy transparently", text: "Individual condition, price and product photos appear on each offer." },
       ],
       faq: [
-        { question: "Are used iPhones refurbished?", answer: "Not automatically. We describe a device as refurbished only when the individual product offer explicitly says so. Otherwise the transparent condition is Used." },
+        { question: "Are used iPhones reconditioned?", answer: "Not as standard. Every device is tested and sold with the condition Used – Grade A+. Reconditioning is promised only where the individual product offer states it." },
         { question: "Which lower-priced iPhone models are available?", answer: "The list comes directly from current inventory and shows used and open-box iPhones presently offered for sale." },
         { question: "Can I collect a used iPhone in Hamburg?", answer: "Yes. Select an available device online and collect it from Apfel Park in Hamburg-Wilhelmsburg." },
         { question: "What should I check about battery health?", answer: "Compare the battery values and notes provided for the individual iPhone. Ask if a value is missing. A minimum battery-health level or replacement battery is only promised when explicitly stated in that offer." },
