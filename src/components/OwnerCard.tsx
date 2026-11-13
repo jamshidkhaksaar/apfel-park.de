@@ -59,10 +59,10 @@ export default function OwnerCard({
           <p className="font-semibold text-foreground">{owner.name}</p>
           <p className="text-sm text-muted">{role}</p>
           <a
-            href={`tel:${owner.phoneE164}`}
+            href={`tel:${siteInfo.landlineE164}`}
             className="text-sm text-gold underline-offset-2 transition hover:underline"
           >
-            {owner.phone}
+            {siteInfo.landline}
           </a>
         </div>
       </div>
@@ -81,16 +81,18 @@ export default function OwnerCard({
           <h2 className="mt-4 text-2xl font-bold text-foreground md:text-3xl">{owner.name}</h2>
           <p className="mt-4 leading-relaxed text-muted">
             {isGerman
-              ? "Bei Apfel Park erreichen Sie Ihren persönlichen Ansprechpartner direkt im Geschäft am Wilhelm-Strauß-Weg – vor dem Kauf, bei einer Reparaturanfrage und wenn später noch Fragen offen sind."
-              : "At Apfel Park you can reach your personal contact directly at the Wilhelm-Strauß-Weg store—before a purchase, with a repair enquiry, or if you have questions later."}
+              ? "Bei Apfel Park erreichen Sie Ihren persönlichen Ansprechpartner direkt im Geschäft im LunaCenter am Wilhelm-Strauß-Weg – vor dem Kauf, bei einer Reparaturanfrage und wenn später noch Fragen offen sind."
+              : "At Apfel Park you can reach your personal contact directly at the LunaCenter store on Wilhelm-Strauß-Weg—before a purchase, with a repair enquiry, or if you have questions later."}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
+            {/* The shop landline, not the proprietor's mobile: the mobile is
+                reserved for WhatsApp support and the Impressum. */}
             <a
-              href={`tel:${owner.phoneE164}`}
+              href={`tel:${siteInfo.landlineE164}`}
               className="inline-flex items-center gap-2 rounded-xl border border-gold/40 px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/10"
             >
-              {isGerman ? "Direkt anrufen" : "Call directly"}
-              <span className="text-muted">{owner.phone}</span>
+              {isGerman ? "Im Shop anrufen" : "Call the shop"}
+              <span className="text-muted">{siteInfo.landline}</span>
             </a>
           </div>
         </div>

@@ -162,7 +162,11 @@ export default async function SiteFooter({ lang }: { lang: Locale }) {
               </>
             )}
             
-            {/* Address */}
+            {/* Address. The landmark is shown, not baked into the street, so
+                the copyable address still matches the Google Business Profile. */}
+            <p className="text-sm font-medium text-foreground">
+              {lang === "de" ? `im ${siteInfo.address.landmark}` : `in the ${siteInfo.address.landmark}`}
+            </p>
             <CopyAddressButton
               address={siteInfo.address}
               label={lang === "de" ? "Adresse kopieren" : "Copy address"}

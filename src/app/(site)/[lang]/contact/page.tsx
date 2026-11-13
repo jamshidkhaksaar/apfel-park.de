@@ -97,20 +97,27 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
             </div>
 
             <div className="mb-4 grid gap-2 rounded-2xl border border-border/60 bg-surface/40 p-4 text-sm">
+              {/* The landline is the business phone; the mobile is labelled
+                  WhatsApp so crawlers do not read two competing NAP numbers. */}
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
-                  {lang === "de" ? "Telefon & WhatsApp" : "Phone & WhatsApp"}
+                  {lang === "de" ? "Telefon" : "Phone"}
                 </span>
-                <a href={`tel:${siteInfo.phoneE164}`} className="font-semibold text-foreground transition hover:text-gold">
-                  {siteInfo.phone}
+                <a href={`tel:${siteInfo.landlineE164}`} className="font-semibold text-foreground transition hover:text-gold">
+                  {siteInfo.landline}
                 </a>
               </div>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
-                  {lang === "de" ? "Ladengeschäft" : "Store landline"}
+                  {lang === "de" ? "WhatsApp Support" : "WhatsApp support"}
                 </span>
-                <a href={`tel:${siteInfo.landlineE164}`} className="font-semibold text-foreground transition hover:text-gold">
-                  {siteInfo.landline}
+                <a
+                  href={siteInfo.social.whatsapp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-foreground transition hover:text-gold"
+                >
+                  {siteInfo.whatsappDisplay}
                 </a>
               </div>
             </div>

@@ -187,16 +187,16 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "weekly",
     defaultTitle: {
-      de: dictionary.de.meta.smartphones.title,
-      en: dictionary.en.meta.smartphones.title,
+      de: "Handy kaufen Hamburg – iPhone & Samsung im LunaCenter",
+      en: "Buy a phone in Hamburg – iPhone & Samsung at LunaCenter",
     },
     defaultDescription: {
-      de: dictionary.de.meta.smartphones.description,
-      en: dictionary.en.meta.smartphones.description,
+      de: "iPhones, Samsung Galaxy und weitere Smartphones bei Apfel Park im LunaCenter in Hamburg-Wilhelmsburg: sofort abholbar oder versichert innerhalb Deutschlands geliefert.",
+      en: "iPhones, Samsung Galaxy and other smartphones from Apfel Park in the LunaCenter, Hamburg-Wilhelmsburg: collect in store or get insured delivery across Germany.",
     },
     defaultKeywords: {
-      de: "Smartphones Hamburg, iPhone kaufen Hamburg, Samsung kaufen Hamburg, gebrauchte Smartphones Hamburg",
-      en: "smartphones Hamburg, buy iPhone Hamburg, buy Samsung Hamburg, refurbished phones Hamburg",
+      de: "Handy kaufen Hamburg, Smartphones Hamburg, iPhone kaufen Hamburg, Samsung kaufen Hamburg, gebrauchte Smartphones Hamburg, Handy Abholung LunaCenter",
+      en: "buy phone Hamburg, smartphones Hamburg, buy iPhone Hamburg, buy Samsung Hamburg, refurbished phones Hamburg, phone pickup LunaCenter",
     },
   },
   {
@@ -567,12 +567,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Smartphones & Zubehör online kaufen",
-      en: "Buy Smartphones & Accessories Online",
+      de: "Handy kaufen Hamburg – Abholung im LunaCenter",
+      en: "Buy a phone in Hamburg – collect at LunaCenter",
     },
     defaultDescription: {
-      de: "Geprüfte iPhones, Smartphones und Zubehör online kaufen. Abholung in Hamburg-Wilhelmsburg oder schneller Versand in ganz Deutschland.",
-      en: "Buy tested iPhones, smartphones and accessories online. Pick up in Hamburg-Wilhelmsburg or get fast shipping across Germany.",
+      de: "Smartphones, iPhones und Zubehör bei Apfel Park im LunaCenter, Wilhelm-Strauß-Weg 2b, kaufen: sofort abholbar in Hamburg-Wilhelmsburg oder versichert innerhalb Deutschlands geliefert.",
+      en: "Buy smartphones, iPhones and accessories from Apfel Park in the LunaCenter, Wilhelm-Strauß-Weg 2b: collect in Hamburg-Wilhelmsburg or get insured delivery across Germany.",
     },
     defaultKeywords: {
       de: "Online Shop Hamburg, Smartphones kaufen Hamburg, iPhone online kaufen, Zubehör online Hamburg",

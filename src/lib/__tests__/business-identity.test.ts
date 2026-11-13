@@ -22,15 +22,30 @@ describe('canonical public business identity', () => {
   });
 
   it('separates legal, customer-service and landline roles', () => {
-    expect(businessSchemaIdentity.legalName).toBe('Bismaillah Safi');
-    expect(businessSchemaIdentity.telephone).toBe('+4917630126041');
-    expect(businessSchemaIdentity.contactPoint.map(p => p.telephone)).toEqual(['+491637786476', '+494058978787']);
+    // The legal entity is the proprietor trading under the shop name, not the
+    // proprietor alone, and the landline is the canonical business telephone.
+    expect(businessSchemaIdentity.legalName).toBe('Bismaillah Safi, handelnd unter der Geschäftsbezeichnung Apfel Park');
+    expect(businessSchemaIdentity.telephone).toBe('+494058978787');
+    expect(businessSchemaIdentity.contactPoint.map(p => p.telephone)).toEqual(['+494058978787', '+491637786476']);
     expect(businessSchemaIdentity.address.addressCountry).toBe('DE');
     expect(businessSchemaIdentity['@id']).toBe('https://apfel-park.de/#store');
     expect(siteInfo.legalName).toBe(businessIdentity.legalOwner);
-    expect(siteInfo.phoneE164).toBe(businessIdentity.phones.customerService.e164);
+    // Public contact CTAs use the landline; the mobile is WhatsApp support only.
+    expect(siteInfo.phoneE164).toBe(businessIdentity.phones.store.e164);
+    expect(siteInfo.whatsapp).toBe(businessIdentity.phones.customerService.e164.slice(1));
     expect(siteInfo.owner.photo).toBe('/images/owner/bismaillah-safi.webp');
     expect(siteInfo.vatId).toBe('DE345074336');
+  });
+
+  it('describes the shop as a MobilePhoneStore inside the LunaCenter', () => {
+    expect(businessSchemaIdentity['@type']).toEqual(['MobilePhoneStore', 'LocalBusiness']);
+    expect(businessSchemaIdentity.founder).toEqual({ '@type': 'Person', name: 'Bismaillah Safi' });
+    expect(businessSchemaIdentity.containedInPlace).toEqual({ '@type': 'ShoppingCenter', name: 'LunaCenter' });
+    expect(businessSchemaIdentity.address.addressRegion).toBe('Hamburg');
+    expect(businessSchemaIdentity.areaServed).toEqual(['Hamburg-Wilhelmsburg', 'Hamburg', 'Deutschland']);
+    // NAP alignment: the landmark is containedInPlace, never appended to the
+    // street, which would read as a different address to Google.
+    expect(businessSchemaIdentity.address.streetAddress).toBe('Wilhelm-Strauß-Weg 2b');
   });
 
   it('exposes only the approved public identity fields', () => {

@@ -28,15 +28,18 @@ export const siteInfo = {
   vatId: businessIdentity.vatId,
   tagline: "Smart Phone. Smart Service. Smart Price.",
   url: businessIdentity.website,
-  // Customer-facing contact; the verification/legal phone has a separate role.
-  phone: businessIdentity.phones.customerService.de,
-  phoneDisplay: businessIdentity.phones.customerService,
-  phoneE164: businessIdentity.phones.customerService.e164,
-  // The shop landline, shown alongside the primary number for people who
-  // would rather call the counter.
+  // The shop landline is the canonical business phone everywhere it is shown:
+  // header, CTAs, footer contact and structured data. The mobile below is
+  // WhatsApp support, and the proprietor's mobile stays out of the public
+  // contact path entirely (Impressum only).
+  phone: businessIdentity.phones.store.de,
+  phoneDisplay: businessIdentity.phones.store,
+  phoneE164: businessIdentity.phones.store.e164,
   landline: businessIdentity.phones.store.de,
   landlineDisplay: businessIdentity.phones.store,
   landlineE164: businessIdentity.phones.store.e164,
+  // Explicitly labelled WhatsApp support, never presented as a second phone.
+  whatsappDisplay: businessIdentity.phones.customerService.de,
   whatsapp: businessIdentity.phones.customerService.e164.slice(1),
   email: businessIdentity.email,
   // Google Merchant Center id. Public by design -- it ships in the Customer
@@ -66,6 +69,8 @@ export const siteInfo = {
     city: businessIdentity.address.city,
     postalCode: businessIdentity.address.postalCode,
     country: businessIdentity.address.countryDe,
+    // The landmark customers search for; rendered next to the street address.
+    landmark: 'LunaCenter',
   },
   hours: {
     days: "Montag – Samstag",

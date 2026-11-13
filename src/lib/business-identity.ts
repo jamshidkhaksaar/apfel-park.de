@@ -54,22 +54,37 @@ export const legalIdentityText = (lang: 'de' | 'en'): string => `${legalProvider
 
 /** Identity fragment shared by the single stable Store/LocalBusiness entity. */
 export const businessSchemaIdentity = {
-  '@type': ['Store', 'LocalBusiness'],
+  // MobilePhoneStore is a LocalBusiness subtype and the most specific type
+  // schema.org offers for this shop, which is what local/AI results key on.
+  '@type': ['MobilePhoneStore', 'LocalBusiness'],
   '@id': `${businessIdentity.website}/#store`,
   name: businessIdentity.tradingName,
-  legalName: businessIdentity.legalOwner,
+  // The registered Einzelunternehmen, not just the proprietor's name: the
+  // legal entity is "Bismaillah Safi, handelnd unter der Geschäftsbezeichnung
+  // Apfel Park" and the Impressum states it the same way.
+  legalName: legalProvider('de'),
+  founder: { '@type': 'Person', name: businessIdentity.legalOwner },
+  owner: { '@type': 'Person', name: businessIdentity.legalOwner },
   url: businessIdentity.website,
   description: 'Apfel Park ist ein Smartphone-Fachgeschäft mit Reparaturwerkstatt im LunaCenter in Hamburg-Wilhelmsburg. Das Unternehmen verkauft neue, Open-Box- und gebrauchte Smartphones, Tablets, Laptops und Zubehör und repariert iPhone-, Samsung-Galaxy- und weitere Smartphone-Modelle zu modellbezogenen Preisen.',
-  telephone: businessIdentity.phones.legalBusiness.e164,
+  // The shop landline is the canonical business phone. The proprietor's mobile
+  // stays in contactPoint only, so crawlers do not read two "main" numbers.
+  telephone: businessIdentity.phones.store.e164,
   email: businessIdentity.email,
   vatID: businessIdentity.vatId,
   address: {
     '@type': 'PostalAddress',
+    // Kept byte-identical to the Google Business Profile so NAP stays aligned;
+    // the LunaCenter is expressed through containedInPlace instead of being
+    // appended to the street, which Google would read as a different address.
     streetAddress: businessIdentity.address.street,
     postalCode: businessIdentity.address.postalCode,
     addressLocality: businessIdentity.address.city,
+    addressRegion: 'Hamburg',
     addressCountry: businessIdentity.address.countryCode,
   },
+  containedInPlace: { '@type': 'ShoppingCenter', name: 'LunaCenter' },
+  areaServed: ['Hamburg-Wilhelmsburg', 'Hamburg', 'Deutschland'],
   // Coordinates of the verified Google Business Profile listing, read from
   // the Maps place URL. These must match the profile pin, so they are not
   // derived from OpenStreetMap: the LunaCenter building centroid sat about
@@ -82,7 +97,7 @@ export const businessSchemaIdentity = {
   knowsLanguage: ['de', 'en'],
   priceRange: '€€',
   paymentAccepted: 'Kreditkarte, Apple Pay, Klarna, Barzahlung, Debitkarte',
-  contactPoint: [businessIdentity.phones.customerService, businessIdentity.phones.store].map(phone => ({
+  contactPoint: [businessIdentity.phones.store, businessIdentity.phones.customerService].map(phone => ({
     '@type': 'ContactPoint',
     telephone: phone.e164,
     contactType: 'customer service',

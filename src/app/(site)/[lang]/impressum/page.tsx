@@ -139,7 +139,7 @@ export default async function ImpressumPage({
             <Row
               label={isGerman ? "Kundenservice / WhatsApp" : "Customer service / WhatsApp"}
               value={
-                <a href={`tel:${siteInfo.phoneE164}`} className="transition hover:text-gold">
+                <a href={`tel:${businessIdentity.phones.customerService.e164}`} className="transition hover:text-gold">
                   {businessIdentity.phones.customerService[lang]}
                 </a>
               }
