@@ -33,8 +33,8 @@ export const generateMetadata = async ({
   return createMetadata(
     lang,
     lang === "de"
-      ? "Smartphones, Tablets & Zubehör kaufen – neu, Open Box, Zustand A+"
-      : "Buy smartphones, tablets & accessories – new, Open Box, Grade A+",
+      ? "Smartphones, Tablets & Zubehör in Hamburg – neu, Open Box, Zustand A+"
+      : "Smartphones, tablets & accessories in Hamburg – new, Open Box, Grade A+",
     lang === "de"
       ? "Smartphones, Tablets und Zubehör bei Apfel Park: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+). Abholung im LunaCenter Wilhelmsburg oder versicherter Versand in 1–3 Werktagen."
       : "Smartphones, tablets and accessories at Apfel Park: new sealed, Open Box or tested pre-owned (Grade A+). Collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
@@ -101,8 +101,8 @@ export default async function StorePage({ params, searchParams }: { params: Prom
       <StoreCommerceHeader
         lang={locale}
         title={lang === "de"
-          ? "Smartphones, Tablets & Zubehör – neu, Open Box & gebraucht (Zustand A+)"
-          : "Smartphones, tablets & accessories – new, Open Box & used (Grade A+)"}
+          ? "Smartphones, Tablets & Zubehör in Hamburg – neu, Open Box & gebraucht (Zustand A+)"
+          : "Smartphones, tablets & accessories in Hamburg – new, Open Box & used (Grade A+)"}
         subtitle={lang === "de"
           ? "Versiegelt, Open Box oder geprüft gebraucht – Abholung in Wilhelmsburg oder Versand in 1–3 Werktagen."
           : "Sealed, Open Box or tested pre-owned – collect in Wilhelmsburg or get delivery in 1–3 business days."}

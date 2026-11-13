@@ -109,19 +109,19 @@ export const dictionary = {
           "Modellbezogene Reparaturpreise für iPhone und Samsung in Hamburg-Wilhelmsburg: Display in Standard, Premium oder Original, Akkutausch und Rückcover.",
       },
       accessories: {
-        title: "Handy-Zubehör in Hamburg kaufen",
+        title: "Handy-Zubehör in Hamburg – neu & Open Box kaufen",
         description:
-          "Hüllen, Panzerglas, Ladegeräte, Kabel und Kopfhörer für iPhone, Samsung und mehr. Ausgewählte Qualität im Apfel Park Hamburg.",
+          "Hüllen, Panzerglas, Ladegeräte, Kabel und Kopfhörer für iPhone, Samsung und mehr – neu oder Open Box. Abholung im LunaCenter Wilhelmsburg oder Versand in 1–3 Werktagen.",
       },
       smartphones: {
-        title: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen Hamburg",
+        title: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen in Hamburg",
         description:
           "Smartphones von Apple, Samsung und Xiaomi: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+) – Abholung im LunaCenter Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
       },
       tablets: {
-        title: "Tablets & iPads in Hamburg kaufen",
+        title: "Tablets & iPads in Hamburg – neu, Open Box & gebraucht",
         description:
-          "Tablets und iPads mit klar ausgewiesenem Zustand und Garantie. Online ansehen, nach Hamburg liefern lassen oder im Shop abholen.",
+          "Tablets und iPads neu, Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung im LunaCenter Wilhelmsburg oder Versand in 1–3 Werktagen.",
       },
       gaming: {
         title: "Gaming & Konsolen Zubehör Hamburg",
@@ -129,9 +129,9 @@ export const dictionary = {
           "Gaming-Zubehör bei Apfel Park in Hamburg-Wilhelmsburg. Konsolen folgen in Kürze – Controller, Kabel und Zubehör gibt es schon jetzt im Laden.",
       },
       laptops: {
-        title: "Laptops & MacBooks kaufen Hamburg",
+        title: "Laptops & MacBooks in Hamburg – neu, Open Box & gebraucht",
         description:
-          "Neue und gebrauchte Laptops kaufen – MacBooks & Windows-Laptops mit Garantie und bestem Preis-Leistungs-Verhältnis in Hamburg.",
+          "MacBooks und Windows-Laptops neu, Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
       },
       contact: {
         title: "Kontakt & Anfahrt – Apfel Park Hamburg",
@@ -411,7 +411,7 @@ export const dictionary = {
       ],
     },
     accessories: {
-      heroTitle: "Zubehör, das dein Gerät schützt",
+      heroTitle: "Handy-Zubehör in Hamburg – neu & Open Box",
       heroSubtitle:
         "Premium-Cases, Audio, Power und Lifestyle-Accessories für jeden Stil.",
       categories: [
@@ -422,7 +422,7 @@ export const dictionary = {
       ],
     },
     smartphones: {
-      heroTitle: "Smartphones: neu, Open Box & gebraucht (Zustand A+)",
+      heroTitle: "Smartphones in Hamburg: neu, Open Box & gebraucht (Zustand A+)",
       heroSubtitle:
         "Versiegelt, Open Box oder geprüft gebraucht – abholbar im LunaCenter Wilhelmsburg oder versichert in 1–3 Werktagen geliefert.",
       highlights: [
@@ -442,7 +442,7 @@ export const dictionary = {
       ],
     },
     laptops: {
-      heroTitle: "Laptops kaufen & reparieren",
+      heroTitle: "Laptops & MacBooks in Hamburg – neu, Open Box & gebraucht (Zustand A+)",
       heroSubtitle:
         "MacBooks und Windows-Laptops – neu, gebraucht und professionell gewartet.",
       sections: {
@@ -857,9 +857,9 @@ export const dictionary = {
           "Model-specific iPhone and Samsung repair prices in Hamburg-Wilhelmsburg: Standard, Premium or Original displays, battery replacement and back covers.",
       },
       accessories: {
-        title: "Phone Accessories in Hamburg",
+        title: "Phone accessories in Hamburg – new & Open Box",
         description:
-          "Cases, screen protection, chargers, cables and headphones for iPhone, Samsung and more. Curated quality at Apfel Park Hamburg.",
+          "Cases, screen protection, chargers, cables and headphones for iPhone, Samsung and more – new or Open Box. Collect at the LunaCenter Wilhelmsburg or get delivery in 1–3 business days.",
       },
       smartphones: {
         title: "Buy new, Open Box & used (Grade A+) smartphones in Hamburg",
@@ -867,9 +867,9 @@ export const dictionary = {
           "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or tested pre-owned (Grade A+) – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
       },
       tablets: {
-        title: "Buy Tablets & iPads in Hamburg",
+        title: "Tablets & iPads in Hamburg – new, Open Box & used",
         description:
-          "Browse tablets and iPads with clearly stated condition and warranty. Order for delivery in Germany or collect at Apfel Park in Hamburg.",
+          "Tablets and iPads new, Open Box or tested pre-owned (Grade A+) with warranty. Collect at the LunaCenter Wilhelmsburg or get delivery in 1–3 business days.",
       },
       gaming: {
         title: "Gaming & Console Accessories Hamburg",
@@ -877,9 +877,9 @@ export const dictionary = {
           "Gaming accessories at Apfel Park in Hamburg-Wilhelmsburg. Consoles are coming soon; controllers, cables and accessories are in store now.",
       },
       laptops: {
-        title: "Buy Laptops & MacBooks in Hamburg",
+        title: "Laptops & MacBooks in Hamburg – new, Open Box & used",
         description:
-          "Buy new, Open Box and tested pre-owned laptops – MacBooks and Windows laptops with warranty in Hamburg.",
+          "MacBooks and Windows laptops new, Open Box or tested pre-owned (Grade A+) with warranty. Collect in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
       },
       contact: {
         title: "Contact & Directions – Apfel Park Hamburg",
@@ -1159,7 +1159,7 @@ export const dictionary = {
       ],
     },
     accessories: {
-      heroTitle: "Accessories that protect your device",
+      heroTitle: "Phone accessories in Hamburg – new & Open Box",
       heroSubtitle:
         "Premium cases, audio, power and lifestyle accessories for every style.",
       categories: [
@@ -1170,7 +1170,7 @@ export const dictionary = {
       ],
     },
     smartphones: {
-      heroTitle: "Smartphones: new, Open Box & used (Grade A+)",
+      heroTitle: "Smartphones in Hamburg: new, Open Box & used (Grade A+)",
       heroSubtitle:
         "Sealed, Open Box or tested pre-owned – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
       highlights: [
@@ -1190,7 +1190,7 @@ export const dictionary = {
       ],
     },
     laptops: {
-      heroTitle: "Buy & repair laptops",
+      heroTitle: "Laptops & MacBooks in Hamburg – new, Open Box & used (Grade A+)",
       heroSubtitle:
         "MacBooks and Windows laptops – new, Open Box and professionally serviced.",
       sections: {
@@ -1605,8 +1605,8 @@ export const deviceQuoteCopy = {
 
 export const partsCatalogCopy = {
   de: {
-    title: 'Smartphone-Ersatzteile',
-    description: 'TRUSMI Displays, Akkus und Smartphone-Ersatzteile online bestellen. Werkstätten und Händler können ein Großhandelsangebot bei Apfel Park anfragen.',
+    title: 'Smartphone-Ersatzteile – neu, Hamburg',
+    description: 'TRUSMI Displays, Akkus und Smartphone-Ersatzteile neu ab Lager. Abholung in Hamburg oder Versand innerhalb Deutschlands; Großhandel auf Anfrage.',
     subtitle: 'Displays, Akkus und Reparaturkomponenten — für Privatkunden, Werkstätten und Fachhändler.',
     all: 'Alle Ersatzteile', displays: 'Displays', batteries: 'Akkus', components: 'Weitere Komponenten',
     retailTitle: 'Einzelkauf für Privatkunden & Unternehmen',
@@ -1618,8 +1618,8 @@ export const partsCatalogCopy = {
     repairs: 'Reparaturservice ansehen',
   },
   en: {
-    title: 'Smartphone spare parts',
-    description: 'Buy TRUSMI displays, batteries and smartphone parts online at Apfel Park. Repair shops and retailers can request a wholesale quote.',
+    title: 'Smartphone parts – new, Hamburg',
+    description: 'New TRUSMI displays, batteries and smartphone parts in stock. Collect in Hamburg-Wilhelmsburg or get delivery within Germany; wholesale on request.',
     subtitle: 'Displays, batteries and repair components — for individuals, repair shops and retailers.',
     all: 'All spare parts', displays: 'Displays', batteries: 'Batteries', components: 'Other components',
     retailTitle: 'Individual purchases for people & businesses',

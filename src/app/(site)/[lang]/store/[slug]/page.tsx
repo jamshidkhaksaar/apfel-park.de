@@ -220,12 +220,15 @@ export default async function ProductDetailPage({
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": product.variants.length > 0 ? "ProductGroup" : "Product",
+    // Canonical product URL as @id, so Shopping and AI agents resolve every
+    // offer and variant back to one entity.
+    "@id": `${siteInfo.url}/${locale}/store/${product.slug}`,
     name: product.title,
     description: product.description || product.subtitle,
     url: `${siteInfo.url}/${locale}/store/${product.slug}`,
     image: product.images.map((image) => image.startsWith("http") ? image : `${siteInfo.url}${image}`),
-    sku: product.variants.length > 0 ? undefined : product.sku,
-    mpn: product.variants.length > 0 ? undefined : product.mpn,
+    sku: product.sku || undefined,
+    ...(product.mpn ? { mpn: product.mpn } : {}),
     ...(product.variants.length > 0 ? {} : gtinProperties(product.gtin)),
     ...(product.variants.length > 0 ? { productGroupID: product.id } : {}),
     category: productCategoryLabel(locale, product.category),
@@ -269,6 +272,23 @@ export default async function ProductDetailPage({
         : undefined,
     ...(product.variants.length > 0
       ? {
+          // ProductGroup also carries the buyable default offer at the top
+          // level: variant offers stay in hasVariant, while parsers that read
+          // only `offers` still see price, condition and availability.
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "EUR",
+            price: product.price,
+            validFrom: offerValidFrom(product.createdAt),
+            priceValidUntil: offerPriceValidUntil(),
+            availability: schemaAvailability(product.stock),
+            url: `${siteInfo.url}/${locale}/store/${product.slug}`,
+            itemCondition: schemaItemCondition(product.condition),
+            availableDeliveryMethod: offerDeliveryMethods,
+            seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
+            hasMerchantReturnPolicy: merchantReturnPolicy(),
+            shippingDetails: isOutOfStock ? undefined : offerShippingDetails(),
+          },
           variesBy: product.variants.some((variant) => Boolean(variant.color))
             ? ["https://schema.org/color"]
             : undefined,
