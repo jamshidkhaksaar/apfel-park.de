@@ -1,3 +1,4 @@
+import { conditionLabel } from "@/lib/condition-labels";
 import type { Locale } from "@/lib/i18n";
 import type { ProductCategory, ProductCondition } from "@/lib/products";
 import { siteInfo } from "@/lib/site";
@@ -11,11 +12,7 @@ import { siteInfo } from "@/lib/site";
 export const productConditionLabel = (
   locale: Locale,
   condition: ProductCondition,
-): string => {
-  if (condition === "open_box") return "Open Box";
-  if (condition === "used") return "A+";
-  return locale === "de" ? "Neu" : "New";
-};
+): string => conditionLabel(locale, condition);
 
 /**
  * Human-readable category name for breadcrumbs and Product JSON-LD. The raw
@@ -39,15 +36,19 @@ export const productCategoryLabel = (locale: Locale, category: ProductCategory):
   }
 };
 
-// Schema.org has no "open box" value. An opened package cannot be advertised
-// as NewCondition and it has not necessarily been professionally refurbished,
-// so UsedCondition is the least misleading supported value. The visible label
-// remains the more precise "Open Box".
-export const schemaItemCondition = (condition: ProductCondition): string => {
-  if (condition === "open_box") return "https://schema.org/UsedCondition";
-  if (condition === "used") return "https://schema.org/UsedCondition";
-  return "https://schema.org/NewCondition";
-};
+// Schema.org offers only New/Used/Refurbished/Damaged. Apfel Park sells open-box
+// stock as new: the device is unused, complete and carries the manufacturer
+// warranty, so NewCondition is the accurate value. Pre-owned grade A+ stock is
+// UsedCondition. RefurbishedCondition is never emitted, because the shop does
+// not sell reconditioned devices.
+export const schemaItemCondition = (condition: ProductCondition): string =>
+  condition === "used" ? "https://schema.org/UsedCondition" : "https://schema.org/NewCondition";
+
+/** Both fulfilment routes the shop actually offers for every listed device. */
+export const offerDeliveryMethods = [
+  "https://schema.org/OnSitePickup",
+  "https://schema.org/ParcelService",
+];
 
 export const germanyShippingAmount = (): number => {
   const configured = Number(process.env.SHOP_GERMANY_SHIPPING_AMOUNT ?? "6.9");

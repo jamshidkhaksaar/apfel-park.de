@@ -8,6 +8,7 @@ import { analyticsItem, withGa4Items } from "@/lib/analytics";
 import { subscribeConsentedTracking } from "@/lib/consented-tracking";
 import { catalogListFields, type CatalogAnalyticsList } from '@/lib/store-collection-analytics';
 import type { CatalogCardModel } from "@/lib/catalog-card";
+import { conditionLabels } from "@/lib/condition-labels";
 import { accessoryTypeLabels, type Locale } from "@/lib/i18n";
 import { parseStorageFilterValues } from '@/lib/product-storage';
 import type { StoreCatalogCategory, StoreCatalogFacets, StoreCatalogFilters, StoreCatalogSort } from "@/lib/products";
@@ -40,12 +41,8 @@ type Props = {
 
 const categoryOrder: StoreCatalogCategory[] = ["all", "smartphones", "tablets", "open-box-smartphones-tablets", "accessories", "parts", "laptops", "consoles"];
 const categoryLabels = {
-  de: { all: "Alle", smartphones: "Smartphones", tablets: "Tablets", "open-box-smartphones-tablets": "Open Box / A+", accessories: "Zubehör", parts: "Ersatzteile", laptops: "Laptops", consoles: "Konsolen" },
-  en: { all: "All", smartphones: "Smartphones", tablets: "Tablets", "open-box-smartphones-tablets": "Open Box / A+", accessories: "Accessories", parts: "Spare parts", laptops: "Laptops", consoles: "Consoles" },
-} as const;
-const conditionLabels = {
-  de: { new: "Neu", open_box: "Open Box", used: "A+" },
-  en: { new: "New", open_box: "Open Box", used: "A+" },
+  de: { all: "Alle", smartphones: "Smartphones", tablets: "Tablets", "open-box-smartphones-tablets": "Open Box & A+", accessories: "Zubehör", parts: "Ersatzteile", laptops: "Laptops", consoles: "Konsolen" },
+  en: { all: "All", smartphones: "Smartphones", tablets: "Tablets", "open-box-smartphones-tablets": "Open Box & A+", accessories: "Accessories", parts: "Spare parts", laptops: "Laptops", consoles: "Consoles" },
 } as const;
 
 const sortOptions = (isGerman: boolean) => [

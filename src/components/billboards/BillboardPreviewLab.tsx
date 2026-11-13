@@ -191,7 +191,7 @@ export const SHOWCASE_DEVICES: DeviceModelInfo[] = [
       { icon: "✨", title: { de: "Gemini Nano AI On-Device", en: "Gemini Nano AI On-Device" }, desc: { de: "Automatische Anrufzusammenfassung, intelligenter Magischer Editor und Audio-Radierer.", en: "Instant call summaries, generative Magic Editor and Audio Magic Eraser." } },
       { icon: "🔭", title: { de: "5x Optischer / 30x Super-Zoom", en: "5x Optical / 30x Super Zoom" }, desc: { de: "Verlustfreie Tele-Schärfe auch bei schwachem Abendlicht.", en: "Lossless telephoto sharpness even in challenging night scenarios." } },
       { icon: "🔒", title: { de: "7 Jahre Update-Garantie", en: "7 Years Update Guarantee" }, desc: { de: "Garantiert zukunftssicher bis mindestens 2033.", en: "Future-proof software reliability guaranteed through 2033." } },
-      { icon: "♻️", title: { de: "Nachhaltig & Hamburg Refurbished", en: "Refurbished in Hamburg" }, desc: { de: "Fachmännisch geprüft im Apfel Park Fachzentrum Wilhelmsburg.", en: "Expertly certified at the Apfel Park workshop in Wilhelmsburg." } },
+      { icon: "♻️", title: { de: "Nachhaltig & geprüft in Hamburg", en: "Tested in Hamburg" }, desc: { de: "Fachmännisch geprüft im Apfel Park Fachzentrum Wilhelmsburg.", en: "Expertly certified at the Apfel Park workshop in Wilhelmsburg." } },
     ],
     hotspots: [
       { x: 38, y: 22, title: { de: "Kamera-Visor 50MP Triple", en: "50MP Triple Visor Array" }, desc: { de: "Ikonische Visor-Leiste mit 5x Tele und Macro-Focus.", en: "Iconic camera bar with 5x telephoto and macro focus." } },

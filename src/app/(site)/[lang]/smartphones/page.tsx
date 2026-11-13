@@ -7,6 +7,7 @@ import DeviceQuoteForm from "@/components/DeviceQuoteForm";
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
+import ConditionExplainer from "@/components/store/ConditionExplainer";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
 import { getProducts, getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
@@ -105,6 +106,8 @@ export default async function SmartphonesPage({
         resultCount={catalog.total}
         breadcrumbs={[{ label: "Smartphones" }]}
       />
+
+      <ConditionExplainer locale={lang} />
 
       <DeviceQuoteForm locale={lang} initialBrand={activeFilters.brands.length === 1 ? activeFilters.brands[0] : undefined} />
 

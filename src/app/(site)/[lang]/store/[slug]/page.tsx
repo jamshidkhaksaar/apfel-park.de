@@ -16,6 +16,7 @@ import {
   productCategoryLabel,
   productConditionLabel,
   schemaItemCondition,
+  offerDeliveryMethods,
 } from "@/lib/schema";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
@@ -24,6 +25,7 @@ import ProductDetailExperience from "@/components/ProductDetailExperience";
 import { isPayPalConfigured } from '@/lib/payment-availability.server';
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import ProductProfessionalExperience from "@/components/ProductProfessionalExperience";
+import ConditionExplainer from "@/components/store/ConditionExplainer";
 import { requireLocale } from "@/lib/route-locale";
 import { validatedGtin } from "@/lib/product-identifiers";
 import { productVariantIdentifiers } from "@/lib/product-variant-identifiers";
@@ -297,6 +299,7 @@ export default async function ProductDetailPage({
                 availability: stock && stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
                 url: `${siteInfo.url}/${locale}/store/${product.slug}?variant=${encodeURIComponent(variantToken)}`,
                 itemCondition: schemaItemCondition(product.condition),
+                availableDeliveryMethod: offerDeliveryMethods,
                 seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
                 hasMerchantReturnPolicy: merchantReturnPolicy(),
                 shippingDetails: stock && stock > 0 ? offerShippingDetails() : undefined,
@@ -314,6 +317,7 @@ export default async function ProductDetailPage({
             availability: product.stock && product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
             url: `${siteInfo.url}/${locale}/store/${product.slug}`,
             itemCondition: schemaItemCondition(product.condition),
+            availableDeliveryMethod: offerDeliveryMethods,
             seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
             hasMerchantReturnPolicy: merchantReturnPolicy(),
             shippingDetails: isOutOfStock ? undefined : offerShippingDetails(),
@@ -384,6 +388,8 @@ export default async function ProductDetailPage({
             initialVariantToken={typeof invitation.variant === "string" ? invitation.variant : undefined}
             experience={experience}
           />
+
+          <ConditionExplainer locale={locale} variant="compact" />
 
       <section className="pb-4">
         <ProductReviews

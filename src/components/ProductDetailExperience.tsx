@@ -22,6 +22,7 @@ import { MINI_CART_OPEN_EVENT } from "@/components/checkout/MiniCart";
 import { ProductRatingBadge } from "@/components/ProductReviews";
 import type { ProductRatingSummary } from "@/lib/product-reviews";
 import ConditionBadge from "@/components/ConditionBadge";
+import { conditionLabel as conditionTierText } from "@/lib/condition-labels";
 import { formatPrice } from "@/lib/format";
 import PriceBlock from "@/components/store/PriceBlock";
 import type { Locale } from "@/lib/i18n";
@@ -514,7 +515,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
           <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
             {([
               [locale === "de" ? "Modell" : "Model", product.model],
-              [locale === "de" ? "Zustand" : "Condition", product.condition === "new" ? (locale === "de" ? "Neu" : "New") : product.condition === "open_box" ? "Open Box" : (locale === "de" ? "A+" : "A+")],
+              [locale === "de" ? "Zustand" : "Condition", conditionTierText(locale, product.condition)],
               ["SKU", activeSku],
               ["MPN", product.mpn],
               ["GTIN/EAN", product.gtin],

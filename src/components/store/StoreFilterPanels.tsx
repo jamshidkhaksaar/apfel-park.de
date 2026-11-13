@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { conditionLabels } from "@/lib/condition-labels";
 import { accessoryTypeLabels, type Locale } from "../../lib/i18n";
 import type { StoreCatalogFacets, StoreCatalogFilters } from "../../lib/products";
 import { Checklist, FilterSection } from "./StoreFilterPrimitives";
@@ -19,12 +20,6 @@ type StoreFilterPanelsProps = {
   onToggleMulti: (param: StoreFilterMultiParam, value: string) => void;
   onToggleAvailability: () => void;
   onApplyPrice: (minimum?: number, maximum?: number) => void;
-};
-
-const CONDITION_LABELS: Record<string, { de: string; en: string }> = {
-  new: { de: "Neu", en: "New" },
-  open_box: { de: "Open-Box", en: "Open-Box" },
-  used: { de: "A+", en: "A+" },
 };
 
 export default function StoreFilterPanels({
@@ -74,7 +69,7 @@ export default function StoreFilterPanels({
     onApplyPrice(minimum, maximum);
   };
 
-  const conditionLabel = (value: string) => CONDITION_LABELS[value]?.[lang] ?? value;
+  const conditionLabel = (value: string) => (conditionLabels[lang] as Record<string, string>)[value] ?? value;
   const accessoryTypeLabel = (value: string) =>
     accessoryTypeLabels[value]?.[lang] ?? value;
 

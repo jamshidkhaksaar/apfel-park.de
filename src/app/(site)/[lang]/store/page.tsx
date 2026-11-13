@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import StoreCollectionLinks from "../../../../components/store/StoreCollectionLinks";
 import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeader";
 import StoreGrid from "../../../../components/store/StoreGrid";
+import ConditionExplainer from "@/components/store/ConditionExplainer";
 import BlackFridayStoreBand from "@/components/black-friday/BlackFridayStoreBand";
 import IPhoneBanner from "@/components/banner/IPhoneBanner";
 import { createMetadata } from "../../../../lib/metadata";
@@ -31,8 +32,12 @@ export const generateMetadata = async ({
   const indexing = resolveStoreIndexing(query);
   return createMetadata(
     lang,
-    lang === "de" ? "Online Shop" : "Online Store",
-    lang === "de" ? "Smartphones, Tablets und Zubehör mit klaren Angaben zu Zustand, Preis und Verfügbarkeit kaufen." : "Buy smartphones, tablets and accessories with clear condition, price and availability details.",
+    lang === "de"
+      ? "Smartphones, Tablets & Zubehör kaufen – neu, Open Box, Zustand A+"
+      : "Buy smartphones, tablets & accessories – new, Open Box, Grade A+",
+    lang === "de"
+      ? "Smartphones, Tablets und Zubehör bei Apfel Park: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+). Abholung im LunaCenter Wilhelmsburg oder versicherter Versand in 1–3 Werktagen."
+      : "Smartphones, tablets and accessories at Apfel Park: new sealed, Open Box or tested pre-owned (Grade A+). Collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
     "/store",
     undefined,
     { noindex: indexing.noindex, canonicalQuery: indexing.canonicalQuery },
@@ -95,14 +100,18 @@ export default async function StorePage({ params, searchParams }: { params: Prom
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
       <StoreCommerceHeader
         lang={locale}
-        title={lang === "de" ? "Online Shop" : "Online Store"}
-        subtitle={lang === "de" 
-          ? "Smartphones, Tablets und Zubehör mit klar ausgewiesenem Zustand, Preis und Verfügbarkeit."
-          : "Smartphones, tablets and accessories with clearly stated condition, price and availability."}
+        title={lang === "de"
+          ? "Smartphones, Tablets & Zubehör – neu, Open Box & gebraucht (Zustand A+)"
+          : "Smartphones, tablets & accessories – new, Open Box & used (Grade A+)"}
+        subtitle={lang === "de"
+          ? "Versiegelt, Open Box oder geprüft gebraucht – Abholung in Wilhelmsburg oder Versand in 1–3 Werktagen."
+          : "Sealed, Open Box or tested pre-owned – collect in Wilhelmsburg or get delivery in 1–3 business days."}
         eyebrow={season ? "Apfel Park Black Week" : lang === "de" ? "Marktplatz" : "Marketplace"}
         query={activeFilters.query}
         resultCount={catalog.total}
       />
+
+      <ConditionExplainer locale={locale} />
 
       {season ? (
         <BlackFridayStoreBand lang={locale} />

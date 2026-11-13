@@ -1,3 +1,4 @@
+import { conditionLabels } from "../lib/condition-labels";
 import type { Locale } from "../lib/i18n";
 import type { Product } from "../lib/products";
 
@@ -13,24 +14,18 @@ const STYLES: Record<string, string> = {
   used: "bg-blue/15 text-blue-text ring-blue/30",
 };
 
-const LABELS: Record<string, { de: string; en: string }> = {
-  new: { de: "Versiegelt", en: "Sealed" },
-  open_box: { de: "Unboxed", en: "Unboxed" },
-  used: { de: "A+", en: "A+" },
-};
-
 /**
- * Shows the product condition as a small chip: Sealed (new), Unboxed
- * (open_box) or Used. Renders for every condition so customers always
- * see what they are buying.
+ * Shows the product condition as a chip using the shared tier wording:
+ * Neu (Versiegelt) / Neu – Open Box / Gebraucht – Zustand A+. Renders for
+ * every condition so customers always see what they are buying.
  */
 export default function ConditionBadge({ condition, lang, className = "" }: ConditionBadgeProps) {
-  const key = condition && LABELS[condition] ? condition : "new";
+  const key = condition && conditionLabels[lang][condition] ? condition : "new";
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ring-1 ${STYLES[key]} ${className}`}
     >
-      {LABELS[key][lang === "de" ? "de" : "en"]}
+      {conditionLabels[lang][key]}
     </span>
   );
 }

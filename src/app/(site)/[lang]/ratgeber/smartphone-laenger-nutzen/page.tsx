@@ -52,14 +52,14 @@ const content: Record<"de" | "en", GuideContent> = {
         ],
       },
       {
-        title: "Gebraucht, Open-Box oder refurbished",
+        title: "Neu, Open-Box oder gebraucht",
         paragraphs: [
           "Die Bezeichnungen werden nicht überall gleich verwendet. Fragen Sie deshalb nach dem konkreten Zustand des Geräts, dem Lieferumfang, der Batterieinformation und den geltenden Garantie- oder Gewährleistungsangaben.",
         ],
         items: [
           "Gebraucht: Das Gerät wurde bereits genutzt; Gebrauchsspuren und Technik sollten beschrieben und geprüft werden.",
           "Open-Box: Die Verpackung wurde geöffnet; der genaue Zustand sollte ausdrücklich erklärt werden.",
-          "Refurbished: Das Gerät wurde geprüft und gegebenenfalls instandgesetzt; Umfang und Ergebnis der Prüfung sollten nachvollziehbar sein.",
+          "Neu (versiegelt): Das Gerät ist ungeöffnet und original verpackt; Herstellergarantie und Lieferumfang stehen in der Produktbeschreibung.",
         ],
       },
       {
@@ -130,14 +130,14 @@ const content: Record<"de" | "en", GuideContent> = {
         ],
       },
       {
-        title: "Used, open-box, or refurbished",
+        title: "New, open-box, or used",
         paragraphs: [
           "These labels are not used consistently everywhere. Ask about the exact condition, included items, battery information, and the applicable warranty or statutory rights.",
         ],
         items: [
           "Used: The device has been used before; wear and technical condition should be described and checked.",
           "Open-box: The packaging has been opened; the exact condition should be explained clearly.",
-          "Refurbished: The device has been tested and may have been serviced; the scope and outcome of testing should be clear.",
+          "New (sealed): The device is unopened in its original packaging; manufacturer warranty and included items are stated in the product description.",
         ],
       },
       {

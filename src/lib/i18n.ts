@@ -114,9 +114,9 @@ export const dictionary = {
           "Hüllen, Panzerglas, Ladegeräte, Kabel und Kopfhörer für iPhone, Samsung und mehr. Ausgewählte Qualität im Apfel Park Hamburg.",
       },
       smartphones: {
-        title: "Smartphones & iPhones kaufen Hamburg",
+        title: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen Hamburg",
         description:
-          "Geprüfte Smartphones von Apple, Samsung, Xiaomi und mehr. Neu, Open Box & gebraucht mit Garantie – online bestellen oder in Hamburg abholen.",
+          "Smartphones von Apple, Samsung und Xiaomi: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+) – Abholung im LunaCenter Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
       },
       tablets: {
         title: "Tablets & iPads in Hamburg kaufen",
@@ -422,9 +422,9 @@ export const dictionary = {
       ],
     },
     smartphones: {
-      heroTitle: "Smartphones sofort verfügbar",
+      heroTitle: "Smartphones: neu, Open Box & gebraucht (Zustand A+)",
       heroSubtitle:
-        "Neue und geprüfte Geräte, Trade-In und Setup-Services direkt im Shop.",
+        "Versiegelt, Open Box oder geprüft gebraucht – abholbar im LunaCenter Wilhelmsburg oder versichert in 1–3 Werktagen geliefert.",
       highlights: [
         "Top-Marken & Premium-Modelle",
         "Finanzierung und Trade-In",
@@ -862,9 +862,9 @@ export const dictionary = {
           "Cases, screen protection, chargers, cables and headphones for iPhone, Samsung and more. Curated quality at Apfel Park Hamburg.",
       },
       smartphones: {
-        title: "Buy Smartphones & iPhones Hamburg",
+        title: "Buy new, Open Box & used (Grade A+) smartphones in Hamburg",
         description:
-          "Tested smartphones from Apple, Samsung, Xiaomi and more. New, open box and used with warranty – order online or collect in Hamburg.",
+          "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or tested pre-owned (Grade A+) – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
       },
       tablets: {
         title: "Buy Tablets & iPads in Hamburg",
@@ -879,7 +879,7 @@ export const dictionary = {
       laptops: {
         title: "Buy Laptops & MacBooks in Hamburg",
         description:
-          "Buy new and refurbished laptops – MacBooks, Windows laptops with warranty and best value in Hamburg.",
+          "Buy new, Open Box and tested pre-owned laptops – MacBooks and Windows laptops with warranty in Hamburg.",
       },
       contact: {
         title: "Contact & Directions – Apfel Park Hamburg",
@@ -1170,9 +1170,9 @@ export const dictionary = {
       ],
     },
     smartphones: {
-      heroTitle: "Smartphones available today",
+      heroTitle: "Smartphones: new, Open Box & used (Grade A+)",
       heroSubtitle:
-        "New and clearly described devices, trade-in and setup services in-store.",
+        "Sealed, Open Box or tested pre-owned – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
       highlights: [
         "Top brands & flagship models",
         "Financing and trade-in",
@@ -1192,14 +1192,14 @@ export const dictionary = {
     laptops: {
       heroTitle: "Buy & repair laptops",
       heroSubtitle:
-        "MacBooks and Windows laptops – new, refurbished and professionally serviced.",
+        "MacBooks and Windows laptops – new, Open Box and professionally serviced.",
       sections: {
         new: {
           title: "New Laptops",
           subtitle: "Premium devices available now with full manufacturer warranty.",
         },
         refurbished: {
-          title: "Refurbished Laptops",
+          title: "Used Laptops",
           subtitle: "Certified quality, like new – at unbeatable prices.",
         },
         accessories: {

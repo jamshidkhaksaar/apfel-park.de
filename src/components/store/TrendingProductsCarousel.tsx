@@ -6,6 +6,7 @@ import { useCallback, useRef } from "react";
 
 import type { CatalogCardModel } from "@/lib/catalog-card";
 import { formatPrice } from "@/lib/format";
+import { conditionLabels } from "@/lib/condition-labels";
 import { trendingAvailabilityCopy, type Locale } from "@/lib/i18n";
 import { isCompleteTrendingSelection } from '@/lib/trending-products';
 import { shouldBypassImageOptimization } from "@/lib/image";
@@ -16,10 +17,6 @@ type TrendingProductsCarouselProps = {
   compact?: boolean;
 };
 
-const conditionLabels = {
-  de: { new: "Versiegelt", open_box: "Open Box", used: "A+" },
-  en: { new: "Sealed", open_box: "Open Box", used: "A+" },
-} as const;
 
 const ArrowIcon = ({ direction }: { direction: "left" | "right" }) => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
