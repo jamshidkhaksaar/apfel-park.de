@@ -194,7 +194,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     },
     defaultDescription: {
       de: "Smartphones von Apple, Samsung und Xiaomi: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+) – Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
-      en: "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or tested pre-owned (Grade A+) – collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
+      en: "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or used (Grade A+) – collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
     },
     defaultKeywords: {
       de: "Handy kaufen Hamburg, Smartphones Hamburg, iPhone kaufen Hamburg, Samsung kaufen Hamburg, Open Box Handy Hamburg, Zustand A+ Smartphone, Handy Abholung LunaCenter",
@@ -583,7 +583,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     },
     defaultDescription: {
       de: "Smartphones, Tablets und Zubehör bei Apfel Park: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+). Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
-      en: "Smartphones, tablets and accessories at Apfel Park: new sealed, Open Box or tested pre-owned (Grade A+). Collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
+      en: "Smartphones, tablets and accessories at Apfel Park: new sealed, Open Box or used (Grade A+). Collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
     },
     defaultKeywords: {
       de: "Online Shop Hamburg, Smartphones kaufen Hamburg, Open Box iPhone, Zustand A+ Handy, Zubehör online Hamburg",

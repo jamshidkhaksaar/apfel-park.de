@@ -864,12 +864,12 @@ export const dictionary = {
       smartphones: {
         title: "Buy new, Open Box & used (Grade A+) smartphones in Hamburg",
         description:
-          "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or tested pre-owned (Grade A+) – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
+          "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or used (Grade A+) – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
       },
       tablets: {
         title: "Tablets & iPads in Hamburg – new, Open Box & used",
         description:
-          "Tablets and iPads new, Open Box or tested pre-owned (Grade A+) with warranty. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
+          "Tablets and iPads new, Open Box or used (Grade A+) with warranty. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
       },
       gaming: {
         title: "Gaming & Console Accessories Hamburg",
@@ -879,7 +879,7 @@ export const dictionary = {
       laptops: {
         title: "Laptops & MacBooks in Hamburg – new, Open Box & used",
         description:
-          "MacBooks and Windows laptops new, Open Box or tested pre-owned (Grade A+) with warranty. Collect in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
+          "MacBooks and Windows laptops new, Open Box or used (Grade A+) with warranty. Collect in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
       },
       contact: {
         title: "Contact & Directions – Apfel Park Hamburg",

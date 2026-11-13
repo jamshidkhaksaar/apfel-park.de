@@ -35,15 +35,15 @@ export type CatalogSchemaOptions = {
 };
 
 /**
- * Builds the CollectionPage + ItemList object. Positions are absolute across
- * pagination, so an item on page 2 at index 0 is position 25.
+ * Builds the CollectionPage + ItemList object. The list describes exactly the
+ * products rendered on this page, so numberOfItems and positions restart at 1
+ * on every paginated view; `catalog.total` only drives the page's own copy.
  */
 export const buildCollectionPageSchema = ({
   lang,
   name,
   description,
   url,
-  catalog,
   products,
 }: CatalogSchemaOptions) => ({
   "@context": "https://schema.org",
@@ -53,10 +53,10 @@ export const buildCollectionPageSchema = ({
   url,
   mainEntity: {
     "@type": "ItemList",
-    numberOfItems: catalog.total,
+    numberOfItems: products.length,
     itemListElement: products.map((product, index) => ({
       "@type": "ListItem",
-      position: (catalog.page - 1) * 24 + index + 1,
+      position: index + 1,
       name: product.title,
       url: `${siteInfo.url}/${lang}/store/${product.slug}`,
     })),
