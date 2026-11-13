@@ -33,6 +33,19 @@ describe("repair comparison sitemap publication gate", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
+  it("lists the Wilhelmsburg landing page under each locale's own slug", async () => {
+    const entries = await getSitemapEntries();
+    const urls = entries.map((entry) => entry.url);
+
+    expect(urls).toContain("https://apfel-park.de/en/phone-store-hamburg-wilhelmsburg");
+    expect(urls).toContain("https://apfel-park.de/de/handy-shop-hamburg-wilhelmsburg");
+    expect(urls).not.toContain("https://apfel-park.de/en/handy-shop-hamburg-wilhelmsburg");
+
+    const english = entries.find((entry) => entry.url.endsWith("/en/phone-store-hamburg-wilhelmsburg"));
+    expect(english?.alternates?.languages?.de).toBe("https://apfel-park.de/de/handy-shop-hamburg-wilhelmsburg");
+    expect(english?.alternates?.languages?.["x-default"]).toBe("https://apfel-park.de/de/handy-shop-hamburg-wilhelmsburg");
+  });
+
 
   it("omits both localized comparison URLs while the benchmark is unpublished", async () => {
     vi.stubEnv("REPAIR_PRICE_COMPARISON_VERIFIED", "false");

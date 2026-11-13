@@ -181,14 +181,18 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     const showcase = slug in showcasePages ? showcasePages[slug as ShowcaseSlug] : null;
     const lastModified = showcase?.updated ? new Date(showcase.updated) : undefined;
 
+    // A page translated to a different slug must be listed under its own
+    // localized path in every locale, never under the German slug.
+    const pathFor = (locale: (typeof locales)[number]) => route.paths?.[locale] ?? route.path;
+
     return locales.map((locale) => ({
-      url: `${siteInfo.url}/${locale}${route.path}`,
+      url: `${siteInfo.url}/${locale}${pathFor(locale)}`,
       lastModified,
       alternates: {
         languages: {
-          de: `${siteInfo.url}/de${route.path}`,
-          en: `${siteInfo.url}/en${route.path}`,
-          "x-default": `${siteInfo.url}/de${route.path}`,
+          de: `${siteInfo.url}/de${pathFor("de")}`,
+          en: `${siteInfo.url}/en${pathFor("en")}`,
+          "x-default": `${siteInfo.url}/de${pathFor("de")}`,
         },
       },
     }));

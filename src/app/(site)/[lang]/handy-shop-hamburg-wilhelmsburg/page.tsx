@@ -26,7 +26,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const path = "/handy-shop-hamburg-wilhelmsburg";
+// The two languages use different slugs for the same page, so every URL this
+// page emits (canonical, hreflang, JSON-LD, breadcrumbs) has to be per-locale.
+const paths: Record<Locale, string> = {
+  de: "/handy-shop-hamburg-wilhelmsburg",
+  en: "/phone-store-hamburg-wilhelmsburg",
+};
 
 const copy = {
   de: {
@@ -124,9 +129,10 @@ export async function generateMetadata({
   const locale = requireLocale(rawLang);
   const content = copy[locale];
   const indexing = resolveStoreIndexing(query);
-  return createMetadata(locale, content.metaTitle, content.description, path, "/images/shop1.jpg", {
+  return createMetadata(locale, content.metaTitle, content.description, paths[locale], "/images/shop1.jpg", {
     noindex: indexing.noindex,
     canonicalQuery: indexing.canonicalQuery,
+    alternatePaths: paths,
   });
 }
 
@@ -140,6 +146,7 @@ export default async function HamburgWilhelmsburgStorePage({
   const { lang: rawLang } = await params;
   const locale = requireLocale(rawLang);
   const content = copy[locale];
+  const path = paths[locale];
   const query = await searchParams;
   const indexing = resolveStoreIndexing(query);
   const sort = parseStoreSort(query.sort);

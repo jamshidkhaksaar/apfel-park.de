@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { createMetadata } from "@/lib/metadata";
+import { getRepairCatalog } from "@/lib/repair-catalog";
 import { isRepairBenchmarkPublished, repairBenchmark, repairBenchmarkFields } from "@/lib/repair-price-benchmark";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
@@ -57,6 +58,70 @@ export default async function RepairPriceComparisonPage({ params }: { params: Pr
     );
   }
   const pageUrl = `${siteInfo.url}/${lang}${path}`;
+
+  // Apfel Park's own prices come from the same store_settings row the repair
+  // finder reads, so this table cannot drift from what the shop actually
+  // quotes. Only models with a real stored price are published.
+  const catalog = await getRepairCatalog();
+  const priceGroups = catalog.brands
+    .flatMap((brand) => brand.families.map((family) => ({
+      brand: brand.name,
+      family: family.name,
+      models: family.models
+        .filter((model) => typeof model.price === "number" && model.price > 0)
+        .map((model) => ({ name: model.name, price: Number(model.price) })),
+    })))
+    .filter((group) => /iphone|galaxy (s|a)/i.test(group.family))
+    .filter((group) => group.models.length > 0);
+
+  const repairOffers = priceGroups.flatMap((group) => group.models.map((model) => ({
+    "@type": "Offer",
+    price: model.price.toFixed(2),
+    priceCurrency: "EUR",
+    availability: "https://schema.org/InStock",
+    itemOffered: {
+      "@type": "Service",
+      name: `${group.brand} ${model.name} ${de ? "Reparatur" : "repair"}`,
+    },
+  })));
+
+  const ownServiceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${pageUrl}#repair-service`,
+    name: de ? "Smartphone-Reparatur in Hamburg-Wilhelmsburg" : "Smartphone repair in Hamburg-Wilhelmsburg",
+    serviceType: de ? "Smartphone- und iPhone-Reparatur" : "Smartphone and iPhone repair",
+    provider: { "@id": `${siteInfo.url}/#store` },
+    areaServed: ["Hamburg-Wilhelmsburg", "Hamburg", "Deutschland"],
+    availableChannel: {
+      "@type": "ServiceChannel",
+      serviceLocation: { "@id": `${siteInfo.url}/#store` },
+    },
+    ...(repairOffers.length > 0
+      ? {
+          hasOfferCatalog: {
+            "@type": "OfferCatalog",
+            name: de ? "Apfel Park Reparaturpreise" : "Apfel Park repair prices",
+            itemListElement: repairOffers,
+          },
+        }
+      : {}),
+  };
+
+  const repairQuestions = de
+    ? [
+        { question: "Wie lange dauert eine Reparatur?", answer: "Viele Display- und Akkureparaturen sind in etwa 30 bis 60 Minuten erledigt. Bei Sonderteilen, Wasserschäden oder aufwendigen Schäden nennen wir die Dauer vor der Freigabe und stimmen einen Abholtermin mit dir ab." },
+        { question: "Kann ich ohne Termin ins LunaCenter kommen?", answer: "Ja. Du kannst während der Öffnungszeiten (Montag bis Samstag, 09:30 bis 20:00 Uhr) ohne Termin vorbeikommen. Wir prüfen dein Gerät vor Ort und bestätigen Preis und Dauer, bevor wir anfangen." },
+        { question: "Bleiben meine Daten auf dem Gerät?", answer: "Bei einer Display- oder Akkureparatur bleiben die Daten in der Regel erhalten. Wir empfehlen trotzdem ein Backup, weil bei Wasserschäden oder Bauteiltausch ein Datenverlust nicht ausgeschlossen werden kann. Auf Wunsch prüfen wir Funktionen erst nach deiner Freigabe." },
+        { question: "Welche Gewährleistung gilt auf die Reparatur?", answer: "Auf verbaute Teile und unsere Arbeitsleistung gilt die gesetzliche Gewährleistung. Umfang und Bedingungen bestätigen wir dir beim Auftrag schriftlich; Schäden durch Flüssigkeit, Sturz oder weitere Eingriffe sind davon nicht erfasst." },
+      ]
+    : [
+        { question: "How long does a repair take?", answer: "Many screen and battery repairs are finished in about 30 to 60 minutes. For special-order parts, water damage or complex faults we confirm the timing before you approve the work and agree a collection time with you." },
+        { question: "Can I visit the LunaCenter without an appointment?", answer: "Yes. You can come in during opening hours (Monday to Saturday, 09:30 to 20:00) without an appointment. We inspect the device on site and confirm price and timing before starting." },
+        { question: "Will my data stay on the device?", answer: "Data is normally preserved during screen or battery repairs. We still recommend a backup, because water damage or component replacement can make data loss possible. We test functions only after your approval." },
+        { question: "What warranty applies to the repair?", answer: "Statutory warranty applies to the parts we fit and to our labour. We confirm the scope and conditions in writing on the job order; damage from liquid, impact or later third-party work is not covered." },
+      ];
+
   const dateLabel = new Intl.DateTimeFormat(de ? "de-DE" : "en-GB", { dateStyle: "long", timeZone: "Europe/Berlin" }).format(new Date(`${repairBenchmark.checkedAt}T12:00:00+02:00`));
 
   const comparisonRows = repairBenchmark.models.flatMap((model) =>
@@ -98,6 +163,7 @@ export default async function RepairPriceComparisonPage({ params }: { params: Pr
 
   return (
     <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(ownServiceJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(datasetJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumbJsonLd) }} />
 
@@ -122,6 +188,84 @@ export default async function RepairPriceComparisonPage({ params }: { params: Pr
               ? "Das ist kein allgemeiner Anspruch, der günstigste Reparaturbetrieb Hamburgs zu sein. Der Vergleich gilt nur für die unten genannten Modelle, Leistungen, Qualitätsbezeichnungen, Quellen und den angegebenen Prüftag."
               : "This is not a general claim to be Hamburg's cheapest repair shop. It applies only to the models, services, quality labels, sources and check date shown below."}
           </p>
+        </div>
+      </section>
+
+      {/* Own prices first: these are the rates the shop actually quotes, pulled
+          from the same catalog row the repair finder reads. */}
+      <section className="section-pad" aria-labelledby="apfel-park-preise">
+        <div className="container-page">
+          <h2 id="apfel-park-preise" className="text-3xl font-bold text-foreground md:text-4xl">
+            {de ? "Apfel Park Preise" : "Apfel Park prices"}
+          </h2>
+          <p className="mt-4 max-w-3xl leading-7 text-muted">
+            {de
+              ? "Transparente Startpreise für Displayreparaturen aus unserem Preisfinder. Der Endpreis hängt von Modell, Ersatzteilqualität und zusätzlichen Schäden ab und wird vor der Reparatur bestätigt."
+              : "Transparent starting prices for display repairs from our price finder. The final price depends on the model, part quality and any additional damage, and is confirmed before the repair."}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
+            <span>{de ? "Richtwert Dauer: ca. 30–60 Min." : "Typical time: approx. 30–60 min"}</span>
+            <span>{de ? "Gewährleistung auf Teile und Arbeitsleistung" : "Warranty on parts and labour"}</span>
+            <span>{de ? "Abholung im LunaCenter, Wilhelm-Strauß-Weg 2b" : "Collect at LunaCenter, Wilhelm-Strauß-Weg 2b"}</span>
+          </div>
+
+          {priceGroups.length > 0 ? (
+            <div className="mt-8 space-y-8">
+              {priceGroups.map((group) => (
+                <article key={`${group.brand}-${group.family}`} className="overflow-hidden rounded-3xl border border-border/60 bg-surface/20">
+                  <div className="border-b border-border/60 px-6 py-4">
+                    <h3 className="text-xl font-semibold text-foreground">{group.brand} {group.family}</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[560px] border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-border/60 bg-surface/40">
+                          <th scope="col" className="px-4 py-3 text-left">{de ? "Modell" : "Model"}</th>
+                          <th scope="col" className="px-4 py-3 text-right">{de ? "ab Preis" : "from"}</th>
+                          <th scope="col" className="px-4 py-3 text-right">{de ? "Dauer" : "Time"}</th>
+                          <th scope="col" className="px-4 py-3 text-right">{de ? "Gewährleistung" : "Warranty"}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.models.map((model) => (
+                          <tr key={model.name} className="border-b border-border/40 last:border-b-0">
+                            <th scope="row" className="px-4 py-3 text-left font-medium text-foreground">{model.name}</th>
+                            <td className="px-4 py-3 text-right font-semibold tabular-nums text-gold">
+                              {de ? "ab" : "from"} {euro(model.price, lang)}
+                            </td>
+                            <td className="px-4 py-3 text-right tabular-nums text-muted">{de ? "ca. 30–60 Min." : "approx. 30–60 min"}</td>
+                            <td className="px-4 py-3 text-right text-muted">{de ? "inklusive" : "included"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-8 rounded-2xl border border-border/60 bg-surface/20 p-6 text-sm leading-6 text-muted">
+              {de
+                ? "Die Modellpreise werden gerade aktualisiert. Ruf uns an oder nutze den Preisfinder für dein konkretes Gerät."
+                : "Model prices are being updated. Call us or use the price finder for your specific device."}
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="section-pad bg-surface/30" aria-labelledby="apfel-park-faq">
+        <div className="container-page max-w-4xl">
+          <h2 id="apfel-park-faq" className="text-3xl font-bold text-foreground md:text-4xl">
+            {de ? "Häufige Fragen zur Reparatur" : "Common repair questions"}
+          </h2>
+          <div className="mt-6 space-y-6">
+            {repairQuestions.map((entry) => (
+              <article key={entry.question}>
+                <h3 className="text-lg font-semibold text-foreground">{entry.question}</h3>
+                <p className="mt-2 leading-7 text-muted">{entry.answer}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 

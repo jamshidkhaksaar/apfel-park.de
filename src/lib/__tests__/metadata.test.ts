@@ -88,3 +88,21 @@ describe("catalog metadata query policy", () => {
     expect(metadata.alternates?.languages?.en).toBe("https://apfel-park.de/en/accessories?page=10");
   });
 });
+
+describe("per-locale slugs", () => {
+  const alternatePaths = { de: "/handy-shop-hamburg-wilhelmsburg", en: "/phone-store-hamburg-wilhelmsburg" };
+
+  it("canonicalises each locale on its own slug and keeps hreflang bidirectional", async () => {
+    const de = await createMetadata("de", "Handy Shop", "Beschreibung", alternatePaths.de, undefined, { alternatePaths });
+    const en = await createMetadata("en", "Phone Store", "Description", alternatePaths.en, undefined, { alternatePaths });
+
+    expect(de.alternates?.canonical).toBe("https://apfel-park.de/de/handy-shop-hamburg-wilhelmsburg");
+    expect(en.alternates?.canonical).toBe("https://apfel-park.de/en/phone-store-hamburg-wilhelmsburg");
+    expect(de.alternates?.languages).toMatchObject({
+      de: "https://apfel-park.de/de/handy-shop-hamburg-wilhelmsburg",
+      en: "https://apfel-park.de/en/phone-store-hamburg-wilhelmsburg",
+      "x-default": "https://apfel-park.de/de/handy-shop-hamburg-wilhelmsburg",
+    });
+    expect(en.alternates?.languages).toEqual(de.alternates?.languages);
+  });
+});

@@ -32,6 +32,12 @@ export type CreateMetadataOptions = {
   locales?: Locale[];
   /** Query string retained only for an intentional canonical, such as page=2. */
   canonicalQuery?: string;
+  /**
+   * Per-locale paths when the two languages use different slugs, e.g. a German
+   * /handy-shop-… page whose English counterpart is /phone-store-…. Canonical
+   * follows the current locale; hreflang points at each locale's own slug.
+   */
+  alternatePaths?: Partial<Record<Locale, string>>;
 };
 
 export const createMetadata = async (
@@ -43,7 +49,8 @@ export const createMetadata = async (
   options?: CreateMetadataOptions,
 ): Promise<Metadata> => {
   const normalizedPath = normalizePath(path);
-  const pathWithLocale = `/${locale}${normalizedPath}`;
+  const ownPath = normalizePath(options?.alternatePaths?.[locale] ?? normalizedPath);
+  const pathWithLocale = `/${locale}${ownPath}`;
   const canonicalSuffix = options?.canonicalQuery ? `?${options.canonicalQuery}` : "";
   const canonical = `${siteInfo.url}${pathWithLocale}${canonicalSuffix}`;
   const routeId = getSeoRouteIdByPath(normalizedPath || "/");
@@ -75,11 +82,12 @@ export const createMetadata = async (
   const index = !options?.noindex && (route ? route.index : true);
   const availableLocales = options?.locales?.length ? options.locales : allLocales;
   const languageAlternates: Record<string, string> = {};
+  const pathFor = (altLocale: Locale) => normalizePath(options?.alternatePaths?.[altLocale] ?? normalizedPath);
   for (const altLocale of availableLocales) {
-    languageAlternates[altLocale] = `${siteInfo.url}/${altLocale}${normalizedPath}${canonicalSuffix}`;
+    languageAlternates[altLocale] = `${siteInfo.url}/${altLocale}${pathFor(altLocale)}${canonicalSuffix}`;
   }
   if (availableLocales.includes("de")) {
-    languageAlternates["x-default"] = `${siteInfo.url}/de${normalizedPath}${canonicalSuffix}`;
+    languageAlternates["x-default"] = `${siteInfo.url}/de${pathFor("de")}${canonicalSuffix}`;
   }
 
   // Agents are told where the markdown twin is, and given a one-line summary

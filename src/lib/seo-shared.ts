@@ -79,6 +79,8 @@ export type SeoSettings = {
 export type SeoRouteDefinition = {
   id: SeoRouteId;
   path: string;
+  /** Per-locale slugs when a page is translated to a different path. */
+  paths?: Partial<Record<Locale, string>>;
   labels: Record<Locale, string>;
   priority: number;
   changeFrequency: SeoChangeFrequency;
@@ -202,6 +204,10 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
   {
     id: "hamburgStore",
     path: "/handy-shop-hamburg-wilhelmsburg",
+    paths: {
+      de: "/handy-shop-hamburg-wilhelmsburg",
+      en: "/phone-store-hamburg-wilhelmsburg",
+    },
     labels: { de: "Handy Shop Wilhelmsburg", en: "Phone Store Wilhelmsburg" },
     priority: 0.93,
     changeFrequency: "daily",

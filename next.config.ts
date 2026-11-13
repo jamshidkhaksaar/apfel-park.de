@@ -142,6 +142,11 @@ const nextConfig: NextConfig = {
       { source: '/impressum.html', destination: '/de/impressum', statusCode: 301 },
       { source: '/privacy-policy', destination: '/de/privacy', permanent: true },
       { source: '/datenschutz', destination: '/de/privacy', statusCode: 301 },
+      // The Wilhelmsburg landing page has a localized slug per language. The
+      // English page was published under the German slug, so indexed English
+      // URLs get a true 301; the German page keeps its own slug only.
+      { source: '/en/handy-shop-hamburg-wilhelmsburg', destination: '/en/phone-store-hamburg-wilhelmsburg', statusCode: 301 },
+      { source: '/de/phone-store-hamburg-wilhelmsburg', destination: '/de/handy-shop-hamburg-wilhelmsburg', statusCode: 301 },
       { source: '/cdn-cgi/l/:path*', destination: '/de/contact', permanent: false },
       ...localePrefixRedirects,
     ];

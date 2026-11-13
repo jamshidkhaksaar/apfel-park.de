@@ -162,7 +162,7 @@ export default async function TabletsPage({
                   <br />
                   {locale === "de" ? "Montag bis Samstag 09:30–20:00 Uhr, Sonntag geschlossen." : "Monday to Saturday 09:30–20:00, closed on Sunday."}
                 </p>
-                <Link href={`/${locale}/handy-shop-hamburg-wilhelmsburg`} className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-gold hover:text-gold-soft">
+                <Link href={`/${locale}/${locale === "en" ? "phone-store-hamburg-wilhelmsburg" : "handy-shop-hamburg-wilhelmsburg"}`} className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-gold hover:text-gold-soft">
                   {locale === "de" ? "Anfahrt und Abholung ansehen" : "See directions and collection"}
                 </Link>
               </div>
