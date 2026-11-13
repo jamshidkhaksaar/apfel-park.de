@@ -63,27 +63,70 @@ export default async function RepairPriceComparisonPage({ params }: { params: Pr
   // finder reads, so this table cannot drift from what the shop actually
   // quotes. Only models with a real stored price are published.
   const catalog = await getRepairCatalog();
-  const priceGroups = catalog.brands
-    .flatMap((brand) => brand.families.map((family) => ({
-      brand: brand.name,
-      family: family.name,
-      models: family.models
-        .filter((model) => typeof model.price === "number" && model.price > 0)
-        .map((model) => ({ name: model.name, price: Number(model.price) })),
-    })))
-    .filter((group) => /iphone|galaxy (s|a)/i.test(group.family))
-    .filter((group) => group.models.length > 0);
 
-  const repairOffers = priceGroups.flatMap((group) => group.models.map((model) => ({
-    "@type": "Offer",
-    price: model.price.toFixed(2),
-    priceCurrency: "EUR",
-    availability: "https://schema.org/InStock",
-    itemOffered: {
-      "@type": "Service",
-      name: `${group.brand} ${model.name} ${de ? "Reparatur" : "repair"}`,
-    },
-  })));
+  // The stored catalog carries no model-level price: each model lists repair
+  // parts whose variants hold the real quotes. Showing the cheapest variant per
+  // repair type gives the honest "ab" price the shop confirms on site.
+  const partLabels: Record<string, { de: string; en: string }> = {
+    Display: { de: "Display", en: "Screen" },
+    Battery: { de: "Akku", en: "Battery" },
+    "Back Cover": { de: "Rückseite", en: "Back cover" },
+    Camera: { de: "Kamera", en: "Camera" },
+    "Charging Port": { de: "Ladebuchse", en: "Charging port" },
+    Speaker: { de: "Lautsprecher", en: "Speaker" },
+    Microphone: { de: "Mikrofon", en: "Microphone" },
+    Glass: { de: "Glas", en: "Glass" },
+    Motherboard: { de: "Mainboard", en: "Mainboard" },
+  };
+  const partLabel = (name: string) => partLabels[name]?.[de ? "de" : "en"] ?? name;
+
+  const familyTitle = (brand: string, family: string) =>
+    /^iphone$/i.test(family)
+      ? `${brand} iPhone`
+      : /series$/i.test(family)
+        ? `${brand} Galaxy ${family.replace(/\s*Series$/i, "")}`
+        : `${brand} ${family}`;
+
+  const priceFamilies = catalog.brands
+    .flatMap((brand) => brand.families.map((family) => ({ brand: brand.name, family: family.name, models: family.models })))
+    .filter(({ family }) => /^iphone$/i.test(family) || /^(s|a) series$/i.test(family))
+    .map(({ brand, family, models }) => {
+      const rows = models
+        .filter((model) => (/^iphone$/i.test(family) ? /iphone (1[3-7]|air)/i.test(model.name) : true))
+        .map((model) => {
+          const cells = (model.parts ?? [])
+            .map((part) => {
+              const prices = (part.variants ?? [])
+                .map((variant) => variant.price)
+                .filter((price): price is number => typeof price === "number" && price > 0);
+              return prices.length > 0 ? { part: part.name, price: Math.min(...prices) } : null;
+            })
+            .filter((cell): cell is { part: string; price: number } => cell !== null);
+          return { name: model.name, cells };
+        })
+        .filter((row) => row.cells.length > 0)
+        .slice(0, 40);
+
+      const columns = [...new Set(rows.flatMap((row) => row.cells.map((cell) => cell.part)))].slice(0, 4);
+      return { brand, family, rows, columns };
+    })
+    .filter((group) => group.rows.length > 0);
+
+  const repairOffers = priceFamilies
+    .flatMap((group) =>
+      group.rows.flatMap((row) =>
+        row.cells
+          .filter((cell) => group.columns.includes(cell.part))
+          .map((cell) => ({
+            "@type": "Offer",
+            price: cell.price.toFixed(2),
+            priceCurrency: "EUR",
+            availability: "https://schema.org/InStock",
+            itemOffered: { "@type": "Service", name: `${group.brand} ${row.name} – ${partLabel(cell.part)}` },
+          })),
+      ),
+    )
+    .slice(0, 200);
 
   const ownServiceJsonLd = {
     "@context": "https://schema.org",
@@ -107,6 +150,17 @@ export default async function RepairPriceComparisonPage({ params }: { params: Pr
         }
       : {}),
   };
+
+  const fromPrice = (price: number) => `${de ? "ab" : "from"} ${euro(price, lang)}`;
+  const ownPricesIntro = de
+    ? "Transparente Startpreise je Reparaturart aus unserem Preisfinder. Der Endpreis hängt von Modell, Ersatzteilqualität und zusätzlichen Schäden ab und wird vor der Reparatur bestätigt."
+    : "Transparent starting prices per repair type from our price finder. The final price depends on the model, part quality and any additional damage, and is confirmed before the repair.";
+  const ownPricesFootnote = de
+    ? "Startpreise je Reparaturart, günstigste Ersatzteilqualität. Höherwertige Teile, weitere Defekte und Sonderbestellungen können den Preis erhöhen; verbindlich ist der im LunaCenter bestätigte Preis."
+    : "Starting prices per repair type at the lowest part quality. Higher-grade parts, additional faults and special orders can raise the price; the price confirmed at the LunaCenter is binding.";
+  const ownPricesEmpty = de
+    ? "Die Modellpreise werden gerade aktualisiert. Ruf uns an oder nutze den Preisfinder für dein konkretes Gerät."
+    : "Model prices are being updated. Call us or use the price finder for your specific device.";
 
   const repairQuestions = de
     ? [
@@ -198,43 +252,46 @@ export default async function RepairPriceComparisonPage({ params }: { params: Pr
           <h2 id="apfel-park-preise" className="text-3xl font-bold text-foreground md:text-4xl">
             {de ? "Apfel Park Preise" : "Apfel Park prices"}
           </h2>
-          <p className="mt-4 max-w-3xl leading-7 text-muted">
-            {de
-              ? "Transparente Startpreise für Displayreparaturen aus unserem Preisfinder. Der Endpreis hängt von Modell, Ersatzteilqualität und zusätzlichen Schäden ab und wird vor der Reparatur bestätigt."
-              : "Transparent starting prices for display repairs from our price finder. The final price depends on the model, part quality and any additional damage, and is confirmed before the repair."}
-          </p>
+          <p className="mt-4 max-w-3xl leading-7 text-muted">{ownPricesIntro}</p>
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
             <span>{de ? "Richtwert Dauer: ca. 30–60 Min." : "Typical time: approx. 30–60 min"}</span>
             <span>{de ? "Gewährleistung auf Teile und Arbeitsleistung" : "Warranty on parts and labour"}</span>
             <span>{de ? "Abholung im LunaCenter, Wilhelm-Strauß-Weg 2b" : "Collect at LunaCenter, Wilhelm-Strauß-Weg 2b"}</span>
           </div>
 
-          {priceGroups.length > 0 ? (
+          {priceFamilies.length === 0 ? (
+            <p className="mt-8 rounded-2xl border border-border/60 bg-surface/20 p-6 text-sm leading-6 text-muted">{ownPricesEmpty}</p>
+          ) : (
             <div className="mt-8 space-y-8">
-              {priceGroups.map((group) => (
-                <article key={`${group.brand}-${group.family}`} className="overflow-hidden rounded-3xl border border-border/60 bg-surface/20">
+              {priceFamilies.map((group) => (
+                <article key={group.brand + group.family} className="overflow-hidden rounded-3xl border border-border/60 bg-surface/20">
                   <div className="border-b border-border/60 px-6 py-4">
-                    <h3 className="text-xl font-semibold text-foreground">{group.brand} {group.family}</h3>
+                    <h3 className="text-xl font-semibold text-foreground">{familyTitle(group.brand, group.family)}</h3>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px] border-collapse text-sm">
+                    <table className="w-full min-w-[640px] border-collapse text-sm">
                       <thead>
                         <tr className="border-b border-border/60 bg-surface/40">
                           <th scope="col" className="px-4 py-3 text-left">{de ? "Modell" : "Model"}</th>
-                          <th scope="col" className="px-4 py-3 text-right">{de ? "ab Preis" : "from"}</th>
+                          {group.columns.map((part) => (
+                            <th key={part} scope="col" className="px-4 py-3 text-right">{partLabel(part)}</th>
+                          ))}
                           <th scope="col" className="px-4 py-3 text-right">{de ? "Dauer" : "Time"}</th>
-                          <th scope="col" className="px-4 py-3 text-right">{de ? "Gewährleistung" : "Warranty"}</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {group.models.map((model) => (
-                          <tr key={model.name} className="border-b border-border/40 last:border-b-0">
-                            <th scope="row" className="px-4 py-3 text-left font-medium text-foreground">{model.name}</th>
-                            <td className="px-4 py-3 text-right font-semibold tabular-nums text-gold">
-                              {de ? "ab" : "from"} {euro(model.price, lang)}
-                            </td>
+                        {group.rows.map((row) => (
+                          <tr key={row.name} className="border-b border-border/40 last:border-b-0">
+                            <th scope="row" className="px-4 py-3 text-left font-medium text-foreground">{row.name}</th>
+                            {group.columns.map((part) => {
+                              const cell = row.cells.find((entry) => entry.part === part);
+                              return (
+                                <td key={part} className="px-4 py-3 text-right font-semibold tabular-nums text-gold">
+                                  {cell === undefined ? "–" : fromPrice(cell.price)}
+                                </td>
+                              );
+                            })}
                             <td className="px-4 py-3 text-right tabular-nums text-muted">{de ? "ca. 30–60 Min." : "approx. 30–60 min"}</td>
-                            <td className="px-4 py-3 text-right text-muted">{de ? "inklusive" : "included"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -242,13 +299,8 @@ export default async function RepairPriceComparisonPage({ params }: { params: Pr
                   </div>
                 </article>
               ))}
+              <p className="text-xs leading-6 text-muted">{ownPricesFootnote}</p>
             </div>
-          ) : (
-            <p className="mt-8 rounded-2xl border border-border/60 bg-surface/20 p-6 text-sm leading-6 text-muted">
-              {de
-                ? "Die Modellpreise werden gerade aktualisiert. Ruf uns an oder nutze den Preisfinder für dein konkretes Gerät."
-                : "Model prices are being updated. Call us or use the price finder for your specific device."}
-            </p>
           )}
         </div>
       </section>
