@@ -111,7 +111,7 @@ export const dictionary = {
       accessories: {
         title: "Handy-Zubehör in Hamburg – neu & Open Box kaufen",
         description:
-          "Hüllen, Panzerglas, Ladegeräte, Kabel und Kopfhörer für iPhone, Samsung und mehr – neu oder Open Box. Abholung im LunaCenter Wilhelmsburg oder Versand in 1–3 Werktagen.",
+          "Hüllen, Panzerglas, Ladegeräte, Kabel und Kopfhörer für iPhone, Samsung und mehr – neu oder Open Box. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
       },
       smartphones: {
         title: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen in Hamburg",
@@ -121,7 +121,7 @@ export const dictionary = {
       tablets: {
         title: "Tablets & iPads in Hamburg – neu, Open Box & gebraucht",
         description:
-          "Tablets und iPads neu, Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung im LunaCenter Wilhelmsburg oder Versand in 1–3 Werktagen.",
+          "Tablets und iPads neu, Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
       },
       gaming: {
         title: "Gaming & Konsolen Zubehör Hamburg",
@@ -859,7 +859,7 @@ export const dictionary = {
       accessories: {
         title: "Phone accessories in Hamburg – new & Open Box",
         description:
-          "Cases, screen protection, chargers, cables and headphones for iPhone, Samsung and more – new or Open Box. Collect at the LunaCenter Wilhelmsburg or get delivery in 1–3 business days.",
+          "Cases, screen protection, chargers, cables and headphones for iPhone, Samsung and more – new or Open Box. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
       },
       smartphones: {
         title: "Buy new, Open Box & used (Grade A+) smartphones in Hamburg",
@@ -869,7 +869,7 @@ export const dictionary = {
       tablets: {
         title: "Tablets & iPads in Hamburg – new, Open Box & used",
         description:
-          "Tablets and iPads new, Open Box or tested pre-owned (Grade A+) with warranty. Collect at the LunaCenter Wilhelmsburg or get delivery in 1–3 business days.",
+          "Tablets and iPads new, Open Box or tested pre-owned (Grade A+) with warranty. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
       },
       gaming: {
         title: "Gaming & Console Accessories Hamburg",
