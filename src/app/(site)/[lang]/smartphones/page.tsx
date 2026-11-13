@@ -43,7 +43,7 @@ export const generateMetadata = async ({
     dict.meta.smartphones.description,
     "/smartphones",
     undefined,
-    { noindex: !isCategoryIndexable(activeCount) || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
+    { noindex: !isCategoryIndexable(activeCount, "smartphones") || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 

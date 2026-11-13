@@ -33,7 +33,7 @@ export const generateMetadata = async ({
     dict.meta.gaming.description,
     "/gaming",
     undefined,
-    { noindex: !isCategoryIndexable(activeCount) || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
+    { noindex: !isCategoryIndexable(activeCount, "consoles") || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 

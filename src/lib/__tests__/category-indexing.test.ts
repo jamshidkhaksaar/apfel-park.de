@@ -15,6 +15,13 @@ describe("thin category indexing", () => {
     expect(isCategoryIndexable(240)).toBe(true);
   });
 
+  it("indexes the curated laptops and parts landing pages from their first SKU", () => {
+    expect(isCategoryIndexable(1, "laptops")).toBe(true);
+    expect(isCategoryIndexable(1, "parts")).toBe(true);
+    expect(isCategoryIndexable(0, "laptops")).toBe(false);
+    expect(isCategoryIndexable(0, "parts")).toBe(false);
+  });
+
   it("treats a broken count as thin instead of indexing on garbage", () => {
     expect(isCategoryIndexable(Number.NaN)).toBe(false);
     expect(isCategoryIndexable(Number.POSITIVE_INFINITY)).toBe(false);

@@ -28,7 +28,7 @@ export const generateMetadata = async ({ params, searchParams }: { params: Promi
   const indexing = resolveStoreIndexing(query);
   const activeCount = await countActiveCategoryProducts("tablets");
   return createMetadata(lang, dict.meta.tablets.title, dict.meta.tablets.description, "/tablets", undefined, {
-    noindex: !isCategoryIndexable(activeCount) || indexing.noindex,
+    noindex: !isCategoryIndexable(activeCount, "tablets") || indexing.noindex,
     canonicalQuery: indexing.canonicalQuery,
   });
 };

@@ -46,7 +46,7 @@ export const generateMetadata = async ({
     dict.meta.accessories.description,
     "/accessories",
     undefined,
-    { noindex: !isCategoryIndexable(activeCount) || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
+    { noindex: !isCategoryIndexable(activeCount, "accessories") || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 

@@ -29,7 +29,7 @@ export const generateMetadata = async ({ params, searchParams }: Props): Promise
   const indexing = resolveStoreIndexing(query);
   const activeCount = await countActiveCategoryProducts('parts');
   return createMetadata(lang, copy.title, copy.description, '/parts', undefined, {
-    noindex: !isCategoryIndexable(activeCount) || indexing.noindex, canonicalQuery: indexing.canonicalQuery,
+    noindex: !isCategoryIndexable(activeCount, "parts") || indexing.noindex, canonicalQuery: indexing.canonicalQuery,
   });
 };
 

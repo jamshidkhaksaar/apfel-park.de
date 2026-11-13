@@ -73,15 +73,20 @@ describe("repair comparison sitemap publication gate", () => {
 });
 
 describe("thin-category and sold-out sitemap hygiene", () => {
-  it("lists a category only once it reaches three active SKUs", async () => {
-    mocks.categoryCount.mockImplementation(async (category: string) => (category === "smartphones" ? 3 : 2));
+  it("lists a category at three SKUs, and the curated laptops/parts pages from one", async () => {
+    mocks.categoryCount.mockImplementation(async (category: string) =>
+      category === "smartphones" ? 3 : category === "laptops" || category === "parts" ? 1 : 2,
+    );
 
     const urls = (await getSitemapEntries()).map((entry) => entry.url);
 
     expect(urls).toContain("https://apfel-park.de/de/smartphones");
     expect(urls).toContain("https://apfel-park.de/en/smartphones");
-    expect(urls.some((url) => url.endsWith("/de/laptops"))).toBe(false);
-    expect(urls.some((url) => url.endsWith("/de/parts"))).toBe(false);
+    expect(urls).toContain("https://apfel-park.de/de/laptops");
+    expect(urls).toContain("https://apfel-park.de/en/laptops");
+    expect(urls).toContain("https://apfel-park.de/de/parts");
+    expect(urls).toContain("https://apfel-park.de/en/parts");
+    expect(urls.some((url) => url.endsWith("/de/accessories"))).toBe(false);
   });
 
   it("drops a category again as soon as its active stock falls below three", async () => {

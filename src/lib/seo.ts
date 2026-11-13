@@ -182,7 +182,7 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     if (!pageSettings.index) return [];
 
     const category = categoryRoutes[route.id];
-    if (category && !isCategoryIndexable(categoryCounts.get(category) ?? 0)) return [];
+    if (category && !isCategoryIndexable(categoryCounts.get(category) ?? 0, category)) return [];
 
     // Editorial showcase pages carry their own content date so improving them
     // moves the sitemap lastmod and prompts a recrawl of the refreshed copy.

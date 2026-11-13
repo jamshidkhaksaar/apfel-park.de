@@ -39,7 +39,7 @@ export const generateMetadata = async ({
     dict.meta.laptops.description,
     "/laptops",
     undefined,
-    { noindex: !isCategoryIndexable(activeCount) || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
+    { noindex: !isCategoryIndexable(activeCount, "laptops") || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 
