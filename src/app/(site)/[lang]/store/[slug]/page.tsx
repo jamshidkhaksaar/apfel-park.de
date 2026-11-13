@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { createMetadata } from "@/lib/metadata";
-import { getProductBySlug, getCurrentSlugForOldSlug, getRelatedProducts } from "@/lib/products";
+import { getInStockAlternatives, getProductBySlug, getCurrentSlugForOldSlug, getRelatedProducts } from "@/lib/products";
+import { conditionLabel } from "@/lib/condition-labels";
 import { subcategoryLabel } from "@/lib/product-subcategory";
 import ProductReviews from "@/components/ProductReviews";
 import { getApprovedReviews, getRatingSummary } from "@/lib/product-reviews";
@@ -17,6 +18,7 @@ import {
   productConditionLabel,
   schemaItemCondition,
   offerDeliveryMethods,
+  schemaAvailability,
 } from "@/lib/schema";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
@@ -195,6 +197,7 @@ export default async function ProductDetailPage({
     getProductExperienceView(product.id, locale),
   ]);
   const isOutOfStock = (product.stock ?? 0) <= 0;
+  const alternatives = isOutOfStock ? await getInStockAlternatives(product, 6, locale) : [];
   const modelCollection = getProductModelCollectionLink(
     `${product.title} ${product.model ?? ""}`,
     product.category,
@@ -296,7 +299,7 @@ export default async function ProductDetailPage({
                 price,
                 validFrom: offerValidFrom(product.createdAt),
                 priceValidUntil: offerPriceValidUntil(),
-                availability: stock && stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                availability: schemaAvailability(stock),
                 url: `${siteInfo.url}/${locale}/store/${product.slug}?variant=${encodeURIComponent(variantToken)}`,
                 itemCondition: schemaItemCondition(product.condition),
                 availableDeliveryMethod: offerDeliveryMethods,
@@ -314,7 +317,7 @@ export default async function ProductDetailPage({
             price: product.price,
             validFrom: offerValidFrom(product.createdAt),
             priceValidUntil: offerPriceValidUntil(),
-            availability: product.stock && product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            availability: schemaAvailability(product.stock),
             url: `${siteInfo.url}/${locale}/store/${product.slug}`,
             itemCondition: schemaItemCondition(product.condition),
             availableDeliveryMethod: offerDeliveryMethods,
@@ -420,6 +423,35 @@ export default async function ProductDetailPage({
         </div>
       </section>
 
+      {alternatives.length > 0 ? (
+        <section className="border-t border-border py-10 md:py-14" aria-labelledby="alternatives-heading">
+          <div className="container-page">
+            <h2 id="alternatives-heading" className="text-2xl font-semibold text-foreground">
+              {locale === "de" ? "Verfügbare Alternativen" : "Available alternatives"}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+              {locale === "de"
+                ? "Dieses Gerät ist aktuell vergriffen. Diese Geräte sind sofort abholbar oder lieferbar."
+                : "This device is currently sold out. These devices are in stock for pickup or delivery."}
+            </p>
+            <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {alternatives.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    href={`/${locale}/store/${item.slug}`}
+                    className="flex h-full flex-col rounded-2xl border border-border/60 bg-surface/40 p-4 transition hover:border-gold/40"
+                  >
+                    <span className="text-sm font-semibold leading-snug text-foreground">{item.title}</span>
+                    <span className="mt-1 text-xs text-muted">{conditionLabel(locale, item.condition)}</span>
+                    <span className="mt-3 text-sm font-semibold tabular-nums text-gold">{formatMoney(locale, item.price)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
+
       {relatedProducts.length > 0 ? (
         <section className="border-t border-border py-10 md:py-14">
           <div className="container-page">
@@ -435,11 +467,7 @@ export default async function ProductDetailPage({
                   related.subcategory && related.subcategory !== related.category
                     ? subcategoryLabel(related.subcategory, locale)
                     : null,
-                  related.condition !== "new"
-                    ? related.condition === "used"
-                      ? "A+"
-                      : "Open-Box"
-                    : null,
+                  related.condition !== "new" ? conditionLabel(locale, related.condition) : null,
                 ].filter(Boolean).join(" · "),
               }))}
             />

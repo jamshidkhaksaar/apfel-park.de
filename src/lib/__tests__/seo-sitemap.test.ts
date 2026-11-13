@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ settings: vi.fn(), products: vi.fn(), count: vi.fn() }));
+const mocks = vi.hoisted(() => ({ settings: vi.fn(), products: vi.fn(), count: vi.fn(), categoryCount: vi.fn() }));
 
 vi.mock("@/lib/admin-db", () => ({
   createAdminDbClient: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: mocks.settings }) }) }) }),
 }));
 
 vi.mock("@/lib/products", () => ({
+  countActiveCategoryProducts: mocks.categoryCount,
   countActiveSubcategoryProducts: mocks.count,
   getProducts: mocks.products,
 }));
@@ -18,6 +19,7 @@ beforeEach(() => {
   mocks.settings.mockReset().mockResolvedValue({ data: null, error: null });
   mocks.products.mockReset().mockResolvedValue([]);
   mocks.count.mockReset().mockResolvedValue(0);
+  mocks.categoryCount.mockReset().mockResolvedValue(0);
 });
 
 const comparisonPath = "/repairs/preisvergleich-hamburg";
@@ -70,6 +72,43 @@ describe("repair comparison sitemap publication gate", () => {
   });
 });
 
+describe("thin-category and sold-out sitemap hygiene", () => {
+  it("lists a category only once it reaches three active SKUs", async () => {
+    mocks.categoryCount.mockImplementation(async (category: string) => (category === "smartphones" ? 3 : 2));
+
+    const urls = (await getSitemapEntries()).map((entry) => entry.url);
+
+    expect(urls).toContain("https://apfel-park.de/de/smartphones");
+    expect(urls).toContain("https://apfel-park.de/en/smartphones");
+    expect(urls.some((url) => url.endsWith("/de/laptops"))).toBe(false);
+    expect(urls.some((url) => url.endsWith("/de/parts"))).toBe(false);
+  });
+
+  it("drops a category again as soon as its active stock falls below three", async () => {
+    mocks.categoryCount.mockResolvedValue(2);
+    const urls = (await getSitemapEntries()).map((entry) => entry.url);
+    expect(urls.some((url) => /\/(de|en)\/smartphones$/.test(url))).toBe(false);
+  });
+
+  it("lists English collections under their English slug, never the German one", async () => {
+    const urls = (await getSitemapEntries()).map((entry) => entry.url);
+    expect(urls).toContain("https://apfel-park.de/en/samsung-phones");
+    expect(urls).toContain("https://apfel-park.de/en/unlocked-phones");
+    expect(urls).not.toContain("https://apfel-park.de/en/samsung-handys");
+    expect(urls).not.toContain("https://apfel-park.de/en/handys-ohne-vertrag");
+  });
+
+  it("keeps sold-out products out of the sitemap while their page stays live", async () => {
+    mocks.products.mockResolvedValue([
+      { category: "smartphones", slug: "in-stock-phone", stock: 2, updatedAt: "2026-09-07T10:00:00Z" },
+      { category: "smartphones", slug: "sold-out-phone", stock: 0, updatedAt: "2026-09-07T10:00:00Z" },
+    ]);
+    const urls = (await getSitemapEntries()).map((entry) => entry.url);
+    expect(urls).toContain("https://apfel-park.de/de/store/in-stock-phone");
+    expect(urls.some((url) => url.endsWith("/store/sold-out-phone"))).toBe(false);
+  });
+});
+
 describe("sitemap dependency failure handling", () => {
   it("rejects a failed catalog read instead of returning a shortened sitemap", async () => {
     mocks.products.mockImplementation(async (_category, _limit, _locale, options) => {
@@ -101,6 +140,14 @@ describe("sitemap dependency failure handling", () => {
     await expect(getSitemapEntries()).rejects.toThrow("settings disconnected");
   });
 
+  it("does not turn a failed category count into a shortened sitemap", async () => {
+    mocks.categoryCount.mockImplementation(async (_category, options) => {
+      if (options?.failOnError) throw new Error("category count unavailable");
+      return 0;
+    });
+    await expect(getSitemapEntries()).rejects.toThrow("category count unavailable");
+  });
+
   it("does not turn a failed collection count into an empty collection", async () => {
     mocks.count.mockImplementation(async (_subcategory, options) => {
       if (options?.failOnError) throw new Error("collection count unavailable");
@@ -129,7 +176,7 @@ describe("sitemap dependency failure handling", () => {
   });
 
   it("preserves actual product lastmod and bidirectional language URLs", async () => {
-    mocks.products.mockResolvedValue([{ category: "smartphones", slug: "test-phone", updatedAt: "2026-09-07T10:00:00Z" }]);
+    mocks.products.mockResolvedValue([{ category: "smartphones", slug: "test-phone", stock: 1, updatedAt: "2026-09-07T10:00:00Z" }]);
     const entries = (await getSitemapEntries()).filter(entry => entry.url.endsWith("/store/test-phone"));
     expect(entries).toHaveLength(2);
     for (const entry of entries) {

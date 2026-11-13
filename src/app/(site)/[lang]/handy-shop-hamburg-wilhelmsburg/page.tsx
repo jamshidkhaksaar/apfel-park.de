@@ -36,14 +36,14 @@ const paths: Record<Locale, string> = {
 const copy = {
   de: {
     metaTitle: "Handy-Reparatur Wilhelmsburg – Hamburg",
-    title: "Handy-Reparatur & Smartphone-Shop in Hamburg-Wilhelmsburg",
+    title: "Smartphones neu, Open Box & gebraucht kaufen in Hamburg-Wilhelmsburg",
     description:
       "Handy-Reparatur für iPhone, Samsung und weitere Smartphones bei Apfel Park in Hamburg-Wilhelmsburg. Dazu Smartphones, Zubehör, Abholung und Versand.",
     eyebrow: "Apfel Park vor Ort",
-    introTitle: "Handy-Reparatur in Wilhelmsburg – transparent und vor Ort",
+    introTitle: "Smartphones vor Ort vergleichen – Abholung im LunaCenter",
     intro: [
-      "Bei Apfel Park im LunaCenter helfen wir bei Display-, Akku-, Kamera- und weiteren Smartphone-Problemen. Wir erklären den nächsten Schritt verständlich und nennen den Preis für dein konkretes Gerät vor der Reparatur.",
-      "Du kannst außerdem Smartphones und Zubehör mit klar ausgewiesenem Preis, Speicher und Gerätezustand ansehen. Bestelle online mit Versand innerhalb Deutschlands oder wähle die Abholung in Hamburg-Wilhelmsburg.",
+      "Vergleiche Smartphones und Zubehör mit klar ausgewiesenem Preis, Speicher und Gerätezustand – neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+). Bestelle online mit Versand innerhalb Deutschlands oder wähle die Abholung in Hamburg-Wilhelmsburg.",
+      "Bei Apfel Park im LunaCenter helfen wir außerdem bei Display-, Akku-, Kamera- und weiteren Smartphone-Problemen – mit verständlicher Beratung und einem Preis vor der Reparatur.",
     ],
     benefits: [
       { title: "Handy-Reparatur", text: "Display, Akku, Kamera und weitere Smartphone-Services mit persönlicher Beratung vor Ort." },
@@ -68,14 +68,14 @@ const copy = {
   },
   en: {
     metaTitle: "Phone Store Hamburg-Wilhelmsburg",
-    title: "Phone Store in Hamburg-Wilhelmsburg",
+    title: "Buy new, open-box and used phones in Hamburg-Wilhelmsburg",
     description:
       "Buy smartphones, iPhones, Samsung phones and accessories at Apfel Park in Hamburg-Wilhelmsburg. Live stock, store collection or delivery.",
     eyebrow: "Visit Apfel Park",
-    introTitle: "View, compare and collect smartphones locally",
+    introTitle: "Compare phones in store – collect at the LunaCenter",
     intro: [
-      "At Apfel Park in the LunaCenter, you can find smartphones and accessories with clear prices, storage and device condition. The products below come directly from our active online inventory, helping you plan your visit before travelling.",
-      "Order online for delivery anywhere in Germany or choose collection from our Hamburg-Wilhelmsburg store. In-store, you can view available devices and ask questions before buying.",
+      "Compare smartphones and accessories with clear prices, storage and device condition – new sealed, open box or tested used (Grade A+). Order online for delivery anywhere in Germany or collect from our Hamburg-Wilhelmsburg store.",
+      "At Apfel Park in the LunaCenter we also help with display, battery, camera and other phone problems, with clear advice and a price before the repair.",
     ],
     benefits: [
       { title: "Live inventory", text: "Current smartphones from our active catalogue rather than a static product list." },

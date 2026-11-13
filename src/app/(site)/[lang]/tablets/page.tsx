@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isCategoryIndexable } from "@/lib/category-indexing";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -7,7 +8,7 @@ import StoreGrid from "@/components/store/StoreGrid";
 import { businessAddress } from "@/lib/business-identity";
 import { getDictionary } from "@/lib/i18n";
 import { createMetadata } from "@/lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "@/lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort, countActiveCategoryProducts } from "@/lib/products";
 import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { siteInfo } from "@/lib/site";
@@ -25,8 +26,9 @@ export const generateMetadata = async ({ params, searchParams }: { params: Promi
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
   const indexing = resolveStoreIndexing(query);
+  const activeCount = await countActiveCategoryProducts("tablets");
   return createMetadata(lang, dict.meta.tablets.title, dict.meta.tablets.description, "/tablets", undefined, {
-    noindex: indexing.noindex,
+    noindex: !isCategoryIndexable(activeCount) || indexing.noindex,
     canonicalQuery: indexing.canonicalQuery,
   });
 };

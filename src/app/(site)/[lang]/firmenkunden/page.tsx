@@ -23,6 +23,8 @@ export const generateMetadata = async ({ params }: { params: Promise<{ lang: str
       ? "Reparaturen, Geräte, Zubehör und Smartphone-Ersatzteile für Unternehmen: Firmengeräte-Reparatur, Mengenbestellungen und Gerätebeschaffung auf Rechnung. Angebot in 1–2 Werktagen."
       : "Repairs, devices, accessories and smartphone spare parts for businesses: company device repair, bulk orders and device procurement on invoice. Quote within 1–2 business days.",
     "/firmenkunden",
+    undefined,
+    { alternatePaths: { de: "/firmenkunden", en: "/business" } },
   );
 };
 

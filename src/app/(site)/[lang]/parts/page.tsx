@@ -7,7 +7,8 @@ import StoreGrid from '@/components/store/StoreGrid';
 import TrusmiPartner from '@/components/TrusmiPartner';
 import { partsCatalogCopy } from '@/lib/i18n';
 import { createMetadata } from '@/lib/metadata';
-import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from '@/lib/products';
+import { countActiveCategoryProducts, getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from '@/lib/products';
+import { isCategoryIndexable } from '@/lib/category-indexing';
 import { PART_SUBCATEGORIES } from '@/lib/product-subcategory';
 import { requireLocale } from '@/lib/route-locale';
 import { safeJsonStringify } from '@/lib/security';
@@ -26,8 +27,9 @@ export const generateMetadata = async ({ params, searchParams }: Props): Promise
   const lang = requireLocale(rawLang);
   const copy = partsCatalogCopy[lang];
   const indexing = resolveStoreIndexing(query);
+  const activeCount = await countActiveCategoryProducts('parts');
   return createMetadata(lang, copy.title, copy.description, '/parts', undefined, {
-    noindex: indexing.noindex, canonicalQuery: indexing.canonicalQuery,
+    noindex: !isCategoryIndexable(activeCount) || indexing.noindex, canonicalQuery: indexing.canonicalQuery,
   });
 };
 

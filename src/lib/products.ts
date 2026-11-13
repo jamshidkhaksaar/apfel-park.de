@@ -957,6 +957,63 @@ export async function countActiveSubcategoryProducts(
 }
 
 /**
+ * Counts sellable products in a top-level category.
+ *
+ * Thin categories (fewer than three active SKUs) are noindexed and kept out of
+ * the sitemap until the shop has enough inventory, so the threshold has to be
+ * computed from live stock rather than from a checked-in list.
+ */
+export async function countActiveCategoryProducts(
+  category: ProductCategory,
+  options: { failOnError?: boolean } = {},
+): Promise<number> {
+  try {
+    const result = await query(
+      `SELECT count(*)::int AS total FROM products
+       WHERE is_active = true AND stock > 0 AND category = $1`,
+      [category],
+    );
+    const total = (result.rows[0] as { total?: number } | undefined)?.total;
+    if (options.failOnError && (typeof total !== "number" || !Number.isInteger(total) || total < 0)) {
+      throw new Error("Category count returned invalid data");
+    }
+    return total ?? 0;
+  } catch (error) {
+    if (options.failOnError) throw error;
+    console.error("countActiveCategoryProducts failed:", error);
+    return 0;
+  }
+}
+
+/**
+ * In-stock replacements for a sold-out product: same brand first, then the rest
+ * of the category. Sold-out 1-of-1 devices keep their URL for search equity, so
+ * the page has to offer something buyable instead of a dead end.
+ */
+export async function getInStockAlternatives(
+  product: Product,
+  limit = 6,
+  locale: Locale = "de",
+): Promise<Product[]> {
+  try {
+    const result = await query(
+      `SELECT ${baseSelect} FROM products
+       WHERE is_active = true AND stock > 0 AND category = $1 AND id <> $2
+       ORDER BY (brand IS NOT NULL AND brand = $3) DESC, created_at DESC
+       LIMIT $4`,
+      [product.category, product.id, product.brand ?? "", limit],
+    );
+    return (result.rows as DbProduct[])
+      .map((row) => mapProduct(row, locale))
+      .filter((item): item is Product => item !== null && item.id !== product.id)
+      .slice(0, limit);
+  } catch (error) {
+    console.error("getInStockAlternatives failed:", error);
+    return [];
+  }
+}
+
+/**
  * One representative in-stock product image per accessory subcategory.
  *
  * Used by category cards (for example the popular-categories grid) so the card

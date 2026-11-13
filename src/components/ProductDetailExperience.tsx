@@ -217,6 +217,11 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
               </span>
             ) : null}
             <ConditionBadge condition={product.condition} lang={locale} />
+            {isOutOfStock ? (
+              <span className="rounded-full bg-red/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-red ring-1 ring-red/30">
+                {locale === "de" ? "Aktuell vergriffen" : "Currently sold out"}
+              </span>
+            ) : null}
           </div>
 
           {ratingSummary ? <ProductRatingBadge locale={locale} summary={ratingSummary} /> : null}
@@ -361,7 +366,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
               {activeStock && activeStock > 0
                 ? locale === "de" ? `Auf Lager · ${activeStock} verfügbar` : `In stock · ${activeStock} available`
                 : isOutOfStock
-                  ? locale === "de" ? "Ausverkauft" : "Out of stock"
+                  ? locale === "de" ? "Aktuell vergriffen" : "Currently sold out"
                   : locale === "de" ? "Auf Anfrage" : "On request"}
             </p>
             {!isOutOfStock ? (

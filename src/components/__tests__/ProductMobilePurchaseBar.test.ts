@@ -46,7 +46,7 @@ describe("ProductMobilePurchaseBar", () => {
       visible: true,
     }));
 
-    expect(html).toContain("Ausverkauft");
+    expect(html).toContain("Aktuell vergriffen");
     expect(html).not.toContain('href="/de/checkout"');
   });
 });

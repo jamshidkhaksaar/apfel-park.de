@@ -97,7 +97,7 @@ export function ProductMobilePurchaseBarContent({
             onClick={onAddToCart}
           >
             {isOutOfStock
-              ? isGerman ? "Ausverkauft" : "Sold out"
+              ? isGerman ? "Aktuell vergriffen" : "Currently sold out"
               : added
                 ? isGerman ? "Hinzugefügt ✓" : "Added ✓"
                 : isGerman ? "Warenkorb" : "Cart"}

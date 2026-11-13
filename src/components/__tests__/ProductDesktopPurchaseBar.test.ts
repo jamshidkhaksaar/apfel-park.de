@@ -52,7 +52,7 @@ describe("ProductDesktopPurchaseBar", () => {
       onAddToCart: () => undefined,
     }));
 
-    expect(html).toContain("Ausverkauft");
+    expect(html).toContain("Aktuell vergriffen");
     expect(html).toContain("disabled");
   });
 

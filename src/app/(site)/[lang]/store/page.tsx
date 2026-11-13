@@ -123,7 +123,7 @@ export default async function StorePage({ params, searchParams }: { params: Prom
           gold iPhone banner would out-shout them directly above the grid. */}
       {season ? null : (
         <div className="container-page py-4">
-          <IPhoneBanner lang={locale} shopHref={`/${locale}/iphone-18-pro`} />
+          <IPhoneBanner lang={locale} headingLevel="h3" shopHref={`/${locale}/iphone-18-pro`} />
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isCategoryIndexable } from "@/lib/category-indexing";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -6,7 +7,7 @@ import PageIntro from "../../../../components/PageIntro";
 import StoreGrid from "../../../../components/store/StoreGrid";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
+import { getStoreCatalog, parseStoreCatalogFilters, parseStoreSort, countActiveCategoryProducts } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getGamingContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
@@ -25,14 +26,14 @@ export const generateMetadata = async ({
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
   const indexing = resolveStoreIndexing(query);
-  const catalog = await getStoreCatalog({ category: "consoles", page: 1, pageSize: 1, locale: lang });
+  const activeCount = await countActiveCategoryProducts("consoles");
   return createMetadata(
     lang,
     dict.meta.gaming.title,
     dict.meta.gaming.description,
     "/gaming",
     undefined,
-    { noindex: catalog.total === 0 || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
+    { noindex: !isCategoryIndexable(activeCount) || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 

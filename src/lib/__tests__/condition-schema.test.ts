@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { conditionLabels } from "@/lib/condition-labels";
-import { offerDeliveryMethods, schemaItemCondition } from "@/lib/schema";
+import { offerDeliveryMethods, schemaAvailability, schemaItemCondition } from "@/lib/schema";
 
 describe("condition tiers", () => {
   it("maps sealed and open box to NewCondition, grade A+ to UsedCondition", () => {
@@ -17,6 +17,14 @@ describe("condition tiers", () => {
       "https://schema.org/OnSitePickup",
       "https://schema.org/ParcelService",
     ]);
+  });
+
+  it("keeps sold-out offers OutOfStock instead of dropping the URL", () => {
+    expect(schemaAvailability(3)).toBe("https://schema.org/InStock");
+    expect(schemaAvailability(1)).toBe("https://schema.org/InStock");
+    expect(schemaAvailability(0)).toBe("https://schema.org/OutOfStock");
+    expect(schemaAvailability(null)).toBe("https://schema.org/OutOfStock");
+    expect(schemaAvailability(undefined)).toBe("https://schema.org/OutOfStock");
   });
 
   it("uses exactly the approved customer-facing labels", () => {

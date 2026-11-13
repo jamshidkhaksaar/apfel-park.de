@@ -3,7 +3,8 @@ import type { MetadataRoute } from "next";
 import { createAdminDbClient } from "@/lib/admin-db";
 import { locales } from "@/lib/i18n";
 import { accessoryCollectionSlugs, getAccessoryCollection } from "@/lib/accessory-collections";
-import { countActiveSubcategoryProducts, getProducts } from "@/lib/products";
+import { countActiveCategoryProducts, countActiveSubcategoryProducts, getProducts, type ProductCategory } from "@/lib/products";
+import { isCategoryIndexable } from "@/lib/category-indexing";
 import { isRepairBenchmarkPublished } from "@/lib/repair-price-benchmark";
 import { repairServiceSlugs } from "@/lib/repair-services";
 import { blackFriday } from "@/lib/black-friday";
@@ -158,7 +159,6 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
   const settings = await getSeoSettings({ failOnError: true });
   if (!settings.global.enableSitemap) return [];
   const products = await getProducts(undefined, undefined, "de", { failOnError: true });
-  const stockedCategories = new Set(products.map((product) => product.category));
   const categoryRoutes: Partial<Record<SeoRouteId, string>> = {
     smartphones: "smartphones",
     tablets: "tablets",
@@ -168,12 +168,21 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
     gaming: "consoles",
   };
 
+  // A category only belongs in the sitemap once it clears the thin-content
+  // threshold; the same rule drives its robots tag in generateMetadata.
+  const categoryCounts = new Map<string, number>();
+  await Promise.all(
+    [...new Set(Object.values(categoryRoutes))].map(async (category) => {
+      categoryCounts.set(category, await countActiveCategoryProducts(category as ProductCategory, { failOnError: true }));
+    }),
+  );
+
   const staticEntries = seoRouteDefinitions.flatMap((route) => {
     const pageSettings = settings.pages[route.id];
     if (!pageSettings.index) return [];
 
     const category = categoryRoutes[route.id];
-    if (category && !stockedCategories.has(category as (typeof products)[number]["category"])) return [];
+    if (category && !isCategoryIndexable(categoryCounts.get(category) ?? 0)) return [];
 
     // Editorial showcase pages carry their own content date so improving them
     // moves the sitemap lastmod and prompts a recrawl of the refreshed copy.
@@ -199,6 +208,10 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
   });
 
   const productEntries = products.flatMap((product) => {
+    // Sold-out pages stay live (200) for the equity they already earned, but the
+    // sitemap advertises only inventory a crawler can actually buy today.
+    if ((product.stock ?? 0) <= 0) return [];
+
     // updated_at, not created_at: a price, stock or content edit has to move
     // the sitemap lastmod or crawlers keep the stale copy.
     const stamp = product.updatedAt ?? product.createdAt;

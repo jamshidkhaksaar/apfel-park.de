@@ -15,7 +15,7 @@ export type IPhoneBannerProps = {
   lang?: "de" | "en";
   shopHref?: string;
   className?: string;
-  headingLevel?: "h1" | "h2";
+  headingLevel?: "h1" | "h2" | "h3";
   ctaLabel?: string;
   primaryTitle?: string;
   secondaryTitle?: string;

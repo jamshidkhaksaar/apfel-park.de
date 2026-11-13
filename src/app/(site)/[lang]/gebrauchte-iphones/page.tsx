@@ -18,6 +18,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   return createMetadata(locale, copy.metaTitle, copy.description, copy.path, undefined, {
     noindex: indexing.noindex,
     canonicalQuery: indexing.canonicalQuery,
+    alternatePaths: { de: "/gebrauchte-iphones", en: "/used-iphones" },
   });
 }
 

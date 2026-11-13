@@ -92,7 +92,7 @@ export function ProductDesktopPurchaseBarContent({
             onClick={onAddToCart}
           >
             {isOutOfStock
-              ? isGerman ? "Ausverkauft" : "Sold out"
+              ? isGerman ? "Aktuell vergriffen" : "Currently sold out"
               : added
                 ? isGerman ? "Hinzugefügt ✓" : "Added ✓"
                 : isGerman ? "In den Warenkorb" : "Add to cart"}

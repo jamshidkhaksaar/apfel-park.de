@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isCategoryIndexable } from "@/lib/category-indexing";
 import Link from "next/link";
 import StoreBrandCards from "@/components/store/StoreBrandCards";
 import { notFound } from "next/navigation";
@@ -10,7 +11,7 @@ import StoreCollectionLinks from "../../../../components/store/StoreCollectionLi
 import ConditionExplainer from "@/components/store/ConditionExplainer";
 import { getDictionary } from "../../../../lib/i18n";
 import { createMetadata } from "../../../../lib/metadata";
-import { getProducts, getStoreCatalog, parseStoreCatalogFilters, parseStoreSort } from "../../../../lib/products";
+import { getProducts, getStoreCatalog, parseStoreCatalogFilters, parseStoreSort, countActiveCategoryProducts } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getSmartphonesContent } from "../../../../lib/content";
 import { requireLocale } from "@/lib/route-locale";
@@ -35,13 +36,14 @@ export const generateMetadata = async ({
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
   const indexing = resolveStoreIndexing(query);
+  const activeCount = await countActiveCategoryProducts("smartphones");
   return createMetadata(
     lang,
     dict.meta.smartphones.title,
     dict.meta.smartphones.description,
     "/smartphones",
     undefined,
-    { noindex: indexing.noindex, canonicalQuery: indexing.canonicalQuery },
+    { noindex: !isCategoryIndexable(activeCount) || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 

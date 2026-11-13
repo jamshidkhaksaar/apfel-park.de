@@ -398,6 +398,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
   {
     id: "samsungPhones",
     path: "/samsung-handys",
+    paths: { de: "/samsung-handys", en: "/samsung-phones" },
     labels: { de: "Samsung Handys", en: "Samsung Phones" },
     priority: 0.92,
     changeFrequency: "daily",
@@ -417,6 +418,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
   {
     id: "xiaomiRedmiPhones",
     path: "/xiaomi-redmi-handys",
+    paths: { de: "/xiaomi-redmi-handys", en: "/xiaomi-redmi-phones" },
     labels: { de: "Xiaomi, Redmi & Poco Handys", en: "Xiaomi, Redmi & Poco Phones" },
     priority: 0.9,
     changeFrequency: "daily",
@@ -436,6 +438,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
   {
     id: "phonesWithoutContract",
     path: "/handys-ohne-vertrag",
+    paths: { de: "/handys-ohne-vertrag", en: "/unlocked-phones" },
     labels: { de: "Handys ohne Vertrag", en: "Phones Without Contract" },
     priority: 0.92,
     changeFrequency: "daily",
@@ -455,6 +458,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
   {
     id: "usedPhones",
     path: "/gebrauchte-handys",
+    paths: { de: "/gebrauchte-handys", en: "/used-phones" },
     labels: { de: "Gebrauchte Handys", en: "Used Phones" },
     priority: 0.92,
     changeFrequency: "daily",
@@ -474,6 +478,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
   {
     id: "usedIphones",
     path: "/gebrauchte-iphones",
+    paths: { de: "/gebrauchte-iphones", en: "/used-iphones" },
     labels: { de: "Gebrauchte iPhones", en: "Used iPhones" },
     priority: 0.93,
     changeFrequency: "daily",
@@ -686,6 +691,7 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
   {
     id: "business",
     path: "/firmenkunden",
+    paths: { de: "/firmenkunden", en: "/business" },
     labels: { de: "Firmenkunden & B2B", en: "Business & B2B" },
     priority: 0.7,
     changeFrequency: "monthly",

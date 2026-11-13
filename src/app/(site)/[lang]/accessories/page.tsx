@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isCategoryIndexable } from "@/lib/category-indexing";
 import Link from "next/link";
 import AccessoryCategoryCards from "@/components/store/AccessoryCategoryCards";
 import AccessoryCollectionNav from "@/components/store/AccessoryCollectionNav";
@@ -12,6 +13,7 @@ import {
   getStoreCatalog,
   parseStoreCatalogFilters,
   parseStoreSort,
+  countActiveCategoryProducts,
 } from "../../../../lib/products";
 import { siteInfo } from "../../../../lib/site";
 import { getAccessoriesContent } from "../../../../lib/content";
@@ -37,13 +39,14 @@ export const generateMetadata = async ({
   const lang = requireLocale(rawLang);
   const dict = getDictionary(lang);
   const indexing = resolveStoreIndexing(query);
+  const activeCount = await countActiveCategoryProducts("accessories");
   return createMetadata(
     lang,
     dict.meta.accessories.title,
     dict.meta.accessories.description,
     "/accessories",
     undefined,
-    { noindex: indexing.noindex, canonicalQuery: indexing.canonicalQuery },
+    { noindex: !isCategoryIndexable(activeCount) || indexing.noindex, canonicalQuery: indexing.canonicalQuery },
   );
 };
 

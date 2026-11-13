@@ -147,8 +147,30 @@ const nextConfig: NextConfig = {
       // URLs get a true 301; the German page keeps its own slug only.
       { source: '/en/handy-shop-hamburg-wilhelmsburg', destination: '/en/phone-store-hamburg-wilhelmsburg', statusCode: 301 },
       { source: '/de/phone-store-hamburg-wilhelmsburg', destination: '/de/handy-shop-hamburg-wilhelmsburg', statusCode: 301 },
+      // English collection slugs. The German slugs were live under /en/, so each
+      // one keeps its earned links through a real 301 while English pages move
+      // to a readable URL. German routes are untouched.
+      { source: '/en/samsung-handys', destination: '/en/samsung-phones', statusCode: 301 },
+      { source: '/en/xiaomi-redmi-handys', destination: '/en/xiaomi-redmi-phones', statusCode: 301 },
+      { source: '/en/handys-ohne-vertrag', destination: '/en/unlocked-phones', statusCode: 301 },
+      { source: '/en/gebrauchte-handys', destination: '/en/used-phones', statusCode: 301 },
+      { source: '/en/gebrauchte-iphones', destination: '/en/used-iphones', statusCode: 301 },
+      { source: '/en/firmenkunden', destination: '/en/business', statusCode: 301 },
       { source: '/cdn-cgi/l/:path*', destination: '/de/contact', permanent: false },
       ...localePrefixRedirects,
+    ];
+  },
+
+  // The English slugs are aliases of the existing German-slug routes: rewrite
+  // keeps one page implementation, one canonical URL per locale.
+  async rewrites() {
+    return [
+      { source: '/en/samsung-phones', destination: '/en/samsung-handys' },
+      { source: '/en/xiaomi-redmi-phones', destination: '/en/xiaomi-redmi-handys' },
+      { source: '/en/unlocked-phones', destination: '/en/handys-ohne-vertrag' },
+      { source: '/en/used-phones', destination: '/en/gebrauchte-handys' },
+      { source: '/en/used-iphones', destination: '/en/gebrauchte-iphones' },
+      { source: '/en/business', destination: '/en/firmenkunden' },
     ];
   },
 

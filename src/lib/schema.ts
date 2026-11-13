@@ -44,6 +44,10 @@ export const productCategoryLabel = (locale: Locale, category: ProductCategory):
 export const schemaItemCondition = (condition: ProductCondition): string =>
   condition === "used" ? "https://schema.org/UsedCondition" : "https://schema.org/NewCondition";
 
+/** Single source for the offer availability both offers and tests rely on. */
+export const schemaAvailability = (stock?: number | null): string =>
+  (stock ?? 0) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
+
 /** Both fulfilment routes the shop actually offers for every listed device. */
 export const offerDeliveryMethods = [
   "https://schema.org/OnSitePickup",
