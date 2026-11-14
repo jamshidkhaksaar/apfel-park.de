@@ -121,7 +121,7 @@ export const dictionary = {
       tablets: {
         title: "Tablets & iPads in Hamburg – Open Box & gebraucht",
         description:
-          "Tablets und iPads neu, Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
+          "Tablets und iPads Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
       },
       gaming: {
         title: "Gaming & Konsolen Zubehör Hamburg",
@@ -131,7 +131,7 @@ export const dictionary = {
       laptops: {
         title: "Laptops & MacBooks in Hamburg – Open Box",
         description:
-          "MacBooks und Windows-Laptops neu, Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
+          "MacBooks und Windows-Laptops als Open Box mit Garantie. Abholung in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
       },
       contact: {
         title: "Kontakt & Anfahrt – Apfel Park Hamburg",
@@ -869,7 +869,7 @@ export const dictionary = {
       tablets: {
         title: "Tablets & iPads in Hamburg – Open Box & used",
         description:
-          "Tablets and iPads new, Open Box or used (Grade A+) with warranty. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
+          "Tablets and iPads Open Box or used (Grade A+) with warranty. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
       },
       gaming: {
         title: "Gaming & Console Accessories Hamburg",
@@ -877,9 +877,9 @@ export const dictionary = {
           "Gaming accessories at Apfel Park in Hamburg-Wilhelmsburg. Consoles are coming soon; controllers, cables and accessories are in store now.",
       },
       laptops: {
-        title: "Laptops & MacBooks in Hamburg – Open Box",
+        title: "Open Box laptops in Hamburg – MacBooks & Windows",
         description:
-          "MacBooks and Windows laptops new, Open Box or used (Grade A+) with warranty. Collect in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
+          "MacBooks and Windows laptops as Open Box with warranty. Collect in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
       },
       contact: {
         title: "Contact & Directions – Apfel Park Hamburg",
