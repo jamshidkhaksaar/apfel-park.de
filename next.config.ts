@@ -95,6 +95,9 @@ const nextConfig: NextConfig = {
   // the closest relevant page; never blanket-redirect everything to home).
   async redirects() {
     return [
+      // In-store TV loop: the clean URL streams the static file below.
+      // Never indexed (robots.txt disallow + X-Robots-Tag on both paths).
+      { source: '/shop-tv', destination: '/shop-tv/index.html', permanent: false },
       // Preserve the old portrait URL; new markup uses the correct spelling.
       { source: '/images/owner/bismiallah-safi.webp', destination: '/images/owner/bismaillah-safi.webp', statusCode: 301 },
       // A distinct query also escapes a browser-cached old permanent locale hop.
@@ -217,10 +220,10 @@ const nextConfig: NextConfig = {
       // The in-store TV loop (public/shop-tv/index.html) must stream on the
       // shop TV but never be crawled or indexed. The page itself carries a
       // noindex meta tag; this answers crawlers even before the body loads.
-      {
-        source: '/shop-tv',
+      ...['/shop-tv', '/shop-tv/index.html'].map((source) => ({
+        source,
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noimageindex, nosnippet' }],
-      },
+      })),
       // Later exact matches override only CSP; all other global headers remain.
       ...['/de/checkout', '/en/checkout'].map((source) => ({
         source,
