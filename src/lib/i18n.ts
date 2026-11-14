@@ -119,7 +119,7 @@ export const dictionary = {
           "Smartphones von Apple, Samsung und Xiaomi: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+) – Abholung im LunaCenter Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
       },
       tablets: {
-        title: "Tablets & iPads in Hamburg – neu, Open Box & gebraucht",
+        title: "Tablets & iPads in Hamburg – Open Box & gebraucht",
         description:
           "Tablets und iPads neu, Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
       },
@@ -129,7 +129,7 @@ export const dictionary = {
           "Gaming-Zubehör bei Apfel Park in Hamburg-Wilhelmsburg. Konsolen folgen in Kürze – Controller, Kabel und Zubehör gibt es schon jetzt im Laden.",
       },
       laptops: {
-        title: "Laptops & MacBooks in Hamburg – neu, Open Box & gebraucht",
+        title: "Laptops & MacBooks in Hamburg – Open Box",
         description:
           "MacBooks und Windows-Laptops neu, Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
       },
@@ -442,7 +442,7 @@ export const dictionary = {
       ],
     },
     laptops: {
-      heroTitle: "Laptops & MacBooks in Hamburg – neu, Open Box & gebraucht (Zustand A+)",
+      heroTitle: "Laptops & MacBooks in Hamburg – Open Box",
       heroSubtitle:
         "MacBooks und Windows-Laptops – neu, gebraucht und professionell gewartet.",
       sections: {
@@ -867,7 +867,7 @@ export const dictionary = {
           "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or used (Grade A+) – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
       },
       tablets: {
-        title: "Tablets & iPads in Hamburg – new, Open Box & used",
+        title: "Tablets & iPads in Hamburg – Open Box & used",
         description:
           "Tablets and iPads new, Open Box or used (Grade A+) with warranty. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
       },
@@ -877,7 +877,7 @@ export const dictionary = {
           "Gaming accessories at Apfel Park in Hamburg-Wilhelmsburg. Consoles are coming soon; controllers, cables and accessories are in store now.",
       },
       laptops: {
-        title: "Laptops & MacBooks in Hamburg – new, Open Box & used",
+        title: "Laptops & MacBooks in Hamburg – Open Box",
         description:
           "MacBooks and Windows laptops new, Open Box or used (Grade A+) with warranty. Collect in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
       },
@@ -1190,7 +1190,7 @@ export const dictionary = {
       ],
     },
     laptops: {
-      heroTitle: "Laptops & MacBooks in Hamburg – new, Open Box & used (Grade A+)",
+      heroTitle: "Laptops & MacBooks in Hamburg – Open Box",
       heroSubtitle:
         "MacBooks and Windows laptops – new, Open Box and professionally serviced.",
       sections: {

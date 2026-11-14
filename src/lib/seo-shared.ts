@@ -189,8 +189,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "weekly",
     defaultTitle: {
-      de: "Smartphones neu, Open Box & gebraucht (A+) kaufen in Hamburg",
-      en: "Buy new, Open Box & used (A+) smartphones in Hamburg",
+      de: "Smartphones neu, Open Box & gebraucht in Hamburg",
+      en: "Smartphones new, Open Box & used in Hamburg",
     },
     defaultDescription: {
       de: "Smartphones von Apple, Samsung und Xiaomi: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+) – Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
@@ -578,8 +578,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Smartphones & Tablets in Hamburg – neu, Open Box & gebraucht",
-      en: "Smartphones & tablets in Hamburg – new, Open Box & used",
+      de: "Smartphones & Tablets Hamburg – neu, Open Box, A+",
+      en: "Smartphones & tablets Hamburg – new, Open Box, A+",
     },
     defaultDescription: {
       de: "Smartphones, Tablets und Zubehör bei Apfel Park: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+). Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",

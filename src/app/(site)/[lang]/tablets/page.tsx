@@ -88,7 +88,7 @@ export default async function TabletsPage({
       <StoreCommerceHeader
         lang={locale}
         eyebrow={locale === "de" ? "Tablets" : "Tablets"}
-        title={locale === "de" ? "Tablets & iPads in Hamburg – neu, Open Box & gebraucht (Zustand A+)" : "Tablets & iPads in Hamburg – new, Open Box & used (Grade A+)"}
+        title={locale === "de" ? "Tablets & iPads in Hamburg – Open Box & gebraucht (Zustand A+)" : "Tablets & iPads in Hamburg – Open Box & used (Grade A+)"}
         subtitle={locale === "de" ? "Geräte mit klar ausgewiesenem Zustand, Preis, Verfügbarkeit und persönlicher Beratung in Hamburg." : "Devices with clearly stated condition, price, availability, and personal advice in Hamburg."}
         query={activeFilters.query}
         resultCount={catalog.total}
