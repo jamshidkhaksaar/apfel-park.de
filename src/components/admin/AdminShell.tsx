@@ -135,6 +135,38 @@ const NavIcon = ({ type }: { type: string }) => {
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
+    receipt: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6M9 16h4M5.25 3h13.5v18l-2.25-1.5-2.25 1.5-2.25-1.5-2.25 1.5L7.5 21l-2.25-1.5V3z" />
+      </svg>
+    ),
+    returns: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+      </svg>
+    ),
+    document: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+      </svg>
+    ),
+    repeat: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+    ),
+    megaphone: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H4.5A2.25 2.25 0 012.25 13.5v-2.25c0-.844.46-1.58 1.14-1.977m8.94-2.916c-.53-.693-1.382-1.145-2.34-1.145-1.513 0-2.84.983-3.29 2.354M12 3.375c3.59 0 6.5 2.91 6.5 6.5s-2.91 6.5-6.5 6.5m-3.09-4.416c0 1.866-.15 3.143-.816 4.272M8.25 21.75c0-2.33.43-4.02 1.231-5.391" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12h3.632" />
+      </svg>
+    ),
+    image: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
+        <circle cx="8.25" cy="8.25" r="1.5" />
+      </svg>
+    ),
   };
   return <>{icons[type] || icons.dashboard}</>;
 };
@@ -317,28 +349,28 @@ export default function AdminShell({
 
   const managerItems: NavItem[] = [
     { label: dict.sidebar.orders,    path: '/admin/orders',   icon: 'orders',  badge: badges.orders },
-    { label: lang === 'de' ? 'Rechnungen' : 'Invoices', path: '/admin/invoices', icon: 'orders' },
+    { label: lang === 'de' ? 'Rechnungen' : 'Invoices', path: '/admin/invoices', icon: 'receipt' },
     { label: 'Marketplaces', path: '/admin/marketplaces', icon: 'marketplaces' },
-    { label: dict.sidebar.withdrawals, path: '/admin/withdrawals', icon: 'orders' },
+    { label: dict.sidebar.withdrawals, path: '/admin/withdrawals', icon: 'returns' },
     { label: dict.sidebar.repairs,   path: '/admin/repairs',  icon: 'repairs', badge: badges.repairs },
-    { label: lang === 'de' ? 'Kostenvoranschläge' : 'Repair Estimates', path: '/admin/repair-estimates', icon: 'repairs' },
+    { label: lang === 'de' ? 'Kostenvoranschläge' : 'Repair Estimates', path: '/admin/repair-estimates', icon: 'document' },
     { label: dict.sidebar.batchBuy,  path: '/admin/batch-buy', icon: 'batchBuy' },
     { label: dict.sidebar.chat,      path: '/admin/chat',     icon: 'chat',    badge: badges.chat },
     { label: dict.sidebar.reviews,   path: '/admin/reviews',  icon: 'reviews' },
     { label: lang === 'de' ? 'Produktbewertungen' : 'Product reviews', path: '/admin/product-reviews', icon: 'reviews' },
-    { label: lang === 'de' ? 'Trade-in Anfragen' : 'Trade-in requests', path: '/admin/trade-ins', icon: 'batchBuy' },
-    { label: lang === 'de' ? 'Kampagnen & Gutscheine' : 'Campaigns & coupons', path: '/admin/campaigns', icon: 'payments' },
-    { label: lang === 'de' ? 'Aktionsbanner' : 'Promotion banner', path: '/admin/promotion-banner', icon: 'branding' },
+    { label: lang === 'de' ? 'Trade-in Anfragen' : 'Trade-in requests', path: '/admin/trade-ins', icon: 'repeat' },
+    { label: lang === 'de' ? 'Kampagnen & Gutscheine' : 'Campaigns & coupons', path: '/admin/campaigns', icon: 'megaphone' },
+    { label: lang === 'de' ? 'Aktionsbanner' : 'Promotion banner', path: '/admin/promotion-banner', icon: 'megaphone' },
   ];
 
   const adminItems: NavItem[] = [
     { label: dict.sidebar.users,     path: '/admin/users',    icon: 'users' },
     { label: dict.sidebar.mail,      path: '/admin/mail',     icon: 'mail' },
-    { label: lang === 'de' ? 'Abonnenten' : 'Subscribers', path: '/admin/subscribers', icon: 'mail' },
+    { label: lang === 'de' ? 'Abonnenten' : 'Subscribers', path: '/admin/subscribers', icon: 'users' },
     { label: dict.sidebar.seo,       path: '/admin/seo',      icon: 'seo' },
     { label: dict.sidebar.payments,  path: '/admin/payments', icon: 'payments' },
     { label: dict.sidebar.branding,  path: '/admin/branding', icon: 'branding' },
-    { label: dict.sidebar.media,     path: '/admin/media',    icon: 'media' },
+    { label: dict.sidebar.media,     path: '/admin/media',    icon: 'image' },
     { label: dict.sidebar.health,    path: '/admin/health',   icon: 'health' },
     { label: dict.sidebar.settings,  path: '/admin/settings', icon: 'settings' },
   ];
@@ -356,6 +388,16 @@ export default function AdminShell({
   const groupLabels = lang === "de"
     ? { catalog: "Katalog", ops: "Betrieb", system: "System" }
     : { catalog: "Catalog", ops: "Operations", system: "System" };
+  const catalogPaths = new Set(["/admin", "/admin/products", "/admin/inventory"]);
+  const systemPaths = new Set(adminItems.map((item) => item.path));
+  const navGroups = [
+    { label: groupLabels.catalog, items: navItems.filter((item) => catalogPaths.has(item.path)) },
+    {
+      label: groupLabels.ops,
+      items: navItems.filter((item) => !catalogPaths.has(item.path) && !systemPaths.has(item.path)),
+    },
+    { label: groupLabels.system, items: navItems.filter((item) => systemPaths.has(item.path)) },
+  ].filter((group) => group.items.length > 0);
   const commandItems: CommandItem[] = [
     ...baseItems.filter((item) => !item.disabled).map((item) => ({ ...item, group: groupLabels.catalog })),
     ...(canManage ? managerItems.map((item) => ({ ...item, group: groupLabels.ops })) : []),
@@ -445,10 +487,7 @@ export default function AdminShell({
             {/* Status bar */}
             <div className={`mt-4 flex items-center justify-between ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               <div className="flex items-center gap-2">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                </span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
                 <span className="text-[10px] text-muted/70 tracking-wide">Hamburg</span>
               </div>
               <span className="font-mono text-[10px] tabular-nums text-muted/50" suppressHydrationWarning>{clock}</span>
@@ -487,23 +526,7 @@ export default function AdminShell({
               >
                 EN
               </button>
-              <div className="ml-auto">
-                <button
-                  onClick={toggleTheme}
-                  aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted/50 transition-all duration-150 hover:bg-surface-strong hover:text-gold"
-                >
-                  {theme === 'dark' ? (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                    </svg>
-                  ) : (
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
+
             </div>
           </div>
 
@@ -514,70 +537,75 @@ export default function AdminShell({
             <p className={`mb-2 px-2 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/40 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               Navigation
             </p>
-            <ul className="space-y-0.5">
-              {navItems.map((item) => {
-                if (item.disabled) {
-                  return (
-                    <li key={item.path}>
-                      <div
-                        aria-disabled="true"
-                        title={`${item.label} — ${maintenanceLabel(lang)}`}
-                        className={`flex cursor-not-allowed items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/40 lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
-                      >
-                        <span className="shrink-0"><NavIcon type={item.icon} /></span>
-                        <span className={`min-w-0 flex-1 break-words leading-snug font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
-                        {!sidebarCollapsed ? <span className="ml-auto shrink-0 rounded bg-gold/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gold/80">{maintenanceLabel(lang)}</span> : null}
-                      </div>
-                    </li>
-                  );
-                }
-                const isActive =
-                  item.path === '/admin'
-                    ? pathname === item.path
-                    : pathname === item.path || pathname.startsWith(`${item.path}/`);
-                return (
-                  <li key={item.path}>
-                    <Link
-                      href={item.path}
-                      prefetch={false}
-                      aria-current={pathname === item.path ? 'page' : undefined}
-                      onMouseEnter={() => router.prefetch(item.path)}
-                      onFocus={() => router.prefetch(item.path)}
-                      onClick={(event) => {
-                        if (navigatingPath) {
-                          event.preventDefault();
-                          return;
-                        }
-                        closeSidebar();
-                        if (pathname !== item.path) setNavigatingPath(item.path);
-                      }}
-                      title={sidebarCollapsed ? item.label : undefined}
-                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs transition-all duration-150 lg:py-2 ${navigatingPath ? 'cursor-wait' : ''} ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${
-                        isActive
-                          ? 'border-l-2 border-gold bg-gold/5 pl-[10px] text-gold'
-                          : 'border-l-2 border-transparent pl-[10px] text-muted/70 hover:bg-surface-strong hover:text-foreground'
-                      }`}
-                    >
-                      <span className={`shrink-0 transition-colors duration-150 ${isActive ? 'text-gold' : 'text-muted/40 group-hover:text-muted/70'}`}>
-                        <NavIcon type={item.icon} />
-                      </span>
-                      <span className={`min-w-0 flex-1 break-words leading-snug font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
-                      {item.badge && item.badge > 0 ? (
-                        <span className={`ml-auto inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
-                          isActive ? "bg-gold text-black" : "bg-red-500/15 text-red-500"
-                        }`}>
-                          {item.badge > 99 ? "99+" : item.badge}
-                        </span>
-                      ) : null}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            {navGroups.map((group) => (
+              <div key={group.label} className="mt-4 first:mt-0">
+                <h2 className={`mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{group.label}</h2>
+                <ul className="space-y-0.5">
+                  {group.items.map((item) => {
+                    if (item.disabled) {
+                      return (
+                        <li key={item.path}>
+                          <div
+                            aria-disabled="true"
+                            title={`${item.label} — ${maintenanceLabel(lang)}`}
+                            className={`flex cursor-not-allowed items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-muted/40 lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
+                          >
+                            <span className="shrink-0"><NavIcon type={item.icon} /></span>
+                            <span className={`min-w-0 flex-1 break-words leading-snug font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                            {!sidebarCollapsed ? <span className="ml-auto shrink-0 rounded bg-gold/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gold/80">{maintenanceLabel(lang)}</span> : null}
+                          </div>
+                        </li>
+                      );
+                    }
+                    const isActive =
+                      item.path === '/admin'
+                        ? pathname === item.path
+                        : pathname === item.path || pathname.startsWith(`${item.path}/`);
+                    return (
+                      <li key={item.path}>
+                        <Link
+                          href={item.path}
+                          prefetch={false}
+                          aria-current={isActive ? 'page' : undefined}
+                          onMouseEnter={() => router.prefetch(item.path)}
+                          onFocus={() => router.prefetch(item.path)}
+                          onClick={(event) => {
+                            if (navigatingPath) {
+                              event.preventDefault();
+                              return;
+                            }
+                            closeSidebar();
+                            if (pathname !== item.path) setNavigatingPath(item.path);
+                          }}
+                          title={sidebarCollapsed ? item.label : undefined}
+                          className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs transition-all duration-150 lg:py-2 ${navigatingPath ? 'cursor-wait' : ''} ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${
+                            isActive
+                              ? 'border-l-2 border-gold bg-gold/5 pl-[10px] text-gold'
+                              : 'border-l-2 border-transparent pl-[10px] text-muted/70 hover:bg-surface-strong hover:text-foreground'
+                          }`}
+                        >
+                          <span className={`shrink-0 transition-colors duration-150 ${isActive ? 'text-gold' : 'text-muted/40 group-hover:text-muted/70'}`}>
+                            <NavIcon type={item.icon} />
+                          </span>
+                          <span className={`min-w-0 flex-1 break-words leading-snug font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                          {item.badge && item.badge > 0 ? (
+                            <span className={`ml-auto inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                              isActive ? "bg-gold text-black" : "bg-red-500/15 text-red-500"
+                            }`}>
+                              {item.badge > 99 ? "99+" : item.badge}
+                            </span>
+                          ) : null}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
           </nav>
 
           {/* Bottom links */}
-          {logoutFailed && sidebarOpen ? <p id="logout-error" role="alert" className="px-4 py-2 text-sm text-red-600 dark:text-red-400">{dict.sidebar.logoutFailed}</p> : null}
+
           <div className={`border-t border-border px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
             <a
               href="https://mail.apfel-park.de"
@@ -602,20 +630,6 @@ export default function AdminShell({
               </svg>
               <span className={`min-w-0 break-words leading-snug font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{dict.sidebar.backToSite}</span>
             </Link>
-            <button
-              onClick={handleLogout}
-              disabled={logoutPending}
-              aria-busy={logoutPending}
-              aria-label={dict.sidebar.logout}
-              aria-describedby={logoutFailed ? 'logout-error' : undefined}
-              title={sidebarCollapsed ? dict.sidebar.logout : undefined}
-              className={`mt-0.5 flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 pl-[10px] text-xs text-red-400/70 transition-all duration-150 hover:bg-red-500/8 hover:text-red-400 lg:py-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
-            >
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-              </svg>
-              <span className={`font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{dict.sidebar.logout}</span>
-            </button>
           </div>
         </aside>
 
@@ -623,7 +637,7 @@ export default function AdminShell({
         <div ref={mainAreaRef} className="flex min-w-0 flex-1 flex-col overflow-hidden">
 
           {/* Top header */}
-          <header className="admin-shell-panel flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface/20 px-4 lg:px-8">
+          <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-4 lg:px-8">
 
             {/* Left: hamburger (mobile) + breadcrumb (desktop) + page title (mobile) */}
             <div className="flex min-w-0 items-center gap-3">
@@ -681,11 +695,9 @@ export default function AdminShell({
             <div className="flex items-center gap-2">
               {/* Online status – hidden on small mobile */}
               <div className="hidden items-center gap-2 sm:flex">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                </span>
-                <span className="text-[10px] text-muted/50 tracking-wide">{dict.sidebar.authenticated}</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+                <span className="max-w-36 truncate text-xs text-muted">{user?.email}</span>
+                <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted">{user?.role}</span>
               </div>
 
               {/* Theme toggle */}
@@ -713,7 +725,7 @@ export default function AdminShell({
                 aria-label={dict.sidebar.logout}
                 aria-describedby={logoutFailed ? 'logout-error' : undefined}
                 title={dict.sidebar.logout}
-                className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium text-muted/50 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 sm:flex"
+                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted transition hover:bg-red-500/10 hover:text-red-400 focus-visible:outline-2 focus-visible:outline-gold"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />

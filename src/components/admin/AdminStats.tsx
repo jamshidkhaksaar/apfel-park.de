@@ -56,18 +56,18 @@ export function KpiTile({
   icon?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
+    <article className="rounded-xl border border-border bg-surface p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">{label}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
         {icon ? <span className="shrink-0 text-muted">{icon}</span> : null}
       </div>
       {/* Tabular figures so a column of tiles aligns on the decimal. */}
-      <p className="mt-3 text-3xl font-bold tabular-nums leading-none text-foreground">{value}</p>
+      <p className="mt-3 text-2xl font-bold tabular-nums leading-none text-foreground">{value}</p>
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
         {trend ? <TrendBadge trend={trend} locale={locale} /> : null}
-        {sub ? <span className="text-xs text-muted">{sub}</span> : null}
+        {sub ? <span className="text-[13px] text-muted">{sub}</span> : null}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -99,9 +99,9 @@ export function StockComposition({
   ].filter((segment) => segment.value > 0);
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
+    <section aria-labelledby="stock-composition-heading" className="rounded-xl border border-border bg-surface p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold text-foreground">{isGerman ? "Lagerbestand" : "Stock levels"}</h2>
+        <h2 id="stock-composition-heading" className="text-sm font-semibold text-foreground">{isGerman ? "Lagerbestand" : "Stock levels"}</h2>
         <p className="text-xs tabular-nums text-muted">
           {total} {isGerman ? "SKUs" : "SKUs"}
         </p>
@@ -137,6 +137,6 @@ export function StockComposition({
       ) : (
         <p className="mt-4 text-sm text-muted">{isGerman ? "Keine Lagerdaten." : "No stock data."}</p>
       )}
-    </div>
+    </section>
   );
 }

@@ -7,6 +7,7 @@ import AdminShell from "@/components/admin/AdminShell";
 import { KpiTile, StockComposition } from "@/components/admin/AdminStats";
 import { formatPrice } from "@/lib/format";
 import type { DashboardStats } from "@/lib/admin-dashboard";
+import type { Locale } from "@/lib/i18n";
 
 type DashboardActivity = {
   id: string;
@@ -50,6 +51,17 @@ const ArrowRightIcon = ({ className }: { className?: string }) => (
 );
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+const formatRelativeTime = (value: string, locale: Locale) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const minutes = Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
+  const formatter = new Intl.RelativeTimeFormat(locale === "de" ? "de-DE" : "en-GB", { numeric: "auto" });
+  if (minutes < 60) return formatter.format(-minutes, "minute");
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return formatter.format(-hours, "hour");
+  return formatter.format(-Math.round(hours / 24), "day");
+};
 
 function isShopOpen(): boolean {
   const now = new Date();
@@ -118,8 +130,8 @@ export default function DashboardClient({
     { label: lang === "de" ? "Offene Bestellungen" : "Pending orders", count: liveStats.orders, href: "/admin/orders", tone: "bg-gold/15 text-gold" },
     { label: lang === "de" ? "Neue Reparaturen" : "New repairs", count: liveStats.repairs, href: "/admin/repairs", tone: "bg-gold/15 text-gold" },
     { label: lang === "de" ? "Ungelesene Chats" : "Unread chats", count: liveStats.unreadChats, href: "/admin/chat", tone: "bg-gold/15 text-gold" },
-    { label: lang === "de" ? "Ausverkaufte SKUs" : "Out-of-stock SKUs", count: liveStats.outOfStockSkus, href: "/admin/inventory", tone: "bg-red/15 text-red" },
-    { label: lang === "de" ? "Fehlgeschlagene Syncs" : "Failed syncs", count: liveStats.failedSyncs, href: "/admin/marketplaces", tone: "bg-red/15 text-red" },
+    { label: lang === "de" ? "Ausverkaufte SKUs" : "Out-of-stock SKUs", count: liveStats.outOfStockSkus, href: "/admin/inventory", tone: "bg-red-500/15 text-red-600 dark:text-red-400", urgent: true },
+    { label: lang === "de" ? "Fehlgeschlagene Syncs" : "Failed syncs", count: liveStats.failedSyncs, href: "/admin/marketplaces", tone: "bg-red-500/15 text-red-600 dark:text-red-400", urgent: true },
     { label: lang === "de" ? "Wartende Syncs" : "Queued syncs", count: liveStats.pendingSyncs, href: "/admin/marketplaces", tone: "bg-gold/15 text-gold" },
   ].filter((item) => item.count > 0);
 
@@ -282,16 +294,19 @@ export default function DashboardClient({
            Only queues with something in them, each a direct link. Doubles as
            navigation: you land on the work instead of hunting through a menu. */}
       {attentionItems.length > 0 ? (
-        <div className="mt-4 rounded-2xl border border-border bg-surface p-5">
-          <h2 className="text-sm font-semibold text-foreground">
-            {lang === "de" ? "Braucht Aufmerksamkeit" : "Needs attention"}
-          </h2>
+        <section aria-labelledby="needs-attention-heading" className="mt-4 rounded-xl border border-border bg-surface p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="needs-attention-heading" className="text-sm font-semibold text-foreground">
+              {lang === "de" ? "Braucht Aufmerksamkeit" : "Needs attention"}
+            </h2>
+            <p className="text-xs tabular-nums text-muted">{attentionItems.length} {lang === "de" ? "offene Punkte" : "open items"}</p>
+          </div>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {attentionItems.map((item) => (
               <li key={`${item.href}-${item.label}`}>
                 <Link
                   href={item.href}
-                  className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 text-sm transition hover:border-gold/50 hover:bg-gold/5"
+                  className={`flex min-h-11 items-center justify-between gap-3 rounded-lg border px-3 text-[13px] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${item.urgent ? "border-red-500/40 bg-red-500/5 hover:bg-red-500/10" : "border-border hover:border-gold/50 hover:bg-gold/5"}`}
                 >
                   <span className="truncate text-foreground">{item.label}</span>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${item.tone}`}>
@@ -301,9 +316,9 @@ export default function DashboardClient({
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : (
-        <p className="mt-4 rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+        <p className="mt-4 rounded-xl border border-border bg-surface p-5 text-sm text-muted">
           {lang === "de" ? "Nichts offen — alle Warteschlangen sind leer." : "Nothing open — every queue is clear."}
         </p>
       )}
@@ -318,157 +333,102 @@ export default function DashboardClient({
       </div>
 
       {/* ── Quick actions ── */}
-      <div className="mt-8">
-        <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
-          {dict.dashboard.quickActions.title}
-        </p>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section aria-labelledby="quick-actions-heading" className="mt-8">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="quick-actions-heading" className="text-sm font-semibold text-foreground">
+            {dict.dashboard.quickActions.title}
+          </h2>
+          <p className="text-xs text-muted">{lang === "de" ? "Häufige Aufgaben" : "Frequent tasks"}</p>
+        </div>
+        <div className="grid overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)] sm:grid-cols-2 xl:grid-cols-4">
           {quickActions.map(({ title, desc, path, accent, Icon }) => {
             const s = accentStyles[accent];
             return (
               <Link
                 key={path}
                 href={path}
-                className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-5 transition-all duration-200 hover:border-border hover:bg-surface-strong/60"
+                className="group flex min-h-20 items-center gap-3 border-border p-4 transition hover:bg-surface-strong/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold sm:border-r sm:last:border-r-0 xl:border-b-0"
               >
-                {/* Icon */}
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{ background: `linear-gradient(135deg, ${s.hex}22, ${s.hex}0a)`, border: `1px solid ${s.hex}30` }}
-                >
-                  <span style={{ color: s.hex }}>
-                    <Icon />
-                  </span>
-                </div>
-
-                {/* Text */}
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">{title}</p>
-                  <p className="mt-1 text-xs text-muted/60">{desc}</p>
-                </div>
-
-                {/* Arrow */}
-                <div className="flex justify-end">
-                  <span
-                    className="transition-transform duration-200 group-hover:translate-x-1"
-                    style={{ color: s.hex }}
-                  >
-                    <ArrowRightIcon />
-                  </span>
-                </div>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border" style={{ background: `${s.hex}12`, borderColor: `${s.hex}38`, color: s.hex }}>
+                  <Icon />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold text-foreground">{title}</span>
+                  <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-muted">{desc}</span>
+                </span>
+                <ArrowRightIcon className="h-4 w-4 shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5" />
               </Link>
             );
           })}
         </div>
-      </div>
+      </section>
 
       {/* ── Bottom row ── */}
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
 
         {/* Recent Activity */}
-        <div className="rounded-2xl border border-border bg-surface p-6">
-          <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
-            Recent Activity
-          </p>
-          <ul className="space-y-1">
+        <section aria-labelledby="recent-activity-heading" className="rounded-xl border border-border bg-surface p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="recent-activity-heading" className="text-sm font-semibold text-foreground">
+              {lang === "de" ? "Letzte Aktivitäten" : "Recent Activity"}
+            </h2>
+            <time className="text-xs text-muted" suppressHydrationWarning>{new Date(liveActivity[0]?.createdAt ?? liveStats.updatedAt).toLocaleTimeString(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit" })}</time>
+          </div>
+          <ul className="divide-y divide-border/60">
             {liveActivity.length > 0 ? liveActivity.map((item) => {
               const cfg = getActivityStatus(item.type, item.status);
               return (
-                <li
-                  key={item.id}
-                  className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-surface-strong"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${cfg.dot}`} />
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-medium text-foreground">{item.label}</p>
-                      <p className="text-[10px] font-mono text-muted/50 tabular-nums">{item.sub}</p>
-                    </div>
-                  </div>
-                  <span className={`ml-3 shrink-0 text-[10px] font-semibold uppercase tracking-wide ${cfg.text}`}>
-                    {cfg.label}
-                  </span>
+                <li key={item.id}>
+                  <Link href={item.type === "order" ? "/admin/orders" : "/admin/repairs"} className="group flex min-h-12 items-center justify-between gap-3 py-2.5 transition hover:bg-surface-strong/50 focus-visible:outline-2 focus-visible:outline-gold">
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${cfg.dot}`} aria-hidden="true" />
+                      <span className="min-w-0">
+                        <span className="block truncate text-[13px] font-medium text-foreground">{item.label}</span>
+                        <span className="mt-0.5 block truncate text-[11px] text-muted">{item.sub} · <time suppressHydrationWarning>{formatRelativeTime(item.createdAt, lang)}</time></span>
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cfg.text}`}>{cfg.label}</span>
+                      <ArrowRightIcon className="h-3.5 w-3.5 text-muted transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
                 </li>
               );
             }) : (
-              <li className="rounded-lg px-3 py-6 text-center text-sm text-muted/70">
+              <li className="py-6 text-center text-sm text-muted">
                 {lang === "de" ? "Noch keine letzten Aktivitäten vorhanden." : "No recent activity yet."}
               </li>
             )}
           </ul>
-        </div>
+        </section>
 
         {/* System */}
-        <div className="rounded-2xl border border-border bg-surface p-6">
-          <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted/60">
-            System
-          </p>
-          <ul className="space-y-3">
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
-              <div className="flex items-center gap-3">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="text-xs text-muted/80">{lang === "de" ? "Hosting" : "Hosting"}</span>
-              </div>
-              <span className="font-mono text-[10px] tabular-nums text-muted/50">
-                {lang === "de" ? "Self-hosted VPS" : "Self-hosted VPS"}
-              </span>
+        <section aria-labelledby="system-status-heading" className="rounded-xl border border-border bg-surface p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="system-status-heading" className="text-sm font-semibold text-foreground">
+              {lang === "de" ? "Systemstatus" : "System status"}
+            </h2>
+            <Link href="/admin/health" className="inline-flex min-h-8 items-center gap-1 text-xs font-semibold text-gold hover:underline focus-visible:outline-2 focus-visible:outline-gold">{lang === "de" ? "Details" : "Details"}<ArrowRightIcon className="h-3.5 w-3.5" /></Link>
+          </div>
+          <ul className="divide-y divide-border/60">
+            <li className="flex min-h-12 items-center justify-between gap-3 py-2.5">
+              <span className="flex items-center gap-3"><span className={`h-2 w-2 rounded-full ${liveStats.failedSyncs > 0 ? 'bg-rose-500' : liveStats.pendingSyncs > 0 ? 'bg-amber-500' : 'bg-emerald-500'}`} aria-hidden="true" /><span className="text-[13px] text-foreground">{lang === "de" ? "Kanalsynchronisierung" : "Channel synchronization"}</span></span>
+              <span className={`shrink-0 text-xs font-medium tabular-nums ${liveStats.failedSyncs > 0 ? 'text-rose-500' : liveStats.pendingSyncs > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{liveStats.failedSyncs > 0 ? `${liveStats.failedSyncs} ${lang === "de" ? "fehlgeschlagen" : "failed"}${liveStats.failedChannels.length ? ` · ${liveStats.failedChannels.join(", ")}` : ""}` : liveStats.pendingSyncs > 0 ? `${liveStats.pendingSyncs} ${lang === "de" ? "ausstehend" : "pending"}` : lang === "de" ? "Aktuell" : "Current"}</span>
             </li>
-
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
-              <div className="flex items-center gap-3">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="text-xs text-muted/80">{lang === "de" ? "Datenbank" : "Database"}</span>
-              </div>
-              <span className="font-mono text-[10px] tabular-nums text-emerald-400/80">PostgreSQL</span>
+            <li className="flex min-h-12 items-center justify-between gap-3 py-2.5">
+              <span className="text-[13px] text-foreground">{lang === "de" ? "Letzte erfolgreiche Synchronisierung" : "Last successful synchronization"}</span>
+              <time className="shrink-0 text-xs tabular-nums text-muted" suppressHydrationWarning>{liveStats.lastSyncedAt ? new Date(liveStats.lastSyncedAt).toLocaleString(lang === "de" ? "de-DE" : "en-GB") : lang === "de" ? "Noch keine" : "Not yet"}</time>
             </li>
-
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
-              <div className="flex items-center gap-3">
-                <span className={`h-1.5 w-1.5 rounded-full ${shopOpen ? 'bg-emerald-400' : 'bg-muted/40'}`} />
-                <span className="text-xs text-muted/80">{lang === "de" ? "Öffnungszeiten" : "Shop Hours"}</span>
-              </div>
-              <span className={`font-mono text-[10px] tabular-nums ${shopOpen ? 'text-emerald-400/80' : 'text-muted/50'}`}>
-                {shopOpen ? (lang === "de" ? 'Geöffnet' : 'Open') : (lang === "de" ? 'Geschlossen' : 'Closed')}
-              </span>
+            <li className="flex min-h-12 items-center justify-between gap-3 py-2.5">
+              <span className="flex items-center gap-3"><span className={`h-2 w-2 rounded-full ${shopOpen ? 'bg-emerald-500' : 'bg-muted/50'}`} aria-hidden="true" /><span className="text-[13px] text-foreground">{lang === "de" ? "Öffnungszeiten" : "Shop Hours"}</span></span>
+              <span className={`shrink-0 text-xs font-medium ${shopOpen ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted'}`}>{shopOpen ? (lang === "de" ? 'Geöffnet' : 'Open') : (lang === "de" ? 'Geschlossen' : 'Closed')}</span>
             </li>
-
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
-              <div className="flex items-center gap-3">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="text-xs text-muted/80">{lang === "de" ? "Dateispeicher" : "File Storage"}</span>
-              </div>
-              <span className="font-mono text-[10px] tabular-nums text-emerald-400/80">
-                {lang === "de" ? "Lokaler Uploadspeicher" : "Local upload storage"}
-              </span>
-            </li>
-
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
-              <div className="flex items-center gap-3">
-                <span className={`h-1.5 w-1.5 rounded-full ${liveStats.failedSyncs > 0 ? 'bg-rose-400' : liveStats.pendingSyncs > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
-                <span className="text-xs text-muted/80">{lang === "de" ? "Kanalsynchronisierung" : "Channel synchronization"}</span>
-              </div>
-              <span className={`font-mono text-[10px] tabular-nums ${liveStats.failedSyncs > 0 ? 'text-rose-400' : liveStats.pendingSyncs > 0 ? 'text-amber-400' : 'text-emerald-400/80'}`}>
-                {liveStats.failedSyncs > 0
-                  ? `${liveStats.failedSyncs} ${lang === "de" ? "fehlgeschlagen" : "failed"}${liveStats.failedChannels.length ? ` · ${liveStats.failedChannels.join(", ")}` : ""}`
-                  : liveStats.pendingSyncs > 0
-                    ? `${liveStats.pendingSyncs} ${lang === "de" ? "ausstehend" : "pending"}`
-                    : lang === "de" ? "Aktuell" : "Current"}
-              </span>
-            </li>
-
-            <li className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-surface-strong transition-colors duration-150">
-              <div className="flex items-center gap-3">
-                <span className={`h-1.5 w-1.5 rounded-full ${liveStats.lastSyncedAt ? 'bg-emerald-400' : 'bg-muted/40'}`} />
-                <span className="text-xs text-muted/80">{lang === "de" ? "Letzte erfolgreiche Synchronisierung" : "Last successful synchronization"}</span>
-              </div>
-              <span className="font-mono text-[10px] tabular-nums text-muted/60" suppressHydrationWarning>
-                {liveStats.lastSyncedAt
-                  ? new Date(liveStats.lastSyncedAt).toLocaleString(lang === "de" ? "de-DE" : "en-GB")
-                  : lang === "de" ? "Noch keine" : "Not yet"}
-              </span>
+            <li className="flex min-h-12 items-center justify-between gap-3 py-2.5">
+              <span className="text-[13px] text-foreground">{lang === "de" ? "Dashboard-Daten" : "Dashboard data"}</span>
+              <time className="shrink-0 text-xs tabular-nums text-muted" suppressHydrationWarning>{new Date(liveStats.updatedAt).toLocaleTimeString(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit" })}</time>
             </li>
           </ul>
-        </div>
+        </section>
 
       </div>
     </AdminShell>

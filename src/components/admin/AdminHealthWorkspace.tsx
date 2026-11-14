@@ -89,14 +89,21 @@ const MetricCard = ({
   label,
   value,
   hint,
+  meter,
 }: {
   label: string;
   value: string;
   hint?: string;
+  meter?: number;
 }) => (
-  <div className="glass-panel rounded-2xl p-5">
-    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{label}</p>
-    <p className="mt-3 text-2xl font-semibold text-foreground">{value}</p>
+  <div className="rounded-xl border border-border bg-surface p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
+    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">{label}</p>
+    <p className="mt-3 text-xl font-semibold tabular-nums text-foreground">{value}</p>
+    {typeof meter === "number" ? (
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border/60" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.max(0, Math.round(meter)))}>
+        <div className={`h-full rounded-full ${meter >= 90 ? "bg-red-500" : meter >= 75 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(100, Math.max(0, meter))}%` }} />
+      </div>
+    ) : null}
     {hint ? <p className="mt-2 text-sm text-muted">{hint}</p> : null}
   </div>
 );
@@ -150,11 +157,11 @@ export default function AdminHealthWorkspace({ dict }: { dict: HealthDictionary 
   }, [data?.generatedAt]);
 
   if (loading) {
-    return <div className="glass-panel rounded-2xl p-6 text-sm text-muted">{dict.loading}</div>;
+    return <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted" role="status">{dict.loading}</div>;
   }
 
   if (!data) {
-    return <div className="glass-panel rounded-2xl p-6 text-sm text-red-500">{error ?? dict.error}</div>;
+    return <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-500" role="alert">{error ?? dict.error}</div>;
   }
 
   return (
@@ -169,13 +176,17 @@ export default function AdminHealthWorkspace({ dict }: { dict: HealthDictionary 
             <span className="font-semibold text-foreground">{dict.labels.generatedAt}:</span> {updatedAt}
           </div>
         </div>
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div role="tablist" aria-label={dict.title} className="mt-6 flex flex-wrap gap-2">
           {(Object.keys(dict.tabs) as Array<keyof HealthDictionary["tabs"]>).map((key) => (
             <button
               key={key}
+              id={`health-tab-${key}`}
               type="button"
+              role="tab"
+              aria-selected={tab === key}
+              aria-controls={`health-panel-${key}`}
               onClick={() => setTab(key)}
-              className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
+              className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${
                 tab === key
                   ? "bg-gold text-black shadow-lg"
                   : "border border-border/60 bg-surface/60 text-muted hover:text-foreground"
@@ -188,20 +199,20 @@ export default function AdminHealthWorkspace({ dict }: { dict: HealthDictionary 
       </section>
 
       {tab === "overview" ? (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section id="health-panel-overview" role="tabpanel" aria-labelledby="health-tab-overview" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label={dict.cards.requests24h} value={String(data.overview.requests24h)} />
           <MetricCard label={dict.cards.visitors24h} value={String(data.overview.visitors24h)} />
           <MetricCard label={dict.cards.topPage} value={data.overview.topPage || "-"} />
           <MetricCard label={dict.cards.dbSize} value={formatBytes(data.overview.dbSizeBytes)} />
-          <MetricCard label={dict.cards.cpuLoad} value={formatPercent(data.overview.cpuLoadPercent)} />
-          <MetricCard label={dict.cards.memoryUsage} value={formatPercent(data.overview.memoryUsagePercent)} />
-          <MetricCard label={dict.cards.diskUsage} value={formatPercent(data.overview.diskUsagePercent)} />
+          <MetricCard label={dict.cards.cpuLoad} value={formatPercent(data.overview.cpuLoadPercent)} meter={data.overview.cpuLoadPercent} />
+          <MetricCard label={dict.cards.memoryUsage} value={formatPercent(data.overview.memoryUsagePercent)} meter={data.overview.memoryUsagePercent} />
+          <MetricCard label={dict.cards.diskUsage} value={formatPercent(data.overview.diskUsagePercent)} meter={data.overview.diskUsagePercent} />
           <MetricCard label={dict.cards.uploadsUsage} value={formatBytes(data.overview.uploadsUsageBytes)} />
         </section>
       ) : null}
 
       {tab === "traffic" ? (
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div id="health-panel-traffic" role="tabpanel" aria-labelledby="health-tab-traffic" className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <section className="glass-panel rounded-2xl p-6">
             <div className="grid gap-4 md:grid-cols-2">
               <MetricCard label={dict.labels.requests24h} value={String(data.traffic.requests24h)} />
@@ -235,7 +246,7 @@ export default function AdminHealthWorkspace({ dict }: { dict: HealthDictionary 
       ) : null}
 
       {tab === "server" ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div id="health-panel-server" role="tabpanel" aria-labelledby="health-tab-server" className="grid gap-6 lg:grid-cols-2">
           <section className="glass-panel rounded-2xl p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.labels.platform}</p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -270,7 +281,7 @@ export default function AdminHealthWorkspace({ dict }: { dict: HealthDictionary 
       ) : null}
 
       {tab === "logs" ? (
-        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <div id="health-panel-logs" role="tabpanel" aria-labelledby="health-tab-logs" className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <section className="glass-panel rounded-2xl p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.labels.security}</p>
             <div className="mt-4 grid gap-4">
@@ -298,7 +309,7 @@ export default function AdminHealthWorkspace({ dict }: { dict: HealthDictionary 
       ) : null}
 
       {tab === "backups" ? (
-        <section className="grid gap-6 lg:grid-cols-2">
+        <section id="health-panel-backups" role="tabpanel" aria-labelledby="health-tab-backups" className="grid gap-6 lg:grid-cols-2">
           <div className="glass-panel rounded-2xl p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{dict.backup.database}</p>
             <p className="mt-3 text-sm text-muted">{dict.backup.databaseHint}</p>
