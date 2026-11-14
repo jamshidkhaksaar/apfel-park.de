@@ -167,8 +167,8 @@ export default async function MarketplacesPage({
           <div className="glass-panel rounded-2xl p-5">
             <p className="text-xs uppercase tracking-[.2em] text-muted">Amazon.de</p>
             <p className="mt-2 text-sm text-muted">
-              New items only. Used, open-box and refurbished remain blocked until Amazon Renewed
-              approval is recorded.
+              New items only. Used and open-box stock remains blocked until the required
+              Amazon approval is recorded.
             </p>
           </div>
           <div className="glass-panel rounded-2xl p-5">

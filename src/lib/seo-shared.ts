@@ -189,12 +189,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "weekly",
     defaultTitle: {
-      de: "Smartphones neu, Open Box & gebraucht in Hamburg",
-      en: "Smartphones new, Open Box & used in Hamburg",
+      de: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen in Hamburg",
+      en: "Buy New, Open Box & Used (Grade A+) Smartphones in Hamburg",
     },
     defaultDescription: {
-      de: "Smartphones von Apple, Samsung und Xiaomi: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+) – Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
-      en: "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or used (Grade A+) – collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
+      de: "Smartphones von Apple, Samsung und Xiaomi: Neu (Versiegelt), Neu – Open Box oder Gebraucht – Zustand A+ kaufen. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
+      en: "Smartphones from Apple, Samsung and Xiaomi: New (Sealed), New – Open Box or Used – Grade A+. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
     },
     defaultKeywords: {
       de: "Handy kaufen Hamburg, Smartphones Hamburg, iPhone kaufen Hamburg, Samsung kaufen Hamburg, Open Box Handy Hamburg, Zustand A+ Smartphone, Handy Abholung LunaCenter",
@@ -578,12 +578,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Smartphones & Tablets Hamburg – neu, Open Box, A+",
-      en: "Smartphones & tablets Hamburg – new, Open Box, A+",
+      de: "Smartphones, Tablets & Zubehör in Hamburg – neu, Open Box & gebraucht (Zustand A+) kaufen",
+      en: "Buy New, Open Box & Used (Grade A+) Smartphones & Tablets in Hamburg",
     },
     defaultDescription: {
-      de: "Smartphones, Tablets und Zubehör bei Apfel Park: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+). Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
-      en: "Smartphones, tablets and accessories at Apfel Park: new sealed, Open Box or used (Grade A+). Collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
+      de: "Smartphones, Tablets und Zubehör bei Apfel Park kaufen: Neu (Versiegelt), Neu – Open Box oder Gebraucht – Zustand A+. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
+      en: "Buy smartphones, tablets and accessories at Apfel Park: New (Sealed), New – Open Box or Used – Grade A+. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
     },
     defaultKeywords: {
       de: "Online Shop Hamburg, Smartphones kaufen Hamburg, Open Box iPhone, Zustand A+ Handy, Zubehör online Hamburg",

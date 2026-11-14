@@ -11,11 +11,26 @@
  */
 
 import type { Locale } from "@/lib/i18n";
+import type { ProductCondition } from "@/lib/products";
+import {
+  offerDeliveryMethods,
+  schemaAvailability,
+  schemaItemCondition,
+} from "@/lib/schema";
 import { siteInfo } from "@/lib/site";
 
 export type CatalogSchemaProduct = {
   title: string;
   slug: string;
+  description?: string;
+  subtitle?: string;
+  image?: string;
+  images?: string[];
+  brand?: string;
+  sku?: string;
+  price?: number | string;
+  stock?: number | null;
+  condition?: ProductCondition;
 };
 
 export type CatalogSchemaOptions = {
@@ -51,15 +66,39 @@ export const buildCollectionPageSchema = ({
   name,
   ...(description ? { description } : {}),
   url,
-  mainEntity: {
+      mainEntity: {
     "@type": "ItemList",
     numberOfItems: products.length,
-    itemListElement: products.map((product, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: product.title,
-      url: `${siteInfo.url}/${lang}/store/${product.slug}`,
-    })),
+    itemListElement: products.map((product, index) => {
+      const productUrl = `${siteInfo.url}/${lang}/store/${product.slug}`;
+      const productImage = product.image ?? product.images?.[0];
+      const price = typeof product.price === 'string' ? Number(product.price) : product.price;
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        url: productUrl,
+        item: {
+          "@type": "Product",
+          "@id": productUrl,
+          name: product.title,
+          ...(product.description || product.subtitle ? { description: product.description || product.subtitle } : {}),
+          url: productUrl,
+          ...(productImage ? { image: productImage.startsWith('http') ? productImage : `${siteInfo.url}${productImage.startsWith('/') ? productImage : `/${productImage}`}` } : {}),
+          ...(product.sku ? { sku: product.sku } : {}),
+          ...(product.brand ? { brand: { "@type": "Brand", name: product.brand } } : {}),
+          offers: {
+            "@type": "Offer",
+            url: productUrl,
+            priceCurrency: "EUR",
+            price: Number.isFinite(price) ? price : 0,
+            itemCondition: schemaItemCondition(product.condition ?? "new"),
+            availability: schemaAvailability(product.stock ?? 0),
+            seller: { "@id": `${siteInfo.url}/#store` },
+            availableDeliveryMethod: offerDeliveryMethods,
+          },
+        },
+      };
+    }),
   },
 });
 

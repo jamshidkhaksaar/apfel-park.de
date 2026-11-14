@@ -21,6 +21,11 @@ import {
   isStorePaginationOutOfRange,
   resolveStoreIndexing,
 } from "@/lib/store-indexing";
+import {
+  offerDeliveryMethods,
+  schemaAvailability,
+  schemaItemCondition,
+} from "@/lib/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -93,12 +98,35 @@ export default async function AccessorySubcategoryPage({
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: catalog.total,
-      itemListElement: catalog.products.map((product, index) => ({
-        "@type": "ListItem",
-        position: (catalog.page - 1) * 24 + index + 1,
-        name: product.title,
-        url: `${siteInfo.url}/${lang}/store/${product.slug}`,
-      })),
+      itemListElement: catalog.products.map((product, index) => {
+        const productUrl = `${siteInfo.url}/${lang}/store/${product.slug}`;
+        const productImage = product.image ?? product.images?.[0];
+        return {
+          "@type": "ListItem",
+          position: (catalog.page - 1) * 24 + index + 1,
+          url: productUrl,
+          item: {
+            "@type": "Product",
+            "@id": productUrl,
+            name: product.title,
+            ...(product.description || product.subtitle ? { description: product.description || product.subtitle } : {}),
+            url: productUrl,
+            ...(productImage ? { image: productImage.startsWith('http') ? productImage : `${siteInfo.url}${productImage.startsWith('/') ? productImage : `/${productImage}`}` } : {}),
+            ...(product.sku ? { sku: product.sku } : {}),
+            ...(product.brand ? { brand: { "@type": "Brand", name: product.brand } } : {}),
+            offers: {
+              "@type": "Offer",
+              url: productUrl,
+              priceCurrency: "EUR",
+              price: product.price,
+              itemCondition: schemaItemCondition(product.condition ?? "new"),
+              availability: schemaAvailability(product.stock ?? 0),
+              seller: { "@id": `${siteInfo.url}/#store` },
+              availableDeliveryMethod: offerDeliveryMethods,
+            },
+          },
+        };
+      }),
     },
   };
   const breadcrumb = {

@@ -307,8 +307,10 @@ export default function AdminInventoryManager({ locale, canManage = true, canPri
   const conditionLabels: Record<string, string> = {
     new: adminDictionary[locale].productForm.conditionNew,
     used: adminDictionary[locale].productForm.conditionUsed,
-    refurbished: adminDictionary[locale].productForm.conditionRefurbished,
-    open_box: "Open-Box",
+    // Legacy imported rows can still carry the old condition value; keep
+    // showing them in the standardized Open Box wording.
+    refurbished: adminDictionary[locale].productForm.conditionOpenBox,
+    open_box: adminDictionary[locale].productForm.conditionOpenBox,
   };
 
   const submitAdjustment = (event: FormEvent) => {

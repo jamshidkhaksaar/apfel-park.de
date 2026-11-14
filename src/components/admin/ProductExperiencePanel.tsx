@@ -409,7 +409,7 @@ export default function ProductExperiencePanel({
               ].map((cond) => {
                 const item = experienceProfile.conditionGuide.find((g) => g.condition === cond.key) ?? {
                   condition: cond.key as "new" | "open_box" | "used",
-                  label: { de: cond.badge, en: cond.key === "new" ? "Brand New" : cond.key === "open_box" ? "Open Box" : "Refurbished A+" },
+                  label: { de: cond.badge, en: cond.key === "new" ? "Brand New" : cond.key === "open_box" ? "Open Box" : "Used – Grade A+" },
                   description: { de: cond.descFallbackDe, en: cond.descFallbackEn },
                   imageUrls: [],
                 };

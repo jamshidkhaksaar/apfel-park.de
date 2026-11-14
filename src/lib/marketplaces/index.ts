@@ -31,7 +31,7 @@ const validate = (marketplace: Marketplace, input: ListingInput): MarketplaceVal
   const errors = validateBase(input);
   if (marketplace === "amazon_de") {
     if (["used", "open_box", "refurbished"].includes(input.condition) && !input.amazonRenewedApproved) {
-      errors.push("Amazon publication is blocked until Amazon Renewed approval is recorded for this condition.");
+      errors.push("Amazon publication is blocked until the required Amazon approval is recorded for this condition.");
     }
     if (!input.gtin && !input.asin) errors.push("Amazon requires a GTIN or an existing ASIN match before publication.");
     if (!input.categoryMappings.amazon_de) errors.push("An Amazon.de productType mapping is required.");

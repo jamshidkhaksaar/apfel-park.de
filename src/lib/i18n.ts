@@ -422,7 +422,7 @@ export const dictionary = {
       ],
     },
     smartphones: {
-      heroTitle: "Smartphones in Hamburg: neu, Open Box & gebraucht (Zustand A+)",
+      heroTitle: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen in Hamburg",
       heroSubtitle:
         "Versiegelt, Open Box oder geprüft gebraucht – abholbar im LunaCenter Wilhelmsburg oder versichert in 1–3 Werktagen geliefert.",
       highlights: [
@@ -450,7 +450,7 @@ export const dictionary = {
           title: "Neue Laptops",
           subtitle: "Premium-Geräte direkt verfügbar mit voller Herstellergarantie.",
         },
-        refurbished: {
+        used: {
           title: "Gebrauchte Laptops",
           subtitle: "Geprüfte Qualität, wie neu – zu unschlagbaren Preisen.",
         },
@@ -1170,7 +1170,7 @@ export const dictionary = {
       ],
     },
     smartphones: {
-      heroTitle: "Smartphones in Hamburg: new, Open Box & used (Grade A+)",
+      heroTitle: "Buy New, Open Box & Used (Grade A+) Smartphones in Hamburg",
       heroSubtitle:
         "Sealed, Open Box or tested pre-owned – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
       highlights: [
@@ -1198,7 +1198,7 @@ export const dictionary = {
           title: "New Laptops",
           subtitle: "Premium devices available now with full manufacturer warranty.",
         },
-        refurbished: {
+        used: {
           title: "Used Laptops",
           subtitle: "Certified quality, like new – at unbeatable prices.",
         },
