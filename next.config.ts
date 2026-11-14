@@ -214,6 +214,13 @@ const nextConfig: NextConfig = {
           }
         ]
       },
+      // The in-store TV loop (public/shop-tv/index.html) must stream on the
+      // shop TV but never be crawled or indexed. The page itself carries a
+      // noindex meta tag; this answers crawlers even before the body loads.
+      {
+        source: '/shop-tv',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noimageindex, nosnippet' }],
+      },
       // Later exact matches override only CSP; all other global headers remain.
       ...['/de/checkout', '/en/checkout'].map((source) => ({
         source,

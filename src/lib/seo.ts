@@ -394,7 +394,9 @@ export const getRobotsConfig = async (): Promise<MetadataRoute.Robots> => {
     "/llms-full.txt",
     "/ai.txt",
   ];
-  const disallow = ["/admin", "/api/"];
+  // /shop-tv is the in-store TV loop (public/shop-tv/index.html). The TV
+  // needs the URL to stream, but it must never be crawled or indexed.
+  const disallow = ["/admin", "/api/", "/shop-tv"];
 
   return {
     ...common,
