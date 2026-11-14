@@ -184,7 +184,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/samsung-handys",
       title: "Samsung Handys kaufen – Galaxy ohne Vertrag",
       metaTitle: "Samsung Handys kaufen – Galaxy ohne Vertrag",
-      description: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu und Open Box mit transparentem Zustand und Versand in ganz Deutschland.",
+      description: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu, Open Box oder gebraucht (Zustand A+) mit transparentem Zustand und Versand in ganz Deutschland.",
       eyebrow: "Samsung Galaxy",
       introTitle: "Samsung Galaxy Modelle direkt vergleichen",
       intro: [
@@ -231,7 +231,7 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
       path: "/samsung-handys",
       title: "Buy Samsung Phones – Galaxy Without Contract",
       metaTitle: "Buy Samsung Galaxy Phones Without Contract",
-      description: "Buy Samsung Galaxy phones without a mobile contract. New and open-box devices with clear condition and delivery across Germany.",
+      description: "Buy Samsung Galaxy phones without a mobile contract. New, open-box or used (Grade A+) with clear condition and delivery across Germany.",
       eyebrow: "Samsung Galaxy",
       introTitle: "Compare Samsung Galaxy models",
       intro: [
@@ -362,8 +362,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "used-phones": {
     de: {
       path: "/gebrauchte-handys",
-      title: "Gebrauchte Handys kaufen – Open Box & geprüft",
-      metaTitle: "Gebrauchte & Open-Box-Handys kaufen",
+      title: "Gebrauchte Handys kaufen in Hamburg – Open Box & Zustand A+",
+      metaTitle: "Gebrauchte Handys in Hamburg kaufen",
       description: "Gebrauchte und Open-Box-Handys von Apple, Samsung und Google vergleichen: Zustand und Preis, Versand in Deutschland oder Abholung in Hamburg.",
       eyebrow: "Gebraucht & Open Box",
       introTitle: "Smartphones mit transparentem Zustand",
@@ -384,8 +384,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/gebrauchte-handys",
-      title: "Buy Used & Open-Box Phones – Tested",
-      metaTitle: "Buy Used & Open-Box Phones – Tested",
+      title: "Buy Used & Open-Box Phones in Hamburg – Grade A+",
+      metaTitle: "Used & Open-Box Phones in Hamburg",
       description: "Compare used and open-box phones from Apple, Samsung, Google and more with clear condition details, delivery in Germany or collection in Hamburg.",
       eyebrow: "Used & Open Box",
       introTitle: "Smartphones with transparent condition",

@@ -407,8 +407,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
       en: "Buy Samsung Galaxy Phones Without Contract",
     },
     defaultDescription: {
-      de: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu und Open Box mit transparentem Zustand und Versand in ganz Deutschland.",
-      en: "Buy Samsung Galaxy phones without a mobile contract. New and open-box devices with clear condition and delivery across Germany.",
+      de: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu, Open Box oder gebraucht (Zustand A+) mit transparentem Zustand und Versand in ganz Deutschland.",
+      en: "Buy Samsung Galaxy phones without a mobile contract. New, open-box or used (Grade A+) with clear condition and delivery across Germany.",
     },
     defaultKeywords: {
       de: "Samsung Handys, Samsung Handy ohne Vertrag, Samsung Galaxy kaufen",
@@ -463,8 +463,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.92,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Gebrauchte & Open-Box-Handys kaufen",
-      en: "Buy Used & Open-Box Phones – Tested",
+      de: "Gebrauchte Handys in Hamburg kaufen",
+      en: "Used & Open-Box Phones in Hamburg",
     },
     defaultDescription: {
       de: "Gebrauchte und Open-Box-Handys von Apple, Samsung und Google vergleichen: Zustand und Preis, Versand in Deutschland oder Abholung in Hamburg.",
