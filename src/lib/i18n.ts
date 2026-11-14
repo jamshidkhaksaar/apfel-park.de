@@ -432,7 +432,7 @@ export const dictionary = {
       ],
     },
     gaming: {
-      heroTitle: "Gaming & Konsolen",
+      heroTitle: "Gaming & Konsolen in Hamburg",
       heroSubtitle:
         "Gaming-Zubehör in Hamburg-Wilhelmsburg. Konsolen nehmen wir demnächst ins Sortiment auf.",
       highlights: [
@@ -1180,7 +1180,7 @@ export const dictionary = {
       ],
     },
     gaming: {
-      heroTitle: "Gaming & consoles",
+      heroTitle: "Gaming & consoles in Hamburg",
       heroSubtitle:
         "Gaming accessories in Hamburg-Wilhelmsburg. Consoles are joining the range soon.",
       highlights: [

@@ -27,7 +27,8 @@ export const dynamic = "force-dynamic";
 // Saying so is both accurate and the selling point.
 const copy = {
   de: {
-    title: "B-Ware & Open-Box Handys kaufen",
+    title: "B-Ware & Open-Box Handys kaufen in Hamburg",
+    h1: "B-Ware & Open-Box Handys kaufen in Hamburg",
     description:
       "B-Ware und Open-Box Smartphones bei Apfel Park Hamburg: geöffnete Vorführ- und Retourengeräte mit konkretem Zustandshinweis, Produktfotos und Garantie.",
     explainer:
@@ -35,7 +36,8 @@ const copy = {
     empty: "Aktuell sind keine B-Ware- oder Open-Box-Artikel verfügbar. Schau bald wieder vorbei.",
   },
   en: {
-    title: "Buy Open-Box Phones & Tablets",
+    title: "Buy Open-Box Phones & Tablets in Hamburg",
+    h1: "Buy Open-Box Phones & Tablets in Hamburg",
     description:
       "Open-box smartphones at Apfel Park Hamburg: opened display and return units with a specific condition note, product photos and warranty.",
     explainer:
@@ -109,7 +111,7 @@ export default async function OpenBoxPage({
     <div className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(collectionPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
-      <StoreCommerceHeader lang={locale} title={t.title} subtitle={t.description} eyebrow={t.title} query={activeFilters.query} resultCount={catalog.total} breadcrumbs={[{ label: t.title }]} />
+      <StoreCommerceHeader lang={locale} title={t.h1} subtitle={t.description} eyebrow={t.title} query={activeFilters.query} resultCount={catalog.total} breadcrumbs={[{ label: t.title }]} />
 
       <section className="border-b border-border/60 pb-8">
         <div className="container-page">
