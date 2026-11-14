@@ -182,8 +182,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "samsung-phones": {
     de: {
       path: "/samsung-handys",
-      title: "Samsung Handys kaufen – Galaxy ohne Vertrag",
-      metaTitle: "Samsung Handys kaufen – Galaxy ohne Vertrag",
+      title: "Samsung Handys kaufen – Galaxy ohne Vertrag in Hamburg",
+      metaTitle: "Samsung Handys in Hamburg kaufen",
       description: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu, Open Box oder gebraucht (Zustand A+) mit transparentem Zustand und Versand in ganz Deutschland.",
       eyebrow: "Samsung Galaxy",
       introTitle: "Samsung Galaxy Modelle direkt vergleichen",
@@ -229,8 +229,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/samsung-handys",
-      title: "Buy Samsung Phones – Galaxy Without Contract",
-      metaTitle: "Buy Samsung Galaxy Phones Without Contract",
+      title: "Buy Samsung phones – Galaxy without contract in Hamburg",
+      metaTitle: "Buy Samsung Galaxy Phones in Hamburg",
       description: "Buy Samsung Galaxy phones without a mobile contract. New, open-box or used (Grade A+) with clear condition and delivery across Germany.",
       eyebrow: "Samsung Galaxy",
       introTitle: "Compare Samsung Galaxy models",
@@ -278,8 +278,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "phones-without-contract": {
     de: {
       path: "/handys-ohne-vertrag",
-      title: "Handys ohne Vertrag günstig kaufen",
-      metaTitle: "Handys ohne Vertrag günstig kaufen",
+      title: "Handys ohne Vertrag günstig kaufen in Hamburg",
+      metaTitle: "Handys ohne Vertrag Hamburg kaufen",
       description: "Handys ohne Vertrag von Apple, Samsung, Google und Xiaomi vergleichen. Neu, Open Box oder gebraucht mit Zustandsangabe und Versand in Deutschland.",
       eyebrow: "Smartphones ohne Vertrag",
       introTitle: "Flexibel bleiben und nur das Gerät kaufen",
@@ -319,8 +319,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/handys-ohne-vertrag",
-      title: "Buy Phones Without a Contract in Germany",
-      metaTitle: "Buy Contract-Free Phones in Germany",
+      title: "Buy phones without a contract in Hamburg",
+      metaTitle: "Buy contract-free phones in Hamburg",
       description: "Buy contract-free phones from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
       eyebrow: "Phones without a contract",
       introTitle: "Stay flexible and buy the device only",
