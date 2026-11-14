@@ -364,8 +364,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.94,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "iPhone 17 kaufen – Pro, Pro Max & Air",
-      en: "Buy iPhone 17 in Germany – Prices & Stock",
+      de: "iPhone 17 kaufen in Hamburg",
+      en: "iPhone 17 in Germany – Prices & Hamburg pickup",
     },
     defaultDescription: {
       de: "iPhone 17, Pro, Pro Max und iPhone Air vergleichen: Speicher, Zustand, Preis und Verfügbarkeit. Versand in Deutschland oder Abholung in Hamburg.",
@@ -383,8 +383,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.94,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "iPhone 16 Pro Max kaufen – Angebote",
-      en: "Buy iPhone 16 Pro Max in Germany – Prices",
+      de: "iPhone 16 Pro Max kaufen in Hamburg – Angebote",
+      en: "iPhone 16 Pro Max in Germany – Hamburg Prices",
     },
     defaultDescription: {
       de: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in Deutschland oder Abholung in Hamburg.",
@@ -423,8 +423,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Xiaomi & Redmi Handys ohne Vertrag kaufen",
-      en: "Buy Xiaomi, Redmi & Poco Phones in Germany",
+      de: "Xiaomi & Redmi Handys in Hamburg kaufen",
+      en: "Buy Xiaomi, Redmi & Poco Phones in Hamburg",
     },
     defaultDescription: {
       de: "Xiaomi, Redmi und Poco Smartphones ohne Vertrag vergleichen: Preis, Speicher, Zustand und Verfügbarkeit; Versand oder Abholung in Hamburg.",

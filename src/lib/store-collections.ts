@@ -30,8 +30,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "iphone-17": {
     de: {
       path: "/iphone-17",
-      title: "iPhone 17 kaufen – Pro, Pro Max & Air",
-      metaTitle: "iPhone 17 kaufen – Pro, Pro Max & Air",
+      title: "iPhone 17 kaufen in Hamburg – Pro, Pro Max & Air",
+      metaTitle: "iPhone 17 kaufen in Hamburg",
       description: "iPhone 17, Pro, Pro Max und iPhone Air vergleichen: Speicher, Zustand, Preis und Verfügbarkeit. Versand in Deutschland oder Abholung in Hamburg.",
       eyebrow: "Apple iPhone 17",
       introTitle: "Welches iPhone 17 passt zu dir?",
@@ -56,8 +56,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/iphone-17",
-      title: "Buy iPhone 17 in Germany – Prices & Stock",
-      metaTitle: "Buy iPhone 17 in Germany – Prices & Stock",
+      title: "Buy iPhone 17 in Germany – Prices & Stock in Hamburg",
+      metaTitle: "iPhone 17 in Germany – Prices & Hamburg pickup",
       description: "Buy iPhone 17, Air, Pro or Pro Max in Germany. Compare current prices, storage and condition, with delivery across Germany or Hamburg pickup.",
       eyebrow: "Apple iPhone 17",
       introTitle: "Compare iPhone 17 prices and current stock",
@@ -84,8 +84,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "iphone-16-pro-max": {
     de: {
       path: "/iphone-16-pro-max",
-      title: "iPhone 16 Pro Max kaufen – Angebote vergleichen",
-      metaTitle: "iPhone 16 Pro Max kaufen – Angebote",
+      title: "iPhone 16 Pro Max kaufen in Hamburg – Angebote vergleichen",
+      metaTitle: "iPhone 16 Pro Max kaufen in Hamburg – Angebote",
       description: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in Deutschland oder Abholung in Hamburg.",
       eyebrow: "Apple iPhone 16 Pro Max",
       introTitle: "Aktuelle iPhone-16-Pro-Max-Angebote",
@@ -106,8 +106,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/iphone-16-pro-max",
-      title: "Buy iPhone 16 Pro Max in Germany – Prices",
-      metaTitle: "Buy iPhone 16 Pro Max in Germany – Prices",
+      title: "iPhone 16 Pro Max in Germany – Hamburg Prices",
+      metaTitle: "iPhone 16 Pro Max in Germany – Hamburg Prices",
       description: "Buy an iPhone 16 Pro Max in Germany. Compare current prices, storage, condition and availability, with delivery across Germany or Hamburg pickup.",
       eyebrow: "Apple iPhone 16 Pro Max",
       introTitle: "Compare current iPhone 16 Pro Max prices",
@@ -130,8 +130,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "xiaomi-redmi-phones": {
     de: {
       path: "/xiaomi-redmi-handys",
-      title: "Xiaomi, Redmi & Poco Handys kaufen",
-      metaTitle: "Xiaomi & Redmi Handys ohne Vertrag kaufen",
+      title: "Xiaomi, Redmi & Poco Handys kaufen in Hamburg",
+      metaTitle: "Xiaomi & Redmi Handys in Hamburg kaufen",
       description: "Xiaomi, Redmi und Poco Smartphones ohne Vertrag vergleichen: Preis, Speicher, Zustand und Verfügbarkeit; Versand oder Abholung in Hamburg.",
       eyebrow: "Xiaomi, Redmi & Poco",
       introTitle: "Xiaomi, Redmi und Poco Modelle vergleichen",
@@ -155,8 +155,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/xiaomi-redmi-handys",
-      title: "Buy Xiaomi, Redmi & Poco Phones in Germany",
-      metaTitle: "Buy Xiaomi, Redmi & Poco Phones in Germany",
+      title: "Buy Xiaomi, Redmi & Poco Phones in Hamburg",
+      metaTitle: "Buy Xiaomi, Redmi & Poco Phones in Hamburg",
       description: "Compare Xiaomi, Redmi and Poco phones without a contract by price, storage, condition and availability, with Germany delivery or Hamburg pickup.",
       eyebrow: "Xiaomi, Redmi & Poco",
       introTitle: "Compare Xiaomi, Redmi and Poco phones",
