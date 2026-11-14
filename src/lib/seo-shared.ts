@@ -600,8 +600,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     // The title leads with the term people actually type; English keeps
     // "open box", since B-Ware means nothing to an English reader.
     defaultTitle: {
-      de: "B-Ware & Open-Box Handys kaufen",
-      en: "Buy Open-Box Phones & Tablets",
+      de: "B-Ware & Open-Box Handys kaufen in Hamburg",
+      en: "Buy Open-Box Phones & Tablets in Hamburg",
     },
     defaultDescription: {
       de: "B-Ware und Open-Box Smartphones bei Apfel Park Hamburg mit klar ausgewiesenem Zustand, Preis und Verfügbarkeit.",
