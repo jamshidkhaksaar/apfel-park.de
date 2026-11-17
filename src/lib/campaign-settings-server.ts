@@ -6,10 +6,12 @@ import type { AdminCampaignMode } from "./seasonal-theme";
 
 export type CampaignSettings = {
   mode: AdminCampaignMode;
+  /** Black Friday menus in the admin; independent of the shop theme. */
+  adminTools: AdminCampaignMode;
   updatedAt?: string;
 };
 
-export const DEFAULT_CAMPAIGN_SETTINGS: CampaignSettings = { mode: "auto" };
+export const DEFAULT_CAMPAIGN_SETTINGS: CampaignSettings = { mode: "auto", adminTools: "auto" };
 
 const normalizeMode = (value: unknown): AdminCampaignMode =>
   value === "on" || value === "off" ? value : "auto";
@@ -28,9 +30,10 @@ export const getCampaignSettings = cache(async (): Promise<CampaignSettings> => 
       .eq("key", "campaign")
       .maybeSingle();
 
-    const value = (data?.value ?? {}) as { mode?: unknown; updatedAt?: unknown };
+    const value = (data?.value ?? {}) as { mode?: unknown; adminTools?: unknown; updatedAt?: unknown };
     return {
       mode: normalizeMode(value.mode),
+      adminTools: normalizeMode(value.adminTools),
       updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined,
     };
   } catch (error) {

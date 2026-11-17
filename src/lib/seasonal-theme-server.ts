@@ -13,11 +13,17 @@ export const getEffectiveCampaign = cache(async (): Promise<CampaignState> => {
 });
 
 /**
- * Black Friday tools in the admin (deal column, editor box, Black Week panel)
- * only exist while a campaign is coming up or running and the switch is not
- * "off". After Black Week they disappear until next year's teaser.
+ * Black Friday tools in the admin (deal column, editor box, Black Week panel).
+ * Controlled by their own setting (Admin -> Einstellungen), separate from the
+ * shop theme. On `auto` they show from the teaser start until Cyber Monday
+ * and disappear afterwards until next year's teaser.
  */
 export const isBlackFridayAdminActive = async (): Promise<boolean> => {
-  const campaign = await getEffectiveCampaign();
-  return campaign.mode !== "off" && (campaign.phase === "before" || campaign.phase === "live");
+  const settings = await getCampaignSettings();
+  if (settings.adminTools === "on") return true;
+  if (settings.adminTools === "off") return false;
+  // auto: follow the calendar, regardless of the shop theme switch, so staff
+  // can prepare prices while customers still see the normal shop.
+  const phase = campaignStateFor(new Date(), "auto").phase;
+  return phase === "before" || phase === "live";
 };

@@ -2,6 +2,12 @@ export type SettingsData = {
   /** Admin control for the seasonal campaign; `auto` follows env + calendar. */
   campaign: {
     mode: "auto" | "on" | "off";
+    /**
+     * Black Friday menus in the admin (deal column, editor box, Black Week
+     * panel), independent of the shop theme so prices can be prepared while
+     * the theme is still off. `auto`: teaser start until Cyber Monday.
+     */
+    adminTools?: "auto" | "on" | "off";
   };
   general: {
     shopName: string;

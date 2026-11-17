@@ -5,6 +5,7 @@ import { telegramText } from '@/lib/telegram-products/i18n';
 import { createAdminDbClient } from "@/lib/admin-db";
 import { businessAddress, businessIdentity } from '@/lib/business-identity';
 import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
+import { getCampaignSettings } from "@/lib/campaign-settings-server";
 import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
 
 import AdminShell from "../../../components/admin/AdminShell";
@@ -28,7 +29,7 @@ export default async function SettingsPage() {
     acc[curr.key] = curr.value;
     return acc;
   }, {} as Partial<Record<keyof SettingsData, SettingsData[keyof SettingsData]>>);
-  const campaignState = await getEffectiveCampaign();
+  const [campaignState, campaignSettings] = await Promise.all([getEffectiveCampaign(), getCampaignSettings()]);
   const general = (settingsMap.general ?? {}) as SettingsData["general"];
   const hours = (settingsMap.hours ?? {}) as SettingsData["hours"];
   const maintenance = (settingsMap.maintenance ?? {}) as SettingsData["maintenance"];
@@ -39,6 +40,7 @@ export default async function SettingsPage() {
   const initialSettings = {
     campaign: {
       mode: campaignState.mode,
+      adminTools: campaignSettings.adminTools,
     },
     general: {
       shopName: general.shopName || businessIdentity.tradingName,

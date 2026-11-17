@@ -396,6 +396,47 @@ export default function SettingsForm({
                 })}
               </div>
 
+              <div className="mt-6 border-t border-border/60 pt-5">
+                <h3 className="text-sm font-semibold text-foreground">
+                  {lang === "de" ? "Black-Friday-Menüs im Admin" : "Black Friday menus in the admin"}
+                </h3>
+                <p className="mt-1 text-xs text-muted">
+                  {lang === "de"
+                    ? "Deal-Spalte in der Produktliste, Box im Produkteditor und Black-Week-Panel. Unabhängig vom Shop-Theme: so lassen sich Preise vorbereiten, während Kunden noch den normalen Shop sehen."
+                    : "Deal column in the product list, editor box and Black Week panel. Independent of the shop theme, so prices can be prepared while customers still see the normal shop."}
+                </p>
+                <div className="mt-3 space-y-2">
+                  {(
+                    [
+                      ["auto", lang === "de" ? "Automatisch" : "Automatic", withCampaignDates(lang === "de" ? "Sichtbar vom Teaser ({teaser}) bis Cyber Monday ({end}), auch wenn das Theme aus ist." : "Visible from the teaser ({teaser}) until Cyber Monday ({end}), even with the theme off.", lang)],
+                      ["on", lang === "de" ? "Immer anzeigen" : "Always show", lang === "de" ? "Menüs auch außerhalb der Black Week zeigen (Preise gelten trotzdem nur in der Black Week)." : "Show the menus outside Black Week too (prices still only apply during Black Week)."],
+                      ["off", lang === "de" ? "Ausblenden" : "Hide", lang === "de" ? "Keine Black-Friday-Menüs im Admin." : "No Black Friday menus in the admin."],
+                    ] as const
+                  ).map(([mode, title, description]) => {
+                    const selected = (settings.campaign.adminTools ?? "auto") === mode;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => handleChange("campaign", "adminTools", mode)}
+                        className={`flex w-full items-start gap-3 rounded-xl border px-4 py-2.5 text-left transition ${
+                          selected ? "border-gold/50 bg-gold/10" : "border-border bg-black/20 hover:border-gold/30"
+                        }`}
+                      >
+                        <span className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border ${selected ? "border-gold" : "border-muted"}`}>
+                          {selected ? <span className="size-2 rounded-full bg-gold" /> : null}
+                        </span>
+                        <span>
+                          <span className="block text-sm font-semibold text-foreground">{title}</span>
+                          <span className="mt-0.5 block text-xs text-muted">{description}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <p className="mt-5 rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-xs text-muted">
                 {withCampaignDates(dict.settingsForm.campaignNote, lang)}
               </p>
