@@ -85,7 +85,6 @@ export default function AdminInventoryManager({ locale, canManage = true, canPri
   const [status, setStatus] = useState("all");
   const [busyProduct, setBusyProduct] = useState<string | null>(null);
   const [items, setItems] = useState<InventoryRow[]>([]);
-  const [history, setHistory] = useState<RecentAdjustment[]>([]);
   const [summary, setSummary] = useState({ available: 0, reserved: 0, low: 0, out: 0 });
   const [filteredSummary, setFilteredSummary] = useState<{ onHand: number; reserved: number; available: number } | null>(null);
   const [query, setQuery] = useState("");
@@ -135,7 +134,6 @@ export default function AdminInventoryManager({ locale, canManage = true, canPri
       setSimilarProducts({});
       if (payload.filterOptions) setFilterOptions(payload.filterOptions);
       if (payload.pagination) setPagination(payload.pagination);
-      setHistory(payload.recentAdjustments ?? []);
       if (payload.summary) setSummary(payload.summary);
       setFilteredSummary(payload.filteredSummary ?? null);
       setSelectedSku((current) => current && nextItems.some((item) => item.sku === current && item.canAdjust) ? current : nextItems.find((item) => item.canAdjust)?.sku ?? "");
@@ -513,15 +511,6 @@ export default function AdminInventoryManager({ locale, canManage = true, canPri
         </div>
       </section>
 
-      <section className="glass-panel rounded-2xl p-5">
-        <h2 className="text-lg font-semibold">{locale === "de" ? "Letzte Lagerbewegungen" : "Recent inventory movements"}</h2>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="text-xs uppercase text-muted"><tr><th className="py-2">{locale === "de" ? "Zeit" : "Time"}</th><th>SKU</th><th>{locale === "de" ? "Änderung" : "Change"}</th><th>{locale === "de" ? "Grund" : "Reason"}</th><th>{locale === "de" ? "Mitarbeiter" : "Staff"}</th><th>{locale === "de" ? "Notiz" : "Note"}</th></tr></thead>
-            <tbody className="divide-y divide-border/50">{history.map((entry) => <tr key={entry.id}><td className="py-2 pr-4 text-xs text-muted" suppressHydrationWarning>{new Date(entry.createdAt).toLocaleString(language)}</td><td className="font-mono text-xs">{entry.sku}</td><td className={`font-mono font-semibold ${entry.adjustment < 0 ? "text-red-500" : "text-emerald-500"}`}>{entry.adjustment > 0 ? "+" : ""}{entry.adjustment}</td><td>{adjustmentLabels[entry.reason as AdjustmentType]?.[locale] ?? entry.reason}</td><td className="text-muted">{entry.actor ?? "—"}</td><td className="max-w-xs truncate text-muted">{entry.note ?? "—"}</td></tr>)}</tbody>
-          </table>
-        </div>
-      </section>
     </div>
   );
 }

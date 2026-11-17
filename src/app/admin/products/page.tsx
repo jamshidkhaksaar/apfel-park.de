@@ -6,6 +6,8 @@ import ProductDeleteButton from "@/components/admin/ProductDeleteButton";
 import BlackFridayDiscountEditor from "@/components/admin/BlackFridayDiscountEditor";
 import GroupedProductCatalog from "@/components/admin/GroupedProductCatalog";
 import HoverImagePreview from "@/components/admin/HoverImagePreview";
+import ScanSearchInput from "@/components/admin/ScanSearchInput";
+import SidebarSpaceToggle from "@/components/admin/SidebarSpaceToggle";
 import { loadGroupedCatalog } from "@/lib/admin-grouped-catalog";
 import { getBlackFridaySelection } from "@/lib/black-friday-selection";
 import { catalogStockSummary } from "@/lib/catalog-stock-summary";
@@ -130,8 +132,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   // Each dropdown's options are counted with its own filter removed, so the
   // numbers show what picking that option would actually return rather than
   // what the current page already shows.
-  const buildWhere = (exclude?: "brand" | "subcategory") => {
-    const clauses: string[] = ["catalog_enabled = true"];
+  const buildWhere = (exclude?: "brand" | "subcategory", includeOffCatalog = false) => {
+    // The grouped view also lists products taken out of the shop in the
+    // inventory menu (labelled "Nicht im Shop"); deleted products never show.
+    const clauses: string[] = [includeOffCatalog ? "import_metadata->>'catalogDeletedAt' IS NULL" : "catalog_enabled = true"];
     const values: unknown[] = [];
     const p = (value: unknown) => {
       values.push(value);
@@ -187,7 +191,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(requestedPage, pages);
   const grouped = view === "catalog" && layout === "grouped"
-    ? await loadGroupedCatalog({ where, values: [...values], orderBy: orderBy[sort] ?? orderBy.newest, page: requestedPage, pageSize: GROUP_PAGE_SIZE })
+    ? await loadGroupedCatalog({ ...buildWhere(undefined, true), orderBy: orderBy[sort] ?? orderBy.newest, page: requestedPage, pageSize: GROUP_PAGE_SIZE })
     : null;
   values.push(PAGE_SIZE, (page - 1) * PAGE_SIZE);
   const productsResult = await query(
@@ -314,7 +318,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
         {view === "catalog" ? <CatalogStockSummary summary={stockSummary} locale={locale} expanded={Boolean(q)}/> : null}
         {view === "catalog" ? (<AdminFilterForm key={filterQuery} className="glass-panel grid gap-3 rounded-2xl p-4 min-w-0 sm:grid-cols-2 xl:grid-cols-4 [&>input]:min-w-0 [&>select]:min-w-0 [&>select]:w-full" action="/admin/products">
           {layout === "list" ? <input type="hidden" name="layout" value="list" /> : null}
-          <input name="q" defaultValue={q} placeholder={locale === "de" ? "Produkt, Modell oder SKU suchen" : "Search product, model, or SKU"} className="rounded-xl border border-border/60 bg-surface/70 px-3.5 py-2.5 text-sm text-foreground" />
+          <ScanSearchInput defaultValue={q} placeholder={locale === "de" ? "Suchen oder Barcode scannen" : "Search or scan a barcode"} />
           <select name="brand" defaultValue={brand} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Marken" : "All brands"}</option>{brandOptions.map((item) => (<option key={item.value} value={item.value}>{item.label} ({item.n})</option>))}</select>
           <select name="category" defaultValue={category} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Kategorien" : "All categories"}</option><option value="smartphones">Smartphones</option><option value="tablets">Tablets</option><option value="parts">{locale === "de" ? "Ersatzteile" : "Spare parts"}</option><option value="accessories">Accessories</option><option value="laptops">Laptops</option><option value="consoles">Consoles</option></select>
           <select name="subcategory" defaultValue={subcategory} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Unterkategorien" : "All subcategories"}</option>{subcategoryOptions.map((item) => (<option key={item.value} value={item.value}>{subcategoryLabel(item.value, locale)} ({item.n})</option>))}</select>
@@ -338,6 +342,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                 <Link role="tab" aria-selected={layout === "grouped"} href={toggle("grouped")} className={`rounded-lg px-3 py-1.5 font-medium transition ${layout === "grouped" ? "bg-gold text-black" : "text-muted hover:text-foreground"}`}>{locale === "de" ? "Nach Modell gruppiert" : "Grouped by model"}</Link>
                 <Link role="tab" aria-selected={layout === "list"} href={toggle("list")} className={`rounded-lg px-3 py-1.5 font-medium transition ${layout === "list" ? "bg-gold text-black" : "text-muted hover:text-foreground"}`}>{locale === "de" ? "Liste" : "List"}</Link>
               </div>
+              <SidebarSpaceToggle locale={locale} />
               {layout === "grouped" ? <p className="text-xs text-muted">{locale === "de" ? "Bestand mit − / + ändern, Preis eintippen und ✓ drücken. Maus auf ein Foto = große Vorschau." : "Change stock with − / +, type a price and press ✓. Hover a photo for a large preview."}</p> : null}
             </div>
           );
@@ -406,7 +411,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                           {justEdited ? <span className="inline-flex flex-wrap items-center gap-1.5 rounded-md bg-gold/15 px-2 py-1 text-xs font-medium text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}<span className="font-normal opacity-70">{sinceEdit(locale, product.edited_minutes_ago ?? 0)}</span></span> : null}
                         </div> : "—"}
                       </td>
-                      <td className={`${tableStyles.editCell} px-4 py-3`}>{canManage ? <><Link href={editorHref(product.id)} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link><ProductDeleteButton id={product.id} title={product.title} locale={locale}/></> : null}</td>
+                      <td className={`${tableStyles.editCell} px-4 py-3`}>{canManage ? <><Link href={editorHref(product.id)} prefetch={false} aria-label={locale === "de" ? `${product.title} bearbeiten` : `Edit ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition group-hover:bg-gold/10 group-hover:text-gold">→</Link><a href={`/admin/products/${product.id}/label`} target="_blank" rel="noopener" title={locale === "de" ? "Etikett drucken" : "Print label"} aria-label={locale === "de" ? `Etikett drucken: ${product.title}` : `Print label: ${product.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-gold/10 hover:text-gold">🖨</a><ProductDeleteButton id={product.id} title={product.title} locale={locale}/></> : null}</td>
                     </tr>
                     );
                   })}

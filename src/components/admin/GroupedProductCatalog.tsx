@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import BlackFridayDiscountEditor from "@/components/admin/BlackFridayDiscountEditor";
 import HoverImagePreview from "@/components/admin/HoverImagePreview";
+import ProductDeleteButton from "@/components/admin/ProductDeleteButton";
 import { PriceControl, QuantityControl } from "@/components/admin/QuickEditControls";
 import type { QuickEditGroup } from "@/lib/admin-grouped-catalog";
 import type { AdminLocale } from "@/lib/admin-i18n";
@@ -38,6 +39,7 @@ export default function GroupedProductCatalog({
   const de = locale === "de";
   const productImage = new Map(groups.flatMap((group) => group.products.map((product) => [product.id, product.image] as const)));
   const productActive = new Map(groups.flatMap((group) => group.products.map((product) => [product.id, product.isActive] as const)));
+  const productInShop = new Map(groups.flatMap((group) => group.products.map((product) => [product.id, product.catalogEnabled] as const)));
   const productBase = new Map(groups.flatMap((group) => group.products.map((product) => [product.id, product] as const)));
 
   return (
@@ -83,7 +85,7 @@ export default function GroupedProductCatalog({
                     <th className="px-3 py-2 text-right font-medium">{de ? "Preis" : "Price"}</th>
                     <th className="px-3 py-2 font-medium">{de ? "Bestand" : "Stock"}</th>
                     <th className="px-3 py-2 font-medium text-red-300">Black Friday</th>
-                    <th className="w-12 px-3 py-2" />
+                    <th className="w-28 px-3 py-2 text-right font-medium">{de ? "Aktionen" : "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/30">
@@ -104,7 +106,9 @@ export default function GroupedProductCatalog({
                             <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold ${conditionTone(row.condition)}`}>
                               {conditionLabel(locale, row.condition)}
                             </span>
-                            {inactive ? <span className="text-[10px] uppercase text-muted">{de ? "Entwurf" : "Draft"}</span> : null}
+                            {productInShop.get(row.productId) === false ? (
+                              <span className="whitespace-nowrap rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300">{de ? "Nicht im Shop" : "Not in shop"}</span>
+                            ) : inactive ? <span className="text-[10px] uppercase text-muted">{de ? "Entwurf" : "Draft"}</span> : null}
                           </span>
                           {mixedTitles && row.firstOfProduct ? <span className="mt-1 block max-w-[16rem] truncate text-[11px] text-muted" title={row.title}>{row.title}</span> : null}
                         </td>
@@ -140,16 +144,34 @@ export default function GroupedProductCatalog({
                             <span className="text-[11px] text-muted">{de ? "↑ gilt für alle Varianten" : "↑ applies to all variants"}</span>
                           ) : null}
                         </td>
-                        <td className="px-3 py-2.5 text-right">
-                          {canManage && row.firstOfProduct ? (
-                            <Link
-                              href={editHref[row.productId] ?? `/admin/products/${row.productId}`}
-                              prefetch={false}
-                              aria-label={de ? `${product.title} bearbeiten` : `Edit ${product.title}`}
-                              className="inline-flex size-8 items-center justify-center rounded-lg text-muted transition hover:bg-gold/10 hover:text-gold"
-                            >
-                              →
-                            </Link>
+                        <td className="px-3 py-2.5">
+                          {canManage ? (
+                            <span className="flex items-center justify-end gap-0.5">
+                              <a
+                                href={`/admin/products/${row.productId}/label${row.sku ? `?sku=${encodeURIComponent(row.sku)}` : ""}`}
+                                target="_blank"
+                                rel="noopener"
+                                title={de ? "Etikett drucken" : "Print label"}
+                                aria-label={de ? `Etikett drucken: ${product.title}` : `Print label: ${product.title}`}
+                                className="inline-flex size-8 items-center justify-center rounded-lg text-sm text-muted transition hover:bg-gold/10 hover:text-gold"
+                              >
+                                🖨
+                              </a>
+                              {row.firstOfProduct ? (
+                                <>
+                                  <Link
+                                    href={editHref[row.productId] ?? `/admin/products/${row.productId}`}
+                                    prefetch={false}
+                                    title={de ? "Bearbeiten" : "Edit"}
+                                    aria-label={de ? `${product.title} bearbeiten` : `Edit ${product.title}`}
+                                    className="inline-flex size-8 items-center justify-center rounded-lg text-muted transition hover:bg-gold/10 hover:text-gold"
+                                  >
+                                    →
+                                  </Link>
+                                  <ProductDeleteButton compact id={row.productId} title={product.title} locale={locale} />
+                                </>
+                              ) : null}
+                            </span>
                           ) : null}
                         </td>
                       </tr>

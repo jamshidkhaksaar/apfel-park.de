@@ -1,4 +1,5 @@
 import { query } from "@/lib/db";
+import { inventoryProductDetails } from "@/lib/inventory-product-details";
 
 /**
  * Grouped admin catalog: one card per model, one row per sellable variant.
@@ -35,10 +36,17 @@ export type QuickEditProduct = {
   id: string;
   title: string;
   brand: string | null;
+  model: string | null;
   category: string;
+  condition: string;
   price: number;
   isActive: boolean;
+  /** False when the product was taken out of the shop in the inventory menu. */
+  catalogEnabled: boolean;
   image: string | null;
+  /** Colour/storage of the product itself (specs, import data or title). */
+  color: string;
+  storage: string;
 };
 
 export type QuickEditGroup = {
@@ -66,8 +74,11 @@ type Row = {
   price: string | number;
   stock: number | null;
   is_active: boolean | null;
+  catalog_enabled: boolean | null;
   images: string[] | null;
   variants: unknown;
+  specs: unknown;
+  import_metadata: unknown;
   family_id: string | null;
   family_name: string | null;
   option_values: { color?: unknown; storage?: unknown } | null;
@@ -106,8 +117,11 @@ export const buildQuickEditGroup = (key: string, products: Row[], ledger: Map<st
     const variants = Array.isArray(product.variants)
       ? (product.variants as Array<Record<string, unknown>>).filter((variant) => variant && typeof variant === "object")
       : [];
-    const familyColor = text(product.option_values?.color);
-    const familyStorage = text(product.option_values?.storage).replace(/^(\d+)$/, "$1 GB");
+    // Older products keep colour and storage in their specs ("Farbe",
+    // "Speicher"), the import data or the title; the list shows those too.
+    const details = inventoryProductDetails({ ...product, variants: [] } as unknown as Record<string, unknown>, "de", "product");
+    const familyColor = text(product.option_values?.color) || details.color || "";
+    const familyStorage = text(product.option_values?.storage).replace(/^(\d+)$/, "$1 GB") || details.storage || "";
     if (variants.length > 0) {
       variants.forEach((variant, index) => {
         const sku = text(variant.sku) || null;
@@ -156,15 +170,23 @@ export const buildQuickEditGroup = (key: string, products: Row[], ledger: Map<st
     category: first.category,
     image: images[0] ?? null,
     images: images.slice(0, 6),
-    products: products.map((product) => ({
-      id: product.id,
-      title: product.title,
-      brand: product.brand,
-      category: product.category,
-      price: Number(product.price),
-      isActive: Boolean(product.is_active),
-      image: product.images?.[0] ?? null,
-    })),
+    products: products.map((product) => {
+      const details = inventoryProductDetails({ ...product, variants: [] } as unknown as Record<string, unknown>, "de", "product");
+      return {
+        id: product.id,
+        title: product.title,
+        brand: product.brand,
+        model: product.model,
+        category: product.category,
+        condition: product.condition ?? "new",
+        price: Number(product.price),
+        isActive: Boolean(product.is_active),
+        catalogEnabled: product.catalog_enabled !== false,
+        image: product.images?.[0] ?? null,
+        color: text(product.option_values?.color) || details.color || "",
+        storage: text(product.option_values?.storage).replace(/^(\d+)$/, "$1 GB") || details.storage || "",
+      };
+    }),
     rows,
     totalStock: rows.reduce((sum, row) => sum + row.stock, 0),
     minPrice: prices.length ? Math.min(...prices) : 0,
@@ -217,8 +239,8 @@ export async function loadGroupedCatalog({
   const [rows, ledger] = await Promise.all([
     query(
       `SELECT products.id, products.title, products.brand, products.model, products.sku, products.category,
-              products.condition, products.price, products.stock, products.is_active, products.images,
-              products.variants, family.id AS family_id, family.name AS family_name, family.option_values,
+              products.condition, products.price, products.stock, products.is_active, products.catalog_enabled,
+              products.images, products.variants, products.specs, products.import_metadata, family.id AS family_id, family.name AS family_name, family.option_values,
               ${GROUP_KEY_SQL} AS group_key
          FROM products ${FAMILY_JOIN}
         WHERE products.id = ANY($1::uuid[])
