@@ -12,6 +12,11 @@
 --
 -- Campaign discounts (Black Friday) are applied at read time and never stored
 -- in `products.price`, so they never pollute the history.
+--
+-- `products` is owned by postgres, so this runs through
+-- deployment/vps/product-intake/apply-owner-migration.sh. The history is
+-- written only by the trigger, whose recorder runs as the owner (SECURITY
+-- DEFINER); the runtime role can read it but not change it.
 SET LOCAL lock_timeout='10s';
 SET LOCAL statement_timeout='120s';
 
@@ -36,7 +41,7 @@ LANGUAGE sql IMMUTABLE AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION public.record_product_price(p_product uuid, p_key text, p_price numeric)
-RETURNS void LANGUAGE plpgsql AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
   last_price numeric;
 BEGIN
@@ -56,7 +61,7 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.track_product_price_history() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
   variant jsonb;
   variant_price numeric;
@@ -117,3 +122,16 @@ BEGIN
   END LOOP;
 END;
 $$;
+
+-- Permissions: read-only for the runtime role, nobody calls the recorder directly.
+REVOKE ALL ON FUNCTION public.record_product_price(uuid, text, numeric) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.track_product_price_history() FROM PUBLIC;
+DO $$ DECLARE runtime_role text := nullif(current_setting('apfel.runtime_role', true), '');
+BEGIN
+  IF runtime_role IS NULL THEN runtime_role := current_user; END IF;
+  REVOKE ALL ON TABLE public.product_price_history FROM PUBLIC;
+  -- Default privileges may already grant the runtime role write access.
+  EXECUTE format('REVOKE ALL ON TABLE public.product_price_history FROM %I', runtime_role);
+  EXECUTE format('REVOKE ALL ON SEQUENCE public.product_price_history_id_seq FROM %I', runtime_role);
+  EXECUTE format('GRANT SELECT ON TABLE public.product_price_history TO %I', runtime_role);
+END; $$;
