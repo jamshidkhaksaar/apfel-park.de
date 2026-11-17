@@ -131,7 +131,7 @@ export default function StoreQuickAddDrawer({
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-xs text-muted">{isGerman ? "Preis" : "Price"}</p>
-              <PriceBlock locale={locale} price={activePrice} compareAtPrice={selected?.compareAtPrice ?? product.compareAtPrice} size="row" className="mt-0.5" />
+              <PriceBlock locale={locale} price={activePrice} compareAtPrice={selected?.compareAtPrice ?? product.compareAtPrice} lowest30Days={Boolean(product.campaignPercent)} size="row" className="mt-0.5" />
             </div>
             <p className={`text-sm font-semibold ${stockToneClass[stockTone(activeStock, activeStock <= 0)]}`}>
               {stockLabel(locale, activeStock, stockTone(activeStock, activeStock <= 0))}

@@ -13,6 +13,7 @@ import {
 
 import { blackFridayCopy } from "@/lib/black-friday";
 import { discountPercentage, type CatalogCardModel } from "@/lib/catalog-card";
+import BlackFridayBadge from "./BlackFridayBadge";
 import { deckSlot, deckStep } from "@/lib/deal-deck";
 import { formatPrice } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
@@ -107,7 +108,9 @@ function DealCard({
           className="object-contain p-6 transition-transform duration-700 group-hover:scale-[1.03] md:p-8"
           unoptimized={shouldBypassImageOptimization(deal.image)}
         />
-        {discount ? (
+        {deal.campaignPercent ? (
+          <BlackFridayBadge percent={deal.campaignPercent} locale={lang} size="row" className="absolute left-3 top-3" />
+        ) : discount ? (
           <span className="absolute right-3 top-3 rounded-sm bg-[color:var(--signal)] px-2 py-1 text-xs font-black tabular-nums text-white shadow-sm">
             −{discount}%
           </span>

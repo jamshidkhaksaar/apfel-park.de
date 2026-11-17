@@ -6,6 +6,7 @@ import { getPublicPromotion } from "@/lib/promotion-server";
 import { blackFriday, blackFridayCopy } from "@/lib/black-friday";
 import { isCampaignPagePublic, secondsRemaining } from "@/lib/seasonal-theme";
 import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
+import { getCampaignMaxPercent } from "@/lib/products";
 
 import LocaleSync from "../../../components/LocaleSync";
 import MiniCart from "../../../components/checkout/MiniCart";
@@ -36,6 +37,7 @@ export default async function SiteLayout({
   // whole shop a month early.
   const navPhase = isCampaignPagePublic(campaignPhase) ? campaignPhase : null;
   const campaignCopy = blackFridayCopy[locale];
+  const campaignMaxPercent = navPhase === "live" ? await getCampaignMaxPercent() : null;
 
   return (
     <div className="min-h-screen">
@@ -54,6 +56,7 @@ export default async function SiteLayout({
                 // countdown, not a running sale.
                 date: navPhase === "before" ? "23.11." : "27.11.",
                 ariaLabel: navPhase === "before" ? campaignCopy.hero.startAria : undefined,
+                maxPercent: campaignMaxPercent,
               }
             : null
         }
@@ -63,7 +66,7 @@ export default async function SiteLayout({
           lang={locale}
           endsAt={season.endsAt}
           initialSeconds={seasonSeconds}
-          maxDiscount={null}
+          maxDiscount={campaignMaxPercent}
           phase={campaignPhase === "before" ? "before" : "live"}
         />
       ) : null}

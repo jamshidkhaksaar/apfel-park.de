@@ -6,6 +6,8 @@ import StoreCommerceHeader from "../../../../components/store/StoreCommerceHeade
 import StoreGrid from "../../../../components/store/StoreGrid";
 import ConditionExplainer from "@/components/store/ConditionExplainer";
 import BlackFridayStoreBand from "@/components/black-friday/BlackFridayStoreBand";
+import BlackFridayBanner from "@/components/black-friday/BlackFridayBanner";
+import { blackFridayCategories } from "@/lib/black-friday-categories";
 import IPhoneBanner from "@/components/banner/IPhoneBanner";
 import { createMetadata } from "../../../../lib/metadata";
 import { getProducts, getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
@@ -52,7 +54,7 @@ export default async function StorePage({ params, searchParams }: { params: Prom
   const lang = requireLocale(rawLang);
   const locale = lang;
   const query = await searchParams;
-  const { theme: season } = await getEffectiveCampaign();
+  const { theme: season, phase: campaignPhase } = await getEffectiveCampaign();
   const indexing = resolveStoreIndexing(query);
   const requestedCategory = valueOf(query.category) as StoreCatalogCategory;
   const category = catalogCategories.has(requestedCategory) ? requestedCategory : "all";
@@ -76,6 +78,26 @@ export default async function StorePage({ params, searchParams }: { params: Prom
     && !activeFilters.inStockOnly
     && activeFilters.priceMin === undefined
     && activeFilters.priceMax === undefined;
+
+  // Black Friday banner: follows the brand/category filter when it matches one
+  // of the campaign categories (e.g. Samsung), otherwise shows all deals.
+  const bannerCategory = season
+    ? blackFridayCategories.find((entry) => {
+        const params = new URLSearchParams(entry.query);
+        const brand = params.get("brand");
+        const bannerCat = params.get("category");
+        return brand
+          ? activeFilters.brands.length === 1 && activeFilters.brands[0].toLowerCase() === brand
+          : category === bannerCat;
+      })
+    : undefined;
+  const bannerDeals = season
+    ? allProducts
+        .filter((product) => product.campaignDeal && (product.stock ?? 0) > 0 && (!bannerCategory || bannerCategory.matches(product)))
+        .sort((left, right) => (right.campaignDeal?.percent ?? 0) - (left.campaignDeal?.percent ?? 0))
+    : [];
+  const bannerMaxPercent = bannerDeals[0]?.campaignDeal?.percent ?? null;
+  const bannerImages = [...new Set(bannerDeals.map((product) => product.image))].slice(0, 3);
 
   const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${lang}/store`, indexing);
   const storeName = lang === "de" ? "Online Shop" : "Online Store";
@@ -121,7 +143,16 @@ export default async function StorePage({ params, searchParams }: { params: Prom
 
       {/* During the campaign the deals are the store's call to action; the
           gold iPhone banner would out-shout them directly above the grid. */}
-      {season ? null : (
+      {season ? (
+        <BlackFridayBanner
+          lang={locale}
+          href={bannerCategory ? `/${locale}/store?${bannerCategory.query}` : `/${locale}/black-friday`}
+          title={bannerCategory ? bannerCategory.title[locale] : "Black Friday"}
+          maxPercent={bannerMaxPercent}
+          images={bannerImages}
+          phase={campaignPhase === "live" ? "live" : "before"}
+        />
+      ) : (
         <div className="container-page py-4">
           <IPhoneBanner lang={locale} headingLevel="h3" shopHref={`/${locale}/iphone-18-pro`} />
         </div>

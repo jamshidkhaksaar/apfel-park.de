@@ -21,6 +21,7 @@ export default function PriceBlock({
   align = "start",
   className = "",
   from = false,
+  lowest30Days = false,
 }: {
   locale: Locale;
   price: number;
@@ -29,6 +30,8 @@ export default function PriceBlock({
   align?: "start" | "end";
   className?: string;
   from?: boolean;
+  /** The strike price is the 30-day lowest price (Black Friday): label it so. */
+  lowest30Days?: boolean;
 }) {
   const scale = sizes[size];
   const discount = discountPercentage(price, compareAtPrice);
@@ -39,8 +42,12 @@ export default function PriceBlock({
       <p className={`${scale.price} font-bold tabular-nums leading-tight text-foreground`}><span className="sr-only">{isGerman ? "Aktueller Preis: " : "Current price: "}</span>{from ? <span className="mr-1 text-sm font-medium">{isGerman ? "Ab" : "From"}</span> : null}{formatPrice(locale, price)}</p>
       {compareAtPrice && compareAtPrice > price ? (
         <p className={`flex flex-wrap items-center gap-1.5 ${scale.strike} leading-tight`}>
-          <span className="font-semibold tabular-nums text-muted-strong line-through"><span className="sr-only">{isGerman ? "Vorheriger Preis: " : "Previous price: "}</span>{formatPrice(locale, compareAtPrice)}</span>
-          {discount ? (
+          {lowest30Days ? (
+            <span className="text-muted">{isGerman ? "30-Tage-Tiefstpreis" : "Lowest 30-day price"}</span>
+          ) : null}
+          <span className="font-semibold tabular-nums text-muted-strong line-through"><span className="sr-only">{lowest30Days ? (isGerman ? "Niedrigster Preis der letzten 30 Tage: " : "Lowest price of the last 30 days: ") : (isGerman ? "Vorheriger Preis: " : "Previous price: ")}</span>{formatPrice(locale, compareAtPrice)}</span>
+          {/* The Black Friday badge already shows the saving. */}
+          {discount && !lowest30Days ? (
             <span className={`rounded bg-sale px-1.5 py-0.5 ${scale.tag} font-bold tabular-nums text-white`}>
               −{discount}%
               <span className="sr-only"> {isGerman ? "gespart" : "off"}</span>

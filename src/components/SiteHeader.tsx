@@ -15,6 +15,7 @@ import ThemeToggle from "./ThemeToggle";
 import TrackedLink from "./TrackedLink";
 import { BlackFridayMark } from "./black-friday/BlackFridayMotion";
 import BlackWeekSting from "./black-friday/BlackWeekSting";
+import BlackFridayNavButton from "./black-friday/BlackFridayNavButton";
 
 type SiteHeaderProps = {
   lang: Locale;
@@ -29,6 +30,8 @@ type SiteHeaderProps = {
     /** Short date marker; before launch it is the countdown, never a saving. */
     date: string;
     ariaLabel?: string;
+    /** Live sale only: the real maximum saving shown on the navbar button. */
+    maxPercent?: number | null;
   } | null;
 };
 
@@ -141,6 +144,7 @@ export default function SiteHeader({
     <header
       ref={headerRef}
       className={`site-header sticky top-0 z-50 transition-all duration-300 ${isScrolled ? "is-scrolled" : ""}`}
+      data-has-campaign={campaign ? "" : undefined}
       translate="no"
     >
       <a
@@ -165,23 +169,6 @@ export default function SiteHeader({
             </span>
           </div>
           <div className="flex items-center gap-4">
-            {/* Phones never see the desktop pill, so the teaser gets a compact
-                entry in the existing utility bar instead of a second strip. It
-                disappears at md, where the contact details take the space. */}
-            {campaignBefore ? (
-              <Link
-                href={`/${lang}${campaign.href}`}
-                data-campaign-target="mobile"
-                aria-label={campaign.ariaLabel}
-                className="group flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] text-red-text transition hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:hidden"
-              >
-                <BlackFridayMark className="size-3 shrink-0 text-[color:var(--signal)]" />
-                <span className="font-bold uppercase tracking-[0.08em]">{campaign.label}</span>
-                <span className="hidden font-mono text-[9px] font-bold tabular-nums tracking-[0.06em] min-[360px]:inline">
-                  {campaign.date}
-                </span>
-              </Link>
-            ) : null}
             <div className="hidden flex-wrap items-center gap-4 text-muted/80 md:flex">
               {/* One number is the business phone; the other is explicitly
                   WhatsApp support. Labelling the mobile as a second "phone"
@@ -233,55 +220,32 @@ export default function SiteHeader({
           <div className="navbar-logo-slot flex shrink-0 items-center justify-center pl-1" suppressHydrationWarning>
             <Logo href={`/${lang}`} size="xl" className="navbar-logo" sizes={headerLogoSizes} priority />
           </div>
+          {campaign ? (
+            <div className="flex shrink-0 items-center sm:pl-2">
+              <BlackFridayNavButton
+                href={`/${lang}${campaign.href}`}
+                label="Black Friday"
+                marker={campaignBefore ? campaign.date : campaign.maxPercent ? `−${campaign.maxPercent}%` : null}
+                ariaLabel={campaign.ariaLabel ?? (campaign.maxPercent
+                  ? lang === "de" ? `Black Friday Angebote: bis zu ${campaign.maxPercent} % sparen` : `Black Friday deals: save up to ${campaign.maxPercent}%`
+                  : lang === "de" ? "Black Friday Angebote" : "Black Friday deals")}
+                active={campaignActive}
+              />
+            </div>
+          ) : null}
           {/* Desktop Navigation */}
           {/* `min-w-0` + `flex-wrap` let the nav wrap its items when large text
               leaves too little room, instead of being clipped by the shell. */}
           <nav className="hidden h-full min-w-0 grow flex-wrap items-center justify-center gap-0 xl:flex">
             {(() => {
-              const entries = campaign
-                ? [{ label: campaign.label, path: campaign.href, campaign: true }, ...desktopNavItems]
-                : desktopNavItems;
+              // The campaign has its own button beside the logo.
+              const entries = desktopNavItems;
               return entries.map((item) => {
                 const fullPath = `/${lang}${item.path}`;
                 const isActive = item.path === ""
                   ? pathname === fullPath
                   : pathname === fullPath || pathname.startsWith(`${fullPath}/`);
                 const isExactMatch = pathname === fullPath;
-                const isCampaign = Boolean((item as { campaign?: boolean }).campaign);
-
-                if (isCampaign) {
-                  return (
-                    <Link
-                      key={item.path}
-                      href={fullPath}
-                      data-campaign-target="nav"
-                      aria-current={isExactMatch ? "page" : undefined}
-                      aria-label={campaign?.ariaLabel}
-                      className={`group relative mx-1 flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-black uppercase tracking-[0.1em] transition active:translate-y-px 2xl:px-3 ${
-                        campaignBefore
-                          ? isActive
-                            ? "border-signal bg-signal/15 text-foreground"
-                            : "border-signal/50 bg-signal/10 text-foreground hover:border-signal hover:bg-signal/15"
-                          : isActive
-                            ? "border-signal bg-signal text-white"
-                            : "border-signal/60 bg-signal/10 text-white hover:bg-signal hover:text-white"
-                      }`}
-                    >
-                      <BlackFridayMark
-                        className={`size-3.5 shrink-0 ${
-                          campaignBefore ? "text-[color:var(--signal)]" : "text-white"
-                        }`}
-                      />
-                      {item.label}
-                      {campaignBefore ? (
-                        <span className="hidden font-mono text-[9px] font-bold tabular-nums tracking-[0.06em] text-foreground/70 min-[1600px]:inline">
-                          {campaign?.date}
-                        </span>
-                      ) : null}
-                    </Link>
-                  );
-                }
-
                 return (
                   <Link
                     key={item.path}
@@ -306,26 +270,6 @@ export default function SiteHeader({
           {/* Actions */}
           <div className="ml-auto flex h-full min-w-0 flex-wrap items-center justify-end gap-1 pr-2 sm:gap-2 sm:pr-3 xl:ml-0">
             <DeviceQuoteForm locale={lang} variant="header" />
-            {/* Tablets fall between the phone entry and the desktop nav pill. */}
-            {campaignBefore && campaign ? (
-              <Link
-                href={`/${lang}${campaign.href}`}
-                data-campaign-target="compact"
-                aria-label={campaign.ariaLabel}
-                aria-current={campaignActive ? "page" : undefined}
-                className={`hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] transition md:inline-flex xl:hidden ${
-                  campaignActive
-                    ? "border-signal bg-signal/15 text-foreground"
-                    : "border-signal/50 bg-signal/10 text-foreground hover:border-signal hover:bg-signal/15"
-                }`}
-              >
-                <BlackFridayMark className="size-3.5 shrink-0 text-[color:var(--signal)]" />
-                {campaign.label}
-                <span className="font-mono text-[9px] font-bold tabular-nums tracking-[0.06em] text-foreground/70">
-                  {campaign.date}
-                </span>
-              </Link>
-            ) : null}
             <div className="hidden items-center gap-3 xl:flex">
               <LocaleSwitcher />
               <ThemeToggle />

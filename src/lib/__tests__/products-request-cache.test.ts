@@ -21,6 +21,11 @@ vi.mock("react", () => ({
   },
 }));
 
+// Campaign pricing is off here; it has its own tests.
+vi.mock("@/lib/seasonal-theme-server", () => ({
+  getEffectiveCampaign: async () => ({ mode: "auto", source: "calendar", phase: "off", theme: null }),
+}));
+
 import { getProductBySlug } from "@/lib/products";
 
 describe("request-scoped product lookup", () => {

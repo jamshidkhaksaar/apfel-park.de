@@ -29,6 +29,8 @@ import { secondsRemaining } from "../../../lib/seasonal-theme";
 import { getEffectiveCampaign } from "../../../lib/seasonal-theme-server";
 import BlackFridayHero from "../../../components/black-friday/BlackFridayHero";
 import BlackFridayDealsSection from "../../../components/black-friday/BlackFridayDealsSection";
+import BlackFridayCategoryTiles from "../../../components/black-friday/BlackFridayCategoryTiles";
+import { blackFridayCategoryStats } from "../../../lib/black-friday-categories";
 import AnimatedSection from "../../../components/AnimatedSection";
 import TrackedLink from "../../../components/TrackedLink";
 
@@ -69,7 +71,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const blackFridayDeals = season ? await getBlackFridayDeals(lang, 48, "hero") : [];
   const blackFridayCards = blackFridayDeals.map((product) => toCatalogCardModel(product));
   const maxDiscount = blackFridayDeals.reduce<number | null>((highest, product) => {
-    const value = discountPercentage(product.price, product.compareAtPrice);
+    const value = product.campaignDeal?.percent ?? discountPercentage(product.price, product.compareAtPrice);
     if (!value) return highest;
     return highest === null ? value : Math.max(highest, value);
   }, null);
@@ -146,6 +148,14 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       ) : (
         <HeroSlider lang={lang} media={heroMedia} hero={home.hero} />
       )}
+
+      {season ? (
+        <BlackFridayCategoryTiles
+          lang={lang}
+          stats={blackFridayCategoryStats(blackFridayDeals)}
+          phase={campaignIsBefore ? "before" : "live"}
+        />
+      ) : null}
 
       {/* Brands Bar */}
       <section className="border-y border-border bg-surface-strong py-4 md:py-7">

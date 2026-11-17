@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { discountPercentage, type CatalogCardModel } from "@/lib/catalog-card";
+import BlackFridayBadge from "@/components/black-friday/BlackFridayBadge";
 import { EnergyClassArrow } from "@/components/EuEnergyLabelSection";
 import type { Locale } from "@/lib/i18n";
 import { shouldBypassImageOptimization } from "@/lib/image";
@@ -70,7 +71,9 @@ export default function StoreProductRow({
           className="object-contain p-3"
           unoptimized={shouldBypassImageOptimization(product.image)}
         />
-        {discount ? (
+        {product.campaignPercent ? (
+          <BlackFridayBadge percent={product.campaignPercent} locale={locale} size="row" className="absolute left-1.5 top-2 z-20" />
+        ) : discount ? (
           <span className="absolute left-2 top-2 z-20 rounded bg-sale px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-white shadow-sm">−{discount}%</span>
         ) : null}
       </div>
@@ -97,7 +100,7 @@ export default function StoreProductRow({
         {/* Below lg the right rail folds in here so the row stays one column set. */}
         <div className="mt-2 flex items-end justify-between gap-2 lg:hidden">
           <div className="flex flex-col gap-1">
-            <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} size="card" />
+            <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} lowest30Days={Boolean(product.campaignPercent)} size="card" />
             <p className={`text-[11px] font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
           </div>
           <AddToCartButton
@@ -112,7 +115,7 @@ export default function StoreProductRow({
 
       <div className="hidden w-44 shrink-0 flex-col items-end justify-between gap-3 border-l border-border py-1 pl-4 lg:flex">
         <div className="flex flex-col items-end gap-1.5">
-          <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} size="row" align="end" />
+          <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} lowest30Days={Boolean(product.campaignPercent)} size="row" align="end" />
           <p className={`text-xs font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
           {product.energyClass ? <EnergyClassArrow grade={product.energyClass} locale={locale} className="origin-top-right scale-90" /> : null}
         </div>

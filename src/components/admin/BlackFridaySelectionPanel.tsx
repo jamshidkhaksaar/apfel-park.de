@@ -4,6 +4,9 @@ import { useMemo, useState, useTransition } from "react";
 
 import type { AdminLocale } from "@/lib/admin-i18n";
 import type { AdminProductRecord } from "@/lib/admin-product-types";
+import type { CampaignDiscount } from "@/lib/campaign-pricing";
+
+import BlackFridayDiscountEditor from "./BlackFridayDiscountEditor";
 
 const discountOf = (product: AdminProductRecord) => {
   const compare = product.compareAtPrice ?? 0;
@@ -16,12 +19,16 @@ export default function BlackFridaySelectionPanel({
   products,
   pageIds: initialPageIds,
   heroIds: initialHeroIds,
+  discounts: initialDiscounts = {},
 }: {
   locale: AdminLocale;
   products: AdminProductRecord[];
   pageIds: string[];
   heroIds: string[];
+  discounts?: Record<string, CampaignDiscount>;
 }) {
+  const [discounts, setDiscounts] = useState<Record<string, CampaignDiscount>>(initialDiscounts);
+  const [onlyDiscounted, setOnlyDiscounted] = useState(false);
   const [pageIds, setPageIds] = useState<string[]>(initialPageIds);
   const [heroIds, setHeroIds] = useState<string[]>(initialHeroIds);
   const [query, setQuery] = useState("");
@@ -33,9 +40,10 @@ export default function BlackFridaySelectionPanel({
     const needle = query.trim().toLowerCase();
     return products
       .filter((product) => product.isActive && product.stock > 0)
+      .filter((product) => !onlyDiscounted || Boolean(discounts[product.id]))
       .filter((product) => !needle || `${product.title} ${product.brand}`.toLowerCase().includes(needle))
       .slice(0, 80);
-  }, [products, query]);
+  }, [products, query, onlyDiscounted, discounts]);
 
   const togglePage = (id: string) => {
     setPageIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
@@ -74,8 +82,8 @@ export default function BlackFridaySelectionPanel({
           </h3>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
             {isGerman
-              ? "Der Rabatt wird aus Verkaufspreis und Streichpreis berechnet. Preise pflegst du im Produkteditor; hier entscheidest du, welche Angebote im Home-Hero und auf der Black-Week-Seite erscheinen."
-              : "The saving is calculated from the sale and compare-at price. Edit prices in the product editor; choose here which offers appear in the home hero and on the Black Week page."}
+              ? "Trage pro Produkt einen Black-Friday-Rabatt in % oder € ein. Er gilt nur während der Black Week, der Badge wird gegen den niedrigsten Preis der letzten 30 Tage berechnet und Produkte mit Rabatt erscheinen automatisch auf der Black-Week-Seite."
+              : "Set a Black Friday discount per product in % or €. It applies only during Black Week, the badge is measured against the lowest price of the last 30 days, and discounted products appear on the Black Week page automatically."}
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-muted">
@@ -84,6 +92,9 @@ export default function BlackFridaySelectionPanel({
           </span>
           <span className="rounded-full border border-border/60 px-3 py-1.5">
             {heroIds.length} Hero
+          </span>
+          <span className="rounded-full border border-red-500/40 bg-red-600/10 px-3 py-1.5 text-red-200">
+            {Object.keys(discounts).length} {isGerman ? "mit BF-Rabatt" : "with BF discount"}
           </span>
         </div>
       </div>
@@ -98,9 +109,13 @@ export default function BlackFridaySelectionPanel({
             className="w-full rounded-2xl border border-border/60 bg-background/60 px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-gold/60"
           />
         </label>
-        <p className="text-xs text-muted">
-          {isGerman ? "Nur aktive Produkte mit Bestand." : "Active products with stock only."}
-        </p>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={onlyDiscounted} onChange={(event) => setOnlyDiscounted(event.target.checked)} />
+            {isGerman ? "Nur mit Black-Friday-Rabatt" : "Only with Black Friday discount"}
+          </label>
+          <span>{isGerman ? "Nur aktive Produkte mit Bestand." : "Active products with stock only."}</span>
+        </div>
       </div>
 
       <div className="mt-4 max-h-[28rem] divide-y divide-border/40 overflow-y-auto rounded-2xl border border-border/60 bg-background/40">
@@ -133,6 +148,22 @@ export default function BlackFridaySelectionPanel({
                 <input type="checkbox" checked={inHero} onChange={() => toggleHero(product.id)} />
                 {isGerman ? "Home-Hero" : "Home hero"}
               </label>
+              <div className="basis-full">
+                <BlackFridayDiscountEditor
+                  key={product.id}
+                  variant="inline"
+                  locale={locale}
+                  productId={product.id}
+                  price={product.price}
+                  initial={discounts[product.id] ?? null}
+                  onSaved={(discount) => setDiscounts((current) => {
+                    const next = { ...current };
+                    if (discount) next[product.id] = discount;
+                    else delete next[product.id];
+                    return next;
+                  })}
+                />
+              </div>
             </div>
           );
         })}

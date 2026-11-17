@@ -20,6 +20,8 @@ export type CatalogCardModel = {
   image: string;
   price: number;
   compareAtPrice?: number;
+  /** Black Friday saving in percent while the sale is live (against the 30-day lowest price). */
+  campaignPercent?: number;
   category: ProductCategory;
   condition: ProductCondition;
   stock: number;
@@ -88,6 +90,7 @@ export const toCatalogCardModel = (
   image: product.image,
   price: product.price,
   compareAtPrice: product.compareAtPrice,
+  campaignPercent: product.campaignDeal?.percent,
   category: product.category,
   condition: product.condition,
   stock: Math.max(0, product.storeFamily?.stock ?? product.stock ?? 0),

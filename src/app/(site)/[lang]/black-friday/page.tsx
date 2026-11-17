@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import BlackFridayCategoryTiles from "@/components/black-friday/BlackFridayCategoryTiles";
 import BlackFridayDealExplorer from "@/components/black-friday/BlackFridayDealExplorer";
 import BlackFridayHero from "@/components/black-friday/BlackFridayHero";
 import BlackWeekTimeline from "@/components/black-friday/BlackWeekTimeline";
 import BlackWeekTrust from "@/components/black-friday/BlackWeekTrust";
 import { blackFriday, blackFridayCopy } from "@/lib/black-friday";
+import { blackFridayCategoryStats } from "@/lib/black-friday-categories";
 import { discountPercentage, toCatalogCardModel } from "@/lib/catalog-card";
 import { createMetadata } from "@/lib/metadata";
 import { getBlackFridayDeals } from "@/lib/products";
@@ -18,9 +20,9 @@ import { siteInfo } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-const maxDiscountOf = (products: Array<{ price: number; compareAtPrice?: number }>) =>
+const maxDiscountOf = (products: Array<{ price: number; compareAtPrice?: number; campaignDeal?: { percent: number } }>) =>
   products.reduce<number | null>((highest, product) => {
-    const value = discountPercentage(product.price, product.compareAtPrice);
+    const value = product.campaignDeal?.percent ?? discountPercentage(product.price, product.compareAtPrice);
     if (!value) return highest;
     return highest === null ? value : Math.max(highest, value);
   }, null);
@@ -126,6 +128,8 @@ export default async function BlackFridayPage({
         variant="landing"
         phase={phase}
       />
+
+      <BlackFridayCategoryTiles lang={locale} stats={blackFridayCategoryStats(deals)} phase={phase} />
 
       <div id="week">
         <BlackWeekTimeline lang={locale} />

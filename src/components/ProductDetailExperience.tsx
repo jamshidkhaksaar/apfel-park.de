@@ -25,6 +25,7 @@ import ConditionBadge from "@/components/ConditionBadge";
 import { conditionLabel as conditionTierText } from "@/lib/condition-labels";
 import { formatPrice } from "@/lib/format";
 import PriceBlock from "@/components/store/PriceBlock";
+import BlackFridayBadge from "@/components/black-friday/BlackFridayBadge";
 import type { Locale } from "@/lib/i18n";
 import { deliveryEstimate } from "@/lib/delivery-estimate";
 import { groupSpecs } from "@/lib/product-spec-group";
@@ -102,6 +103,11 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
   const activePrice = selectedVariant?.price ?? product.price;
   const activeComparePrice = selectedVariant?.compareAtPrice ?? product.compareAtPrice;
   const activeDiscount = getDiscount(activePrice, activeComparePrice);
+  // Black Friday saving, measured against the 30-day lowest price of the
+  // selected variant (or the product when the variant has no own price).
+  const campaignPercent = selectedVariant?.price !== undefined
+    ? selectedVariant.campaignDeal?.percent
+    : product.campaignDeal?.percent;
   const activeStock = selectedVariant?.stock ?? product.stock;
   const activePickupStock=selectedVariant?.pickupStock ?? product.pickupStock ?? 0;
   const activeSku = selectedVariant?.sku || product.sku;
@@ -211,7 +217,9 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             <span className="rounded-full border border-border/60 bg-surface/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
               {product.brand || product.category}
             </span>
-            {activeDiscount ? (
+            {campaignPercent ? (
+              <BlackFridayBadge percent={campaignPercent} locale={locale} size="row" className="!rotate-0" />
+            ) : activeDiscount ? (
               <span className="rounded-full bg-sale px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white">
                 -{activeDiscount}%
               </span>
@@ -233,7 +241,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             <p className="mt-3 text-pretty text-sm leading-6 text-muted sm:text-base">{product.subtitle}</p>
           ) : null}
 
-          <PriceBlock locale={locale} price={activePrice} compareAtPrice={activeComparePrice} size="detail" className="mt-5 sm:mt-6" />
+          <PriceBlock locale={locale} price={activePrice} compareAtPrice={activeComparePrice} lowest30Days={Boolean(campaignPercent)} size="detail" className="mt-5 sm:mt-6" />
           <p className="sr-only" aria-live="polite" aria-atomic="true">
             {locale === "de" ? "Ausgewählt" : "Selected"}: {activeVariantLabel}. {locale === "de" ? "Preis" : "Price"}: {formatMoney(locale, activePrice)}. {isOutOfStock ? (locale === "de" ? "Ausverkauft" : "Sold out") : (locale === "de" ? "Verfügbar" : "Available")}.
           </p>

@@ -17,6 +17,8 @@ import { selectTrendingProducts } from '@/lib/trending-products';
 import { readDescriptionAiHashes } from '@/lib/product-text-provenance';
 import { readBatteryHealthRange, type BatteryHealthRange } from './product-offer-options';
 import { getBlackFridaySelection } from './black-friday-selection';
+import { applyCampaignDiscount, campaignDealFor, productPriceKey, type CampaignDeal } from './campaign-pricing';
+import { getEffectiveCampaign } from './seasonal-theme-server';
 
 export type ProductCategory = "smartphones" | "tablets" | "accessories" | "parts" | "consoles" | "laptops";
 
@@ -46,6 +48,10 @@ export type ProductVariant = {
   imageIndex?: number;
   images?: string[];
   isDefault?: boolean;
+  /** Key of this variant's line in `product_price_history`. */
+  priceKey?: string;
+  /** Set while a Black Friday discount applies to this variant. */
+  campaignDeal?: CampaignDeal;
 };
 
 export type Product = {
@@ -62,6 +68,8 @@ export type Product = {
   titleAiHashes?: string[];
   price: number;
   compareAtPrice?: number;
+  /** Set while a Black Friday discount applies; `price` is then the sale price. */
+  campaignDeal?: CampaignDeal;
   category: ProductCategory;
   subcategory?: string;
   condition: ProductCondition;
@@ -460,6 +468,7 @@ const toVariants = (value: unknown, locale: Locale = "de"): ProductVariant[] => 
           ? candidate.images.filter((image): image is string => typeof image === "string" && Boolean(image.trim())).slice(0, 4)
           : undefined,
         isDefault: Boolean(candidate.isDefault),
+        priceKey: productPriceKey(candidate),
       };
     })
     .filter((entry) => entry !== null) as ProductVariant[];
@@ -640,6 +649,123 @@ const hydrateProductsWithInventory = async (products: Product[], failOnError = f
   }
 };
 
+type LowestPriceRow = { product_id: string; variant_key: string; lowest: string | number };
+
+/**
+ * Lowest price of the previous 30 days per product and variant. The newest
+ * entry from before the window counts too: it was still the price in effect
+ * when the window opened.
+ */
+const getLowestPrices30Days = async (productIds: string[]): Promise<Map<string, number>> => {
+  const lowest = new Map<string, number>();
+  if (productIds.length === 0) return lowest;
+  try {
+    const result = await query(
+      `SELECT product_id, variant_key, min(price) AS lowest FROM (
+         SELECT product_id, variant_key, price FROM product_price_history
+          WHERE product_id = ANY($1::uuid[]) AND recorded_at >= now() - interval '30 days'
+         UNION ALL
+         SELECT DISTINCT ON (product_id, variant_key) product_id, variant_key, price FROM product_price_history
+          WHERE product_id = ANY($1::uuid[]) AND recorded_at < now() - interval '30 days'
+          ORDER BY product_id, variant_key, recorded_at DESC, id DESC
+       ) window_prices
+       GROUP BY product_id, variant_key`,
+      [productIds],
+    );
+    for (const row of result.rows as LowestPriceRow[]) {
+      const value = Number(row.lowest);
+      if (Number.isFinite(value)) lowest.set(`${row.product_id}:${row.variant_key}`, value);
+    }
+  } catch (error) {
+    // Before the price-history migration runs, the regular price is the only
+    // known reference.
+    if ((error as { code?: string }).code !== '42P01') console.error('getLowestPrices30Days failed:', error);
+  }
+  return lowest;
+};
+
+/**
+ * Applies the staff-set Black Friday discounts while the sale is live. Cart and
+ * checkout read products through the same functions, so the badge, the product
+ * page and the order always charge the same price.
+ */
+export const applyCampaignPricing = async (products: Product[]): Promise<Product[]> => {
+  if (products.length === 0) return products;
+  const campaign = await getEffectiveCampaign();
+  if (!campaign.theme || campaign.phase !== 'live') return products;
+  const { discounts } = await getBlackFridaySelection();
+  const discounted = products.filter((product) => discounts[product.id]);
+  if (discounted.length === 0) return products;
+  const lowest = await getLowestPrices30Days(discounted.map((product) => product.id));
+
+  return products.map((product) => {
+    const discount = discounts[product.id];
+    if (!discount) return product;
+
+    const variants = product.variants.map((variant) => {
+      if (variant.price === undefined) return variant;
+      const sale = applyCampaignDiscount(variant.price, discount);
+      if (sale === null) return variant;
+      const deal = campaignDealFor(variant.price, sale, lowest.get(`${product.id}:${variant.priceKey ?? ''}`));
+      return { ...variant, price: sale, compareAtPrice: deal?.referencePrice, campaignDeal: deal ?? undefined };
+    });
+
+    const sale = applyCampaignDiscount(product.price, discount);
+    if (sale === null) return { ...product, variants };
+    const deal = campaignDealFor(product.price, sale, lowest.get(`${product.id}:`));
+    return {
+      ...product,
+      variants,
+      price: sale,
+      compareAtPrice: deal?.referencePrice,
+      campaignDeal: deal ?? undefined,
+      discountPercentage: deal?.percent,
+      hasDiscount: Boolean(deal),
+    };
+  });
+};
+
+/**
+ * Largest real Black Friday saving across the discounted products, for the
+ * navbar button and banners. Light query: only the discounted rows, no full
+ * catalogue load on every page.
+ */
+export const getCampaignMaxPercent = cache(async (): Promise<number | null> => {
+  const campaign = await getEffectiveCampaign();
+  if (!campaign.theme || campaign.phase !== 'live') return null;
+  const { discounts } = await getBlackFridaySelection();
+  const ids = Object.keys(discounts);
+  if (ids.length === 0) return null;
+  try {
+    const [rows, lowest] = await Promise.all([
+      query('SELECT id, price, variants FROM products WHERE is_active = true AND id = ANY($1::uuid[])', [ids]),
+      getLowestPrices30Days(ids),
+    ]);
+    let max = 0;
+    for (const row of rows.rows as Array<{ id: string; price: string | number; variants: unknown }>) {
+      const discount = discounts[row.id];
+      if (!discount) continue;
+      const points: Array<[number | undefined, string]> = [[toNumber(row.price), '']];
+      if (Array.isArray(row.variants)) {
+        for (const variant of row.variants as Array<Record<string, unknown>>) {
+          points.push([toNumber(variant?.price as number | string | null | undefined), productPriceKey(variant)]);
+        }
+      }
+      for (const [price, key] of points) {
+        if (price === undefined) continue;
+        const sale = applyCampaignDiscount(price, discount);
+        if (sale === null) continue;
+        const deal = campaignDealFor(price, sale, lowest.get(`${row.id}:${key}`));
+        if (deal && deal.percent > max) max = deal.percent;
+      }
+    }
+    return max > 0 ? max : null;
+  } catch (error) {
+    console.error('getCampaignMaxPercent failed:', error);
+    return null;
+  }
+});
+
 /** Fetches and request-memoizes the active catalog plus authoritative inventory. */
 const getProductsCached = cache(async (
   category: ProductCategory | null,
@@ -667,7 +793,7 @@ const getProductsCached = cache(async (
   const products = (data as DbProduct[])
     .map((row) => mapProduct(row, locale))
     .filter((item): item is Product => item !== null);
-  const hydrated = await hydrateProductsWithInventory(products, failOnError);
+  const hydrated = await applyCampaignPricing(await hydrateProductsWithInventory(products, failOnError));
   if (!category) return hydrated;
   return hydrated.filter((product) => product.category === category);
 });
@@ -1003,10 +1129,10 @@ export async function getInStockAlternatives(
        LIMIT $4`,
       [product.category, product.id, product.brand ?? "", limit],
     );
-    return (result.rows as DbProduct[])
+    return applyCampaignPricing((result.rows as DbProduct[])
       .map((row) => mapProduct(row, locale))
       .filter((item): item is Product => item !== null && item.id !== product.id)
-      .slice(0, limit);
+      .slice(0, limit));
   } catch (error) {
     console.error("getInStockAlternatives failed:", error);
     return [];
@@ -1385,7 +1511,7 @@ const getProductBySlugCached = cache(async (slug: string, locale: Locale): Promi
   if (!mapped) {
     throw new Error(`Product query returned an invalid row for slug "${slug}"`);
   }
-  const hydrated = (await hydrateProductsWithInventory([mapped]))[0];
+  const hydrated = (await applyCampaignPricing(await hydrateProductsWithInventory([mapped])))[0];
   if (!hydrated) {
     throw new Error(`Product inventory hydration lost slug "${slug}"`);
   }
@@ -1525,7 +1651,7 @@ export async function getRelatedProducts(product: Product, limit = 4, locale: Lo
     }
   }
 
-  return hydrateProductsWithInventory(collected.slice(0, limit));
+  return applyCampaignPricing(await hydrateProductsWithInventory(collected.slice(0, limit)));
 }
 
 /**
@@ -1548,9 +1674,12 @@ export async function getBlackFridayDeals(
       ? { ...product, catalogFamily: memberships.get(product.id) }
       : product),
   );
-  const curated = placement === "hero"
-    ? [...selection.heroIds, ...selection.pageIds]
-    : selection.pageIds;
+  // A product with a Black Friday discount belongs on the campaign page even
+  // when staff did not tick it separately.
+  const discounted = Object.keys(selection.discounts);
+  const curated = [...new Set(placement === "hero"
+    ? [...selection.heroIds, ...selection.pageIds, ...discounted]
+    : [...selection.pageIds, ...discounted])];
   const rank = new Map(curated.map((id, index) => [id, index] as const));
   const curatedSet = new Set(curated);
 

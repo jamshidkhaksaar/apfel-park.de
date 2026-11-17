@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { discountPercentage, type CatalogCardModel } from "@/lib/catalog-card";
 import { EnergyClassArrow } from "@/components/EuEnergyLabelSection";
+import BlackFridayBadge from "@/components/black-friday/BlackFridayBadge";
 import type { Locale } from "@/lib/i18n";
 import { shouldBypassImageOptimization } from "@/lib/image";
 import { catalogCardImageSizes } from '@/lib/store-image-sizes';
@@ -69,7 +70,9 @@ export default function StoreProductCard({
         />
         {/* Saving top-right, energy class bottom-left: both corners the product
             photo rarely occupies, and they never stack on top of each other. */}
-        {discount ? (
+        {product.campaignPercent ? (
+          <BlackFridayBadge percent={product.campaignPercent} locale={locale} className="absolute left-2 top-2.5 z-20" />
+        ) : discount ? (
           <span className="pointer-events-none absolute right-2.5 top-2.5 z-20 rounded bg-sale px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-white shadow-sm">−{discount}%</span>
         ) : null}
         {product.energyClass ? (
@@ -99,7 +102,7 @@ export default function StoreProductCard({
         {variantSummary ? <p className="line-clamp-2 text-xs text-muted-strong">{variantSummary}</p> : null}
 
         <div className="mt-auto pt-2">
-          <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} size="card" />
+          <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} lowest30Days={Boolean(product.campaignPercent)} size="card" />
           <div className="mt-2 flex items-end justify-between gap-2">
             <div className="min-w-0">
               <p className={`text-[11px] font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>

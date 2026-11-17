@@ -30,6 +30,7 @@ export default async function ProductPromotionsPage() {
         products={products}
         pageIds={selection.pageIds}
         heroIds={selection.heroIds}
+        discounts={selection.discounts}
       />
     </AdminShell>
   );

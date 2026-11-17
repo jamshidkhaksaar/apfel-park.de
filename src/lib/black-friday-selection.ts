@@ -1,5 +1,6 @@
 import { cache } from "react";
 
+import { parseCampaignDiscounts, type CampaignDiscount } from "@/lib/campaign-pricing";
 import { createDbClient } from "@/lib/db";
 
 export type BlackFridaySelection = {
@@ -7,13 +8,15 @@ export type BlackFridaySelection = {
   pageIds: string[];
   /** Products that should lead the home and landing hero. */
   heroIds: string[];
-  /** Optional per-product campaign badge override, shown in the admin panel. */
+  /** Per-product Black Friday discount, applied at read time while the sale is live. */
+  discounts: Record<string, CampaignDiscount>;
   updatedAt?: string;
 };
 
 export const EMPTY_BLACK_FRIDAY_SELECTION: BlackFridaySelection = {
   pageIds: [],
   heroIds: [],
+  discounts: {},
 };
 
 const uniqueIds = (value: unknown): string[] =>
@@ -35,10 +38,11 @@ export const getBlackFridaySelection = cache(async (): Promise<BlackFridaySelect
       .eq("key", "black_friday_selection")
       .maybeSingle();
     if (!data?.value || typeof data.value !== "object") return EMPTY_BLACK_FRIDAY_SELECTION;
-    const value = data.value as { pageIds?: unknown; heroIds?: unknown; updatedAt?: unknown };
+    const value = data.value as { pageIds?: unknown; heroIds?: unknown; discounts?: unknown; updatedAt?: unknown };
     return {
       pageIds: uniqueIds(value.pageIds),
       heroIds: uniqueIds(value.heroIds),
+      discounts: parseCampaignDiscounts(value.discounts),
       updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined,
     };
   } catch (error) {
