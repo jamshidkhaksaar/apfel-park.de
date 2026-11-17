@@ -4,6 +4,9 @@ import { listTelegramSubmissions } from '@/lib/telegram-products/repository';
 import CatalogStockSummary from "@/components/admin/CatalogStockSummary";
 import ProductDeleteButton from "@/components/admin/ProductDeleteButton";
 import BlackFridayDiscountEditor from "@/components/admin/BlackFridayDiscountEditor";
+import GroupedProductCatalog from "@/components/admin/GroupedProductCatalog";
+import HoverImagePreview from "@/components/admin/HoverImagePreview";
+import { loadGroupedCatalog } from "@/lib/admin-grouped-catalog";
 import { getBlackFridaySelection } from "@/lib/black-friday-selection";
 import { catalogStockSummary } from "@/lib/catalog-stock-summary";
 import Image from "next/image";
@@ -93,6 +96,7 @@ const editedAt = (locale: "de" | "en", updatedAt: string) =>
   );
 
 const PAGE_SIZE = 25;
+const GROUP_PAGE_SIZE = 15;
 const valueOf = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
 const money = (locale: "de" | "en", value: string | number) =>
   new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-US", { style: "currency", currency: "EUR" }).format(Number(value));
@@ -113,6 +117,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const sort = valueOf(params.sort) || "newest";
   const requestedPage = Math.max(1, Number.parseInt(valueOf(params.page) || "1", 10) || 1);
   const view = workspaceViewFromParam(valueOf(params.view));
+  // Grouped (one card per model, stock and price editable in place) is the
+  // default catalog layout; the classic one-row-per-product table stays at ?layout=list.
+  const layout = valueOf(params.layout) === "list" ? "list" : "grouped";
   const canManage = canManageProducts(user);
   // Cashiers get a read-only catalog; never load intake/history workspaces for them.
   if (!canManage && view !== "catalog") redirect("/admin/products");
@@ -179,6 +186,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const total = (countResult.rows[0] as { total?: number } | undefined)?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(requestedPage, pages);
+  const grouped = view === "catalog" && layout === "grouped"
+    ? await loadGroupedCatalog({ where, values: [...values], orderBy: orderBy[sort] ?? orderBy.newest, page: requestedPage, pageSize: GROUP_PAGE_SIZE })
+    : null;
   values.push(PAGE_SIZE, (page - 1) * PAGE_SIZE);
   const productsResult = await query(
     `SELECT id,title,brand,model,sku,category,condition,price,stock,slug,is_active,images,subcategory,updated_at,(extract(epoch from (now() - updated_at)) / 60)::int AS edited_minutes_ago,description,mpn,gtin,condition_note,battery_health,has_real_product_photos,manufacturer,eu_responsible_person,identifier_status,variants,specs,import_metadata,eprel_id,coalesce(import_metadata->'energyEvidenceReview'->>'status'='needs_supplier_confirmation',false) AS energy_review_required
@@ -250,6 +260,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     if (status) next.set("status", status);
     if (sort) next.set("sort", sort);
     if (view !== "catalog") next.set("view", view);
+    if (layout === "list") next.set("layout", "list");
     if (page > 1) next.set("page", String(page));
     return next.toString();
   })();
@@ -275,6 +286,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     if (status) next.set("status", status);
     if (sort) next.set("sort", sort);
     if (view !== "catalog") next.set("view", view);
+    if (layout === "list") next.set("layout", "list");
     next.set("page", String(nextPage));
     return `/admin/products?${next.toString()}`;
   };
@@ -301,6 +313,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
 
         {view === "catalog" ? <CatalogStockSummary summary={stockSummary} locale={locale} expanded={Boolean(q)}/> : null}
         {view === "catalog" ? (<AdminFilterForm key={filterQuery} className="glass-panel grid gap-3 rounded-2xl p-4 min-w-0 sm:grid-cols-2 xl:grid-cols-4 [&>input]:min-w-0 [&>select]:min-w-0 [&>select]:w-full" action="/admin/products">
+          {layout === "list" ? <input type="hidden" name="layout" value="list" /> : null}
           <input name="q" defaultValue={q} placeholder={locale === "de" ? "Produkt, Modell oder SKU suchen" : "Search product, model, or SKU"} className="rounded-xl border border-border/60 bg-surface/70 px-3.5 py-2.5 text-sm text-foreground" />
           <select name="brand" defaultValue={brand} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Marken" : "All brands"}</option>{brandOptions.map((item) => (<option key={item.value} value={item.value}>{item.label} ({item.n})</option>))}</select>
           <select name="category" defaultValue={category} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="">{locale === "de" ? "Alle Kategorien" : "All categories"}</option><option value="smartphones">Smartphones</option><option value="tablets">Tablets</option><option value="parts">{locale === "de" ? "Ersatzteile" : "Spare parts"}</option><option value="accessories">Accessories</option><option value="laptops">Laptops</option><option value="consoles">Consoles</option></select>
@@ -310,6 +323,25 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           <select name="sort" defaultValue={sort} className="rounded-xl border border-border/60 bg-surface/70 px-3 py-2.5 text-sm"><option value="newest">{locale === "de" ? "Zuletzt geändert" : "Recently updated"}</option><option value="oldest">{locale === "de" ? "Älteste" : "Oldest"}</option><option value="title">A–Z</option><option value="price-asc">{locale === "de" ? "Preis aufsteigend" : "Price low-high"}</option><option value="price-desc">{locale === "de" ? "Preis absteigend" : "Price high-low"}</option></select>
           <button className="rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background">{locale === "de" ? "Anwenden" : "Apply"}</button>
         </AdminFilterForm>) : null}
+
+        {view === "catalog" ? (() => {
+          const toggle = (target: "grouped" | "list") => {
+            const next = new URLSearchParams(filterQuery);
+            next.delete("page");
+            if (target === "list") next.set("layout", "list"); else next.delete("layout");
+            const qs = next.toString();
+            return `/admin/products${qs ? `?${qs}` : ""}`;
+          };
+          return (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div role="tablist" aria-label={locale === "de" ? "Ansicht" : "Layout"} className="inline-flex rounded-xl border border-border/60 p-1 text-sm">
+                <Link role="tab" aria-selected={layout === "grouped"} href={toggle("grouped")} className={`rounded-lg px-3 py-1.5 font-medium transition ${layout === "grouped" ? "bg-gold text-black" : "text-muted hover:text-foreground"}`}>{locale === "de" ? "Nach Modell gruppiert" : "Grouped by model"}</Link>
+                <Link role="tab" aria-selected={layout === "list"} href={toggle("list")} className={`rounded-lg px-3 py-1.5 font-medium transition ${layout === "list" ? "bg-gold text-black" : "text-muted hover:text-foreground"}`}>{locale === "de" ? "Liste" : "List"}</Link>
+              </div>
+              {layout === "grouped" ? <p className="text-xs text-muted">{locale === "de" ? "Bestand mit − / + ändern, Preis eintippen und ✓ drücken. Maus auf ein Foto = große Vorschau." : "Change stock with − / +, type a price and press ✓. Hover a photo for a large preview."}</p> : null}
+            </div>
+          );
+        })() : null}
 
         {view !== "catalog" ? <TelegramProductSubmissions locale={locale} rows={telegramRows} history={view === "history"} isOwner={isOwner}/> : null}
         {view === "intake" ? (
@@ -327,6 +359,21 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           </>
         ) : view === "history" ? (
           <ProductsHistoryPanel locale={locale} isOwner={isOwner} runs={intakeRuns} revisions={revisions} />
+        ) : grouped ? (
+          <section className="space-y-3">
+            {grouped.groups.length === 0 ? (
+              <div className="glass-panel rounded-2xl px-6 py-16 text-center"><h2 className="text-lg font-semibold">{locale === "de" ? "Keine Produkte gefunden" : "No products found"}</h2><p className="mt-2 text-sm text-muted">{locale === "de" ? "Ändere die Suche oder Filter." : "Adjust the search or filters."}</p></div>
+            ) : (
+              <GroupedProductCatalog
+                locale={locale}
+                groups={grouped.groups}
+                canManage={canManage}
+                discounts={campaignSelection.discounts}
+                editHref={Object.fromEntries(grouped.groups.flatMap((group) => group.products.map((item) => [item.id, editorHref(item.id)])))}
+              />
+            )}
+            <footer className="glass-panel flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm text-muted"><span>{grouped.totalGroups} {locale === "de" ? "Modelle" : "models"} · {locale === "de" ? "Seite" : "Page"} {grouped.page} / {grouped.pages}</span><div className="flex gap-2"><Link aria-disabled={grouped.page <= 1} href={buildHref(Math.max(1, grouped.page - 1))} className={`rounded-lg border border-border/60 px-3 py-1.5 ${grouped.page <= 1 ? "pointer-events-none opacity-40" : "hover:border-gold/40 hover:text-gold"}`}>{locale === "de" ? "Zurück" : "Previous"}</Link><Link aria-disabled={grouped.page >= grouped.pages} href={buildHref(Math.min(grouped.pages, grouped.page + 1))} className={`rounded-lg border border-border/60 px-3 py-1.5 ${grouped.page >= grouped.pages ? "pointer-events-none opacity-40" : "hover:border-gold/40 hover:text-gold"}`}>{locale === "de" ? "Weiter" : "Next"}</Link></div></footer>
+          </section>
         ) : (
         <section className={`${tableStyles.catalog} glass-panel overflow-hidden rounded-2xl`}>
           {products.length === 0 ? (
@@ -341,7 +388,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                     const details = inventoryProductDetails(product, locale, 'product');
                     return (
                     <tr key={product.id} className={`group transition hover:bg-gold/[0.04] ${justEdited ? "bg-gold/[0.05]" : ""}`}>
-                      <td className={`${tableStyles.titleCell} px-4 py-3`}><Link href={canManage ? editorHref(product.id) : buildHref(page)} prefetch={false} className="flex items-center gap-3"><span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span><span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><span className="break-words text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block break-words text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span>
+                      <td className={`${tableStyles.titleCell} px-4 py-3`}><Link href={canManage ? editorHref(product.id) : buildHref(page)} prefetch={false} className="flex items-center gap-3"><HoverImagePreview src={product.images?.[0] ?? null} alt={product.title}><span className="relative block h-12 w-10 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-white">{product.images?.[0] ? <Image src={product.images[0]} alt="" fill sizes="40px" className="object-contain" unoptimized={product.images[0].startsWith("/uploads/")} /> : null}</span></HoverImagePreview><span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><span className="break-words text-sm font-semibold text-foreground">{product.title}</span>{justEdited ? <span className="shrink-0 rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">{locale === "de" ? "Bearbeitet" : "Edited"}</span> : null}</span><span className="mt-0.5 block break-words text-xs text-muted">{[product.brand, product.model, product.sku].filter(Boolean).join(" · ")}</span>
                         <span className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
                           <span><span className="text-muted">{dict.inventoryCatalog.color}: </span><span className="font-medium">{details.color || dict.inventoryCatalog.notSpecified}</span></span>
                           <span><span className="text-muted">{dict.inventoryCatalog.storage}: </span><span className="font-medium">{details.storage || dict.inventoryCatalog.notSpecified}</span></span>

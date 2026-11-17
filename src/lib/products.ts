@@ -1670,11 +1670,6 @@ export async function getBlackFridayDeals(
     getStoreFamilyMemberships(),
     getBlackFridaySelection(),
   ]);
-  const grouped = groupStoreProducts(
-    products.map((product) => memberships.has(product.id)
-      ? { ...product, catalogFamily: memberships.get(product.id) }
-      : product),
-  );
   // A product with a Black Friday discount belongs on the campaign page even
   // when staff did not tick it separately.
   const discounted = Object.keys(selection.discounts);
@@ -1684,15 +1679,26 @@ export async function getBlackFridayDeals(
   const rank = new Map(curated.map((id, index) => [id, index] as const));
   const curatedSet = new Set(curated);
 
+  // Filter individual offers first, then group (see groupStoreProducts): a
+  // family card is then built only from eligible offers, so a discounted
+  // iPhone is not hidden behind a cheaper, non-discounted family member.
+  const eligible = products
+    .filter((product) => (product.hasDiscount || curatedSet.has(product.id)) && (product.stock ?? 0) > 0)
+    .map((product) => memberships.has(product.id)
+      ? { ...product, catalogFamily: memberships.get(product.id) }
+      : product);
+  const grouped = groupStoreProducts(eligible);
+  const rankOf = (product: Product) => Math.min(
+    ...(product.storeFamily?.productIds ?? [product.id]).map((id) => rank.get(id) ?? Number.MAX_SAFE_INTEGER),
+  );
+  const savingOf = (product: Product) => product.campaignDeal?.percent
+    ?? computeDiscountPercentage(product.price, product.compareAtPrice) ?? 0;
+
   return grouped
-    .filter((product) => (product.hasDiscount || curatedSet.has(product.id))
-      && (product.storeFamily?.stock ?? product.stock ?? 0) > 0)
     .sort((left, right) => {
-      const rankDelta = (rank.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(right.id) ?? Number.MAX_SAFE_INTEGER);
+      const rankDelta = rankOf(left) - rankOf(right);
       if (rankDelta !== 0) return rankDelta;
-      const rightDiscount = computeDiscountPercentage(right.price, right.compareAtPrice) ?? 0;
-      const leftDiscount = computeDiscountPercentage(left.price, left.compareAtPrice) ?? 0;
-      return rightDiscount - leftDiscount || left.price - right.price;
+      return savingOf(right) - savingOf(left) || left.price - right.price;
     })
     .slice(0, Math.max(1, limit));
 }
