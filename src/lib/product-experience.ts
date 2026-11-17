@@ -185,29 +185,65 @@ export const sanitizeProductExperienceProfile = (value: unknown): ProductExperie
 export const localizedText = (value: LocalizedText, locale: "de" | "en"): string =>
   value[locale] || value[locale === "de" ? "en" : "de"] || "";
 
-const normalizedFamilyValue = (axis: string, value: string): string => axis.toLowerCase() === 'storage'
-  ? normalizeStorageValue(value.trim().replace(/^(\d+)$/, '$1 GB'))?.label ?? value.trim() : value.trim();
+/**
+ * Colour names arrive in German and English and in any case ("schwarz",
+ * "Black"). One canonical German name per colour keeps a family to one button
+ * per real colour.
+ */
+const COLOR_ALIASES: Record<string, string> = {
+  black: 'Schwarz', white: 'Weiß', weiss: 'Weiß', red: 'Rot', blue: 'Blau', green: 'Grün', gruen: 'Grün',
+  purple: 'Violett', violet: 'Violett', lila: 'Violett', yellow: 'Gelb', silver: 'Silber', gray: 'Grau', grey: 'Grau',
+  'space gray': 'Space Grau', 'space grey': 'Space Grau', midnight: 'Mitternacht', starlight: 'Polarstern',
+  graphite: 'Graphit', 'natural titanium': 'Titan Natur', 'blue titanium': 'Titan Blau', 'black titanium': 'Titan Schwarz',
+  'white titanium': 'Titan Weiß', 'desert titanium': 'Titan Wüstensand', orange: 'Orange', pink: 'Pink', gold: 'Gold',
+};
+const titleCase = (value: string) => value.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, sep: string, char: string) => sep + char.toUpperCase());
+const normalizedColor = (value: string): string => {
+  const trimmed = value.trim().replace(/\s+/g, ' ');
+  return COLOR_ALIASES[trimmed.toLowerCase()] ?? titleCase(trimmed);
+};
+const normalizedFamilyValue = (axis: string, value: string): string => {
+  const key = axis.toLowerCase();
+  if (key === 'storage') return normalizeStorageValue(value.trim().replace(/^(\d+)$/, '$1 GB'))?.label ?? value.trim();
+  if (key === 'color') return value.trim() ? normalizedColor(value) : '';
+  return value.trim();
+};
 export const familyOptionValue = (member: ProductFamilyMember | undefined, axis: string): string | undefined => {
   const value = member ? Object.entries(member.optionValues).find(([key]) => key.toLowerCase() === axis.toLowerCase())?.[1] : undefined;
   return typeof value === 'string' ? normalizedFamilyValue(axis,value) : undefined;
 };
 
+/**
+ * Which offer a click on an option opens. Like professional shops, an option
+ * is never a dead end while any offer of the model has it: the best match
+ * keeps the customer's other choices where possible (condition, then colour,
+ * then storage), prefers offers in stock, and otherwise switches to the
+ * closest one; the selector says what changes. Null only when no offer in the
+ * family has the value at all.
+ */
 export const getFamilyOptionTarget = (family: ProductFamilyView, axis: string, value: string): ProductFamilyMember | null => {
   const current = family.members.find(member => member.selected);
   if (!current) return null;
   const key = axis.toLowerCase();
-  // Upstream choices constrain downstream options. Storage never changes the
-  // color/condition; battery health never changes storage/color/condition.
+  const wanted = normalizedFamilyValue(axis, value);
+  const withValue = family.members.filter(member => familyOptionValue(member, axis) === wanted);
+  if (!withValue.length) return null;
   const fixed = key === 'batteryhealth' ? ['condition','color','storage']
     : key === 'storage' ? ['condition','color'] : key === 'color' ? ['condition'] : [];
-  const candidates = family.members.filter(member => familyOptionValue(member, axis) === normalizedFamilyValue(axis,value)
-    && fixed.every(other => familyOptionValue(member,other) === familyOptionValue(current,other)));
-  const available = candidates.filter(member => member.stock > 0);
+  const keepsChoices = (member: ProductFamilyMember) => fixed.every(other => familyOptionValue(member,other) === familyOptionValue(current,other));
+  const inStock = (member: ProductFamilyMember) => member.stock > 0;
+  const pools = [
+    withValue.filter(member => keepsChoices(member) && inStock(member)),
+    withValue.filter(inStock),
+    withValue.filter(keepsChoices),
+    withValue,
+  ];
+  const pool = pools.find(candidates => candidates.length) ?? withValue;
   const others = family.optionAxes.filter(other => other.toLowerCase() !== key && other.toLowerCase() !== 'device');
   const score = (member: ProductFamilyMember): number => others.reduce((total, other) =>
     total + (familyOptionValue(member,other) === familyOptionValue(current,other)
       ? ({condition:1_000,color:100,storage:10,batteryhealth:1}[other.toLowerCase()] ?? 1) : 0), 0);
-  return (available.length ? available : candidates).sort((a,b) => score(b)-score(a)
+  return [...pool].sort((a,b) => score(b)-score(a)
     || Number(b.selected)-Number(a.selected) || a.price-b.price || a.productId.localeCompare(b.productId))[0] ?? null;
 };
 

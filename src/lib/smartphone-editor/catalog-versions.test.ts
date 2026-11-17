@@ -22,10 +22,10 @@ describe('researched versions and battery tiers', () => {
     tier.details.chargerIncluded=false;
     expect(source.details.chargerIncluded).toBe(true);
   });
-  it('never switches color or storage when choosing a battery tier', () => {
+  it('keeps colour and storage for a battery tier when that exists, else opens the closest offer', () => {
     const offer=(id:string,color:string,health:string,selected=false)=>({productId:id,slug:id,title:id,image:'',price:399,stock:1,optionValues:{color,storage:'128 GB',condition:'used',batteryHealth:health},selected});
     const family:ProductFamilyView={id:'family',name:'Phone',slug:'phone',optionAxes:['color','storage','condition','batteryHealth'],members:[offer('one','Black','95%',true),offer('two','Black','100%'),offer('three','Blue','90%')]};
     expect(getFamilyOptionTarget(family,'batteryHealth','100%')?.productId).toBe('two');
-    expect(getFamilyOptionTarget(family,'batteryHealth','90%')).toBeNull();
+    expect(getFamilyOptionTarget(family,'batteryHealth','90%')?.productId).toBe('three');
   });
 });

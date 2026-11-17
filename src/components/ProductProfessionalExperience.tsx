@@ -43,34 +43,103 @@ export function ProductWishlistButton({ productId, title, locale }: { productId:
   return <button type="button" onClick={toggle} aria-pressed={saved} aria-label={saved ? (locale === "de" ? `${title} von Wunschliste entfernen` : `Remove ${title} from wishlist`) : (locale === "de" ? `${title} zur Wunschliste hinzufügen` : `Add ${title} to wishlist`)} className="grid size-11 place-items-center rounded-full border border-border bg-surface text-xl text-gold transition hover:border-gold/50 active:scale-95">{saved ? "♥" : "♡"}</button>;
 }
 
+/** Swatch colours for the canonical (German) colour names. */
+const SWATCHES: Record<string, string> = {
+  schwarz: '#141416', 'weiß': '#f4f4f2', rot: '#c3172b', blau: '#3b6ab3', 'grün': '#4d7f5d', violett: '#9a86c9',
+  gelb: '#f2d15a', gold: '#d8b46a', silber: '#cfd1d4', grau: '#8b8e93', 'space grau': '#5a5d62', mitternacht: '#1f2734',
+  polarstern: '#efe6d6', graphit: '#4b4c4f', pink: '#f3c3cf', orange: '#e9823a', 'titan natur': '#b8ad9c',
+  'titan blau': '#3f4b5e', 'titan schwarz': '#2e2e30', 'titan weiß': '#e6e3dd', 'titan wüstensand': '#c9a988',
+};
+const swatchFor = (value: string) => SWATCHES[value.toLowerCase()];
+
+/**
+ * Variant selector for one model family (each colour/storage/condition is its
+ * own purchasable offer). Every option the model offers is clickable: if the
+ * exact combination does not exist, it opens the closest offer and shows what
+ * changes ("→ Schwarz"). Only options with nothing in stock are greyed out.
+ * Links keep the scroll position, so switching feels like an in-page change.
+ */
 export function ProductFamilyConfigurator({ family, locale }: { family: ProductFamilyView; locale: Locale }) {
   const t = catalogToolsText[locale];
+  const de = locale === 'de';
   const current = family.members.find(member => member.selected);
-  const order: Record<string,number> = {condition:0,color:1,storage:2,batteryhealth:3};
-  const axes = family.optionAxes.filter(axis => axis.toLowerCase() !== 'device' && (axis.toLowerCase() !== 'batteryhealth' || familyOptionValue(current,'condition') === 'used') && family.members.some(member => familyOptionValue(member,axis))).sort((a,b) => (order[a.toLowerCase()] ?? 4)-(order[b.toLowerCase()] ?? 4));
+  const order: Record<string,number> = {condition:0,color:1,storage:2,configuration:3,batteryhealth:4};
+  const currentCondition = familyOptionValue(current,'condition');
+  const axes = family.optionAxes
+    .filter(axis => axis.toLowerCase() !== 'device')
+    .filter(axis => axis.toLowerCase() !== 'batteryhealth' || currentCondition === 'used')
+    .filter(axis => family.members.some(member => familyOptionValue(member,axis)))
+    .sort((a,b) => (order[a.toLowerCase()] ?? 5)-(order[b.toLowerCase()] ?? 5));
   const devices = family.members.filter(member => axes.every(axis => familyOptionValue(member,axis) === familyOptionValue(current,axis)));
-  const labels: Record<string,string> = locale === 'de' ? {configuration:'Konfiguration',color:'Farbe',storage:'Speicher',condition:'Zustand',new:'Neu',used:'A+',open_box:'Open-Box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified} : {configuration:'Configuration',color:'Color',storage:'Storage',condition:'Condition',new:'New',used:'A+',open_box:'Open-box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified};
+  const labels: Record<string,string> = de
+    ? {configuration:'Konfiguration',color:'Farbe',storage:'Speicher',condition:'Zustand',new:'Neu',used:'Gebraucht A+',open_box:'Open Box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified}
+    : {configuration:'Configuration',color:'Colour',storage:'Storage',condition:'Condition',new:'New',used:'Used A+',open_box:'Open box',batteryhealth:t.batteryHealth,unspecified:t.notSpecified};
   const labelFor = (axis: string, value: string) => axis.toLowerCase() === 'storage' ? formatStorageLabel(value) : labels[value] ?? value;
-  if (axes.length === 0 || family.members.length < 2) return null;
-  return <section className="mt-5 rounded-2xl border border-border/60 bg-surface/50 p-4" aria-label={locale === 'de' ? 'Produktvarianten' : 'Product variants'}>
-    <p className="text-sm font-semibold text-foreground">{family.name}</p>
-    <p className="mt-2 text-xs leading-5 text-muted">{t.chooseOptions}</p>
-    <div className="mt-4 space-y-4">{axes.map(axis => <div key={axis}><p className="text-xs font-semibold text-muted">{labels[axis.toLowerCase()] ?? axis}</p><div className="mt-2 flex flex-wrap gap-2">{Array.from(new Set(family.members.filter(member => axis.toLowerCase() === 'condition' || familyOptionValue(member,'condition') === familyOptionValue(current,'condition')).map(member => familyOptionValue(member,axis)).filter((value): value is string => Boolean(value)))).sort((a,b) => axis.toLowerCase() === 'batteryhealth' ? (Number.parseInt(a) || 0)-(Number.parseInt(b) || 0) : 0).map(value => {
-      const member = getFamilyOptionTarget(family,axis,value);
-      const selected = familyOptionValue(current,axis) === value;
-      const disabled = !member || member.stock <= 0;
-      const reason = member ? t.optionSoldOut : t.optionUnavailable;
-      const changes = member ? ['color','storage','configuration','batteryHealth'].filter(other => other.toLowerCase() !== axis.toLowerCase() && familyOptionValue(member,other) && familyOptionValue(member,other) !== familyOptionValue(current,other)).map(other => labelFor(other,familyOptionValue(member,other)!)) : [];
-      const classes = `min-h-11 max-w-full rounded-xl border px-4 py-2.5 text-left text-sm ${selected ? 'border-gold bg-gold/10 text-foreground' : 'border-border text-muted'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`;
-      const label = labelFor(axis,value);
-      const content = <><span>{label}{axis.toLowerCase() === 'batteryhealth' && member ? ` · ${formatPrice(locale,member.price)}` : ''}</span>{disabled ? <span className="mt-1 block text-[11px] leading-4">{reason}</span> : changes.length ? <span className="mt-1 block text-[11px] leading-4">{t.alsoSelects}: {changes.join(' · ')}</span> : null}</>;
-      return disabled ? <button key={value} type="button" disabled aria-pressed={selected} title={reason} className={classes}>{content}</button> : <Link key={value} href={`/${locale}/store/${member.slug}`} aria-current={selected ? 'page' : undefined} className={classes}>{content}</Link>;
-    })}</div></div>)}</div>
-    {devices.length > 1 ? <div className="mt-5 grid gap-3 sm:grid-cols-2">{devices.map(device => {
-      const content = <>{device.image ? <Image src={device.image} alt={device.title} width={80} height={100} unoptimized className="h-24 w-20 object-contain" /> : null}<div className="text-sm text-foreground"><p>{formatPrice(locale,device.price)}</p>{formatBatteryHealth(device.batteryHealth,device.batteryHealthRange) ? <p>{locale === 'de' ? 'Akku' : 'Battery'}: {formatBatteryHealth(device.batteryHealth,device.batteryHealthRange)}</p> : null}<p>{device.conditionNote}</p>{device.stock <= 0 ? <p>{t.optionSoldOut}</p> : null}</div></>;
-      const classes = `flex gap-3 rounded-xl border p-3 ${device.selected ? 'border-gold' : 'border-border'} ${device.stock <= 0 ? 'opacity-50' : ''}`;
-      return device.stock > 0 ? <Link key={device.productId} href={`/${locale}/store/${device.slug}`} aria-current={device.selected ? 'page' : undefined} className={classes}>{content}</Link> : <div key={device.productId} aria-disabled="true" className={classes}>{content}</div>;
-    })}</div> : null}
+  if (!current || axes.length === 0 || family.members.length < 2) return null;
+
+  const valuesFor = (axis: string): string[] => {
+    const key = axis.toLowerCase();
+    // Colours, storage and battery tiers are listed for the chosen condition;
+    // a different condition is one click on the condition row.
+    const pool = key === 'condition' ? family.members : family.members.filter(member => familyOptionValue(member,'condition') === currentCondition);
+    const values = Array.from(new Set(pool.map(member => familyOptionValue(member,axis)).filter((value): value is string => Boolean(value))));
+    if (key === 'condition') return values.sort((a,b) => ['new','open_box','used'].indexOf(a)-['new','open_box','used'].indexOf(b));
+    if (key === 'storage') return values.sort((a,b) => (Number.parseInt(a) * (/tb/i.test(a) ? 1024 : 1) || 0)-(Number.parseInt(b) * (/tb/i.test(b) ? 1024 : 1) || 0));
+    if (key === 'batteryhealth') return values.sort((a,b) => (Number.parseInt(a) || 0)-(Number.parseInt(b) || 0));
+    return values;
+  };
+  const lowestInStock = (axis: string, value: string) => {
+    const prices = family.members.filter(member => familyOptionValue(member,axis) === value && member.stock > 0).map(member => member.price);
+    return prices.length ? Math.min(...prices) : null;
+  };
+
+  return <section className="mt-5 rounded-2xl border border-border/60 bg-surface/50 p-4 sm:p-5" aria-label={de ? 'Produktvarianten' : 'Product variants'}>
+    <p className="text-sm font-semibold text-foreground">{de ? 'Variante wählen' : 'Choose your version'}</p>
+    <div className="mt-4 space-y-5">{axes.map(axis => {
+      const key = axis.toLowerCase();
+      const selectedValue = familyOptionValue(current,axis);
+      return <div key={axis} role="group" aria-label={labels[key] ?? axis}>
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+          {labels[key] ?? axis}{selectedValue ? <span className="ml-1.5 normal-case tracking-normal text-foreground">{labelFor(axis,selectedValue)}</span> : null}
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">{valuesFor(axis).map(value => {
+          const member = getFamilyOptionTarget(family,axis,value);
+          const selected = selectedValue === value;
+          const soldOut = !member || member.stock <= 0;
+          const changes = member && !selected ? ['condition','color','storage','configuration','batteryHealth']
+            .filter(other => other.toLowerCase() !== key && familyOptionValue(member,other) && familyOptionValue(member,other) !== familyOptionValue(current,other))
+            .map(other => labelFor(other,familyOptionValue(member,other)!)) : [];
+          const price = key === 'condition' ? lowestInStock(axis,value) : member && member.stock > 0 ? member.price : null;
+          const swatch = key === 'color' ? swatchFor(value) : undefined;
+          const classes = `group relative flex min-h-12 min-w-[5.5rem] max-w-full flex-col justify-center rounded-xl border px-3.5 py-2 text-left text-sm transition ${
+            selected ? 'border-gold bg-gold/10 text-foreground ring-1 ring-gold' : 'border-border text-foreground hover:border-gold/60'
+          } ${soldOut ? 'cursor-not-allowed border-dashed opacity-45' : ''}`;
+          const content = <>
+            <span className="flex items-center gap-2 font-semibold">
+              {key === 'color' ? <span aria-hidden="true" className="size-4 shrink-0 rounded-full border border-black/15 shadow-inner" style={{ background: swatch ?? 'conic-gradient(#ccc,#888,#ccc)' }} /> : null}
+              {labelFor(axis,value)}
+            </span>
+            {soldOut
+              ? <span className="mt-0.5 text-[11px] leading-4 text-muted">{t.optionSoldOut}</span>
+              : <>
+                  {price !== null && !selected ? <span className="mt-0.5 text-[11px] leading-4 text-muted tabular-nums">{key === 'condition' ? (de ? 'ab ' : 'from ') : ''}{formatPrice(locale,price)}</span> : null}
+                  {changes.length ? <span className="mt-0.5 text-[11px] leading-4 text-gold">→ {changes.join(' · ')}</span> : null}
+                </>}
+          </>;
+          return soldOut || !member
+            ? <button key={value} type="button" disabled aria-pressed={selected} title={t.optionSoldOut} className={classes}>{content}</button>
+            : <Link key={value} href={`/${locale}/store/${member.slug}`} scroll={false} prefetch aria-current={selected ? 'page' : undefined} aria-label={`${labels[key] ?? axis}: ${labelFor(axis,value)}${changes.length ? ` (${changes.join(', ')})` : ''}`} className={classes}>{content}</Link>;
+        })}</div>
+      </div>;
+    })}</div>
+    {devices.length > 1 ? <div className="mt-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{de ? `${devices.length} Geräte in dieser Ausführung` : `${devices.length} units in this version`}</p>
+      <div className="mt-2 grid gap-3 sm:grid-cols-2">{devices.map(device => {
+        const content = <>{device.image ? <Image src={device.image} alt={device.title} width={80} height={100} unoptimized className="h-24 w-20 object-contain" /> : null}<div className="text-sm text-foreground"><p className="font-semibold">{formatPrice(locale,device.price)}</p>{formatBatteryHealth(device.batteryHealth,device.batteryHealthRange) ? <p>{de ? 'Akku' : 'Battery'}: {formatBatteryHealth(device.batteryHealth,device.batteryHealthRange)}</p> : null}<p className="text-muted">{device.conditionNote}</p>{device.stock <= 0 ? <p>{t.optionSoldOut}</p> : null}</div></>;
+        const classes = `flex gap-3 rounded-xl border p-3 ${device.selected ? 'border-gold ring-1 ring-gold' : 'border-border'} ${device.stock <= 0 ? 'opacity-50' : ''}`;
+        return device.stock > 0 ? <Link key={device.productId} href={`/${locale}/store/${device.slug}`} scroll={false} aria-current={device.selected ? 'page' : undefined} className={classes}>{content}</Link> : <div key={device.productId} aria-disabled="true" className={classes}>{content}</div>;
+      })}</div>
+    </div> : null}
   </section>;
 }
 
