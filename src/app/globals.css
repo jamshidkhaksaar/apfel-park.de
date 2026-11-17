@@ -1963,3 +1963,43 @@ html[data-header-reflowed] .bf-sting-layer {
     display: flex;
   }
 }
+
+/* Black Friday showcase: three slides crossfade in a 9-second loop. */
+@layer utilities {
+  .bf-slide {
+    opacity: 0;
+    animation: bf-slide 9s ease-in-out infinite both;
+  }
+  .bf-slide-1 { animation-delay: -6s; }
+  .bf-slide-2 { animation-delay: -3s; }
+  .bf-slide .bf-slide-scene { animation: bf-kenburns 9s ease-out infinite both; animation-delay: inherit; }
+  .bf-slide .bf-slide-cutout { animation: bf-cutout 9s cubic-bezier(.2,.7,.2,1) infinite both; animation-delay: inherit; }
+}
+
+@keyframes bf-slide {
+  0% { opacity: 0; }
+  5%, 31% { opacity: 1; }
+  37%, 100% { opacity: 0; }
+}
+
+@keyframes bf-kenburns {
+  0% { transform: scale(1.16) translate3d(2%, 1%, 0); }
+  37%, 100% { transform: scale(1.02) translate3d(-1%, -1%, 0); }
+}
+
+@keyframes bf-cutout {
+  0% { transform: translate3d(0, 14%, 0) scale(0.86) rotate(-6deg); }
+  10% { transform: translate3d(0, 0, 0) scale(1) rotate(-2deg); }
+  20% { transform: translate3d(0, -3%, 0) scale(1.01) rotate(1deg); }
+  31% { transform: translate3d(0, 0, 0) scale(1) rotate(-1deg); }
+  37%, 100% { transform: translate3d(0, -6%, 0) scale(1.06) rotate(2deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-slide,
+  .bf-slide .bf-slide-scene,
+  .bf-slide .bf-slide-cutout {
+    animation: none !important;
+  }
+  .bf-slide-0 { opacity: 1; }
+}

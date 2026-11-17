@@ -704,7 +704,7 @@ export const applyCampaignPricing = async (products: Product[]): Promise<Product
 
     const variants = product.variants.map((variant) => {
       if (variant.price === undefined) return variant;
-      const sale = applyCampaignDiscount(variant.price, discount);
+      const sale = applyCampaignDiscount(variant.price, discount, product.price);
       if (sale === null) return variant;
       const deal = campaignDealFor(variant.price, sale, lowest.get(`${product.id}:${variant.priceKey ?? ''}`));
       return { ...variant, price: sale, compareAtPrice: deal?.referencePrice, campaignDeal: deal ?? undefined };
@@ -745,7 +745,8 @@ export const getCampaignMaxPercent = cache(async (): Promise<number | null> => {
     for (const row of rows.rows as Array<{ id: string; price: string | number; variants: unknown }>) {
       const discount = discounts[row.id];
       if (!discount) continue;
-      const points: Array<[number | undefined, string]> = [[toNumber(row.price), '']];
+      const basePrice = toNumber(row.price);
+      const points: Array<[number | undefined, string]> = [[basePrice, '']];
       if (Array.isArray(row.variants)) {
         for (const variant of row.variants as Array<Record<string, unknown>>) {
           points.push([toNumber(variant?.price as number | string | null | undefined), productPriceKey(variant)]);
@@ -753,7 +754,7 @@ export const getCampaignMaxPercent = cache(async (): Promise<number | null> => {
       }
       for (const [price, key] of points) {
         if (price === undefined) continue;
-        const sale = applyCampaignDiscount(price, discount);
+        const sale = applyCampaignDiscount(price, discount, basePrice ?? price);
         if (sale === null) continue;
         const deal = campaignDealFor(price, sale, lowest.get(`${row.id}:${key}`));
         if (deal && deal.percent > max) max = deal.percent;

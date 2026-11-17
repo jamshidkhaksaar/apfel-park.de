@@ -7,7 +7,7 @@ import StoreGrid from "../../../../components/store/StoreGrid";
 import ConditionExplainer from "@/components/store/ConditionExplainer";
 import BlackFridayStoreBand from "@/components/black-friday/BlackFridayStoreBand";
 import BlackFridayBanner from "@/components/black-friday/BlackFridayBanner";
-import { blackFridayCategories } from "@/lib/black-friday-categories";
+import { blackFridayAllShowcase, blackFridayCategories } from "@/lib/black-friday-categories";
 import IPhoneBanner from "@/components/banner/IPhoneBanner";
 import { createMetadata } from "../../../../lib/metadata";
 import { getProducts, getStoreCatalog, getTrendingProducts, parseStoreCatalogFilters, parseStoreSort, type StoreCatalogCategory } from "../../../../lib/products";
@@ -97,7 +97,6 @@ export default async function StorePage({ params, searchParams }: { params: Prom
         .sort((left, right) => (right.campaignDeal?.percent ?? 0) - (left.campaignDeal?.percent ?? 0))
     : [];
   const bannerMaxPercent = bannerDeals[0]?.campaignDeal?.percent ?? null;
-  const bannerImages = [...new Set(bannerDeals.map((product) => product.image))].slice(0, 3);
 
   const pageUrl = buildStoreCanonicalUrl(`${siteInfo.url}/${lang}/store`, indexing);
   const storeName = lang === "de" ? "Online Shop" : "Online Store";
@@ -149,7 +148,8 @@ export default async function StorePage({ params, searchParams }: { params: Prom
           href={bannerCategory ? `/${locale}/store?${bannerCategory.query}` : `/${locale}/black-friday`}
           title={bannerCategory ? bannerCategory.title[locale] : "Black Friday"}
           maxPercent={bannerMaxPercent}
-          images={bannerImages}
+          slides={bannerCategory?.showcase ?? blackFridayAllShowcase}
+          glow={bannerCategory?.glow}
           phase={campaignPhase === "live" ? "live" : "before"}
         />
       ) : (

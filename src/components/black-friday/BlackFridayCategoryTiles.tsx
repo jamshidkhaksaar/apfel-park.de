@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import type { BlackFridayCategoryStat } from "@/lib/black-friday-categories";
 import type { Locale } from "@/lib/i18n";
-import { shouldBypassImageOptimization } from "@/lib/image";
+
+import BlackFridayShowcase from "./BlackFridayShowcase";
 
 const copy = {
   de: {
@@ -73,11 +73,11 @@ export default function BlackFridayCategoryTiles({
         ) : null}
 
         <ul className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-5">
-          {visible.map(({ category, count, maxPercent, images }, index) => (
+          {visible.map(({ category, count, maxPercent }, index) => (
             <li key={category.id} className="w-[78%] shrink-0 snap-start sm:w-auto">
               <Link
                 href={`/${lang}/store?${category.query}`}
-                className="bf-shine group relative flex h-full min-h-[17rem] flex-col overflow-hidden rounded-2xl border border-[color:var(--bf-gold-3)]/35 bg-[radial-gradient(120%_90%_at_80%_0%,rgba(232,23,44,0.28),transparent_60%),linear-gradient(180deg,#141416,#09090b)] p-4 text-white transition hover:-translate-y-0.5 hover:border-[color:var(--bf-gold-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--bf-gold-2)]"
+                className="bf-shine group relative flex h-full min-h-[21rem] flex-col overflow-hidden rounded-2xl border border-[color:var(--bf-gold-3)]/35 bg-[radial-gradient(120%_90%_at_80%_0%,rgba(232,23,44,0.28),transparent_60%),linear-gradient(180deg,#141416,#09090b)] p-4 text-white transition hover:-translate-y-0.5 hover:border-[color:var(--bf-gold-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--bf-gold-2)]"
               >
                 <span className="relative z-[2] flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2 text-[color:var(--bf-gold-2)]">
@@ -93,32 +93,14 @@ export default function BlackFridayCategoryTiles({
                   </span>
                 </span>
 
-                {/* Floating product cut-outs */}
-                <span aria-hidden="true" className="relative z-[1] my-3 flex h-32 items-center justify-center">
-                  <span className="bf-orbit absolute size-28 rounded-full border border-dashed border-[color:var(--bf-gold-3)]/30" />
-                  {images.length > 0 ? (
-                    images.slice(0, 2).map((src, imageIndex) => (
-                      <span
-                        key={src}
-                        className={`${imageIndex === 0 ? "bf-float-a z-[2] size-28" : "bf-float-b -ml-10 mt-8 size-20 opacity-90"} relative overflow-hidden rounded-2xl bg-white shadow-[0_18px_30px_-12px_rgba(0,0,0,0.8)]`}
-                      >
-                        <Image
-                          src={src}
-                          alt=""
-                          fill
-                          sizes="112px"
-                          className="object-contain p-2"
-                          unoptimized={shouldBypassImageOptimization(src)}
-                          priority={index < 2 && imageIndex === 0}
-                        />
-                      </span>
-                    ))
-                  ) : (
-                    <span className="bf-float-a relative flex size-20 items-center justify-center rounded-2xl bg-[color:var(--bf-red)] text-white">
-                      {tagIcon}
-                    </span>
-                  )}
-                </span>
+                {/* Animated showcase: iPhone 18 Pro Max, Galaxy Z Fold, cut-out products */}
+                <BlackFridayShowcase
+                  slides={category.showcase}
+                  glow={category.glow}
+                  sizes="(min-width: 1024px) 20vw, (min-width: 640px) 45vw, 80vw"
+                  priority={index < 2}
+                  className="-mx-4 my-3 h-44 border-y border-white/5"
+                />
 
                 <span className="relative z-[2] mt-auto">
                   <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">{category.kicker[lang]}</span>

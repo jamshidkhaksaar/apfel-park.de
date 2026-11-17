@@ -155,6 +155,8 @@ export default function BlackFridaySelectionPanel({
                   locale={locale}
                   productId={product.id}
                   price={product.price}
+                  brand={product.brand}
+                  category={product.category}
                   initial={discounts[product.id] ?? null}
                   onSaved={(discount) => setDiscounts((current) => {
                     const next = { ...current };

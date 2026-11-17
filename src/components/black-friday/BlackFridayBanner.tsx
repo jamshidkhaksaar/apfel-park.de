@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { Locale } from "@/lib/i18n";
-import { shouldBypassImageOptimization } from "@/lib/image";
+import type { ShowcaseSlide } from "@/lib/black-friday-categories";
+
+import BlackFridayShowcase from "./BlackFridayShowcase";
 
 const copy = {
   de: {
@@ -36,7 +38,8 @@ export default function BlackFridayBanner({
   lang,
   href,
   maxPercent,
-  images,
+  slides,
+  glow = "rgba(232,23,44,0.5)",
   phase,
   title = "Black Friday",
   className = "",
@@ -44,7 +47,9 @@ export default function BlackFridayBanner({
   lang: Locale;
   href: string;
   maxPercent: number | null;
-  images: string[];
+  /** Animated showcase on the right (top on phones). */
+  slides: ShowcaseSlide[];
+  glow?: string;
   phase: "before" | "live";
   /** e.g. "Samsung Black Friday Deals" for a category banner. */
   title?: string;
@@ -99,25 +104,15 @@ export default function BlackFridayBanner({
           {showSaving ? <span className="text-[10px] text-white/45">{t.note}</span> : null}
         </span>
 
-        <span aria-hidden="true" className="relative hidden min-h-[22rem] items-center justify-center md:flex">
-          <span className="bf-orbit absolute aspect-square h-[78%] rounded-full border border-dashed border-[color:var(--bf-gold-3)]/40" />
-          <span className="absolute aspect-square h-[58%] rounded-full bg-[radial-gradient(circle,rgba(232,23,44,0.55),transparent_70%)]" />
-          {images.slice(0, 3).map((src, index) => (
-            <span
-              key={src}
-              className={`absolute overflow-hidden rounded-3xl bg-white shadow-[0_30px_50px_-20px_rgba(0,0,0,0.9)] ${
-                index === 0
-                  ? "bf-float-a z-[3] aspect-square h-[62%]"
-                  : index === 1
-                    ? "bf-float-b z-[2] aspect-square h-[42%] -translate-x-[85%] translate-y-[22%]"
-                    : "bf-float-b z-[1] aspect-square h-[38%] translate-x-[95%] -translate-y-[28%]"
-              }`}
-            >
-              <Image src={src} alt="" fill sizes="(min-width: 768px) 320px, 0px" className="object-contain p-3" unoptimized={shouldBypassImageOptimization(src)} />
-            </span>
-          ))}
+        <span aria-hidden="true" className="relative order-first h-56 sm:h-64 md:order-none md:h-auto md:min-h-[22rem]">
+          <BlackFridayShowcase
+            slides={slides}
+            glow={glow}
+            sizes="(min-width: 768px) 50vw, 100vw"
+            className="absolute inset-0 [mask-image:linear-gradient(180deg,#000_70%,transparent)] md:[mask-image:linear-gradient(90deg,transparent,#000_22%)]"
+          />
           {showSaving ? (
-            <span className="bf-badge absolute right-[10%] top-[12%] z-[4] flex flex-col items-start gap-1 px-3 pb-2 pt-1.5 !rotate-[8deg]">
+            <span className="bf-badge absolute right-[8%] top-[10%] z-[4] flex flex-col items-start gap-1 px-3 pb-2 pt-1.5 !rotate-[8deg]">
               <span className="bf-gold-text relative z-[2] text-[10px] font-black uppercase tracking-[0.16em]">Black Friday</span>
               <span className="bf-badge-pct relative z-[2] rounded-md px-2 text-2xl font-black tabular-nums text-white">−{maxPercent}%</span>
             </span>

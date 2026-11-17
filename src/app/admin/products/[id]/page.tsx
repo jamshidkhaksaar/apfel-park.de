@@ -70,6 +70,8 @@ export default async function ProductEditorPage({ params, searchParams }: { para
         locale={locale}
         productId={product.id}
         price={product.price}
+        brand={product.brand}
+        category={product.category}
         initial={campaignSelection.discounts[product.id] ?? null}
       />
       <div id="ai-intake"><ProductLinkedIntakeCard locale={locale} productId={product.id} condition={product.condition} isOwner={isProductIntakeOwner(user)} /></div>

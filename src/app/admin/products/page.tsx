@@ -3,6 +3,8 @@ import TelegramSubmissionToasts from '@/components/admin/TelegramSubmissionToast
 import { listTelegramSubmissions } from '@/lib/telegram-products/repository';
 import CatalogStockSummary from "@/components/admin/CatalogStockSummary";
 import ProductDeleteButton from "@/components/admin/ProductDeleteButton";
+import BlackFridayDiscountEditor from "@/components/admin/BlackFridayDiscountEditor";
+import { getBlackFridaySelection } from "@/lib/black-friday-selection";
 import { catalogStockSummary } from "@/lib/catalog-stock-summary";
 import Image from "next/image";
 import Link from "next/link";
@@ -184,6 +186,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
     values,
   );
   const products = productsResult.rows as CatalogRow[];
+  const campaignSelection = await getBlackFridaySelection();
   const tipsByProduct = new Map(products.map((product) => [product.id, productMissingData({
     energyReviewRequired: product.energy_review_required,
     identifierStatus: product.identifier_status ?? 'unknown',
@@ -331,7 +334,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
           ) : (
             <div className="overflow-x-auto">
               <table className={`${tableStyles.table} border-collapse text-left`}>
-                <thead className="border-b border-border/60 bg-surface/50 text-xs text-muted"><tr><th className="px-4 py-3 font-medium">{locale === "de" ? "Produkt" : "Product"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Kategorie" : "Category"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Zustand" : "Condition"}</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Tipps" : "Tips"}</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.aiStatus}</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.latestCode}</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Preis" : "Price"}</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Lager" : "Stock"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Geändert" : "Updated"}</th><th className="w-16" /></tr></thead>
+                <thead className="border-b border-border/60 bg-surface/50 text-xs text-muted"><tr><th className="px-4 py-3 font-medium">{locale === "de" ? "Produkt" : "Product"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Kategorie" : "Category"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Zustand" : "Condition"}</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Tipps" : "Tips"}</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.aiStatus}</th><th className="px-4 py-3 font-medium">{dict.productsWorkspace.latestCode}</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Preis" : "Price"}</th><th className="px-4 py-3 font-medium text-red-300">Black Friday</th><th className="px-4 py-3 text-right font-medium">{locale === "de" ? "Lager" : "Stock"}</th><th className="px-4 py-3 font-medium">{locale === "de" ? "Geändert" : "Updated"}</th><th className="w-16" /></tr></thead>
                 <tbody className="divide-y divide-border/50">
                   {products.map((product) => {
                     const justEdited = Boolean(product.is_active) && wasJustEdited(product.edited_minutes_ago);
@@ -349,7 +352,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
                       <td data-label={locale === "de" ? "Tipps" : "Tips"} className="px-4 py-3"><ProductTipsBadge tips={tipsByProduct.get(product.id)!} locale={locale} /></td>
                       <td data-label={dict.productsWorkspace.aiStatus} className="px-4 py-3 text-sm text-muted">{statusLabel(summaries.get(product.id)?.status ?? "none")}<span className="mt-0.5 block text-xs">{summaries.get(product.id)?.intakeCode ?? "—"}</span></td>
                       <td data-label={dict.productsWorkspace.latestCode} className="px-4 py-3">{canManage ? <Link href={editorHref(product.id, "#ai-intake")} prefetch={false} className="text-sm font-semibold text-gold">{dict.productsWorkspace.aiUpdate}</Link> : <span className="text-sm text-muted">—</span>}</td>
-                      <td data-label={locale === "de" ? "Preis" : "Price"} className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{money(locale, product.price)}</td><td data-label={locale === "de" ? "Lager" : "Stock"} className={`px-4 py-3 text-right text-sm tabular-nums ${(product.stock ?? 0) <= 0 ? "font-medium text-red-500" : "text-muted"}`}>{product.stock ?? 0}</td>
+                      <td data-label={locale === "de" ? "Preis" : "Price"} className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{money(locale, product.price)}</td><td data-label="Black Friday" className="px-4 py-3">{canManage ? <BlackFridayDiscountEditor variant="cell" locale={locale} productId={product.id} price={Number(product.price)} brand={product.brand} category={product.category} initial={campaignSelection.discounts[product.id] ?? null} /> : <span className="text-sm text-muted">—</span>}</td><td data-label={locale === "de" ? "Lager" : "Stock"} className={`px-4 py-3 text-right text-sm tabular-nums ${(product.stock ?? 0) <= 0 ? "font-medium text-red-500" : "text-muted"}`}>{product.stock ?? 0}</td>
                       <td data-label={locale === "de" ? "Geändert" : "Updated"} className={`${tableStyles.updatedCell} px-4 py-3 text-sm text-muted`}>
                         {product.updated_at ? <div className="space-y-1.5">
                           <time dateTime={new Date(product.updated_at).toISOString()} className="block whitespace-nowrap text-xs tabular-nums">{editedAt(locale, product.updated_at)}</time>

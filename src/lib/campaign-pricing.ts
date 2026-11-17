@@ -10,7 +10,13 @@
  * previous 30 days (PAngV §11), never against an arbitrary strike price.
  */
 
-export type CampaignDiscountType = 'percent' | 'amount';
+/**
+ * - `percent`: −x % on every variant
+ * - `amount`:  −x € on every variant
+ * - `price`:   the Black Friday price of the main product; variants get the
+ *              same euro reduction
+ */
+export type CampaignDiscountType = 'percent' | 'amount' | 'price';
 
 export type CampaignDiscount = {
   type: CampaignDiscountType;
@@ -40,9 +46,9 @@ export const parseCampaignDiscount = (value: unknown): CampaignDiscount | null =
     if (amount > MAX_PERCENT_DISCOUNT) return null;
     return { type: 'percent', value: round2(amount) };
   }
-  if (candidate.type === 'amount') {
+  if (candidate.type === 'amount' || candidate.type === 'price') {
     if (amount > 100000) return null;
-    return { type: 'amount', value: round2(amount) };
+    return { type: candidate.type, value: round2(amount) };
   }
   return null;
 };
@@ -65,11 +71,18 @@ export const parseCampaignDiscounts = (
  * Sale price for one regular price, or null when the discount would leave
  * nothing to pay (an amount larger than the price).
  */
-export const applyCampaignDiscount = (price: number, discount: CampaignDiscount): number | null => {
+export const applyCampaignDiscount = (
+  price: number,
+  discount: CampaignDiscount,
+  /** Regular price of the main product; a `price` discount reduces variants by the same euros. */
+  basePrice: number = price,
+): number | null => {
   if (!Number.isFinite(price) || price <= 0) return null;
+  const reduction = discount.type === 'price' ? basePrice - discount.value : discount.value;
+  if (discount.type !== 'percent' && !(reduction > 0)) return null;
   const next = discount.type === 'percent'
     ? price * (1 - discount.value / 100)
-    : price - discount.value;
+    : price - reduction;
   const rounded = round2(next);
   return rounded > 0 && rounded < price ? rounded : null;
 };
@@ -111,7 +124,10 @@ export const productPriceKey = (variant?: { sku?: unknown; color?: unknown; stor
   return `${color}|${storage}`;
 };
 
-export const describeCampaignDiscount = (discount: CampaignDiscount, locale: 'de' | 'en'): string =>
-  discount.type === 'percent'
-    ? `−${discount.value.toLocaleString(locale === 'de' ? 'de-DE' : 'en-GB')} %`
-    : `−${discount.value.toLocaleString(locale === 'de' ? 'de-DE' : 'en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+export const describeCampaignDiscount = (discount: CampaignDiscount, locale: 'de' | 'en'): string => {
+  const tag = locale === 'de' ? 'de-DE' : 'en-GB';
+  const euro = (value: number) => value.toLocaleString(tag, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (discount.type === 'percent') return `−${discount.value.toLocaleString(tag)} %`;
+  if (discount.type === 'amount') return `−${euro(discount.value)} €`;
+  return `${euro(discount.value)} €`;
+};

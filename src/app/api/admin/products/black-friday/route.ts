@@ -66,8 +66,8 @@ export async function PATCH(request: NextRequest) {
           return NextResponse.json(
             {
               error: isEnglish
-                ? "Enter a percent between 1 and 90 or a euro amount above 0"
-                : "Gib einen Prozentwert zwischen 1 und 90 oder einen Eurobetrag über 0 ein",
+                ? "Enter a new price, a percent between 1 and 90 or a euro amount above 0"
+                : "Gib einen neuen Preis, einen Prozentwert zwischen 1 und 90 oder einen Eurobetrag über 0 ein",
             },
             { status: 400 },
           );

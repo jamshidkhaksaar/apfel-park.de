@@ -16,6 +16,14 @@ describe("campaign pricing", () => {
     expect(applyCampaignDiscount(19.99, { type: "percent", value: 33 })).toBe(13.39);
   });
 
+  it("sets a fixed Black Friday price and carries the euro cut to variants", () => {
+    const deal = { type: "price" as const, value: 749 };
+    expect(applyCampaignDiscount(899, deal)).toBe(749);
+    expect(applyCampaignDiscount(999, deal, 899)).toBe(849);
+    expect(applyCampaignDiscount(899, { type: "price", value: 950 })).toBeNull();
+    expect(parseCampaignDiscount({ type: "price", value: "749,90" })).toEqual({ type: "price", value: 749.9 });
+  });
+
   it("never produces a zero or higher price", () => {
     expect(applyCampaignDiscount(40, { type: "amount", value: 40 })).toBeNull();
     expect(applyCampaignDiscount(40, { type: "amount", value: 60 })).toBeNull();
