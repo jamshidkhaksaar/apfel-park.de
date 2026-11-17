@@ -1,4 +1,5 @@
 import { blackFriday } from "./black-friday";
+import { currentBlackWeek } from "./black-week-calendar";
 
 export type SeasonalThemeId = "black-friday";
 
@@ -32,11 +33,12 @@ export type CampaignState = {
   theme: SeasonalTheme | null;
 };
 
+/** Dates are read per access, so the window follows the current year. */
 export const seasonalThemes: readonly SeasonalTheme[] = [
   {
     id: "black-friday",
-    startsAt: blackFriday.startsAt,
-    endsAt: blackFriday.endsAt,
+    get startsAt() { return blackFriday.startsAt; },
+    get endsAt() { return blackFriday.endsAt; },
     href: blackFriday.href,
     forcedTheme: "dark",
   },
@@ -79,9 +81,11 @@ function campaignPhaseFor(now: Date, override: string): CampaignPhase {
   const forced = Boolean(override);
   const time = now.getTime();
 
-  if (time < Date.parse(blackFriday.teaserStartsAt)) return forced ? "before" : "off";
-  if (time < Date.parse(blackFriday.startsAt)) return "before";
-  if (time <= Date.parse(blackFriday.endsAt)) return "live";
+  // The dates of the Black Week in `now`'s year (see black-week-calendar.ts).
+  const week = currentBlackWeek(now);
+  if (time < Date.parse(week.teaserStartsAt)) return forced ? "before" : "off";
+  if (time < Date.parse(week.startsAt)) return "before";
+  if (time <= Date.parse(week.endsAt)) return "live";
   return "after";
 }
 
@@ -92,9 +96,10 @@ function seasonalThemeFor(now: Date, override: string): SeasonalTheme | null {
   }
 
   const time = now.getTime();
-  return seasonalThemes.find(
-    (theme) => time >= Date.parse(theme.startsAt) && time <= Date.parse(theme.endsAt),
-  ) ?? null;
+  const week = currentBlackWeek(now);
+  return time >= Date.parse(week.startsAt) && time <= Date.parse(week.endsAt)
+    ? seasonalThemes.find((theme) => theme.id === "black-friday") ?? null
+    : null;
 }
 
 export function getCampaignPhase(now: Date = new Date()): CampaignPhase {

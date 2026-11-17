@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { currentBlackWeek, type CampaignDates } from "@/lib/black-week-calendar";
 
 import type { Locale } from "@/lib/i18n";
 import type { ShowcaseSlide } from "@/lib/black-friday-categories";
@@ -11,8 +12,8 @@ const copy = {
     kicker: "Apfel Park · Hamburg-Wilhelmsburg",
     upTo: "Bis zu",
     sale: "Rabatt",
-    dates: "23.–30. November · online & im Shop",
-    teaser: "Start am 23. November",
+    dates: (d: CampaignDates) => `${d.de.range} · online & im Shop`,
+    teaser: (d: CampaignDates) => `Start am ${d.de.start}`,
     cta: "Jetzt Deals sichern",
     teaserCta: "Deals vormerken",
     note: "Ersparnis gegenüber dem niedrigsten Preis der letzten 30 Tage.",
@@ -21,8 +22,8 @@ const copy = {
     kicker: "Apfel Park · Hamburg-Wilhelmsburg",
     upTo: "Up to",
     sale: "off",
-    dates: "23–30 November · online & in store",
-    teaser: "Starts 23 November",
+    dates: (d: CampaignDates) => `${d.en.range} · online & in store`,
+    teaser: (d: CampaignDates) => `Starts ${d.en.start}`,
     cta: "Grab the deals",
     teaserCta: "See what's coming",
     note: "Saving against the lowest price of the last 30 days.",
@@ -56,6 +57,7 @@ export default function BlackFridayBanner({
   className?: string;
 }) {
   const t = copy[lang];
+  const week = currentBlackWeek();
   const showSaving = phase === "live" && maxPercent;
   const [first, ...rest] = title.split(" ");
 
@@ -93,10 +95,10 @@ export default function BlackFridayBanner({
               <span className="hidden text-sm font-bold uppercase tracking-[0.16em] text-white/80 sm:inline">{t.sale}</span>
             </span>
           ) : (
-            <span className="text-lg font-black uppercase tracking-[0.12em] text-[color:var(--bf-red)]">{t.teaser}</span>
+            <span className="text-lg font-black uppercase tracking-[0.12em] text-[color:var(--bf-red)]">{t.teaser(week)}</span>
           )}
 
-          <span className="text-sm text-white/70">{t.dates}</span>
+          <span className="text-sm text-white/70">{t.dates(week)}</span>
 
           <span className="mt-1 inline-flex w-fit items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--bf-gold-1),var(--bf-gold-3))] px-5 py-2.5 text-sm font-black uppercase tracking-[0.08em] text-black transition group-hover:scale-[1.03]">
             {phase === "live" ? t.cta : t.teaserCta} <span aria-hidden="true">→</span>

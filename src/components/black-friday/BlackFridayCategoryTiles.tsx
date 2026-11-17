@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { currentBlackWeek } from "@/lib/black-week-calendar";
 
 import type { BlackFridayCategoryStat } from "@/lib/black-friday-categories";
 import type { Locale } from "@/lib/i18n";
@@ -12,7 +13,7 @@ const copy = {
     upTo: "bis zu",
     deals: (count: number) => (count === 1 ? "1 Angebot" : `${count} Angebote`),
     cta: "Deals ansehen",
-    from: "Ab 23.11.",
+    from: () => `Ab ${currentBlackWeek().de.startShort}`,
   },
   en: {
     eyebrow: "Black Friday by category",
@@ -20,7 +21,7 @@ const copy = {
     upTo: "up to",
     deals: (count: number) => (count === 1 ? "1 offer" : `${count} offers`),
     cta: "View deals",
-    from: "From 23 Nov",
+    from: () => `From ${currentBlackWeek().de.startShort}`,
   },
 } as const;
 
@@ -89,7 +90,7 @@ export default function BlackFridayCategoryTiles({
                     )}
                   </span>
                   <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-semibold text-white/70">
-                    {phase === "live" ? t.deals(count) : t.from}
+                    {phase === "live" ? t.deals(count) : t.from()}
                   </span>
                 </span>
 

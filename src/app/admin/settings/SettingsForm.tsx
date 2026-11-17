@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { blackWeekDates } from "@/lib/black-week-calendar";
+
 import { useAdmin } from "@/lib/admin-context";
 import { saveSettings } from "./actions";
 import { type SettingsData } from "./types";
@@ -32,6 +34,21 @@ const statusPillClass = (active: boolean) =>
       ? "border-green-500/30 bg-green-950/20 text-green-300"
       : "border-border bg-surface-strong text-muted"
   }`;
+
+/** Fills {teaser} {start} {end} {range} with this year's Black Week dates. */
+const withCampaignDates = (text: string, lang: string): string => {
+  const d = blackWeekDates(new Date().getFullYear());
+  const teaser = new Date(d.teaserStartsAt.slice(0, 10) + "T12:00:00Z");
+  const teaserText = lang === "de"
+    ? `${teaser.getUTCDate()}. ${["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"][teaser.getUTCMonth()]}`
+    : `${teaser.getUTCDate()} ${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][teaser.getUTCMonth()]}`;
+  const local = lang === "de" ? d.de : d.en;
+  return text
+    .replaceAll("{teaser}", teaserText)
+    .replaceAll("{start}", local.start)
+    .replaceAll("{end}", local.end)
+    .replaceAll("{range}", `${local.range} ${d.year}`);
+};
 
 export default function SettingsForm({
   initialSettings,
@@ -351,7 +368,7 @@ export default function SettingsForm({
               <div className="mt-6 space-y-3">
                 {(
                   [
-                    ["auto", dict.settingsForm.campaignModeAuto, dict.settingsForm.campaignModeAutoDesc],
+                    ["auto", dict.settingsForm.campaignModeAuto, withCampaignDates(dict.settingsForm.campaignModeAutoDesc, lang)],
                     ["on", dict.settingsForm.campaignModeOn, dict.settingsForm.campaignModeOnDesc],
                     ["off", dict.settingsForm.campaignModeOff, dict.settingsForm.campaignModeOffDesc],
                   ] as const
@@ -380,7 +397,7 @@ export default function SettingsForm({
               </div>
 
               <p className="mt-5 rounded-xl border border-border/60 bg-black/20 px-4 py-3 text-xs text-muted">
-                {dict.settingsForm.campaignNote}
+                {withCampaignDates(dict.settingsForm.campaignNote, lang)}
               </p>
             </div>
 
@@ -404,7 +421,7 @@ export default function SettingsForm({
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-muted">{dict.settingsForm.campaignStatusWindow}</dt>
                   <dd className="text-right font-semibold text-foreground">
-                    {dict.settingsForm.campaignStatusWindowValue}
+                    {withCampaignDates(dict.settingsForm.campaignStatusWindowValue, lang)}
                   </dd>
                 </div>
               </dl>

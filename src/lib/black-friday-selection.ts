@@ -1,6 +1,7 @@
 import { cache } from "react";
 
 import { parseCampaignDiscounts, type CampaignDiscount } from "@/lib/campaign-pricing";
+import { currentBlackWeek } from "@/lib/black-week-calendar";
 import { createDbClient } from "@/lib/db";
 
 export type BlackFridaySelection = {
@@ -10,6 +11,8 @@ export type BlackFridaySelection = {
   heroIds: string[];
   /** Per-product Black Friday discount, applied at read time while the sale is live. */
   discounts: Record<string, CampaignDiscount>;
+  /** Campaign year the selection was made for; other years are ignored. */
+  year?: number;
   updatedAt?: string;
 };
 
@@ -38,8 +41,16 @@ export const getBlackFridaySelection = cache(async (): Promise<BlackFridaySelect
       .eq("key", "black_friday_selection")
       .maybeSingle();
     if (!data?.value || typeof data.value !== "object") return EMPTY_BLACK_FRIDAY_SELECTION;
-    const value = data.value as { pageIds?: unknown; heroIds?: unknown; discounts?: unknown; updatedAt?: unknown };
+    const value = data.value as { pageIds?: unknown; heroIds?: unknown; discounts?: unknown; year?: unknown; updatedAt?: unknown };
+    // Discounts and picks belong to one Black Week. A selection from an
+    // earlier year is ignored, so last year's prices can never come back.
+    // Older saves have no year; their save date tells it.
+    const savedYear = typeof value.year === "number"
+      ? value.year
+      : typeof value.updatedAt === "string" ? Number(value.updatedAt.slice(0, 4)) : NaN;
+    if (savedYear !== currentBlackWeek().year) return EMPTY_BLACK_FRIDAY_SELECTION;
     return {
+      year: savedYear,
       pageIds: uniqueIds(value.pageIds),
       heroIds: uniqueIds(value.heroIds),
       discounts: parseCampaignDiscounts(value.discounts),

@@ -1,3 +1,4 @@
+import { currentBlackWeek, type CampaignDates } from "./black-week-calendar";
 import type { Locale } from "./i18n";
 
 /**
@@ -8,6 +9,11 @@ import type { Locale } from "./i18n";
  * components. The active window itself lives in `seasonal-theme.ts`; the id
  * stays `black-friday` because it is also the URL the ads point at.
  */
+/**
+ * Campaign facts for the current year (see black-week-calendar.ts). The
+ * getters are read per request, so a long-running server rolls over to next
+ * year's dates by itself.
+ */
 export const blackFriday = {
   id: "black-friday" as const,
   /**
@@ -15,19 +21,21 @@ export const blackFriday = {
    * and owner review have a destination. Nothing is on sale yet in that phase;
    * the page says so and counts down to `startsAt`.
    */
-  teaserStartsAt: "2026-10-26T00:00:00+01:00",
-  /** Monday before Thanksgiving through Cyber Monday, Europe/Berlin. */
-  startsAt: "2026-11-23T00:00:00+01:00",
-  endsAt: "2026-11-30T23:59:59+01:00",
+  get teaserStartsAt(): string { return currentBlackWeek().teaserStartsAt; },
+  /** Monday before Black Friday through Cyber Monday, Europe/Berlin. */
+  get startsAt(): string { return currentBlackWeek().startsAt; },
+  get endsAt(): string { return currentBlackWeek().endsAt; },
   href: "/black-friday",
-  dates: {
-    de: "23.–30. November",
-    en: "23–30 November",
+  get dates(): { de: string; en: string } {
+    const d = currentBlackWeek();
+    return { de: d.de.range, en: d.en.range };
   },
-} as const;
+};
 
-export const seasonEndLabel = (lang: Locale) =>
-  lang === "de" ? "30. November, 23:59 Uhr" : "30 November, 23:59 CET";
+export const seasonEndLabel = (lang: Locale) => {
+  const d = currentBlackWeek();
+  return lang === "de" ? `${d.de.end}, 23:59 Uhr` : `${d.en.end}, 23:59 CET`;
+};
 
 type TrustPoint = {
   title: string;
@@ -147,7 +155,7 @@ type BlackFridayCopy = {
   };
 };
 
-const de: BlackFridayCopy = {
+const deCopy = (d: CampaignDates): BlackFridayCopy => ({
   campaign: {
     name: "Apfel Park Black Week",
     short: "Black Week",
@@ -156,14 +164,14 @@ const de: BlackFridayCopy = {
     label: "Apfel Park Black Week",
     text: (maxDiscount) =>
       maxDiscount
-        ? `23.–30. November · bis zu −${maxDiscount} %`
-        : "23.–30. November · solange der Vorrat reicht",
+        ? `${d.de.range} · bis zu −${maxDiscount} %`
+        : `${d.de.range} · solange der Vorrat reicht`,
     cta: "Deals ansehen",
   },
   hero: {
     metaLeft: "Apfel Park · Hamburg-Wilhelmsburg",
-    metaRight: "Black Week · 23.–30. November 2026",
-    kicker: "Black Friday am 27. November",
+    metaRight: `Black Week · ${d.de.range} ${d.year}`,
+    kicker: `Black Friday am ${d.de.bf}`,
     titleTop: "Black",
     titleBottom: "Week",
     saving: (maxDiscount) =>
@@ -173,21 +181,21 @@ const de: BlackFridayCopy = {
         ? `Bis zu ${maxDiscount} % Preisvorteil auf geprüfte Smartphones, Tablets und Zubehör – acht Tage lang, abholbereit in Wilhelmsburg.`
         : "Geprüfte Smartphones, Tablets und Zubehör mit klar ausgewiesenem Zustand – acht Tage lang, abholbereit in Wilhelmsburg.",
     countdownTitle: "Angebote enden in",
-    countdownNote: "30. November · 23:59 Uhr · MEZ",
+    countdownNote: `${d.de.end} · 23:59 Uhr · MEZ`,
     ctaPrimary: "Alle Deals ansehen",
     ctaSecondary: "Zum Shop",
     jumpCta: "Deals vergleichen",
     landingDeck:
       "Acht Tage lang an einem Ort: jedes Angebot mit Zustand, Preisvorteil und Bestand – geprüft im Haus, klar ausgezeichnet und in Wilhelmsburg abholbereit.",
     storeProofTitle: "Direkt im Shop",
-    teaserKicker: "Start am 23. November · 00:00 Uhr",
+    teaserKicker: `Start am ${d.de.start} · 00:00 Uhr`,
     teaserDeck:
-      "Acht Tage Black Week ab dem 23. November: geprüfte Smartphones, Tablets und Zubehör, klar ausgezeichnet und abholbereit in Wilhelmsburg. Der Countdown läuft – die Aktionen schalten wir zum Start frei.",
-    teaserSaving: "Startschuss am 23. November",
+      `Acht Tage Black Week ab dem ${d.de.start}: geprüfte Smartphones, Tablets und Zubehör, klar ausgezeichnet und abholbereit in Wilhelmsburg. Der Countdown läuft – die Aktionen schalten wir zum Start frei.`,
+    teaserSaving: `Startschuss am ${d.de.start}`,
     teaserNote: "Bis dahin gelten die regulären Preise.",
     startsIn: "Black Week startet in",
-    startNote: "23. November · 00:00 Uhr · MEZ",
-    startAria: "Black Week startet am 23. November um 00:00 Uhr",
+    startNote: `${d.de.start} · 00:00 Uhr · MEZ`,
+    startAria: `Black Week startet am ${d.de.start} um 00:00 Uhr`,
     teaserCtaPrimary: "Ablauf ansehen",
     currentPick: "Aktuell im Shop",
     shopBadge: "Im Shop",
@@ -228,7 +236,7 @@ const de: BlackFridayCopy = {
   timeline: {
     eyebrow: "Die Woche",
     title: "Acht Tage, ein klarer Ablauf",
-    note: "Der Black Friday am 27. November und der Cyber Monday am 30. rahmen die Woche. Alle Angebote sind ab dem 23. online und im Shop gültig.",
+    note: `Der Black Friday am ${d.de.bf} und der Cyber Monday am ${d.de.endShort} rahmen die Woche. Alle Angebote sind ab dem ${d.de.startShort} online und im Shop gültig.`,
     start: "Start",
     live: "Deals live",
     weekend: "Wochenende",
@@ -266,20 +274,20 @@ const de: BlackFridayCopy = {
     ],
   },
   page: {
-    metaTitle: "Black Week 2026 – Black Friday Angebote",
+    metaTitle: `Black Week ${d.year} – Black Friday Angebote`,
     metaDescription: (maxDiscount) =>
       maxDiscount
-        ? `Apfel Park Black Week vom 23.–30. November: bis zu ${maxDiscount} % auf geprüfte Smartphones, Tablets und Zubehör. Black Friday am 27.11., Abholung in Wilhelmsburg.`
-        : "Apfel Park Black Week vom 23.–30. November: reduzierte Smartphones, Tablets und Zubehör. Black Friday am 27.11., Abholung in Wilhelmsburg.",
+        ? `Apfel Park Black Week vom ${d.de.range}: bis zu ${maxDiscount} % auf geprüfte Smartphones, Tablets und Zubehör. Black Friday am ${d.de.bfShort}, Abholung in Wilhelmsburg.`
+        : `Apfel Park Black Week vom ${d.de.range}: reduzierte Smartphones, Tablets und Zubehör. Black Friday am ${d.de.bfShort}, Abholung in Wilhelmsburg.`,
     metaDescriptionBefore:
-      "Apfel Park Black Week startet am 23. November 2026: acht Tage geprüfte Smartphones, Tablets und Zubehör. Countdown, Ablauf, häufige Fragen und Shop in Hamburg-Wilhelmsburg.",
+      `Apfel Park Black Week startet am ${d.de.start} ${d.year}: acht Tage geprüfte Smartphones, Tablets und Zubehör. Countdown, Ablauf, häufige Fragen und Shop in Hamburg-Wilhelmsburg.`,
     dealsEyebrow: "Alle Angebote",
     dealsTitle: "Black-Week-Deals",
     dealsNote: "Sortiert nach Preisvorteil. Nur verfügbare Geräte, solange der Vorrat reicht.",
     teaserDealsEyebrow: "Schon jetzt im Shop",
     teaserDealsTitle: "Verfügbare Geräte",
     teaserDealsNote:
-      "Diese Geräte sind heute verfügbar. Die Black-Week-Aktionen starten am 23. November – bis dahin gelten die regulären Preise.",
+      `Diese Geräte sind heute verfügbar. Die Black-Week-Aktionen starten am ${d.de.start} – bis dahin gelten die regulären Preise.`,
     categoryEyebrow: "Nach Kategorie",
     categoryTitle: "Deals nach Gerät",
     howEyebrow: "So funktioniert's",
@@ -294,7 +302,7 @@ const de: BlackFridayCopy = {
     faq: [
       {
         question: "Wie lange läuft die Black Week bei Apfel Park?",
-        answer: "Vom 23. bis 30. November 2026 – online und im Shop in Hamburg-Wilhelmsburg. Der Black Friday fällt auf den 27. November, der Cyber Monday auf den 30.",
+        answer: `Vom ${d.de.start} bis ${d.de.end} ${d.year} – online und im Shop in Hamburg-Wilhelmsburg. Der Black Friday fällt auf den ${d.de.bf}, der Cyber Monday auf den ${d.de.end}`,
       },
       {
         question: "Sind die reduzierten Geräte neu oder gebraucht?",
@@ -318,9 +326,9 @@ const de: BlackFridayCopy = {
     visitCta: "Shop & Öffnungszeiten",
     finePrint: "Alle Preise inkl. MwSt. Solange der Vorrat reicht. Zwischenverkauf vorbehalten.",
   },
-};
+});
 
-const en: BlackFridayCopy = {
+const enCopy = (d: CampaignDates): BlackFridayCopy => ({
   campaign: {
     name: "Apfel Park Black Week",
     short: "Black Week",
@@ -328,13 +336,13 @@ const en: BlackFridayCopy = {
   ribbon: {
     label: "Apfel Park Black Week",
     text: (maxDiscount) =>
-      maxDiscount ? `23–30 November · up to −${maxDiscount}%` : "23–30 November · while stock lasts",
+      maxDiscount ? `${d.en.range} · up to −${maxDiscount}%` : `${d.en.range} · while stock lasts`,
     cta: "See deals",
   },
   hero: {
     metaLeft: "Apfel Park · Hamburg-Wilhelmsburg",
-    metaRight: "Black Week · 23–30 November 2026",
-    kicker: "Black Friday on 27 November",
+    metaRight: `Black Week · ${d.en.range} ${d.year}`,
+    kicker: `Black Friday on ${d.en.bf}`,
     titleTop: "Black",
     titleBottom: "Week",
     saving: (maxDiscount) =>
@@ -344,21 +352,21 @@ const en: BlackFridayCopy = {
         ? `Up to ${maxDiscount}% off checked smartphones, tablets and accessories – for eight days, ready for pickup in Wilhelmsburg.`
         : "Checked smartphones, tablets and accessories with a clearly stated condition – for eight days, ready for pickup in Wilhelmsburg.",
     countdownTitle: "Offers end in",
-    countdownNote: "30 November · 23:59 CET",
+    countdownNote: `${d.en.end} · 23:59 CET`,
     ctaPrimary: "See all deals",
     ctaSecondary: "Go to store",
     jumpCta: "Compare deals",
     landingDeck:
       "Eight days in one place: every offer with its condition, saving and live stock – checked in house, clearly labelled and ready for pickup in Wilhelmsburg.",
     storeProofTitle: "In the store",
-    teaserKicker: "Starts 23 November · 00:00 CET",
+    teaserKicker: `Starts ${d.en.start} · 00:00 CET`,
     teaserDeck:
-      "Eight days of Black Week from 23 November: checked smartphones, tablets and accessories, clearly labelled and ready for pickup in Wilhelmsburg. The countdown is running – the sale goes live at the start.",
-    teaserSaving: "Kick-off on 23 November",
+      `Eight days of Black Week from ${d.en.start}: checked smartphones, tablets and accessories, clearly labelled and ready for pickup in Wilhelmsburg. The countdown is running – the sale goes live at the start.`,
+    teaserSaving: `Kick-off on ${d.en.start}`,
     teaserNote: "Regular prices apply until then.",
     startsIn: "Black Week starts in",
-    startNote: "23 November · 00:00 CET",
-    startAria: "Black Week starts on 23 November at 00:00 CET",
+    startNote: `${d.en.start} · 00:00 CET`,
+    startAria: `Black Week starts on ${d.en.start} at 00:00 CET`,
     teaserCtaPrimary: "See the schedule",
     currentPick: "In the store now",
     shopBadge: "In store",
@@ -399,7 +407,7 @@ const en: BlackFridayCopy = {
   timeline: {
     eyebrow: "The week",
     title: "Eight days, one clear schedule",
-    note: "Black Friday on 27 November and Cyber Monday on 30 November frame the week. Every offer is live online and in store from 23 November.",
+    note: `Black Friday on ${d.en.bf} and Cyber Monday on ${d.en.end} frame the week. Every offer is live online and in store from ${d.en.start}.`,
     start: "Start",
     live: "Deals live",
     weekend: "Weekend",
@@ -437,20 +445,20 @@ const en: BlackFridayCopy = {
     ],
   },
   page: {
-    metaTitle: "Black Week 2026 – Black Friday deals",
+    metaTitle: `Black Week ${d.year} – Black Friday deals`,
     metaDescription: (maxDiscount) =>
       maxDiscount
-        ? `Apfel Park Black Week, 23–30 November: up to ${maxDiscount}% off checked smartphones, tablets and accessories. Black Friday on 27 Nov, pickup in Wilhelmsburg.`
-        : "Apfel Park Black Week, 23–30 November: reduced smartphones, tablets and accessories. Black Friday on 27 Nov, pickup in Wilhelmsburg.",
+        ? `Apfel Park Black Week, ${d.en.range}: up to ${maxDiscount}% off checked smartphones, tablets and accessories. Black Friday on ${d.en.bfShort}, pickup in Wilhelmsburg.`
+        : `Apfel Park Black Week, ${d.en.range}: reduced smartphones, tablets and accessories. Black Friday on ${d.en.bfShort}, pickup in Wilhelmsburg.`,
     metaDescriptionBefore:
-      "Apfel Park Black Week starts on 23 November 2026: eight days of checked smartphones, tablets and accessories. Countdown, schedule, FAQ and store in Hamburg-Wilhelmsburg.",
+      `Apfel Park Black Week starts on ${d.en.start} ${d.year}: eight days of checked smartphones, tablets and accessories. Countdown, schedule, FAQ and store in Hamburg-Wilhelmsburg.`,
     dealsEyebrow: "All offers",
     dealsTitle: "Black Week deals",
     dealsNote: "Sorted by saving. Available devices only, while stock lasts.",
     teaserDealsEyebrow: "In the store now",
     teaserDealsTitle: "Available devices",
     teaserDealsNote:
-      "These devices are available today. Black Week offers start on 23 November – regular prices apply until then.",
+      `These devices are available today. Black Week offers start on ${d.en.start} – regular prices apply until then.`,
     categoryEyebrow: "By category",
     categoryTitle: "Deals by device",
     howEyebrow: "How it works",
@@ -465,7 +473,7 @@ const en: BlackFridayCopy = {
     faq: [
       {
         question: "How long does Black Week run at Apfel Park?",
-        answer: "From 23 to 30 November 2026 – online and in our Hamburg-Wilhelmsburg store. Black Friday falls on 27 November, Cyber Monday on 30 November.",
+        answer: `From ${d.en.start} to ${d.en.end} ${d.year} – online and in our Hamburg-Wilhelmsburg store. Black Friday falls on ${d.en.bf}, Cyber Monday on ${d.en.end}.`,
       },
       {
         question: "Are the reduced devices new or used?",
@@ -489,6 +497,10 @@ const en: BlackFridayCopy = {
     visitCta: "Store & opening hours",
     finePrint: "All prices include VAT. While stock lasts. Subject to prior sale.",
   },
-};
+});
 
-export const blackFridayCopy: Record<Locale, BlackFridayCopy> = { de, en };
+/** Copy for the current year's dates; read per request (see blackFriday). */
+export const blackFridayCopy: Record<Locale, BlackFridayCopy> = {
+  get de() { return deCopy(currentBlackWeek()); },
+  get en() { return enCopy(currentBlackWeek()); },
+};

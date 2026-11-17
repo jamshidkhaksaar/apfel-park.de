@@ -1,3 +1,4 @@
+import { currentBlackWeek } from "@/lib/black-week-calendar";
 import Link from "next/link";
 
 import { blackFridayCopy } from "@/lib/black-friday";
@@ -46,7 +47,7 @@ export default function BlackFridayRibbon({
         <div className="flex shrink-0 items-center gap-3">
           {isBefore ? (
             <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--brass)]">
-              {lang === "de" ? "Start 23.11." : "Starts 23.11."}
+              {lang === "de" ? `Start ${currentBlackWeek().de.startShort}` : `Starts ${currentBlackWeek().de.startShort}`}
             </span>
           ) : (
             <Countdown

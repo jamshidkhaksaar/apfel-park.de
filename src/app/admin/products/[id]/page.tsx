@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
 import BlackFridayDiscountEditor from "@/components/admin/BlackFridayDiscountEditor";
 import { getBlackFridaySelection } from "@/lib/black-friday-selection";
+import { isBlackFridayAdminActive } from "@/lib/seasonal-theme-server";
 import ProductLinkedIntakeCard from "@/components/admin/ProductLinkedIntakeCard";
 import ProductTipsCard from "@/components/admin/ProductTipsCard";
 import { productMissingData } from "@/lib/product-missing-data";
@@ -21,13 +22,14 @@ export const dynamic = "force-dynamic";
 export default async function ProductEditorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{legacy?:string;step?:string;returnTo?:string}> }) {
   const [{ id }, locale, user] = await Promise.all([params, getAdminLocale(), readSessionUser()]);
   if (!phoneEditorEnabled()) notFound();
-  const [productResult, featuredResult, campaignSelection] = await Promise.all([
+  const [productResult, featuredResult, campaignSelection, showBlackFriday] = await Promise.all([
     query(
       `SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,gtin,identifier_status,asin,ebay_epid,country_of_origin,package_weight_kg,package_length_cm,package_width_cm,package_height_cm,battery_details,charger_included,charging_power_min_w,charging_power_max_w,usb_pd_supported,marketplace_category_mappings,marketplace_attributes,amazon_gtin_exemption,amazon_renewed_approved,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,manufacturer,eu_responsible_person,safety_warnings,safety_documents,eprel_id,energy_label,faq,updated_at,import_metadata FROM products WHERE id = $1 AND import_metadata->>'catalogDeletedAt' IS NULL LIMIT 1`,
       [id],
     ),
     query(`SELECT value FROM store_settings WHERE key = 'featured_product_ids' LIMIT 1`),
     getBlackFridaySelection(),
+    isBlackFridayAdminActive(),
   ]);
   const row = productResult.rows[0] as ProductRow | undefined;
   if (!row) notFound();
@@ -66,14 +68,14 @@ export default async function ProductEditorPage({ params, searchParams }: { para
     <AdminShell title={product.title}>
       {backLink}
       <ProductTipsCard tips={tips} locale={locale} />
-      <BlackFridayDiscountEditor
+      {showBlackFriday ? <BlackFridayDiscountEditor
         locale={locale}
         productId={product.id}
         price={product.price}
         brand={product.brand}
         category={product.category}
         initial={campaignSelection.discounts[product.id] ?? null}
-      />
+      /> : null}
       <div id="ai-intake"><ProductLinkedIntakeCard locale={locale} productId={product.id} condition={product.condition} isOwner={isProductIntakeOwner(user)} /></div>
       <SmartphoneWizard locale={locale} productId={product.id} researchEnabled={process.env.LEGACY_PRODUCT_RESEARCH_ENABLED === 'true'} />
     </AdminShell>

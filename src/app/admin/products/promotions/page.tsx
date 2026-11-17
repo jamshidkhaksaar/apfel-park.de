@@ -8,14 +8,16 @@ import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
 import { getPromoPopupSettings } from "@/lib/products";
 import { getBlackFridaySelection } from "@/lib/black-friday-selection";
+import { isBlackFridayAdminActive } from "@/lib/seasonal-theme-server";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductPromotionsPage() {
-  const [locale, promo, selection, productsResult] = await Promise.all([
+  const [locale, promo, selection, showBlackFriday, productsResult] = await Promise.all([
     getAdminLocale(),
     getPromoPopupSettings(),
     getBlackFridaySelection(),
+    isBlackFridayAdminActive(),
     query(`SELECT id,title,subtitle,description,category,condition,battery_health,has_real_product_photos,condition_note,brand,model,sku,mpn,gtin,price,compare_at_price,stock,slug,is_active,images,feature_bullets,specs,variants,created_at,created_at AS updated_at FROM products ORDER BY created_at DESC`),
   ]);
   const products = (productsResult.rows as ProductRow[]).map((row) => mapAdminProduct(row));
@@ -25,13 +27,15 @@ export default async function ProductPromotionsPage() {
         <Link href="/admin/products" className="inline-flex items-center gap-2 text-sm font-medium text-muted transition hover:text-gold">← {locale === "de" ? "Zurück zum Produktkatalog" : "Back to product catalog"}</Link>
       </div>
       <ProductPromotionManager locale={locale} products={products} promo={promo} />
-      <BlackFridaySelectionPanel
-        locale={locale}
-        products={products}
-        pageIds={selection.pageIds}
-        heroIds={selection.heroIds}
-        discounts={selection.discounts}
-      />
+      {showBlackFriday ? (
+        <BlackFridaySelectionPanel
+          locale={locale}
+          products={products}
+          pageIds={selection.pageIds}
+          heroIds={selection.heroIds}
+          discounts={selection.discounts}
+        />
+      ) : null}
     </AdminShell>
   );
 }

@@ -108,7 +108,12 @@ export default async function RootLayout({
     : langCookie?.value === "en"
       ? "en"
       : "de";
-  const { theme: season } = await getEffectiveCampaign();
+  const campaign = await getEffectiveCampaign();
+  // The campaign art direction is for customers only. The admin and the login
+  // keep their normal palette: staff reported poor readability on the red
+  // and black campaign tokens.
+  const isStaffSurface = /^\/(admin|login)(\/|$)/.test(requestPath ?? "");
+  const season = isStaffSurface ? null : campaign.theme;
   const themeCookie = cookieStore.get("apfel-theme");
   const hasThemeCookie = themeCookie?.value === "dark" || themeCookie?.value === "mono";
   // A campaign art direction needs the dark token set. The cookie is left

@@ -71,7 +71,7 @@ export default async function BlackFridayPage({
   const itemList = isBefore ? null : {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: locale === "de" ? "Apfel Park Black Week 2026" : "Apfel Park Black Week 2026",
+    name: `Apfel Park Black Week ${blackFriday.startsAt.slice(0, 4)}`,
     url: pageUrl,
     numberOfItems: cards.length,
     itemListElement: cards.map((card, index) => ({

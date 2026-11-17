@@ -4,6 +4,7 @@ import StorePromotion from "@/components/promotion/StorePromotion";
 import BlackFridayRibbon from "@/components/black-friday/BlackFridayRibbon";
 import { getPublicPromotion } from "@/lib/promotion-server";
 import { blackFriday, blackFridayCopy } from "@/lib/black-friday";
+import { currentBlackWeek } from "@/lib/black-week-calendar";
 import { isCampaignPagePublic, secondsRemaining } from "@/lib/seasonal-theme";
 import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
 import { getCampaignMaxPercent } from "@/lib/products";
@@ -54,7 +55,7 @@ export default async function SiteLayout({
                 phase: navPhase,
                 // Before launch the date is the honest signal: it is a
                 // countdown, not a running sale.
-                date: navPhase === "before" ? "23.11." : "27.11.",
+                date: navPhase === "before" ? currentBlackWeek().de.startShort : currentBlackWeek().de.bfShort,
                 ariaLabel: navPhase === "before" ? campaignCopy.hero.startAria : undefined,
                 maxPercent: campaignMaxPercent,
               }

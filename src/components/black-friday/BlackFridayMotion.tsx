@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { currentBlackWeek } from "@/lib/black-week-calendar";
 
 import { discountPercentage, type CatalogCardModel } from "@/lib/catalog-card";
 import { formatPrice } from "@/lib/format";
@@ -102,7 +103,7 @@ export function BlackWeekSeal({
           letterSpacing="-0.8"
           style={{ fontFamily: "var(--font-display), sans-serif" }}
         >
-          {isBefore ? "23.11." : maxDiscount ? `−${maxDiscount}%` : "2026"}
+          {isBefore ? currentBlackWeek().de.startShort : maxDiscount ? `−${maxDiscount}%` : String(currentBlackWeek().year)}
         </text>
         <line x1="44" y1="86" x2="76" y2="86" stroke="var(--brass)" strokeOpacity="0.35" />
         <text
@@ -114,7 +115,7 @@ export function BlackWeekSeal({
           letterSpacing="1.5"
           style={{ fontFamily: "var(--font-display), sans-serif" }}
         >
-          BLACK WEEK 2026
+          BLACK WEEK {currentBlackWeek().year}
         </text>
       </svg>
     </div>

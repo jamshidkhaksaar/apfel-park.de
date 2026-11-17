@@ -5,6 +5,7 @@ import { canManageProducts } from "@/lib/admin-auth";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import { createAdminDbClient } from "@/lib/admin-db";
 import { getBlackFridaySelection } from "@/lib/black-friday-selection";
+import { currentBlackWeek } from "@/lib/black-week-calendar";
 import { parseCampaignDiscount, parseCampaignDiscounts } from "@/lib/campaign-pricing";
 import { query } from "@/lib/db";
 
@@ -102,6 +103,7 @@ export async function PATCH(request: NextRequest) {
           pageIds,
           heroIds,
           discounts,
+          year: currentBlackWeek().year,
           updatedAt: new Date().toISOString(),
         },
         updated_at: new Date().toISOString(),

@@ -190,6 +190,24 @@ export default function AdminShell({
   const [navigatingPath, setNavigatingPath] = useState<string | null>(null);
   const [badges, setBadges] = useState<AdminBadgeCounts>({ chat: 0, repairs: 0, orders: 0 });
 
+  // The Black Friday campaign theme is for the shop only. If the page came
+  // from the shop without a full reload, drop it and restore the staff
+  // member's own theme; put it back if they navigate into the shop again.
+  useEffect(() => {
+    const root = document.documentElement;
+    const season = root.getAttribute("data-season");
+    if (!season) return;
+    const previousTheme = root.getAttribute("data-theme");
+    root.removeAttribute("data-season");
+    let stored: string | null = null;
+    try { stored = localStorage.getItem("apfel-theme"); } catch { /* storage blocked */ }
+    root.setAttribute("data-theme", stored === "dark" || stored === "mono" ? stored : "mono");
+    return () => {
+      root.setAttribute("data-season", season);
+      if (previousTheme) root.setAttribute("data-theme", previousTheme);
+    };
+  }, []);
+
   // Live clock
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Europe/Berlin' }));

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 import type { AdminLocale } from "@/lib/admin-i18n";
 import { blackFridayCategories } from "@/lib/black-friday-categories";
+import { currentBlackWeek } from "@/lib/black-week-calendar";
 import type { ProductCategory } from "@/lib/products";
 import {
   applyCampaignDiscount,
@@ -215,8 +216,8 @@ export default function BlackFridayDiscountEditor({
           </h3>
           <p className="mt-1 text-sm leading-6 text-muted">
             {isGerman
-              ? "Neuen Preis, % oder € eingeben und ✓ drücken. Das Produkt erscheint dann automatisch in den Black-Friday-Deals seiner Kategorie. Gilt nur während der Black Week (23.–30.11.)."
-              : "Enter a new price, % or € and press ✓. The product then appears in its category's Black Friday deals. Applies only during Black Week (23–30 Nov)."}
+              ? `Neuen Preis, % oder € eingeben und ✓ drücken. Das Produkt erscheint dann automatisch in den Black-Friday-Deals seiner Kategorie. Gilt nur während der Black Week (${currentBlackWeek().de.range}).`
+              : `Enter a new price, % or € and press ✓. The product then appears in its category's Black Friday deals. Applies only during Black Week (${currentBlackWeek().en.range}).`}
           </p>
         </div>
       </div>

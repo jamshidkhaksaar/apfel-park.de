@@ -29,12 +29,15 @@ export default function GroupedProductCatalog({
   canManage,
   editHref,
   discounts,
+  showBlackFriday = true,
 }: {
   locale: AdminLocale;
   groups: QuickEditGroup[];
   canManage: boolean;
   editHref: Record<string, string>;
   discounts: Record<string, CampaignDiscount>;
+  /** False outside the Black Week season: no deal column at all. */
+  showBlackFriday?: boolean;
 }) {
   const de = locale === "de";
   const productImage = new Map(groups.flatMap((group) => group.products.map((product) => [product.id, product.image] as const)));
@@ -84,7 +87,7 @@ export default function GroupedProductCatalog({
                     <th className="px-3 py-2 font-medium">SKU</th>
                     <th className="px-3 py-2 text-right font-medium">{de ? "Preis" : "Price"}</th>
                     <th className="px-3 py-2 font-medium">{de ? "Bestand" : "Stock"}</th>
-                    <th className="px-3 py-2 font-medium text-red-300">Black Friday</th>
+                    {showBlackFriday ? <th className="px-3 py-2 font-medium text-red-300">Black Friday</th> : null}
                     <th className="w-28 px-3 py-2 text-right font-medium">{de ? "Aktionen" : "Actions"}</th>
                   </tr>
                 </thead>
@@ -129,6 +132,7 @@ export default function GroupedProductCatalog({
                             <span className="tabular-nums">{row.stock}</span>
                           )}
                         </td>
+                        {showBlackFriday ? (
                         <td className="px-3 py-2.5">
                           {canManage && row.firstOfProduct ? (
                             <BlackFridayDiscountEditor
@@ -144,6 +148,7 @@ export default function GroupedProductCatalog({
                             <span className="text-[11px] text-muted">{de ? "↑ gilt für alle Varianten" : "↑ applies to all variants"}</span>
                           ) : null}
                         </td>
+                        ) : null}
                         <td className="px-3 py-2.5">
                           {canManage ? (
                             <span className="flex items-center justify-end gap-0.5">

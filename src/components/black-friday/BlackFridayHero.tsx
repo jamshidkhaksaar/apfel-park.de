@@ -65,7 +65,7 @@ export default function BlackFridayHero({
           )}
           <p className={isLanding ? "hidden sm:block" : undefined}>
             {isLanding
-              ? `${blackFriday.dates[lang]} 2026 · Hamburg-Wilhelmsburg`
+              ? `${blackFriday.dates[lang]} ${blackFriday.startsAt.slice(0, 4)} · Hamburg-Wilhelmsburg`
               : copy.metaRight}
           </p>
         </div>

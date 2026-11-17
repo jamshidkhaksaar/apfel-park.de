@@ -1,18 +1,15 @@
 import { blackFridayCopy } from "@/lib/black-friday";
+import { currentBlackWeek } from "@/lib/black-week-calendar";
 import type { Locale } from "@/lib/i18n";
 
 type DayKind = "start" | "live" | "weekend" | "blackFriday" | "cyberMonday";
 
-const days: Array<{ date: string; kind: DayKind }> = [
-  { date: "2026-11-23", kind: "start" },
-  { date: "2026-11-24", kind: "live" },
-  { date: "2026-11-25", kind: "live" },
-  { date: "2026-11-26", kind: "live" },
-  { date: "2026-11-27", kind: "blackFriday" },
-  { date: "2026-11-28", kind: "weekend" },
-  { date: "2026-11-29", kind: "weekend" },
-  { date: "2026-11-30", kind: "cyberMonday" },
-];
+/** Monday to Cyber Monday of this year's Black Week. */
+const weekDays = (): Array<{ date: string; kind: DayKind }> => {
+  const start = new Date(currentBlackWeek().startsAt.slice(0, 10) + "T12:00:00Z");
+  const kinds: DayKind[] = ["start", "live", "live", "live", "blackFriday", "weekend", "weekend", "cyberMonday"];
+  return kinds.map((kind, index) => ({ date: new Date(start.getTime() + index * 86400000).toISOString().slice(0, 10), kind }));
+};
 
 const berlinDate = (date: string) =>
   new Intl.DateTimeFormat("en-CA", {
@@ -64,17 +61,17 @@ export default function BlackWeekTimeline({ lang }: { lang: Locale }) {
           <ul className="hidden shrink-0 gap-5 text-[9px] font-bold uppercase tracking-[0.16em] text-white/45 sm:flex">
             <li className="flex items-center gap-2">
               <span aria-hidden="true" className="h-2 w-2 bg-[color:var(--signal)]" />
-              {copy.blackFriday} · 27.11.
+              {copy.blackFriday} · {currentBlackWeek().de.bfShort}
             </li>
             <li className="flex items-center gap-2">
               <span aria-hidden="true" className="h-2 w-2 bg-[color:var(--brass)]" />
-              {copy.cyberMonday} · 30.11.
+              {copy.cyberMonday} · {currentBlackWeek().de.endShort}
             </li>
           </ul>
         </div>
 
         <ol className="mt-7 grid grid-cols-4 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10 sm:grid-cols-8">
-          {days.map(({ date, kind }) => {
+          {weekDays().map(({ date, kind }) => {
             const isPeak = kind === "blackFriday";
             const isCyber = kind === "cyberMonday";
             const isToday = date === today;
