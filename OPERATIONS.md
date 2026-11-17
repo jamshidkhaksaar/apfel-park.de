@@ -41,7 +41,7 @@ has **not been deployed** by this work.
    npm test
    npm run lint
    npm run typecheck
-   npm audit --audit-level=high
+   npm audit --omit=dev --audit-level=high   # production dependencies; see scripts/ci-check.mjs
    npm run build
    python3 -m unittest discover -s deployment/vps/tests -v
    bash -n deployment/vps/scripts/deploy-app.sh

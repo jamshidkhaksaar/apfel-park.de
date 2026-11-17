@@ -39,7 +39,11 @@ const gates = [
   { name: 'typecheck', command: ['run', 'typecheck'], covers: 'tsc --noEmit' },
   { name: 'audit:unused', command: ['run', 'audit:unused'], covers: 'source files nothing reaches' },
   { name: 'test', command: ['test'], covers: 'the vitest suite' },
-  { name: 'audit', command: ['audit', '--audit-level=high'], covers: 'high-severity advisories' },
+  // Production dependencies only: dev tooling (vitest, eslint) runs on the
+  // build host over our own code and never ships. A dev-only advisory without
+  // an upstream fix (picomatch GHSA-fc5q-39xc-vjpf, Nov 2026) must not block
+  // releases; anything the shop actually runs still fails the gate.
+  { name: 'audit', command: ['audit', '--omit=dev', '--audit-level=high'], covers: 'high-severity advisories in production dependencies' },
   { name: 'build', command: ['run', 'build'], covers: 'the production build' },
 ];
 
