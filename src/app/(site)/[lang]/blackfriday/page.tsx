@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 import { requireLocale } from "@/lib/route-locale";
 
@@ -12,5 +12,5 @@ export default async function BlackFridayAlias({
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  redirect(`/${requireLocale(lang)}/black-friday`);
+  permanentRedirect(`/${requireLocale(lang)}/black-friday`);
 }

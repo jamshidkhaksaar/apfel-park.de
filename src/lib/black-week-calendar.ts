@@ -80,3 +80,28 @@ export function blackWeekDates(year: number): CampaignDates {
  */
 export const currentBlackWeek = (now: Date = new Date()): CampaignDates =>
   blackWeekDates(Number(new Intl.DateTimeFormat("en", { timeZone: "Europe/Berlin", year: "numeric" }).format(now)));
+
+/**
+ * The Black Week a visitor can still look forward to: this year's until it
+ * ends, then next year's. The off-season landing page announces these dates
+ * so /black-friday stays a live, indexable URL all year.
+ */
+export const upcomingBlackWeek = (now: Date = new Date()): CampaignDates => {
+  const week = currentBlackWeek(now);
+  return now.getTime() > Date.parse(week.endsAt) ? blackWeekDates(week.year + 1) : week;
+};
+
+/**
+ * When the campaign page's content last really changed: the latest phase
+ * boundary (teaser start, sale start, sale end) not in the future. Used as the
+ * sitemap lastmod, so search engines and IndexNow see a change exactly when the
+ * page switches phase and a stable date in between.
+ */
+export const campaignPageChangedAt = (now: Date = new Date()): Date => {
+  const week = currentBlackWeek(now);
+  const time = now.getTime();
+  const boundaries = [week.teaserStartsAt, week.startsAt, week.endsAt]
+    .map((value) => Date.parse(value))
+    .filter((value) => value <= time);
+  return new Date(boundaries.length ? Math.max(...boundaries) : Date.parse(blackWeekDates(week.year - 1).endsAt));
+};

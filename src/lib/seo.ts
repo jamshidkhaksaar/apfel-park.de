@@ -8,7 +8,7 @@ import { isCategoryIndexable } from "@/lib/category-indexing";
 import { isRepairBenchmarkPublished } from "@/lib/repair-price-benchmark";
 import { repairServiceSlugs } from "@/lib/repair-services";
 import { blackFriday } from "@/lib/black-friday";
-import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
+import { campaignPageChangedAt } from "@/lib/black-week-calendar";
 import { showcasePages, type ShowcaseSlug } from "@/lib/showcase-pages";
 import {
   buildDefaultSeoSettings,
@@ -305,15 +305,15 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
       }))
     : [];
 
-  // The campaign page is listed from the teaser window on: it is a real page
-  // with dates and answers. Outside that window it 404s, so it must not be in
-  // the sitemap then.
-  const { phase: campaignPhase } = await getEffectiveCampaign();
-  const campaignListed = campaignPhase === "before" || campaignPhase === "live";
-  const seasonalEntries = campaignListed
-    ? locales.map((locale) => ({
+  // The campaign page is one permanent URL all year (teaser → sale → "next
+  // Black Week" page), so it keeps its ranking from year to year. Its lastmod
+  // is the last phase switch, not "now": a date that moves on every fetch
+  // teaches crawlers to ignore lastmod, and it lets IndexNow re-send the page
+  // exactly when its content changes.
+  const campaignChangedAt = campaignPageChangedAt();
+  const seasonalEntries = locales.map((locale) => ({
         url: `${siteInfo.url}/${locale}${blackFriday.href}`,
-        lastModified: new Date(),
+        lastModified: campaignChangedAt,
         alternates: {
           languages: {
             de: `${siteInfo.url}/de${blackFriday.href}`,
@@ -321,8 +321,7 @@ export const getSitemapEntries = async (): Promise<MetadataRoute.Sitemap> => {
             "x-default": `${siteInfo.url}/de${blackFriday.href}`,
           },
         },
-      }))
-    : [];
+      }));
 
   const tradeInEntries = locales.map((locale) => ({
     url: `${siteInfo.url}/${locale}/trade-in`,

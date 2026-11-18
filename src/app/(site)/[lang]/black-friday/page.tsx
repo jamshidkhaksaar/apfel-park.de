@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import BlackFridayCategoryTiles from "@/components/black-friday/BlackFridayCategoryTiles";
 import BlackFridayDealExplorer from "@/components/black-friday/BlackFridayDealExplorer";
 import BlackFridayHero from "@/components/black-friday/BlackFridayHero";
+import BlackWeekOffSeason, { offSeasonCopy } from "@/components/black-friday/BlackWeekOffSeason";
 import BlackWeekTimeline from "@/components/black-friday/BlackWeekTimeline";
 import BlackWeekTrust from "@/components/black-friday/BlackWeekTrust";
 import { blackFriday, blackFridayCopy } from "@/lib/black-friday";
 import { blackFridayCategoryStats } from "@/lib/black-friday-categories";
+import { upcomingBlackWeek } from "@/lib/black-week-calendar";
 import { discountPercentage, toCatalogCardModel } from "@/lib/catalog-card";
 import { createMetadata } from "@/lib/metadata";
 import { getBlackFridayDeals } from "@/lib/products";
@@ -35,6 +36,13 @@ export const generateMetadata = async ({
   const { lang } = await params;
   const locale = requireLocale(lang);
   const { phase } = await getEffectiveCampaign();
+  if (!isCampaignPagePublic(phase)) {
+    // Off season the URL stays indexable as the "next Black Week" page; the
+    // year-branded campaign image would show the wrong year, so the site
+    // default image is used.
+    const offSeason = offSeasonCopy(locale, upcomingBlackWeek());
+    return createMetadata(locale, offSeason.metaTitle, offSeason.metaDescription, "/black-friday");
+  }
   const copy = blackFridayCopy[locale].page;
   const deals = phase === "live" ? await getBlackFridayDeals(locale, 48) : [];
   return createMetadata(
@@ -54,7 +62,9 @@ export default async function BlackFridayPage({
   const { lang } = await params;
   const locale = requireLocale(lang);
   const { phase } = await getEffectiveCampaign();
-  if (!isCampaignPagePublic(phase)) notFound();
+  // One permanent URL every year keeps the page's ranking: outside the
+  // campaign it announces the next Black Week instead of returning 404.
+  if (!isCampaignPagePublic(phase)) return <OffSeasonPage locale={locale} />;
   const isBefore = phase === "before";
 
   const copy = blackFridayCopy[locale];
@@ -86,6 +96,8 @@ export default async function BlackFridayPage({
           "@type": "Offer",
           price: card.price,
           priceCurrency: "EUR",
+          // Campaign prices end with the Black Week.
+          priceValidUntil: blackFriday.endsAt.slice(0, 10),
           availability: card.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
           url: `${siteInfo.url}/${locale}/store/${card.slug}`,
         },
@@ -235,6 +247,36 @@ export default async function BlackFridayPage({
       </section>
 
       <p className="container-page py-6 text-xs leading-5 text-muted-strong">{page.finePrint}</p>
+    </div>
+  );
+}
+
+function OffSeasonPage({ locale }: { locale: "de" | "en" }) {
+  const next = upcomingBlackWeek();
+  const copy = offSeasonCopy(locale, next);
+  const pageUrl = `${siteInfo.url}/${locale}${blackFriday.href}`;
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: copy.faq.map((entry) => ({
+      "@type": "Question",
+      name: entry.question,
+      acceptedAnswer: { "@type": "Answer", text: entry.answer },
+    })),
+  };
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: copy.home, item: `${siteInfo.url}/${locale}` },
+      { "@type": "ListItem", position: 2, name: `Black Friday ${next.year}`, item: pageUrl },
+    ],
+  };
+  return (
+    <div className="bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonStringify(breadcrumb) }} />
+      <BlackWeekOffSeason lang={locale} next={next} />
     </div>
   );
 }
