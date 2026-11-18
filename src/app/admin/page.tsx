@@ -1,6 +1,6 @@
 import AdminShell from "@/components/admin/AdminShell";
 import OwnerDashboard, { type DashboardCampaign } from "@/components/admin/OwnerDashboard";
-import { getAdminDictionary } from "@/lib/admin-i18n-server";
+import { getAdminDictionary, getAdminLocale } from "@/lib/admin-i18n-server";
 import { loadDashboardOverview } from "@/lib/admin-dashboard-overview";
 import { readActiveVisitors } from "@/lib/admin-live-visitors";
 import { getBlackFridaySelection } from "@/lib/black-friday-selection";
@@ -17,8 +17,9 @@ export const dynamic = "force-dynamic";
  * The first frame is rendered on the server; OwnerDashboard refreshes it live.
  */
 export default async function AdminPage() {
-  const [dict, user, overview, visitors, campaignState, selection, blackFridayTools] = await Promise.all([
+  const [dict, locale, user, overview, visitors, campaignState, selection, blackFridayTools] = await Promise.all([
     getAdminDictionary(),
+    getAdminLocale(),
     readSessionUser(),
     loadDashboardOverview(),
     readActiveVisitors(),
@@ -44,6 +45,7 @@ export default async function AdminPage() {
         name={isProductIntakeOwner(user) ? ownerName : null}
         campaign={campaign}
         blackFridayTools={blackFridayTools}
+        locale={locale}
       />
     </AdminShell>
   );

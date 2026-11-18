@@ -19,7 +19,7 @@ const overview: DashboardOverview = {
   },
   topSellers: [{ productId: "c", title: "Apple iPhone 11", image: null, units: 4 }],
   todo: { ordersToHandle: 2, repairsOpen: 0, unreadChats: 1, failedSyncs: 0 },
-  activity: [{ id: "sale_shop:1", kind: "sale_shop", title: "Apple iPhone 11", detail: "1× im Laden verkauft", at: "2026-11-18T09:58:00Z", href: "/admin/products/c" }],
+  activity: [{ id: "sale_shop:1", kind: "sale_shop", title: "Apple iPhone 11", amount: "1", at: "2026-11-18T09:58:00Z", href: "/admin/products/c" }],
 };
 
 describe("owner dashboard", () => {
@@ -35,5 +35,21 @@ describe("owner dashboard", () => {
     expect(html).toContain("Bestellungen warten");
     expect(html).toContain("Black Friday startet in");
     expect(html).toContain("Ladenhüter");
+    expect(html).toContain("1× im Laden verkauft");
+  });
+
+  it("speaks English when the admin language is English", () => {
+    const html = renderToStaticMarkup(createElement(OwnerDashboard, {
+      initial: { overview, visitors: 3 }, name: "Safi", blackFridayTools: true, locale: "en",
+      campaign: { active: true, phase: "before", startsAt: "2026-11-23T00:00:00+01:00", endsAt: "2026-11-30T23:59:59+01:00", deals: 8 },
+    }));
+    expect(html).toContain("3 units");
+    expect(html).toContain("169,052");
+    expect(html).toContain("Scan &amp; sell");
+    expect(html).toContain("Orders waiting for shipping/pickup");
+    expect(html).toContain("Black Friday starts in");
+    expect(html).toContain("Slow sellers");
+    expect(html).toContain("1× sold in store");
+    expect(html).not.toMatch(/Stück|Bestellungen|Ladenhüter|Lagerwert/);
   });
 });

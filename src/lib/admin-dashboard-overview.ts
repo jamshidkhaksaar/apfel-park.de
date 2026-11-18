@@ -15,7 +15,8 @@ export type DashboardActivityItem = {
   id: string;
   kind: "sale_shop" | "sale_online" | "restock" | "product" | "order" | "repair" | "chat";
   title: string;
-  detail: string;
+  /** Raw value behind the line (units, order total, ticket number or message text); the UI phrases it per language. */
+  amount: string;
   at: string;
   href: string;
 };
@@ -205,11 +206,8 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
     todo: { ordersToHandle: num(todoRow.orders), repairsOpen: num(todoRow.repairs), unreadChats: num(todoRow.chats), failedSyncs: num(todoRow.failed_syncs) },
     activity: (activity.rows as Array<Record<string, unknown>>).map((row) => {
       const kind = String(row.kind) as DashboardActivityItem["kind"];
-      const amount = String(row.amount ?? "");
-      const detail = kind === "sale_shop" ? `${amount}× im Laden verkauft` : kind === "sale_online" ? `${amount}× online verkauft`
-        : kind === "restock" ? `Bestand +${amount}` : kind === "product" ? "Neues Produkt" : kind === "order" ? `Bestellung · ${Number(amount).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}`
-        : kind === "repair" ? `Reparatur${amount ? ` R-${amount}` : ""}` : amount.slice(0, 60) || "Neue Nachricht";
-      return { id: `${kind}:${row.id}`, kind, title: String(row.title ?? ""), detail, at: new Date(String(row.created_at)).toISOString(), href: href(kind, String(row.ref)) };
+      const amount = kind === "chat" ? String(row.amount ?? "").slice(0, 60) : String(row.amount ?? "");
+      return { id: `${kind}:${row.id}`, kind, title: String(row.title ?? ""), amount, at: new Date(String(row.created_at)).toISOString(), href: href(kind, String(row.ref)) };
     }),
   };
 }
