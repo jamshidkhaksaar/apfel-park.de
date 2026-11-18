@@ -13,6 +13,8 @@ const copy = {
     upTo: "bis zu",
     deals: (count: number) => (count === 1 ? "1 Angebot" : `${count} Angebote`),
     cta: "Deals ansehen",
+    explore: "Jetzt entdecken",
+    soon: "Black Friday",
     from: () => `Ab ${currentBlackWeek().de.startShort}`,
   },
   en: {
@@ -21,6 +23,8 @@ const copy = {
     upTo: "up to",
     deals: (count: number) => (count === 1 ? "1 offer" : `${count} offers`),
     cta: "View deals",
+    explore: "Explore now",
+    soon: "Black Friday",
     from: () => `From ${currentBlackWeek().de.startShort}`,
   },
 } as const;
@@ -56,8 +60,19 @@ export default function BlackFridayCategoryTiles({
 }) {
   const t = copy[lang];
   // Live: hide categories that have nothing on offer. Teaser: show all five.
-  const visible = phase === "live" ? stats.filter((stat) => stat.count > 0) : stats;
+  // All five categories always show. During the sale a category without
+  // deals links to its normal shop page instead of an empty deals list.
+  const visible = stats;
   if (visible.length === 0) return null;
+  const hrefFor = (query: string, count: number) => {
+    if (phase === "live" && count === 0) {
+      const params = new URLSearchParams(query);
+      params.delete("deals");
+      const rest = params.toString();
+      return `/${lang}/store${rest ? `?${rest}` : ""}`;
+    }
+    return `/${lang}/store?${query}`;
+  };
 
   return (
     <section className={`bg-[#08080a] py-10 md:py-14 ${className}`} aria-labelledby={heading ? "bf-categories-title" : undefined}>
@@ -77,7 +92,7 @@ export default function BlackFridayCategoryTiles({
           {visible.map(({ category, count, maxPercent }, index) => (
             <li key={category.id} className="w-[78%] shrink-0 snap-start sm:w-auto">
               <Link
-                href={`/${lang}/store?${category.query}`}
+                href={hrefFor(category.query, count)}
                 className="bf-shine group relative flex h-full min-h-[21rem] flex-col overflow-hidden rounded-2xl border border-[color:var(--bf-gold-3)]/35 bg-[radial-gradient(120%_90%_at_80%_0%,rgba(232,23,44,0.28),transparent_60%),linear-gradient(180deg,#141416,#09090b)] p-4 text-white transition hover:-translate-y-0.5 hover:border-[color:var(--bf-gold-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--bf-gold-2)]"
               >
                 <span className="relative z-[2] flex items-center justify-between gap-2">
@@ -90,7 +105,7 @@ export default function BlackFridayCategoryTiles({
                     )}
                   </span>
                   <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-semibold text-white/70">
-                    {phase === "live" ? t.deals(count) : t.from()}
+                    {phase === "live" ? (count > 0 ? t.deals(count) : t.soon) : t.from()}
                   </span>
                 </span>
 
@@ -119,7 +134,7 @@ export default function BlackFridayCategoryTiles({
                     )}
                   </span>
                   <span className="mt-3 flex items-center justify-between border-t border-white/10 pt-3 text-xs font-bold text-[color:var(--bf-gold-2)]">
-                    {t.cta}
+                    {phase === "live" && count === 0 ? t.explore : t.cta}
                     <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span>
                   </span>
                 </span>
