@@ -32,7 +32,7 @@ const newKey = () =>
  * opens over a blurred page with a big "Verkaufen" button that takes one unit
  * off stock. Anything else runs the normal search.
  */
-export default function ScanSearchInput({ defaultValue, placeholder }: { defaultValue: string; placeholder: string }) {
+export default function ScanSearchInput({ defaultValue, placeholder, autoFocus = false }: { defaultValue: string; placeholder: string; autoFocus?: boolean }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
@@ -130,6 +130,8 @@ export default function ScanSearchInput({ defaultValue, placeholder }: { default
         <input
           ref={input}
           name="q"
+          // From "Scannen & verkaufen" on the dashboard: ready for the scanner.
+          autoFocus={autoFocus}
           defaultValue={defaultValue}
           placeholder={placeholder}
           onKeyDown={(event) => { void lookup(event); }}

@@ -1,96 +1,50 @@
-import { createAdminServerClient } from "@/lib/admin-auth-server";
-import DashboardClient from "./DashboardClient";
-import { loadDashboardStats } from "@/lib/admin-dashboard";
+import AdminShell from "@/components/admin/AdminShell";
+import OwnerDashboard, { type DashboardCampaign } from "@/components/admin/OwnerDashboard";
+import { getAdminDictionary } from "@/lib/admin-i18n-server";
+import { loadDashboardOverview } from "@/lib/admin-dashboard-overview";
+import { readActiveVisitors } from "@/lib/admin-live-visitors";
+import { getBlackFridaySelection } from "@/lib/black-friday-selection";
+import { currentBlackWeek } from "@/lib/black-week-calendar";
+import { businessIdentity } from "@/lib/business-identity";
+import { isProductIntakeOwner } from "@/lib/product-intake/owner";
+import { getEffectiveCampaign, isBlackFridayAdminActive } from "@/lib/seasonal-theme-server";
+import { readSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-type DashboardActivity = {
-  id: string;
-  type: "repair" | "order";
-  label: string;
-  sub: string;
-  status: string | null;
-  createdAt: string;
-};
-
-const normalizeCreatedAt = (value: unknown): string => {
-  if (typeof value === "string" && value.trim()) {
-    return value;
-  }
-
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value.toISOString();
-  }
-
-  if (value && typeof value === "object" && "toString" in value) {
-    const asString = String(value);
-    if (asString && asString !== "[object Object]") {
-      return asString;
-    }
-  }
-
-  return new Date(0).toISOString();
-};
-
-const toTimestamp = (value: string): number => {
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
-
+/**
+ * Owner dashboard: today's sales, stock, live visitors, to-dos and activity.
+ * The first frame is rendered on the server; OwnerDashboard refreshes it live.
+ */
 export default async function AdminPage() {
-  const adminClient = await createAdminServerClient();
-
-  // Fetch independent dashboard data in parallel.
-  const [
-    stats,
-    { data: recentRepairs },
-    { data: recentOrders },
-  ] = await Promise.all([
-    loadDashboardStats(),
-    adminClient
-      .from("repairs")
-      .select("id,ticket_number,device_model,status,created_at")
-      .order("created_at", { ascending: false })
-      .limit(4),
-    adminClient
-      .from("orders")
-      .select("id,order_number,customer_name,status,created_at")
-      .order("created_at", { ascending: false })
-      .limit(4),
+  const [dict, user, overview, visitors, campaignState, selection, blackFridayTools] = await Promise.all([
+    getAdminDictionary(),
+    readSessionUser(),
+    loadDashboardOverview(),
+    readActiveVisitors(),
+    getEffectiveCampaign(),
+    getBlackFridaySelection(),
+    isBlackFridayAdminActive(),
   ]);
+  const week = currentBlackWeek();
+  const campaign: DashboardCampaign = {
+    active: campaignState.mode !== "off" && (campaignState.phase === "before" || campaignState.phase === "live"),
+    phase: campaignState.phase,
+    startsAt: week.startsAt,
+    endsAt: week.endsAt,
+    deals: Object.keys(selection.discounts).length,
+  };
+  // The owner is greeted by name ("Safi"); everyone else gets a neutral greeting.
+  const ownerName = businessIdentity.legalOwner.trim().split(/\s+/).at(-1) ?? null;
 
-  const activity: DashboardActivity[] = [
-    ...((recentRepairs ?? []) as Array<{
-      id: string;
-      ticket_number: number | null;
-      device_model: string | null;
-      status: string | null;
-      created_at: string | null;
-    }>).map((repair) => ({
-      id: repair.id,
-      type: "repair" as const,
-      label: repair.device_model?.trim() || "Repair",
-      sub: repair.ticket_number ? `R-${repair.ticket_number}` : `R-${repair.id.slice(0, 6)}`,
-      status: repair.status,
-      createdAt: normalizeCreatedAt(repair.created_at),
-    })),
-    ...((recentOrders ?? []) as Array<{
-      id: string;
-      order_number: number | null;
-      customer_name: string | null;
-      status: string | null;
-      created_at: string | null;
-    }>).map((order) => ({
-      id: order.id,
-      type: "order" as const,
-      label: order.customer_name?.trim() || "Order",
-      sub: order.order_number ? `#A-${order.order_number}` : `#${order.id.slice(0, 8)}`,
-      status: order.status,
-      createdAt: normalizeCreatedAt(order.created_at),
-    })),
-  ]
-    .sort((left, right) => toTimestamp(right.createdAt) - toTimestamp(left.createdAt))
-    .slice(0, 6);
-
-  return <DashboardClient stats={stats} recentActivity={activity} />;
+  return (
+    <AdminShell title={dict.dashboard.title}>
+      <OwnerDashboard
+        initial={{ overview, visitors }}
+        name={isProductIntakeOwner(user) ? ownerName : null}
+        campaign={campaign}
+        blackFridayTools={blackFridayTools}
+      />
+    </AdminShell>
+  );
 }
