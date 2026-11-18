@@ -665,9 +665,11 @@ const getLowestPrices30Days = async (productIds: string[]): Promise<Map<string, 
          SELECT product_id, variant_key, price FROM product_price_history
           WHERE product_id = ANY($1::uuid[]) AND recorded_at >= now() - interval '30 days'
          UNION ALL
-         SELECT DISTINCT ON (product_id, variant_key) product_id, variant_key, price FROM product_price_history
-          WHERE product_id = ANY($1::uuid[]) AND recorded_at < now() - interval '30 days'
-          ORDER BY product_id, variant_key, recorded_at DESC, id DESC
+         -- Parenthesised: without them Postgres applies this ORDER BY to the
+         -- whole UNION, where recorded_at does not exist.
+         (SELECT DISTINCT ON (product_id, variant_key) product_id, variant_key, price FROM product_price_history
+           WHERE product_id = ANY($1::uuid[]) AND recorded_at < now() - interval '30 days'
+           ORDER BY product_id, variant_key, recorded_at DESC, id DESC)
        ) window_prices
        GROUP BY product_id, variant_key`,
       [productIds],
