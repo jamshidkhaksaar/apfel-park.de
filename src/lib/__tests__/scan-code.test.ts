@@ -22,7 +22,16 @@ describe("scanned codes on a German keyboard layout", () => {
 describe("label barcode value", () => {
   it("prints short SKUs as they are", () => {
     expect(barcodeValueForSku("AP-APP-00035")).toBe("AP-APP-00035");
-    expect(barcodeValueForSku("GUES-IP15PM-PINK-CCS")).toBe("GUES-IP15PM-PINK-CCS");
+    expect(barcodeValueForSku("CA44-11")).toBe("CA44-11");
+  });
+
+  it("keeps every printed barcode at three printer dots per bar on a 62 mm label", () => {
+    // Code 128: 11 modules per character + 35 for start/check/stop + 20 quiet zone.
+    for (const sku of ["AP-APP-00035", "GUES-IP15PM-PINK-CCS", "AP-851bcc93-138f-4ac1-ad86-4a17e6d92c32"]) {
+      const value = barcodeValueForSku(sku);
+      const modules = value.length * 11 + 35 + 20;
+      expect(modules * 3 * (25.4 / 300)).toBeLessThanOrEqual(56);
+    }
   });
 
   it("gives long SKUs a short, stable label code the scan lookup understands", () => {

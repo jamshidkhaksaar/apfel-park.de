@@ -25,20 +25,25 @@ export type LabelData = {
  * label exactly; the matching driver paper size is shown in the toolbar.
  */
 const SIZES = {
-  "62x40": {
-    w: 62, h: 40, roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
-    driver: '2.4" (62 mm Endlos) · Länge 40 mm · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 40 mm · Portrait · Auto Cut on',
-    oneLineTitle: false, title: 4.1, color: 2.4, price: 5.8, warranty: 2.3, sku: 1.7,
+  // Default: like the hand-made shop stickers, about half the back of a phone.
+  "62x75": {
+    w: 62, h: 75, name: "Smartphone", nameEn: "Smartphone",
+    roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
+    driver: '2.4" (62 mm Endlos) · Länge 75 mm · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 75 mm · Portrait · Auto Cut on',
+    titleLines: 2, title: 8.5, titleMin: 5.6, price: 13.5, warranty: 3.2, details: 3.6, code: 2.4, gap: 1.8, barPad: 1.8,
   },
-  "62x29": {
-    w: 62, h: 29, roll: "DK-11209 (62 × 29 mm)", rollEn: "DK-11209 (62 × 29 mm)",
-    driver: '2.4" x 1.1" · Hochformat', driverEn: '2.4" x 1.1" · Portrait',
-    oneLineTitle: true, title: 3.5, color: 2.1, price: 4.6, warranty: 1.9, sku: 1.5,
+  "62x40": {
+    w: 62, h: 40, name: "Klein / Zubehör", nameEn: "Small / accessories",
+    roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
+    driver: '2.4" (62 mm Endlos) · Länge 40 mm · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 40 mm · Portrait · Auto Cut on',
+    // One title line on the small label, so the barcode keeps its height.
+    titleLines: 1, title: 5, titleMin: 3.4, price: 6.4, warranty: 2.2, details: 2.5, code: 1.7, gap: 0.8, barPad: 0.6,
   },
   "62x100": {
-    w: 62, h: 100, roll: "DK-11202 (62 × 100 mm)", rollEn: "DK-11202 (62 × 100 mm)",
+    w: 62, h: 100, name: "Groß", nameEn: "Large",
+    roll: "DK-11202 (62 × 100 mm)", rollEn: "DK-11202 (62 × 100 mm)",
     driver: '2.4" x 3.9" · Hochformat', driverEn: '2.4" x 3.9" · Portrait',
-    oneLineTitle: false, title: 6.2, color: 3.4, price: 10, warranty: 3.4, sku: 2.4,
+    titleLines: 2, title: 9.5, titleMin: 6, price: 16, warranty: 3.6, details: 4.2, code: 2.6, gap: 2.4, barPad: 2.4,
   },
 } as const;
 type SizeKey = keyof typeof SIZES;
@@ -48,7 +53,8 @@ const SAFE_Y = 3;
 const SAFE_X = 3;
 /** One printer dot at 300 dpi, in mm. Barcode modules use whole dots so every bar prints crisp. */
 const DOT_MM = 25.4 / 300;
-const STORAGE_KEY = "apfel-label-size";
+// v2: the default changed to the bigger smartphone label.
+const STORAGE_KEY = "apfel-label-size-v2";
 
 const subscribeStorage = (onChange: () => void) => {
   window.addEventListener("storage", onChange);
@@ -61,6 +67,27 @@ const readSavedSize = (): SizeKey | null => {
   } catch {
     return null;
   }
+};
+
+/** "256", "256GB" or "256 gb" → "256 GB"; anything else unchanged. */
+const formatStorage = (value: string): string => {
+  const trimmed = value.trim();
+  if (/^\d+$/.test(trimmed)) return `${trimmed} GB`;
+  return trimmed.replace(/(\d)\s*(gb|tb)\b/i, (_, digit: string, unit: string) => `${digit} ${unit.toUpperCase()}`);
+};
+
+/**
+ * Font size (mm) and line count for the model name: as big as the size allows,
+ * on one line when it fits, else on two. Bold italic Inter is about 0.6 em per
+ * character, which is what the estimate uses.
+ */
+const fitTitle = (text: string, widthMm: number, maxMm: number, minMm: number, maxLines: number) => {
+  const perChar = 0.6;
+  const oneLine = widthMm / (Math.max(1, text.length) * perChar);
+  if (maxLines === 1) return { size: Math.max(minMm, Math.min(maxMm, oneLine)), lines: 1 };
+  if (oneLine >= maxMm * 0.82) return { size: Math.min(maxMm, oneLine), lines: 1 };
+  const twoLines = (2 * widthMm * 0.92) / (Math.max(1, text.length) * perChar);
+  return { size: Math.max(minMm, Math.min(maxMm, twoLines)), lines: 2 };
 };
 
 const WARRANTIES = ["12 Monate Garantie", "24 Monate Garantie", "6 Monate Garantie", "3 Monate Garantie", ""] as const;
@@ -112,17 +139,17 @@ function Barcode({ value, maxWidthMm }: { value: string; maxWidthMm: number }) {
 }
 
 /**
- * Shop shelf label like the hand-made ones in the shop: model and storage, a
- * black price bar with the warranty, plus colour and a Code 128 barcode of the
- * SKU for the scanner in the product list. Only the labels print (one per
- * page); the toolbar is screen-only.
+ * Shop sticker like the hand-made ones in the shop, in this order: the model
+ * in big bold text, the price big in a black bar (warranty underneath), then
+ * storage and colour small, and a big Code 128 barcode for the scanner. Only
+ * the labels print (one per page); the toolbar is screen-only.
  */
 export default function ProductLabelPrint({ data, defaultWarranty, locale = "de" }: { data: LabelData; defaultWarranty: string; locale?: "de" | "en" }) {
   const t = COPY[locale] ?? COPY.de;
   // The roll in the printer rarely changes: remember the last size used.
   const savedSize = useSyncExternalStore(subscribeStorage, readSavedSize, () => null);
   const [chosenSize, setChosenSize] = useState<SizeKey | null>(null);
-  const size: SizeKey = chosenSize ?? savedSize ?? "62x40";
+  const size: SizeKey = chosenSize ?? savedSize ?? "62x75";
   const [warranty, setWarranty] = useState(defaultWarranty);
   const [copies, setCopies] = useState(1);
   const [price, setPrice] = useState(data.price);
@@ -136,7 +163,8 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
   const contentW = s.w - 2 * SAFE_X;
   const barcodeOk = Boolean(data.barcode && isCode128BText(data.barcode));
   const priceText = `${price.toLocaleString("de-DE", { minimumFractionDigits: price % 1 ? 2 : 0, maximumFractionDigits: 2 })}€`;
-  const gap = s.h >= 60 ? 1.6 : 0.8;
+  const title = fitTitle(data.model, contentW, s.title, s.titleMin, s.titleLines);
+  const details = [data.storage ? formatStorage(data.storage) : "", data.color].filter(Boolean).join(" · ");
 
   return (
     <div className="label-print-root min-h-screen bg-neutral-200 p-6 text-black print:min-h-0 print:bg-white print:p-0">
@@ -161,7 +189,7 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
           <label className="text-xs font-semibold text-neutral-600">{t.size}
             <select value={size} onChange={(event) => chooseSize(event.target.value as SizeKey)} className="mt-1 block rounded-lg border border-neutral-300 px-2 py-1.5 text-sm text-black">
               {(Object.keys(SIZES) as SizeKey[]).map((key) => (
-                <option key={key} value={key}>{SIZES[key].w} × {SIZES[key].h} mm – {locale === "de" ? SIZES[key].roll : SIZES[key].rollEn}</option>
+                <option key={key} value={key}>{locale === "de" ? SIZES[key].name : SIZES[key].nameEn} – {SIZES[key].w} × {SIZES[key].h} mm</option>
               ))}
             </select>
           </label>
@@ -195,29 +223,29 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
             className="label-sheet flex flex-col overflow-hidden bg-white shadow-xl"
             style={{ width: `${s.w}mm`, height: `${s.h}mm`, padding: `${SAFE_Y}mm ${SAFE_X}mm`, boxSizing: "border-box" }}
           >
-            <div className="text-center font-extrabold italic leading-[1.08]" style={{ fontSize: `${s.title}mm` }}>
-              {s.oneLineTitle ? (
-                <div className="truncate">{[data.model, data.storage].filter(Boolean).join(" ")}</div>
-              ) : (
-                <>
-                  <div className="truncate">{data.model}</div>
-                  {data.storage ? <div className="truncate">{data.storage}</div> : null}
-                </>
-              )}
+            {/* 1. Model: the biggest text on the label. */}
+            <div
+              className="shrink-0 text-center font-extrabold italic leading-[1.05] [overflow-wrap:anywhere]"
+              style={{ fontSize: `${title.size}mm`, display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: title.lines, overflow: "hidden" }}
+            >
+              {data.model}
             </div>
-            {data.color ? (
-              <div className="truncate text-center font-semibold leading-tight" style={{ fontSize: `${s.color}mm`, marginTop: `${gap / 2}mm` }}>
-                Farbe: {data.color}
+            {/* 2. Price in the black bar, warranty small underneath. */}
+            <div className="flex shrink-0 flex-col items-center justify-center bg-black text-white" style={{ marginTop: `${s.gap}mm`, padding: `${s.barPad}mm 0` }}>
+              <div className="font-extrabold leading-none tracking-tight" style={{ fontSize: `${s.price}mm` }}>{priceText}</div>
+              {warranty ? <div className="font-semibold leading-none" style={{ fontSize: `${s.warranty}mm`, marginTop: `${s.warranty * 0.35}mm` }}>{warranty}</div> : null}
+            </div>
+            {/* 3. Storage and colour, small. */}
+            {details ? (
+              <div className="shrink-0 truncate text-center font-semibold leading-tight" style={{ fontSize: `${s.details}mm`, marginTop: `${s.gap}mm` }}>
+                {details}
               </div>
             ) : null}
-            <div className="flex shrink-0 flex-col items-center justify-center bg-black text-white" style={{ marginTop: `${gap}mm`, padding: `${s.h >= 60 ? 2 : 0.7}mm 0` }}>
-              <div className="font-extrabold leading-none" style={{ fontSize: `${s.price}mm` }}>{priceText}</div>
-              {warranty ? <div className="font-semibold leading-none" style={{ fontSize: `${s.warranty}mm`, marginTop: `${s.warranty * 0.25}mm` }}>{warranty}</div> : null}
-            </div>
+            {/* 4. Barcode: all remaining height, wide bars. */}
             {barcodeOk ? (
-              <div className="flex min-h-0 flex-1 flex-col items-center" style={{ marginTop: `${gap}mm` }}>
+              <div className="flex min-h-0 flex-1 flex-col items-center" style={{ marginTop: `${s.gap}mm` }}>
                 <div className="flex min-h-0 w-full flex-1 justify-center"><Barcode value={data.barcode!} maxWidthMm={contentW} /></div>
-                <div className="font-mono leading-none" style={{ fontSize: `${s.sku}mm`, marginTop: "0.4mm" }}>{data.barcode}</div>
+                <div className="font-mono leading-none" style={{ fontSize: `${s.code}mm`, marginTop: "0.5mm" }}>{data.barcode}</div>
               </div>
             ) : null}
           </div>

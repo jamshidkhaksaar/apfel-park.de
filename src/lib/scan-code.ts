@@ -19,10 +19,11 @@ export const normalizedSkuSql = (column: string): string =>
   `translate(upper(regexp_replace(${column}, '[^A-Za-z0-9]', '', 'g')), 'Y', 'Z')`;
 
 /**
- * Longest SKU printed as-is. Longer ones would need bars one printer dot wide
- * on a 62 mm label (too thin to scan reliably), so they get a short label code.
+ * Longest SKU printed as-is. Up to 15 characters a Code 128 barcode fits the
+ * 56 mm printable width with bars three printer dots (0.25 mm) wide, which
+ * every scanner reads easily; longer SKUs get a short label code instead.
  */
-export const MAX_DIRECT_BARCODE_LENGTH = 24;
+export const MAX_DIRECT_BARCODE_LENGTH = 15;
 
 const LABEL_CODE_PREFIX = "LB";
 
