@@ -15,6 +15,16 @@ type AdjustmentPayload = {
   quantity?: unknown;
   note?: unknown;
   idempotencyKey?: unknown;
+  /** Scanner sale: the price actually charged, and the discount given off the list price. */
+  salePrice?: unknown;
+  discount?: unknown;
+};
+
+/** A euro amount with at most two decimals inside [min, 100000), else null. */
+const euroAmount = (value: unknown, min: number): number | null => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  const rounded = Math.round(value * 100) / 100;
+  return rounded >= min && rounded < 100000 ? rounded : null;
 };
 
 export async function POST(request: NextRequest) {
@@ -33,6 +43,9 @@ export async function POST(request: NextRequest) {
     const note = typeof payload.note === "string" ? payload.note.trim().slice(0, 500) : "";
     const idempotencyKey =
       typeof payload.idempotencyKey === "string" ? payload.idempotencyKey.trim().slice(0, 160) : "";
+    // Only a single-unit sale out of stock carries a price.
+    const salePrice = quantity === -1 || (type === "shop_sale" && quantity === 1) ? euroAmount(payload.salePrice, 0.01) : null;
+    const discount = salePrice !== null ? euroAmount(payload.discount, 0) ?? 0 : null;
 
     if (!sku || !type || !supportedTypes.has(type)) {
       return NextResponse.json({ error: "A valid SKU and adjustment type are required" }, { status: 400 });
@@ -68,7 +81,11 @@ export async function POST(request: NextRequest) {
       referenceType: "admin_inventory_adjustment",
       referenceId: idempotencyKey,
       actor: user?.email ?? "admin",
-      metadata: { note, source: "admin_inventory" },
+      metadata: {
+        note,
+        source: "admin_inventory",
+        ...(salePrice !== null ? { salePrice, discount } : {}),
+      },
     });
     const targets = await query(
       `SELECT marketplace

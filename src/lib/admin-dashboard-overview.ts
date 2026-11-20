@@ -6,7 +6,8 @@ import { query } from "@/lib/db";
  * Sales come from the stock ledger (inventory_adjustments): a "sale" from a
  * checkout order counts as online, every other sale (inventory menu, scanner
  * "Verkaufen") as in-store. Online revenue is money actually captured; in-store
- * revenue is estimated from the current list price, and labelled as such.
+ * revenue uses the price charged at the scanner (after discount) and falls
+ * back to the current list price for sales booked without one.
  */
 
 export type DashboardDay = { date: string; shop: number; online: number };
@@ -52,6 +53,8 @@ const ONLINE_SALE = `(a.event_type = 'sale' AND a.reference_type = 'checkout_ord
 const UNIT_PRICE = `coalesce((SELECT nullif(v->>'price', '')::numeric FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p.variants) = 'array' THEN p.variants ELSE '[]'::jsonb END) v
   WHERE v->>'sku' = s.sku LIMIT 1), p.price)`;
 const LIVE_PRODUCT = `p.import_metadata->>'catalogDeletedAt' IS NULL`;
+/** What a shop sale brought in: the scanner's sale price (after discount), else the list price. */
+const SALE_PRICE = `CASE WHEN a.metadata->>'salePrice' ~ '^[0-9]+([.][0-9]+)?$' THEN (a.metadata->>'salePrice')::numeric ELSE ${UNIT_PRICE} END`;
 const firstImage = (images: unknown): string | null =>
   Array.isArray(images) ? (images.find((image) => typeof image === "string" && image.trim()) as string | undefined) ?? null : null;
 
@@ -62,7 +65,7 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
       `SELECT ${LOCAL_DAY} AS day,
               sum(-a.quantity_delta) FILTER (WHERE ${SHOP_SALE})::int AS shop,
               sum(-a.quantity_delta) FILTER (WHERE ${ONLINE_SALE})::int AS online,
-              coalesce(sum(-a.quantity_delta * ${UNIT_PRICE}) FILTER (WHERE ${SHOP_SALE}), 0)::float AS shop_value
+              coalesce(sum(-a.quantity_delta * ${SALE_PRICE}) FILTER (WHERE ${SHOP_SALE}), 0)::float AS shop_value
          FROM inventory_adjustments a
          JOIN inventory_skus s ON s.id = a.inventory_sku_id
          JOIN products p ON p.id = s.product_id

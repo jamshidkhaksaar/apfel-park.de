@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DashboardActivityItem, DashboardDay, DashboardOverview, DashboardProductLine } from "@/lib/admin-dashboard-overview";
+import ScanSellDialog from "@/components/admin/ScanSellDialog";
 import type { AdminLocale } from "@/lib/admin-i18n";
 
 export type DashboardCampaign = {
@@ -36,7 +37,7 @@ const COPY = {
     hoursAgo: (n: number) => `vor ${n} Std.`,
     yesterday: "gestern",
     quickActions: "Schnellaktionen",
-    scan: "Scannen & verkaufen", scanSub: "Etikett scannen, −1 Stück",
+    scan: "Scannen & verkaufen", scanSub: "Scannen, Rabatt, verkaufen",
     newProduct: "Produkt anlegen", newProductSub: "Neues Gerät oder Zubehör",
     orders: "Bestellungen", repairs: "Reparaturen",
     open: (n: number) => `${n} offen`, allDone: "Alles erledigt", noneOpen: "Keine offenen",
@@ -82,7 +83,7 @@ const COPY = {
       repair: (a: string) => `Reparatur${a ? ` R-${a}` : ""}`,
       chat: (a: string) => a || "Neue Nachricht",
     },
-    footnote: "Laden-Umsatz geschätzt nach aktuellem Listenpreis · Online-Umsatz = bezahlte Bestellungen · aktualisiert sich automatisch alle 30 Sekunden",
+    footnote: "Laden-Umsatz = Preis beim Scannen nach Rabatt (ältere Verkäufe: Listenpreis) · Online-Umsatz = bezahlte Bestellungen · aktualisiert sich automatisch alle 30 Sekunden",
   },
   en: {
     numberLocale: "en-US",
@@ -96,7 +97,7 @@ const COPY = {
     hoursAgo: (n: number) => `${n} h ago`,
     yesterday: "yesterday",
     quickActions: "Quick actions",
-    scan: "Scan & sell", scanSub: "Scan a label, −1 unit",
+    scan: "Scan & sell", scanSub: "Scan, discount, sell",
     newProduct: "Add product", newProductSub: "New device or accessory",
     orders: "Orders", repairs: "Repairs",
     open: (n: number) => `${n} open`, allDone: "All done", noneOpen: "None open",
@@ -142,7 +143,7 @@ const COPY = {
       repair: (a: string) => `Repair${a ? ` R-${a}` : ""}`,
       chat: (a: string) => a || "New message",
     },
-    footnote: "In-store revenue estimated at current list price · Online revenue = paid orders · updates automatically every 30 seconds",
+    footnote: "In-store revenue = price charged at the scanner after discount (older sales: list price) · Online revenue = paid orders · updates automatically every 30 seconds",
   },
 };
 
@@ -316,6 +317,7 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
   const [flash, setFlash] = useState<Record<string, boolean>>({});
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const previous = useRef(initial);
+  const [scanOpen, setScanOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -413,16 +415,28 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
           { href: "/admin/products/new", icon: "＋", title: t.newProduct, sub: t.newProductSub },
           { href: "/admin/orders", icon: "🧾", title: t.orders, sub: overview.todo.ordersToHandle ? t.open(overview.todo.ordersToHandle) : t.allDone },
           { href: "/admin/repairs", icon: "🔧", title: t.repairs, sub: overview.todo.repairsOpen ? t.open(overview.todo.repairsOpen) : t.noneOpen },
-        ].map((action) => (
-          <Link key={action.href} href={action.href} className={`group flex min-w-0 items-center gap-2.5 rounded-2xl border p-3 transition sm:gap-3 sm:p-4 hover:-translate-y-0.5 hover:shadow-lg ${action.primary ? "border-gold bg-gold text-black shadow-md shadow-gold/20" : "border-border bg-surface hover:border-gold/50"}`}>
-            <span aria-hidden="true" className={`grid size-9 shrink-0 place-items-center rounded-xl text-lg sm:size-11 sm:text-xl ${action.primary ? "bg-black/10" : "bg-gold/10 text-gold"}`}>{action.icon}</span>
-            <span className="min-w-0">
-              <span className={`block text-sm font-bold leading-tight sm:text-base ${action.primary ? "text-black" : "text-foreground"}`}>{action.title}</span>
-              <span className={`block truncate text-xs ${action.primary ? "text-black/70" : "text-muted"}`}>{action.sub}</span>
-            </span>
-          </Link>
-        ))}
+        ].map((action) => {
+          const className = `group flex min-w-0 items-center gap-2.5 rounded-2xl border p-3 text-left transition sm:gap-3 sm:p-4 hover:-translate-y-0.5 hover:shadow-lg ${action.primary ? "border-gold bg-gold text-black shadow-md shadow-gold/20" : "border-border bg-surface hover:border-gold/50"}`;
+          const body = (
+            <>
+              <span aria-hidden="true" className={`grid size-9 shrink-0 place-items-center rounded-xl text-lg sm:size-11 sm:text-xl ${action.primary ? "bg-black/10" : "bg-gold/10 text-gold"}`}>{action.icon}</span>
+              <span className="min-w-0">
+                <span className={`block text-sm font-bold leading-tight sm:text-base ${action.primary ? "text-black" : "text-foreground"}`}>{action.title}</span>
+                <span className={`block truncate text-xs ${action.primary ? "text-black/70" : "text-muted"}`}>{action.sub}</span>
+              </span>
+            </>
+          );
+          // "Scannen & verkaufen" opens the scan popup right here.
+          return action.primary ? (
+            <button key={action.href} type="button" onClick={() => setScanOpen(true)} className={className}>{body}</button>
+          ) : (
+            <Link key={action.href} href={action.href} className={className}>{body}</Link>
+          );
+        })}
       </nav>
+      {scanOpen ? (
+        <ScanSellDialog locale={locale} onClose={(changed) => { setScanOpen(false); if (changed) void refresh(); }} />
+      ) : null}
 
       {/* KPI tiles */}
       <section aria-label={t.kpis} className={`grid gap-4 sm:grid-cols-2 ${campaign.active ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}>

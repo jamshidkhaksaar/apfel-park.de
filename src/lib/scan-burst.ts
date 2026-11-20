@@ -25,3 +25,34 @@ export function looksLikeScan(times: readonly number[], enterAt: number): boolea
   }
   return (last - times[0]) / (times.length - 1) <= SCAN_MAX_AVERAGE_GAP_MS;
 }
+
+/** Keys collected since the last pause, with the field they were typed into. */
+export type ScanBurst = { text: string; times: number[]; target: Element | null; snapshot: string | null };
+
+export const emptyBurst = (): ScanBurst => ({ text: "", times: [], target: null, snapshot: null });
+
+const isTextField = (element: Element | null): element is HTMLInputElement | HTMLTextAreaElement =>
+  typeof HTMLInputElement !== "undefined" && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement);
+
+/** Adds a character key to the burst, or starts a new burst after a pause. */
+export function trackScanKey(burst: ScanBurst, key: string, now: number): ScanBurst {
+  const lastAt = burst.times[burst.times.length - 1];
+  if (lastAt === undefined || now - lastAt > SCAN_MAX_GAP_MS) {
+    const target = typeof document === "undefined" ? null : document.activeElement;
+    return { text: key, times: [now], target, snapshot: isTextField(target) ? target.value : null };
+  }
+  return { ...burst, text: burst.text + key, times: [...burst.times, now] };
+}
+
+/** Puts a field's value back (React-controlled fields included) after a scan typed into it. */
+export function restoreScannedField(burst: ScanBurst): void {
+  const { target, snapshot } = burst;
+  if (snapshot === null || !isTextField(target) || target.value === snapshot) return;
+  const prototype = target instanceof HTMLInputElement ? HTMLInputElement.prototype : HTMLTextAreaElement.prototype;
+  Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(target, snapshot);
+  target.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+/** A character key that may belong to a scan (not a shortcut). */
+export const isScanCharacter = (event: KeyboardEvent): boolean =>
+  event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
