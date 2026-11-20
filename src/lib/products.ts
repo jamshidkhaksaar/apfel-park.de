@@ -1681,11 +1681,14 @@ export async function getBlackFridayDeals(
   const rank = new Map(curated.map((id, index) => [id, index] as const));
   const curatedSet = new Set(curated);
 
+  // Only Black Friday products: a Black Friday discount or a product picked for
+  // the campaign. An ordinary sale price (compare-at price) from earlier
+  // promotions does not make a product a Black Friday deal.
   // Filter individual offers first, then group (see groupStoreProducts): a
   // family card is then built only from eligible offers, so a discounted
   // iPhone is not hidden behind a cheaper, non-discounted family member.
   const eligible = products
-    .filter((product) => (product.hasDiscount || curatedSet.has(product.id)) && (product.stock ?? 0) > 0)
+    .filter((product) => curatedSet.has(product.id) && (product.stock ?? 0) > 0)
     .map((product) => memberships.has(product.id)
       ? { ...product, catalogFamily: memberships.get(product.id) }
       : product);
