@@ -180,6 +180,11 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
           body > :not(:has(.label-print-root)), [aria-modal="true"], .fixed { display: none !important; }
           .label-toolbar { display: none !important; }
           .label-sheet { box-shadow: none !important; margin: 0 !important; break-after: page; page-break-after: always; }
+          /* Chrome prints on the paper chosen in its dialog (e.g. the driver's
+             "2.4"" continuous entry), whose length can differ from the label.
+             Filling exactly one page keeps every label on one piece of tape:
+             the barcode takes up the difference, nothing spills over. */
+          .label-sheet { width: 100vw !important; height: calc(100vh - 0.2mm) !important; overflow: hidden !important; }
           .label-sheet:last-child { break-after: auto; page-break-after: auto; }
         }
       `}</style>
