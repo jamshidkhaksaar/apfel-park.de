@@ -83,7 +83,7 @@ const COPY = {
       repair: (a: string) => `Reparatur${a ? ` R-${a}` : ""}`,
       chat: (a: string) => a || "Neue Nachricht",
     },
-    footnote: "Laden-Umsatz = Preis beim Scannen nach Rabatt (ältere Verkäufe: Listenpreis) · Online-Umsatz = bezahlte Bestellungen · aktualisiert sich automatisch alle 30 Sekunden",
+    footnote: "Laden-Umsatz geschätzt nach aktuellem Listenpreis · Online-Umsatz = bezahlte Bestellungen · aktualisiert sich automatisch alle 30 Sekunden",
   },
   en: {
     numberLocale: "en-US",
@@ -143,7 +143,7 @@ const COPY = {
       repair: (a: string) => `Repair${a ? ` R-${a}` : ""}`,
       chat: (a: string) => a || "New message",
     },
-    footnote: "In-store revenue = price charged at the scanner after discount (older sales: list price) · Online revenue = paid orders · updates automatically every 30 seconds",
+    footnote: "In-store revenue estimated at current list price · Online revenue = paid orders · updates automatically every 30 seconds",
   },
 };
 

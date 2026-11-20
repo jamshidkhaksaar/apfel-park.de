@@ -105,6 +105,10 @@ export async function lookupScan(code: string): Promise<ScanLookup> {
  * shows the product live with a discount box and a big sell button. Further
  * scans switch to the next product. Keys never press a button here: a
  * scanner's Enter can not sell anything, selling only happens by clicking.
+ *
+ * Selling only takes one unit off that product's stock. The discount is a
+ * calculation on screen for the customer: no price, discount or sale record
+ * is stored.
  */
 export default function ScanSellDialog({ locale = "de", initial = null, onClose }: {
   locale?: Locale;
@@ -208,8 +212,6 @@ export default function ScanSellDialog({ locale = "de", initial = null, onClose 
           quantity: -1,
           idempotencyKey: newKey(),
           note: "Scanner: verkauft",
-          salePrice,
-          discount: Math.round((product.price - salePrice) * 100) / 100,
         }),
       });
       const payload = (await response.json().catch(() => ({}))) as { error?: string; available?: number };
