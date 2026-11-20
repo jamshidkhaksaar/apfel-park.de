@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import ProductLabelPrint, { type LabelData } from "@/components/admin/ProductLabelPrint";
 import { canManageProducts } from "@/lib/admin-auth";
+import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
 import { inventoryProductDetails } from "@/lib/inventory-product-details";
 import { readSessionUser } from "@/lib/session";
@@ -14,7 +15,11 @@ const text = (value: unknown) => (typeof value === "string" ? value.trim() : "")
 /** Strips a leading brand and a trailing storage size from the model name. */
 const modelName = (raw: string, storage: string) => {
   let name = raw.replace(/^(apple|samsung|xiaomi|google|huawei)\s+/i, "").trim();
-  if (storage) name = name.replace(new RegExp(`\s*${storage.replace(/\s+/g, "\s*")}\s*$`, "i"), "").trim();
+  if (storage) {
+    // Escaped and spacing-tolerant: "256 GB" also matches "256GB".
+    const pattern = storage.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s*");
+    name = name.replace(new RegExp(`\\s*${pattern}\\s*$`, "i"), "").trim();
+  }
   return name.replace(/\s*\d+\s?(GB|TB)\b.*$/i, "").trim() || raw;
 };
 
@@ -55,5 +60,6 @@ export default async function ProductLabelPage({
   };
   const defaultWarranty = data.condition === "new" ? "24 Monate Garantie" : "12 Monate Garantie";
 
-  return <ProductLabelPrint data={data} defaultWarranty={defaultWarranty} />;
+  const locale = await getAdminLocale();
+  return <ProductLabelPrint data={data} defaultWarranty={defaultWarranty} locale={locale} />;
 }
