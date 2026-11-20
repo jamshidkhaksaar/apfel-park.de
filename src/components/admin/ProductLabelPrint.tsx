@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useSyncExternalStore } from "react";
 
 import { code128Width, encodeCode128B, isCode128BText } from "@/lib/barcode-code128";
@@ -28,11 +29,11 @@ export type LabelData = {
  */
 const SIZES = {
   // Default: like the hand-made shop stickers, close to half the back of a phone.
-  "62x65": {
-    w: 62, h: 65, name: "Smartphone", nameEn: "Smartphone",
+  "62x58": {
+    w: 62, h: 58, name: "Smartphone", nameEn: "Smartphone",
     roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
-    driver: '2.4" (62 mm Endlos) · Länge 65 mm (2.56") · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 65 mm (2.56") · Portrait · Auto Cut on',
-    titleLines: 2, title: 8, titleMin: 5.4, brand: 2.8, price: 12.5, warranty: 3, details: 3.5, barcode: 8.5, code: 2.3, gap: 1.4, barPad: 1.5,
+    driver: '2.4" (62 mm Endlos) · Länge 58 mm (2.28") · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 58 mm (2.28") · Portrait · Auto Cut on',
+    titleLines: 2, title: 7.6, titleMin: 5.2, brand: 2.8, price: 12, warranty: 3, details: 3.5, barcode: 8.5, code: 2.3, gap: 1, barPad: 1.4,
   },
   "62x40": {
     w: 62, h: 40, name: "Klein / Zubehör", nameEn: "Small / accessories",
@@ -50,13 +51,20 @@ const SIZES = {
 } as const;
 type SizeKey = keyof typeof SIZES;
 
-/** Safe margin inside the label edge (mm): top/bottom, left/right. */
-const SAFE_Y = 3;
+/**
+ * Safe margin inside the label edge (mm). Top and bottom stay small: the
+ * printer already feeds its own blank margin before the label, so more space
+ * here only shows up as empty tape. The sides keep 3 mm (printable width).
+ */
+const SAFE_Y = 1;
 const SAFE_X = 3;
+/** The shop logo next to the barcode: width ÷ height of the black/white mark. */
+const LOGO_RATIO = 354 / 520;
+const LOGO_GAP_MM = 1;
 /** One printer dot at 300 dpi, in mm. Barcode modules use whole dots so every bar prints crisp. */
 const DOT_MM = 25.4 / 300;
-// v3: the default changed to the 62 × 65 mm smartphone label.
-const STORAGE_KEY = "apfel-label-size-v3";
+// v4: the default changed to the 62 × 58 mm smartphone label.
+const STORAGE_KEY = "apfel-label-size-v4";
 
 const subscribeStorage = (onChange: () => void) => {
   window.addEventListener("storage", onChange);
@@ -143,7 +151,8 @@ function Barcode({ value, maxWidthMm }: { value: string; maxWidthMm: number }) {
 /**
  * Shop sticker like the hand-made ones in the shop, in this order: the brand
  * small and the model in big bold text, the price big in a black bar (warranty underneath), then
- * storage and colour small, and a big Code 128 barcode for the scanner. Only
+ * storage and colour small, and a Code 128 barcode for the scanner with the
+ * shop logo beside it. Only
  * the labels print (one per page); the toolbar is screen-only.
  */
 export default function ProductLabelPrint({ data, defaultWarranty, locale = "de" }: { data: LabelData; defaultWarranty: string; locale?: "de" | "en" }) {
@@ -151,7 +160,7 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
   // The roll in the printer rarely changes: remember the last size used.
   const savedSize = useSyncExternalStore(subscribeStorage, readSavedSize, () => null);
   const [chosenSize, setChosenSize] = useState<SizeKey | null>(null);
-  const size: SizeKey = chosenSize ?? savedSize ?? "62x65";
+  const size: SizeKey = chosenSize ?? savedSize ?? "62x58";
   const [warranty, setWarranty] = useState(defaultWarranty);
   const [copies, setCopies] = useState(1);
   const [price, setPrice] = useState(data.price);
@@ -166,6 +175,9 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
   const barcodeOk = Boolean(data.barcode && isCode128BText(data.barcode));
   const priceText = `${price.toLocaleString("de-DE", { minimumFractionDigits: price % 1 ? 2 : 0, maximumFractionDigits: 2 })}€`;
   const title = fitTitle(data.model, contentW, s.title, s.titleMin, s.titleLines);
+  // Logo as tall as the barcode bars (at most 10 mm), so the barcode keeps its width.
+  const logoH = Math.min(s.barcode, 10);
+  const logoW = Math.round(logoH * LOGO_RATIO * 10) / 10;
   const details = [data.storage ? formatStorage(data.storage) : "", data.color].filter(Boolean).join(" · ");
 
   return (
@@ -227,7 +239,7 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
         {Array.from({ length: copies }, (_, index) => (
           <div
             key={index}
-            className="label-sheet flex flex-col justify-center overflow-hidden bg-white shadow-xl"
+            className="label-sheet flex flex-col justify-between overflow-hidden bg-white shadow-xl"
             style={{ width: `${s.w}mm`, height: `${s.h}mm`, padding: `${SAFE_Y}mm ${SAFE_X}mm`, boxSizing: "border-box" }}
           >
             {/* 1. Model: the biggest text on the label, the brand small above
@@ -258,14 +270,26 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
                 {details}
               </div>
             ) : null}
-            {/* 4. Barcode: wide bars at a fixed, compact height (it may shrink a
-                little if the printer page is shorter than the label). */}
-            {barcodeOk ? (
-              <div className="flex min-h-0 shrink flex-col items-center" style={{ marginTop: `${s.gap}mm` }}>
-                <div className="flex w-full shrink justify-center" style={{ height: `${s.barcode}mm`, minHeight: "5mm" }}><Barcode value={data.barcode!} maxWidthMm={contentW} /></div>
-                <div className="font-mono leading-none" style={{ fontSize: `${s.code}mm`, marginTop: "0.5mm" }}>{data.barcode}</div>
-              </div>
-            ) : null}
+            {/* 4. Barcode (wide bars, compact height; it may shrink a little if
+                the printer page is shorter) with the shop logo beside it. */}
+            <div className="flex min-h-0 shrink items-start justify-center" style={{ marginTop: `${s.gap}mm`, gap: `${LOGO_GAP_MM}mm` }}>
+              {barcodeOk ? (
+                <div className="flex min-h-0 shrink flex-col items-center">
+                  <div className="flex shrink justify-center" style={{ height: `${s.barcode}mm`, minHeight: "5mm" }}><Barcode value={data.barcode!} maxWidthMm={contentW - logoW - LOGO_GAP_MM} /></div>
+                  <div className="font-mono leading-none" style={{ fontSize: `${s.code}mm`, marginTop: "0.5mm" }}>{data.barcode}</div>
+                </div>
+              ) : null}
+              <Image
+                src="/branding/apfel-park-label-mark.png"
+                alt="Apfel Park"
+                width={354}
+                height={520}
+                unoptimized
+                loading="eager"
+                className="shrink-0"
+                style={{ height: `${logoH}mm`, width: `${logoW}mm` }}
+              />
+            </div>
           </div>
         ))}
       </div>
