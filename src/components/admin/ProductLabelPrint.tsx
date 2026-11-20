@@ -5,6 +5,8 @@ import { useState, useSyncExternalStore } from "react";
 import { code128Width, encodeCode128B, isCode128BText } from "@/lib/barcode-code128";
 
 export type LabelData = {
+  /** Printed small above the model ("Samsung"); empty when unknown. */
+  brand: string;
   model: string;
   storage: string;
   color: string;
@@ -25,25 +27,25 @@ export type LabelData = {
  * label exactly; the matching driver paper size is shown in the toolbar.
  */
 const SIZES = {
-  // Default: like the hand-made shop stickers, about half the back of a phone.
-  "62x75": {
-    w: 62, h: 75, name: "Smartphone", nameEn: "Smartphone",
+  // Default: like the hand-made shop stickers, close to half the back of a phone.
+  "62x65": {
+    w: 62, h: 65, name: "Smartphone", nameEn: "Smartphone",
     roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
-    driver: '2.4" (62 mm Endlos) · Länge 75 mm · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 75 mm · Portrait · Auto Cut on',
-    titleLines: 2, title: 8.5, titleMin: 5.6, price: 13.5, warranty: 3.2, details: 3.6, code: 2.4, gap: 1.8, barPad: 1.8,
+    driver: '2.4" (62 mm Endlos) · Länge 65 mm (2.56") · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 65 mm (2.56") · Portrait · Auto Cut on',
+    titleLines: 2, title: 8, titleMin: 5.4, brand: 2.8, price: 12.5, warranty: 3, details: 3.5, barcode: 8.5, code: 2.3, gap: 1.4, barPad: 1.5,
   },
   "62x40": {
     w: 62, h: 40, name: "Klein / Zubehör", nameEn: "Small / accessories",
     roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
     driver: '2.4" (62 mm Endlos) · Länge 40 mm · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 40 mm · Portrait · Auto Cut on',
     // One title line on the small label, so the barcode keeps its height.
-    titleLines: 1, title: 5, titleMin: 3.4, price: 6.4, warranty: 2.2, details: 2.5, code: 1.7, gap: 0.8, barPad: 0.6,
+    titleLines: 1, title: 5, titleMin: 2.8, brand: 2, price: 6.4, warranty: 2.2, details: 2.5, barcode: 7, code: 1.7, gap: 0.8, barPad: 0.6,
   },
   "62x100": {
     w: 62, h: 100, name: "Groß", nameEn: "Large",
     roll: "DK-11202 (62 × 100 mm)", rollEn: "DK-11202 (62 × 100 mm)",
     driver: '2.4" x 3.9" · Hochformat', driverEn: '2.4" x 3.9" · Portrait',
-    titleLines: 2, title: 9.5, titleMin: 6, price: 16, warranty: 3.6, details: 4.2, code: 2.6, gap: 2.4, barPad: 2.4,
+    titleLines: 2, title: 9.5, titleMin: 6, brand: 3.6, price: 16, warranty: 3.6, details: 4.2, barcode: 16, code: 2.6, gap: 2.4, barPad: 2.4,
   },
 } as const;
 type SizeKey = keyof typeof SIZES;
@@ -53,8 +55,8 @@ const SAFE_Y = 3;
 const SAFE_X = 3;
 /** One printer dot at 300 dpi, in mm. Barcode modules use whole dots so every bar prints crisp. */
 const DOT_MM = 25.4 / 300;
-// v2: the default changed to the bigger smartphone label.
-const STORAGE_KEY = "apfel-label-size-v2";
+// v3: the default changed to the 62 × 65 mm smartphone label.
+const STORAGE_KEY = "apfel-label-size-v3";
 
 const subscribeStorage = (onChange: () => void) => {
   window.addEventListener("storage", onChange);
@@ -139,8 +141,8 @@ function Barcode({ value, maxWidthMm }: { value: string; maxWidthMm: number }) {
 }
 
 /**
- * Shop sticker like the hand-made ones in the shop, in this order: the model
- * in big bold text, the price big in a black bar (warranty underneath), then
+ * Shop sticker like the hand-made ones in the shop, in this order: the brand
+ * small and the model in big bold text, the price big in a black bar (warranty underneath), then
  * storage and colour small, and a big Code 128 barcode for the scanner. Only
  * the labels print (one per page); the toolbar is screen-only.
  */
@@ -149,7 +151,7 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
   // The roll in the printer rarely changes: remember the last size used.
   const savedSize = useSyncExternalStore(subscribeStorage, readSavedSize, () => null);
   const [chosenSize, setChosenSize] = useState<SizeKey | null>(null);
-  const size: SizeKey = chosenSize ?? savedSize ?? "62x75";
+  const size: SizeKey = chosenSize ?? savedSize ?? "62x65";
   const [warranty, setWarranty] = useState(defaultWarranty);
   const [copies, setCopies] = useState(1);
   const [price, setPrice] = useState(data.price);
@@ -225,15 +227,25 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
         {Array.from({ length: copies }, (_, index) => (
           <div
             key={index}
-            className="label-sheet flex flex-col overflow-hidden bg-white shadow-xl"
+            className="label-sheet flex flex-col justify-center overflow-hidden bg-white shadow-xl"
             style={{ width: `${s.w}mm`, height: `${s.h}mm`, padding: `${SAFE_Y}mm ${SAFE_X}mm`, boxSizing: "border-box" }}
           >
-            {/* 1. Model: the biggest text on the label. */}
-            <div
-              className="shrink-0 text-center font-extrabold italic leading-[1.05] [overflow-wrap:anywhere]"
-              style={{ fontSize: `${title.size}mm`, display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: title.lines, overflow: "hidden" }}
-            >
-              {data.model}
+            {/* 1. Model: the biggest text on the label, the brand small above
+                it, lined up with the model's left edge. */}
+            <div className="flex shrink-0 justify-center">
+              <div className="min-w-0 max-w-full">
+                {data.brand ? (
+                  <div className="truncate text-left font-bold uppercase leading-none tracking-[0.12em]" style={{ fontSize: `${s.brand}mm`, marginBottom: `${s.brand * 0.25}mm` }}>
+                    {data.brand}
+                  </div>
+                ) : null}
+                <div
+                  className="text-center font-extrabold italic leading-[1.05] [overflow-wrap:anywhere]"
+                  style={{ fontSize: `${title.size}mm`, display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: title.lines, overflow: "hidden", paddingRight: "0.12em" }}
+                >
+                  {data.model}
+                </div>
+              </div>
             </div>
             {/* 2. Price in the black bar, warranty small underneath. */}
             <div className="flex shrink-0 flex-col items-center justify-center bg-black text-white" style={{ marginTop: `${s.gap}mm`, padding: `${s.barPad}mm 0` }}>
@@ -246,10 +258,11 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
                 {details}
               </div>
             ) : null}
-            {/* 4. Barcode: all remaining height, wide bars. */}
+            {/* 4. Barcode: wide bars at a fixed, compact height (it may shrink a
+                little if the printer page is shorter than the label). */}
             {barcodeOk ? (
-              <div className="flex min-h-0 flex-1 flex-col items-center" style={{ marginTop: `${s.gap}mm` }}>
-                <div className="flex min-h-0 w-full flex-1 justify-center"><Barcode value={data.barcode!} maxWidthMm={contentW} /></div>
+              <div className="flex min-h-0 shrink flex-col items-center" style={{ marginTop: `${s.gap}mm` }}>
+                <div className="flex w-full shrink justify-center" style={{ height: `${s.barcode}mm`, minHeight: "5mm" }}><Barcode value={data.barcode!} maxWidthMm={contentW} /></div>
                 <div className="font-mono leading-none" style={{ fontSize: `${s.code}mm`, marginTop: "0.5mm" }}>{data.barcode}</div>
               </div>
             ) : null}

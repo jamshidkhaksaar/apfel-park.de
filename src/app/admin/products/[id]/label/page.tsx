@@ -5,6 +5,7 @@ import { canManageProducts } from "@/lib/admin-auth";
 import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
 import { inventoryProductDetails } from "@/lib/inventory-product-details";
+import { labelBrandAndModel } from "@/lib/label-text";
 import { barcodeValueForSku } from "@/lib/scan-code";
 import { readSessionUser } from "@/lib/session";
 
@@ -12,17 +13,6 @@ export const dynamic = "force-dynamic";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
-
-/** Strips a leading brand and a trailing storage size from the model name. */
-const modelName = (raw: string, storage: string) => {
-  let name = raw.replace(/^(apple|samsung|xiaomi|google|huawei)\s+/i, "").trim();
-  if (storage) {
-    // Escaped and spacing-tolerant: "256 GB" also matches "256GB".
-    const pattern = storage.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s*");
-    name = name.replace(new RegExp(`\\s*${pattern}\\s*$`, "i"), "").trim();
-  }
-  return name.replace(/\s*\d+\s?(GB|TB)\b.*$/i, "").trim() || raw;
-};
 
 export default async function ProductLabelPage({
   params,
@@ -52,8 +42,10 @@ export default async function ProductLabelPage({
   const details = inventoryProductDetails({ ...row, variants: [] }, "de", "product");
   const storage = text(variant?.storage) || details.storage || "";
   const sku = text(variant?.sku) || text(row.sku) || null;
+  const { brand, model } = labelBrandAndModel(text(row.family_name) || text(row.model) || text(row.title), storage, text(row.brand));
   const data: LabelData = {
-    model: modelName(text(row.family_name) || text(row.model) || text(row.title), storage),
+    brand,
+    model,
     storage,
     color: text(variant?.color) || details.color || "",
     price: Number(variant?.price ?? row.price) || 0,
