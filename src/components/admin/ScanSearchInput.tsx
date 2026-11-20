@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
+import { SCAN_MAX_GAP_MS, SCAN_MIN_LENGTH, looksLikeScan } from "@/lib/scan-burst";
+
 type ScanResult = {
   productId: string;
   title: string;
@@ -43,6 +45,20 @@ const conditionLabel = (copy: (typeof COPY)["de"], condition: string) =>
 const newKey = () =>
   `scan:${typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
 
+type Burst = { text: string; times: number[]; target: Element | null; snapshot: string | null };
+
+const fieldValue = (element: Element | null): string | null =>
+  element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement ? element.value : null;
+
+/** Puts a field's value back (React-controlled fields included) after a scan typed into it. */
+const restoreField = (element: Element | null, value: string | null) => {
+  if (value === null || !(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) return;
+  if (element.value === value) return;
+  const prototype = element instanceof HTMLInputElement ? HTMLInputElement.prototype : HTMLTextAreaElement.prototype;
+  Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(element, value);
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+};
+
 /**
  * Product search field that doubles as a barcode scanner input. A scanner types
  * the label's SKU (or the box EAN) and presses Enter: on an exact match a popup
@@ -54,7 +70,7 @@ export default function ScanSearchInput({ defaultValue, placeholder, autoFocus =
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
-  const buffer = useRef({ text: "", at: 0 });
+  const buffer = useRef<Burst>({ text: "", times: [], target: null, snapshot: null });
   const [result, setResult] = useState<ScanResult | null>(null);
   const [looking, setLooking] = useState(false);
   const [sold, setSold] = useState(0);
@@ -89,29 +105,64 @@ export default function ScanSearchInput({ defaultValue, placeholder, autoFocus =
     }
   };
 
-  // While the popup is open, keys never reach a button: a scanner's Enter must
-  // not sell anything. A new scan (fast keys + Enter) opens that product
-  // instead; selling only happens by clicking the button.
   useEffect(() => {
-    if (!result) return;
-    dialog.current?.focus();
+    if (result) dialog.current?.focus();
+  }, [result]);
+
+  // Latest values for the page-wide key listener below.
+  const live = useRef<{ open: boolean; close: () => void; lookupCode: (code: string) => Promise<boolean>; search: (code: string) => void }>({
+    open: false, close: () => {}, lookupCode, search: () => {},
+  });
+  live.current = {
+    open: Boolean(result),
+    close: () => close(sold > 0),
+    lookupCode,
+    search: (code: string) => {
+      if (!input.current) return;
+      input.current.value = code;
+      input.current.form?.requestSubmit();
+    },
+  };
+
+  // A scan works anywhere on the product list, not only in the search field.
+  // A fast burst of keys plus Enter (see scan-burst.ts) is taken over: the
+  // field it typed into gets its old value back, so a scan can never change a
+  // stock or price field, and the product opens in the popup. While the popup
+  // is open, Enter never reaches a button: selling only happens by clicking.
+  useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { close(sold > 0); return; }
+      const state = live.current;
+      const now = performance.now();
+      if (event.key === "Escape" && state.open) { state.close(); return; }
       if (event.key === "Enter") {
+        const burst = buffer.current;
+        buffer.current = { text: "", times: [], target: null, snapshot: null };
+        const code = burst.text.trim();
+        const scan = looksLikeScan(burst.times, now) && code.length >= SCAN_MIN_LENGTH;
+        if (!scan && !state.open) return; // a typed Enter: normal behaviour
         event.preventDefault();
-        const code = buffer.current.text.trim();
-        buffer.current = { text: "", at: 0 };
-        if (code.length >= 3) void lookupCode(code);
+        event.stopImmediatePropagation();
+        if (!scan) return;
+        restoreField(burst.target, burst.snapshot);
+        void state.lookupCode(code).then((found) => {
+          if (!found && !live.current.open) live.current.search(code);
+        });
         return;
       }
-      if (event.key.length === 1) {
-        const now = Date.now();
-        buffer.current = { text: (now - buffer.current.at > 120 ? "" : buffer.current.text) + event.key, at: now };
+      if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
+      const burst = buffer.current;
+      const lastAt = burst.times[burst.times.length - 1];
+      if (lastAt === undefined || now - lastAt > SCAN_MAX_GAP_MS) {
+        const target = document.activeElement;
+        buffer.current = { text: event.key, times: [now], target, snapshot: fieldValue(target) };
+      } else {
+        burst.text += event.key;
+        burst.times.push(now);
       }
     };
     document.addEventListener("keydown", onKey, true);
     return () => document.removeEventListener("keydown", onKey, true);
-  });
+  }, []);
 
   const lookup = async (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") return;

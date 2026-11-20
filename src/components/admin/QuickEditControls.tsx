@@ -34,7 +34,8 @@ export function QuantityControl({
   const [pending, start] = useTransition();
 
   const apply = (target: number) => {
-    if (!sku || !Number.isInteger(target) || target < 0) return;
+    // 9999 is far above any real shelf count; a stray scan (an EAN) is not a stock level.
+    if (!sku || !Number.isInteger(target) || target < 0 || target > 9999) return;
     const delta = target - stock;
     if (delta === 0) return;
     start(async () => {

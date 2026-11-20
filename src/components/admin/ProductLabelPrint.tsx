@@ -10,6 +10,8 @@ export type LabelData = {
   color: string;
   price: number;
   sku: string | null;
+  /** What the barcode encodes: the SKU, or a short "LB-…" code for long SKUs (see scan-code.ts). */
+  barcode: string | null;
   condition: string;
 };
 
@@ -132,7 +134,7 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
 
   const s = SIZES[size];
   const contentW = s.w - 2 * SAFE_X;
-  const barcodeOk = Boolean(data.sku && isCode128BText(data.sku));
+  const barcodeOk = Boolean(data.barcode && isCode128BText(data.barcode));
   const priceText = `${price.toLocaleString("de-DE", { minimumFractionDigits: price % 1 ? 2 : 0, maximumFractionDigits: 2 })}€`;
   const gap = s.h >= 60 ? 1.6 : 0.8;
 
@@ -214,8 +216,8 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
             </div>
             {barcodeOk ? (
               <div className="flex min-h-0 flex-1 flex-col items-center" style={{ marginTop: `${gap}mm` }}>
-                <div className="flex min-h-0 w-full flex-1 justify-center"><Barcode value={data.sku!} maxWidthMm={contentW} /></div>
-                <div className="font-mono leading-none" style={{ fontSize: `${s.sku}mm`, marginTop: "0.4mm" }}>{data.sku}</div>
+                <div className="flex min-h-0 w-full flex-1 justify-center"><Barcode value={data.barcode!} maxWidthMm={contentW} /></div>
+                <div className="font-mono leading-none" style={{ fontSize: `${s.sku}mm`, marginTop: "0.4mm" }}>{data.barcode}</div>
               </div>
             ) : null}
           </div>

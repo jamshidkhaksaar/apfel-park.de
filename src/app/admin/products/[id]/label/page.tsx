@@ -5,6 +5,7 @@ import { canManageProducts } from "@/lib/admin-auth";
 import { getAdminLocale } from "@/lib/admin-i18n-server";
 import { query } from "@/lib/db";
 import { inventoryProductDetails } from "@/lib/inventory-product-details";
+import { barcodeValueForSku } from "@/lib/scan-code";
 import { readSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -50,12 +51,14 @@ export default async function ProductLabelPage({
   const variant = (wanted && variants.find((entry) => text(entry.sku).toLowerCase() === wanted)) || (variants.length === 1 ? variants[0] : undefined);
   const details = inventoryProductDetails({ ...row, variants: [] }, "de", "product");
   const storage = text(variant?.storage) || details.storage || "";
+  const sku = text(variant?.sku) || text(row.sku) || null;
   const data: LabelData = {
     model: modelName(text(row.family_name) || text(row.model) || text(row.title), storage),
     storage,
     color: text(variant?.color) || details.color || "",
     price: Number(variant?.price ?? row.price) || 0,
-    sku: text(variant?.sku) || text(row.sku) || null,
+    sku,
+    barcode: sku ? barcodeValueForSku(sku) : null,
     condition: text(row.condition) || "new",
   };
   const defaultWarranty = data.condition === "new" ? "24 Monate Garantie" : "12 Monate Garantie";
