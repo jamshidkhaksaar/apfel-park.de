@@ -22,6 +22,7 @@ import {
   resolveStoreIndexing,
 } from "@/lib/store-indexing";
 import {
+  listingOfferPolicies,
   offerDeliveryMethods,
   schemaAvailability,
   schemaItemCondition,
@@ -123,6 +124,7 @@ export default async function AccessorySubcategoryPage({
               availability: schemaAvailability(product.stock ?? 0),
               seller: { "@id": `${siteInfo.url}/#store` },
               availableDeliveryMethod: offerDeliveryMethods,
+              ...listingOfferPolicies(product.stock),
             },
           },
         };

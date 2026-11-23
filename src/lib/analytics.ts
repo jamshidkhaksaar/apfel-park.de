@@ -54,3 +54,11 @@ export const pushGtagCommand = (
   const commandArguments = toArguments(command, ...args);
   dataLayer.push(commandArguments);
 };
+
+/**
+ * Measurement only runs on the live shop. Local development, previews and
+ * staging copies (localhost, *.test, IPs, other hosts) must never send
+ * page views or events: they used to show up in GA4 as real visits.
+ */
+export const isTrackedHost = (hostname: string): boolean =>
+  /^(?:www\.)?apfel-park\.de$/i.test(hostname);

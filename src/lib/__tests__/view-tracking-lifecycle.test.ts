@@ -46,7 +46,7 @@ beforeEach(() => {
   harness.fetch.mockReset().mockResolvedValue({ ok: true });
   vi.stubGlobal('fetch', harness.fetch);
   vi.stubGlobal('window', Object.assign(new EventTarget(), {
-    location: { origin: 'https://apfel-park.de', get pathname() { return harness.pathname; }, get search() { return harness.search; } },
+    location: { origin: 'https://apfel-park.de', hostname: 'apfel-park.de', get pathname() { return harness.pathname; }, get search() { return harness.search; } },
     localStorage: { getItem: vi.fn(() => null) },
     setTimeout: (fn: () => void, delay: number) => setTimeout(fn, delay), clearTimeout: (timer: ReturnType<typeof setTimeout>) => clearTimeout(timer),
   }));

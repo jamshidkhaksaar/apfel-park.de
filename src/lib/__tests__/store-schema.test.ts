@@ -32,7 +32,7 @@ describe("catalog structured data canonical alignment", () => {
     expect(item["@id"]).toBe("https://apfel-park.de/de/store/iphone-air");
     expect(item.image).toBe("https://apfel-park.de/images/iphone.png");
     expect(item.brand).toEqual({ "@type": "Brand", name: "Apple" });
-    expect(item.offers).toEqual({
+    expect(item.offers).toMatchObject({
       "@type": "Offer",
       url: "https://apfel-park.de/de/store/iphone-air",
       priceCurrency: "EUR",
@@ -42,5 +42,16 @@ describe("catalog structured data canonical alignment", () => {
       seller: { "@id": "https://apfel-park.de/#store" },
       availableDeliveryMethod: ["https://schema.org/OnSitePickup", "https://schema.org/ParcelService"],
     });
+  });
+
+  it("gives every listed offer the return policy and, when in stock, shipping (merchant listings)", () => {
+    const offers = buildCollectionPageSchema(options).mainEntity.itemListElement[0].item.offers;
+    expect(offers.hasMerchantReturnPolicy).toMatchObject({ "@type": "MerchantReturnPolicy", merchantReturnDays: 14, applicableCountry: "DE" });
+    expect(offers.shippingDetails).toMatchObject({ "@type": "OfferShippingDetails", shippingDestination: { addressCountry: "DE" } });
+
+    const soldOut = buildCollectionPageSchema({ ...options, products: [{ ...options.products[0], stock: 0 }] })
+      .mainEntity.itemListElement[0].item.offers;
+    expect(soldOut.hasMerchantReturnPolicy).toBeDefined();
+    expect("shippingDetails" in soldOut).toBe(false);
   });
 });

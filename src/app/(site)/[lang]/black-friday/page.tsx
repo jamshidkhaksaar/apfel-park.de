@@ -17,6 +17,7 @@ import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { isCampaignPagePublic, secondsRemaining } from "@/lib/seasonal-theme";
 import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
+import { listingOfferPolicies } from "@/lib/schema";
 import { siteInfo } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -99,6 +100,7 @@ export default async function BlackFridayPage({
           // Campaign prices end with the Black Week.
           priceValidUntil: blackFriday.endsAt.slice(0, 10),
           availability: card.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+          ...listingOfferPolicies(card.stock),
           url: `${siteInfo.url}/${locale}/store/${card.slug}`,
         },
       },

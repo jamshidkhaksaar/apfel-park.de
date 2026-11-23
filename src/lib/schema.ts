@@ -144,6 +144,18 @@ export const merchantReturnPolicy = () => ({
   merchantReturnLink: `${siteInfo.url}/de/delivery-returns`,
 });
 
+/**
+ * Return policy and shipping for an Offer inside a product list (category
+ * pages, /store, accessory pages, Black Friday). Google checks these fields on
+ * every Offer it finds, not only on product pages; without them the products
+ * are not eligible for merchant listings / free Shopping results. Shipping is
+ * only stated for offers that can actually ship (in stock).
+ */
+export const listingOfferPolicies = (stock?: number | null) => ({
+  hasMerchantReturnPolicy: merchantReturnPolicy(),
+  ...(stock && stock > 0 ? { shippingDetails: offerShippingDetails() } : {}),
+});
+
 export const offerValidFrom = (createdAt?: string): string | undefined => {
   if (!createdAt) return undefined;
   const created = new Date(createdAt);

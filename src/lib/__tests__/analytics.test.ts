@@ -46,3 +46,14 @@ describe("GA4 ecommerce payloads", () => {
     });
   });
 });
+
+describe("live-domain measurement", () => {
+  it("measures only apfel-park.de", async () => {
+    const { isTrackedHost } = await import("@/lib/analytics");
+    expect(isTrackedHost("apfel-park.de")).toBe(true);
+    expect(isTrackedHost("www.apfel-park.de")).toBe(true);
+    for (const host of ["localhost", "127.0.0.1", "staging.apfel-park.de", "apfel-park.de.evil.com", "preview.test"]) {
+      expect(isTrackedHost(host)).toBe(false);
+    }
+  });
+});

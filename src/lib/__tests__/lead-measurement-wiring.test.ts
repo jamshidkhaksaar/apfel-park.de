@@ -29,3 +29,18 @@ describe('lead and page-view wiring regressions', () => {
     expect(scripts).toContain('...analyticsPageContext(pathname, searchParams, window.location.origin, document.referrer)');
   });
 });
+
+describe('product reservation', () => {
+  it('offers a free in-store reservation via WhatsApp, tracked as a reservation click', () => {
+    const product = component('ProductDetailExperience.tsx');
+    expect(product).toContain('Kostenlos reservieren – im Shop ansehen');
+    expect(product).toContain('source: "product_reserve"');
+    expect(product).toContain('lead_type: "reservation"');
+    // a click is not a completed lead
+    expect(product).not.toContain('"generate_lead"');
+  });
+  it('never measures outside the live domain', () => {
+    const scripts = component('MarketingConsentScripts.tsx');
+    expect(scripts.match(/!onTrackedHost\(\)/g)).toHaveLength(2);
+  });
+});

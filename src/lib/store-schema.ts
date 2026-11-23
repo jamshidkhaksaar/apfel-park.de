@@ -13,6 +13,7 @@
 import type { Locale } from "@/lib/i18n";
 import type { ProductCondition } from "@/lib/products";
 import {
+  listingOfferPolicies,
   offerDeliveryMethods,
   schemaAvailability,
   schemaItemCondition,
@@ -95,6 +96,7 @@ export const buildCollectionPageSchema = ({
             availability: schemaAvailability(product.stock ?? 0),
             seller: { "@id": `${siteInfo.url}/#store` },
             availableDeliveryMethod: offerDeliveryMethods,
+            ...listingOfferPolicies(product.stock),
           },
         },
       };

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
-import { pushGtagCommand, TRACKING_READY_EVENT } from "@/lib/analytics";
+import { isTrackedHost, pushGtagCommand, TRACKING_READY_EVENT } from "@/lib/analytics";
 import { analyticsPageContext, analyticsPagePath, isPrivateAnalyticsPath } from "@/lib/analytics-url";
 
 type MarketingConsentScriptsProps = {
@@ -231,6 +231,8 @@ const toTikTokEventName = (eventName: string) => {
  */
 const isExcludedPath = isPrivateAnalyticsPath;
 
+const onTrackedHost = (): boolean => typeof window !== "undefined" && isTrackedHost(window.location.hostname);
+
 const isConversionPath = (pathname: string): boolean =>
   /^\/(?:de|en)\/(?:store\/[^/]+|cart(?:\/|$)|checkout(?:\/|$)|campaigns?(?:\/|$))/.test(pathname);
 
@@ -274,7 +276,7 @@ export default function MarketingConsentScripts({
 
     const applyConsent = (mode: ConsentMode) => {
       readyContextRef.current = null;
-      if (mode !== "external" || isExcludedPath(pathname) || isExcludedPath(window.location.pathname ?? pathname)) {
+      if (mode !== "external" || !onTrackedHost() || isExcludedPath(pathname) || isExcludedPath(window.location.pathname ?? pathname)) {
         if (googleAnalyticsEnabled && googleAnalyticsId) {
           updateGoogleAnalyticsConsent(googleAnalyticsId, false);
         }
@@ -322,7 +324,7 @@ export default function MarketingConsentScripts({
     const track: NonNullable<Window['apfelTrack']> = (eventName, payload = {}, eventId) => {
       const currentPath = window.location.pathname ?? pathname;
       const currentSearch = new URLSearchParams(window.location.search ?? searchParams.toString());
-      if (readyContextRef.current !== trackingContext || readConsentMode() !== "external"
+      if (readyContextRef.current !== trackingContext || readConsentMode() !== "external" || !onTrackedHost()
         || isExcludedPath(pathname) || isExcludedPath(currentPath)
         || analyticsPagePath(currentPath, currentSearch) !== analyticsPagePath(pathname, searchParams)) return false;
       let queued = false;
