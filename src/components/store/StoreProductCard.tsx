@@ -111,12 +111,12 @@ export default function StoreProductCard({
 
         {variantSummary ? <p className="line-clamp-2 text-xs text-muted-strong">{variantSummary}</p> : null}
 
+        {/* Cart button beside the price; stock and delivery get the full card
+            width below, so they no longer wrap into four short lines on phones. */}
         <div className="mt-auto pt-2">
-          <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} lowest30Days={Boolean(product.campaignPercent)} size="card" />
-          <div className="mt-2 flex items-end justify-between gap-2">
+          <div className="flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <p className={`text-xs font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
-              {!isOutOfStock ? <p className="mt-0.5 text-xs leading-4 text-muted">{deliveryLabel(locale,product.pickupStock)}</p> : null}
+              <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} lowest30Days={Boolean(product.campaignPercent)} size="card" />
             </div>
             <AddToCartButton
               onClick={onQuickAdd}
@@ -126,6 +126,8 @@ export default function StoreProductCard({
               options={product.familyOptions}
             />
           </div>
+          <p className={`mt-2 text-xs font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
+          {!isOutOfStock ? <p className="mt-0.5 text-xs leading-4 text-muted">{deliveryLabel(locale,product.pickupStock)}</p> : null}
         </div>
 
         <span className="sr-only" role="status" aria-live="polite">

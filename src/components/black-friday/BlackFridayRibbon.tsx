@@ -34,16 +34,16 @@ export default function BlackFridayRibbon({
       <Link
         href={`/${lang}/black-friday`}
         aria-label={lang === "de" ? "Black Week Angebote ansehen" : "View Black Week deals"}
-        className="container-page flex min-h-12 items-center gap-2.5 py-2 sm:hidden"
+        className="container-page flex min-h-12 items-center gap-2 py-2 min-[380px]:gap-2.5 sm:hidden"
       >
         <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--signal)] text-white shadow-[0_0_14px_rgba(232,23,44,0.45)]">
           <BlackFridayMark className="size-4" />
         </span>
-        <span className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-heading">{copy.campaign.short}</span>
+        <span className="whitespace-nowrap text-[13px] font-extrabold uppercase tracking-[0.05em] text-heading min-[380px]:tracking-[0.1em]">{copy.campaign.short}</span>
         {!isBefore && maxDiscount ? (
-          <span className="rounded-full bg-[color:var(--signal)] px-2 py-0.5 text-xs font-black tabular-nums text-white">−{maxDiscount} %</span>
+          <span className="shrink-0 whitespace-nowrap rounded-full bg-[color:var(--signal)] px-2 py-0.5 text-xs font-black tabular-nums text-white">−{maxDiscount} %</span>
         ) : null}
-        <span className="ml-auto flex items-center gap-2 text-[color:var(--brass)]">
+        <span className="ml-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[color:var(--brass)]">
           {isBefore ? (
             <span className="font-mono text-xs font-bold">
               {lang === "de" ? `Start ${currentBlackWeek().de.startShort}` : `Starts ${currentBlackWeek().de.startShort}`}

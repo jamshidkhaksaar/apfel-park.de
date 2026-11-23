@@ -159,8 +159,8 @@ export default function SiteHeader({
         <div className="container-page flex items-center justify-between py-2 text-xs">
           {/* One line from md up: the pickup note yields at tablet widths and
               returns on desktop, where both notes and the contact details fit. */}
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 animate-gold-pulse rounded-full bg-gold" />
+          <div className="flex items-center gap-2 whitespace-nowrap text-[11px] min-[380px]:text-xs">
+            <span className="flex h-2 w-2 shrink-0 animate-gold-pulse rounded-full bg-gold" />
             <span className="font-medium text-gold">
               {lang === "de" ? "Versand in Deutschland" : "Delivery within Germany"}
             </span>
