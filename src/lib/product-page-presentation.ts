@@ -1,6 +1,7 @@
 import type { Locale } from "./i18n";
 import type { ProductCondition } from "./products";
 import { formatBatteryHealth, type BatteryHealthRange } from './product-offer-options';
+import { stripPlaceholderLines } from './product-condition';
 
 export type ProductPageSignalInput = {
   locale: Locale;
@@ -29,7 +30,7 @@ export type ProductConditionNoteInput = {
 const normalizeText = (value: string): string => value.toLocaleLowerCase().replace(/[^a-z0-9]+/gi, " ").trim();
 
 export const getSafeConditionNote = ({ condition, model, note }: ProductConditionNoteInput): string | null => {
-  const cleanNote = note?.trim();
+  const cleanNote = stripPlaceholderLines(note);
   if (!cleanNote) return null;
   const normalizedNote = normalizeText(cleanNote);
   if (condition === "used" && /(?:fabrikneu|neu und unbenutzt|brand new|factory new|new and unused|new unused|unused)/.test(normalizedNote)) return null;

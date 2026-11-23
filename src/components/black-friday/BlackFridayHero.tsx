@@ -37,7 +37,6 @@ export default function BlackFridayHero({
 }) {
   const copy = blackFridayCopy[lang].hero;
   const isLanding = variant === "landing";
-  const HeroHeading = isLanding ? "h1" : "h2";
   const isBefore = phase === "before";
   const tickerLabel = isBefore
     ? lang === "de" ? "Aktuell im Shop" : "In the store now"
@@ -94,18 +93,21 @@ export default function BlackFridayHero({
             </p>
 
             <div className="mt-4 flex items-end gap-6">
-              {/* The landing page owns the H1; on the home page the hero is a
-                  section, so it must not add a second H1 there. The spaced,
-                  dated reading is what search engines and screen readers get. */}
-              <HeroHeading className="bf-display min-w-0 uppercase">
+              {/* During the campaign this hero replaces the home slider, which
+                  normally carries the page's H1, so it is the H1 in both
+                  variants. The sr-only reading is what search engines and
+                  screen readers get; on the home page it keeps the shop topic. */}
+              <h1 className="bf-display min-w-0 uppercase">
                 <span className="block text-[clamp(3.5rem,8.8vw,8rem)] leading-[0.82] text-white">
                   {copy.titleTop}
                 </span>{" "}
                 <span className="block text-[clamp(3.5rem,8.8vw,8rem)] leading-[0.82] text-[color:var(--signal)]">
                   {copy.titleBottom}
                 </span>
-                <span className="sr-only"> {blackFriday.startsAt.slice(0, 4)} – {lang === "de" ? "Black Friday Angebote bei Apfel Park Hamburg" : "Black Friday deals at Apfel Park Hamburg"}</span>
-              </HeroHeading>
+                <span className="sr-only"> {blackFriday.startsAt.slice(0, 4)} – {isLanding
+                  ? lang === "de" ? "Black Friday Angebote bei Apfel Park Hamburg" : "Black Friday deals at Apfel Park Hamburg"
+                  : lang === "de" ? "iPhone & Smartphone kaufen in Hamburg bei Apfel Park" : "Buy iPhones & smartphones in Hamburg at Apfel Park"}</span>
+              </h1>
               <BlackWeekSeal
                 maxDiscount={isBefore ? null : maxDiscount}
                 phase={phase}

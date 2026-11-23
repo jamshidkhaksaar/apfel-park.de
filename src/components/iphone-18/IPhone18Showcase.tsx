@@ -328,15 +328,15 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
             <p className="mx-auto max-w-2xl text-base sm:text-lg text-muted leading-relaxed text-balance">
               {selectedModel === "duo"
                 ? (isDe
-                  ? "Apples erstes faltbares Smartphone mit nahtlosem 7,6-Zoll-OLED-Canvas, 5,4-Zoll-Cover-Display, Titanscharnier und der vollen Power des A20 Pro 2nm-Chips."
-                  : "Apple's first foldable smartphone featuring a seamless 7.6-inch inner OLED canvas, 5.4-inch outer cover screen, titanium folding hinge, and 2nm A20 Pro silicon.")
+                  ? "Apples erstes faltbares Smartphone mit nahtlosem 7,6-Zoll-OLED-Canvas, 5,4-Zoll-Cover-Display, Titanscharnier und A20 Pro Chip."
+                  : "Apple's first foldable smartphone featuring a seamless 7.6-inch inner OLED canvas, 5.4-inch outer cover screen, titanium folding hinge and the A20 Pro chip.")
                 : selectedModel === "promax"
                 ? (isDe
                   ? "iPhone 18 Pro Max mit 6,9-Zoll-Display, A20 Pro und 48-MP-Pro-Fusion-Kamerasystem. Apple nennt bis zu 43 Stunden Videowiedergabe unter Testbedingungen."
                   : "iPhone 18 Pro Max with a 6.9-inch display, A20 Pro and 48 MP Pro Fusion camera system. Apple lists up to 43 hours of video playback under test conditions.")
                 : (isDe
-                  ? "Entwickelt für kompromisslose Leistung. Der A20 Pro Prozessor in 2-Nanometer-Architektur, eine 48 MP Pro Fusion Optik mit variabler Blende von f/1.48 bis f/4.0 und Apples erstes faltbares Meisterwerk aus Titan."
-                  : "Engineered without compromise. Powered by the 2nm Apple A20 Pro architecture, a 48MP Pro Fusion system with variable f/1.48–f/4.0 aperture, and Apple's inaugural titanium foldable.")}
+                  ? "iPhone 18 Pro mit A20 Pro Chip und 48-MP-Fusion-Hauptkamera mit variabler Blende von ƒ/1.48 bis ƒ/4.0. Daneben steht mit dem iPhone Duo Apples erstes faltbares iPhone aus Titan."
+                  : "iPhone 18 Pro with the A20 Pro chip and a 48 MP Fusion main camera with a variable ƒ/1.48–ƒ/4.0 aperture. Alongside it, the iPhone Duo is Apple's first foldable iPhone, made of titanium.")}
             </p>
 
             {/* Restrained Luxury CTA Actions */}
@@ -575,8 +575,8 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
                       ? "Apples erstes faltbares Meisterwerk. Ein nahtloses 7,6-Zoll-OLED-Innendisplay trifft auf ein kompaktes 5,4-Zoll-Außendisplay, geschützt von einem neuartigen Titanscharnier mit faltbarem Innendisplay."
                       : "Apple's first foldable masterpiece. A seamless 7.6-inch inner OLED canvas meets a compact 5.4-inch outer cover screen, engineered with a titanium folding hinge."
                     : isDe
-                    ? "Der neue Maßstab in der mobilen Bild- und Videoverarbeitung. Mechanisch variable Blende (f/1.48 bis f/4.0), A20 Pro Rechenplattform und unübertroffene Effizienz durch TSMCs 2nm-Verfahren."
-                    : "The definitive creative instrument. Physical mechanical variable aperture (f/1.48 to f/4.0), the A20 Pro platform, and unmatched efficiency via TSMC's 2nm node."}
+                    ? "Für Foto und Video: mechanisch variable Blende (ƒ/1.48 bis ƒ/4.0) an der 48-MP-Hauptkamera und der A20 Pro Chip (Herstellerangaben)."
+                    : "Built for photo and video: a mechanical variable aperture (ƒ/1.48 to ƒ/4.0) on the 48 MP main camera and the A20 Pro chip (manufacturer figures)."}
                 </p>
               </div>
 
@@ -584,7 +584,7 @@ export default function IPhone18Showcase({ locale, initialModel = "pro" }: IPhon
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div className="rounded-xl border border-border/80 bg-surface/50 p-3.5">
                   <div className="text-xs text-muted uppercase tracking-wider">{isDe ? "Architektur" : "Architecture"}</div>
-                  <div className="text-lg font-bold text-foreground mt-0.5">2 nm A20 Pro</div>
+                  <div className="text-lg font-bold text-foreground mt-0.5">A20 Pro</div>
                   <div className="text-[11px] text-muted">6-Core CPU · 7-Core GPU</div>
                 </div>
                 <div className="rounded-xl border border-border/80 bg-surface/50 p-3.5">

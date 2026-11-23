@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { conditionDetailsChanged, resolveProductConditionNote } from "../product-condition";
+import { conditionDetailsChanged, resolveProductConditionNote, stripPlaceholderLines } from "../product-condition";
 
 describe("resolveProductConditionNote", () => {
   const imported = {
@@ -42,5 +42,18 @@ describe("conditionDetailsChanged", () => {
       { condition: "open_box", conditionNote: "Same note" },
       { condition: " open_box ", conditionNote: " Same note " },
     )).toBe(false);
+  });
+});
+
+describe("stripPlaceholderLines", () => {
+  it("drops empty template values but keeps real note text", () => {
+    expect(stripPlaceholderLines("12 Monate Garantie\nnone\nnone")).toBe("12 Monate Garantie");
+    expect(stripPlaceholderLines("Open-Box geprüft.\r\n None \n-\nN/A\nnull")).toBe("Open-Box geprüft.");
+    expect(stripPlaceholderLines("none")).toBe("");
+    expect(stripPlaceholderLines("Keine Kratzer, nonetheless top")).toBe("Keine Kratzer, nonetheless top");
+  });
+
+  it("applies when resolving the shown note", () => {
+    expect(resolveProductConditionNote({ de: "Gebraucht, A+\nnone" }, "de", "Gebraucht, A+\nnone")).toBe("Gebraucht, A+");
   });
 });

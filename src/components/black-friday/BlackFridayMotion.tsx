@@ -190,7 +190,9 @@ export function BlackFridayDealTicker({
           <span className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-white">
             <Image
               src={deal.image}
-              alt=""
+              // The looping second copy is hidden from assistive tech; only the
+              // first copy describes the product image.
+              alt={suffix === "a" ? deal.title : ""}
               fill
               sizes="44px"
               className="object-contain p-1"

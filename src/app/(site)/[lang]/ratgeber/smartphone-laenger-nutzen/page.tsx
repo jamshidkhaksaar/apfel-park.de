@@ -24,6 +24,13 @@ type GuideContent = {
 };
 
 const guidePath = "/ratgeber/smartphone-laenger-nutzen";
+// Bump GUIDE_UPDATED whenever the guide text changes in substance.
+const GUIDE_PUBLISHED = "2026-11-09";
+const GUIDE_UPDATED = "2026-11-13";
+
+const formatGuideDate = (locale: "de" | "en", isoDate: string): string =>
+  new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Berlin" })
+    .format(new Date(`${isoDate}T12:00:00Z`));
 
 const content: Record<"de" | "en", GuideContent> = {
   de: {
@@ -212,7 +219,15 @@ export default async function SmartphoneLongevityGuidePage({ params }: { params:
     url: pageUrl,
     inLanguage: locale === "de" ? "de-DE" : "en-DE",
     articleSection: locale === "de" ? "Smartphone-Ratgeber" : "Smartphone guide",
-    author: { "@id": `${siteInfo.url}/#store` },
+    datePublished: GUIDE_PUBLISHED,
+    dateModified: GUIDE_UPDATED,
+    author: {
+      "@type": "Person",
+      name: siteInfo.owner.name,
+      jobTitle: locale === "de" ? siteInfo.owner.roleDe : siteInfo.owner.roleEn,
+      url: `${siteInfo.url}/${locale}/about`,
+      worksFor: { "@id": `${siteInfo.url}/#store` },
+    },
     publisher: { "@id": `${siteInfo.url}/#store` },
     mainEntityOfPage: { "@type": "WebPage", "@id": pageUrl },
   };
@@ -232,6 +247,13 @@ export default async function SmartphoneLongevityGuidePage({ params }: { params:
       <PageIntro title={copy.title} subtitle={copy.subtitle} eyebrow={copy.eyebrow} />
       <article className="section-pad">
         <div className="container-page max-w-4xl">
+          <p className="mb-8 text-sm text-muted">
+            {locale === "de" ? "Von " : "By "}
+            <Link href={`/${locale}/about`} className="font-semibold text-foreground underline-offset-4 hover:underline">{siteInfo.owner.name}</Link>
+            {locale === "de" ? `, ${siteInfo.owner.roleDe} von ${siteInfo.name}` : `, ${siteInfo.owner.roleEn} of ${siteInfo.name}`}
+            {" · "}
+            <time dateTime={GUIDE_UPDATED}>{(locale === "de" ? "Aktualisiert am " : "Updated ") + formatGuideDate(locale, GUIDE_UPDATED)}</time>
+          </p>
           <div className="space-y-10">
             {copy.sections.map((section) => (
               <section key={section.title} className="tech-card rounded-2xl p-6 md:p-8">

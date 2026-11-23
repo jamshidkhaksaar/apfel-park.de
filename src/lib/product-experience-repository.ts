@@ -3,6 +3,7 @@ import "server-only";
 import { query, withTransaction } from "@/lib/db";
 import { persistProfile, persistFamily } from '@/lib/product-experience-persistence';
 import { readBatteryHealthRange, formatBatteryHealth } from './product-offer-options';
+import { stripPlaceholderLines } from './product-condition';
 import {
   localizedText,
   resolveBundleCartSelection,
@@ -74,7 +75,7 @@ export async function getProductFamilyForProduct(productId: string, locale: Loca
       const localized = row.title_i18n && typeof row.title_i18n === "object" ? row.title_i18n as { de: string; en: string } : { de: "", en: "" };
       const images = Array.isArray(row.images) ? row.images.filter((item): item is string => typeof item === "string") : [];
       return {
-        conditionNote: String(row.condition_note ?? ""),
+        conditionNote: stripPlaceholderLines(String(row.condition_note ?? "")),
         batteryHealth: row.battery_health == null ? undefined : Number(row.battery_health),
         batteryHealthRange: readBatteryHealthRange(row.import_metadata, row.battery_health == null ? undefined : Number(row.battery_health)),
         productId: String(row.product_id),
