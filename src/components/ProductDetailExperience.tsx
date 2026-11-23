@@ -525,6 +525,18 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             <span>{locale === "de" ? "14 Tage Rückgaberecht" : "14-day returns"}</span>
           </div>
 
+          {/* Secondary paths for buyers who are not a single private purchase. */}
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+            {product.category === "smartphones" || product.category === "tablets" || product.category === "laptops" ? (
+              <Link href={`/${locale}/trade-in`} className="font-medium text-gold underline-offset-4 hover:underline">
+                {locale === "de" ? "Altes Gerät verkaufen? Angebot anfragen →" : "Selling your old device? Get an offer →"}
+              </Link>
+            ) : null}
+            <Link href={`/${locale}/firmenkunden`} className="font-medium text-muted underline-offset-4 hover:text-foreground hover:underline">
+              {locale === "de" ? "Für Firmen: Angebot für mehrere Geräte →" : "For businesses: quote for several devices →"}
+            </Link>
+          </div>
+
           {added ? (
             <p className="mt-4 text-center text-sm font-medium text-gold">
               <Link href={`/${locale}/cart`} className="underline underline-offset-4">
