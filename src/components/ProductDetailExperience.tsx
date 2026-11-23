@@ -67,6 +67,8 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
   const [selectedStorage, setSelectedStorage] = useState(defaultVariant?.storage ?? "");
   const [added, setAdded] = useState(false);
   const desktopPurchaseAnchorRef = useRef<HTMLDivElement>(null);
+  // Phones: the bar hides only while the real buy buttons are on screen.
+  const mobileBuyButtonsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!added) return;
@@ -446,7 +448,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3">
+          <div ref={mobileBuyButtonsRef} className="mt-4 grid gap-3">
             <button
               type="button"
               className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-50"
@@ -813,7 +815,7 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
       onAddToCart={handleAddToCart}
     />
     <ProductMobilePurchaseBar
-      anchorRef={desktopPurchaseAnchorRef}
+      anchorRef={mobileBuyButtonsRef}
       locale={locale}
       title={product.title}
       image={activeImage}
