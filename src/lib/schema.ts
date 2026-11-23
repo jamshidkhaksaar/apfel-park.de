@@ -36,13 +36,15 @@ export const productCategoryLabel = (locale: Locale, category: ProductCategory):
   }
 };
 
-// Schema.org offers only New/Used/Refurbished/Damaged. Apfel Park sells open-box
-// stock as new: the device is unused, complete and carries the manufacturer
-// warranty, so NewCondition is the accurate value. Pre-owned grade A+ stock is
-// UsedCondition. RefurbishedCondition is never emitted, because the shop does
-// not sell reconditioned devices.
+// Schema.org offers only New/Used/Refurbished/Damaged. Google reads this markup
+// as the product condition and defines "new" as unused in unopened packaging;
+// opened packaging counts as used. Open-box stock is unused but its box has been
+// opened, so it is UsedCondition here, matching the Merchant feed (see
+// google-merchant.ts). Calling it new was flagged as misrepresentation. The shop
+// still explains open box to customers in its own words. RefurbishedCondition
+// is never emitted, because the shop does not sell reconditioned devices.
 export const schemaItemCondition = (condition: ProductCondition): string =>
-  condition === "used" ? "https://schema.org/UsedCondition" : "https://schema.org/NewCondition";
+  condition === "new" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition";
 
 /** Single source for the offer availability both offers and tests rely on. */
 export const schemaAvailability = (stock?: number | null): string =>

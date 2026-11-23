@@ -37,7 +37,8 @@ describe("catalog structured data canonical alignment", () => {
       url: "https://apfel-park.de/de/store/iphone-air",
       priceCurrency: "EUR",
       price: 899,
-      itemCondition: "https://schema.org/NewCondition",
+      // open_box: the box has been opened, which Google treats as used.
+      itemCondition: "https://schema.org/UsedCondition",
       availability: "https://schema.org/InStock",
       seller: { "@id": "https://apfel-park.de/#store" },
       availableDeliveryMethod: ["https://schema.org/OnSitePickup", "https://schema.org/ParcelService"],

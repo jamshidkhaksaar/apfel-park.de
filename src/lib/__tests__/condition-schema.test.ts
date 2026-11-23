@@ -4,9 +4,9 @@ import { conditionLabels } from "@/lib/condition-labels";
 import { offerDeliveryMethods, schemaAvailability, schemaItemCondition } from "@/lib/schema";
 
 describe("condition tiers", () => {
-  it("maps sealed and open box to NewCondition, grade A+ to UsedCondition", () => {
+  it("maps only sealed stock to NewCondition; open box and grade A+ are UsedCondition (Google: opened packaging is used)", () => {
     expect(schemaItemCondition("new")).toBe("https://schema.org/NewCondition");
-    expect(schemaItemCondition("open_box")).toBe("https://schema.org/NewCondition");
+    expect(schemaItemCondition("open_box")).toBe("https://schema.org/UsedCondition");
     expect(schemaItemCondition("used")).toBe("https://schema.org/UsedCondition");
   });
 
