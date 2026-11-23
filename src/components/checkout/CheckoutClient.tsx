@@ -61,7 +61,7 @@ const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
   }).format(value);
 
 const FIELD_CLASS =
-  "mt-2 w-full rounded-lg border border-border/60 bg-background/60 px-4 py-3 text-[15px] text-foreground outline-none transition " +
+  "mt-2 w-full rounded-lg border border-border/60 bg-background/60 px-4 py-3 text-base text-foreground outline-none transition " +
   "placeholder:text-muted/60 focus:border-gold/60 focus:bg-background focus:ring-1 focus:ring-gold/30";
 
 const LABEL_CLASS = "text-[11px] font-medium uppercase tracking-[0.14em] text-muted";
@@ -423,6 +423,40 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
           </p>
         </header>
 
+        {/* Phones: the full summary sits after the form, so show what is being
+            bought and the total up front, expandable. Desktop keeps the side column. */}
+        {cart && cart.items.length > 0 ? (
+          <details className="group rounded-xl border border-border/60 bg-background-alt lg:hidden">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm [&::-webkit-details-marker]:hidden">
+              <span className="flex items-center gap-2 font-semibold text-foreground">
+                <svg className="h-4 w-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                {locale === "de" ? "Deine Bestellung" : "Your order"}
+                <span className="font-normal text-muted">
+                  ({cart.items.reduce((sum, item) => sum + item.quantity, 0)} {locale === "de" ? "Artikel" : cart.items.length === 1 ? "item" : "items"})
+                </span>
+              </span>
+              <span className={`font-semibold text-foreground ${MONEY}`}>
+                {formatMoney(locale, couponPreview ? couponPreview.previewTotalAmountCents / 100 : cart.totalAmount, cart.currency)}
+              </span>
+            </summary>
+            <ul className="space-y-3 border-t border-border/60 px-4 py-3">
+              {cart.items.map((item) => (
+                <li key={item.key} className="flex items-center gap-3">
+                  {item.image ? (
+                    <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-[#f5f5f5]">
+                      <Image src={item.image} alt={item.title} fill sizes="48px" className="object-contain p-1" unoptimized={shouldBypassImageOptimization(item.image)} />
+                    </span>
+                  ) : null}
+                  <span className="min-w-0 flex-1 text-sm leading-snug text-foreground">
+                    {item.quantity > 1 ? `${item.quantity} × ` : ""}{item.title}
+                  </span>
+                  <span className={`shrink-0 text-sm text-foreground ${MONEY}`}>{formatMoney(locale, item.lineAmount, cart.currency)}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
+
         {error ? (
           <div id="checkout-error-summary" className="rounded-lg border border-red/30 bg-red/10 px-4 py-3 text-sm text-red-text" role="alert" aria-live="assertive">
             {error}
@@ -634,7 +668,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
 
               {hasNonNewItems ? (
                 <label className="mt-6 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted">
-                  <input type="checkbox" data-checkout-field="conditionConsent" aria-invalid={invalidField === "conditionConsent"} aria-describedby={invalidField === "conditionConsent" ? "checkout-error-summary" : undefined} checked={conditionConsent} onChange={(event) => { setConditionConsent(event.target.checked); if (invalidField === "conditionConsent") setInvalidField(null); }} className="mt-0.5 accent-[color:var(--gold)]" required />
+                  <input type="checkbox" data-checkout-field="conditionConsent" aria-invalid={invalidField === "conditionConsent"} aria-describedby={invalidField === "conditionConsent" ? "checkout-error-summary" : undefined} checked={conditionConsent} onChange={(event) => { setConditionConsent(event.target.checked); if (invalidField === "conditionConsent") setInvalidField(null); }} className="mt-0.5 size-5 shrink-0 accent-[color:var(--gold)]" required />
                   <span>
                     {locale === "de"
                       ? "Mir ist bekannt, dass diese Bestellung Open-Box- bzw. Gebrauchtgeräte enthält. "
@@ -649,7 +683,7 @@ export default function CheckoutClient({ locale, initialShippingMethod, stripePu
 
               <LegalBusinessIdentity lang={locale} />
               <label className="mt-4 flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted">
-                <input type="checkbox" data-checkout-field="termsConsent" aria-invalid={invalidField === "termsConsent"} aria-describedby={invalidField === "termsConsent" ? "checkout-error-summary" : undefined} checked={termsConsent} onChange={(event) => { setTermsConsent(event.target.checked); if (invalidField === "termsConsent") setInvalidField(null); }} className="mt-0.5 accent-[color:var(--gold)]" required />
+                <input type="checkbox" data-checkout-field="termsConsent" aria-invalid={invalidField === "termsConsent"} aria-describedby={invalidField === "termsConsent" ? "checkout-error-summary" : undefined} checked={termsConsent} onChange={(event) => { setTermsConsent(event.target.checked); if (invalidField === "termsConsent") setInvalidField(null); }} className="mt-0.5 size-5 shrink-0 accent-[color:var(--gold)]" required />
                 <span>
                   {locale === "de" ? "Ich akzeptiere die " : "I accept the "}
                   <a href={`/${locale}/terms`} target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2">

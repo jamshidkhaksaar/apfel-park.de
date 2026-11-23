@@ -12,7 +12,16 @@ describe("gallery responsive image budget", () => {
     expect(html).toContain('aria-label="Bild 2 von 2"');
     expect(html).toContain('aria-label="Bildergalerie öffnen: Fixture phone"');
     expect(html).toContain('<link rel="preload" as="image"');
-    expect(html).toContain('loading="lazy"');
+    // The first thumbnails load at once: lazy ones in the sideways strip stayed
+    // blank on phones until tapped.
+    expect(html.match(/loading="eager"/g)).toHaveLength(2);
     expect(html).toContain("object-contain");
+  });
+
+  it("still lazy-loads thumbnails beyond the first five", () => {
+    const images = Array.from({ length: 7 }, (_, index) => `/images/fixture-${index}.png`);
+    const html = renderToStaticMarkup(createElement(ProductGallery, { title: "Fixture phone", locale: "de", images }));
+    expect(html.match(/loading="eager"/g)).toHaveLength(5);
+    expect(html.match(/loading="lazy"/g)).toHaveLength(2);
   });
 });

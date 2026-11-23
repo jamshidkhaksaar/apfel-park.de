@@ -270,7 +270,9 @@ export default function StoreFilters({ lang, facets, activeFilters, resultCount,
   if (variant === "mobile") {
     return (
       <>
-        <div className="-mx-6 mb-4 flex items-center gap-2 border-y border-border bg-background px-6 py-2.5 lg:hidden">
+        {/* Sticks under the site header (SiteHeader measures --site-header-h),
+            so Filter and Sort stay in reach while scrolling the grid on phones. */}
+        <div className="sticky top-[var(--site-header-h,6rem)] z-40 -mx-6 mb-4 flex items-center gap-2 border-y border-border bg-background/95 px-6 py-2.5 backdrop-blur lg:hidden">
           <button
             ref={triggerButtonRef}
             type="button"

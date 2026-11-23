@@ -31,7 +31,14 @@ export default function AddToCartButton({
           <path d="m5 13 4 4L19 7" />
         </svg>
       ) : options ? (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="currentColor"/><circle cx="15" cy="17" r="3" fill="currentColor"/></svg>
+        // Shoppers read a "sliders" icon as settings, not buying. Show the cart
+        // with a small chevron: tapping still opens the colour/storage choice.
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="9" cy="20" r="1.4" />
+          <circle cx="18" cy="20" r="1.4" />
+          <path d="M2.5 3.5h2.2l2.2 11.2h11.4l1.9-8.3H6.2" />
+          <path d="m11 9 2.5 2.5L16 9" />
+        </svg>
       ) : (
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="9" cy="20" r="1.4" />

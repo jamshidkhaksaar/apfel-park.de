@@ -9,6 +9,7 @@ import {
   getServerCartSnapshot,
   readStoredCart,
   subscribeStoredCart,
+  writeStoredCart,
 } from "@/components/checkout/cart";
 import { shouldBypassImageOptimization } from "@/lib/image";
 
@@ -28,7 +29,14 @@ export const MINI_CART_STATE_EVENT = "apfel-cart-state";
 const formatMoney = (locale: "de" | "en", value: number, currency = "EUR") =>
   new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-US", { style: "currency", currency }).format(value);
 
-export default function MiniCart({ locale }: { locale: "de" | "en" }) {
+const removeStoredLine = (line: ValidatedCart["items"][number]) =>
+  writeStoredCart(readStoredCart().filter((item) => !(
+    item.productId === line.productId &&
+    (item.variantColor ?? "") === (line.variantColor ?? "") &&
+    (item.variantStorage ?? "") === (line.variantStorage ?? "")
+  )));
+
+export default function MiniCart({ locale, shippingAmount }: { locale: "de" | "en"; shippingAmount: number }) {
   const items = useSyncExternalStore(subscribeStoredCart, readStoredCart, getServerCartSnapshot);
   const [open, setOpen] = useState(false);
   const [cart, setCart] = useState<ValidatedCart | null>(null);
@@ -182,7 +190,7 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
                   <span className="min-w-0 flex-1">
                     <Link
                       href={`/${locale}/store/${line.slug}`}
-                      className="block truncate text-sm font-medium text-foreground transition hover:text-gold"
+                      className="line-clamp-2 text-sm font-medium text-foreground transition hover:text-gold"
                       onClick={() => setOpen(false)}
                     >
                       {line.title}
@@ -190,6 +198,15 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
                     <span className="mt-1 block text-xs text-muted">
                       {line.quantity} × {formatMoney(locale, line.unitAmount, cart.currency)}
                     </span>
+                    <button
+                      type="button"
+                      data-compact-touch
+                      className="mt-1 py-1 text-xs text-muted underline-offset-2 transition hover:text-foreground hover:underline"
+                      aria-label={locale === "de" ? `${line.title} entfernen` : `Remove ${line.title}`}
+                      onClick={() => removeStoredLine(line)}
+                    >
+                      {locale === "de" ? "Entfernen" : "Remove"}
+                    </button>
                   </span>
                   <span className="text-sm font-semibold text-foreground">
                     {formatMoney(locale, line.lineAmount, cart.currency)}
@@ -211,7 +228,9 @@ export default function MiniCart({ locale }: { locale: "de" | "en" }) {
               </span>
             </div>
             <p className="mt-1 text-xs text-muted">
-              {locale === "de" ? "Versand wird im Warenkorb berechnet." : "Shipping is calculated in the cart."}
+              {locale === "de"
+                ? `Abholung in Wilhelmsburg kostenlos · Versand in Deutschland ${formatMoney(locale, shippingAmount, cart.currency)}`
+                : `Free pickup in Wilhelmsburg · Shipping within Germany ${formatMoney(locale, shippingAmount, cart.currency)}`}
             </p>
             <div className="mt-4 grid gap-2">
               <Link href={`/${locale}/checkout`} className="btn-primary justify-center" onClick={() => setOpen(false)}>

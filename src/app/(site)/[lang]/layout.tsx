@@ -2,12 +2,14 @@ import type { ReactNode } from "react";
 
 import StorePromotion from "@/components/promotion/StorePromotion";
 import BlackFridayRibbon from "@/components/black-friday/BlackFridayRibbon";
+import HideOnCheckout from "@/components/HideOnCheckout";
 import { getPublicPromotion } from "@/lib/promotion-server";
 import { blackFriday, blackFridayCopy } from "@/lib/black-friday";
 import { currentBlackWeek } from "@/lib/black-week-calendar";
 import { isCampaignPagePublic, secondsRemaining } from "@/lib/seasonal-theme";
 import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
 import { getCampaignMaxPercent } from "@/lib/products";
+import { germanyShippingAmount } from "@/lib/schema";
 
 import LocaleSync from "../../../components/LocaleSync";
 import MiniCart from "../../../components/checkout/MiniCart";
@@ -63,13 +65,15 @@ export default async function SiteLayout({
         }
       />
       {season ? (
-        <BlackFridayRibbon
-          lang={locale}
-          endsAt={season.endsAt}
-          initialSeconds={seasonSeconds}
-          maxDiscount={campaignMaxPercent}
-          phase={campaignPhase === "before" ? "before" : "live"}
-        />
+        <HideOnCheckout>
+          <BlackFridayRibbon
+            lang={locale}
+            endsAt={season.endsAt}
+            initialSeconds={seasonSeconds}
+            maxDiscount={campaignMaxPercent}
+            phase={campaignPhase === "before" ? "before" : "live"}
+          />
+        </HideOnCheckout>
       ) : null}
       <main id="main-content" tabIndex={-1} className="page-surface">
         {/* One promotion at a time: the campaign ribbon and this repair banner
@@ -78,7 +82,7 @@ export default async function SiteLayout({
         <PageTransition>{children}</PageTransition>
       </main>
       <SiteFooter lang={locale} />
-      <MiniCart locale={locale} />
+      <MiniCart locale={locale} shippingAmount={germanyShippingAmount()} />
     </div>
   );
 }

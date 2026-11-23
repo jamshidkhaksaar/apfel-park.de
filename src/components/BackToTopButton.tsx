@@ -29,7 +29,9 @@ export default function BackToTopButton({ label = "Back to top" }: { label?: str
 
   return (
     <div
-      className={`fixed bottom-28 right-6 z-50 flex items-center transition-all duration-300 ${
+      // Hidden on phones: it covered prices and checkout totals, and a tap on
+      // the status bar already scrolls to the top there.
+      className={`fixed bottom-28 right-6 z-50 items-center transition-all duration-300 max-md:hidden md:flex ${
         visible
           ? "opacity-100 translate-y-0 pointer-events-auto"
           : "opacity-0 translate-y-4 pointer-events-none"

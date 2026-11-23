@@ -127,7 +127,10 @@ export function ProductMobilePurchaseBarContent({
 
 export default function ProductMobilePurchaseBar({ anchorRef, ...props }: Props) {
   const isClient = useSyncExternalStore(subscribe, () => true, () => false);
-  const [purchasePanelPassed, setPurchasePanelPassed] = useState(false);
+  // The bar shows whenever the real buy buttons are off screen, above or below.
+  // On phones they sit about 2.5 screens down, so waiting until the shopper had
+  // scrolled past them left the first screens with no way to buy.
+  const [purchasePanelInView, setPurchasePanelInView] = useState(true);
   const [footerVisible, setFooterVisible] = useState(false);
   const [miniCartOpen, setMiniCartOpen] = useState(false);
   useEffect(() => {
@@ -140,7 +143,7 @@ export default function ProductMobilePurchaseBar({ anchorRef, ...props }: Props)
     const anchor = anchorRef.current;
     if (!anchor) return;
     const purchaseObserver = new IntersectionObserver(([entry]) => {
-      setPurchasePanelPassed(!entry.isIntersecting && entry.boundingClientRect.bottom < 0);
+      setPurchasePanelInView(entry.isIntersecting);
     });
     purchaseObserver.observe(anchor);
     const footer = document.querySelector("footer");
@@ -152,5 +155,5 @@ export default function ProductMobilePurchaseBar({ anchorRef, ...props }: Props)
     };
   }, [anchorRef, isClient]);
   if (!isClient) return null;
-  return createPortal(<ProductMobilePurchaseBarContent {...props} visible={purchasePanelPassed && !footerVisible && !miniCartOpen} />, document.body);
+  return createPortal(<ProductMobilePurchaseBarContent {...props} visible={!purchasePanelInView && !footerVisible && !miniCartOpen} />, document.body);
 }

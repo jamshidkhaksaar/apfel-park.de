@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import NotFoundSearch from "@/components/NotFoundSearch";
+
 export default function LocalizedNotFound() {
   const pathname = usePathname();
   const lang = pathname.startsWith("/en") ? "en" : "de";
@@ -20,6 +22,7 @@ export default function LocalizedNotFound() {
               ? "Die Adresse ist möglicherweise veraltet. Über die Startseite oder den Shop findest du schnell zurück."
               : "The address may be outdated. Use the homepage or store to continue browsing."}
           </p>
+          <NotFoundSearch lang={lang} />
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href={`/${lang}`} className="btn-secondary justify-center">
               {isGerman ? "Zur Startseite" : "Go to homepage"}

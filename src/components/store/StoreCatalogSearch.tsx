@@ -28,11 +28,19 @@ export default function StoreCatalogSearch({
   initialQuery = "",
   resultCount,
   className = "",
+  submitPath,
+  autoFocus = false,
+  onNavigate,
 }: {
   lang: Locale;
   initialQuery?: string;
   resultCount?: number;
   className?: string;
+  /** Search results page; defaults to filtering the current page. */
+  submitPath?: string;
+  autoFocus?: boolean;
+  /** Called when the search leaves for a result (e.g. to close an overlay). */
+  onNavigate?: () => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -104,6 +112,11 @@ export default function StoreCatalogSearch({
       search_term: term,
       results_count: term === initialQuery ? resultCount : undefined,
     });
+    if (submitPath) {
+      onNavigate?.();
+      router.push(term ? `${submitPath}?q=${encodeURIComponent(term)}` : submitPath);
+      return;
+    }
     router.push(`${pathname}${next.size ? `?${next.toString()}` : ""}`, { scroll: false });
   };
 
@@ -120,6 +133,7 @@ export default function StoreCatalogSearch({
       setActiveIndex(-1);
     } else if (event.key === "Enter" && activeIndex >= 0) {
       event.preventDefault();
+      onNavigate?.();
       router.push(`/${lang}/store/${suggestions[activeIndex].slug}`);
     }
   };
@@ -146,6 +160,8 @@ export default function StoreCatalogSearch({
           aria-expanded={open && suggestions.length > 0}
           aria-activedescendant={open && suggestions.length > 0 && activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
           maxLength={80}
+          autoFocus={autoFocus}
+          enterKeyHint="search"
           className="h-13 w-full rounded-2xl border border-border/80 bg-background/90 py-3 pl-12 pr-20 text-base text-foreground shadow-sm outline-none transition placeholder:text-muted focus:border-gold/60 focus:ring-4 focus:ring-gold/10 sm:pr-28"
         />
         <button type="submit" className="absolute right-1 top-1 min-h-11 min-w-11 rounded-xl bg-foreground px-3 text-sm font-bold text-background transition hover:bg-gold hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold sm:px-5">
@@ -168,7 +184,7 @@ export default function StoreCatalogSearch({
                     key={item.id}
                     href={`/${lang}/store/${item.slug}`}
                     onMouseEnter={() => setActiveIndex(index)}
-                    onClick={() => setOpen(false)}
+                    onClick={() => { setOpen(false); onNavigate?.(); }}
                     className={`flex min-h-16 items-center gap-3 rounded-xl px-3 py-2 transition ${index === activeIndex ? "bg-gold/10" : "hover:bg-surface"}`}
                   >
                     <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white">

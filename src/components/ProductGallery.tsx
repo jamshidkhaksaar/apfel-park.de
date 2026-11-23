@@ -116,6 +116,7 @@ export default function ProductGallery({ title, images, locale }: Props) {
             alt={title}
             fill
             priority
+            fetchPriority="high"
             className={`object-contain p-4 transition-opacity duration-200 sm:p-6 ${fading ? "opacity-0" : "opacity-100"}`}
             sizes="(max-width: 1280px) 100vw, 760px"
             unoptimized={shouldBypassImageOptimization(activeImage)}
@@ -170,6 +171,9 @@ export default function ProductGallery({ title, images, locale }: Props) {
                   fill
                   className={`object-contain p-2 transition-opacity duration-200 ${activeIndex === index ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
                   sizes="(max-width: 639px) 72px, 96px"
+                  // Lazy images inside this sideways strip stayed blank on phones
+                  // until tapped; the first few are tiny, so load them at once.
+                  loading={index < 5 ? "eager" : "lazy"}
                   unoptimized={shouldBypassImageOptimization(image)}
                 />
               </div>

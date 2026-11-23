@@ -19,6 +19,9 @@ describe("chat widget visibility", () => {
     expect(shouldHideChatWidgetOnMobile("/en/store")).toBe(true);
     expect(shouldHideChatWidgetOnMobile("/de/store/catalog?view=all")).toBe(true);
     expect(shouldHideChatWidgetOnMobile("/de/cart")).toBe(false);
+    expect(shouldHideChatWidgetOnMobile("/de/smartphones")).toBe(true);
+    expect(shouldHideChatWidgetOnMobile("/en/accessories/cables")).toBe(true);
+    expect(shouldHideChatWidgetOnMobile("/de/repairs")).toBe(false);
     expect(shouldHideChatWidget("/de")).toBe(false);
     expect(shouldHideChatWidget("/de/store")).toBe(false);
   });

@@ -132,8 +132,6 @@ export default async function StorePage({ params, searchParams }: { params: Prom
         resultCount={catalog.total}
       />
 
-      <ConditionExplainer locale={locale} />
-
       {season ? (
         <BlackFridayStoreBand lang={locale} />
       ) : null}
@@ -163,6 +161,10 @@ export default async function StorePage({ params, searchParams }: { params: Prom
           <StoreGrid products={catalog.products} trendingProducts={showTrending ? trendingProducts : []} lang={locale} activeCategory={category} sortBy={sort} total={catalog.total} page={catalog.page} pages={catalog.pages} counts={catalog.counts} facets={catalog.facets} activeFilters={activeFilters} showSearch={false} />
         </div>
       </section>
+
+      {/* Below the grid: above it, the explanation pushed the first device far
+          down on phones. */}
+      <ConditionExplainer locale={locale} />
     </div>
   );
 }

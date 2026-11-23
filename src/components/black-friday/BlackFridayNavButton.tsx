@@ -44,7 +44,8 @@ export default function BlackFridayNavButton({
       </span>
       {/* sm+: BLACK / FRIDAY stack plus a red marker pill. Phones with a
           marker: BLACK FRIDAY over the marker, so the header keeps one row
-          at 360 px. */}
+          at 360 px. Below 420 px only the marker shows, so the header search
+          fits; the Black Week bar underneath names the campaign. */}
       <span aria-hidden="true" className={`${marker ? "hidden sm:flex" : "flex"} flex-col leading-none`}>
         <span className="bf-gold-text text-[9px] font-black uppercase tracking-[0.16em] sm:text-[10px]">
           {label.split(" ")[0]}
@@ -56,7 +57,7 @@ export default function BlackFridayNavButton({
       {marker ? (
         <>
           <span aria-hidden="true" className="flex flex-col pr-0.5 leading-none sm:hidden">
-            <span className="bf-gold-text whitespace-nowrap text-[8px] font-black uppercase tracking-[0.04em] min-[380px]:tracking-[0.12em]">{label}</span>
+            <span className="bf-gold-text hidden whitespace-nowrap text-[8px] min-[420px]:block font-black uppercase tracking-[0.04em] min-[380px]:tracking-[0.12em]">{label}</span>
             <span className="mt-0.5 text-sm font-black tabular-nums text-white">{marker}</span>
           </span>
           <span

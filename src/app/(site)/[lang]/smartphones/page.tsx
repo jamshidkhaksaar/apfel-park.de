@@ -109,8 +109,6 @@ export default async function SmartphonesPage({
         breadcrumbs={[{ label: "Smartphones" }]}
       />
 
-      <ConditionExplainer locale={lang} />
-
       <DeviceQuoteForm locale={lang} initialBrand={activeFilters.brands.length === 1 ? activeFilters.brands[0] : undefined} />
 
       <StoreCollectionLinks lang={lang} products={collectionProducts} />
@@ -133,6 +131,10 @@ export default async function SmartphonesPage({
           />
         </div>
       </section>
+
+      {/* The condition explanation follows the phones: above the grid it pushed
+          the first device about three screens down on phones. */}
+      <ConditionExplainer locale={lang} />
 
       <StoreBrandCards lang={lang} />
 

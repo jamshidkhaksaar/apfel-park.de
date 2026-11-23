@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { conditionDetailsChanged, resolveProductConditionNote, stripPlaceholderLines } from "../product-condition";
+import { conditionDetailsChanged, localizeStandardConditionLines, resolveProductConditionNote, stripPlaceholderLines } from "../product-condition";
 
 describe("resolveProductConditionNote", () => {
   const imported = {
@@ -55,5 +55,20 @@ describe("stripPlaceholderLines", () => {
 
   it("applies when resolving the shown note", () => {
     expect(resolveProductConditionNote({ de: "Gebraucht, A+\nnone" }, "de", "Gebraucht, A+\nnone")).toBe("Gebraucht, A+");
+  });
+});
+
+describe("standard condition texts follow the page language", () => {
+  const en = "A+ condition (like new): Nearly new appearance with no or minimal signs of wear. Fully functional and thoroughly checked.";
+  const de = "Zustand A+ (Wie neu): Optisch nahezu neuwertig, keine oder minimale Gebrauchsspuren. Technisch einwandfrei und vollständig geprüft.";
+
+  it("shows the German standard text on German pages even when only English was saved", () => {
+    expect(resolveProductConditionNote(null, "de", en)).toBe(de);
+    expect(resolveProductConditionNote(null, "en", de)).toBe(en);
+  });
+
+  it("keeps hand-written lines as they are", () => {
+    expect(localizeStandardConditionLines(`${en}\n12 Monate Garantie`, "de")).toBe(`${de}\n12 Monate Garantie`);
+    expect(localizeStandardConditionLines("Kleiner Kratzer am Rahmen.", "en")).toBe("Kleiner Kratzer am Rahmen.");
   });
 });

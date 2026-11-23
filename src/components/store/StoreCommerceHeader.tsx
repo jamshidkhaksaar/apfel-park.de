@@ -49,7 +49,7 @@ export default function StoreCommerceHeader({
               <li key={`${crumb.label}-${index}`} className="flex items-center gap-1.5">
                 {index > 0 ? <span aria-hidden="true" className="text-muted/60">/</span> : null}
                 {crumb.href && index < crumbs.length - 1 ? (
-                  <Link href={crumb.href} className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold">{crumb.label}</Link>
+                  <Link href={crumb.href} className="inline-flex items-center rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold">{crumb.label}</Link>
                 ) : (
                   <span className="font-medium text-foreground">{crumb.label}</span>
                 )}
@@ -60,7 +60,8 @@ export default function StoreCommerceHeader({
 
         <div className={`grid gap-4 ${showSearch ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-center" : ""}`}>
           <div className="min-w-0">
-            {eyebrow ? <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">{eyebrow}</p> : null}
+            {/* Skip an eyebrow that only repeats the title. */}
+            {eyebrow && eyebrow.trim().toLowerCase() !== title.trim().toLowerCase() ? <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">{eyebrow}</p> : null}
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <h1 className="text-balance text-2xl font-bold tracking-tight text-foreground md:text-3xl">{title}</h1>
               {typeof resultCount === "number" ? (

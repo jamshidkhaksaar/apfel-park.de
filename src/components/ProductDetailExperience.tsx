@@ -590,7 +590,9 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
             {([
               [locale === "de" ? "Modell" : "Model", product.model],
               [locale === "de" ? "Zustand" : "Condition", conditionTierText(locale, product.condition)],
-              ["SKU", activeSku],
+              // Long generated codes ("AP-4709ec15-…") mean nothing to shoppers;
+              // same 15-character limit as the shelf labels (scan-code.ts).
+              ["SKU", activeSku && activeSku.length <= 15 ? activeSku : undefined],
               ["MPN", product.mpn],
               ["GTIN/EAN", product.gtin],
             ] as Array<[string, string | undefined | null]>)

@@ -383,17 +383,17 @@ export default async function ProductDetailPage({
       <section className="py-5 md:py-10">
         <div className={PRODUCT_PAGE_CONTAINER_CLASS}>
           <div className="mb-4 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-muted md:mb-6">
-            <Link href={`/${locale}/store`} className="transition hover:text-gold">
+            <Link href={`/${locale}/store`} className="inline-flex items-center transition hover:text-gold">
               {locale === "de" ? "Shop" : "Store"}
             </Link>
             <span>/</span>
-            <Link href={`/${locale}/${categoryPath}`} className="transition hover:text-gold">
+            <Link href={`/${locale}/${categoryPath}`} className="inline-flex items-center transition hover:text-gold">
               {productCategoryLabel(locale, product.category)}
             </Link>
             {modelCollection ? (
               <>
                 <span>/</span>
-                <Link href={`/${locale}${modelCollection.href}`} className="transition hover:text-gold">
+                <Link href={`/${locale}${modelCollection.href}`} className="inline-flex items-center transition hover:text-gold">
                   {modelCollection.label}
                 </Link>
               </>
