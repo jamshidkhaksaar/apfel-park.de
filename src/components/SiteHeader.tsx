@@ -269,7 +269,7 @@ export default function SiteHeader({
           </nav>
 
           {/* Actions */}
-          <div className="ml-auto flex h-full min-w-0 flex-wrap items-center justify-end gap-1 pr-2 sm:gap-2 sm:pr-3 xl:ml-0">
+          <div className="ml-auto flex h-full min-w-0 flex-wrap items-center justify-end gap-0.5 pr-1 sm:gap-2 sm:pr-3 xl:ml-0">
             <HeaderSearch lang={lang} />
             <DeviceQuoteForm locale={lang} variant="header" />
             <div className="hidden items-center gap-3 xl:flex">

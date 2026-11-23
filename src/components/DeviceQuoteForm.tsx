@@ -105,7 +105,7 @@ export function DeviceQuoteFormContent({ locale, initialBrand = "", variant = "c
         <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-controls={`device-quote-dialog-${id}`}
           onClick={() => dialogRef.current?.showModal()}
           className={isHeader
-            ? "group inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-2.5 text-xs font-semibold text-gold shadow-sm shadow-gold/10 transition-colors hover:border-gold/70 hover:bg-gold/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:px-3 sm:text-sm"
+            ? "group inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-2 text-xs font-semibold text-gold shadow-sm shadow-gold/10 transition-colors hover:border-gold/70 hover:bg-gold/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:px-3 sm:text-sm"
             : "btn-primary shrink-0 justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"}>
           {isHeader && (
             <span aria-hidden="true" className="device-quote-icon hidden size-6 shrink-0 items-center justify-center rounded-lg bg-gold/15 transition-colors group-hover:bg-gold/25 min-[380px]:flex">

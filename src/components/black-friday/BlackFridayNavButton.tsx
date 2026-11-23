@@ -56,7 +56,7 @@ export default function BlackFridayNavButton({
       </span>
       {marker ? (
         <>
-          <span aria-hidden="true" className="flex flex-col pr-0.5 leading-none sm:hidden">
+          <span aria-hidden="true" className="hidden flex-col pr-0.5 leading-none min-[380px]:flex sm:hidden">
             <span className="bf-gold-text hidden whitespace-nowrap text-[8px] min-[420px]:block font-black uppercase tracking-[0.04em] min-[380px]:tracking-[0.12em]">{label}</span>
             <span className="mt-0.5 text-sm font-black tabular-nums text-white">{marker}</span>
           </span>
