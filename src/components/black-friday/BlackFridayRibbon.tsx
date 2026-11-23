@@ -29,7 +29,33 @@ export default function BlackFridayRibbon({
 
   return (
     <div className="relative overflow-hidden border-b border-[color:var(--brass)]/20 bg-[#070709]">
-      <div className="container-page relative flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2.5">
+      {/* Phones: one complete, tappable row. It replaces the Black Friday
+          button that sat cramped next to the logo in the phone header. */}
+      <Link
+        href={`/${lang}/black-friday`}
+        aria-label={lang === "de" ? "Black Week Angebote ansehen" : "View Black Week deals"}
+        className="container-page flex min-h-12 items-center gap-2.5 py-2 sm:hidden"
+      >
+        <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--signal)] text-white shadow-[0_0_14px_rgba(232,23,44,0.45)]">
+          <BlackFridayMark className="size-4" />
+        </span>
+        <span className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-heading">{copy.campaign.short}</span>
+        {!isBefore && maxDiscount ? (
+          <span className="rounded-full bg-[color:var(--signal)] px-2 py-0.5 text-xs font-black tabular-nums text-white">−{maxDiscount} %</span>
+        ) : null}
+        <span className="ml-auto flex items-center gap-2 text-[color:var(--brass)]">
+          {isBefore ? (
+            <span className="font-mono text-xs font-bold">
+              {lang === "de" ? `Start ${currentBlackWeek().de.startShort}` : `Starts ${currentBlackWeek().de.startShort}`}
+            </span>
+          ) : (
+            <Countdown endsAt={endsAt} lang={lang} initialSeconds={initialSeconds} variant="inline" className="text-[color:var(--brass)]" />
+          )}
+          <span aria-hidden="true" className="text-base font-bold">→</span>
+        </span>
+      </Link>
+
+      <div className="container-page relative hidden flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2.5 sm:flex">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[color:var(--brass)]/35 bg-[color:var(--signal)]/10 text-[color:var(--signal)]">
             <BlackFridayMark className="size-3.5" />

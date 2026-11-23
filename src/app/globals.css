@@ -1958,7 +1958,7 @@ html[data-header-reflowed] .bf-sting-layer {
 /* Phones: the Black Friday button sits beside the logo, so the quote button
    becomes an icon. Its label stays available to assistive technology. */
 @media (max-width: 559px) {
-  .site-header[data-has-campaign] .device-quote-label {
+  .site-header[data-has-campaign] .navbar-shell .device-quote-label {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -1967,7 +1967,7 @@ html[data-header-reflowed] .bf-sting-layer {
     white-space: nowrap;
   }
 
-  .site-header[data-has-campaign] .device-quote-icon {
+  .site-header[data-has-campaign] .navbar-shell .device-quote-icon {
     display: flex;
   }
 }
@@ -2010,4 +2010,14 @@ html[data-header-reflowed] .bf-sting-layer {
     animation: none !important;
   }
   .bf-slide-0 { opacity: 1; }
+}
+
+/* Phone menu: the price-request button is a full-width row, not a header icon. */
+.mobile-menu-quote [aria-haspopup="dialog"] {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 9999px;
+}
+.mobile-menu-quote .device-quote-icon {
+  display: flex;
 }

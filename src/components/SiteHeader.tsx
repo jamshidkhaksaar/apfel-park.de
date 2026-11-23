@@ -222,7 +222,9 @@ export default function SiteHeader({
             <Logo href={`/${lang}`} size="xl" className="navbar-logo" sizes={headerLogoSizes} priority />
           </div>
           {campaign ? (
-            <div className="flex shrink-0 items-center sm:pl-2">
+            // Phones show the campaign in the full-width Black Week bar under the
+            // header instead: squeezed next to the logo it looked cut off.
+            <div className="hidden shrink-0 items-center sm:flex sm:pl-2">
               <BlackFridayNavButton
                 href={`/${lang}${campaign.href}`}
                 label="Black Friday"
@@ -271,7 +273,20 @@ export default function SiteHeader({
           {/* Actions */}
           <div className="ml-auto flex h-full min-w-0 flex-wrap items-center justify-end gap-0.5 pr-1 sm:gap-2 sm:pr-3 xl:ml-0">
             <HeaderSearch lang={lang} />
-            <DeviceQuoteForm locale={lang} variant="header" />
+            {/* Phones: the quote dialog moves into the menu, so the header keeps
+                search, shop, cart and menu with full-size touch targets. */}
+            <div className="hidden sm:block">
+              <DeviceQuoteForm locale={lang} variant="header" />
+            </div>
+            <Link
+              href={`/${lang}/store`}
+              className="flex h-11 w-11 items-center justify-center rounded-xl text-gold transition hover:bg-gold/10 xl:hidden"
+              aria-label={lang === "de" ? "Zum Online Shop" : "Go to store"}
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </Link>
             <div className="hidden items-center gap-3 xl:flex">
               <LocaleSwitcher />
               <ThemeToggle />
@@ -397,6 +412,9 @@ export default function SiteHeader({
             );
           })}
           <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
+            <div className="mobile-menu-quote sm:hidden">
+              <DeviceQuoteForm locale={lang} variant="header" />
+            </div>
             <Link
               href={`/${lang}/store`}
               onClick={() => setMobileMenuOpen(false)}

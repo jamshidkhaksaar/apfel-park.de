@@ -235,13 +235,13 @@ export default function ProductDetailExperience({ locale, product, ratingSummary
       <div ref={desktopPurchaseAnchorRef} className="min-w-0 space-y-6 xl:sticky xl:top-28 xl:self-start">
         <div className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-border bg-store-card p-4 sm:p-8">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-border/60 bg-surface/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
+            <span className="rounded-full border border-border/60 bg-surface/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-muted">
               {product.brand || product.category}
             </span>
             {campaignPercent ? (
               <BlackFridayBadge percent={campaignPercent} locale={locale} size="row" className="!rotate-0" />
             ) : activeDiscount ? (
-              <span className="rounded-full bg-sale px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white">
+              <span className="rounded-full bg-sale px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-white">
                 -{activeDiscount}%
               </span>
             ) : null}

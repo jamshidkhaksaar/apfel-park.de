@@ -15,6 +15,12 @@ import StoreQuickAddDrawer from "./StoreQuickAddDrawer";
 import { categoryLabels, conditionLabels, deliveryLabel, stockLabel, stockTone, stockToneClass } from "./store-labels";
 import { useCatalogAddToCart } from "./useCatalogAddToCart";
 
+const conditionDotClass: Record<"new" | "open_box" | "used", string> = {
+  new: "bg-emerald-400",
+  open_box: "bg-amber-300",
+  used: "bg-sky-300",
+};
+
 export default function StoreProductCard({
   product,
   locale,
@@ -87,11 +93,15 @@ export default function StoreProductCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-2 border-t border-border p-3 sm:p-3.5">
-        <p className="flex flex-wrap items-center gap-x-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-          <span className="text-muted-strong">{product.brand || categoryLabels[locale][product.category]}</span>
-          <span aria-hidden="true">·</span>
-          <span>{conditionLabels[locale][product.condition]}</span>
-        </p>
+        {/* Brand and condition on separate lines in normal case: the old single
+            all-caps 11px line wrapped awkwardly and was hard to read on phones. */}
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-strong">{product.brand || categoryLabels[locale][product.category]}</p>
+          <p className="flex items-start gap-1.5 text-xs font-medium leading-4 text-muted-strong">
+            <span aria-hidden="true" className={`mt-[5px] size-1.5 shrink-0 rounded-full ${conditionDotClass[product.condition]}`} />
+            <span>{conditionLabels[locale][product.condition]}</span>
+          </p>
+        </div>
 
         <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-foreground group-hover:text-gold">{product.title}</h3>
 
@@ -105,8 +115,8 @@ export default function StoreProductCard({
           <PriceBlock locale={locale} price={product.price} from={product.priceFrom} compareAtPrice={product.compareAtPrice} lowest30Days={Boolean(product.campaignPercent)} size="card" />
           <div className="mt-2 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <p className={`text-[11px] font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
-              {!isOutOfStock ? <p className="mt-0.5 text-[11px] leading-4 text-muted">{deliveryLabel(locale,product.pickupStock)}</p> : null}
+              <p className={`text-xs font-semibold ${stockToneClass[tone]}`}>{stockLabel(locale, product.stock, tone)}</p>
+              {!isOutOfStock ? <p className="mt-0.5 text-xs leading-4 text-muted">{deliveryLabel(locale,product.pickupStock)}</p> : null}
             </div>
             <AddToCartButton
               onClick={onQuickAdd}
