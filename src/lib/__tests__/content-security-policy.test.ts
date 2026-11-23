@@ -16,6 +16,18 @@ describe('content security policy', () => {
     expect(policy).toContain('https://cloudflareinsights.com');
   });
 
+  it('allows the Pulse (Ciphera) script and event endpoint', async () => {
+    const configuredHeaders = await nextConfig.headers?.();
+    const policy = configuredHeaders
+      ?.flatMap((entry) => entry.headers)
+      .find((header) => header.key === 'Content-Security-Policy')
+      ?.value ?? '';
+    const directive = (name: string) => policy.split('; ').find((part) => part.startsWith(`${name} `)) ?? '';
+
+    expect(directive('script-src').split(' ')).toContain('https://js.ciphera.net');
+    expect(directive('connect-src').split(' ')).toContain('https://pulse-api.ciphera.net');
+  });
+
   it('allows the Ahrefs Web Analytics script and event endpoint', async () => {
     const configuredHeaders = await nextConfig.headers?.();
     const policy = configuredHeaders

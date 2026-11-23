@@ -10,6 +10,7 @@ import { merchantReturnPolicy, organizationShippingService } from "@/lib/schema"
 import { getSeoSettings, splitKeywords } from "@/lib/seo";
 import { siteInfo } from "@/lib/site";
 import { businessSchemaIdentity, googleBusinessProfileUrl } from '@/lib/business-identity';
+import { isTrackedHost } from "@/lib/analytics";
 import { canBootstrapPublicAnalytics, isPrivateAnalyticsPath } from "@/lib/analytics-url";
 import { getMarketingIntegrations, getSiteSocialLinks, getWhatsAppWidgetSettings } from "@/lib/site-settings-server";
 import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
@@ -101,6 +102,10 @@ export default async function RootLayout({
   const [cookieStore, requestHeaders] = await Promise.all([cookies(), headers()]);
   const requestPath = requestHeaders.get("x-apfel-pathname");
   const publicAnalyticsDocument = canBootstrapPublicAnalytics(requestPath);
+  // Pulse (Ciphera) is cookie-free; it only counts the live domain so local
+  // and staging copies never show up as visits.
+  const requestHost = (requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "").split(",")[0].trim().replace(/:\d+$/, "");
+  const pulseAnalytics = publicAnalyticsDocument && isTrackedHost(requestHost);
   const langCookie = cookieStore.get("apfel-lang");
   const pathLocale = requestHeaders.get("x-apfel-pathname")?.match(/^\/(de|en)(?:\/|$)/)?.[1];
   const lang = pathLocale === "en" || pathLocale === "de"
@@ -185,6 +190,12 @@ export default async function RootLayout({
           src="https://analytics.ahrefs.com/analytics.js"
           data-key="LaVNM6b1mT7pRZ+y3FqQEw"
           async
+        /> : null}
+        {pulseAnalytics ? <script
+          id="pulse-analytics"
+          src="https://js.ciphera.net/script.js"
+          data-domain="apfel-park.de"
+          defer
         /> : null}
         <script
           type="application/ld+json"
