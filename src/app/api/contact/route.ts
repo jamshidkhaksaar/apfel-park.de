@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify reCAPTCHA token
-    const captchaResult = await verifyReCaptcha(payload.recaptchaToken, "contact_form");
+    const captchaResult = await verifyReCaptcha(payload.recaptchaToken, "contact_form", { allowGuard: true, headers: request.headers, scope: "contact", text: message });
     if (!captchaResult.success) {
       console.error("[Contact API] reCAPTCHA verification failed:", captchaResult.error);
       return NextResponse.json(

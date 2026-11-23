@@ -159,7 +159,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
   const typingSentRef = useRef(false);
 
   const {
-    token: recaptchaToken,
+    execute: getSecurityToken,
     error: recaptchaError,
     isLoading: recaptchaLoading,
     ReCaptchaComponent,
@@ -312,7 +312,7 @@ export default function ChatWidget({ lang, whatsapp }: ChatWidgetProps) {
           ...form,
           locale: lang,
           sourcePage: pathname,
-          recaptchaToken,
+          recaptchaToken: await getSecurityToken(),
         }),
       });
 

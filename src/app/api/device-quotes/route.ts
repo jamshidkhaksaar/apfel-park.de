@@ -83,7 +83,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ success: false, error: parsed.error }, { status: 400 });
     }
     const lead = parsed.data;
-    const captcha = await verifyReCaptcha(lead.recaptchaToken, "device_quote");
+    const captcha = await verifyReCaptcha(lead.recaptchaToken, "device_quote", { allowGuard: true, headers: request.headers, scope: "device_quote" });
     if (!captcha.success) {
       return NextResponse.json(
         { success: false, error: captcha.error || "security_failed" },

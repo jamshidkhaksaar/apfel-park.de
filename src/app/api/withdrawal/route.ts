@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Input too long" }, { status: 400 });
     }
 
-    const captchaResult = await verifyReCaptcha(payload.recaptchaToken, "withdrawal_form");
+    const captchaResult = await verifyReCaptcha(payload.recaptchaToken, "withdrawal_form", { allowGuard: true, headers: request.headers, scope: "withdrawal" });
     if (!captchaResult.success) {
       console.error("[Withdrawal API] reCAPTCHA verification failed:", captchaResult.error);
       return NextResponse.json(

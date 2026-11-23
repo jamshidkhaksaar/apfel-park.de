@@ -11,6 +11,39 @@
  */
 
 import { createAdminDbClient } from "@/lib/admin-db";
+import { checkGuardToken, isGuardToken } from "@/lib/form-guard";
+import { consumePublicRateLimit } from "@/lib/public-rate-limit";
+
+/**
+ * Public enquiry forms opt in to the cookie-free guard (see form-guard.ts):
+ * without consent they send a guard proof instead of a reCAPTCHA token.
+ */
+export type GuardOptions = {
+  allowGuard: true;
+  headers: Headers;
+  /** Rate-limit bucket, e.g. "contact". */
+  scope: string;
+  /** Free text of the enquiry, checked for link spam. */
+  text?: string;
+};
+
+/** Guard submissions per visitor and form per hour (reCAPTCHA ones keep the route limit). */
+const GUARD_MAX_PER_HOUR = 3;
+
+const verifyGuard = async (token: string, options: GuardOptions): Promise<{ success: boolean; score?: number; error?: string }> => {
+  const check = checkGuardToken(token, options.text ?? "");
+  if (!check.ok) {
+    console.warn(`[form-guard] ${options.scope} rejected: ${check.reason}`);
+    return { success: false, error: "Security verification failed" };
+  }
+  const limit = await consumePublicRateLimit(options.headers, `${options.scope}_guard`, GUARD_MAX_PER_HOUR, 60 * 60);
+  if (!limit.allowed) {
+    console.warn(`[form-guard] ${options.scope} rate limited`);
+    return { success: false, error: "Too many requests" };
+  }
+  console.log(`[form-guard] ${options.scope} accepted without reCAPTCHA (no consent)`);
+  return { success: true };
+};
 
 // Types
 export type ReCaptchaSettings = {
@@ -80,8 +113,14 @@ export const getReCaptchaSettings = async (): Promise<ReCaptchaSettings> => {
  */
 export const verifyReCaptcha = async (
   token: string,
-  action?: string
+  action?: string,
+  guard?: GuardOptions,
 ): Promise<{ success: boolean; score?: number; error?: string }> => {
+  if (isGuardToken(token)) {
+    if (!guard?.allowGuard) return { success: false, error: "Security verification failed" };
+    return verifyGuard(token, guard);
+  }
+
   const settings = await getReCaptchaSettings();
 
   // Skip verification if reCAPTCHA is disabled

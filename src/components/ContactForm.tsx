@@ -35,7 +35,7 @@ function ContactFormContent({ lang }: ContactFormProps) {
   const [status, setStatus] = useState<SubmitStatus>({ type: "idle" });
   const id = useId();
   
-  const { token: recaptchaToken, ReCaptchaComponent } = useReCaptcha("contact_form");
+  const { execute: getSecurityToken, ReCaptchaComponent } = useReCaptcha("contact_form");
 
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -85,7 +85,7 @@ function ContactFormContent({ lang }: ContactFormProps) {
         },
         body: JSON.stringify({
           ...formData,
-          recaptchaToken,
+          recaptchaToken: await getSecurityToken(),
           locale: lang,
         }),
       });

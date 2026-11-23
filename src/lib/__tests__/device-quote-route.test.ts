@@ -68,7 +68,7 @@ describe("POST /api/device-quotes", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ success: true, id: "quote-123" });
     expect(mocks.consumePublicRateLimit).toHaveBeenCalledWith(expect.any(Headers), "device_quote", 5, 15 * 60);
-    expect(mocks.verifyReCaptcha).toHaveBeenCalledWith("captcha-token", "device_quote");
+    expect(mocks.verifyReCaptcha).toHaveBeenCalledWith("captcha-token", "device_quote", expect.objectContaining({ allowGuard: true, scope: "device_quote" }));
     expect(mocks.query).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO device_quote_requests"),
       [

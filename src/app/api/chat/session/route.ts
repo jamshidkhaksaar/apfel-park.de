@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const captchaResult = await verifyReCaptcha(body.recaptchaToken ?? "", "chat_request");
+    const captchaResult = await verifyReCaptcha(body.recaptchaToken ?? "", "chat_request", { allowGuard: true, headers: request.headers, scope: "chat_start", text: String(body.message ?? "") });
     if (!captchaResult.success) {
       return NextResponse.json(
         { success: false, error: captchaResult.error || dictionary.captcha },

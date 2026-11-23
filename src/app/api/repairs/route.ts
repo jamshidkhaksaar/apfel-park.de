@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const captchaResult = await verifyReCaptcha(payload.recaptchaToken, "repair_request");
+    const captchaResult = await verifyReCaptcha(payload.recaptchaToken, "repair_request", { allowGuard: true, headers: request.headers, scope: "repair_request" });
     if (!captchaResult.success) {
       return NextResponse.json(
         {

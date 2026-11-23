@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { CONSENT_EVENT_NAME, readConsentMode, type ConsentMode } from "@/lib/consent";
+import { encodeGuardToken, GUARD_FIELD_NAME } from "@/lib/form-guard";
 
 declare global {
   interface Window {
@@ -20,14 +21,8 @@ type ReCaptchaProps = {
   onLoad?: () => void;
   requireConsent?: boolean;
   executeRef?: { current: (() => Promise<string>) | null };
-};
-
-const getConsentErrorMessage = () => {
-  if (typeof document !== "undefined" && document.documentElement.lang.startsWith("de")) {
-    return "Externer Google-Spamschutz ist erst nach Ihrer Zustimmung verfügbar.";
-  }
-
-  return "External Google spam protection is disabled until consent is granted.";
+  /** Hidden trap input for the cookie-free guard (see form-guard.ts). */
+  trapRef?: { current: HTMLInputElement | null };
 };
 
 /**
@@ -69,7 +64,7 @@ const getReCaptchaSiteKey = async (): Promise<{ siteKey: string; enabled: boolea
  * 
  * The token should be sent with your form submission and verified server-side.
  */
-export default function ReCaptcha({ action, onVerify, onError, onLoad, requireConsent = true, executeRef }: ReCaptchaProps) {
+export default function ReCaptcha({ action, onVerify, onError, onLoad, requireConsent = true, executeRef, trapRef }: ReCaptchaProps) {
   const [siteKey, setSiteKey] = useState<string>("");
   const [enabled, setEnabled] = useState<boolean>(false);
   const [consentMode, setConsentMode] = useState<ConsentMode>(() => readConsentMode());
@@ -79,7 +74,6 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad, requireCo
   const executedRef = useRef(false);
 
   const consentBlocked = Boolean(enabled && siteKey && requireConsent && consentMode !== "external");
-  const consentMessage = consentBlocked ? getConsentErrorMessage() : null;
 
   // Load settings from database
   useEffect(() => {
@@ -118,12 +112,11 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad, requireCo
     };
   }, []);
 
-  // Notify the parent while consent is missing
+  // Without consent Google is never loaded. The form is still usable: at
+  // submit time it sends the cookie-free guard proof instead of a token.
   useEffect(() => {
-    if (consentMessage) {
-      onError?.(consentMessage);
-    }
-  }, [consentMessage, onError]);
+    if (consentBlocked) onVerify("");
+  }, [consentBlocked, onVerify]);
 
   // Load reCAPTCHA script
   useEffect(() => {
@@ -240,23 +233,22 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad, requireCo
     }
   }, [loaded, enabled, siteKey, consentMode, executeReCaptcha, requireConsent]);
 
-  // Don't render anything visible for reCAPTCHA v3
-  // The badge is shown by Google automatically (can be hidden with CSS if disclosed in privacy policy)
-  const displayError = error ?? consentMessage;
-
-  if (displayError) {
-    return (
-      <div className="text-xs text-red-text">
-        {displayError}
-      </div>
-    );
-  }
-
-  if (!enabled) {
-    return null;
-  }
-
-  return null;
+  // Nothing visible for reCAPTCHA v3 (Google shows its own badge). Errors
+  // never block a form: it falls back to the guard proof. Only the hidden
+  // trap field is rendered; people never see or reach it, bots fill it in.
+  if (error) console.warn("[reCAPTCHA]", error);
+  return (
+    <input
+      ref={trapRef}
+      type="text"
+      name={GUARD_FIELD_NAME}
+      tabIndex={-1}
+      autoComplete="off"
+      aria-hidden="true"
+      defaultValue=""
+      className="pointer-events-none absolute -left-[10000px] top-auto h-px w-px overflow-hidden opacity-0"
+    />
+  );
 }
 
 /**
@@ -265,9 +257,22 @@ export default function ReCaptcha({ action, onVerify, onError, onLoad, requireCo
 export function useReCaptcha(action: string, options?: { requireConsent?: boolean }) {
   const [token, setToken] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Never blocks a form any more; kept for the existing form props.
+  const error: string | null = null;
   const executeRef = useRef<(() => Promise<string>) | null>(null);
   const tokenRef = useRef<string>("");
+  const trapRef = useRef<HTMLInputElement | null>(null);
+  const openedAtRef = useRef(0);
+
+  useEffect(() => {
+    openedAtRef.current = Date.now();
+  }, []);
+
+  /** Cookie-free proof used whenever no reCAPTCHA token is available. */
+  const guardToken = useCallback(
+    () => encodeGuardToken(Date.now() - openedAtRef.current, Boolean(trapRef.current?.value)),
+    [],
+  );
 
   const handleVerify = useCallback((newToken: string) => {
     tokenRef.current = newToken;
@@ -275,8 +280,10 @@ export function useReCaptcha(action: string, options?: { requireConsent?: boolea
     setIsLoading(false);
   }, []);
 
+  // Errors (consent missing, script blocked, Google unreachable) are not
+  // shown and do not block: execute() falls back to the guard proof.
   const handleError = useCallback((err: string) => {
-    setError(err);
+    console.warn("[reCAPTCHA]", err);
     setIsLoading(false);
   }, []);
 
@@ -293,21 +300,21 @@ export function useReCaptcha(action: string, options?: { requireConsent?: boolea
    * last known token (or "") if execution fails or Google is unreachable.
    */
   const execute = useCallback(async (): Promise<string> => {
-    if (!executeRef.current) {
-      return tokenRef.current;
+    let token = tokenRef.current;
+    if (executeRef.current) {
+      try {
+        token = await Promise.race([
+          executeRef.current(),
+          new Promise<string>((_, reject) => {
+            setTimeout(() => reject(new Error("reCAPTCHA execute timed out")), 8000);
+          }),
+        ]);
+      } catch {
+        token = tokenRef.current;
+      }
     }
-
-    try {
-      return await Promise.race([
-        executeRef.current(),
-        new Promise<string>((_, reject) => {
-          setTimeout(() => reject(new Error("reCAPTCHA execute timed out")), 8000);
-        }),
-      ]);
-    } catch {
-      return tokenRef.current;
-    }
-  }, []);
+    return token || guardToken();
+  }, [guardToken]);
 
   const ReCaptchaComponent = useCallback(() => (
     <ReCaptcha
@@ -317,6 +324,7 @@ export function useReCaptcha(action: string, options?: { requireConsent?: boolea
       onLoad={handleLoad}
       requireConsent={requireConsent}
       executeRef={executeRef}
+      trapRef={trapRef}
     />
   ), [action, handleVerify, handleError, handleLoad, requireConsent]);
 

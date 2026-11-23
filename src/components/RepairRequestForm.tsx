@@ -166,7 +166,7 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
   const [checkedQuote,setCheckedQuote]=useState<RepairBookingDetails|null>(null);
   const activeQuote=checkedQuote && JSON.stringify(checkedQuote.selection)===JSON.stringify(booking.selection) && checkedQuote.requestedDate===(booking.requestedDate||null) && checkedQuote.preferredTime===(booking.preferredTime||null) && (checkedQuote.coupon?.code||"")===(booking.couponCode||"").toUpperCase() ? checkedQuote:null;
   const [status, setStatus] = useState<SubmitState>({ type: "idle" });
-  const { token: recaptchaToken, error: recaptchaError, isLoading: recaptchaLoading, ReCaptchaComponent } =
+  const { execute: getSecurityToken, isLoading: recaptchaLoading, ReCaptchaComponent } =
     useReCaptcha("repair_request");
 
   const inputClassName =
@@ -221,14 +221,6 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
       return;
     }
 
-    if (recaptchaError) {
-      setStatus({
-        type: "error",
-        message: recaptchaError,
-      });
-      return;
-    }
-
     setStatus({ type: "loading" });
 
     try {
@@ -243,7 +235,7 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
           bookingKey,
           quoteFingerprint:activeQuote?.fingerprint,
           locale: lang,
-          recaptchaToken,
+          recaptchaToken: await getSecurityToken(),
         }),
       });
 
@@ -494,7 +486,6 @@ export default function RepairRequestForm({ lang, catalog }: RepairRequestFormPr
           {status.type === "loading" ? text.submitting : text.submit}
         </button>
 
-        {recaptchaError && <p className="text-xs text-red-text" role="alert">{recaptchaError}</p>}
         <p className="text-xs text-muted">{text.privacy}</p>
         <ReCaptchaComponent />
       </form>

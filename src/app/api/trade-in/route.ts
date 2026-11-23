@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const consent = form.get("consent") === "true";
     if (!name || !email || !brand || !model || !condition || !consent || !isValidEmail(email)) return NextResponse.json({ success: false, error: "invalid_fields" }, { status: 400 });
     if (![name, email, phone, brand, model, storage, condition].every((value) => isValidInputLength(value, 160)) || !isValidInputLength(notes, 3000)) return NextResponse.json({ success: false, error: "too_long" }, { status: 400 });
-    const captcha = await verifyReCaptcha(token, "trade_in");
+    const captcha = await verifyReCaptcha(token, "trade_in", { allowGuard: true, headers: request.headers, scope: "trade_in" });
     if (!captcha.success) return NextResponse.json({ success: false, error: captcha.error || "security_failed" }, { status: 403 });
     const files = form.getAll("images").filter((item): item is File => item instanceof File && item.size > 0);
     if (files.length > 4) return NextResponse.json({ success: false, error: "too_many_images" }, { status: 400 });

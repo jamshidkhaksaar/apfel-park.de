@@ -22,7 +22,7 @@ export default function WithdrawalForm({ lang }: Props) {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmedAt, setConfirmedAt] = useState("");
-  const { token: recaptchaToken, ReCaptchaComponent } = useReCaptcha("withdrawal_form");
+  const { execute: getSecurityToken, ReCaptchaComponent } = useReCaptcha("withdrawal_form");
 
   const inputClass =
     "w-full rounded-xl border border-border/60 bg-surface px-4 py-3 text-foreground placeholder:text-muted/50 focus:border-gold focus:outline-none";
@@ -57,7 +57,7 @@ export default function WithdrawalForm({ lang }: Props) {
           orderNumber,
           receivedDate: receivedDate || undefined,
           reason: reason || undefined,
-          recaptchaToken,
+          recaptchaToken: await getSecurityToken(),
           locale: lang,
         }),
       });
