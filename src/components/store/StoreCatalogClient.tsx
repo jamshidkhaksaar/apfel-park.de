@@ -18,6 +18,7 @@ import StoreCatalogSearch from "./StoreCatalogSearch";
 import StoreFilters from "./StoreFilters";
 import StoreProductCard from "./StoreProductCard";
 import StoreProductRow from "./StoreProductRow";
+import StoreQuickFilters from "./StoreQuickFilters";
 import TrendingProductsCarousel from "./TrendingProductsCarousel";
 
 type StoreView = "grid" | "list";
@@ -240,6 +241,17 @@ export default function StoreCatalogClient({
               {sortOptions(isGerman).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </StoreFilters>
+
+          <StoreQuickFilters
+            lang={lang}
+            facets={facets}
+            activeFilters={activeFilters}
+            activeCategory={activeCategory}
+            lockedCategory={lockedCategory}
+            counts={counts}
+            categoryHref={(category) => buildHref({ category, page: 1 })}
+            onChange={pushParams}
+          />
 
           {chips.length > 0 ? (
             <div className="mb-4 flex flex-wrap items-center gap-2" aria-label={isGerman ? "Aktive Filter" : "Active filters"}>
