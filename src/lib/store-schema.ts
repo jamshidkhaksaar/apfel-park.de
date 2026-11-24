@@ -15,6 +15,7 @@ import type { ProductCondition } from "@/lib/products";
 import {
   listingOfferPolicies,
   offerDeliveryMethods,
+  offerValidFrom,
   schemaAvailability,
   schemaItemCondition,
 } from "@/lib/schema";
@@ -32,6 +33,8 @@ export type CatalogSchemaProduct = {
   price?: number | string;
   stock?: number | null;
   condition?: ProductCondition;
+  /** Listing date; becomes the offer validFrom. */
+  createdAt?: string;
 };
 
 export type CatalogSchemaOptions = {
@@ -92,6 +95,7 @@ export const buildCollectionPageSchema = ({
             url: productUrl,
             priceCurrency: "EUR",
             price: Number.isFinite(price) ? price : 0,
+            ...(offerValidFrom(product.createdAt) ? { validFrom: offerValidFrom(product.createdAt) } : {}),
             itemCondition: schemaItemCondition(product.condition ?? "new"),
             availability: schemaAvailability(product.stock ?? 0),
             seller: { "@id": `${siteInfo.url}/#store` },

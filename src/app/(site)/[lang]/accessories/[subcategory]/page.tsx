@@ -24,6 +24,7 @@ import {
 import {
   listingOfferPolicies,
   offerDeliveryMethods,
+  offerValidFrom,
   schemaAvailability,
   schemaItemCondition,
 } from "@/lib/schema";
@@ -120,6 +121,7 @@ export default async function AccessorySubcategoryPage({
               url: productUrl,
               priceCurrency: "EUR",
               price: product.price,
+              ...(offerValidFrom(product.createdAt) ? { validFrom: offerValidFrom(product.createdAt) } : {}),
               itemCondition: schemaItemCondition(product.condition ?? "new"),
               availability: schemaAvailability(product.stock ?? 0),
               seller: { "@id": `${siteInfo.url}/#store` },

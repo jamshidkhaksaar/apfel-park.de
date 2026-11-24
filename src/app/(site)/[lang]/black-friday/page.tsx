@@ -17,7 +17,12 @@ import { requireLocale } from "@/lib/route-locale";
 import { safeJsonStringify } from "@/lib/security";
 import { isCampaignPagePublic, secondsRemaining } from "@/lib/seasonal-theme";
 import { getEffectiveCampaign } from "@/lib/seasonal-theme-server";
-import { listingOfferPolicies } from "@/lib/schema";
+import {
+  listingOfferPolicies,
+  offerDeliveryMethods,
+  schemaAvailability,
+  schemaItemCondition,
+} from "@/lib/schema";
 import { siteInfo } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -85,26 +90,42 @@ export default async function BlackFridayPage({
     name: `Apfel Park Black Week ${blackFriday.startsAt.slice(0, 4)}`,
     url: pageUrl,
     numberOfItems: cards.length,
-    itemListElement: cards.map((card, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      item: {
-        "@type": "Product",
-        name: card.title,
-        url: `${siteInfo.url}/${locale}/store/${card.slug}`,
-        image: card.image,
-        offers: {
-          "@type": "Offer",
-          price: card.price,
-          priceCurrency: "EUR",
-          // Campaign prices end with the Black Week.
-          priceValidUntil: blackFriday.endsAt.slice(0, 10),
-          availability: card.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-          ...listingOfferPolicies(card.stock),
-          url: `${siteInfo.url}/${locale}/store/${card.slug}`,
+    itemListElement: cards.map((card, index) => {
+      const product = deals[index];
+      const productUrl = `${siteInfo.url}/${locale}/store/${card.slug}`;
+      const description = product?.description || product?.subtitle;
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "Product",
+          name: card.title,
+          // Google's merchant listing report asks for description and a
+          // brand (or GTIN) on every Product it finds, list pages included.
+          ...(description ? { description } : {}),
+          url: productUrl,
+          image: card.image.startsWith("http") ? card.image : `${siteInfo.url}${card.image}`,
+          ...(card.sku ? { sku: card.sku } : {}),
+          ...(product?.mpn ? { mpn: product.mpn } : {}),
+          ...(card.brand ? { brand: { "@type": "Brand", name: card.brand } } : {}),
+          offers: {
+            "@type": "Offer",
+            price: card.price,
+            priceCurrency: "EUR",
+            // The campaign price is valid for the Black Week only, so both
+            // ends of the window are stated.
+            validFrom: blackFriday.startsAt.slice(0, 10),
+            priceValidUntil: blackFriday.endsAt.slice(0, 10),
+            itemCondition: schemaItemCondition(card.condition),
+            availability: schemaAvailability(card.stock),
+            seller: { "@id": `${siteInfo.url}/#store` },
+            availableDeliveryMethod: offerDeliveryMethods,
+            ...listingOfferPolicies(card.stock),
+            url: productUrl,
+          },
         },
-      },
-    })),
+      };
+    }),
   };
   const faqSchema = {
     "@context": "https://schema.org",

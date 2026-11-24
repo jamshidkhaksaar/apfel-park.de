@@ -19,6 +19,7 @@ describe("catalog structured data canonical alignment", () => {
       price: 899,
       stock: 1,
       condition: "open_box" as const,
+      createdAt: "2026-10-02T09:30:00.000Z",
     }],
   };
 
@@ -43,6 +44,11 @@ describe("catalog structured data canonical alignment", () => {
       seller: { "@id": "https://apfel-park.de/#store" },
       availableDeliveryMethod: ["https://schema.org/OnSitePickup", "https://schema.org/ParcelService"],
     });
+  });
+
+  it("states validFrom on listed offers from the listing date", () => {
+    const offer = buildCollectionPageSchema(options).mainEntity.itemListElement[0].item.offers;
+    expect(offer).toMatchObject({ validFrom: "2026-10-02" });
   });
 
   it("gives every listed offer the return policy and, when in stock, shipping (merchant listings)", () => {
