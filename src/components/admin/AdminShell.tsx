@@ -366,6 +366,8 @@ export default function AdminShell({
     ...(user?.role === "admin" || user?.role === "manager" ? tillItems : []),
     { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
     { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: INVENTORY_UNDER_CONSTRUCTION },
+    // Printable stock lists to match the online shop against the store.
+    { label: lang === 'de' ? 'Berichte' : 'Reports', path: '/admin/products/reports', icon: 'document' },
   ];
 
   const managerItems: NavItem[] = [
@@ -409,7 +411,7 @@ export default function AdminShell({
   const groupLabels = lang === "de"
     ? { catalog: "Katalog", ops: "Betrieb", system: "System" }
     : { catalog: "Catalog", ops: "Operations", system: "System" };
-  const catalogPaths = new Set(["/admin", "/admin/products", "/admin/inventory"]);
+  const catalogPaths = new Set(["/admin", "/admin/products", "/admin/inventory", "/admin/products/reports"]);
   const systemPaths = new Set(adminItems.map((item) => item.path));
   const navGroups = [
     { label: groupLabels.catalog, items: navItems.filter((item) => catalogPaths.has(item.path)) },
@@ -578,10 +580,13 @@ export default function AdminShell({
                         </li>
                       );
                     }
+                    const matches = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
+                    // The most specific entry wins: /admin/products/reports lights up
+                    // "Berichte", not "Produkte" as well.
                     const isActive =
                       item.path === '/admin'
                         ? pathname === item.path
-                        : pathname === item.path || pathname.startsWith(`${item.path}/`);
+                        : matches(item.path) && !navItems.some((other) => other.path.length > item.path.length && other.path.startsWith(`${item.path}/`) && matches(other.path));
                     return (
                       <li key={item.path}>
                         <Link
