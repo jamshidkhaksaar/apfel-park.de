@@ -65,13 +65,15 @@ const Row = ({ label, children }: { label: string; children: ReactNode }) => (
 
 const chipClass = (active: boolean) =>
   `inline-flex min-h-11 shrink-0 snap-start items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
+    // A tinted fill with the theme's own text colour: a solid gold fill with
+    // black text became dark-on-red in the Black Week theme.
     active
-      ? "border-gold bg-gold text-black shadow-[0_6px_18px_-10px_rgba(212,167,44,0.9)]"
-      : "border-border bg-surface text-foreground hover:border-gold/60 hover:bg-gold/10"
+      ? "border-2 border-gold bg-gold/20 font-bold text-foreground"
+      : "border-border bg-surface text-foreground hover:border-gold/60"
   }`;
 
 const Count = ({ value, active }: { value: number; active: boolean }) => (
-  <span className={`rounded-full px-1.5 text-xs font-bold tabular-nums ${active ? "bg-black/15 text-black" : "bg-surface-strong text-muted"}`}>{value}</span>
+  <span className={`rounded-full px-1.5 text-xs font-bold tabular-nums ${active ? "bg-foreground/15 text-foreground" : "bg-surface-strong text-muted"}`}>{value}</span>
 );
 
 const countOf = (options: FacetOption[], value: string) =>
