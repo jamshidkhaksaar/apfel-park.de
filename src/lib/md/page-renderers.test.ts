@@ -24,6 +24,7 @@ const deal = (overrides: Partial<Product>): Product => ({
   description: '',
   slug: 'apple-iphone-16-128gb',
   price: 699,
+  category: 'smartphones',
   condition: 'open_box',
   stock: 2,
   ...overrides,
@@ -41,13 +42,18 @@ describe('Black Week markdown twin', () => {
     deals.list = [
       deal({ campaignDeal: { percent: 12, referencePrice: 799, regularPrice: 799 } }),
       deal({ id: 'p2', title: 'Samsung Galaxy S25', slug: 'samsung-galaxy-s25', price: 649, condition: 'new', campaignDeal: { percent: 18, referencePrice: 799, regularPrice: 799 } }),
+      deal({ id: 'p3', title: 'USB-C Ladekabel', slug: 'usb-c-ladekabel', price: 9.49, category: 'accessories', condition: 'new', campaignDeal: { percent: 5, referencePrice: 9.99, regularPrice: 9.99 } }),
     ];
   });
 
   it('lists live deals with price, saving against the 30-day lowest price and product link', async () => {
     const markdown = await render('black-friday', 'de', '/black-friday');
     expect(markdown).toContain('Canonical: https://apfel-park.de/de/black-friday');
-    expect(markdown).toContain('Status: Die Aktion läuft. 2 Angebote verfügbar, bis zu 18 % Ersparnis.');
+    expect(markdown).toContain('Status: Die Aktion läuft. 3 Angebote verfügbar, bis zu 18 % Ersparnis.');
+    // Every deal, grouped by category, smartphones before accessories.
+    expect(markdown).toContain('### Smartphones (2 Angebote, bis zu 18 % Ersparnis)');
+    expect(markdown.indexOf('### Smartphones')).toBeLessThan(markdown.indexOf('USB-C Ladekabel'));
+    expect(markdown).toContain('Versand in ganz Deutschland');
     expect(markdown).toContain('niedrigster Preis der letzten 30 Tage');
     expect(markdown).toContain('https://apfel-park.de/de/store/samsung-galaxy-s25');
     // Biggest saving first.

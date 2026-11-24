@@ -17,6 +17,7 @@ import { GUIDE_PUBLISHED, GUIDE_UPDATED, guideContent } from '@/lib/page-copy/sm
 import { tradeInCopy } from '@/lib/page-copy/trade-in';
 import { withdrawalCopy } from '@/lib/page-copy/withdrawal';
 import { getBlackFridayDeals, getStoreCatalog, type Product } from '@/lib/products';
+import { productCategoryLabel } from '@/lib/schema';
 import { isCampaignPagePublic } from '@/lib/seasonal-theme';
 import { getEffectiveCampaign } from '@/lib/seasonal-theme-server';
 import { siteInfo } from '@/lib/site';
@@ -97,6 +98,35 @@ const dealTable = (locale: MarkdownLocale, deals: readonly Product[], live: bool
     ]),
   );
 
+/**
+ * Answer engines get every deal, not the first screen of the page: the HTML
+ * page shows the top offers, the twin lists the whole campaign by category.
+ */
+const MAX_MARKDOWN_DEALS = 400;
+
+const CATEGORY_ORDER = ['smartphones', 'tablets', 'laptops', 'consoles', 'accessories', 'parts'];
+
+const savingOf = (product: Product): number => product.campaignDeal?.percent ?? 0;
+
+/** One table per category, biggest saving first, with a count and the top saving. */
+const dealsByCategory = (locale: MarkdownLocale, deals: readonly Product[], live: boolean): string => {
+  const groups = new Map<string, Product[]>();
+  for (const deal of deals) groups.set(deal.category, [...(groups.get(deal.category) ?? []), deal]);
+  const order = [...groups.keys()].sort((a, b) => {
+    const rank = (key: string) => { const index = CATEGORY_ORDER.indexOf(key); return index < 0 ? CATEGORY_ORDER.length : index; };
+    return rank(a) - rank(b);
+  });
+  return blocks(...order.map((category) => {
+    const items = [...(groups.get(category) ?? [])].sort((a, b) => savingOf(b) - savingOf(a) || b.price - a.price);
+    const top = Math.max(0, ...items.map(savingOf));
+    const label = productCategoryLabel(locale, category as Product['category']);
+    const count = locale === 'de'
+      ? `${items.length} ${items.length === 1 ? 'Angebot' : 'Angebote'}${live && top ? `, bis zu ${top} % Ersparnis` : ''}`
+      : `${items.length} ${items.length === 1 ? 'offer' : 'offers'}${live && top ? `, saving up to ${top}%` : ''}`;
+    return blocks(`### ${escapeMarkdown(label)} (${count})`, dealTable(locale, items, live));
+  }));
+};
+
 const blackWeekRenderer: PageRenderer = async (locale, path) => {
   const { phase } = await getEffectiveCampaign();
 
@@ -124,7 +154,7 @@ const blackWeekRenderer: PageRenderer = async (locale, path) => {
   const page = blackFridayCopy[locale].page;
   let deals: Product[] = [];
   try {
-    deals = await getBlackFridayDeals(locale, 48);
+    deals = await getBlackFridayDeals(locale, MAX_MARKDOWN_DEALS);
   } catch (error) {
     // The copy and the dates are still worth serving when the catalogue read
     // fails; the deal section then points at the HTML page.
@@ -137,26 +167,25 @@ const blackWeekRenderer: PageRenderer = async (locale, path) => {
     return highest === null ? percent : Math.max(highest, percent);
   }, null);
   const live = !isBefore;
-  const sorted = live
-    ? [...deals].sort((a, b) => (b.campaignDeal?.percent ?? 0) - (a.campaignDeal?.percent ?? 0))
-    : deals;
 
   const facts = locale === 'de'
     ? [
         `Zeitraum: ${dates.de.start} bis ${dates.de.end} ${dates.year} (Ende ${dates.de.end}, 23:59 Uhr)`,
         `Black Friday: ${dates.de.bf} ${dates.year}`,
         live ? `Status: Die Aktion läuft. ${deals.length} Angebote verfügbar${maxDiscount ? `, bis zu ${maxDiscount} % Ersparnis` : ''}.` : `Status: Die Aktion startet am ${dates.de.start}. Bis dahin gelten die regulären Preise.`,
-        'Gilt online (Versand innerhalb Deutschlands) und im Laden in Hamburg-Wilhelmsburg.',
+        'Gilt im Online-Shop mit Versand in ganz Deutschland und bei Abholung im Laden in Hamburg-Wilhelmsburg.',
+        ...(live ? ['Ersparnis gemessen am niedrigsten Preis der letzten 30 Tage. Bei Ersparnissen unter 1 % ist der Aktionspreis bereits eingerechnet, es wird aber kein Prozentwert ausgewiesen.'] : []),
       ]
     : [
         `Period: ${dates.en.start} to ${dates.en.end} ${dates.year} (ends ${dates.en.end}, 23:59 CET)`,
         `Black Friday: ${dates.en.bf} ${dates.year}`,
         live ? `Status: The sale is live. ${deals.length} offers available${maxDiscount ? `, saving up to ${maxDiscount}%` : ''}.` : `Status: The sale starts on ${dates.en.start}. Regular prices apply until then.`,
-        'Valid online (delivery within Germany) and in the Hamburg-Wilhelmsburg store.',
+        'Valid in the online shop with delivery across Germany and for collection in the Hamburg-Wilhelmsburg store.',
+        ...(live ? ['Savings are measured against the lowest price of the previous 30 days. Where the saving is below 1%, the sale price is already applied but no percentage is shown.'] : []),
       ];
 
   const dealsBody = deals.length > 0
-    ? blocks(isBefore ? page.teaserDealsNote : page.dealsNote, dealTable(locale, sorted, live))
+    ? blocks(isBefore ? page.teaserDealsNote : page.dealsNote, dealsByCategory(locale, deals, live))
     : locale === 'de'
       ? `Die Angebotsliste ist gerade nicht abrufbar. Alle Deals stehen auf ${markdownLink('der Black-Week-Seite', canonical(locale, path))}.`
       : `The offer list is temporarily unavailable. All deals are on ${markdownLink('the Black Week page', canonical(locale, path))}.`;
