@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { accessoryTypeLabels, type Locale } from "@/lib/i18n";
 import type { FacetOption, ProductCondition, StoreCatalogCategory, StoreCatalogFacets, StoreCatalogFilters } from "@/lib/products";
@@ -57,7 +57,7 @@ const Row = ({ label, children }: { label: string; children: ReactNode }) => (
   <div role="group" aria-label={label} className="flex items-center gap-2">
     <span className="hidden w-24 shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-muted lg:block">{label}</span>
     {/* Phones: one swipeable line; desktop: chips wrap. */}
-    <div className="-mx-6 flex min-w-0 flex-1 snap-x gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
+    <div data-quick-row className="-mx-6 flex min-w-0 flex-1 snap-x scroll-px-6 gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
       {children}
     </div>
   </div>
@@ -76,6 +76,22 @@ const Count = ({ value, active }: { value: number; active: boolean }) => (
   <span className={`rounded-full px-1.5 text-xs font-bold tabular-nums ${active ? "bg-foreground/15 text-foreground" : "bg-surface-strong text-muted"}`}>{value}</span>
 );
 
+/**
+ * Single choice per row: a chip selects only itself, tapping it again (or
+ * "Alle", value null) clears the row. The full filter panel still allows
+ * combinations.
+ */
+export const applyQuickChoice = (
+  params: URLSearchParams,
+  param: "condition" | "brand" | "atype",
+  value: string | null,
+  current: string[],
+): void => {
+  const selected = value !== null && !(current.length === 1 && current[0].toLowerCase() === value.toLowerCase());
+  if (selected) params.set(param, param === "brand" ? value.toLowerCase() : value);
+  else params.delete(param);
+};
+
 const countOf = (options: FacetOption[], value: string) =>
   options.find((option) => option.value.toLowerCase() === value.toLowerCase())?.count ?? 0;
 
@@ -91,15 +107,23 @@ export default function StoreQuickFilters({
 }: Props) {
   const isGerman = lang === "de";
   const category = lockedCategory ?? activeCategory;
+  const root = useRef<HTMLDivElement>(null);
+  const selectionKey = [category, ...activeFilters.conditions, ...activeFilters.brands, ...activeFilters.accessoryTypes].join("|");
 
-  // Single choice per row: tapping a chip selects only it, tapping it again
-  // (or "Alle") clears the row. The full panel still allows combinations.
+  // On phones each row scrolls sideways, so a chosen chip such as
+  // "Ladegeräte" can sit off-screen. Bring the selected chip into view.
+  useEffect(() => {
+    for (const row of root.current?.querySelectorAll<HTMLElement>("[data-quick-row]") ?? []) {
+      if (row.scrollWidth <= row.clientWidth) continue;
+      const selected = row.querySelector<HTMLElement>('[aria-pressed="true"], [aria-current="page"]');
+      if (!selected || selected === row.firstElementChild) continue;
+      const left = selected.offsetLeft - row.offsetLeft - 24;
+      row.scrollTo({ left: Math.max(0, left), behavior: "auto" });
+    }
+  }, [selectionKey]);
+
   const setSingle = (param: "condition" | "brand" | "atype", value: string | null, current: string[]) =>
-    onChange((next) => {
-      const selected = value !== null && !(current.length === 1 && current[0].toLowerCase() === value.toLowerCase());
-      if (selected) next.set(param, param === "brand" ? value!.toLowerCase() : value!);
-      else next.delete(param);
-    }, `quick_${param}`, value ?? "all");
+    onChange((next) => applyQuickChoice(next, param, value, current), `quick_${param}`, value ?? "all");
 
   const conditions = CONDITION_ORDER.filter((condition) => countOf(facets.conditions, condition) > 0);
   const brands = [...facets.brands]
@@ -120,7 +144,7 @@ export default function StoreQuickFilters({
   const isActive = (list: string[], value: string) => list.some((entry) => entry.toLowerCase() === value.toLowerCase());
 
   return (
-    <div data-store-quick-filters className="mb-5 space-y-2.5">
+    <div ref={root} data-store-quick-filters className="mb-5 space-y-2.5">
       {showCategories ? (
         // The desktop sidebar already lists the categories.
         <nav aria-label={isGerman ? "Kategorien" : "Categories"} className="lg:hidden">
