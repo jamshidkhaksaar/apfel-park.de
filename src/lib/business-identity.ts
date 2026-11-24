@@ -53,6 +53,47 @@ export const legalProvider = (lang: 'de' | 'en'): string => lang === 'de'
 export const legalIdentityText = (lang: 'de' | 'en'): string => `${legalProvider(lang)}, ${businessAddress(lang)}`;
 
 /** Identity fragment shared by the single stable Store/LocalBusiness entity. */
+/**
+ * Two linked entities, because the business serves two different areas:
+ *
+ * - `#online-store` (OnlineStore): the online shop. It ships to every address
+ *   in Germany, so it serves the whole country and is the seller of every
+ *   product offer.
+ * - `#store` (MobilePhoneStore): the shop in the LunaCenter. Repairs, advice,
+ *   trade-in and collection happen there, so it serves Hamburg. It is the
+ *   entity that matches the Google Business Profile.
+ *
+ * Mixing them made Google read the online shop as Hamburg-only.
+ */
+export const onlineStoreSchemaId = `${businessIdentity.website}/#online-store`;
+export const localStoreSchemaId = `${businessIdentity.website}/#store`;
+
+export const onlineStoreSchemaIdentity = {
+  '@type': 'OnlineStore',
+  '@id': onlineStoreSchemaId,
+  name: businessIdentity.tradingName,
+  legalName: legalProvider('de'),
+  url: businessIdentity.website,
+  description: 'Online-Shop von Apfel Park für neue, Open-Box- und geprüfte gebrauchte Smartphones, Tablets, Laptops und Zubehör mit versichertem Versand in ganz Deutschland. Abholung ist kostenlos im Ladengeschäft in Hamburg-Wilhelmsburg möglich.',
+  email: businessIdentity.email,
+  telephone: businessIdentity.phones.store.e164,
+  vatID: businessIdentity.vatId,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: businessIdentity.address.street,
+    postalCode: businessIdentity.address.postalCode,
+    addressLocality: businessIdentity.address.city,
+    addressRegion: 'Hamburg',
+    addressCountry: businessIdentity.address.countryCode,
+  },
+  areaServed: { '@type': 'Country', name: 'Deutschland', identifier: 'DE' },
+  knowsLanguage: ['de', 'en'],
+  currenciesAccepted: 'EUR',
+  paymentAccepted: 'Kreditkarte, Apple Pay, Klarna',
+  // The physical shop belongs to the same business.
+  subOrganization: { '@id': localStoreSchemaId },
+} as const;
+
 export const businessSchemaIdentity = {
   // MobilePhoneStore is a LocalBusiness subtype and the most specific type
   // schema.org offers for this shop, which is what local/AI results key on.
@@ -84,7 +125,13 @@ export const businessSchemaIdentity = {
     addressCountry: businessIdentity.address.countryCode,
   },
   containedInPlace: { '@type': 'ShoppingCenter', name: 'LunaCenter' },
-  areaServed: ['Hamburg-Wilhelmsburg', 'Hamburg', 'Deutschland'],
+  // Local services (repairs, advice, trade-in, collection) are offered in
+  // Hamburg; online sales to the rest of Germany belong to #online-store.
+  areaServed: [
+    { '@type': 'City', name: 'Hamburg' },
+    { '@type': 'Place', name: 'Hamburg-Wilhelmsburg' },
+  ],
+  parentOrganization: { '@id': onlineStoreSchemaId },
   // Coordinates of the verified Google Business Profile listing, read from
   // the Maps place URL. These must match the profile pin, so they are not
   // derived from OpenStreetMap: the LunaCenter building centroid sat about

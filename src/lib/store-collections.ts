@@ -30,9 +30,9 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "iphone-17": {
     de: {
       path: "/iphone-17",
-      title: "iPhone 17 kaufen in Hamburg – Pro, Pro Max & Air",
-      metaTitle: "iPhone 17 kaufen in Hamburg",
-      description: "iPhone 17, Pro, Pro Max und iPhone Air vergleichen: Speicher, Zustand, Preis und Verfügbarkeit. Versand in Deutschland oder Abholung in Hamburg.",
+      title: "iPhone 17 online kaufen – Pro, Pro Max & Air",
+      metaTitle: "iPhone 17 kaufen – Versand in ganz Deutschland",
+      description: "iPhone 17, Pro, Pro Max und iPhone Air vergleichen: Speicher, Zustand, Preis und Verfügbarkeit. Versand in ganz Deutschland oder Abholung in Hamburg.",
       eyebrow: "Apple iPhone 17",
       introTitle: "Welches iPhone 17 passt zu dir?",
       intro: [
@@ -56,8 +56,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/iphone-17",
-      title: "Buy iPhone 17 in Germany – Prices & Stock in Hamburg",
-      metaTitle: "iPhone 17 in Germany – Prices & Hamburg pickup",
+      title: "Buy iPhone 17 in Germany – Prices & Stock",
+      metaTitle: "iPhone 17 in Germany – Prices & Delivery",
       description: "Buy iPhone 17, Air, Pro or Pro Max in Germany. Compare current prices, storage and condition, with delivery across Germany or Hamburg pickup.",
       eyebrow: "Apple iPhone 17",
       introTitle: "Compare iPhone 17 prices and current stock",
@@ -84,9 +84,9 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "iphone-16-pro-max": {
     de: {
       path: "/iphone-16-pro-max",
-      title: "iPhone 16 Pro Max kaufen in Hamburg – Angebote vergleichen",
-      metaTitle: "iPhone 16 Pro Max kaufen in Hamburg – Angebote",
-      description: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in Deutschland oder Abholung in Hamburg.",
+      title: "iPhone 16 Pro Max kaufen – Angebote vergleichen",
+      metaTitle: "iPhone 16 Pro Max kaufen – Angebote & Versand",
+      description: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in ganz Deutschland oder Abholung in Hamburg.",
       eyebrow: "Apple iPhone 16 Pro Max",
       introTitle: "Aktuelle iPhone-16-Pro-Max-Angebote",
       intro: [
@@ -106,8 +106,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/iphone-16-pro-max",
-      title: "iPhone 16 Pro Max in Germany – Hamburg Prices",
-      metaTitle: "iPhone 16 Pro Max in Germany – Hamburg Prices",
+      title: "iPhone 16 Pro Max in Germany – Prices & Stock",
+      metaTitle: "iPhone 16 Pro Max in Germany – Prices & Stock",
       description: "Buy an iPhone 16 Pro Max in Germany. Compare current prices, storage, condition and availability, with delivery across Germany or Hamburg pickup.",
       eyebrow: "Apple iPhone 16 Pro Max",
       introTitle: "Compare current iPhone 16 Pro Max prices",
@@ -130,8 +130,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "xiaomi-redmi-phones": {
     de: {
       path: "/xiaomi-redmi-handys",
-      title: "Xiaomi, Redmi & Poco Handys kaufen in Hamburg",
-      metaTitle: "Xiaomi & Redmi Handys in Hamburg kaufen",
+      title: "Xiaomi, Redmi & Poco Handys online kaufen",
+      metaTitle: "Xiaomi & Redmi Handys online kaufen",
       description: "Xiaomi, Redmi und Poco Smartphones ohne Vertrag vergleichen: Preis, Speicher, Zustand und Verfügbarkeit; Versand oder Abholung in Hamburg.",
       eyebrow: "Xiaomi, Redmi & Poco",
       introTitle: "Xiaomi, Redmi und Poco Modelle vergleichen",
@@ -155,8 +155,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/xiaomi-redmi-handys",
-      title: "Buy Xiaomi, Redmi & Poco Phones in Hamburg",
-      metaTitle: "Buy Xiaomi, Redmi & Poco Phones in Hamburg",
+      title: "Buy Xiaomi, Redmi & Poco Phones Online",
+      metaTitle: "Buy Xiaomi, Redmi & Poco Phones Online",
       description: "Compare Xiaomi, Redmi and Poco phones without a contract by price, storage, condition and availability, with Germany delivery or Hamburg pickup.",
       eyebrow: "Xiaomi, Redmi & Poco",
       introTitle: "Compare Xiaomi, Redmi and Poco phones",
@@ -182,8 +182,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "samsung-phones": {
     de: {
       path: "/samsung-handys",
-      title: "Samsung Handys kaufen – Galaxy ohne Vertrag in Hamburg",
-      metaTitle: "Samsung Handys in Hamburg kaufen",
+      title: "Samsung Handys kaufen – Galaxy ohne Vertrag",
+      metaTitle: "Samsung Handys online kaufen",
       description: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu, Open Box oder gebraucht (Zustand A+) mit transparentem Zustand und Versand in ganz Deutschland.",
       eyebrow: "Samsung Galaxy",
       introTitle: "Samsung Galaxy Modelle direkt vergleichen",
@@ -229,8 +229,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/samsung-handys",
-      title: "Buy Samsung phones – Galaxy without contract in Hamburg",
-      metaTitle: "Buy Samsung Galaxy Phones in Hamburg",
+      title: "Buy Samsung phones – Galaxy without contract",
+      metaTitle: "Buy Samsung Galaxy Phones Online",
       description: "Buy Samsung Galaxy phones without a mobile contract. New, open-box or used (Grade A+) with clear condition and delivery across Germany.",
       eyebrow: "Samsung Galaxy",
       introTitle: "Compare Samsung Galaxy models",
@@ -278,8 +278,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "phones-without-contract": {
     de: {
       path: "/handys-ohne-vertrag",
-      title: "Handys ohne Vertrag günstig kaufen in Hamburg",
-      metaTitle: "Handys ohne Vertrag Hamburg kaufen",
+      title: "Handys ohne Vertrag günstig online kaufen",
+      metaTitle: "Handys ohne Vertrag online kaufen",
       description: "Handys ohne Vertrag von Apple, Samsung, Google und Xiaomi vergleichen. Neu, Open Box oder gebraucht mit Zustandsangabe und Versand in Deutschland.",
       eyebrow: "Smartphones ohne Vertrag",
       introTitle: "Flexibel bleiben und nur das Gerät kaufen",
@@ -319,8 +319,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/handys-ohne-vertrag",
-      title: "Buy phones without a contract in Hamburg",
-      metaTitle: "Buy contract-free phones in Hamburg",
+      title: "Buy phones without a contract online",
+      metaTitle: "Buy contract-free phones online",
       description: "Buy contract-free phones from Apple, Samsung, Google, Xiaomi and more. New, open-box or used with clear condition details and delivery in Germany.",
       eyebrow: "Phones without a contract",
       introTitle: "Stay flexible and buy the device only",
@@ -362,9 +362,9 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "used-phones": {
     de: {
       path: "/gebrauchte-handys",
-      title: "Gebrauchte Handys kaufen in Hamburg – Open Box & Zustand A+",
-      metaTitle: "Gebrauchte Handys in Hamburg kaufen",
-      description: "Gebrauchte und Open-Box-Handys von Apple, Samsung und Google vergleichen: Zustand und Preis, Versand in Deutschland oder Abholung in Hamburg.",
+      title: "Gebrauchte Handys online kaufen – Open Box & Zustand A+",
+      metaTitle: "Gebrauchte Handys online kaufen",
+      description: "Gebrauchte und Open-Box-Handys von Apple, Samsung und Google vergleichen: Zustand und Preis, Versand in ganz Deutschland oder Abholung in Hamburg.",
       eyebrow: "Gebraucht & Open Box",
       introTitle: "Smartphones mit transparentem Zustand",
       intro: [
@@ -384,8 +384,8 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/gebrauchte-handys",
-      title: "Buy Used & Open-Box Phones in Hamburg – Grade A+",
-      metaTitle: "Used & Open-Box Phones in Hamburg",
+      title: "Buy Used & Open-Box Phones Online – Grade A+",
+      metaTitle: "Used & Open-Box Phones Online",
       description: "Compare used and open-box phones from Apple, Samsung, Google and more with clear condition details, delivery in Germany or collection in Hamburg.",
       eyebrow: "Used & Open Box",
       introTitle: "Smartphones with transparent condition",
@@ -408,9 +408,9 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
   "used-iphones": {
     de: {
       path: "/gebrauchte-iphones",
-      title: "Gebrauchte iPhones kaufen – Hamburg & Versand",
-      metaTitle: "Gebrauchte iPhones kaufen in Hamburg",
-      description: "Gebrauchte und Open-Box-iPhones: Zustand, Speicher und Preis vergleichen. Abholung in Hamburg-Wilhelmsburg oder Versand innerhalb Deutschlands.",
+      title: "Gebrauchte iPhones kaufen – Versand in ganz Deutschland",
+      metaTitle: "Gebrauchte iPhones online kaufen",
+      description: "Gebrauchte und Open-Box-iPhones: Zustand, Speicher und Preis vergleichen. Versand in ganz Deutschland oder Abholung in Hamburg-Wilhelmsburg.",
       eyebrow: "Gebrauchte & Open-Box-iPhones",
       introTitle: "Gebrauchtes iPhone passend zu deinem Budget wählen",
       intro: [
@@ -452,9 +452,9 @@ const collections: Record<StoreCollectionId, Record<Locale, CollectionCopy>> = {
     },
     en: {
       path: "/gebrauchte-iphones",
-      title: "Buy Used iPhones – Hamburg & Germany Delivery",
-      metaTitle: "Buy Used iPhones in Hamburg",
-      description: "Buy used and open-box iPhones. Compare condition, storage, price and availability with delivery from Hamburg across Germany.",
+      title: "Buy Used iPhones – Delivery Across Germany",
+      metaTitle: "Buy Used iPhones Online",
+      description: "Buy used and open-box iPhones. Compare condition, storage, price and availability with delivery across Germany or pickup in Hamburg.",
       eyebrow: "Used & Open-Box iPhones",
       introTitle: "Find the right iPhone at a better price",
       intro: [

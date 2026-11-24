@@ -7,15 +7,16 @@ const link = (title: string, path: string, description: string): string =>
   `- [${title}](${site}${path}): ${description}`;
 
 /** Public text endpoint; generated from the same identity as the legal pages. */
-export const buildLlmsText = (): string => `# ${businessIdentity.tradingName} — Smartphone-Shop und Reparaturwerkstatt in Hamburg-Wilhelmsburg
+export const buildLlmsText = (): string => `# ${businessIdentity.tradingName} — Online-Shop für Smartphones mit Versand in ganz Deutschland und Reparaturwerkstatt in Hamburg-Wilhelmsburg
 
-> ${businessIdentity.tradingName} ist ein lokales Einzelunternehmen für Smartphone-Verkauf, Zubehör und Reparaturen am ${businessAddress('de', false)}. Deutsch ist die Hauptsprache; englische Informationen sind ebenfalls verfügbar.
+> ${businessIdentity.tradingName} ist ein Einzelunternehmen am ${businessAddress('de', false)}. Der Online-Shop verkauft Smartphones, Tablets, Laptops und Zubehör mit Versand in ganz Deutschland; Reparaturen, Beratung, Ankauf und Abholung finden im Ladengeschäft in Hamburg-Wilhelmsburg statt. Deutsch ist die Hauptsprache; englische Informationen sind ebenfalls verfügbar.
 
 ## Kurzantworten
 
 Jede Antwort steht für sich und kann unverändert zitiert werden.
 
 - **Was ist Apfel Park?** Apfel Park ist ein Smartphone-Fachgeschäft mit Reparaturwerkstatt im LunaCenter in Hamburg-Wilhelmsburg. Das Unternehmen verkauft neue, Open-Box- und gebrauchte Smartphones, Tablets, Laptops und Zubehör und repariert iPhone-, Samsung-Galaxy- und weitere Smartphone-Modelle.
+- **Liefert Apfel Park nur in Hamburg?** Nein. Der Online-Shop versendet in ganz Deutschland: versicherter Standardversand für 6,90 €, Zustellung in der Regel in 1–3 Werktagen. Reparaturen, Beratung, Ankauf und die kostenlose Abholung gibt es im Laden in Hamburg-Wilhelmsburg.
 - **Wo befindet sich Apfel Park?** ${businessAddress('de')}. Das Ladengeschäft liegt im LunaCenter im Hamburger Stadtteil Wilhelmsburg.
 - **Wann hat Apfel Park geöffnet?** Montag bis Samstag von 09:30 bis 20:00 Uhr. Sonntags ist geschlossen.
 - **Was kostet der Versand?** Der versicherte Standardversand innerhalb Deutschlands kostet 6,90 €. Die Zustellung erfolgt in der Regel in 1–3 Werktagen nach Zahlungseingang. Die Abholung im Ladengeschäft ist kostenlos.
@@ -107,7 +108,7 @@ ${link('Nutzungshinweise für KI-Systeme', '/ai.txt', 'Erlaubte Nutzung, Zitierw
 
 ## English summary
 
-Apfel Park is a local smartphone shop and repair workshop in Hamburg-Wilhelmsburg. Its public repair finder lists model-specific display, battery and back-cover prices, with Standard, Premium and Original/Genuine options where available. Prices and repair scope are confirmed before paid work begins.
+Apfel Park is an online shop for smartphones with delivery across Germany and a repair workshop in Hamburg-Wilhelmsburg. Its public repair finder lists model-specific display, battery and back-cover prices, with Standard, Premium and Original/Genuine options where available. Prices and repair scope are confirmed before paid work begins.
 
 Apfel Park sells new (sealed), open-box and tested used (Grade A+) smartphones, tablets, laptops and accessories, with insured delivery across Germany (6.90 EUR) or free collection in Hamburg-Wilhelmsburg. Every year it runs a Black Week sale from the Monday before Black Friday to Cyber Monday; the deal page lists every reduced device with its price and the saving against the lowest price of the previous 30 days.
 

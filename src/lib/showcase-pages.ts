@@ -112,7 +112,7 @@ export const buildShowcaseSchema = (slug: ShowcaseSlug, lang: Locale): Record<st
   description: showcaseDescription(slug, lang),
   image: `${siteInfo.url}${showcasePages[slug].image}`,
   inLanguage: lang === 'de' ? 'de-DE' : 'en',
-  publisher: { '@id': `${siteInfo.url}/#store` },
+  publisher: { '@id': `${siteInfo.url}/#online-store` },
   citation: showcasePages[slug].source,
   breadcrumb: {
     '@type': 'BreadcrumbList',

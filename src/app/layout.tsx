@@ -9,7 +9,7 @@ import { safeJsonStringify } from "@/lib/security";
 import { merchantReturnPolicy, organizationShippingService } from "@/lib/schema";
 import { getSeoSettings, splitKeywords } from "@/lib/seo";
 import { siteInfo } from "@/lib/site";
-import { businessSchemaIdentity, googleBusinessProfileUrl } from '@/lib/business-identity';
+import { businessSchemaIdentity, googleBusinessProfileUrl, onlineStoreSchemaId, onlineStoreSchemaIdentity } from '@/lib/business-identity';
 import { isTrackedHost } from "@/lib/analytics";
 import { canBootstrapPublicAnalytics, isPrivateAnalyticsPath } from "@/lib/analytics-url";
 import { getMarketingIntegrations, getSiteSocialLinks, getWhatsAppWidgetSettings } from "@/lib/site-settings-server";
@@ -143,30 +143,31 @@ export default async function RootLayout({
         image: normalizeImageUrl(branding?.ogImage ?? ""),
         logo: normalizeImageUrl(branding?.logo ?? ""),
         currenciesAccepted: "EUR",
-        hasMerchantReturnPolicy: merchantReturnPolicy(),
-        hasShippingService: organizationShippingService(),
         openingHoursSpecification: [{
           "@type": "OpeningHoursSpecification",
           dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
           opens: "09:30",
           closes: "20:00",
         }],
-
-        areaServed: {
-          "@type": "City",
-          name: "Hamburg",
-        },
         hasMap: siteInfo.map.linkUrl,
         // The Google Business Profile is the strongest public corroboration of
         // this entity, so it belongs in sameAs alongside the social profiles.
         sameAs: [...new Set([googleBusinessProfileUrl, ...Object.values(socialLinks)])],
       },
       {
+        ...onlineStoreSchemaIdentity,
+        logo: normalizeImageUrl(branding?.logo ?? ""),
+        image: normalizeImageUrl(branding?.ogImage ?? ""),
+        hasMerchantReturnPolicy: merchantReturnPolicy(),
+        hasShippingService: organizationShippingService(),
+        sameAs: [...new Set(Object.values(socialLinks))],
+      },
+      {
         "@type": "WebSite",
         "@id": `${siteInfo.url}/#website`,
         name: siteInfo.name,
         url: siteInfo.url,
-        publisher: { "@id": `${siteInfo.url}/#store` },
+        publisher: { "@id": onlineStoreSchemaId },
         inLanguage: ["de-DE", "en-DE"],
       },
     ],

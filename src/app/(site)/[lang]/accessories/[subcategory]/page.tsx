@@ -124,7 +124,7 @@ export default async function AccessorySubcategoryPage({
               ...(offerValidFrom(product.createdAt) ? { validFrom: offerValidFrom(product.createdAt) } : {}),
               itemCondition: schemaItemCondition(product.condition ?? "new"),
               availability: schemaAvailability(product.stock ?? 0),
-              seller: { "@id": `${siteInfo.url}/#store` },
+              seller: { "@id": `${siteInfo.url}/#online-store` },
               availableDeliveryMethod: offerDeliveryMethods,
               ...listingOfferPolicies(product.stock),
             },

@@ -118,7 +118,7 @@ export default async function BlackFridayPage({
             priceValidUntil: blackFriday.endsAt.slice(0, 10),
             itemCondition: schemaItemCondition(card.condition),
             availability: schemaAvailability(card.stock),
-            seller: { "@id": `${siteInfo.url}/#store` },
+            seller: { "@id": `${siteInfo.url}/#online-store` },
             availableDeliveryMethod: offerDeliveryMethods,
             ...listingOfferPolicies(card.stock),
             url: productUrl,

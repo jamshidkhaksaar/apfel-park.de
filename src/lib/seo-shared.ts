@@ -189,12 +189,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "weekly",
     defaultTitle: {
-      de: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen in Hamburg",
-      en: "Buy New, Open Box & Used (Grade A+) Smartphones in Hamburg",
+      de: "Smartphones neu, Open Box & gebraucht (Zustand A+) online kaufen",
+      en: "Buy New, Open Box & Used (Grade A+) Smartphones Online",
     },
     defaultDescription: {
-      de: "Smartphones von Apple, Samsung und Xiaomi: Neu (Versiegelt), Neu – Open Box oder Gebraucht – Zustand A+ kaufen. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
-      en: "Smartphones from Apple, Samsung and Xiaomi: New (Sealed), New – Open Box or Used – Grade A+. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
+      de: "Smartphones von Apple, Samsung und Xiaomi: Neu (Versiegelt), Neu – Open Box oder Gebraucht – Zustand A+ kaufen. Versicherter Versand in ganz Deutschland in 1–3 Werktagen oder Abholung im LunaCenter in Hamburg-Wilhelmsburg.",
+      en: "Smartphones from Apple, Samsung and Xiaomi: New (Sealed), New – Open Box or Used – Grade A+. Insured delivery across Germany in 1–3 business days or collection at the LunaCenter in Hamburg-Wilhelmsburg.",
     },
     defaultKeywords: {
       de: "Handy kaufen Hamburg, Smartphones Hamburg, iPhone kaufen Hamburg, Samsung kaufen Hamburg, Open Box Handy Hamburg, Zustand A+ Smartphone, Handy Abholung LunaCenter",
@@ -231,8 +231,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: showcasePages["iphone-18-pro"].name + " entdecken | Apfel Park Hamburg",
-      en: showcasePages["iphone-18-pro"].name + " overview | Apfel Park Hamburg",
+      de: showcasePages["iphone-18-pro"].name + " entdecken | Apfel Park",
+      en: showcasePages["iphone-18-pro"].name + " overview | Apfel Park",
     },
     defaultDescription: {
       de: showcaseDescription("iphone-18-pro", "de"),
@@ -250,8 +250,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: showcasePages["iphone-18-pro-max"].name + " entdecken | Apfel Park Hamburg",
-      en: showcasePages["iphone-18-pro-max"].name + " overview | Apfel Park Hamburg",
+      de: showcasePages["iphone-18-pro-max"].name + " entdecken | Apfel Park",
+      en: showcasePages["iphone-18-pro-max"].name + " overview | Apfel Park",
     },
     defaultDescription: {
       de: showcaseDescription("iphone-18-pro-max", "de"),
@@ -269,8 +269,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: showcasePages["iphone-duo"].name + " entdecken | Apfel Park Hamburg",
-      en: showcasePages["iphone-duo"].name + " overview | Apfel Park Hamburg",
+      de: showcasePages["iphone-duo"].name + " entdecken | Apfel Park",
+      en: showcasePages["iphone-duo"].name + " overview | Apfel Park",
     },
     defaultDescription: {
       de: showcaseDescription("iphone-duo", "de"),
@@ -288,8 +288,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: showcasePages["galaxy-z-fold-8"].name + " entdecken | Apfel Park Hamburg",
-      en: showcasePages["galaxy-z-fold-8"].name + " overview | Apfel Park Hamburg",
+      de: showcasePages["galaxy-z-fold-8"].name + " entdecken | Apfel Park",
+      en: showcasePages["galaxy-z-fold-8"].name + " overview | Apfel Park",
     },
     defaultDescription: {
       de: showcaseDescription("galaxy-z-fold-8", "de"),
@@ -307,8 +307,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: showcasePages["galaxy-z-fold-8-ultra"].name + " entdecken | Apfel Park Hamburg",
-      en: showcasePages["galaxy-z-fold-8-ultra"].name + " overview | Apfel Park Hamburg",
+      de: showcasePages["galaxy-z-fold-8-ultra"].name + " entdecken | Apfel Park",
+      en: showcasePages["galaxy-z-fold-8-ultra"].name + " overview | Apfel Park",
     },
     defaultDescription: {
       de: showcaseDescription("galaxy-z-fold-8-ultra", "de"),
@@ -326,8 +326,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: showcasePages["pixel-11"].name + " entdecken | Apfel Park Hamburg",
-      en: showcasePages["pixel-11"].name + " overview | Apfel Park Hamburg",
+      de: showcasePages["pixel-11"].name + " entdecken | Apfel Park",
+      en: showcasePages["pixel-11"].name + " overview | Apfel Park",
     },
     defaultDescription: {
       de: showcaseDescription("pixel-11", "de"),
@@ -345,8 +345,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.96,
     changeFrequency: "daily",
     defaultTitle: {
-      de: showcasePages["pixel-11-pro-fold"].name + " entdecken | Apfel Park Hamburg",
-      en: showcasePages["pixel-11-pro-fold"].name + " overview | Apfel Park Hamburg",
+      de: showcasePages["pixel-11-pro-fold"].name + " entdecken | Apfel Park",
+      en: showcasePages["pixel-11-pro-fold"].name + " overview | Apfel Park",
     },
     defaultDescription: {
       de: showcaseDescription("pixel-11-pro-fold", "de"),
@@ -364,11 +364,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.94,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "iPhone 17 kaufen in Hamburg",
-      en: "iPhone 17 in Germany – Prices & Hamburg pickup",
+      de: "iPhone 17 kaufen – Versand in ganz Deutschland",
+      en: "iPhone 17 in Germany – Prices & Delivery",
     },
     defaultDescription: {
-      de: "iPhone 17, Pro, Pro Max und iPhone Air vergleichen: Speicher, Zustand, Preis und Verfügbarkeit. Versand in Deutschland oder Abholung in Hamburg.",
+      de: "iPhone 17, Pro, Pro Max und iPhone Air vergleichen: Speicher, Zustand, Preis und Verfügbarkeit. Versand in ganz Deutschland oder Abholung in Hamburg.",
       en: "Buy iPhone 17, Air, Pro or Pro Max in Germany. Compare current prices, storage and condition, with delivery across Germany or Hamburg pickup.",
     },
     defaultKeywords: {
@@ -383,11 +383,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.94,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "iPhone 16 Pro Max kaufen in Hamburg – Angebote",
-      en: "iPhone 16 Pro Max in Germany – Hamburg Prices",
+      de: "iPhone 16 Pro Max kaufen – Angebote & Versand",
+      en: "iPhone 16 Pro Max in Germany – Prices & Stock",
     },
     defaultDescription: {
-      de: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in Deutschland oder Abholung in Hamburg.",
+      de: "iPhone 16 Pro Max Angebote mit transparentem Zustand, Speicher, Preis und Verfügbarkeit vergleichen. Versand in ganz Deutschland oder Abholung in Hamburg.",
       en: "Buy an iPhone 16 Pro Max in Germany. Compare current prices, storage, condition and availability, with delivery across Germany or Hamburg pickup.",
     },
     defaultKeywords: {
@@ -403,8 +403,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.92,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Samsung Handys in Hamburg kaufen",
-      en: "Buy Samsung Galaxy Phones in Hamburg",
+      de: "Samsung Handys online kaufen",
+      en: "Buy Samsung Galaxy Phones Online",
     },
     defaultDescription: {
       de: "Samsung Galaxy Handys ohne Vertrag kaufen. Neu, Open Box oder gebraucht (Zustand A+) mit transparentem Zustand und Versand in ganz Deutschland.",
@@ -423,8 +423,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Xiaomi & Redmi Handys in Hamburg kaufen",
-      en: "Buy Xiaomi, Redmi & Poco Phones in Hamburg",
+      de: "Xiaomi & Redmi Handys online kaufen",
+      en: "Buy Xiaomi, Redmi & Poco Phones Online",
     },
     defaultDescription: {
       de: "Xiaomi, Redmi und Poco Smartphones ohne Vertrag vergleichen: Preis, Speicher, Zustand und Verfügbarkeit; Versand oder Abholung in Hamburg.",
@@ -443,8 +443,8 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.92,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Handys ohne Vertrag Hamburg kaufen",
-      en: "Buy contract-free phones in Hamburg",
+      de: "Handys ohne Vertrag online kaufen",
+      en: "Buy contract-free phones online",
     },
     defaultDescription: {
       de: "Handys ohne Vertrag von Apple, Samsung, Google und Xiaomi vergleichen. Neu, Open Box oder gebraucht mit Zustandsangabe und Versand in Deutschland.",
@@ -463,11 +463,11 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.92,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Gebrauchte Handys in Hamburg kaufen",
-      en: "Used & Open-Box Phones in Hamburg",
+      de: "Gebrauchte Handys online kaufen",
+      en: "Used & Open-Box Phones Online",
     },
     defaultDescription: {
-      de: "Gebrauchte und Open-Box-Handys von Apple, Samsung und Google vergleichen: Zustand und Preis, Versand in Deutschland oder Abholung in Hamburg.",
+      de: "Gebrauchte und Open-Box-Handys von Apple, Samsung und Google vergleichen: Zustand und Preis, Versand in ganz Deutschland oder Abholung in Hamburg.",
       en: "Compare used and open-box phones from Apple, Samsung, Google and more with clear condition details, delivery in Germany or collection in Hamburg.",
     },
     defaultKeywords: {
@@ -483,12 +483,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.93,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Gebrauchte iPhones kaufen in Hamburg",
-      en: "Buy Used iPhones in Hamburg",
+      de: "Gebrauchte iPhones online kaufen",
+      en: "Buy Used iPhones Online",
     },
     defaultDescription: {
-      de: "Gebrauchte und Open-Box-iPhones: Zustand, Speicher und Preis vergleichen. Abholung in Hamburg-Wilhelmsburg oder Versand innerhalb Deutschlands.",
-      en: "Buy used and open-box iPhones. Compare condition, storage, price and availability with delivery from Hamburg across Germany.",
+      de: "Gebrauchte und Open-Box-iPhones: Zustand, Speicher und Preis vergleichen. Versand in ganz Deutschland oder Abholung in Hamburg-Wilhelmsburg.",
+      en: "Buy used and open-box iPhones. Compare condition, storage, price and availability with delivery across Germany or pickup in Hamburg.",
     },
     defaultKeywords: {
       de: "iPhone gebraucht kaufen, gebrauchte iPhones, gebrauchtes Apple iPhone",
@@ -578,12 +578,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     priority: 0.9,
     changeFrequency: "daily",
     defaultTitle: {
-      de: "Smartphones, Tablets & Zubehör in Hamburg – neu, Open Box & gebraucht (Zustand A+) kaufen",
-      en: "Buy New, Open Box & Used (Grade A+) Smartphones & Tablets in Hamburg",
+      de: "Smartphones, Tablets & Zubehör online kaufen – neu, Open Box & gebraucht (Zustand A+)",
+      en: "Buy New, Open Box & Used (Grade A+) Smartphones & Tablets Online",
     },
     defaultDescription: {
-      de: "Smartphones, Tablets und Zubehör bei Apfel Park kaufen: Neu (Versiegelt), Neu – Open Box oder Gebraucht – Zustand A+. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
-      en: "Buy smartphones, tablets and accessories at Apfel Park: New (Sealed), New – Open Box or Used – Grade A+. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get insured delivery in 1–3 business days.",
+      de: "Smartphones, Tablets und Zubehör bei Apfel Park kaufen: Neu (Versiegelt), Neu – Open Box oder Gebraucht – Zustand A+. Versicherter Versand in ganz Deutschland in 1–3 Werktagen oder Abholung im LunaCenter in Hamburg-Wilhelmsburg.",
+      en: "Buy smartphones, tablets and accessories at Apfel Park: New (Sealed), New – Open Box or Used – Grade A+. Insured delivery across Germany in 1–3 business days or collection at the LunaCenter in Hamburg-Wilhelmsburg.",
     },
     defaultKeywords: {
       de: "Online Shop Hamburg, Smartphones kaufen Hamburg, Open Box iPhone, Zustand A+ Handy, Zubehör online Hamburg",
@@ -600,12 +600,12 @@ export const seoRouteDefinitions: SeoRouteDefinition[] = [
     // The title leads with the term people actually type; English keeps
     // "open box", since B-Ware means nothing to an English reader.
     defaultTitle: {
-      de: "B-Ware & Open-Box Handys kaufen in Hamburg",
-      en: "Buy Open-Box Phones & Tablets in Hamburg",
+      de: "B-Ware & Open-Box Handys online kaufen",
+      en: "Buy Open-Box Phones & Tablets Online",
     },
     defaultDescription: {
-      de: "B-Ware und Open-Box Smartphones bei Apfel Park Hamburg mit klar ausgewiesenem Zustand, Preis und Verfügbarkeit.",
-      en: "What does Open Box mean? See current open-box devices with clearly stated condition, price and availability at Apfel Park Hamburg.",
+      de: "B-Ware und Open-Box Smartphones bei Apfel Park mit klar ausgewiesenem Zustand, Preis und Verfügbarkeit – Versand in ganz Deutschland.",
+      en: "What does Open Box mean? See current open-box devices with clearly stated condition, price and availability at Apfel Park, with delivery across Germany.",
     },
     defaultKeywords: {
       de: "B-Ware Handy, B Ware Smartphone, B-Ware Hamburg, Open Box iPhone, Open Box Smartphone, iPhone günstiger Hamburg",

@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { businessAddress, businessIdentity, businessSchemaIdentity, legalIdentityText } from '../business-identity';
+import { businessAddress, businessIdentity, businessSchemaIdentity, legalIdentityText, onlineStoreSchemaIdentity } from '../business-identity';
 import { withBusinessEmailIdentity } from '../business-email-identity';
 import { getDictionary } from '../i18n';
 import { buildLlmsText } from '../llms';
@@ -42,7 +42,12 @@ describe('canonical public business identity', () => {
     expect(businessSchemaIdentity.founder).toEqual({ '@type': 'Person', name: 'Bismaillah Safi' });
     expect(businessSchemaIdentity.containedInPlace).toEqual({ '@type': 'ShoppingCenter', name: 'LunaCenter' });
     expect(businessSchemaIdentity.address.addressRegion).toBe('Hamburg');
-    expect(businessSchemaIdentity.areaServed).toEqual(['Hamburg-Wilhelmsburg', 'Hamburg', 'Deutschland']);
+    // The physical shop serves Hamburg; online sales to all of Germany belong
+    // to the linked OnlineStore entity.
+    expect(businessSchemaIdentity.areaServed).toEqual([{ '@type': 'City', name: 'Hamburg' }, { '@type': 'Place', name: 'Hamburg-Wilhelmsburg' }]);
+    expect(businessSchemaIdentity.parentOrganization).toEqual({ '@id': 'https://apfel-park.de/#online-store' });
+    expect(onlineStoreSchemaIdentity['@type']).toBe('OnlineStore');
+    expect(onlineStoreSchemaIdentity.areaServed).toEqual({ '@type': 'Country', name: 'Deutschland', identifier: 'DE' });
     // NAP alignment: the landmark is containedInPlace, never appended to the
     // street, which would read as a different address to Google.
     expect(businessSchemaIdentity.address.streetAddress).toBe('Wilhelm-Strauß-Weg 2b');

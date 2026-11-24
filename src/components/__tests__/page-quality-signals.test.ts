@@ -23,7 +23,7 @@ describe("page quality signals", () => {
       expect(html.match(/<h1\b/g)).toHaveLength(1);
     }
     const home = renderToStaticMarkup(createElement(BlackFridayHero, { ...heroProps, variant: "home" }));
-    expect(home).toContain("iPhone &amp; Smartphone kaufen in Hamburg bei Apfel Park");
+    expect(home).toContain("iPhone &amp; Smartphone online kaufen bei Apfel Park – Versand in ganz Deutschland");
   });
 
   it("shows the guide's author and update date, matching its Article schema", async () => {

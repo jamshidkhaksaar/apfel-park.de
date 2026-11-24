@@ -41,7 +41,9 @@ describe("store collections", () => {
 
   it('grounds iPhone battery and activation guidance in manufacturer support', () => {
     const copy = getStoreCollectionCopy('used-iphones', 'de');
-    expect(copy.metaTitle).toContain('Hamburg');
+    // Online sales ship across Germany; Hamburg is the pickup option.
+    expect(copy.metaTitle).not.toContain('Hamburg');
+    expect(copy.description).toContain('ganz Deutschland');
     expect(copy.sources?.[0].href).toBe('https://support.apple.com/de-de/104999');
     expect(copy.faq.some(item => item.answer.includes('Mindestwert'))).toBe(true);
     expect(copy.faq.some(item => item.answer.includes('Aktivierungssperre'))).toBe(true);

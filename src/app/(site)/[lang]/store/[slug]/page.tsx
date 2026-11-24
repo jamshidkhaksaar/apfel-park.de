@@ -144,11 +144,11 @@ export const generateMetadata = async ({
   const seoDescription = compactText(
     (product.stock ?? 0) <= 0
       ? locale === "de"
-        ? `${descriptiveName}: derzeit ausverkauft. ${conditionLabel}, geprüft, mit Garantie. Artikeldetails und Verfügbarkeit bei Apfel Park Hamburg.`
-        : `${descriptiveName}: currently out of stock. ${conditionLabel}, tested, with warranty. Product details and availability from Apfel Park Hamburg.`
+        ? `${descriptiveName}: derzeit ausverkauft. ${conditionLabel}, geprüft, mit Garantie. Artikeldetails und Verfügbarkeit bei Apfel Park.`
+        : `${descriptiveName}: currently out of stock. ${conditionLabel}, tested, with warranty. Product details and availability from Apfel Park.`
       : locale === "de"
-        ? `${descriptiveName} für ${price}: ${conditionLabel}, geprüft, mit Garantie. Artikel ${reference}. Abholung in Hamburg oder Versand in Deutschland.`
-        : `${descriptiveName} for ${price}: ${conditionLabel}, tested, with warranty. Item ${reference}. Hamburg pickup or shipping in Germany.`,
+        ? `${descriptiveName} für ${price}: ${conditionLabel}, geprüft, mit Garantie. Artikel ${reference}. Versand in ganz Deutschland oder Abholung in Hamburg.`
+        : `${descriptiveName} for ${price}: ${conditionLabel}, tested, with warranty. Item ${reference}. Shipping across Germany or pickup in Hamburg.`,
     155,
   );
 
@@ -285,7 +285,7 @@ export default async function ProductDetailPage({
             url: `${siteInfo.url}/${locale}/store/${product.slug}`,
             itemCondition: schemaItemCondition(product.condition),
             availableDeliveryMethod: offerDeliveryMethods,
-            seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
+            seller: { "@type": "Organization", "@id": `${siteInfo.url}/#online-store` },
             hasMerchantReturnPolicy: merchantReturnPolicy(),
             shippingDetails: isOutOfStock ? undefined : offerShippingDetails(),
           },
@@ -323,7 +323,7 @@ export default async function ProductDetailPage({
                 url: `${siteInfo.url}/${locale}/store/${product.slug}?variant=${encodeURIComponent(variantToken)}`,
                 itemCondition: schemaItemCondition(product.condition),
                 availableDeliveryMethod: offerDeliveryMethods,
-                seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
+                seller: { "@type": "Organization", "@id": `${siteInfo.url}/#online-store` },
                 hasMerchantReturnPolicy: merchantReturnPolicy(),
                 shippingDetails: stock && stock > 0 ? offerShippingDetails() : undefined,
               },
@@ -341,7 +341,7 @@ export default async function ProductDetailPage({
             url: `${siteInfo.url}/${locale}/store/${product.slug}`,
             itemCondition: schemaItemCondition(product.condition),
             availableDeliveryMethod: offerDeliveryMethods,
-            seller: { "@type": "Organization", "@id": `${siteInfo.url}/#store` },
+            seller: { "@type": "Organization", "@id": `${siteInfo.url}/#online-store` },
             hasMerchantReturnPolicy: merchantReturnPolicy(),
             shippingDetails: isOutOfStock ? undefined : offerShippingDetails(),
           },

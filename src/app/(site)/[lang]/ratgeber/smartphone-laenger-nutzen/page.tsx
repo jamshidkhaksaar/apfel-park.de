@@ -51,7 +51,7 @@ export default async function SmartphoneLongevityGuidePage({ params }: { params:
       url: `${siteInfo.url}/${locale}/about`,
       worksFor: { "@id": `${siteInfo.url}/#store` },
     },
-    publisher: { "@id": `${siteInfo.url}/#store` },
+    publisher: { "@id": `${siteInfo.url}/#online-store` },
     mainEntityOfPage: { "@type": "WebPage", "@id": pageUrl },
   };
   const breadcrumbJsonLd = {

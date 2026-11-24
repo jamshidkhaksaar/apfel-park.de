@@ -94,9 +94,9 @@ export const dictionary = {
     },
     meta: {
       home: {
-        title: "iPhone & Smartphone kaufen Hamburg",
+        title: "iPhone & Smartphone online kaufen – Reparatur in Hamburg",
         description:
-          `Smartphones & iPhones in Hamburg: neu, Open Box & gebraucht mit Garantie. Sofort abholbar oder schneller Versand. Tel. ${businessIdentity.phones.store.de}.`,
+          `iPhones & Smartphones neu, Open Box & gebraucht mit Garantie online kaufen – versicherter Versand in ganz Deutschland oder Abholung in Hamburg-Wilhelmsburg. Reparatur vor Ort. Tel. ${businessIdentity.phones.store.de}.`,
       },
       services: {
         title: "Services & Reparatur Hamburg",
@@ -109,29 +109,29 @@ export const dictionary = {
           "Modellbezogene Reparaturpreise für iPhone und Samsung in Hamburg-Wilhelmsburg: Display in Standard, Premium oder Original, Akkutausch und Rückcover.",
       },
       accessories: {
-        title: "Handy-Zubehör in Hamburg – neu & Open Box kaufen",
+        title: "Handy-Zubehör online kaufen – neu & Open Box",
         description:
-          "Hüllen, Panzerglas, Ladegeräte, Kabel und Kopfhörer für iPhone, Samsung und mehr – neu oder Open Box. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
+          "Hüllen, Panzerglas, Ladegeräte, Kabel und Kopfhörer für iPhone, Samsung und mehr – neu oder Open Box. Versand in ganz Deutschland in 1–3 Werktagen oder Abholung im LunaCenter in Hamburg-Wilhelmsburg.",
       },
       smartphones: {
-        title: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen in Hamburg",
+        title: "Smartphones neu, Open Box & gebraucht (Zustand A+) online kaufen",
         description:
-          "Smartphones von Apple, Samsung und Xiaomi: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+) – Abholung im LunaCenter Wilhelmsburg oder versicherter Versand in 1–3 Werktagen.",
+          "Smartphones von Apple, Samsung und Xiaomi: neu versiegelt, Open Box oder geprüft gebraucht (Zustand A+) – versicherter Versand in ganz Deutschland in 1–3 Werktagen oder Abholung im LunaCenter Wilhelmsburg.",
       },
       tablets: {
-        title: "Tablets & iPads in Hamburg – Open Box & gebraucht",
+        title: "Tablets & iPads online kaufen – Open Box & gebraucht",
         description:
-          "Tablets und iPads Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Abholung im LunaCenter in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
+          "Tablets und iPads Open Box oder geprüft gebraucht (Zustand A+) mit Garantie. Versand in ganz Deutschland in 1–3 Werktagen oder Abholung im LunaCenter in Hamburg-Wilhelmsburg.",
       },
       gaming: {
-        title: "Gaming & Konsolen Zubehör Hamburg",
+        title: "Gaming- & Konsolen-Zubehör online kaufen",
         description:
-          "Gaming-Zubehör bei Apfel Park in Hamburg-Wilhelmsburg. Konsolen folgen in Kürze – Controller, Kabel und Zubehör gibt es schon jetzt im Laden.",
+          "Gaming-Zubehör online bei Apfel Park mit Versand in ganz Deutschland. Konsolen folgen in Kürze – Controller, Kabel und Zubehör gibt es schon jetzt.",
       },
       laptops: {
-        title: "Laptops & MacBooks in Hamburg – Open Box",
+        title: "Laptops & MacBooks online kaufen – Open Box",
         description:
-          "MacBooks und Windows-Laptops als Open Box mit Garantie. Abholung in Hamburg-Wilhelmsburg oder Versand in 1–3 Werktagen.",
+          "MacBooks und Windows-Laptops als Open Box mit Garantie. Versand in ganz Deutschland in 1–3 Werktagen oder Abholung in Hamburg-Wilhelmsburg.",
       },
       contact: {
         title: "Kontakt & Anfahrt – Apfel Park Hamburg",
@@ -411,7 +411,7 @@ export const dictionary = {
       ],
     },
     accessories: {
-      heroTitle: "Handy-Zubehör in Hamburg – neu & Open Box",
+      heroTitle: "Handy-Zubehör online kaufen – neu & Open Box",
       heroSubtitle:
         "Premium-Cases, Audio, Power und Lifestyle-Accessories für jeden Stil.",
       categories: [
@@ -422,7 +422,7 @@ export const dictionary = {
       ],
     },
     smartphones: {
-      heroTitle: "Smartphones neu, Open Box & gebraucht (Zustand A+) kaufen in Hamburg",
+      heroTitle: "Smartphones neu, Open Box & gebraucht (Zustand A+) online kaufen",
       heroSubtitle:
         "Versiegelt, Open Box oder geprüft gebraucht – abholbar im LunaCenter Wilhelmsburg oder versichert in 1–3 Werktagen geliefert.",
       highlights: [
@@ -432,7 +432,7 @@ export const dictionary = {
       ],
     },
     gaming: {
-      heroTitle: "Gaming & Konsolen in Hamburg",
+      heroTitle: "Gaming & Konsolen online kaufen",
       heroSubtitle:
         "Gaming-Zubehör in Hamburg-Wilhelmsburg. Konsolen nehmen wir demnächst ins Sortiment auf.",
       highlights: [
@@ -442,7 +442,7 @@ export const dictionary = {
       ],
     },
     laptops: {
-      heroTitle: "Laptops & MacBooks in Hamburg – Open Box",
+      heroTitle: "Laptops & MacBooks online kaufen – Open Box",
       heroSubtitle:
         "MacBooks und Windows-Laptops – neu, gebraucht und professionell gewartet.",
       sections: {
@@ -844,9 +844,9 @@ export const dictionary = {
     },
     meta: {
       home: {
-        title: "Buy iPhones & Smartphones in Hamburg",
+        title: "Buy iPhones & Smartphones Online – Repairs in Hamburg",
         description:
-          `Smartphones & iPhones in Hamburg: new, open box & used with warranty. Pick up in store or fast shipping across Germany. Call ${businessIdentity.phones.store.en}.`,
+          `Buy iPhones & smartphones online: new, open box & used with warranty, insured delivery across Germany or pickup in Hamburg. Repairs in store. Call ${businessIdentity.phones.store.en}.`,
       },
       services: {
         title: "Services & Repair Hamburg",
@@ -859,29 +859,29 @@ export const dictionary = {
           "Model-specific iPhone and Samsung repair prices in Hamburg-Wilhelmsburg: Standard, Premium or Original displays, battery replacement and back covers.",
       },
       accessories: {
-        title: "Phone accessories in Hamburg – new & Open Box",
+        title: "Phone accessories online – new & Open Box",
         description:
-          "Cases, screen protection, chargers, cables and headphones for iPhone, Samsung and more – new or Open Box. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
+          "Cases, screen protection, chargers, cables and headphones for iPhone, Samsung and more – new or Open Box. Delivery across Germany in 1–3 business days or collection at the LunaCenter in Hamburg-Wilhelmsburg.",
       },
       smartphones: {
-        title: "Buy new, Open Box & used (Grade A+) smartphones in Hamburg",
+        title: "Buy new, Open Box & used (Grade A+) smartphones online",
         description:
-          "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or used (Grade A+) – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
+          "Smartphones from Apple, Samsung and Xiaomi: new sealed, Open Box or used (Grade A+) – insured delivery across Germany in 1–3 business days or collection at the LunaCenter Wilhelmsburg.",
       },
       tablets: {
-        title: "Tablets & iPads in Hamburg – Open Box & used",
+        title: "Tablets & iPads online – Open Box & used",
         description:
-          "Tablets and iPads Open Box or used (Grade A+) with warranty. Collect at the LunaCenter in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
+          "Tablets and iPads Open Box or used (Grade A+) with warranty. Delivery across Germany in 1–3 business days or collection at the LunaCenter in Hamburg-Wilhelmsburg.",
       },
       gaming: {
-        title: "Gaming & Console Accessories Hamburg",
+        title: "Gaming & Console Accessories Online",
         description:
-          "Gaming accessories at Apfel Park in Hamburg-Wilhelmsburg. Consoles are coming soon; controllers, cables and accessories are in store now.",
+          "Gaming accessories online at Apfel Park with delivery across Germany. Consoles are coming soon; controllers, cables and accessories are available now.",
       },
       laptops: {
-        title: "Open Box laptops in Hamburg – MacBooks & Windows",
+        title: "Open Box laptops online – MacBooks & Windows",
         description:
-          "MacBooks and Windows laptops as Open Box with warranty. Collect in Hamburg-Wilhelmsburg or get delivery in 1–3 business days.",
+          "MacBooks and Windows laptops as Open Box with warranty. Delivery across Germany in 1–3 business days or collection in Hamburg-Wilhelmsburg.",
       },
       contact: {
         title: "Contact & Directions – Apfel Park Hamburg",
@@ -1161,7 +1161,7 @@ export const dictionary = {
       ],
     },
     accessories: {
-      heroTitle: "Phone accessories in Hamburg – new & Open Box",
+      heroTitle: "Phone accessories online – new & Open Box",
       heroSubtitle:
         "Premium cases, audio, power and lifestyle accessories for every style.",
       categories: [
@@ -1172,9 +1172,9 @@ export const dictionary = {
       ],
     },
     smartphones: {
-      heroTitle: "Buy New, Open Box & Used (Grade A+) Smartphones in Hamburg",
+      heroTitle: "Buy New, Open Box & Used (Grade A+) Smartphones Online",
       heroSubtitle:
-        "Sealed, Open Box or tested pre-owned – collect at the LunaCenter Wilhelmsburg or get insured delivery in 1–3 business days.",
+        "Sealed, Open Box or tested pre-owned – insured delivery across Germany in 1–3 business days or collection at the LunaCenter Wilhelmsburg.",
       highlights: [
         "Top brands & flagship models",
         "Financing and trade-in",
@@ -1182,7 +1182,7 @@ export const dictionary = {
       ],
     },
     gaming: {
-      heroTitle: "Gaming & consoles in Hamburg",
+      heroTitle: "Gaming & consoles online",
       heroSubtitle:
         "Gaming accessories in Hamburg-Wilhelmsburg. Consoles are joining the range soon.",
       highlights: [
@@ -1192,7 +1192,7 @@ export const dictionary = {
       ],
     },
     laptops: {
-      heroTitle: "Laptops & MacBooks in Hamburg – Open Box",
+      heroTitle: "Laptops & MacBooks online – Open Box",
       heroSubtitle:
         "MacBooks and Windows laptops – new, Open Box and professionally serviced.",
       sections: {
@@ -1609,7 +1609,7 @@ export const deviceQuoteCopy = {
 
 export const partsCatalogCopy = {
   de: {
-    title: 'Smartphone-Ersatzteile – neu, Hamburg',
+    title: 'Smartphone-Ersatzteile neu kaufen',
     description: 'TRUSMI Displays, Akkus und Smartphone-Ersatzteile neu ab Lager. Abholung in Hamburg oder Versand innerhalb Deutschlands; Großhandel auf Anfrage.',
     subtitle: 'Displays, Akkus und Reparaturkomponenten — für Privatkunden, Werkstätten und Fachhändler.',
     all: 'Alle Ersatzteile', displays: 'Displays', batteries: 'Akkus', components: 'Weitere Komponenten',
@@ -1622,7 +1622,7 @@ export const partsCatalogCopy = {
     repairs: 'Reparaturservice ansehen',
   },
   en: {
-    title: 'Smartphone parts – new, Hamburg',
+    title: 'Buy new smartphone parts',
     description: 'New TRUSMI displays, batteries and smartphone parts in stock. Collect in Hamburg-Wilhelmsburg or get delivery within Germany; wholesale on request.',
     subtitle: 'Displays, batteries and repair components — for individuals, repair shops and retailers.',
     all: 'All spare parts', displays: 'Displays', batteries: 'Batteries', components: 'Other components',

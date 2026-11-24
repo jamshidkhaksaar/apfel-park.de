@@ -106,7 +106,7 @@ export default function BlackFridayHero({
                 </span>
                 <span className="sr-only"> {blackFriday.startsAt.slice(0, 4)} – {isLanding
                   ? lang === "de" ? "Black Friday Angebote bei Apfel Park Hamburg" : "Black Friday deals at Apfel Park Hamburg"
-                  : lang === "de" ? "iPhone & Smartphone kaufen in Hamburg bei Apfel Park" : "Buy iPhones & smartphones in Hamburg at Apfel Park"}</span>
+                  : lang === "de" ? "iPhone & Smartphone online kaufen bei Apfel Park – Versand in ganz Deutschland" : "Buy iPhones & smartphones online at Apfel Park – delivery across Germany"}</span>
               </h1>
               <BlackWeekSeal
                 maxDiscount={isBefore ? null : maxDiscount}
