@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DashboardActivityItem, DashboardDay, DashboardOverview, DashboardProductLine } from "@/lib/admin-dashboard-overview";
-import ScanSellDialog from "@/components/admin/ScanSellDialog";
 import type { AdminLocale } from "@/lib/admin-i18n";
 
 export type DashboardCampaign = {
@@ -37,15 +36,15 @@ const COPY = {
     hoursAgo: (n: number) => `vor ${n} Std.`,
     yesterday: "gestern",
     quickActions: "Schnellaktionen",
-    scan: "Scannen & verkaufen", scanSub: "Scannen, Rabatt, verkaufen",
+    inventory: "Lagerbestand", inventorySub: "Bestand prüfen & korrigieren",
     newProduct: "Produkt anlegen", newProductSub: "Neues Gerät oder Zubehör",
     orders: "Bestellungen", repairs: "Reparaturen",
     open: (n: number) => `${n} offen`, allDone: "Alles erledigt", noneOpen: "Keine offenen",
     kpis: "Kennzahlen",
     units: (n: string) => `${n} Stück`,
-    soldToday: "Heute verkauft",
-    soldTodaySub: (shop: string, online: string) => `≈ ${shop} im Laden · ${online} online`,
-    noSaleToday: "Noch kein Verkauf heute – Scannen geht in 2 Sekunden.",
+    soldToday: "Heute online verkauft",
+    soldTodaySub: (online: string) => `${online} Umsatz online`,
+    noSaleToday: "Noch keine Online-Bestellung heute.",
     last7: "Letzte 7 Tage", revenue: "Umsatz", vsLastWeek: "vs. Vorwoche",
     stockValue: "Lagerwert",
     stockValueSub: (units: string, skus: string) => `${units} Stück · ${skus} Varianten auf Lager`,
@@ -53,11 +52,11 @@ const COPY = {
     bfLive: "Black Friday endet in", bfBefore: "Black Friday startet in",
     countdown: (d: number, h: number) => `${d} T ${h} Std`,
     deals: (n: number) => `${n} ${plural(n, "Deal", "Deals")} vorbereitet`, manage: "verwalten",
-    salesTitle: "Verkäufe – letzte 14 Tage", perDay: "Stück pro Tag",
-    inStore: "Im Laden", online: "Online", today: "Heute",
+    salesTitle: "Online-Verkäufe – letzte 14 Tage", perDay: "Stück pro Tag",
+    online: "Online", today: "Heute",
     unitsIn14: (n: string) => `${n} Stück in 14 Tagen`,
     chartLabel: (n: number) => `Verkaufte Stück pro Tag, letzte 14 Tage, insgesamt ${n}`,
-    dayLabel: (day: string, shop: number, online: number) => `${day}: ${shop} im Laden, ${online} online`,
+    dayLabel: (day: string, online: number) => `${day}: ${online} online verkauft`,
     todoTitle: "Zu erledigen",
     todoEmpty: "Keine offenen Bestellungen, Reparaturen oder Nachrichten.",
     todoSync: "Marktplatz-Synchronisierung fehlgeschlagen", ctaCheck: "Prüfen",
@@ -75,7 +74,6 @@ const COPY = {
     category: { smartphones: "Smartphones", tablets: "Tablets", accessories: "Zubehör", parts: "Ersatzteile", laptops: "Laptops", consoles: "Konsolen" } as Record<string, string>,
     activityTitle: "Live-Aktivität", activitySub: "Verkäufe, Lager, Bestellungen, Nachrichten", fresh: "neu",
     activity: {
-      sale_shop: (a: string) => `${a}× im Laden verkauft`,
       sale_online: (a: string) => `${a}× online verkauft`,
       restock: (a: string) => `Bestand +${a}`,
       product: () => "Neues Produkt",
@@ -97,15 +95,15 @@ const COPY = {
     hoursAgo: (n: number) => `${n} h ago`,
     yesterday: "yesterday",
     quickActions: "Quick actions",
-    scan: "Scan & sell", scanSub: "Scan, discount, sell",
+    inventory: "Inventory", inventorySub: "Check & correct stock",
     newProduct: "Add product", newProductSub: "New device or accessory",
     orders: "Orders", repairs: "Repairs",
     open: (n: number) => `${n} open`, allDone: "All done", noneOpen: "None open",
     kpis: "Key figures",
     units: (n: string) => `${n} ${n === "1" ? "unit" : "units"}`,
-    soldToday: "Sold today",
-    soldTodaySub: (shop: string, online: string) => `≈ ${shop} in store · ${online} online`,
-    noSaleToday: "No sales yet today – scanning takes 2 seconds.",
+    soldToday: "Sold online today",
+    soldTodaySub: (online: string) => `${online} online revenue`,
+    noSaleToday: "No online orders yet today.",
     last7: "Last 7 days", revenue: "revenue", vsLastWeek: "vs. last week",
     stockValue: "Stock value",
     stockValueSub: (units: string, skus: string) => `${units} units · ${skus} variants in stock`,
@@ -113,11 +111,11 @@ const COPY = {
     bfLive: "Black Friday ends in", bfBefore: "Black Friday starts in",
     countdown: (d: number, h: number) => `${d} d ${h} h`,
     deals: (n: number) => `${n} ${plural(n, "deal", "deals")} ready`, manage: "manage",
-    salesTitle: "Sales – last 14 days", perDay: "Units per day",
-    inStore: "In store", online: "Online", today: "Today",
+    salesTitle: "Online sales – last 14 days", perDay: "Units per day",
+    online: "Online", today: "Today",
     unitsIn14: (n: string) => `${n} units in 14 days`,
     chartLabel: (n: number) => `Units sold per day, last 14 days, ${n} in total`,
-    dayLabel: (day: string, shop: number, online: number) => `${day}: ${shop} in store, ${online} online`,
+    dayLabel: (day: string, online: number) => `${day}: ${online} sold online`,
     todoTitle: "To do",
     todoEmpty: "No open orders, repairs or messages.",
     todoSync: "Marketplace sync failed", ctaCheck: "Check",
@@ -135,7 +133,6 @@ const COPY = {
     category: { smartphones: "Smartphones", tablets: "Tablets", accessories: "Accessories", parts: "Spare parts", laptops: "Laptops", consoles: "Consoles" } as Record<string, string>,
     activityTitle: "Live activity", activitySub: "Sales, stock, orders, messages", fresh: "new",
     activity: {
-      sale_shop: (a: string) => `${a}× sold in store`,
       sale_online: (a: string) => `${a}× sold online`,
       restock: (a: string) => `Stock +${a}`,
       product: () => "New product",
@@ -180,7 +177,7 @@ const activityDetail = (t: Copy, item: DashboardActivityItem) => {
 /* ---------- small pieces ---------- */
 
 function Sparkline({ days }: { days: DashboardDay[] }) {
-  const values = days.map((day) => day.shop + day.online);
+  const values = days.map((day) => day.online);
   const max = Math.max(1, ...values);
   const w = 120, h = 36;
   const points = values.map((value, index) => [ (index / (values.length - 1)) * w, h - 3 - (value / max) * (h - 8) ] as const);
@@ -221,19 +218,18 @@ function Tile({ label, value, sub, flash, children, accent }: { label: string; v
 function SalesChart({ t, days }: { t: Copy; days: DashboardDay[] }) {
   const [hover, setHover] = useState<number | null>(null);
   const { count } = formatters(t);
-  const max = Math.max(4, ...days.map((day) => day.shop + day.online));
+  const max = Math.max(4, ...days.map((day) => day.online));
   const nice = Math.ceil(max / 4) * 4;
   const W = 700, H = 220, padL = 28, padB = 26, padT = 8;
   const innerW = W - padL - 8, innerH = H - padB - padT;
   const slot = innerW / days.length, barW = Math.min(30, slot * 0.62);
   const y = (value: number) => padT + innerH - (value / nice) * innerH;
-  const total = days.reduce((sum, day) => sum + day.shop + day.online, 0);
+  const total = days.reduce((sum, day) => sum + day.online, 0);
   const weekday = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString(t.numberLocale, { weekday: "short", timeZone: "UTC" }).replace(".", "");
   const longDate = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString(t.numberLocale, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
   return (
     <div className="relative">
       <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-muted">
-        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[color:var(--dash-series-1)]" />{t.inStore}</span>
         <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[color:var(--dash-series-2)]" />{t.online}</span>
         <span className="ml-auto tabular-nums">{t.unitsIn14(count(total))}</span>
       </div>
@@ -246,15 +242,14 @@ function SalesChart({ t, days }: { t: Copy; days: DashboardDay[] }) {
         ))}
         {days.map((day, index) => {
           const x = padL + index * slot + (slot - barW) / 2;
-          const shopTop = y(day.shop), onlineTop = y(day.shop + day.online);
+          const onlineTop = y(day.online);
           const isToday = index === days.length - 1;
           return (
-            <g key={day.date} onMouseEnter={() => setHover(index)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(index)} onBlur={() => setHover(null)} tabIndex={0} aria-label={t.dayLabel(longDate(day.date), day.shop, day.online)}>
+            <g key={day.date} onMouseEnter={() => setHover(index)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(index)} onBlur={() => setHover(null)} tabIndex={0} aria-label={t.dayLabel(longDate(day.date), day.online)}>
               <rect x={padL + index * slot} y={padT} width={slot} height={innerH} fill="transparent" />
               {hover === index ? <rect x={padL + index * slot + 2} y={padT} width={slot - 4} height={innerH} rx="6" className="fill-[color:var(--dash-hover)]" /> : null}
-              {day.shop > 0 ? <rect x={x} y={shopTop} width={barW} height={y(0) - shopTop} rx={day.online > 0 ? 0 : 4} className="fill-[color:var(--dash-series-1)]" /> : null}
-              {day.online > 0 ? <rect x={x} y={onlineTop} width={barW} height={Math.max(0, shopTop - onlineTop - (day.shop > 0 ? 2 : 0))} rx="4" className="fill-[color:var(--dash-series-2)]" /> : null}
-              {day.shop + day.online === 0 ? <rect x={x} y={y(0) - 2} width={barW} height="2" rx="1" className="fill-[color:var(--dash-muted)]" opacity="0.35" /> : null}
+              {day.online > 0 ? <rect x={x} y={onlineTop} width={barW} height={Math.max(0, y(0) - onlineTop)} rx="4" className="fill-[color:var(--dash-series-2)]" /> : null}
+              {day.online === 0 ? <rect x={x} y={y(0) - 2} width={barW} height="2" rx="1" className="fill-[color:var(--dash-muted)]" opacity="0.35" /> : null}
               <text x={x + barW / 2} y={H - 8} textAnchor="middle" className={`text-[11px] ${isToday ? "fill-[color:var(--dash-text)] font-semibold" : "fill-[color:var(--dash-muted)]"}`}>
                 {isToday ? t.today : index % 2 === 1 ? weekday(day.date) : ""}
               </text>
@@ -266,8 +261,7 @@ function SalesChart({ t, days }: { t: Copy; days: DashboardDay[] }) {
         <div className="pointer-events-none absolute top-8 z-10 rounded-xl border border-border bg-background px-3 py-2 text-xs shadow-xl"
           style={{ left: `clamp(0px, calc(${((padL + (hover + 0.5) * slot) / W) * 100}% - 70px), calc(100% - 150px))` }}>
           <p className="font-semibold text-foreground">{longDate(days[hover].date)}</p>
-          <p className="mt-1 flex items-center gap-1.5 text-muted"><span className="size-2 rounded-sm bg-[color:var(--dash-series-1)]" />{t.inStore}: <span className="font-semibold text-foreground tabular-nums">{days[hover].shop}</span></p>
-          <p className="flex items-center gap-1.5 text-muted"><span className="size-2 rounded-sm bg-[color:var(--dash-series-2)]" />{t.online}: <span className="font-semibold text-foreground tabular-nums">{days[hover].online}</span></p>
+          <p className="mt-1 flex items-center gap-1.5 text-muted"><span className="size-2 rounded-sm bg-[color:var(--dash-series-2)]" />{t.online}: <span className="font-semibold text-foreground tabular-nums">{days[hover].online}</span></p>
         </div>
       ) : null}
     </div>
@@ -296,7 +290,7 @@ function ProductList({ items, empty, metric, action }: { items: DashboardProduct
 }
 
 const ACTIVITY_ICON: Record<DashboardActivityItem["kind"], string> = {
-  sale_shop: "🛍️", sale_online: "🌐", restock: "📦", product: "✨", order: "🧾", repair: "🔧", chat: "💬",
+  sale_online: "🌐", restock: "📦", product: "✨", order: "🧾", repair: "🔧", chat: "💬",
 };
 
 /* ---------- dashboard ---------- */
@@ -317,7 +311,6 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
   const [flash, setFlash] = useState<Record<string, boolean>>({});
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const previous = useRef(initial);
-  const [scanOpen, setScanOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -326,7 +319,7 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
       const next = (await response.json()) as LiveData;
       const before = previous.current;
       const changed: Record<string, boolean> = {
-        today: next.overview.today.unitsShop + next.overview.today.unitsOnline !== before.overview.today.unitsShop + before.overview.today.unitsOnline,
+        today: next.overview.today.unitsOnline !== before.overview.today.unitsOnline,
         stock: Math.round(next.overview.stock.value) !== Math.round(before.overview.stock.value),
         visitors: next.visitors !== before.visitors,
       };
@@ -352,7 +345,7 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
   }, [refresh]);
 
   const { overview, visitors } = data;
-  const todayUnits = overview.today.unitsShop + overview.today.unitsOnline;
+  const todayUnits = overview.today.unitsOnline;
   const seconds = Math.max(0, Math.round((now - updatedAt) / 1000));
   const categoryMax = Math.max(1, ...overview.stock.byCategory.map((row) => row.value));
 
@@ -411,7 +404,7 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
       {/* Quick actions */}
       <nav aria-label={t.quickActions} className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          { href: "/admin/products?scan=1", icon: "▤", title: t.scan, sub: t.scanSub, primary: true },
+          { href: "/admin/inventory", icon: "▤", title: t.inventory, sub: t.inventorySub, primary: true },
           { href: "/admin/products/new", icon: "＋", title: t.newProduct, sub: t.newProductSub },
           { href: "/admin/orders", icon: "🧾", title: t.orders, sub: overview.todo.ordersToHandle ? t.open(overview.todo.ordersToHandle) : t.allDone },
           { href: "/admin/repairs", icon: "🔧", title: t.repairs, sub: overview.todo.repairsOpen ? t.open(overview.todo.repairsOpen) : t.noneOpen },
@@ -426,26 +419,18 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
               </span>
             </>
           );
-          // "Scannen & verkaufen" opens the scan popup right here.
-          return action.primary ? (
-            <button key={action.href} type="button" onClick={() => setScanOpen(true)} className={className}>{body}</button>
-          ) : (
-            <Link key={action.href} href={action.href} className={className}>{body}</Link>
-          );
+          return <Link key={action.href} href={action.href} className={className}>{body}</Link>;
         })}
       </nav>
-      {scanOpen ? (
-        <ScanSellDialog locale={locale} onClose={(changed) => { setScanOpen(false); if (changed) void refresh(); }} />
-      ) : null}
 
       {/* KPI tiles */}
       <section aria-label={t.kpis} className={`grid gap-4 sm:grid-cols-2 ${campaign.active ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}>
         <Tile label={t.soldToday} value={t.units(count(todayUnits))} flash={flash.today}
-          sub={todayUnits ? t.soldTodaySub(euro(overview.today.revenueShopEstimate), euro(overview.today.revenueOnline)) : t.noSaleToday}>
+          sub={todayUnits ? t.soldTodaySub(euro(overview.today.revenueOnline)) : t.noSaleToday}>
           <Sparkline days={overview.days} />
         </Tile>
         <Tile label={t.last7} value={t.units(count(overview.week.units))} sub={<Trend t={t} current={overview.week.units} previous={overview.week.previousUnits} />}>
-          <span className="text-right text-xs text-muted">≈ {euro(overview.week.revenueShopEstimate + overview.week.revenueOnline)}<br />{t.revenue}</span>
+          <span className="text-right text-xs text-muted">≈ {euro(overview.week.revenueOnline)}<br />{t.revenue}</span>
         </Tile>
         <Tile label={t.stockValue} value={euro(overview.stock.value)} flash={flash.stock}
           sub={t.stockValueSub(count(overview.stock.units), count(overview.stock.inStockSkus))} />

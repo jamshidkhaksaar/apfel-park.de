@@ -3,17 +3,16 @@ import { query } from "@/lib/db";
 /**
  * Data for the owner dashboard ("Heute im Shop"). Read-only, Berlin time.
  *
- * Sales come from the stock ledger (inventory_adjustments): a "sale" from a
- * checkout order counts as online, every other sale (inventory menu, scanner
- * "Verkaufen") as in-store. Online revenue is money actually captured; in-store
- * revenue is estimated from the current list price, and labelled as such.
+ * The shop sells online only: sales are the stock ledger's "sale" entries
+ * from checkout orders, and revenue is money actually captured. In-store
+ * selling was removed from the admin, so no in-store figures are shown.
  */
 
-export type DashboardDay = { date: string; shop: number; online: number };
+export type DashboardDay = { date: string; online: number };
 export type DashboardProductLine = { productId: string; title: string; image: string | null; units: number; value?: number };
 export type DashboardActivityItem = {
   id: string;
-  kind: "sale_shop" | "sale_online" | "restock" | "product" | "order" | "repair" | "chat";
+  kind: "sale_online" | "restock" | "product" | "order" | "repair" | "chat";
   title: string;
   /** Raw value behind the line (units, order total, ticket number or message text); the UI phrases it per language. */
   amount: string;
@@ -23,8 +22,8 @@ export type DashboardActivityItem = {
 
 export type DashboardOverview = {
   generatedAt: string;
-  today: { unitsShop: number; unitsOnline: number; revenueOnline: number; revenueShopEstimate: number; ordersToday: number };
-  week: { units: number; previousUnits: number; revenueOnline: number; revenueShopEstimate: number };
+  today: { unitsOnline: number; revenueOnline: number; ordersToday: number };
+  week: { units: number; previousUnits: number; revenueOnline: number };
   days: DashboardDay[];
   stock: {
     value: number;
@@ -45,8 +44,6 @@ export type DashboardOverview = {
 const num = (value: unknown) => Number(value ?? 0) || 0;
 const BERLIN_TODAY = "(now() AT TIME ZONE 'Europe/Berlin')::date";
 const LOCAL_DAY = "(a.created_at AT TIME ZONE 'Europe/Berlin')::date";
-const SHOP_SALE = `((a.event_type = 'sale' AND coalesce(a.reference_type, '') <> 'checkout_order')
-  OR (a.event_type = 'adjustment' AND a.quantity_delta < 0 AND a.metadata->>'note' = 'Scanner: verkauft'))`;
 const ONLINE_SALE = `(a.event_type = 'sale' AND a.reference_type = 'checkout_order')`;
 /** List price of the SKU: variant price when the SKU is a variant, else the product price. */
 const UNIT_PRICE = `coalesce((SELECT nullif(v->>'price', '')::numeric FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p.variants) = 'array' THEN p.variants ELSE '[]'::jsonb END) v
@@ -57,17 +54,15 @@ const firstImage = (images: unknown): string | null =>
 
 export async function loadDashboardOverview(): Promise<DashboardOverview> {
   const [sales, revenue, stock, lowStock, slowMovers, categories, top, todo, activity] = await Promise.all([
-    // Units and estimated in-store revenue per Berlin day, last 14 days.
+    // Units sold online per Berlin day, last 14 days.
     query(
       `SELECT ${LOCAL_DAY} AS day,
-              sum(-a.quantity_delta) FILTER (WHERE ${SHOP_SALE})::int AS shop,
-              sum(-a.quantity_delta) FILTER (WHERE ${ONLINE_SALE})::int AS online,
-              coalesce(sum(-a.quantity_delta * ${UNIT_PRICE}) FILTER (WHERE ${SHOP_SALE}), 0)::float AS shop_value
+              sum(-a.quantity_delta)::int AS online
          FROM inventory_adjustments a
          JOIN inventory_skus s ON s.id = a.inventory_sku_id
          JOIN products p ON p.id = s.product_id
         WHERE a.created_at >= (${BERLIN_TODAY} - 13)::timestamp AT TIME ZONE 'Europe/Berlin'
-          AND (${SHOP_SALE} OR ${ONLINE_SALE})
+          AND ${ONLINE_SALE}
         GROUP BY 1`,
     ),
     query(
@@ -102,7 +97,7 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
         WHERE s.location = 'local' AND s.is_active AND p.is_active AND ${LIVE_PRODUCT}
           AND p.created_at < now() - interval '60 days'
           AND NOT EXISTS (SELECT 1 FROM inventory_adjustments a JOIN inventory_skus s2 ON s2.id = a.inventory_sku_id
-                           WHERE s2.product_id = p.id AND a.created_at > now() - interval '60 days' AND (${SHOP_SALE} OR ${ONLINE_SALE}))
+                           WHERE s2.product_id = p.id AND a.created_at > now() - interval '60 days' AND ${ONLINE_SALE})
         GROUP BY p.id
        HAVING sum(available_inventory(s.on_hand, s.reserved, s.safety_buffer)) > 0
         ORDER BY value DESC NULLS LAST LIMIT 5`,
@@ -118,7 +113,7 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
     query(
       `SELECT p.id, p.title, p.images, sum(-a.quantity_delta)::int AS units
          FROM inventory_adjustments a JOIN inventory_skus s ON s.id = a.inventory_sku_id JOIN products p ON p.id = s.product_id
-        WHERE a.created_at > now() - interval '30 days' AND (${SHOP_SALE} OR ${ONLINE_SALE}) AND ${LIVE_PRODUCT}
+        WHERE a.created_at > now() - interval '30 days' AND ${ONLINE_SALE} AND ${LIVE_PRODUCT}
         GROUP BY p.id ORDER BY units DESC, max(a.created_at) DESC LIMIT 5`,
     ),
     query(
@@ -129,10 +124,10 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
          (SELECT count(*) FROM marketplace_jobs WHERE status = 'failed' AND updated_at > now() - interval '7 days')::int AS failed_syncs`,
     ),
     query(
-      `(SELECT 'sale_' || CASE WHEN ${ONLINE_SALE} THEN 'online' ELSE 'shop' END AS kind, a.id::text AS id, p.id::text AS ref, p.title,
+      `(SELECT 'sale_online' AS kind, a.id::text AS id, p.id::text AS ref, p.title,
                (-a.quantity_delta)::text AS amount, a.created_at
           FROM inventory_adjustments a JOIN inventory_skus s ON s.id = a.inventory_sku_id JOIN products p ON p.id = s.product_id
-         WHERE (${SHOP_SALE} OR ${ONLINE_SALE}) ORDER BY a.created_at DESC LIMIT 8)
+         WHERE ${ONLINE_SALE} ORDER BY a.created_at DESC LIMIT 8)
        UNION ALL
        (SELECT 'restock', a.id::text, p.id::text, p.title, a.quantity_delta::text, a.created_at
           FROM inventory_adjustments a JOIN inventory_skus s ON s.id = a.inventory_sku_id JOIN products p ON p.id = s.product_id
@@ -159,16 +154,13 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
   const todayBerlin = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(new Date());
   const base = new Date(`${todayBerlin}T12:00:00Z`);
   const days: DashboardDay[] = [];
-  let shopValueToday = 0, shopValueWeek = 0;
   for (let offset = 13; offset >= 0; offset -= 1) {
     const date = new Date(base.getTime() - offset * 86_400_000).toISOString().slice(0, 10);
     const row = byDay.get(date);
-    days.push({ date, shop: num(row?.shop), online: num(row?.online) });
-    if (offset === 0) shopValueToday = num(row?.shop_value);
-    if (offset < 7) shopValueWeek += num(row?.shop_value);
+    days.push({ date, online: num(row?.online) });
   }
   const lastWeek = days.slice(7), weekBefore = days.slice(0, 7);
-  const sum = (list: DashboardDay[]) => list.reduce((total, day) => total + day.shop + day.online, 0);
+  const sum = (list: DashboardDay[]) => list.reduce((total, day) => total + day.online, 0);
   const revenueRow = (revenue.rows[0] ?? {}) as Record<string, unknown>;
   const stockRow = (stock.rows[0] ?? {}) as Record<string, unknown>;
   const todoRow = (todo.rows[0] ?? {}) as Record<string, unknown>;
@@ -183,13 +175,11 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
   return {
     generatedAt: new Date().toISOString(),
     today: {
-      unitsShop: today.shop,
       unitsOnline: today.online,
       revenueOnline: num(revenueRow.today),
-      revenueShopEstimate: shopValueToday,
       ordersToday: num(revenueRow.orders_today),
     },
-    week: { units: sum(lastWeek), previousUnits: sum(weekBefore), revenueOnline: num(revenueRow.week), revenueShopEstimate: shopValueWeek },
+    week: { units: sum(lastWeek), previousUnits: sum(weekBefore), revenueOnline: num(revenueRow.week) },
     days,
     stock: {
       value: num(stockRow.value),

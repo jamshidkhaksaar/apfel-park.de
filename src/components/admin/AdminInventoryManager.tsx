@@ -53,10 +53,10 @@ type RecentAdjustment = {
   createdAt: string;
 };
 
-type AdjustmentType = "shop_sale" | "restock" | "correction" | "return";
+// In-store selling is not offered: the shop sells online only.
+type AdjustmentType = "restock" | "correction" | "return";
 
 const adjustmentLabels: Record<AdjustmentType, { de: string; en: string }> = {
-  shop_sale: { de: "Vor Ort verkauft", en: "Sold in shop" },
   restock: { de: "Wareneingang", en: "Restock" },
   correction: { de: "Bestandskorrektur", en: "Stock correction" },
   return: { de: "Kundenretoure", en: "Customer return" },
@@ -73,7 +73,7 @@ function InventoryThumbnail({ src, title, fallback }: { src: string | null; titl
   </span>;
 }
 
-export default function AdminInventoryManager({ locale, canManage = true, canPrintLabels = false, canViewReports = false, canSellInShop = false }: { locale: "de" | "en"; canManage?: boolean; canPrintLabels?: boolean; canViewReports?: boolean; canSellInShop?: boolean }) {
+export default function AdminInventoryManager({ locale, canManage = true, canPrintLabels = false, canViewReports = false }: { locale: "de" | "en"; canManage?: boolean; canPrintLabels?: boolean; canViewReports?: boolean }) {
   const searchParams = useSearchParams();
   const urlQuery = searchParams.toString();
   const request = useRef<AbortController | null>(null);
@@ -321,16 +321,6 @@ export default function AdminInventoryManager({ locale, canManage = true, canPri
     void applyAdjustment(selectedSku, type, amount, note);
   };
 
-  const quickSale = (item: InventoryRow) => {
-    if (item.available < 1 || busySku) return;
-    const confirmed = window.confirm(
-      locale === "de"
-        ? `1 × ${item.title} (${item.sku}) als Vor-Ort-Verkauf buchen?`
-        : `Record 1 × ${item.title} (${item.sku}) as a shop sale?`,
-    );
-    if (confirmed) void applyAdjustment(item.sku, "shop_sale", 1, "Vor-Ort-Verkauf über Lagerverwaltung");
-  };
-
   return (
     <div className="mx-auto w-full max-w-[1500px] space-y-6">
       <AdminListMemory path="/admin/inventory" ready={!loading} />
@@ -462,8 +452,7 @@ export default function AdminInventoryManager({ locale, canManage = true, canPri
                   <td className="px-3 py-3 text-right font-mono tabular-nums">{item.safetyBuffer}</td>
                   <td className={`px-3 py-3 text-right font-mono font-semibold tabular-nums ${item.available === 0 ? "text-red-500" : item.available <= 3 ? "text-amber-500" : "text-emerald-500"}`}>{item.available}</td>
                   <td className="px-3 py-3 font-mono text-xs text-muted">{item.canAdjust ? `v${item.version}` : <span className="font-sans">{text.noStockRecord}</span>}</td>
-                  <td className="px-4 py-3 text-right">{canSellInShop || canManage ? <div className="flex flex-col items-end gap-1.5">
-                    {canSellInShop ? <button type="button" disabled={!item.canAdjust || item.available < 1 || Boolean(busySku) || Boolean(busyProduct)} onClick={() => quickSale(item)} className="rounded-lg border border-gold/40 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-40">{locale === "de" ? "1× Vor Ort verkauft" : "Sell 1 in shop"}</button> : null}
+                  <td className="px-4 py-3 text-right">{canManage ? <div className="flex flex-col items-end gap-1.5">
                     {canManage && canPrintLabels && item.inventoryId ? <a href={`/admin/kasse-lager/labels?inventory=${item.inventoryId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold underline underline-offset-2">{locale === "de" ? "Etikett drucken" : "Print label"}</a> : null}
                   </div> : <span className="text-xs text-muted">—</span>}</td>
                 </tr>

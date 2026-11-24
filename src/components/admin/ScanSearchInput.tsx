@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import ScanSellDialog, { lookupScan, type ScanResult } from "@/components/admin/ScanSellDialog";
+import { lookupScan } from "@/lib/admin-scan-lookup";
 import {
   SCAN_MIN_LENGTH,
   emptyBurst,
@@ -16,24 +16,26 @@ import {
 /**
  * Product search field that doubles as a barcode scanner input. A scan works
  * anywhere on the product list: a fast burst of keys plus Enter (see
- * scan-burst.ts) opens the scan-and-sell popup for that product, and a field
- * the scanner typed into gets its old value back, so a scan can never change a
- * stock or price field. A code that matches nothing runs the normal search.
+ * scan-burst.ts) opens that product's editor, and a field the scanner typed
+ * into gets its old value back, so a scan can never change a stock or price
+ * field. A code that matches nothing runs the normal search.
+ *
+ * Scanning only finds a product. The shop sells online only, so there is no
+ * in-store "sell" step here.
  */
-export default function ScanSearchInput({ defaultValue, placeholder, autoFocus = false, locale = "de" }: { defaultValue: string; placeholder: string; autoFocus?: boolean; locale?: "de" | "en" }) {
+export default function ScanSearchInput({ defaultValue, placeholder, autoFocus = false }: { defaultValue: string; placeholder: string; autoFocus?: boolean; locale?: "de" | "en" }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const burst = useRef(emptyBurst());
-  const [dialog, setDialog] = useState<{ initial: ScanResult | null } | null>(null);
   const [looking, setLooking] = useState(false);
 
-  /** Opens the popup for a code; false when nothing matched. */
+  /** Opens the product for a code; false when nothing matched. */
   const openFor = async (code: string): Promise<boolean> => {
     setLooking(true);
     const found = await lookupScan(code);
     setLooking(false);
     if (found.status !== "found") return false;
-    setDialog({ initial: found.result });
+    router.push(`/admin/products/${found.result.productId}`);
     return true;
   };
 
@@ -43,16 +45,14 @@ export default function ScanSearchInput({ defaultValue, placeholder, autoFocus =
     input.current.form?.requestSubmit();
   };
 
-  const live = useRef({ open: false, openFor, search });
+  const live = useRef({ openFor, search });
   useEffect(() => {
-    live.current = { open: Boolean(dialog), openFor, search };
+    live.current = { openFor, search };
   });
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const state = live.current;
-      // The popup handles its own keys while it is open.
-      if (state.open) { burst.current = emptyBurst(); return; }
       const now = performance.now();
       if (event.key === "Enter") {
         const keys = burst.current;
@@ -73,7 +73,7 @@ export default function ScanSearchInput({ defaultValue, placeholder, autoFocus =
     return () => document.removeEventListener("keydown", onKey, true);
   }, []);
 
-  /** A typed SKU + Enter in the search field opens the popup too. */
+  /** A typed SKU + Enter in the search field opens the product too. */
   const onSearchKey = async (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") return;
     const code = event.currentTarget.value.trim();
@@ -84,33 +84,19 @@ export default function ScanSearchInput({ defaultValue, placeholder, autoFocus =
     if (!(await openFor(code))) form?.requestSubmit();
   };
 
-  const close = (changed: boolean) => {
-    setDialog(null);
-    if (input.current) {
-      input.current.value = "";
-      input.current.focus();
-    }
-    if (changed) router.refresh();
-  };
-
   return (
-    <>
-      <span className="relative block min-w-0">
-        <input
-          ref={input}
-          name="q"
-          autoFocus={autoFocus}
-          defaultValue={defaultValue}
-          placeholder={placeholder}
-          onKeyDown={(event) => { void onSearchKey(event); }}
-          autoComplete="off"
-          className="w-full rounded-xl border border-border/60 bg-surface/70 py-2.5 pl-9 pr-3.5 text-sm text-foreground"
-        />
-        <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">{looking ? "…" : "⌕"}</span>
-      </span>
-      {/* Portal inside: the filter form's glass blur would otherwise trap a
-          fixed overlay inside the form instead of covering the whole page. */}
-      {dialog ? <ScanSellDialog locale={locale} initial={dialog.initial} onClose={close} /> : null}
-    </>
+    <span className="relative block min-w-0">
+      <input
+        ref={input}
+        name="q"
+        autoFocus={autoFocus}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        onKeyDown={(event) => { void onSearchKey(event); }}
+        autoComplete="off"
+        className="w-full rounded-xl border border-border/60 bg-surface/70 py-2.5 pl-9 pr-3.5 text-sm text-foreground"
+      />
+      <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">{looking ? "…" : "⌕"}</span>
+    </span>
   );
 }

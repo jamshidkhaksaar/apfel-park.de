@@ -352,15 +352,18 @@ export default function AdminShell({
 
   const isAdmin = user?.role === "admin";
 
+  // The shop sells online only, so the till (in-store selling) is not offered
+  // in the menu while it is switched off.
+  const tillItems: NavItem[] = TILL_UNDER_CONSTRUCTION ? [] : [
+    { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments' },
+  ];
   const baseItems: NavItem[] = user?.role === "cashier" ? [
-    { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments', disabled: TILL_UNDER_CONSTRUCTION },
+    ...tillItems,
     { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
     { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: INVENTORY_UNDER_CONSTRUCTION },
   ] : [
     { label: dict.sidebar.dashboard, path: '/admin', icon: 'dashboard' },
-    ...(user?.role === "admin" || user?.role === "manager" ? [
-      { label: lang === 'de' ? 'Kasse & Lager' : 'Till & Inventory', path: '/admin/kasse-lager', icon: 'payments', disabled: TILL_UNDER_CONSTRUCTION },
-    ] : []),
+    ...(user?.role === "admin" || user?.role === "manager" ? tillItems : []),
     { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
     { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: INVENTORY_UNDER_CONSTRUCTION },
   ];
