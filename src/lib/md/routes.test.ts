@@ -66,6 +66,15 @@ describe('markdown route matching', () => {
     expect(matchMarkdownRoute('/de/samsung-phones')).toBeNull();
   });
 
+  it('resolves the Black Week, service and guide pages in both languages', () => {
+    expect(matchMarkdownRoute('/de/black-friday')?.route.id).toBe('black-friday');
+    expect(matchMarkdownRoute('/en/black-friday')?.route.id).toBe('black-friday');
+    expect(matchMarkdownRoute('/de/delivery-returns')?.route.kind).toBe('page');
+    expect(matchMarkdownRoute('/en/ratgeber/smartphone-laenger-nutzen')?.route.id).toBe('smartphone-longevity-guide');
+    expect(matchMarkdownRoute('/de/handy-shop-hamburg-wilhelmsburg')?.route.id).toBe('local-store');
+    expect(matchMarkdownRoute('/en/phone-store-hamburg-wilhelmsburg')?.route.id).toBe('local-store');
+  });
+
   it('keeps English twin paths in step with the English page slugs', () => {
     for (const definition of seoRouteDefinitions) {
       const route = markdownRoutes.find((candidate) => candidate.pattern === definition.path);
@@ -88,7 +97,8 @@ describe('markdown route matching', () => {
       expect(matchMarkdownRoute(path), path).toBeNull();
       expect(matchMarkdownRoute(`/de${path}`), path).toBeNull();
     }
-    expect(matchMarkdownRoute('/de/ratgeber/smartphone-laenger-nutzen')).toBeNull();
+    expect(matchMarkdownRoute('/de/firmenkunden')).toBeNull();
+    expect(matchMarkdownRoute('/de/repairs/preisvergleich-hamburg')).toBeNull();
   });
 
   it('treats the homepage as a content route', () => {

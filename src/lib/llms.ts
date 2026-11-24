@@ -24,6 +24,14 @@ Jede Antwort steht für sich und kann unverändert zitiert werden.
 - **Was bedeuten die Zustandsangaben?** Neu bedeutet versiegelt. Open-Box bezeichnet geöffnete Verpackungen, etwa Ausstellungs- oder Retourenware. A+ wurde bereits genutzt und wird mit konkretem Zustandshinweis angeboten.
 - **Welche Marken repariert Apfel Park?** Repariert werden alle gängigen Marken, unter anderem Apple, Samsung, Huawei, Xiaomi und Google Pixel.
 - **Braucht man einen Termin für die Reparatur?** Nein. Eine Sofort-Diagnose ist ohne Termin möglich. Bei hoher Auslastung werden kurzfristige Termine vergeben.
+- **Gibt es Black-Friday-Angebote bei Apfel Park?** Ja. Apfel Park veranstaltet jedes Jahr eine Black Week von Montag vor dem Black Friday bis Cyber Monday, online und im Laden. Die aktuellen Aktionsgeräte mit Preis, Ersparnis gegenüber dem niedrigsten Preis der letzten 30 Tage und Verfügbarkeit stehen auf ${site}/de/black-friday; außerhalb der Aktion nennt die Seite den Termin der nächsten Black Week.
+- **Kauft Apfel Park gebrauchte Handys an?** Ja. Über ${site}/de/trade-in lassen sich Modell, Zustand und Fotos senden; Apfel Park erstellt ein unverbindliches Angebot, der endgültige Preis wird nach der Geräteprüfung bestätigt.
+
+## Aktuelle Aktionen
+
+${link('Black Week und Black-Friday-Angebote', '/de/black-friday', 'Alle reduzierten Geräte während der Black Week mit Aktionspreis, Ersparnis, Zustand und Verfügbarkeit; außerhalb der Aktion der Termin der nächsten Black Week. Als Markdown: /de/black-friday.md')}
+${link('Black Week deals (English)', '/en/black-friday', 'The same deal list in English. Markdown: /en/black-friday.md')}
+${link('Open-Box-Geräte', '/de/open-box', 'Geöffnete, geprüfte Geräte unter dem Neupreis.')}
 
 ## Geschäftsdaten
 
@@ -91,7 +99,7 @@ ${link('Sitemap', '/sitemap.xml', 'Vollständige Liste aller indexierbaren Seite
 
 ## Maschinenlesbare Versionen
 
-Jede der oben verlinkten Seiten existiert zusätzlich als Markdown unter derselben Adresse mit der Endung .md – zum Beispiel /de/repairs.md. Die Markdown-Fassung enthält denselben Inhalt wie die HTML-Seite, ohne Navigation und ohne Skripte, und verweist im Feld Canonical auf die HTML-Adresse. Clients, die im HTTP-Header Accept den Wert text/markdown senden, erhalten die Markdown-Fassung direkt unter der HTML-Adresse.
+Jede der oben verlinkten Seiten außer dem Hamburger Preisvergleich und der Seite für Firmenkunden existiert zusätzlich als Markdown unter derselben Adresse mit der Endung .md – zum Beispiel /de/repairs.md. Die Markdown-Fassung enthält denselben Inhalt wie die HTML-Seite, ohne Navigation und ohne Skripte, und verweist im Feld Canonical auf die HTML-Adresse. Clients, die im HTTP-Header Accept den Wert text/markdown senden, erhalten die Markdown-Fassung direkt unter der HTML-Adresse.
 
 ${link('Gesamter Inhalt in einer Datei', '/llms-full.txt', 'Alle Seiten aus dieser Liste hintereinander, durch dieselbe Renderer-Registry erzeugt.')}
 ${link('Katalog aller Markdown-Adressen', '/api/md/_catalog', 'JSON-Liste der Markdown-Adressen mit HTML-Pfad und Seitentyp.')}
@@ -101,7 +109,19 @@ ${link('Nutzungshinweise für KI-Systeme', '/ai.txt', 'Erlaubte Nutzung, Zitierw
 
 Apfel Park is a local smartphone shop and repair workshop in Hamburg-Wilhelmsburg. Its public repair finder lists model-specific display, battery and back-cover prices, with Standard, Premium and Original/Genuine options where available. Prices and repair scope are confirmed before paid work begins.
 
-${link('Frequently asked questions (English)', '/en/faq', 'Answers on repair times, warranty, shipping, returns and payment.')}
+Apfel Park sells new (sealed), open-box and tested used (Grade A+) smartphones, tablets, laptops and accessories, with insured delivery across Germany (6.90 EUR) or free collection in Hamburg-Wilhelmsburg. Every year it runs a Black Week sale from the Monday before Black Friday to Cyber Monday; the deal page lists every reduced device with its price and the saving against the lowest price of the previous 30 days.
 
-Last updated: 2026-10-26
+${link('Frequently asked questions (English)', '/en/faq', 'Answers on repair times, warranty, shipping, returns and payment.')}
+${link('Black Week deals', '/en/black-friday', 'Current Black Week offers with price, saving, condition and availability.')}
+${link('Online store', '/en/store', 'Full catalogue with live stock and prices.')}
+${link('Smartphones', '/en/smartphones', 'Smartphones currently for sale.')}
+${link('Used iPhones', '/en/used-iphones', 'Pre-owned iPhones with a stated condition.')}
+${link('Samsung phones', '/en/samsung-phones', 'Samsung Galaxy models in stock.')}
+${link('Device conditions explained', '/en/device-conditions', 'What Sealed, Open-Box and A+ mean, and your rights.')}
+${link('Delivery and returns', '/en/delivery-returns', 'Shipping cost, delivery time, 14-day withdrawal and refunds.')}
+${link('Sell your phone', '/en/trade-in', 'Non-binding trade-in quote for your old device.')}
+${link('Phone store Hamburg-Wilhelmsburg', '/en/phone-store-hamburg-wilhelmsburg', 'Store location, opening hours and phones in stock.')}
+${link('Contact and directions', '/en/contact', 'Address, opening hours and directions to the LunaCenter store.')}
+
+Last updated: 2026-11-24
 `;

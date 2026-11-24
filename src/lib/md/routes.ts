@@ -24,7 +24,9 @@ export type MarkdownRouteKind =
   /** One accessory subcategory landing page. */
   | 'accessory-collection'
   /** One product from the database. */
-  | 'product';
+  | 'product'
+  /** A page whose copy lives in src/lib/page-copy, or the Black Week page. */
+  | 'page';
 
 export type MarkdownRoute = {
   /** Locale-relative public path; `[slug]` marks the single dynamic segment. */
@@ -57,6 +59,15 @@ export const markdownRoutes: readonly MarkdownRoute[] = [
   { pattern: '/gaming', kind: 'content', id: 'gaming' },
   { pattern: '/laptops', kind: 'content', id: 'laptops' },
   { pattern: '/impressum', kind: 'legal', id: 'impressum' },
+
+  // Shopping and service pages whose copy lives in src/lib/page-copy.
+  { pattern: '/black-friday', kind: 'page', id: 'black-friday' },
+  { pattern: '/delivery-returns', kind: 'page', id: 'delivery-returns' },
+  { pattern: '/device-conditions', kind: 'page', id: 'device-conditions' },
+  { pattern: '/withdrawal', kind: 'page', id: 'withdrawal' },
+  { pattern: '/trade-in', kind: 'page', id: 'trade-in' },
+  { pattern: '/ratgeber/smartphone-laenger-nutzen', kind: 'page', id: 'smartphone-longevity-guide' },
+  { pattern: '/handy-shop-hamburg-wilhelmsburg', kind: 'page', id: 'local-store', en: '/phone-store-hamburg-wilhelmsburg' },
 
   // Category and collection pages whose copy lives in data, not in the page
   // component: the same source the HTML page renders from.
@@ -92,14 +103,8 @@ export const markdownRoutes: readonly MarkdownRoute[] = [
  * src/lib/seo-shared.ts is neither in `markdownRoutes` nor here.
  */
 export const markdownSkips: readonly { pattern: string; reason: string }[] = [
-  { pattern: '/delivery-returns', reason: 'Shipping and return copy is written inline in the page component; move it to src/lib/content.ts to expose it.' },
-  { pattern: '/device-conditions', reason: 'Condition-grade copy (Neu, Open Box, A+, Gebraucht) is inline in the page component; move it to src/lib/content.ts to expose it.' },
-  { pattern: '/withdrawal', reason: 'The withdrawal page is a form plus links; the legal text it points to is /delivery-returns.' },
-  { pattern: '/trade-in', reason: 'Trade-in is an interactive quote form with no prose beyond its intro.' },
   { pattern: '/firmenkunden', reason: 'B2B copy (including partsCatalogCopy) is inline in the page component.' },
-  { pattern: '/handy-shop-hamburg-wilhelmsburg', reason: 'Local landing copy is inline in the page component; move it to src/lib/content.ts to expose it.' },
-  { pattern: '/ratgeber/smartphone-laenger-nutzen', reason: 'Guide copy is inline in the page component; move it to src/lib/content.ts to expose it.' },
-  { pattern: '/repairs/preisvergleich-hamburg', reason: 'Benchmark copy is inline in the page component; the dated comparison table should move next to src/lib/repair-price-benchmark.ts.' },
+  { pattern: '/repairs/preisvergleich-hamburg', reason: 'Competitor prices are dated (Preischeck 29.08.2026) and due for a re-check; do not hand stale third-party prices to answer engines until they are refreshed.' },
   { pattern: '/cart', reason: 'Transactional and noindex; never exposed as markdown.' },
   { pattern: '/checkout', reason: 'Transactional and noindex; never exposed as markdown.' },
   { pattern: '/store/preview/[token]', reason: 'Signed preview links are private.' },
@@ -154,6 +159,10 @@ export const matchMarkdownRoute = (pathname: string): MarkdownRouteMatch | null 
   const normalized = rest.length > 1 && rest.endsWith('/') ? rest.slice(0, -1) : rest;
   if (normalized === '') return { route: markdownRoutes[0] };
   if (isPrivate(normalized)) return null;
+  // A skipped page can sit under a dynamic family (/repairs/preisvergleich-hamburg
+  // under /repairs/[service]); without this it would be advertised as a twin
+  // and AI crawlers sent to the markdown handler would get a 404.
+  if (markdownSkips.some((skip) => skip.pattern === normalized)) return null;
 
   // Static patterns win over dynamic ones, so /store/catalog stays a listing.
   for (const route of markdownRoutes) {

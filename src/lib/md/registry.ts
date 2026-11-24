@@ -28,6 +28,8 @@ import { getStoreCollectionCopy, type StoreCollectionId } from '@/lib/store-coll
 import { contentToMarkdown, firstString } from './content-walk';
 import type { MarkdownDoc } from './document';
 import { blocks, heading, isoDate, list, markdownLink, section, table } from './format';
+import { availabilityLabel, conditionLabel, formatPrice } from './labels';
+import { pageRenderers } from './page-renderers';
 import {
   fillPattern,
   isDynamicPattern,
@@ -53,32 +55,6 @@ export type MarkdownRenderer = (context: MarkdownRenderContext) => Promise<Markd
 const MAX_LISTED_PRODUCTS = 50;
 
 const localeTag = (locale: MarkdownLocale): Locale => locale;
-
-const formatPrice = (locale: MarkdownLocale, value: number): string =>
-  new Intl.NumberFormat(locale === 'de' ? 'de-DE' : 'en-US', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(value);
-
-const conditionLabel = (locale: MarkdownLocale, condition: Product['condition']): string => {
-  if (locale === 'de') {
-    return condition === 'new' ? 'Neu' : condition === 'open_box' ? 'Open Box' : 'Gebraucht';
-  }
-  return condition === 'new' ? 'New' : condition === 'open_box' ? 'Open box' : 'Used';
-};
-
-const availabilityLabel = (locale: MarkdownLocale, product: Product): string => {
-  const stock = product.stock ?? 0;
-  const pickup = product.pickupStock ?? 0;
-  if (locale === 'de') {
-    if (stock > 0) return 'online verfügbar';
-    if (pickup > 0) return 'im Laden verfügbar (Abholung)';
-    return 'derzeit nicht verfügbar';
-  }
-  if (stock > 0) return 'available online';
-  if (pickup > 0) return 'available for pickup';
-  return 'currently unavailable';
-};
 
 /** One listing line: title, absolute product URL, price, condition, stock. */
 const productLine = (locale: MarkdownLocale, product: Product): string => {
@@ -534,6 +510,10 @@ const renderers: Record<string, MarkdownRenderer> = {
   showcase: showcaseRenderer,
   'accessory-collection': accessoryCollectionRenderer,
   legal: legalRenderer,
+  page: async ({ locale, path, slug }) => {
+    const render = slug ? pageRenderers[slug] : undefined;
+    return render ? render(locale, path) : null;
+  },
 };
 
 const rendererFor = (route: MarkdownRoute): MarkdownRenderer | null => renderers[route.kind] ?? null;

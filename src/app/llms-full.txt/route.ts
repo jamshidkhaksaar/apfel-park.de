@@ -25,10 +25,11 @@ const KIND_ORDER: Record<MarkdownRouteInfo['kind'], number> = {
   'accessory-collection': 5,
   product: 6,
   legal: 7,
+  page: 1,
 };
 
 /** Core pages first, then guides and catalogue, with the legal pages last. */
-const CORE_FIRST = ['/de', '/en', '/de/about', '/en/about', '/de/faq', '/en/faq', '/de/contact', '/en/contact', '/de/repairs', '/en/repairs'];
+const CORE_FIRST = ['/de', '/en', '/de/black-friday', '/en/black-friday', '/de/about', '/en/about', '/de/faq', '/en/faq', '/de/contact', '/en/contact', '/de/repairs', '/en/repairs'];
 
 const ordered = (routes: readonly MarkdownRouteInfo[]): MarkdownRouteInfo[] =>
   [...routes].sort((a, b) => {
