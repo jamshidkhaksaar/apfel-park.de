@@ -58,6 +58,22 @@ describe('markdown route matching', () => {
     expect(matchMarkdownRoute('/de/store')?.route.kind).toBe('catalog');
   });
 
+  it('gives every translated page its twin on the English slug', () => {
+    expect(matchMarkdownRoute('/en/samsung-phones')?.route.id).toBe('samsung-phones');
+    expect(matchMarkdownRoute('/en/unlocked-phones')?.route.id).toBe('phones-without-contract');
+    // The German slug under /en redirects to the English page; no twin there.
+    expect(matchMarkdownRoute('/en/samsung-handys')).toBeNull();
+    expect(matchMarkdownRoute('/de/samsung-phones')).toBeNull();
+  });
+
+  it('keeps English twin paths in step with the English page slugs', () => {
+    for (const definition of seoRouteDefinitions) {
+      const route = markdownRoutes.find((candidate) => candidate.pattern === definition.path);
+      if (!route) continue;
+      expect(route.en, definition.path).toBe(definition.paths?.en);
+    }
+  });
+
   it('resolves dynamic families to their slug', () => {
     expect(matchMarkdownRoute('/de/store/iphone-15-128gb')?.slug).toBe('iphone-15-128gb');
     expect(matchMarkdownRoute('/en/repairs/water-damage')?.slug).toBe('water-damage');

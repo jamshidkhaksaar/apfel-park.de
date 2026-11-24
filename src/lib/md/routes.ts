@@ -32,7 +32,17 @@ export type MarkdownRoute = {
   kind: MarkdownRouteKind;
   /** Entity or copy id the renderer needs, when it is not the path itself. */
   id?: string;
+  /**
+   * English public path when the page is translated to a different slug
+   * (src/lib/seo-shared.ts `paths.en`). The twin lives on the URL the reader
+   * actually sees: /en/samsung-phones.md, not the German slug that redirects.
+   */
+  en?: string;
 };
+
+/** The public, locale-relative pattern of a route in one locale. */
+export const localizedPattern = (route: MarkdownRoute, locale: MarkdownLocale): string =>
+  locale === 'en' && route.en ? route.en : route.pattern;
 
 export const markdownRoutes: readonly MarkdownRoute[] = [
   { pattern: '', kind: 'content', id: 'home' },
@@ -57,11 +67,11 @@ export const markdownRoutes: readonly MarkdownRoute[] = [
   { pattern: '/open-box', kind: 'catalog', id: 'open-box-smartphones-tablets' },
   { pattern: '/iphone-17', kind: 'collection', id: 'iphone-17' },
   { pattern: '/iphone-16-pro-max', kind: 'collection', id: 'iphone-16-pro-max' },
-  { pattern: '/xiaomi-redmi-handys', kind: 'collection', id: 'xiaomi-redmi-phones' },
-  { pattern: '/samsung-handys', kind: 'collection', id: 'samsung-phones' },
-  { pattern: '/handys-ohne-vertrag', kind: 'collection', id: 'phones-without-contract' },
-  { pattern: '/gebrauchte-handys', kind: 'collection', id: 'used-phones' },
-  { pattern: '/gebrauchte-iphones', kind: 'collection', id: 'used-iphones' },
+  { pattern: '/xiaomi-redmi-handys', kind: 'collection', id: 'xiaomi-redmi-phones', en: '/xiaomi-redmi-phones' },
+  { pattern: '/samsung-handys', kind: 'collection', id: 'samsung-phones', en: '/samsung-phones' },
+  { pattern: '/handys-ohne-vertrag', kind: 'collection', id: 'phones-without-contract', en: '/unlocked-phones' },
+  { pattern: '/gebrauchte-handys', kind: 'collection', id: 'used-phones', en: '/used-phones' },
+  { pattern: '/gebrauchte-iphones', kind: 'collection', id: 'used-iphones', en: '/used-iphones' },
 
   { pattern: '/iphone-18-pro', kind: 'showcase', id: 'iphone-18-pro' },
   { pattern: '/iphone-18-pro-max', kind: 'showcase', id: 'iphone-18-pro-max' },
@@ -140,7 +150,7 @@ const matchesPattern = (pattern: string, rest: string): string | null | undefine
  * rather than guessing.
  */
 export const matchMarkdownRoute = (pathname: string): MarkdownRouteMatch | null => {
-  const { rest } = splitLocale(pathname);
+  const { locale, rest } = splitLocale(pathname);
   const normalized = rest.length > 1 && rest.endsWith('/') ? rest.slice(0, -1) : rest;
   if (normalized === '') return { route: markdownRoutes[0] };
   if (isPrivate(normalized)) return null;
@@ -148,7 +158,7 @@ export const matchMarkdownRoute = (pathname: string): MarkdownRouteMatch | null 
   // Static patterns win over dynamic ones, so /store/catalog stays a listing.
   for (const route of markdownRoutes) {
     if (isDynamicPattern(route.pattern)) continue;
-    if (matchesPattern(route.pattern, normalized) === null) return { route };
+    if (matchesPattern(localizedPattern(route, locale), normalized) === null) return { route };
   }
   for (const route of markdownRoutes) {
     if (!isDynamicPattern(route.pattern)) continue;

@@ -31,6 +31,7 @@ import { blocks, heading, isoDate, list, markdownLink, section, table } from './
 import {
   fillPattern,
   isDynamicPattern,
+  localizedPattern,
   matchMarkdownRoute,
   markdownRoutes,
   type MarkdownLocale,
@@ -547,7 +548,7 @@ export const renderMarkdownFor = async (pathname: string): Promise<MarkdownDoc |
 
   const { locale } = matchLocale(pathname);
   const slug = match.slug ?? match.route.id;
-  const basePath = fillPattern(match.route.pattern, match.slug);
+  const basePath = fillPattern(localizedPattern(match.route, locale), match.slug);
 
   return renderer({ locale, path: basePath, slug });
 };
@@ -591,7 +592,8 @@ export const listMarkdownRoutes = (): MarkdownRouteInfo[] => {
       // Product slugs are not enumerated: hundreds of them, all already
       // reachable through the catalogue listing.
       if (isDynamicPattern(route.pattern)) continue;
-      infos.push(routeInfo(locale, route.pattern === '' ? '/' : route.pattern, route.kind));
+      const pattern = localizedPattern(route, locale);
+      infos.push(routeInfo(locale, pattern === '' ? '/' : pattern, route.kind));
     }
   }
 
