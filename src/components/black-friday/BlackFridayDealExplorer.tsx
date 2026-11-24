@@ -37,6 +37,9 @@ const deviceFilters: Array<{ id: string; label: string; pattern: RegExp }> = [
 const brandSlug = (brand: string) => brand.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const knownBrands = new Set(["apple", "samsung", "google", "xiaomi", "huawei", "sony"]);
 
+/** Cards rendered per step; the rest arrive with “Weitere anzeigen”. */
+export const DEALS_PAGE_SIZE = 24;
+
 const sortLabels: Record<Locale, Record<SortId, string>> = {
   de: { saving: "Größte Ersparnis", "price-asc": "Preis aufsteigend", "price-desc": "Preis absteigend" },
   en: { saving: "Biggest saving", "price-asc": "Price low to high", "price-desc": "Price high to low" },
@@ -109,6 +112,15 @@ export default function BlackFridayDealExplorer({
       return savingOf(b) - savingOf(a);
     });
   }, [accessoryKind, brand, categoryDeals, condition, device, maxPrice, query, sort]);
+
+  // Every deal is loaded, but the grid starts with one page of cards and grows
+  // on request, so a phone does not render 200 cards at once. Any filter or
+  // sort change starts again at the first page.
+  const filterKey = `${category}-${brand}-${device}-${accessoryKind}-${condition}-${sort}-${maxPrice}-${query}`;
+  const [paging, setPaging] = useState({ key: filterKey, count: DEALS_PAGE_SIZE });
+  const shownCount = paging.key === filterKey ? paging.count : DEALS_PAGE_SIZE;
+  const shown = visible.slice(0, shownCount);
+  const remaining = visible.length - shown.length;
 
   const activeFilters =
     (brand !== "all" ? 1 : 0) +
@@ -363,8 +375,9 @@ export default function BlackFridayDealExplorer({
       </div>
 
       {visible.length > 0 ? (
-        <div key={`${category}-${brand}-${device}-${accessoryKind}-${condition}-${sort}-${maxPrice}-${query}`} className="mt-4 grid animate-page-enter grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
-          {visible.map((deal, index) => (
+        <>
+        <div key={filterKey} className="mt-4 grid animate-page-enter grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
+          {shown.map((deal, index) => (
             <StoreProductCard
               key={deal.id}
               product={deal}
@@ -376,6 +389,24 @@ export default function BlackFridayDealExplorer({
             />
           ))}
         </div>
+        {remaining > 0 ? (
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPaging({ key: filterKey, count: shownCount + DEALS_PAGE_SIZE })}
+              className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/25 px-6 text-sm font-bold text-white transition hover:border-white hover:bg-white hover:text-[#08080a]"
+            >
+              {lang === "de"
+                ? `Weitere ${Math.min(DEALS_PAGE_SIZE, remaining)} Deals anzeigen`
+                : `Show ${Math.min(DEALS_PAGE_SIZE, remaining)} more deals`}
+              <span aria-hidden="true">↓</span>
+            </button>
+            <p className="text-[11px] text-white/40">
+              {lang === "de" ? `${shown.length} von ${visible.length} angezeigt` : `Showing ${shown.length} of ${visible.length}`}
+            </p>
+          </div>
+        ) : null}
+        </>
       ) : (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-white/12 bg-white/[0.03] px-6 py-12 text-center">
           <span aria-hidden="true" className="grid size-12 place-items-center rounded-full border border-signal/40 text-[color:var(--signal)]">

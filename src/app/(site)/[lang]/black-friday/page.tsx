@@ -27,6 +27,11 @@ import { siteInfo } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
+/** Upper bound for one campaign; the admin allows at most 400 discounts. */
+const BLACK_WEEK_DEAL_LIMIT = 400;
+/** The ItemList schema names the top deals only, to keep the HTML light. */
+const SCHEMA_DEAL_LIMIT = 48;
+
 const maxDiscountOf = (products: Array<{ price: number; compareAtPrice?: number; campaignDeal?: { percent: number } }>) =>
   products.reduce<number | null>((highest, product) => {
     const value = product.campaignDeal?.percent ?? discountPercentage(product.price, product.compareAtPrice);
@@ -50,7 +55,7 @@ export const generateMetadata = async ({
     return createMetadata(locale, offSeason.metaTitle, offSeason.metaDescription, "/black-friday");
   }
   const copy = blackFridayCopy[locale].page;
-  const deals = phase === "live" ? await getBlackFridayDeals(locale, 48) : [];
+  const deals = phase === "live" ? await getBlackFridayDeals(locale, BLACK_WEEK_DEAL_LIMIT) : [];
   return createMetadata(
     locale,
     copy.metaTitle,
@@ -75,7 +80,9 @@ export default async function BlackFridayPage({
 
   const copy = blackFridayCopy[locale];
   const page = copy.page;
-  const deals = await getBlackFridayDeals(locale, 48);
+  // Every campaign deal: the explorer pages through them, so the page shows the
+  // whole Black Week instead of the first 48.
+  const deals = await getBlackFridayDeals(locale, BLACK_WEEK_DEAL_LIMIT);
   const cards = deals.map((product) => toCatalogCardModel(product));
   const maxDiscount = maxDiscountOf(deals);
   const targetAt = isBefore ? blackFriday.startsAt : blackFriday.endsAt;
@@ -89,8 +96,8 @@ export default async function BlackFridayPage({
     "@type": "ItemList",
     name: `Apfel Park Black Week ${blackFriday.startsAt.slice(0, 4)}`,
     url: pageUrl,
-    numberOfItems: cards.length,
-    itemListElement: cards.map((card, index) => {
+    numberOfItems: Math.min(cards.length, SCHEMA_DEAL_LIMIT),
+    itemListElement: cards.slice(0, SCHEMA_DEAL_LIMIT).map((card, index) => {
       const product = deals[index];
       const productUrl = `${siteInfo.url}/${locale}/store/${card.slug}`;
       const description = product?.description || product?.subtitle;
