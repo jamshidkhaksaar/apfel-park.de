@@ -114,7 +114,10 @@ export default function BlackFridayBanner({
             className="absolute inset-0 [mask-image:linear-gradient(180deg,#000_70%,transparent)] md:[mask-image:linear-gradient(90deg,transparent,#000_22%)]"
           />
           {showSaving ? (
-            <span className="bf-badge absolute right-[8%] top-[10%] z-[4] flex flex-col items-start gap-1 px-3 pb-2 pt-1.5 !rotate-[8deg]">
+            // `.bf-badge` sets position: relative in the same CSS layer and
+            // wins over `absolute`; the sticker then spanned the whole image as
+            // a bar. `!absolute` and `w-max` keep it a compact corner sticker.
+            <span className="bf-badge !absolute right-[8%] top-[10%] z-[4] flex w-max flex-col items-start gap-1 px-3 pb-2 pt-1.5 !rotate-[8deg]">
               <span className="bf-gold-text relative z-[2] text-[10px] font-black uppercase tracking-[0.16em]">Black Friday</span>
               <span className="bf-badge-pct relative z-[2] rounded-md px-2 text-2xl font-black tabular-nums text-white">−{maxPercent}%</span>
             </span>
