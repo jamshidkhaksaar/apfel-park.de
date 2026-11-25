@@ -3,19 +3,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getProductBySlug: vi.fn(),
   getCurrentSlugForOldSlug: vi.fn(),
+  getRetiredProductBySlug: vi.fn(),
   notFound: vi.fn(),
   permanentRedirect: vi.fn(),
+  redirect: vi.fn(),
   createMetadata: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
   notFound: mocks.notFound,
   permanentRedirect: mocks.permanentRedirect,
+  redirect: mocks.redirect,
 }));
 
 vi.mock('@/lib/products', () => ({
   getProductBySlug: mocks.getProductBySlug,
   getCurrentSlugForOldSlug: mocks.getCurrentSlugForOldSlug,
+  getRetiredProductBySlug: mocks.getRetiredProductBySlug,
   getRelatedProducts: vi.fn(),
 }));
 
@@ -113,6 +117,10 @@ describe('missing product route metadata', () => {
     vi.clearAllMocks();
     mocks.getProductBySlug.mockResolvedValue(null);
     mocks.getCurrentSlugForOldSlug.mockResolvedValue(null);
+    mocks.getRetiredProductBySlug.mockResolvedValue(null);
+    mocks.redirect.mockImplementation((url: string) => {
+      throw new Error(`NEXT_TEMPORARY_REDIRECT:${url}`);
+    });
     mocks.notFound.mockImplementation(() => {
       throw new Error('NEXT_NOT_FOUND');
     });
@@ -129,6 +137,20 @@ describe('missing product route metadata', () => {
     expect(mocks.getCurrentSlugForOldSlug).toHaveBeenCalledWith('removed-product');
     expect(mocks.notFound).toHaveBeenCalledOnce();
     expect(mocks.createMetadata).not.toHaveBeenCalled();
+  });
+
+  it('sends a sold product to its model page for good', async () => {
+    mocks.getRetiredProductBySlug.mockResolvedValue({ title: 'Apple iPhone 16 Pro Max 256GB', brand: 'Apple', model: 'iPhone 16 Pro Max', category: 'smartphones', condition: 'used', deleted: true });
+    await expect(generateMetadata({ params: Promise.resolve({ lang: 'en', slug: 'apple-iphone-16-pro-max-256gb-gebraucht' }) }))
+      .rejects.toThrow('NEXT_REDIRECT:/en/iphone-16-pro-max');
+    expect(mocks.notFound).not.toHaveBeenCalled();
+  });
+
+  it('only temporarily redirects a product that is switched off', async () => {
+    mocks.getRetiredProductBySlug.mockResolvedValue({ title: 'Apple iPhone 17 Pro Max 256GB', brand: 'Apple', model: null, category: 'smartphones', condition: 'new', deleted: false });
+    await expect(generateMetadata({ params: Promise.resolve({ lang: 'de', slug: 'apple-iphone-17-pro-max-256gb-neu' }) }))
+      .rejects.toThrow('NEXT_TEMPORARY_REDIRECT:/de/iphone-17');
+    expect(mocks.permanentRedirect).not.toHaveBeenCalled();
   });
 
   it('permanently redirects an old slug to its exact localized successor', async () => {

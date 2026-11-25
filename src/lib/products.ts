@@ -1536,6 +1536,44 @@ export const getProductBySlug = (
  * and recorded in product_slug_history. Returns null when there is no history
  * entry, so the caller can 404.
  */
+/**
+ * A product behind this URL (current or former slug) that no longer sells:
+ * switched off or removed from the catalogue. Null when the URL never
+ * belonged to a product, or the product is live.
+ */
+export async function getRetiredProductBySlug(slug: string): Promise<
+  | { title: string; model: string | null; brand: string | null; category: ProductCategory; condition: ProductCondition; deleted: boolean }
+  | null
+> {
+  try {
+    const { rows } = await query(
+      `SELECT p.title, p.model, p.brand, p.category, p.condition, p.is_active,
+              (p.import_metadata->>'catalogDeletedAt') IS NOT NULL AS deleted
+         FROM products p
+        WHERE p.slug = $1
+           OR p.id IN (SELECT h.product_id FROM product_slug_history h WHERE h.old_slug = $1)
+        ORDER BY (p.slug = $1) DESC
+        LIMIT 1`,
+      [slug],
+    );
+    const row = rows[0] as
+      | { title: string | null; model: string | null; brand: string | null; category: string; condition: string; is_active: boolean; deleted: boolean }
+      | undefined;
+    if (!row || (row.is_active && !row.deleted)) return null;
+    return {
+      title: row.title ?? "",
+      model: row.model,
+      brand: row.brand,
+      category: normalizeCategory(row.category) ?? "accessories",
+      condition: (["new", "open_box", "used"].includes(row.condition) ? row.condition : "new") as ProductCondition,
+      deleted: row.deleted,
+    };
+  } catch (error) {
+    console.warn("[store] retired product lookup failed", { slug, error });
+    return null;
+  }
+}
+
 export async function getCurrentSlugForOldSlug(oldSlug: string): Promise<string | null> {
   const { rows } = await query(
     `SELECT p.slug

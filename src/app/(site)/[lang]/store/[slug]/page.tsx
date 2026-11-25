@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 
 import { createMetadata } from "@/lib/metadata";
 import { germanyPriceTitle } from "@/lib/price-title";
-import { getInStockAlternatives, getProductBySlug, getCurrentSlugForOldSlug, getRelatedProducts } from "@/lib/products";
+import { getInStockAlternatives, getProductBySlug, getCurrentSlugForOldSlug, getRelatedProducts, getRetiredProductBySlug } from "@/lib/products";
+import { retiredProductTarget } from "@/lib/retired-product-redirect";
 import { conditionLabel } from "@/lib/condition-labels";
 import { subcategoryLabel } from "@/lib/product-subcategory";
 import ProductReviews from "@/components/ProductReviews";
@@ -84,6 +85,20 @@ const gtinProperties = (value: string | undefined) => {
   return {};
 };
 
+/**
+ * A sold or switched-off product sends its visitors (and Google) to the
+ * closest page that still sells the same thing instead of a 404. Removed from
+ * the catalogue: permanent, so the ranking moves over. Only switched off:
+ * temporary, so the page comes back as soon as it is reactivated.
+ */
+const redirectRetiredProduct = async (slug: string, locale: Locale): Promise<void> => {
+  const retired = await getRetiredProductBySlug(slug);
+  if (!retired) return;
+  const target = retiredProductTarget(retired, locale);
+  if (retired.deleted) permanentRedirect(target);
+  redirect(target);
+};
+
 export const generateMetadata = async ({
   params,
 }: {
@@ -98,6 +113,7 @@ export const generateMetadata = async ({
     if (currentSlug) {
       permanentRedirect(`/${locale}/store/${currentSlug}`);
     }
+    await redirectRetiredProduct(slug, locale);
     // Throw during metadata resolution so Next can send a genuine 404 before
     // the dynamic page starts streaming. Next also adds robots noindex here.
     notFound();
@@ -202,6 +218,7 @@ export default async function ProductDetailPage({
       // the whole point of keeping slug history. Same trap as src/app/page.tsx.
       permanentRedirect(`/${locale}/store/${currentSlug}`);
     }
+    await redirectRetiredProduct(slug, locale);
     notFound();
   }
 
