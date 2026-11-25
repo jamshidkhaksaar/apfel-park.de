@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { createMetadata } from "@/lib/metadata";
+import { germanyPriceTitle } from "@/lib/price-title";
 import { getInStockAlternatives, getProductBySlug, getCurrentSlugForOldSlug, getRelatedProducts } from "@/lib/products";
 import { conditionLabel } from "@/lib/condition-labels";
 import { subcategoryLabel } from "@/lib/product-subcategory";
@@ -139,8 +140,22 @@ export const generateMetadata = async ({
     ? descriptiveTitle
     : `${compactText([seoProductName, titleCondition].filter(Boolean).join(" "), 44 - reference.length)} #${reference}`;
   // Prefer an unshortened model and identity when they fit.
-  const resolvedSeoTitle = (!attributes.length || descriptiveTitle.length > 47) && identityTitle.length <= 47
+  const identityOrSeoTitle = (!attributes.length || descriptiveTitle.length > 47) && identityTitle.length <= 47
     ? identityTitle : seoTitle;
+  // English searches from Germany ask "… price in Germany": devices in stock
+  // put the live price in the title. Variants with different prices read "from".
+  const variantPrices = product.variants.map(variant => variant.price).filter((value): value is number => typeof value === "number" && value > 0);
+  const lowestPrice = Math.min(product.price, ...variantPrices);
+  const priceTitle = locale === "en"
+    && (product.stock ?? 0) > 0
+    && (product.category === "smartphones" || product.category === "tablets")
+    ? germanyPriceTitle(
+        [product.title.replace(/^Apple (?=iPhone\b)/i, ""), ...attributes, titleCondition].filter(Boolean).join(" "),
+        lowestPrice,
+        { from: variantPrices.some(value => value !== lowestPrice) },
+      )
+    : null;
+  const resolvedSeoTitle = priceTitle ?? identityOrSeoTitle;
   const seoDescription = compactText(
     (product.stock ?? 0) <= 0
       ? locale === "de"

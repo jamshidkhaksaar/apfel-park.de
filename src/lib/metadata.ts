@@ -38,6 +38,11 @@ export type CreateMetadataOptions = {
    * follows the current locale; hreflang points at each locale's own slug.
    */
   alternatePaths?: Partial<Record<Locale, string>>;
+  /**
+   * Page copy carries live data (e.g. the current price) and wins over the
+   * registered route's default title and description.
+   */
+  preferPageCopy?: boolean;
 };
 
 export const createMetadata = async (
@@ -60,9 +65,10 @@ export const createMetadata = async (
   const routeMetadata = route ? route.locales[locale] : null;
   // Registered routes: admin/default route copy wins so /admin/seo overrides work.
   // Unregistered paths (products, articles, …): the page-supplied copy wins.
-  const baseTitle = normalizeMetadataTitle(routeMetadata ? routeMetadata.title || title : title);
-  const baseDescription = routeMetadata
-    ? routeMetadata.description || description
+  const routeCopy = options?.preferPageCopy ? null : routeMetadata;
+  const baseTitle = normalizeMetadataTitle(routeCopy ? routeCopy.title || title : title);
+  const baseDescription = routeCopy
+    ? routeCopy.description || description
     : description;
   // Only clean, self-canonical listing pages get distinct snippets. Filtered
   // views remain noindex even when their canonical retains the page number.
