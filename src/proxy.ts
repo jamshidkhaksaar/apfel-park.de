@@ -152,14 +152,22 @@ export async function proxy(request: NextRequest) {
         const response = await fetch(routeUrl, { cache: 'no-store' });
         if (response.ok) {
           const resolution = (await response.json()) as {
-            kind?: 'active' | 'redirect' | 'missing';
+            kind?: 'active' | 'redirect' | 'retired' | 'missing';
             slug?: string;
+            targets?: { de?: string; en?: string };
+            permanent?: boolean;
           };
           if (resolution.kind === 'redirect' && resolution.slug) {
             return NextResponse.redirect(
               redirectUrl(`/${productPath.locale}/store/${resolution.slug}`),
               301,
             );
+          }
+          // A sold or switched-off product: the closest page that still sells
+          // the same thing instead of a 404 (permanent once it is removed).
+          const retiredTarget = resolution.kind === 'retired' ? resolution.targets?.[productPath.locale as 'de' | 'en'] : undefined;
+          if (retiredTarget && retiredTarget.startsWith('/')) {
+            return NextResponse.redirect(redirectUrl(retiredTarget), resolution.permanent ? 301 : 302);
           }
           if (resolution.kind === 'missing') {
             const missingUrl = internalMissingProductUrl(internalAppUrl, productPath.locale);
