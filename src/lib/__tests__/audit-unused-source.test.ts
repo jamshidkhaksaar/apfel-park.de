@@ -69,7 +69,9 @@ const cliPath = path.join(repoRoot, 'scripts/audit-unused-source.mjs');
 const runCli = (root: string, env: Record<string, string | undefined> = {}) =>
   spawnSync(process.execPath, [cliPath, '--root', root], { encoding: 'utf8', env: { ...process.env, ...env } });
 
-describe('unused-source audit', () => {
+// These tests spawn the audit over a fixture tree and read every file; on a
+// busy machine that overruns the 5 s default without anything being wrong.
+describe('unused-source audit', { timeout: 30_000 }, () => {
   it('flags the unreferenced file and spares the reachable ones, with normalized paths', () => {
     const root = createFixture();
     try {

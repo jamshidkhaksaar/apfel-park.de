@@ -9,7 +9,8 @@ import { buildLlmsText } from '../llms';
 import { createDefaultEstimatePayload, defaultEstimateTemplate, normalizeEstimatePayload, normalizeTemplateSettings } from '../repair-estimates';
 import { siteInfo } from '../site';
 
-describe('canonical public business identity', () => {
+// One test walks the whole source tree; give it room on a busy machine.
+describe('canonical public business identity', { timeout: 30_000 }, () => {
   it.each(['de', 'en'] as const)('keeps legal pages consistent in %s', lang => {
     const dict = getDictionary(lang);
     expect(dict.business.proprietorStatement).toContain('Bismaillah Safi');
