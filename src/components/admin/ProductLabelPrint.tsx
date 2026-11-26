@@ -33,30 +33,31 @@ const SIZES = {
     w: 62, h: 58, name: "Smartphone", nameEn: "Smartphone",
     roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
     driver: '2.4" (62 mm Endlos) · Länge 58 mm (2.28") · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 58 mm (2.28") · Portrait · Auto Cut on',
-    titleLines: 2, title: 7.6, titleMin: 5.2, brand: 2.8, price: 12, warranty: 3, details: 3.5, barcode: 8.5, code: 2.3, gap: 1, barPad: 1.4,
+    // Fits 51 mm (58 mm minus the driver's 3 mm feed at each end), even with a two-line model name.
+    safeY: 3.5, titleLines: 2, title: 6.6, titleMin: 5, brand: 2.4, price: 10, warranty: 2.6, details: 3.2, barcode: 7, code: 2, gap: 1, barPad: 1,
   },
   "62x40": {
     w: 62, h: 40, name: "Klein / Zubehör", nameEn: "Small / accessories",
     roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
     driver: '2.4" (62 mm Endlos) · Länge 40 mm · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 40 mm · Portrait · Auto Cut on',
     // One title line on the small label, so the barcode keeps its height.
-    titleLines: 1, title: 5, titleMin: 2.8, brand: 2, price: 6.4, warranty: 2.2, details: 2.5, barcode: 7, code: 1.7, gap: 0.8, barPad: 0.6,
+    safeY: 3.5, titleLines: 1, title: 5, titleMin: 2.8, brand: 2, price: 6.4, warranty: 2.2, details: 2.5, barcode: 6, code: 1.7, gap: 0.8, barPad: 0.6,
   },
   "62x100": {
     w: 62, h: 100, name: "Groß", nameEn: "Large",
     roll: "DK-11202 (62 × 100 mm)", rollEn: "DK-11202 (62 × 100 mm)",
     driver: '2.4" x 3.9" · Hochformat', driverEn: '2.4" x 3.9" · Portrait',
-    titleLines: 2, title: 9.5, titleMin: 6, brand: 3.6, price: 16, warranty: 3.6, details: 4.2, barcode: 16, code: 2.6, gap: 2.4, barPad: 2.4,
+    safeY: 2, titleLines: 2, title: 9.5, titleMin: 6, brand: 3.6, price: 16, warranty: 3.6, details: 4.2, barcode: 16, code: 2.6, gap: 2.4, barPad: 2.4,
   },
 } as const;
 type SizeKey = keyof typeof SIZES;
 
 /**
- * Safe margin inside the label edge (mm). Top and bottom stay small: the
- * printer already feeds its own blank margin before the label, so more space
- * here only shows up as empty tape. The sides keep 3 mm (printable width).
+ * Safe margin inside the label edge (mm). The sides keep 3 mm (printable
+ * width). Top and bottom come per size (safeY): on continuous tape the Brother
+ * driver's "Feed" (0.12" = 3 mm) is not printed at either end, so the layout
+ * keeps 3.5 mm free there or the brand line and the barcode text get cut off.
  */
-const SAFE_Y = 1;
 const SAFE_X = 3;
 /** The shop logo next to the barcode: width ÷ height of the black/white mark. */
 const LOGO_RATIO = 354 / 520;
@@ -240,7 +241,7 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
           <div
             key={index}
             className="label-sheet flex flex-col justify-between overflow-hidden bg-white shadow-xl"
-            style={{ width: `${s.w}mm`, height: `${s.h}mm`, padding: `${SAFE_Y}mm ${SAFE_X}mm`, boxSizing: "border-box" }}
+            style={{ width: `${s.w}mm`, height: `${s.h}mm`, padding: `${s.safeY}mm ${SAFE_X}mm`, boxSizing: "border-box" }}
           >
             {/* 1. Model: the biggest text on the label, the brand small above
                 it, lined up with the model's left edge. */}
