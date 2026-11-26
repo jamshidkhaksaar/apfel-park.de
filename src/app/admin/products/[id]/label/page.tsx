@@ -29,7 +29,9 @@ export default async function ProductLabelPage({
   const result = await query(
     `SELECT p.id, p.title, p.brand, p.model, p.sku, p.category, p.condition, p.price, p.variants, p.specs, p.import_metadata,
             (SELECT f.name FROM product_family_members m JOIN product_families f ON f.id = m.family_id
-              WHERE m.product_id = p.id AND m.is_active AND f.is_active LIMIT 1) AS family_name
+              WHERE m.product_id = p.id AND m.is_active AND f.is_active LIMIT 1) AS family_name,
+            (SELECT m.option_values FROM product_family_members m
+              WHERE m.product_id = p.id AND m.is_active LIMIT 1) AS family_options
        FROM products p WHERE p.id = $1 LIMIT 1`,
     [id],
   );
@@ -40,14 +42,17 @@ export default async function ProductLabelPage({
   const wanted = text(rawSku).toLowerCase();
   const variant = (wanted && variants.find((entry) => text(entry.sku).toLowerCase() === wanted)) || (variants.length === 1 ? variants[0] : undefined);
   const details = inventoryProductDetails({ ...row, variants: [] }, "de", "product");
-  const storage = text(variant?.storage) || details.storage || "";
+  // Older products have no variant entry; the product editor keeps their
+  // colour and storage on the model-family membership instead.
+  const options = row.family_options && typeof row.family_options === "object" ? (row.family_options as Record<string, unknown>) : {};
+  const storage = text(variant?.storage) || text(options.storage) || details.storage || "";
   const sku = text(variant?.sku) || text(row.sku) || null;
   const { brand, model } = labelBrandAndModel(text(row.family_name) || text(row.model) || text(row.title), storage, text(row.brand));
   const data: LabelData = {
     brand,
     model,
     storage,
-    color: text(variant?.color) || details.color || "",
+    color: text(variant?.color) || text(options.color) || details.color || "",
     price: Number(variant?.price ?? row.price) || 0,
     sku,
     barcode: sku ? barcodeValueForSku(sku) : null,
