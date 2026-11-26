@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { code128Width, encodeCode128B, isCode128BText } from "@/lib/barcode-code128";
 
@@ -33,15 +33,14 @@ const SIZES = {
     w: 62, h: 58, name: "Smartphone", nameEn: "Smartphone",
     roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
     driver: '2.4" (62 mm Endlos) · Länge 58 mm (2.28") · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 58 mm (2.28") · Portrait · Auto Cut on',
-    // Fits 51 mm (58 mm minus the driver's 3 mm feed at each end), even with a two-line model name.
-    safeY: 3.5, titleLines: 2, title: 6.6, titleMin: 5, brand: 2.4, price: 10, warranty: 2.6, details: 3.2, barcode: 7, code: 2, gap: 1, barPad: 1,
+    safeY: 5, titleLines: 2, title: 6.6, titleMin: 5, brand: 2.4, price: 10, warranty: 2.6, details: 3.2, barcode: 7, code: 2, gap: 1, barPad: 1,
   },
   "62x40": {
     w: 62, h: 40, name: "Klein / Zubehör", nameEn: "Small / accessories",
     roll: "DK-22205 (62 mm Endlos)", rollEn: "DK-22205 (62 mm continuous)",
     driver: '2.4" (62 mm Endlos) · Länge 40 mm · Hochformat · Auto Cut an', driverEn: '2.4" (62 mm continuous) · length 40 mm · Portrait · Auto Cut on',
     // One title line on the small label, so the barcode keeps its height.
-    safeY: 3.5, titleLines: 1, title: 5, titleMin: 2.8, brand: 2, price: 6.4, warranty: 2.2, details: 2.5, barcode: 6, code: 1.7, gap: 0.8, barPad: 0.6,
+    safeY: 4, titleLines: 1, title: 5, titleMin: 2.8, brand: 2, price: 6.4, warranty: 2.2, details: 2.5, barcode: 6, code: 1.7, gap: 0.8, barPad: 0.6,
   },
   "62x100": {
     w: 62, h: 100, name: "Groß", nameEn: "Large",
@@ -55,8 +54,9 @@ type SizeKey = keyof typeof SIZES;
 /**
  * Safe margin inside the label edge (mm). The sides keep 3 mm (printable
  * width). Top and bottom come per size (safeY): on continuous tape the Brother
- * driver's "Feed" (0.12" = 3 mm) is not printed at either end, so the layout
- * keeps 3.5 mm free there or the brand line and the barcode text get cut off.
+ * driver's "Feed" (0.12" = 3 mm) plus the printer's own unprintable edge is
+ * lost at either end (about 4–5 mm in practice), so the content stays inside
+ * that zone; it is centred and scaled down to fit (see `fit` below).
  */
 const SAFE_X = 3;
 /** The shop logo next to the barcode: width ÷ height of the black/white mark. */
@@ -165,6 +165,10 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
   const [warranty, setWarranty] = useState(defaultWarranty);
   const [copies, setCopies] = useState(1);
   const [price, setPrice] = useState(data.price);
+  // Whatever the brand, model length, price or warranty: measure the content
+  // and scale it down until it fits inside the safe zone of the label.
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
 
   const chooseSize = (next: SizeKey) => {
     setChosenSize(next);
@@ -180,6 +184,20 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
   const logoH = Math.min(s.barcode, 10);
   const logoW = Math.round(logoH * LOGO_RATIO * 10) / 10;
   const details = [data.storage ? formatStorage(data.storage) : "", data.color].filter(Boolean).join(" · ");
+  const availableMm = s.h - 2 * s.safeY;
+  useLayoutEffect(() => {
+    const element = contentRef.current;
+    if (!element) return;
+    const measure = () => {
+      const pxPerMm = element.parentElement ? element.parentElement.getBoundingClientRect().width / s.w : 0;
+      const neededMm = pxPerMm ? element.scrollHeight / pxPerMm : 0;
+      const widthMm = pxPerMm ? element.scrollWidth / pxPerMm : 0;
+      const next = neededMm && widthMm ? Math.min(1, availableMm / neededMm, (s.w - 2 * SAFE_X) / widthMm) : 1;
+      setFit((current) => (Math.abs(current - next) > 0.005 ? next : current));
+    };
+    measure();
+    void document.fonts?.ready.then(measure);
+  }, [availableMm, s.w, data.brand, data.model, details, priceText, warranty, size, copies]);
 
   return (
     <div className="label-print-root min-h-screen bg-neutral-200 p-6 text-black print:min-h-0 print:bg-white print:p-0">
@@ -240,9 +258,10 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
         {Array.from({ length: copies }, (_, index) => (
           <div
             key={index}
-            className="label-sheet flex flex-col justify-between overflow-hidden bg-white shadow-xl"
+            className="label-sheet flex flex-col items-stretch justify-center overflow-hidden bg-white shadow-xl"
             style={{ width: `${s.w}mm`, height: `${s.h}mm`, padding: `${s.safeY}mm ${SAFE_X}mm`, boxSizing: "border-box" }}
           >
+            <div ref={index === 0 ? contentRef : undefined} className="flex shrink-0 flex-col" style={{ transform: `scale(${fit})`, transformOrigin: "center center", width: "100%" }}>
             {/* 1. Model: the biggest text on the label, the brand small above
                 it, lined up with the model's left edge. */}
             <div className="flex shrink-0 justify-center">
@@ -290,6 +309,7 @@ export default function ProductLabelPrint({ data, defaultWarranty, locale = "de"
                 className="shrink-0"
                 style={{ height: `${logoH}mm`, width: `${logoW}mm` }}
               />
+            </div>
             </div>
           </div>
         ))}
