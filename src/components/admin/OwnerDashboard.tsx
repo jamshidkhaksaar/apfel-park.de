@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DashboardActivityItem, DashboardDay, DashboardOverview, DashboardProductLine } from "@/lib/admin-dashboard-overview";
-import ScanSearchInput from "@/components/admin/ScanSearchInput";
+import ScanSellDialog from "@/components/admin/ScanSellDialog";
 import type { AdminLocale } from "@/lib/admin-i18n";
 
 export type DashboardCampaign = {
@@ -37,8 +37,7 @@ const COPY = {
     hoursAgo: (n: number) => `vor ${n} Std.`,
     yesterday: "gestern",
     quickActions: "Schnellaktionen",
-    scan: "Barcode scannen", scanSub: "öffnet das Produkt", scanPlaceholder: "Barcode scannen oder SKU / Name eingeben",
-    inventory: "Lagerbestand", inventorySub: "Bestand prüfen & korrigieren",
+    scan: "Scannen & verkaufen", scanSub: "Scannen, Rabatt, verkaufen",
     newProduct: "Produkt anlegen", newProductSub: "Neues Gerät oder Zubehör",
     orders: "Bestellungen", repairs: "Reparaturen",
     open: (n: number) => `${n} offen`, allDone: "Alles erledigt", noneOpen: "Keine offenen",
@@ -97,8 +96,7 @@ const COPY = {
     hoursAgo: (n: number) => `${n} h ago`,
     yesterday: "yesterday",
     quickActions: "Quick actions",
-    scan: "Scan barcode", scanSub: "opens the product", scanPlaceholder: "Scan a barcode or type SKU / name",
-    inventory: "Inventory", inventorySub: "Check & correct stock",
+    scan: "Scan & sell", scanSub: "Scan, discount, sell",
     newProduct: "Add product", newProductSub: "New device or accessory",
     orders: "Orders", repairs: "Repairs",
     open: (n: number) => `${n} open`, allDone: "All done", noneOpen: "None open",
@@ -314,6 +312,7 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
   const [flash, setFlash] = useState<Record<string, boolean>>({});
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const previous = useRef(initial);
+  const [scanOpen, setScanOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -404,19 +403,10 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
         </div>
       </header>
 
-      {/* Barcode scan: a scan anywhere on the dashboard opens the product */}
-      <form action="/admin/products" method="get" role="search" aria-label={t.scan} className="flex items-center gap-3 rounded-2xl border border-gold/50 bg-surface p-3 sm:p-4">
-        <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-xl bg-gold/10 text-lg text-gold sm:size-11 sm:text-xl">▥</span>
-        <span className="min-w-0 flex-1">
-          <span className="mb-1.5 block text-sm font-bold text-foreground">{t.scan} <span className="font-normal text-muted">· {t.scanSub}</span></span>
-          <ScanSearchInput defaultValue="" placeholder={t.scanPlaceholder} />
-        </span>
-      </form>
-
       {/* Quick actions */}
       <nav aria-label={t.quickActions} className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          { href: "/admin/inventory", icon: "▤", title: t.inventory, sub: t.inventorySub, primary: true },
+          { href: "/admin/products?scan=1", icon: "▤", title: t.scan, sub: t.scanSub, primary: true },
           { href: "/admin/products/new", icon: "＋", title: t.newProduct, sub: t.newProductSub },
           { href: "/admin/orders", icon: "🧾", title: t.orders, sub: overview.todo.ordersToHandle ? t.open(overview.todo.ordersToHandle) : t.allDone },
           { href: "/admin/repairs", icon: "🔧", title: t.repairs, sub: overview.todo.repairsOpen ? t.open(overview.todo.repairsOpen) : t.noneOpen },
@@ -431,9 +421,17 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
               </span>
             </>
           );
-          return <Link key={action.href} href={action.href} className={className}>{body}</Link>;
+          // "Scannen & verkaufen" opens the scan popup right here.
+          return action.primary ? (
+            <button key={action.href} type="button" onClick={() => setScanOpen(true)} className={className}>{body}</button>
+          ) : (
+            <Link key={action.href} href={action.href} className={className}>{body}</Link>
+          );
         })}
       </nav>
+      {scanOpen ? (
+        <ScanSellDialog locale={locale} onClose={(changed) => { setScanOpen(false); if (changed) void refresh(); }} />
+      ) : null}
 
       {/* KPI tiles */}
       <section aria-label={t.kpis} className={`grid gap-4 sm:grid-cols-2 ${campaign.active ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}>

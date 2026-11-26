@@ -33,9 +33,8 @@ describe("owner dashboard", () => {
     expect(html).toContain("Safi");
     expect(html).toContain("3 Stück");
     expect(html).toContain("169.052");
-    expect(html).toContain("Lagerbestand");
-    expect(html).toContain("Barcode scannen");
-    expect(html).not.toMatch(/verkaufen|im Laden/);
+    expect(html).toContain("Scannen &amp; verkaufen");
+    expect(html).not.toMatch(/im Laden/);
     expect(html).toContain("Bestellungen warten");
     expect(html).toContain("Black Friday startet in");
     expect(html).toContain("Ladenhüter");
@@ -49,8 +48,8 @@ describe("owner dashboard", () => {
     }));
     expect(html).toContain("3 units");
     expect(html).toContain("169,052");
-    expect(html).toContain("Inventory");
-    expect(html).not.toMatch(/Scan &amp; sell|in store/);
+    expect(html).toContain("Scan &amp; sell");
+    expect(html).not.toMatch(/in store/);
     expect(html).toContain("Orders waiting for shipping/pickup");
     expect(html).toContain("Black Friday starts in");
     expect(html).toContain("Slow sellers");
