@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DashboardActivityItem, DashboardDay, DashboardOverview, DashboardProductLine } from "@/lib/admin-dashboard-overview";
+import ScanSearchInput from "@/components/admin/ScanSearchInput";
 import type { AdminLocale } from "@/lib/admin-i18n";
 
 export type DashboardCampaign = {
@@ -36,6 +37,7 @@ const COPY = {
     hoursAgo: (n: number) => `vor ${n} Std.`,
     yesterday: "gestern",
     quickActions: "Schnellaktionen",
+    scan: "Barcode scannen", scanSub: "öffnet das Produkt", scanPlaceholder: "Barcode scannen oder SKU / Name eingeben",
     inventory: "Lagerbestand", inventorySub: "Bestand prüfen & korrigieren",
     newProduct: "Produkt anlegen", newProductSub: "Neues Gerät oder Zubehör",
     orders: "Bestellungen", repairs: "Reparaturen",
@@ -95,6 +97,7 @@ const COPY = {
     hoursAgo: (n: number) => `${n} h ago`,
     yesterday: "yesterday",
     quickActions: "Quick actions",
+    scan: "Scan barcode", scanSub: "opens the product", scanPlaceholder: "Scan a barcode or type SKU / name",
     inventory: "Inventory", inventorySub: "Check & correct stock",
     newProduct: "Add product", newProductSub: "New device or accessory",
     orders: "Orders", repairs: "Repairs",
@@ -400,6 +403,15 @@ export default function OwnerDashboard({ initial, name, campaign, blackFridayToo
           <button type="button" onClick={() => void refresh()} className="rounded-full border border-border px-3 py-1.5 text-muted transition hover:border-gold/50 hover:text-foreground">{t.refresh}</button>
         </div>
       </header>
+
+      {/* Barcode scan: a scan anywhere on the dashboard opens the product */}
+      <form action="/admin/products" method="get" role="search" aria-label={t.scan} className="flex items-center gap-3 rounded-2xl border border-gold/50 bg-surface p-3 sm:p-4">
+        <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-xl bg-gold/10 text-lg text-gold sm:size-11 sm:text-xl">▥</span>
+        <span className="min-w-0 flex-1">
+          <span className="mb-1.5 block text-sm font-bold text-foreground">{t.scan} <span className="font-normal text-muted">· {t.scanSub}</span></span>
+          <ScanSearchInput defaultValue="" placeholder={t.scanPlaceholder} />
+        </span>
+      </form>
 
       {/* Quick actions */}
       <nav aria-label={t.quickActions} className="grid grid-cols-2 gap-3 md:grid-cols-4">

@@ -1,6 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 import OwnerDashboard from "../admin/OwnerDashboard";
 import type { DashboardOverview } from "@/lib/admin-dashboard-overview";
@@ -32,7 +34,8 @@ describe("owner dashboard", () => {
     expect(html).toContain("3 Stück");
     expect(html).toContain("169.052");
     expect(html).toContain("Lagerbestand");
-    expect(html).not.toMatch(/Scannen|im Laden/);
+    expect(html).toContain("Barcode scannen");
+    expect(html).not.toMatch(/verkaufen|im Laden/);
     expect(html).toContain("Bestellungen warten");
     expect(html).toContain("Black Friday startet in");
     expect(html).toContain("Ladenhüter");
