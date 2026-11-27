@@ -6,6 +6,7 @@ import { deleteBlobByUrl, resolveUploadPath, uploadProductImage } from "@/lib/bl
 import { withTransaction } from "@/lib/db";
 import { aiIntakeTextProvenance } from '@/lib/product-text-provenance';
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
+import { ensureModelFamilyMembership } from "@/lib/catalog-offer-resolution";
 
 import { ProductIntakeError } from "./errors";
 import { canonicalJsonHash, scopedIdempotencyKey } from "./json";
@@ -30,7 +31,7 @@ export const productPriceUpdateForSku = (
     : -1;
   if (index < 0) return { variants, matched: false, updateBase: false };
   const next = variants.map((variant, variantIndex) => variantIndex === index ? { ...variant, price } : variant);
-  return { variants: next, matched: true, updateBase: next[index].isDefault === true };
+  return { variants: next, matched: true, updateBase: next.length === 1 || next[index].isDefault === true };
 };
 
 const assertLiveReady = (run: ProductIntakeRun): void => {
@@ -565,6 +566,18 @@ export const publishApprovedProductDraft = async (
     await client.query("UPDATE products SET is_active=true, updated_at=now() WHERE id=$1::uuid", [run.targetProductId]);
     await client.query("UPDATE inventory_skus SET is_active=true WHERE product_id=$1::uuid AND location='local'", [run.targetProductId]);
     await client.query("SELECT queue_inventory_sync($1)", [inventoryRow.sku]);
+    if (proposal.product.brand && proposal.product.model) {
+      await ensureModelFamilyMembership(client, {
+        productId: run.targetProductId,
+        category: proposal.product.category ?? "smartphones",
+        brand: proposal.product.brand,
+        model: proposal.product.model,
+        title: proposal.listingPreview.de.title,
+        condition: conditionValue(proposal.condition),
+        color: proposal.product.color,
+        storage: proposal.product.storage,
+      });
+    }
     const applied = await client.query(
       `UPDATE product_intake_runs
           SET status='applied', applied_at=now(), applied_by=$2, last_error=null

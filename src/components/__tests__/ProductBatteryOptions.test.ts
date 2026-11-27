@@ -33,6 +33,12 @@ describe('customer battery selectors and catalog stock summaries',()=>{
     const sealed={...family,members:family.members.map((member,index)=>({...member,selected:index===0,optionValues:{...member.optionValues,condition:'new'}}))};
     expect(renderToStaticMarkup(createElement(ProductFamilyConfigurator,{family:sealed,locale:'en'}))).not.toContain('Battery health');
   });
+  it('shows battery selectors for open-box offers that record battery health',()=>{
+    const openBox={...family,members:family.members.map((member,index)=>({...member,selected:index===0,optionValues:{...member.optionValues,condition:'open_box'}}))};
+    const html=renderToStaticMarkup(createElement(ProductFamilyConfigurator,{family:openBox,locale:'en'}));
+    expect(html).toContain('Battery health');
+    expect(html).toContain('95%');
+  });
   it('distinguishes unit totals from listing count and shows a model subtotal',()=>{
     const html=renderToStaticMarkup(createElement(CatalogStockSummary,{locale:'en',expanded:true,summary:{models:[{model:'iPhone 15',listings:2,units:8,value:3200},{model:'iPhone 15 Pro',listings:1,units:2,value:1200}],listings:3,units:10,value:4400}}));
     expect(html).toContain('iPhone 15 Pro');expect(html).toContain('Stock value');expect(html).toContain('Subtotal');expect(html).toContain('10');expect(html).toContain('4,400');

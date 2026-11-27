@@ -157,9 +157,13 @@ const rowsToCandidates = (rows: MatchRow[]): ProductMatchCandidate[] => rows.map
 }));
 
 const variantJoin = `
+  left join product_family_members pfm on pfm.product_id = product.id
   left join lateral jsonb_array_elements(
     case when jsonb_typeof(product.variants) = 'array' then product.variants else '[]'::jsonb end
   ) as variant(value) on true`;
+
+const storageExpr = `coalesce(nullif(btrim(variant.value ->> 'storage'), ''), nullif(nullif(btrim(pfm.option_values ->> 'storage'), ''), 'unspecified'))`;
+const colorExpr = `coalesce(nullif(btrim(variant.value ->> 'color'), ''), nullif(nullif(btrim(pfm.option_values ->> 'color'), ''), 'unspecified'))`;
 
 const projection = `
   select distinct product.id, product.title, product.slug, product.condition,
@@ -168,8 +172,10 @@ const projection = `
          coalesce(nullif(btrim(variant.value ->> 'mpn'), ''), nullif(btrim(product.mpn), '')) as mpn,
          product.hardware_model,
          product.model,
-         nullif(btrim(variant.value ->> 'storage'), '') as storage,
-         nullif(btrim(variant.value ->> 'color'), '') as color
+         ${storageExpr} as storage,
+         ${colorExpr} as color,
+         product.battery_health,
+         pfm.family_id
     from products product`;
 
 export const createPostgresProductMatchLookup = (executor: SqlExecutor): ProductMatchLookup => {
@@ -190,13 +196,15 @@ export const createPostgresProductMatchLookup = (executor: SqlExecutor): Product
     ),
     byGtinAndCondition: (gtin, conditions) => run(
       `${projection}${variantJoin}
-       where product.condition = any($2::text[])
+       where coalesce(product.import_metadata ->> 'catalogDeletedAt', '') = ''
+         and product.condition = any($2::text[])
          and (btrim(product.gtin) = $1 or btrim(variant.value ->> 'gtin') = $1)`,
       [gtin, conditions],
     ),
     byMpnAndCondition: (mpn, conditions) => run(
       `${projection}${variantJoin}
-       where product.condition = any($2::text[])
+       where coalesce(product.import_metadata ->> 'catalogDeletedAt', '') = ''
+         and product.condition = any($2::text[])
          and (
            lower(btrim(product.mpn)) = lower(btrim($1))
            or lower(btrim(variant.value ->> 'mpn')) = lower(btrim($1))
@@ -205,23 +213,26 @@ export const createPostgresProductMatchLookup = (executor: SqlExecutor): Product
     ),
     byHardwareModelAndCondition: (hardwareModel, storage, color, conditions) => run(
       `${projection}${variantJoin}
-       where product.condition = any($4::text[])
+       where coalesce(product.import_metadata ->> 'catalogDeletedAt', '') = ''
+         and product.condition = any($4::text[])
          and lower(btrim(coalesce(product.hardware_model, ''))) = lower(btrim($1))
-         and ($2::text is null or lower(regexp_replace(coalesce(variant.value ->> 'storage', ''), '[^a-zA-Z0-9]+', '', 'g')) = $2)
-         and ($3::text is null or lower(regexp_replace(coalesce(variant.value ->> 'color', ''), '[^a-zA-Z0-9]+', '', 'g')) = $3)`,
+         and ($2::text is null or lower(regexp_replace(coalesce(${storageExpr}, ''), '[^a-zA-Z0-9]+', '', 'g')) = $2)
+         and ($3::text is null or lower(regexp_replace(coalesce(${colorExpr}, ''), '[^a-zA-Z0-9]+', '', 'g')) = $3)`,
       [hardwareModel, storage ? normalizeMatchText(storage) : null, color ? normalizeMatchText(color) : null, conditions],
     ),
     byModelVariantAndCondition: (model, storage, color, conditions) => run(
       `${projection}${variantJoin}
-       where product.condition = any($4::text[])
+       where coalesce(product.import_metadata ->> 'catalogDeletedAt', '') = ''
+         and product.condition = any($4::text[])
          and lower(regexp_replace(coalesce(product.model, ''), '[^a-zA-Z0-9]+', '', 'g')) = $1
-         and lower(regexp_replace(coalesce(variant.value ->> 'storage', ''), '[^a-zA-Z0-9]+', '', 'g')) = $2
-         and lower(regexp_replace(coalesce(variant.value ->> 'color', ''), '[^a-zA-Z0-9]+', '', 'g')) = $3`,
+         and lower(regexp_replace(coalesce(${storageExpr}, ''), '[^a-zA-Z0-9]+', '', 'g')) = $2
+         and lower(regexp_replace(coalesce(${colorExpr}, ''), '[^a-zA-Z0-9]+', '', 'g')) = $3`,
       [model, storage, color, conditions],
     ),
     byNormalizedModelAndCondition: (model, conditions) => run(
       `${projection}${variantJoin}
-       where product.condition = any($2::text[])
+       where coalesce(product.import_metadata ->> 'catalogDeletedAt', '') = ''
+         and product.condition = any($2::text[])
          and lower(regexp_replace(coalesce(product.model, ''), '[^a-zA-Z0-9]+', '', 'g')) = $1`,
       [model, conditions],
     ),

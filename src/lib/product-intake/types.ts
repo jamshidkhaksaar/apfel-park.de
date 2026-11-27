@@ -90,6 +90,7 @@ export type ProductMatchInput = {
   storage: string | null;
   color: string | null;
   condition: ProductIntakeCondition;
+  batteryHealth?: number | null;
 };
 
 export type ProductProposal = {
@@ -179,6 +180,8 @@ export type ProductMatchCandidate = {
   model: string | null;
   storage: string | null;
   color: string | null;
+  batteryHealth?: number | null;
+  familyId?: string | null;
 };
 
 export type ProductMatchStrategy =

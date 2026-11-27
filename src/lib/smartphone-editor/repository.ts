@@ -1,4 +1,5 @@
 import { randomUUID, createHash } from 'node:crypto';
+import { ensureModelFamilyMembership } from '@/lib/catalog-offer-resolution';
 import sharp from 'sharp';
 import { query, withTransaction, type TransactionClient } from '@/lib/db';
 import { mapAdminProduct, type ProductRow } from '@/lib/admin-product-data';
@@ -989,6 +990,20 @@ export const publishPhoneDraft = async (
       const family = { ...doc.family, id: familyId ?? doc.family.id, members: [...mapped, ...added.filter(member => newProductIds.has(member.product_id) && !doc.family!.members.some(m => m.productId === member.product_id)).map(member => ({ productId: member.product_id, optionValues: member.option_values, position: member.position, isActive: member.is_active }))] };
       familyId = await persistFamily(client, family);
       doc.family = family;
+    }
+    if (familyId && !doc.family && !telegramUpdateOnly && selected[0]) {
+      await ensureModelFamilyMembership(client, {
+        productId: selected[0].sourceProductId ?? [...newProductIds][0] ?? '',
+        category: String(doc.shared.category ?? 'smartphones'),
+        brand: doc.shared.brand,
+        model: doc.shared.model,
+        title: doc.shared.title,
+        condition: selected[0].condition,
+        color: selected[0].color,
+        storage: selected[0].storage,
+        configuration: selected[0].configuration,
+        existingFamilyId: familyId,
+      });
     }
     if (familyId) doc.family = await readEditorFamily(client, familyId);
     for (const [productId, source] of Object.entries(row.sources)) source.experienceFingerprint = await experienceFingerprint(client, productId);

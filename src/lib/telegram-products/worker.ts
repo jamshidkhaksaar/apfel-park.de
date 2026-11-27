@@ -3,6 +3,7 @@ import { query, withTransaction, type TransactionClient } from '@/lib/db';
 import { uploadProductImage } from '@/lib/blob';
 import { researchProductFromOfficialPages } from '@/lib/product-research-service';
 import { applyEditorResearch } from '@/lib/smartphone-editor/research';
+import { findModelCatalogCandidates, pickTemplateCandidate } from '@/lib/catalog-offer-resolution';
 import type { ProductResearchResult } from '@/lib/product-research-core';
 import {
   applyPhotoHints,
@@ -238,6 +239,30 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
         for (const entry of doc.entries)
           if (entry.condition !== 'new' && entry.experience && !entry.telegramAccessoriesConfirmed && !entry.experience.packageContents.some(item=>item.isGift || item.presetId))
             entry.experience.packageContents = [];
+        const existingSiblings = await findModelCatalogCandidates(client, {
+          category: String(doc.shared.category ?? 'smartphones'),
+          brand: doc.shared.brand,
+          model: doc.shared.model,
+          title: doc.shared.title,
+        });
+        row.state.familyMatchesCount = new Set(existingSiblings.map((c) => c.id)).size;
+        if (existingSiblings.length > 0) {
+          const tpl = pickTemplateCandidate(
+            {
+              category: String(doc.shared.category ?? 'smartphones'),
+              brand: doc.shared.brand,
+              model: doc.shared.model,
+              condition: row.state.condition,
+            },
+            existingSiblings,
+          );
+          if (!doc.shared.eprelId && tpl.eprelId) doc.shared.eprelId = tpl.eprelId;
+          if (!doc.shared.energyLabel && tpl.energyLabel) doc.shared.energyLabel = tpl.energyLabel;
+          if (!doc.shared.manufacturer?.name && tpl.manufacturer) doc.shared.manufacturer = tpl.manufacturer;
+          if (!doc.shared.euResponsiblePerson?.name && tpl.euResponsiblePerson) doc.shared.euResponsiblePerson = tpl.euResponsiblePerson;
+          if (!doc.shared.batteryDetails && tpl.batteryDetails) doc.shared.batteryDetails = tpl.batteryDetails;
+          if (!doc.shared.specs?.length && tpl.specs.length) doc.shared.specs = tpl.specs;
+        }
         row.state.sources = result.researchSources ?? [];
         row.state.warnings = result.researchWarnings ?? [];
         row.state.stage = row.state.guided && row.state.editing ? 'review' : 'versions';

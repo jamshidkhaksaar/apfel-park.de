@@ -71,9 +71,11 @@ describe("validateAdminProductCondition", () => {
     expect(validateAdminProductCondition(input)).toBeNull();
   });
 
-  it("does not require battery health for open-box iPhones", () => {
+  it("does not require battery health for open-box iPhones, and accepts open-box battery ranges", () => {
     const input = usedProduct({ condition: "open_box", batteryHealth: "" });
     expect(validateAdminProductCondition(input)).toBeNull();
+    expect(validateAdminProductCondition(usedProduct({ condition: "open_box", batteryHealth: "95", batteryHealthMax: "100" }))).toBeNull();
+    expect(validateAdminProductCondition(usedProduct({ condition: "open_box", batteryHealth: "98", batteryHealthMax: "95" }))).toBeTruthy();
   });
 
   it.each(["0", "101", "85.5", "abc", "-5"])(

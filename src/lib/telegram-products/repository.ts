@@ -17,6 +17,7 @@ import {
 } from './model';
 import { acceptPhoto } from './photos';
 import { createPhoneDraftInTransaction } from '@/lib/smartphone-editor/repository';
+import { classifyCatalogOfferMatch, findModelCatalogCandidates } from '@/lib/catalog-offer-resolution';
 import { normalizeTelegramOfferDocument } from './offer-content';
 import { readOfferPresets } from '@/lib/product-offer-presets-repository';
 import { readFile } from 'node:fs/promises';
@@ -340,33 +341,57 @@ export const viewSession = async (
     );
   }
   if (
-    row.state.stage === 'versions' && (!row.state.guided || row.state.existingMode) &&
+    row.state.stage === 'versions' &&
+    !row.state.editing &&
     row.document.entries.length === 1 &&
     !row.document.entries[0].price &&
     !row.document.entries[0].photos.some((p) => p.url)
   ) {
-    const matches = (
-      await client.query(
-        `SELECT id,title,condition,price FROM products WHERE lower(brand)=lower($1) AND lower(model)=lower($2) AND category=$3 AND condition=$4 AND import_metadata->>'catalogDeletedAt' IS NULL ORDER BY title LIMIT 12`,
-        [
-          row.document.shared.brand,
-          row.document.shared.model,
-          row.document.shared.category,
-          row.state.condition,
-        ],
+    const candidates = await findModelCatalogCandidates(client, {
+      category: row.document.shared.category ?? 'smartphones',
+      brand: row.document.shared.brand,
+      model: row.document.shared.model,
+      title: row.document.shared.title,
+    });
+    const byId = new Map<string, (typeof candidates)[number]>();
+    for (const c of candidates) {
+      if (c.variantCount <= 1 && !byId.has(c.id)) byId.set(c.id, c);
+    }
+    const sorted = [...byId.values()]
+      .sort(
+        (a, b) =>
+          Number(b.condition === row.state.condition) -
+            Number(a.condition === row.state.condition) ||
+          a.title.localeCompare(b.title),
       )
-    ).rows;
+      .slice(0, 10);
+    if (sorted.length > 0 && !row.state.existingMode) {
+      view.text = `${tr(
+        row.state.locale,
+        `✨ ${sorted.length} vorhandene(s) Angebot(e) im Shop gefunden — oben zum Aufstocken/Aktualisieren wählen oder neue Variante anlegen:`,
+        `✨ Found ${sorted.length} existing offer(s) in shop — tap below to restock/update, or add a new variant:`,
+      )}\n\n${view.text}`;
+    }
     view.buttons.unshift(
-      ...matches.map((m) => [
-        {
-          text: tr(
-            row.state.locale,
-            `Bestand aktualisieren: ${m.title}`,
-            `Update existing offer: ${m.title}`,
-          ),
-          action: `existing:${m.id}`,
-        },
-      ]),
+      ...sorted.map((c) => {
+        const cond =
+          c.condition === 'new'
+            ? 'Neu'
+            : c.condition === 'open_box'
+              ? 'Open-Box'
+              : 'A+';
+        const labelParts = [c.color, c.storage, cond].filter(Boolean).join(' · ') || c.title;
+        return [
+          {
+            text: tr(
+              row.state.locale,
+              `📦 +${labelParts} · €${c.price.toFixed(0)} (${c.stock} Stk)`,
+              `📦 +${labelParts} · €${c.price.toFixed(0)} (${c.stock} pcs)`,
+            ),
+            action: `existing:${c.id}`,
+          },
+        ];
+      }),
     );
   }
   return view;
@@ -811,7 +836,6 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
       return viewSession(client, await readSession(client, row.id));
     }
     if (body.action.startsWith('existing:')) {
-      if(row.state.guided && !row.state.existingMode)throw new Error('invalid_action');
       if (
         row.state.stage !== 'versions' ||
         row.document.entries.length !== 1 ||
@@ -823,13 +847,11 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
       if (!/^[a-f0-9-]{36}$/i.test(productId)) throw new Error('invalid_input');
       const product = (
         await client.query(
-          `SELECT id FROM products WHERE id=$1 AND lower(brand)=lower($2) AND lower(model)=lower($3) AND category=$4 AND condition=$5`,
+          `SELECT id FROM products WHERE id=$1 AND lower(btrim(brand))=lower(btrim($2)) AND category=$3 AND coalesce(import_metadata->>'catalogDeletedAt','')=''`,
           [
             productId,
-            row.document.shared.brand,
-            row.document.shared.model,
-            row.document.shared.category,
-            row.state.condition,
+            row.document.shared.brand ?? '',
+            row.document.shared.category ?? 'smartphones',
           ],
         )
       ).rows[0];
@@ -844,7 +866,10 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
         throw new Error('legacy_offer_requires_admin');
       draft.document.telegramSessionId = row.id;
       draft.document.telegramUpdateOnly = true;
+      row.state.condition = draft.document.entries[0].condition;
       row.state.entryId = draft.document.entries[0].id;
+      row.state.existingStock = draft.document.entries[0].stock;
+      delete row.state.stockDelta;
       row.state.updateOnly = true;
       row.state.stage = 'price';
       await client.query(
@@ -866,6 +891,56 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
         'existing_offer_selected',
         { productId },
       );
+      return viewSession(client, await readSession(client, id));
+    }
+    if (body.action === 'matchUseExisting') {
+      if (row.state.stage !== 'match_confirm' || !row.state.autoMatch) {
+        throw new Error('invalid_action');
+      }
+      const typed = row.document.entries.find((e) => e.id === row.state.entryId);
+      if (!typed) throw new Error('entry_not_found');
+      const matchedId = row.state.autoMatch.productId;
+      const draft = await createPhoneDraftInTransaction(
+        client,
+        `telegram:${body.telegramId}`,
+        matchedId,
+        true,
+      );
+      if (draft.document.entries.length !== 1) {
+        throw new Error('legacy_offer_requires_admin');
+      }
+      const existingEntry = draft.document.entries[0];
+      const baseStock = existingEntry.stock;
+      existingEntry.stock = baseStock + Math.max(0, typed.stock);
+      if (typed.price > 0) existingEntry.price = typed.price;
+      draft.document.telegramSessionId = row.id;
+      draft.document.telegramUpdateOnly = true;
+      row.state.condition = existingEntry.condition;
+      row.state.entryId = existingEntry.id;
+      row.state.existingStock = baseStock;
+      row.state.stockDelta = Math.max(0, typed.stock);
+      row.state.updateOnly = true;
+      row.state.stage = 'review';
+      delete row.state.autoMatch;
+      delete row.state.nextStageAfterMatch;
+      draft.document.step = 6;
+      await client.query(
+        'UPDATE smartphone_editor_drafts SET document=$2 WHERE id=$1',
+        [draft.id, JSON.stringify(draft.document)],
+      );
+      await client.query(
+        'UPDATE smartphone_editor_drafts SET deleted_at=now() WHERE id=$1',
+        [row.draft_id],
+      );
+      await client.query(
+        'UPDATE telegram_product_sessions SET draft_id=$2,state=$3,revision=revision+1,updated_at=now() WHERE id=$1',
+        [id, draft.id, JSON.stringify(row.state)],
+      );
+      await event(client, id, `telegram:${body.telegramId}`, 'auto_matched_existing_offer', {
+        productId: matchedId,
+        addedStock: Math.max(0, typed.stock),
+        price: existingEntry.price,
+      });
       return viewSession(client, await readSession(client, id));
     }
     if (body.action.startsWith('asset')) {
@@ -921,6 +996,63 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
       throw new Error('review_pending_photos');
     const result = transition(row.state, row.document, body,
       ['price', 'notes', 'accessories', 'accessory_custom'].includes(row.state.stage) ? await readOfferPresets(client) : undefined);
+    const transitionedEntry = result.document.entries.find((e) => e.id === result.state.entryId);
+    if (
+      !result.state.updateOnly &&
+      !result.state.singleField &&
+      !result.state.autoMatch &&
+      row.state.stage !== result.state.stage &&
+      ['notes', 'accessories', 'photos'].includes(result.state.stage) &&
+      transitionedEntry &&
+      !transitionedEntry.sourceProductId &&
+      transitionedEntry.price > 0
+    ) {
+      const candidates = await findModelCatalogCandidates(client, {
+        category: String(result.document.shared.category ?? 'smartphones'),
+        brand: result.document.shared.brand,
+        model: result.document.shared.model,
+        title: result.document.shared.title,
+      });
+      const resolution = classifyCatalogOfferMatch(
+        {
+          category: String(result.document.shared.category ?? 'smartphones'),
+          brand: result.document.shared.brand,
+          model: result.document.shared.model,
+          title: result.document.shared.title,
+          condition: transitionedEntry.condition,
+          color: transitionedEntry.color,
+          storage: transitionedEntry.storage,
+          configuration: transitionedEntry.configuration ?? null,
+          batteryHealth: transitionedEntry.batteryHealth,
+          batteryHealthMax: transitionedEntry.batteryHealthMax,
+        },
+        candidates,
+      );
+      if (resolution.kind === 'exact_offer' && resolution.candidate.variantCount <= 1) {
+        result.state.nextStageAfterMatch = result.state.stage;
+        result.state.stage = 'match_confirm';
+        result.state.autoMatch = {
+          productId: resolution.candidate.id,
+          title: resolution.candidate.title,
+          price: resolution.candidate.price,
+          stock: resolution.candidate.stock,
+          sku: resolution.candidate.sku ?? '',
+          color: resolution.candidate.color,
+          storage: resolution.candidate.storage,
+          condition: resolution.candidate.condition,
+        };
+      } else if (resolution.kind === 'next_variant') {
+        const tpl = resolution.templateCandidate;
+        if (!result.document.shared.description && tpl.description) result.document.shared.description = tpl.description;
+        if (!result.document.shared.specs?.length && tpl.specs.length) result.document.shared.specs = tpl.specs;
+        if (!result.document.shared.featureBullets?.length && tpl.featureBullets.length) result.document.shared.featureBullets = tpl.featureBullets;
+        if (!result.document.shared.manufacturer && tpl.manufacturer) result.document.shared.manufacturer = tpl.manufacturer;
+        if (!result.document.shared.euResponsiblePerson && tpl.euResponsiblePerson) result.document.shared.euResponsiblePerson = tpl.euResponsiblePerson;
+        if (!result.document.shared.eprelId && tpl.eprelId) result.document.shared.eprelId = tpl.eprelId;
+        if (!result.document.shared.energyLabel && tpl.energyLabel) result.document.shared.energyLabel = tpl.energyLabel;
+        if (!result.document.shared.batteryDetails && tpl.batteryDetails) result.document.shared.batteryDetails = tpl.batteryDetails;
+      }
+    }
     validateDocument(result.document);
     await client.query(
       `UPDATE smartphone_editor_drafts SET document=$2,revision=revision+1,updated_by=$3,updated_at=now() WHERE id=$1`,

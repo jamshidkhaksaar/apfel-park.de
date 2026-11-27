@@ -198,7 +198,7 @@ const COLOR_ALIASES: Record<string, string> = {
   'white titanium': 'Titan Weiß', 'desert titanium': 'Titan Wüstensand', orange: 'Orange', pink: 'Pink', gold: 'Gold',
 };
 const titleCase = (value: string) => value.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, sep: string, char: string) => sep + char.toUpperCase());
-const normalizedColor = (value: string): string => {
+export const normalizedColor = (value: string): string => {
   const trimmed = value.trim().replace(/\s+/g, ' ');
   return COLOR_ALIASES[trimmed.toLowerCase()] ?? titleCase(trimmed);
 };

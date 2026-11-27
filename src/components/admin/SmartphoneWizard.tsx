@@ -491,7 +491,7 @@ export default function SmartphoneWizard({
       </div>
     );
   const entryLabel = (e: PhoneEntry) =>
-    `${t[e.condition]} · ${e.color || '—'} · ${e.storage || '—'}${Object.values(e.configuration??{}).length ? ` · ${Object.values(e.configuration??{}).join(' · ')}` : ''}${e.condition === 'used' && e.batteryHealth != null ? ` · ${formatBatteryHealth(e.batteryHealth, e.batteryHealthMax != null ? {min:e.batteryHealth,max:e.batteryHealthMax} : undefined)}` : ''} · #${e.sku.slice(-8)}`;
+    `${t[e.condition]} · ${e.color || '—'} · ${e.storage || '—'}${Object.values(e.configuration??{}).length ? ` · ${Object.values(e.configuration??{}).join(' · ')}` : ''}${e.condition !== 'new' && e.batteryHealth != null ? ` · ${formatBatteryHealth(e.batteryHealth, e.batteryHealthMax != null ? {min:e.batteryHealth,max:e.batteryHealthMax} : undefined)}` : ''} · #${e.sku.slice(-8)}`;
   const versionEntries = document.variantSuggestions?.length && !manualVersion ? document.entries.filter(entry => !isResearchPlaceholder(entry, {...document.shared,...document.pendingShared})) : document.entries;
   const shared = sharedEdit ?? document.shared;
   const readyIds = document.entries.filter(e => entryProblems(document, e, locale).length === 0 && e.channels.length > 0).map(e => e.id);
@@ -723,7 +723,7 @@ export default function SmartphoneWizard({
                     <label className="mt-3 flex gap-2 text-sm"><input type="checkbox" checked={Boolean(e.individualPhotos)} onChange={event => updateEntry(e.id, { individualPhotos: event.target.checked })} />{locale === 'de' ? 'Eigene Fotos für diese Version verwenden' : 'Use separate photos for this version'}</label>
                     <VersionOfferFields locale={locale} entry={e} presets={presets} chargerIncluded={Object.prototype.hasOwnProperty.call(e.details, 'chargerIncluded') ? e.details.chargerIncluded : shared.chargerIncluded} onChange={patch => updateEntry(e.id, patch)} />
                     <div className="mt-4 flex flex-wrap gap-3">
-                      {e.condition === 'used' ? <button type="button" className="btn-secondary" disabled={document.entries.length >= 100} onClick={() => change(d => ({ ...d, entries: [...d.entries, newBatteryHealthOffer(e)] }))}>{cleanup.batteryTier}</button> : null}
+                      {e.condition !== 'new' ? <button type="button" className="btn-secondary" disabled={document.entries.length >= 100} onClick={() => change(d => ({ ...d, entries: [...d.entries, newBatteryHealthOffer(e)] }))}>{cleanup.batteryTier}</button> : null}
                       <button
                         className="btn-secondary"
                         onClick={() =>

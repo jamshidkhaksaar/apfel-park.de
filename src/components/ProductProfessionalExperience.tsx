@@ -67,7 +67,7 @@ export function ProductFamilyConfigurator({ family, locale }: { family: ProductF
   const currentCondition = familyOptionValue(current,'condition');
   const axes = family.optionAxes
     .filter(axis => axis.toLowerCase() !== 'device')
-    .filter(axis => axis.toLowerCase() !== 'batteryhealth' || currentCondition === 'used')
+    .filter(axis => axis.toLowerCase() !== 'batteryhealth' || currentCondition === 'used' || (currentCondition === 'open_box' && family.members.some(member => familyOptionValue(member, 'condition') === 'open_box' && Boolean(familyOptionValue(member, 'batteryHealth')))))
     .filter(axis => family.members.some(member => familyOptionValue(member,axis)))
     .sort((a,b) => (order[a.toLowerCase()] ?? 5)-(order[b.toLowerCase()] ?? 5));
   const devices = family.members.filter(member => axes.every(axis => familyOptionValue(member,axis) === familyOptionValue(current,axis)));

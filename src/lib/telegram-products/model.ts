@@ -47,6 +47,7 @@ export type Stage =
   | 'presentation'
   | 'photos'
   | 'information'
+  | 'match_confirm'
   | 'gtin'
   | 'mpn'
   | 'channels'
@@ -68,6 +69,20 @@ export type Conversation = {
   condition: PhoneEntry['condition'];
   researchError?: string;
   updateOnly?: boolean;
+  existingStock?: number;
+  stockDelta?: number;
+  familyMatchesCount?: number;
+  autoMatch?: {
+    productId: string;
+    title: string;
+    price: number;
+    stock: number;
+    sku: string;
+    color: string;
+    storage: string;
+    condition: PhoneEntry['condition'];
+  };
+  nextStageAfterMatch?: Stage;
   photoKind:
     | 'device'
     | 'box'
@@ -315,6 +330,7 @@ export const transition = (
         price:'stock',
         stock:'versions',
         battery:'price',
+        match_confirm:needsBattery(document,entry)?'battery':'price',
         notes:needsBattery(document,entry)?'battery':'price',
         defects:'notes',
         accessories:entry.condition==='new'?'price':'notes',
@@ -322,6 +338,10 @@ export const transition = (
         photos:'accessories',
         review:'edit_menu'
       };
+      if (state.stage === 'match_confirm') {
+        delete state.autoMatch;
+        delete state.nextStageAfterMatch;
+      }
       if(previous[state.stage]){state.stage=previous[state.stage]!;return {state,document};}
     }
     const sequence: Stage[] = [
@@ -389,6 +409,11 @@ export const transition = (
       if(entry.condition!=='new' && entry.experience)entry.experience.packageContents=[];
       if(entry.condition==='new'){entry.batteryHealth=null;entry.batteryHealthMax=null;}
       if(state.guided && state.editing){review(state,document);break;}
+      if (state.existingMode) {
+        state.stage = 'versions';
+        delete state.researchError;
+        return { state, document };
+      }
       state.stage = 'researching';
       delete state.researchError;
       return { state, document, research: true };
@@ -437,6 +462,7 @@ export const transition = (
         target.configuration = option.configuration;
       } else if (input.action !== 'add') throw new Error('invalid_action');
       if (!untouched) document.entries.push(target);
+      state.existingMode = false;
       state.entryId = target.id;
       state.selectedAccessories=[];state.singleField=false;state.editing=false;
       state.stage = target.color && (target.storage || !['smartphones','tablets','laptops'].includes(document.shared.category??'')) ? (state.guided ? 'stock' : 'price') : 'color';
@@ -465,11 +491,15 @@ export const transition = (
       state.stage = state.guided ? (state.singleField?'review':'stock') : 'price';
       break;
     case 'price': {
-      if (!/^\d{1,7}(?:[.,]\d{1,2})?$/.test(value.replace(/\s*€$/, '')))
-        throw new Error('invalid_price');
-      const price = Number(value.replace(/\s*€$/, '').replace(',', '.'));
-      if (!(price > 0)) throw new Error('invalid_price');
-      entry.price = price;
+      if (input.action === 'keepPrice' && entry.price > 0) {
+        // retain current entry.price
+      } else {
+        if (!/^\d{1,7}(?:[.,]\d{1,2})?$/.test(value.replace(/\s*€$/, '')))
+          throw new Error('invalid_price');
+        const price = Number(value.replace(/\s*€$/, '').replace(',', '.'));
+        if (!(price > 0)) throw new Error('invalid_price');
+        entry.price = price;
+      }
       if (state.guided && state.singleField) {
         state.stage = 'review';
       } else if (state.guided && !state.updateOnly) {
@@ -490,9 +520,31 @@ export const transition = (
       }
       break;
     }
-    case 'stock':
-      if (!/^\d{1,6}$/.test(value)) throw new Error('invalid_quantity');
-      entry.stock = Number(value);
+    case 'stock': {
+      let nextStock: number;
+      if (state.updateOnly && input.action === 'keepStock') {
+        nextStock = state.existingStock ?? entry.stock;
+        state.stockDelta = 0;
+      } else if (state.updateOnly && input.action.startsWith('addStock:')) {
+        const add = Number(input.action.slice(9));
+        if (!Number.isInteger(add) || add < 1 || add > 10000) throw new Error('invalid_quantity');
+        nextStock = (state.existingStock ?? entry.stock) + add;
+        state.stockDelta = add;
+      } else if (state.updateOnly && /^=\s*\d{1,6}$/.test(value)) {
+        nextStock = Number(value.slice(1).trim());
+        delete state.stockDelta;
+      } else {
+        const clean = state.updateOnly && value.startsWith('+') ? value.slice(1).trim() : value;
+        if (!/^\d{1,6}$/.test(clean)) throw new Error('invalid_quantity');
+        const num = Number(clean);
+        if (state.updateOnly && state.existingStock != null) {
+          nextStock = state.existingStock + num;
+          state.stockDelta = num;
+        } else {
+          nextStock = num;
+        }
+      }
+      entry.stock = nextStock;
       if(state.guided && !state.updateOnly){state.stage=entry.condition!=='new' && entry.stock>1 ? 'identical' : state.singleField?'review':'price';break;}
       state.stage = state.updateOnly
         ? 'review'
@@ -502,6 +554,18 @@ export const transition = (
             ? 'battery'
             : 'notes';
       break;
+    }
+    case 'match_confirm':
+      if (input.action === 'matchCreateVariant') {
+        const nextStage =
+          state.nextStageAfterMatch ??
+          (entry.condition === 'new' ? 'accessories' : 'notes');
+        delete state.autoMatch;
+        delete state.nextStageAfterMatch;
+        state.stage = nextStage;
+        break;
+      }
+      throw new Error('invalid_action');
     case 'identical':
       if (input.action === 'split') entry.stock = 1;
       else if (input.action !== 'confirmIdentical')
@@ -846,14 +910,43 @@ export const renderConversation = (
       break;
     case 'price':
       text = `${versionLabel(entry)}\n${t('2/7 · Verkaufspreis in €? Zum Beispiel 699,90.', '2/7 · Selling price in €? For example 699.90.')}`;
+      if (entry.price > 0) {
+        buttons = [[b(t(`✓ Preis behalten (€${entry.price.toFixed(2)})`, `✓ Keep price (€${entry.price.toFixed(2)})`), 'keepPrice')]];
+      }
       break;
     case 'stock':
-      text = t(
-        '2/7 · Tatsächliche Gesamtmenge dieser Version?',
-        '2/7 · Actual total quantity of this version?',
-      );
-      buttons = [[1, 2, 3, 5, 10].map((n) => b(String(n), `choose:${n}`))];
+      if (state.updateOnly) {
+        const base = state.existingStock ?? entry.stock;
+        text = t(
+          `Aktueller Bestand: ${base} Stk.\nWie viele Geräte kommen DAZU? Z. B. 2 (→ ${base + 2} Stk), oder =Zahl für Gesamtmenge:`,
+          `Current stock: ${base} pcs.\nHow many units to ADD? E.g. 2 (→ ${base + 2} pcs), or =N to set total:`,
+        );
+        buttons = [
+          [1, 2, 3, 5].map((n) => b(`+${n}`, `addStock:${n}`)),
+          [b(t(`✓ Bestand lassen (${base} Stk)`, `✓ Keep stock (${base} pcs)`), 'keepStock')],
+        ];
+      } else {
+        text = t(
+          '2/7 · Tatsächliche Gesamtmenge dieser Version?',
+          '2/7 · Actual total quantity of this version?',
+        );
+        buttons = [[1, 2, 3, 5, 10].map((n) => b(String(n), `choose:${n}`))];
+      }
       break;
+    case 'match_confirm': {
+      const m = state.autoMatch;
+      if (m) {
+        text = t(
+          `🔄 Dieses Produkt existiert bereits im Shop!\n${m.title}\nAktuell: ${m.stock} Stk · €${m.price.toFixed(2)}\nNach Update: ${m.stock + entry.stock} Stk (+${entry.stock}) · €${entry.price.toFixed(2)}\n\nDirekt zu diesem Angebot hinzubuchen? (Fotos bleiben erhalten.)`,
+          `🔄 Exact product already exists in shop!\n${m.title}\nCurrent: ${m.stock} pcs · €${m.price.toFixed(2)}\nAfter update: ${m.stock + entry.stock} pcs (+${entry.stock}) · €${entry.price.toFixed(2)}\n\nAdd +${entry.stock} directly to this offer? (Existing photos stay intact.)`,
+        );
+        buttons = [
+          [b(t(`✅ +${entry.stock} & €${entry.price.toFixed(2)} übernehmen`, `✅ Add +${entry.stock} & set €${entry.price.toFixed(2)}`), 'matchUseExisting')],
+          [b(t('➕ Als neue separate Variante anlegen', '➕ Create as separate new variant'), 'matchCreateVariant')],
+        ];
+      }
+      break;
+    }
     case 'identical':
       text = t(
         'Nur identische Geräte zusammenfassen: Farbe, Speicher, Zustand und Batteriekapazität müssen übereinstimmen. Die Fotos müssen alle Geräte wahrheitsgetreu zeigen. Sonst einzelne Versionen anlegen.',
@@ -1014,7 +1107,7 @@ export const renderConversation = (
         if(!state.researchError){text=`⏳ ${doc.shared.brand} ${doc.shared.model}\n\n${t('Offizielle Quellen werden geprüft und Modellversionen vorbereitet. Du musst nichts eingeben. Das Ergebnis erscheint automatisch.','Checking official sources and preparing model versions. No input needed; the result will appear automatically.')}`;buttons=[];}
         break;
       case 'versions': {
-        if(state.existingMode){text=t('Bestandsmodus: Ein gespeichertes Angebot auswählen. Nur Preis und Gesamtmenge werden geändert. Für ein neues Produkt /cancel und /new verwenden.','Stock-update mode: choose a saved offer below. Only price and total quantity change. For a new product, use /cancel then /new.');buttons=[];break;}
+        if(state.existingMode){text=t('Bestandsmodus: Angebot wählen (+Bestand & Preis), oder unten als neue Variante anlegen.','Stock-update mode: pick an offer below to add stock & update price, or add as a new variant.');buttons=[[b(t('➕ Neue Variante manuell anlegen','➕ Add new variant manually'),'add')]];break;}
         text=state.editing ? `2/7 · ${steps[1]}\n${t('Gespeicherte Version zum Bearbeiten wählen.','Choose a saved version to edit.')}` : `✅ ${doc.shared.brand} ${doc.shared.model}\n${t('Welche genaue Version hast du im Laden? Danach folgen Menge, Preis und Fotos.','Which exact version is in the shop? Next: quantity, price and photos.')}`;
         buttons=state.editing ? doc.entries.slice(state.page*8,state.page*8+8).map(e=>[b(versionLabel(e),`entry:${e.id}`)]) : (doc.variantSuggestions??[]).slice(state.page*8,state.page*8+8).map((o,i)=>[b([o.color,o.storage,...Object.values(o.configuration??{})].filter(Boolean).join(' · '),`variant:${state.page*8+i}`)]);
         const count=state.editing?doc.entries.length:(doc.variantSuggestions??[]).length;
@@ -1069,7 +1162,11 @@ export const renderConversation = (
     }
   }
   if(state.guided && ['stock','price','battery','notes','accessories','photos'].includes(state.stage)){
-    if(state.stage==='price')text=t('2/7 · Verkaufspreis in €? Zum Beispiel 699,90.','2/7 · Selling price in €? For example 699.90.');
+    if(state.stage==='price'){
+      text=entry.price>0
+        ? t(`2/7 · Verkaufspreis in €? (Aktuell: €${entry.price.toFixed(2)})`,`2/7 · Selling price in €? (Current: €${entry.price.toFixed(2)})`)
+        : t('2/7 · Verkaufspreis in €? Zum Beispiel 699,90.','2/7 · Selling price in €? For example 699.90.');
+    }
     const qtyTag = state.stage !== 'stock' ? ` · ${t('Menge', 'Qty')}: ${entry.stock}` : '';
     text=`${doc.shared.brand} ${doc.shared.model} · ${versionLabel(entry)}${qtyTag}\n\n${text}`;
   }

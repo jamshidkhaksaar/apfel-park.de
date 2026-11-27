@@ -6,7 +6,10 @@ import { canManageProducts } from "@/lib/admin-auth";
 import { markOpenIntakeRunsStale } from "@/lib/product-intake/stale-runs";
 import { createAdminServerClient } from "@/lib/admin-auth-server";
 import { createAdminDbClient } from "@/lib/admin-db";
-import { query } from "@/lib/db";
+import { randomUUID } from "node:crypto";
+import { query, withTransaction } from "@/lib/db";
+import { applyExactOfferUpdateInTransaction, canonicalOfferColor, canonicalOfferStorage, classifyCatalogOfferMatch, ensureModelFamilyMembership, findModelCatalogCandidates, normalizeBatteryTuple, type OfferCondition } from "@/lib/catalog-offer-resolution";
+import { validBatteryHealthRange } from "@/lib/product-offer-options";
 import { autoPublishProductPromotion } from "@/lib/marketing";
 import { sanitizeInput } from "@/lib/security";
 import { buildBaseSlug, uniquifySlug } from "@/lib/product-slug";
@@ -149,6 +152,287 @@ export async function POST(request: NextRequest) {
 
   try {
     const payload = (await request.json()) as ProductPayload;
+    if (payload.autoResolveVariant) {
+      const normCondition: OfferCondition =
+        payload.condition === "open_box" || payload.condition === "refurbished"
+          ? "open_box"
+          : payload.condition === "used"
+            ? "used"
+            : "new";
+      const batteryTuple = normalizeBatteryTuple(
+        normCondition,
+        payload.batteryHealthRange?.min ?? payload.batteryHealth ?? null,
+        payload.batteryHealthRange?.max ?? null,
+      );
+      const firstVar = Array.isArray(payload.variants) && payload.variants.length > 0 ? payload.variants[0] : null;
+      const color = canonicalOfferColor(payload.color ?? firstVar?.color);
+      const storage = canonicalOfferStorage(payload.storage ?? firstVar?.storage);
+      const configEntries =
+        payload.configuration && typeof payload.configuration === "object"
+          ? Object.fromEntries(
+              Object.entries(payload.configuration)
+                .map(([k, v]) => [sanitizeInput(k), sanitizeInput(String(v ?? ""))])
+                .filter(([k, v]) => Boolean(k && v)),
+            )
+          : undefined;
+      const cleanConfig = configEntries && Object.keys(configEntries).length > 0 ? configEntries : undefined;
+
+      const resolved = await withTransaction(async (client) => {
+        const candidates = await findModelCatalogCandidates(client, {
+          productId: payload.id ?? null,
+          sku: payload.sku ?? null,
+          gtin: payload.gtin ?? null,
+          category: payload.category ?? "smartphones",
+          brand: payload.brand ?? null,
+          model: payload.model ?? null,
+          title: payload.title ?? null,
+        });
+        const match = classifyCatalogOfferMatch(
+          {
+            productId: payload.id ?? null,
+            sku: payload.sku ?? null,
+            gtin: payload.gtin ?? null,
+            mpn: payload.mpn ?? null,
+            category: payload.category ?? "smartphones",
+            brand: payload.brand ?? null,
+            model: payload.model ?? null,
+            title: payload.title ?? null,
+            condition: normCondition,
+            color,
+            storage,
+            configuration: cleanConfig ?? null,
+            batteryHealth: batteryTuple.min,
+            batteryHealthMax: batteryTuple.max,
+          },
+          candidates,
+        );
+
+        if (match.kind === "exact_offer") {
+          const parsedPrice = Number(payload.price);
+          if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+            return { error: auth.messages.priceRequired, status: 400 as const };
+          }
+          const rawQty = Number(payload.stock ?? 1);
+          if (!Number.isFinite(rawQty) || rawQty < 0) {
+            return { error: auth.messages.stockRequired, status: 400 as const };
+          }
+          const updated = await applyExactOfferUpdateInTransaction(client, {
+            candidate: match.candidate,
+            price: parsedPrice,
+            compareAtPrice: payload.compareAtPrice,
+            addedQuantity: payload.quantityMode === "set" ? undefined : Math.floor(rawQty),
+            targetQuantity: payload.quantityMode === "set" ? Math.floor(rawQty) : null,
+            conditionNote: payload.conditionNote ?? null,
+            batteryHealth: batteryTuple.max ? null : batteryTuple.min,
+            batteryHealthRange:
+              batteryTuple.max && validBatteryHealthRange({ min: batteryTuple.min!, max: batteryTuple.max })
+                ? { min: batteryTuple.min!, max: batteryTuple.max }
+                : null,
+            images: Array.isArray(payload.images) ? payload.images : undefined,
+            hasRealProductPhotos: payload.hasRealProductPhotos,
+            actor: auth.actor,
+            referenceType: "admin_wizard",
+            referenceId: match.candidate.id,
+          });
+          return {
+            ok: true as const,
+            id: updated.productId,
+            resolution: "restocked" as const,
+            previousStock: updated.previousStock,
+            newStock: updated.newStock,
+            addedQuantity: updated.addedQuantity,
+            price: updated.price,
+            familyId: updated.familyId,
+          };
+        }
+
+        const tpl = match.kind === "next_variant" ? match.templateCandidate : null;
+        const generatedSku = sanitizeInput(payload.sku || "") || `AP-${randomUUID()}`;
+        const inheritedPayload: ProductPayload = {
+          ...payload,
+          id: undefined,
+          subtitle: payload.subtitle || tpl?.subtitle || [payload.model || tpl?.model, storage, color].filter(Boolean).join(" · "),
+          description: payload.description || tpl?.description || "",
+          brand: payload.brand || tpl?.brand || "",
+          model: payload.model || tpl?.model || "",
+          category: payload.category || tpl?.category || "smartphones",
+          sku: generatedSku,
+          specs: payload.specs?.length ? payload.specs : tpl?.specs ?? [],
+          featureBullets: payload.featureBullets?.length ? payload.featureBullets : tpl?.featureBullets ?? [],
+          manufacturer: payload.manufacturer ?? (tpl?.manufacturer as ProductPayload["manufacturer"]) ?? null,
+          euResponsiblePerson: payload.euResponsiblePerson ?? (tpl?.euResponsiblePerson as ProductPayload["euResponsiblePerson"]) ?? null,
+          safetyWarnings: payload.safetyWarnings?.length ? payload.safetyWarnings : tpl?.safetyWarnings ?? [],
+          safetyDocuments: payload.safetyDocuments?.length ? payload.safetyDocuments : tpl?.safetyDocuments ?? [],
+          eprelId: payload.eprelId || tpl?.eprelId || "",
+          energyLabel: payload.energyLabel ?? (tpl?.energyLabel as ProductPayload["energyLabel"]) ?? null,
+          countryOfOrigin: payload.countryOfOrigin || tpl?.countryOfOrigin || undefined,
+          packageWeightKg: payload.packageWeightKg ?? tpl?.packageWeightKg ?? null,
+          packageLengthCm: payload.packageLengthCm ?? tpl?.packageLengthCm ?? null,
+          packageWidthCm: payload.packageWidthCm ?? tpl?.packageWidthCm ?? null,
+          packageHeightCm: payload.packageHeightCm ?? tpl?.packageHeightCm ?? null,
+          chargerIncluded: payload.chargerIncluded ?? tpl?.chargerIncluded ?? null,
+          chargingPowerMinW: payload.chargingPowerMinW ?? tpl?.chargingPowerMinW ?? null,
+          chargingPowerMaxW: payload.chargingPowerMaxW ?? tpl?.chargingPowerMaxW ?? null,
+          usbPdSupported: payload.usbPdSupported ?? tpl?.usbPdSupported ?? null,
+          batteryDetails: payload.batteryDetails ?? (tpl?.batteryDetails as ProductPayload["batteryDetails"]) ?? null,
+          batteryHealth: batteryTuple.max ? null : batteryTuple.min,
+          batteryHealthRange:
+            batteryTuple.max && validBatteryHealthRange({ min: batteryTuple.min!, max: batteryTuple.max })
+              ? { min: batteryTuple.min!, max: batteryTuple.max }
+              : null,
+          variants: payload.variants?.length
+            ? payload.variants
+            : color || storage
+              ? [
+                  {
+                    color: color || "Standard",
+                    storage: storage || "Standard",
+                    price: payload.price,
+                    compareAtPrice: payload.compareAtPrice ?? undefined,
+                    stock: payload.stock,
+                    sku: generatedSku,
+                    mpn: payload.mpn || undefined,
+                    gtin: payload.gtin || undefined,
+                    identifierStatus: payload.identifierStatus,
+                    images: payload.images,
+                    isDefault: true,
+                  },
+                ]
+              : [],
+        };
+
+        const resolvedTitle = sanitizeInput(inheritedPayload.title);
+        const base = buildBaseSlug({
+          brand: inheritedPayload.brand,
+          model: inheritedPayload.model,
+          title: resolvedTitle,
+          subtitle: inheritedPayload.subtitle,
+          condition: inheritedPayload.condition,
+          variants: inheritedPayload.variants,
+        });
+        const { rows: slugRows } = await client.query(`SELECT slug FROM products WHERE slug LIKE $1`, [`${base}%`]);
+        const takenSlugs = new Set((slugRows as Array<{ slug: string }>).map((r) => r.slug));
+        const slug = uniquifySlug(base, takenSlugs);
+        const product = buildPayload(inheritedPayload, slug);
+        const validationError = validatePayload(product, auth.messages);
+        if (validationError) {
+          return { error: validationError, status: 400 as const };
+        }
+        const units = productInventoryUnits(product);
+        const unitSkus = units.map((u) => u.sku);
+        if (unitSkus.length > 0) {
+          const dupSku = await client.query(
+            `SELECT sku FROM inventory_skus WHERE location = 'local' AND sku = ANY($1::text[]) LIMIT 1`,
+            [unitSkus],
+          );
+          if (dupSku.rows[0]) {
+            throw new DuplicateSkuError(`SKU is already assigned to another product: ${String(dupSku.rows[0].sku)}`);
+          }
+        }
+        const metaObj = {
+          contentProvenance: buildAiTextProvenance(null, {}, product, product.aiGeneratedFields),
+          ...(product.batteryHealthRange ? { batteryHealthRange: product.batteryHealthRange } : {}),
+          ...(cleanConfig ? { smartphoneEditor: { configuration: cleanConfig } } : {}),
+        };
+        const inserted = await client.query(
+          `INSERT INTO "products" (
+            "title","subtitle","description","price","compare_at_price","category","brand","model","sku","stock","slug",
+            "images","variants","feature_bullets","specs","is_active","condition","battery_health","has_real_product_photos",
+            "condition_note","subcategory","mpn","gtin","manufacturer","eu_responsible_person","safety_warnings","safety_documents",
+            "eprel_id","energy_label","faq","asin","ebay_epid","identifier_status","country_of_origin","package_weight_kg",
+            "package_length_cm","package_width_cm","package_height_cm","charger_included","charging_power_min_w","charging_power_max_w",
+            "usb_pd_supported","battery_details","marketplace_category_mappings","marketplace_attributes","amazon_gtin_exemption",
+            "amazon_renewed_approved","catalog_enabled","import_metadata"
+          ) VALUES (
+            $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23,$24::jsonb,$25::jsonb,$26,$27,$28,$29::jsonb,$30::jsonb,
+            $31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43::jsonb,$44::jsonb,$45::jsonb,$46,$47,true,$48::jsonb
+          ) RETURNING "id"`,
+          [
+            product.title, product.subtitle, product.description, product.price, product.compareAtPrice,
+            product.category, product.brand, product.model, product.sku, product.stock, product.slug,
+            product.images, JSON.stringify(product.variants), product.featureBullets, JSON.stringify(product.specs),
+            product.isActive, product.condition, product.batteryHealth, product.hasRealProductPhotos, product.conditionNote,
+            product.subcategory, product.mpn, product.gtin, JSON.stringify(product.manufacturer),
+            JSON.stringify(product.euResponsiblePerson), product.safetyWarnings, product.safetyDocuments, product.eprelId,
+            JSON.stringify(product.energyLabel), product.faq ? JSON.stringify(product.faq) : null, product.asin, product.ebayEpid,
+            product.identifierStatus, product.countryOfOrigin, product.packageWeightKg, product.packageLengthCm,
+            product.packageWidthCm, product.packageHeightCm, product.chargerIncluded, product.chargingPowerMinW,
+            product.chargingPowerMaxW, product.usbPdSupported, JSON.stringify(product.batteryDetails),
+            JSON.stringify(product.marketplaceCategoryMappings), JSON.stringify(product.marketplaceAttributes),
+            product.amazonGtinExemption, product.amazonRenewedApproved, JSON.stringify(metaObj),
+          ],
+        );
+        const productId = String(inserted.rows[0].id);
+        for (const unit of units) {
+          await client.query(
+            `INSERT INTO inventory_skus (product_id, sku, location, on_hand, reserved, safety_buffer, is_active)
+             VALUES ($1, $2, 'local', greatest($3, 0), 0, 0, true)`,
+            [productId, unit.sku, Math.max(0, Math.floor(unit.stock))],
+          );
+        }
+        const familyId = await ensureModelFamilyMembership(client, {
+          productId,
+          category: product.category || "smartphones",
+          brand: product.brand,
+          model: product.model,
+          title: product.title,
+          condition: normCondition,
+          color: color || null,
+          storage: storage || null,
+          configuration: cleanConfig ?? null,
+          existingFamilyId: match.kind === "next_variant" ? match.familyId : null,
+        });
+        return {
+          ok: true as const,
+          id: productId,
+          slug: product.slug || slug,
+          title: product.title,
+          subtitle: product.subtitle,
+          description: product.description,
+          imageUrl: product.images[0] || null,
+          price: product.price,
+          compareAtPrice: product.compareAtPrice,
+          isActive: product.isActive,
+          resolution: match.kind === "next_variant" ? ("next_variant" as const) : ("created" as const),
+          familyId,
+        };
+      });
+
+      if ("error" in resolved) {
+        return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+      }
+      if (resolved.resolution !== "restocked") {
+        await syncHomepageFeatured(resolved.id, Boolean(payload.isHomepageFeatured));
+      }
+      const socialPublishing =
+        resolved.resolution !== "restocked" && resolved.isActive
+          ? await autoPublishProductPromotion(
+              {
+                id: resolved.id,
+                title: resolved.title,
+                subtitle: resolved.subtitle,
+                description: resolved.description,
+                slug: resolved.slug,
+                imageUrl: resolved.imageUrl,
+                price: resolved.price,
+                compareAtPrice: resolved.compareAtPrice,
+                locale: auth.isEnglish ? "en" : "de",
+              },
+              hasDiscountPrice(resolved.price, resolved.compareAtPrice) ? "discount" : "new",
+            )
+          : [];
+      return NextResponse.json({
+        success: true,
+        id: resolved.id,
+        resolution: resolved.resolution,
+        previousStock: "previousStock" in resolved ? resolved.previousStock : undefined,
+        newStock: "newStock" in resolved ? resolved.newStock : undefined,
+        addedQuantity: "addedQuantity" in resolved ? resolved.addedQuantity : undefined,
+        price: resolved.price,
+        familyId: resolved.familyId,
+        socialPublishing,
+      });
+    }
     const title = sanitizeInput(payload.title);
     const base = buildBaseSlug({
       brand: payload.brand,

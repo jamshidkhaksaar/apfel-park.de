@@ -369,5 +369,8 @@ describe("product-intake inventory intent", () => {
       { sku: "BLACK-128", price: 700, isDefault: false },
       { sku: "WHITE-256", price: 749, isDefault: true },
     ]);
+    const single = productPriceUpdateForSku([{ sku: "SOLO-128", price: 599 }], "SOLO-128", 549);
+    expect(single).toMatchObject({ matched: true, updateBase: true });
+    expect(single.variants).toEqual([{ sku: "SOLO-128", price: 549 }]);
   });
 });

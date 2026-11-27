@@ -94,6 +94,11 @@ export type ProductPayload = {
   specs?: Array<{ label: string; value: string }>;
   isActive?: boolean;
   isHomepageFeatured?: boolean;
+  autoResolveVariant?: boolean;
+  quantityMode?: 'add' | 'set';
+  color?: string;
+  storage?: string;
+  configuration?: Record<string, string>;
 };
 
 const normalizeCategory = (category: string): string | null => {

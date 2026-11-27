@@ -85,7 +85,7 @@ export async function getProductFamilyForProduct(productId: string, locale: Loca
         price: Number(row.price),
         compareAtPrice: row.compare_at_price == null ? undefined : Number(row.compare_at_price),
         stock: Number(row.stock ?? 0),
-        optionValues: { ...(row.option_values && typeof row.option_values === "object" ? row.option_values as Record<string, string> : {}), condition: String(row.condition), ...(row.condition === "used" ? {batteryHealth: formatBatteryHealth(row.battery_health == null ? undefined : Number(row.battery_health), readBatteryHealthRange(row.import_metadata,row.battery_health == null ? undefined : Number(row.battery_health))) ?? "unspecified"} : {}) },
+        optionValues: { ...(row.option_values && typeof row.option_values === "object" ? row.option_values as Record<string, string> : {}), condition: String(row.condition), ...(row.condition === "used" || (row.condition === "open_box" && (row.battery_health != null || readBatteryHealthRange(row.import_metadata) != null)) ? {batteryHealth: formatBatteryHealth(row.battery_health == null ? undefined : Number(row.battery_health), readBatteryHealthRange(row.import_metadata,row.battery_health == null ? undefined : Number(row.battery_health))) ?? "unspecified"} : {}) },
         selected: String(row.product_id) === productId,
       };
     });

@@ -323,4 +323,49 @@ describe('shop-floor product conversation', () => {
       expect(renderConversation(state, document, 1).text).toContain('95–100%');
     }
   });
+
+  it('skips AI research in /update mode and supports keepPrice, additive restock, =total override, and match_confirm', () => {
+    let { state, document } = newConversation('de');
+    state.existingMode = true;
+    state.stage = 'condition';
+    ({ state, document } = transition(state, document, { action: 'choose:used' }));
+    expect(state.stage).toBe('versions');
+
+    state.updateOnly = true;
+    state.existingStock = 4;
+    document.entries[0].price = 499;
+    document.entries[0].stock = 4;
+    state.stage = 'price';
+    expect(renderConversation(state, document, 1).buttons.flat().map((b) => b.action)).toContain('keepPrice');
+    ({ state, document } = transition(state, document, { action: 'keepPrice' }));
+    expect(state.stage).toBe('stock');
+    expect(document.entries[0].price).toBe(499);
+    ({ state, document } = transition(state, document, { action: 'addStock:3' }));
+    expect(state.stage).toBe('review');
+    expect(document.entries[0].stock).toBe(7);
+
+    state.stage = 'stock';
+    ({ state, document } = transition(state, document, { action: 'text', text: '=12' }));
+    expect(document.entries[0].stock).toBe(12);
+
+    const mc = newConversation('en');
+    mc.state.updateOnly = false;
+    mc.state.stage = 'match_confirm';
+    mc.state.autoMatch = {
+      productId: '00000000-0000-4000-8000-000000000010',
+      title: 'iPhone 15 128 GB',
+      price: 599,
+      stock: 2,
+      sku: 'SKU-1',
+      color: 'Black',
+      storage: '128 GB',
+      condition: 'new',
+    };
+    mc.state.nextStageAfterMatch = 'accessories';
+    const mcView = renderConversation(mc.state, mc.document, 1);
+    expect(mcView.buttons.flat().map((b) => b.action)).toEqual(expect.arrayContaining(['matchUseExisting', 'matchCreateVariant']));
+    const cont = transition(mc.state, mc.document, { action: 'matchCreateVariant' });
+    expect(cont.state.stage).toBe('accessories');
+    expect(cont.state.autoMatch).toBeUndefined();
+  });
 });
