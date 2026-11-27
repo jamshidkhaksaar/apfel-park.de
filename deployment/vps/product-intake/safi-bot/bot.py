@@ -20,10 +20,11 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, Update
+from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, Update
 from telegram.constants import ChatAction
 from telegram.error import TelegramError
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.request import HTTPXRequest
 
 BOT_TOKEN = os.environ['BOT_TOKEN']
 API_URL = os.getenv('APFEL_API_URL', 'http://127.0.0.1:3000').rstrip('/')
@@ -38,6 +39,20 @@ logging.getLogger('httpx').setLevel(logging.WARNING)
 logging.getLogger('telegram').setLevel(logging.WARNING)
 locks: dict[int, asyncio.Lock] = {}
 watchers: dict[int, asyncio.Task] = {}
+scan_mode: set[int] = set()
+_api_client: httpx.AsyncClient | None = None
+_TRANSIENT_HTTP_ERRORS = (httpx.ConnectError, httpx.ReadError, httpx.RemoteProtocolError, httpx.PoolTimeout)
+
+
+def get_api_client() -> httpx.AsyncClient:
+    global _api_client
+    if _api_client is None or _api_client.is_closed:
+        _api_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(30.0, connect=10.0),
+            trust_env=False,
+            limits=httpx.Limits(max_connections=16, max_keepalive_connections=8),
+        )
+    return _api_client
 
 
 def connect() -> sqlite3.Connection:
@@ -63,6 +78,7 @@ def load_callback(user_id: int, token: str) -> dict | None:
 
 
 async def invoke(payload: dict, photos: bool = False) -> dict:
+    global _api_client
     payload = {key: value for key, value in payload.items() if value is not None}
     path = PATH + ('/photos' if photos else '')
     body = json.dumps(payload, separators=(',', ':'), ensure_ascii=False)
@@ -70,11 +86,26 @@ async def invoke(payload: dict, photos: bool = False) -> dict:
     idem = f"telegram:{payload['telegramId']}:{payload.get('updateId', 'read')}"
     canonical = '\n'.join(['APFEL-PRODUCT-INTAKE-V1', KEY_ID, stamp, 'POST', path, idem, hashlib.sha256(body.encode()).hexdigest()])
     signature = hmac.new(SECRET.encode(), canonical.encode(), hashlib.sha256).hexdigest()
-    async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
-        response = await client.post(API_URL + path, content=body.encode(), headers={
-            'Content-Type': 'application/json', 'x-apfel-intake-key-id': KEY_ID,
-            'x-apfel-intake-timestamp': stamp, 'x-apfel-intake-signature': signature, 'idempotency-key': idem,
-        })
+    headers = {
+        'Content-Type': 'application/json',
+        'x-apfel-intake-key-id': KEY_ID,
+        'x-apfel-intake-timestamp': stamp,
+        'x-apfel-intake-signature': signature,
+        'idempotency-key': idem,
+    }
+    response = None
+    for attempt in range(3):
+        try:
+            response = await get_api_client().post(API_URL + path, content=body.encode(), headers=headers)
+            break
+        except _TRANSIENT_HTTP_ERRORS:
+            if _api_client and not _api_client.is_closed:
+                await _api_client.aclose()
+            _api_client = None
+            if attempt == 2:
+                raise
+            await asyncio.sleep(0.25 * (attempt + 1))
+    assert response is not None
     result = response.json()
     if response.status_code >= 400:
         raise ValueError(result.get('error', 'request_failed'))
@@ -88,6 +119,10 @@ def identity(update: Update) -> dict:
 
 
 async def show(context: ContextTypes.DEFAULT_TYPE, user_id: int, view: dict, previews: bool = True) -> None:
+    if view.get('scanMode'):
+        scan_mode.add(user_id)
+    else:
+        scan_mode.discard(user_id)
     previous = watchers.get(user_id)
     if previous and previous is not asyncio.current_task() and not view.get('workChat'):
         previous.cancel()
@@ -126,36 +161,61 @@ async def show(context: ContextTypes.DEFAULT_TYPE, user_id: int, view: dict, pre
         # Never offer approval for a comparison that could not be delivered.
         rows = [[button for button in row if not (load_callback(user_id, button.callback_data) or {}).get('action', '').startswith(('assetUse:', 'assetOriginal:'))] for row in rows]
         rows = [row for row in rows if row]
-    sent = await context.bot.send_message(chat_id=user_id, text=text[:4000], reply_markup=InlineKeyboardMarkup(rows))
+    markup = InlineKeyboardMarkup(rows)
+    if view.get('scanPhoto'):
+        try:
+            await context.bot.send_photo(
+                chat_id=user_id,
+                photo=io.BytesIO(base64.b64decode(view['scanPhoto'])),
+                caption=text[:1000],
+                reply_markup=markup,
+            )
+            return
+        except TelegramError:
+            pass
+    sent = await context.bot.send_message(chat_id=user_id, text=text[:4000], reply_markup=markup)
     if view.get('pending') and user_id not in watchers:
-        watchers[user_id] = asyncio.create_task(watch(context, user_id, view, sent.message_id, InlineKeyboardMarkup(rows)))
+        watchers[user_id] = asyncio.create_task(watch(context, user_id, view, sent.message_id, markup))
 
 
 async def watch(context: ContextTypes.DEFAULT_TYPE, user_id: int, initial: dict, message_id: int, markup: InlineKeyboardMarkup) -> None:
     started = time.monotonic()
     frames = ['⏳', '⌛']
+    consecutive_errors = 0
     try:
         for tick in range(90):
             await asyncio.sleep(3)
-            async with locks.setdefault(user_id, asyncio.Lock()):
-                view = await invoke({'telegramId': str(user_id), 'chatId': str(user_id), 'sessionId': initial['sessionId'], 'action': 'status'})
-                if not view.get('pending'):
+            try:
+                async with locks.setdefault(user_id, asyncio.Lock()):
+                    view = await invoke({'telegramId': str(user_id), 'chatId': str(user_id), 'sessionId': initial['sessionId'], 'action': 'status'})
+                    consecutive_errors = 0
+                    if not view.get('pending'):
+                        try:
+                            await context.bot.edit_message_text(chat_id=user_id, message_id=message_id, text=('⏹ Neuer Stand unten.' if initial.get('locale') == 'de' else '⏹ Latest result below.'), reply_markup=None)
+                        except TelegramError:
+                            pass
+                        await show(context, user_id, view)
+                        return
                     try:
-                        await context.bot.edit_message_text(chat_id=user_id, message_id=message_id, text=('⏹ Neuer Stand unten.' if initial.get('locale') == 'de' else '⏹ Latest result below.'), reply_markup=None)
+                        await context.bot.send_chat_action(chat_id=user_id, action=ChatAction.TYPING)
+                        await context.bot.edit_message_text(chat_id=user_id, message_id=message_id,
+                            text=f"{frames[tick % 2]} {int(time.monotonic() - started)} s\n\n{view['text']}"[:4000], reply_markup=markup)
                     except TelegramError:
+                        # Progress delivery must never cancel the durable backend job.
                         pass
-                    await show(context, user_id, view)
-                    return
-                try:
-                    await context.bot.send_chat_action(chat_id=user_id, action=ChatAction.TYPING)
-                    await context.bot.edit_message_text(chat_id=user_id, message_id=message_id,
-                        text=f"{frames[tick % 2]} {int(time.monotonic() - started)} s\n\n{view['text']}"[:4000], reply_markup=markup)
-                except TelegramError:
-                    # Progress delivery must never cancel the durable backend job.
-                    pass
+            except httpx.HTTPError:
+                consecutive_errors += 1
+                if consecutive_errors >= 5:
+                    raise
+                await asyncio.sleep(2)
         await context.bot.send_message(chat_id=user_id, text='Die Verarbeitung läuft weiter. Mit /resume prüfen. / Processing continues. Use /resume to check.')
-    except (ValueError, httpx.HTTPError):
+    except ValueError:
         pass
+    except httpx.HTTPError:
+        try:
+            await context.bot.send_message(chat_id=user_id, text='Verbindung kurz unterbrochen. Status mit /resume prüfen. / Connection briefly interrupted. Check status with /resume.')
+        except TelegramError:
+            pass
     finally:
         if watchers.get(user_id) is asyncio.current_task():
             watchers.pop(user_id, None)
@@ -173,7 +233,7 @@ async def failure(update: Update, context: ContextTypes.DEFAULT_TYPE, error: Exc
         'private_or_invalid_input': 'Keine IMEI, Seriennummern oder privaten Angaben senden. / Do not send IMEI, serial numbers or private data.',
         'photo_wait_for_review': 'Bitte zuerst dieses Foto prüfen. Danach folgt die nächste Seite. / Approve this photo first; then send the next side.',
         'select_accessories_or_none': 'Zubehör auswählen oder Kein Zubehör drücken. / Select accessories or tap No accessories.',
-        'invalid_battery': 'Batteriekapazität von 1 bis 100 eingeben. / Enter battery health from 1 to 100.',
+        'invalid_battery': 'Batteriekapazität von 1 bis 100 (oder Bereich z. B. 95-100) eingeben. / Enter battery health from 1 to 100 (or range like 95-100).',
         'photo_invalid': 'JPEG, PNG oder WebP bis 8 MB senden. / Send JPEG, PNG or WebP up to 8 MB.',
         'review_pending_photos': 'Fotovorschauen zuerst prüfen. / Review pending photo previews first.',
         'invalid_price': 'Preis z. B. 699,90 eingeben. / Enter a price such as 699.90.',
@@ -205,7 +265,15 @@ async def command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 view = await invoke({**payload, 'action': 'status'})
                 await show(context, user_id, await invoke({**payload, 'action': 'chat', 'text': text, 'sessionId': view.get('sessionId')}), previews=False)
                 return
-            payload['action'] = {'/new': 'new', '/update': 'new_update', '/drafts': 'list', '/cancel': 'cancel'}.get(name, 'resume')
+            if name in {'/scan', '/sold'}:
+                arg = ' '.join(context.args).strip()
+                if arg:
+                    await show(context, user_id, await invoke({**payload, 'action': 'scan_lookup', 'text': arg}))
+                else:
+                    await show(context, user_id, await invoke({**payload, 'action': 'scan_menu'}))
+                return
+            scan_mode.discard(user_id)
+            payload['action'] = {'/menu': 'menu', '/new': 'new', '/update': 'new_update', '/drafts': 'list', '/cancel': 'cancel'}.get(name, 'resume')
             if name == '/start' and context.args:
                 payload.update(action='enroll', token=context.args[0], name=update.effective_user.full_name,
                                locale='en' if update.effective_user.language_code == 'en' else 'de')
@@ -242,9 +310,19 @@ async def message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     async with locks.setdefault(user_id, asyncio.Lock()):
         try:
+            media = update.message.photo[-1] if update.message.photo else update.message.document
+            if user_id in scan_mode:
+                if media:
+                    if not media.file_size or media.file_size > 8 * 1024 * 1024:
+                        raise ValueError('photo_invalid')
+                    data = await (await context.bot.get_file(media.file_id)).download_as_bytearray()
+                    view = await invoke({**payload, 'action': 'scan_photo', 'data': base64.b64encode(data).decode()}, photos=True)
+                else:
+                    view = await invoke({**payload, 'action': 'scan_lookup', 'text': update.message.text or ''})
+                await show(context, user_id, view)
+                return
             view = await invoke({**payload, 'action': 'status'})
             payload.update(sessionId=view.get('sessionId'), revision=view['revision'])
-            media = update.message.photo[-1] if update.message.photo else update.message.document
             if media:
                 if not media.file_size or media.file_size > 8 * 1024 * 1024:
                     raise ValueError('photo_invalid')
@@ -259,17 +337,92 @@ async def message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await failure(update, context, error)
 
 
-async def error_handler(_update: object, _context: ContextTypes.DEFAULT_TYPE) -> None:
-    logging.error('Telegram product transport failed; update contents and credentials suppressed')
+# A bare "failed" line makes an incident undiagnosable, so the cause is logged
+# too. Known secrets are scrubbed verbatim and anything token-, HMAC- or
+# signature-shaped is scrubbed by shape: httpx error strings embed the request
+# URL, and a Telegram URL carries the bot token in its path.
+_CREDENTIALS = tuple(credential for credential in (BOT_TOKEN, SECRET) if len(credential) >= 8)
+_CREDENTIAL_PATTERNS = (
+    re.compile(r'\d{6,}:[A-Za-z0-9_-]{30,}'),  # bot token, bare or inside a URL
+    re.compile(r'\b[0-9a-fA-F]{32,}\b'),  # HMAC secrets and request signatures
+    re.compile(r'(?i)\b(?:bearer|authorization)\s+\S+'),
+)
+
+
+def redact(error: BaseException, limit: int = 300) -> str:
+    text = f'{type(error).__name__}: {error}'
+    for credential in _CREDENTIALS:
+        text = text.replace(credential, '[redacted]')
+    for pattern in _CREDENTIAL_PATTERNS:
+        text = pattern.sub('[redacted]', text)
+    text = ' '.join(text.split())
+    return text if len(text) <= limit else text[:limit] + '…'
+
+
+def update_kind(update: object) -> str:
+    if isinstance(update, Update):
+        for name in ('callback_query', 'message', 'edited_message', 'inline_query'):
+            if getattr(update, name, None):
+                return name
+    return 'unknown'
+
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    reason = redact(context.error) if context.error else 'no exception recorded'
+    logging.error('Telegram product transport failed; update contents and credentials suppressed (%s) reason=%s',
+                  update_kind(update), reason)
+
+
+async def post_init(app: Application) -> None:
+    try:
+        await app.bot.set_my_commands([
+            BotCommand('menu', 'Main menu / Hauptmenü'),
+            BotCommand('scan', 'Scan barcode & mark sold (-1)'),
+            BotCommand('new', 'Add new product'),
+            BotCommand('update', 'Update stock or price'),
+            BotCommand('drafts', 'My product drafts'),
+            BotCommand('resume', 'Resume open draft'),
+            BotCommand('language', 'Switch language (de/en)'),
+            BotCommand('chat', 'Ask product assistant'),
+            BotCommand('cancel', 'Cancel open draft'),
+        ])
+    except TelegramError:
+        pass
+
+
+async def post_shutdown(_app: Application) -> None:
+    if _api_client and not _api_client.is_closed:
+        await _api_client.aclose()
 
 
 def main() -> None:
-    app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler(['start', 'new', 'update', 'resume', 'drafts', 'language', 'cancel', 'chat', 'ask'], command, filters=filters.ChatType.PRIVATE))
+    request = HTTPXRequest(
+        connection_pool_size=8,
+        connect_timeout=10.0,
+        read_timeout=20.0,
+        write_timeout=20.0,
+        pool_timeout=5.0,
+    )
+    get_updates_request = HTTPXRequest(
+        connection_pool_size=2,
+        connect_timeout=10.0,
+        read_timeout=35.0,
+        pool_timeout=5.0,
+    )
+    app = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .request(request)
+        .get_updates_request(get_updates_request)
+        .post_init(post_init)
+        .post_shutdown(post_shutdown)
+        .build()
+    )
+    app.add_handler(CommandHandler(['start', 'menu', 'scan', 'sold', 'new', 'update', 'resume', 'drafts', 'language', 'cancel', 'chat', 'ask'], command, filters=filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(callback))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE & (filters.PHOTO | filters.Document.IMAGE | (filters.TEXT & ~filters.COMMAND)), message))
     app.add_error_handler(error_handler)
-    app.run_polling(allowed_updates=['message', 'callback_query'], drop_pending_updates=False)
+    app.run_polling(allowed_updates=['message', 'callback_query'], drop_pending_updates=False, timeout=25, bootstrap_retries=-1)
 
 
 if __name__ == '__main__':

@@ -45,6 +45,11 @@ type NavItem = { label: string; path: string; icon: string; badge?: number; disa
 
 const NavIcon = ({ type }: { type: string }) => {
   const icons: Record<string, ReactNode> = {
+    barcode: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h3.75m10.5 0h-3.75m4.875 1.125V8.25m0 7.5v3.375c0 .621-.504 1.125-1.125 1.125h-3.75m-6.75 0H4.875a1.125 1.125 0 01-1.125-1.125V15.75m0-7.5V4.875M7.5 8.25v7.5m3-7.5v7.5m3-7.5v7.5m3-7.5v7.5" />
+      </svg>
+    ),
     dashboard: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
@@ -364,6 +369,7 @@ export default function AdminShell({
   ] : [
     { label: dict.sidebar.dashboard, path: '/admin', icon: 'dashboard' },
     ...(user?.role === "admin" || user?.role === "manager" ? tillItems : []),
+    { label: lang === 'de' ? 'Barcode scannen' : 'Scan barcode', path: '/admin/products?scan=1', icon: 'barcode' },
     { label: dict.sidebar.products, path: '/admin/products', icon: 'products' },
     { label: lang === 'de' ? 'Lager' : 'Inventory', path: '/admin/inventory', icon: 'inventory', disabled: INVENTORY_UNDER_CONSTRUCTION },
     // Printable stock lists to match the online shop against the store.
@@ -411,7 +417,7 @@ export default function AdminShell({
   const groupLabels = lang === "de"
     ? { catalog: "Katalog", ops: "Betrieb", system: "System" }
     : { catalog: "Catalog", ops: "Operations", system: "System" };
-  const catalogPaths = new Set(["/admin", "/admin/products", "/admin/inventory", "/admin/products/reports"]);
+  const catalogPaths = new Set(["/admin", "/admin/products?scan=1", "/admin/products", "/admin/inventory", "/admin/products/reports"]);
   const systemPaths = new Set(adminItems.map((item) => item.path));
   const navGroups = [
     { label: groupLabels.catalog, items: navItems.filter((item) => catalogPaths.has(item.path)) },
@@ -425,6 +431,7 @@ export default function AdminShell({
     ...baseItems.filter((item) => !item.disabled).map((item) => ({ ...item, group: groupLabels.catalog })),
     ...(canManage ? managerItems.map((item) => ({ ...item, group: groupLabels.ops })) : []),
     ...(isAdmin ? adminItems.map((item) => ({ ...item, group: groupLabels.system })) : []),
+    ...(userRole === "cashier" ? [] : [{ label: lang === "de" ? "Barcode scannen & verkaufen" : "Scan barcode & sell", path: "/admin/products?scan=1", group: groupLabels.catalog, keywords: "scan barcode verkaufen sold فروخته -1" }]),
     ...(userRole === "cashier" ? [] : [{ label: lang === "de" ? "Produkt anlegen" : "New product", path: "/admin/products/new", group: groupLabels.catalog, keywords: "neu new create add artikel" }]),
     ...(userRole === "cashier" ? [] : [{ label: lang === "de" ? "Aktionen & Rabatte" : "Promotions", path: "/admin/products/promotions", group: groupLabels.catalog, keywords: "rabatt discount sale aktion" }]),
     ...(canManage ? [{ label: lang === "de" ? "Trade-in Anfragen" : "Trade-in requests", path: "/admin/trade-ins", group: groupLabels.ops, keywords: "trade in ankauf verkaufen quote angebot" }] : []),
@@ -584,9 +591,11 @@ export default function AdminShell({
                     // The most specific entry wins: /admin/products/reports lights up
                     // "Berichte", not "Produkte" as well.
                     const isActive =
-                      item.path === '/admin'
-                        ? pathname === item.path
-                        : matches(item.path) && !navItems.some((other) => other.path.length > item.path.length && other.path.startsWith(`${item.path}/`) && matches(other.path));
+                      item.path.includes('?')
+                        ? false
+                        : item.path === '/admin'
+                          ? pathname === item.path
+                          : matches(item.path) && !navItems.some((other) => !other.path.includes('?') && other.path.length > item.path.length && other.path.startsWith(`${item.path}/`) && matches(other.path));
                     return (
                       <li key={item.path}>
                         <Link
@@ -601,6 +610,11 @@ export default function AdminShell({
                               return;
                             }
                             closeSidebar();
+                            if (item.path === '/admin/products?scan=1' && pathname === '/admin/products') {
+                              event.preventDefault();
+                              window.dispatchEvent(new Event('admin-scan-open'));
+                              return;
+                            }
                             if (pathname !== item.path) setNavigatingPath(item.path);
                           }}
                           title={sidebarCollapsed ? item.label : undefined}

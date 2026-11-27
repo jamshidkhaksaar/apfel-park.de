@@ -12,7 +12,7 @@ import { phoneEditorText } from '@/lib/smartphone-editor/i18n';
 import { validatedGtin } from '@/lib/product-identifiers';
 import { findSensitiveDataIssues } from '@/lib/product-intake/redaction';
 import { telegramAccessoryChoices, setTelegramAccessories } from './offer-content';
-import { defaultOfferPresets, type OfferPresets } from '@/lib/product-offer-options';
+import { defaultOfferPresets, formatBatteryHealth, type OfferPresets } from '@/lib/product-offer-options';
 
 export const categories = [
   'smartphones',
@@ -78,6 +78,8 @@ export type Conversation = {
 export type Button = { text: string; action: string };
 export type BotView = {
   workChat?: boolean;
+  scanMode?: boolean;
+  scanPhoto?: string;
   workflowStage?: Stage;
   locale?: Locale;
   gallery?: Array<{ id: string; edited: boolean; caption: string }>;
@@ -120,16 +122,41 @@ export const currentEntry = (
   if (!entry) throw new Error('entry_not_found');
   return entry;
 };
+const entryBatteryLabel = (entry: PhoneEntry): string =>
+  formatBatteryHealth(
+    entry.batteryHealth,
+    entry.batteryHealthMax != null && entry.batteryHealth != null
+      ? { min: entry.batteryHealth, max: entry.batteryHealthMax }
+      : undefined,
+  ) ?? '';
+
 export const versionLabel = (entry: PhoneEntry): string =>
   [
     entry.color,
     entry.storage,
     ...Object.values(entry.configuration ?? {}),
     entry.condition,
-    entry.batteryHealth == null ? '' : `${entry.batteryHealth}%`,
+    entryBatteryLabel(entry),
   ]
     .filter(Boolean)
     .join(' · ');
+
+const parseBatteryInput = (raw: string): { min: number; max: number | null } | null => {
+  const cleaned = raw.trim().replace(/%/g, '').replace(/\s+/g, '');
+  const range = /^(\d{1,3})[-–](\d{1,3})$/.exec(cleaned);
+  if (range) {
+    const min = Number(range[1]);
+    const max = Number(range[2]);
+    if (min < 1 || max > 100 || min > max) return null;
+    return { min, max: min === max ? null : max };
+  }
+  if (/^\d{1,3}$/.test(cleaned)) {
+    const value = Number(cleaned);
+    if (value < 1 || value > 100) return null;
+    return { min: value, max: null };
+  }
+  return null;
+};
 export const telegramBlockers = (
   doc: PhoneDocument,
   locale: Locale,
@@ -182,7 +209,10 @@ export const accessoryOptions = (doc: PhoneDocument) => {
   const keys = doc.shared.category==='consoles' ? ['box','controller','hdmi','charger'] : doc.shared.category==='laptops' ? ['box','charger','bag','usb_c'] : ['smartphones','tablets'].includes(doc.shared.category??'') ? ['box','usb_c','lightning','charger','case','protector'] : ['box','usb_c','charger'];
   return options.filter(option=>keys.includes(option.key));
 };
-const needsBattery = (doc: PhoneDocument) => doc.shared.category==='smartphones' && /iphone/i.test(doc.shared.model??'');
+const needsBattery = (doc: PhoneDocument, entry: PhoneEntry): boolean =>
+  ['smartphones', 'tablets', 'laptops'].includes(
+    doc.shared.category ?? 'smartphones',
+  ) && entry.condition !== 'new';
 const review = (state: Conversation, document: PhoneDocument) => {state.stage='review';document.step=6;state.editing=false;state.singleField=false;};
 const startPhotos = (state: Conversation, document: PhoneDocument) => {state.stage='photos';document.step=3;state.photoKind='device';state.photoAngles??={};};
 
@@ -272,13 +302,26 @@ export const transition = (
   }
   if(state.guided && input.action.startsWith('field:') && state.stage==='entry_edit'){
     const stage=input.action.slice(6) as Stage;
-    if((state.updateOnly && !['stock','price'].includes(stage)) || !['color','stock','price','battery','notes','accessories'].includes(stage) || (stage==='battery'&&!needsBattery(document)))throw new Error('invalid_action');
+    if((state.updateOnly && !['stock','price'].includes(stage)) || !['color','stock','price','battery','notes','accessories'].includes(stage) || (stage==='battery'&&!needsBattery(document,entry)))throw new Error('invalid_action');
     state.stage=stage;state.singleField=true;state.selectedAccessories=stage==='accessories'?entry.accessories.split(', ').filter(Boolean).map(label=>accessoryOptions(document).find(option=>option.de===label||option.en===label)?.key??'custom:'+label):[];return {state,document};
   }
   if (input.action === 'back') {
     if(state.guided && state.editing){state.stage='edit_menu';return {state,document};}
     if(state.guided){
-      const previous: Partial<Record<Stage,Stage>>={price:'stock',stock:'versions',battery:'price',notes:needsBattery(document)?'battery':'price',defects:'notes',accessories:'notes',accessory_custom:'accessories',photos:'accessories',review:'edit_menu'};
+      const previous: Partial<Record<Stage,Stage>>={
+        color:'versions',
+        storage:'color',
+        configuration:'storage',
+        price:'stock',
+        stock:'versions',
+        battery:'price',
+        notes:needsBattery(document,entry)?'battery':'price',
+        defects:'notes',
+        accessories:entry.condition==='new'?'price':'notes',
+        accessory_custom:'accessories',
+        photos:'accessories',
+        review:'edit_menu'
+      };
       if(previous[state.stage]){state.stage=previous[state.stage]!;return {state,document};}
     }
     const sequence: Stage[] = [
@@ -344,6 +387,7 @@ export const transition = (
       entry.condition = state.condition;
       state.conditionChosen=true;
       if(entry.condition!=='new' && entry.experience)entry.experience.packageContents=[];
+      if(entry.condition==='new'){entry.batteryHealth=null;entry.batteryHealthMax=null;}
       if(state.guided && state.editing){review(state,document);break;}
       state.stage = 'researching';
       delete state.researchError;
@@ -426,7 +470,24 @@ export const transition = (
       const price = Number(value.replace(/\s*€$/, '').replace(',', '.'));
       if (!(price > 0)) throw new Error('invalid_price');
       entry.price = price;
-      state.stage = state.guided && state.singleField ? 'review' : state.guided && !state.updateOnly ? (needsBattery(document)?'battery':'notes') : 'stock';
+      if (state.guided && state.singleField) {
+        state.stage = 'review';
+      } else if (state.guided && !state.updateOnly) {
+        if (needsBattery(document, entry)) {
+          state.stage = 'battery';
+        } else if (entry.condition === 'new') {
+          const sealed = presets.conditionNotes.find((p) => p.id === 'new-sealed');
+          if (!entry.conditionNote && sealed) {
+            entry.conditionNote = sealed.text.de;
+            entry.conditionNotePresetId = sealed.id;
+          }
+          state.stage = 'accessories';
+        } else {
+          state.stage = 'notes';
+        }
+      } else {
+        state.stage = 'stock';
+      }
       break;
     }
     case 'stock':
@@ -437,8 +498,7 @@ export const transition = (
         ? 'review'
         : entry.condition !== 'new' && entry.stock > 1
           ? 'identical'
-          : entry.condition === 'used' &&
-              /iphone/i.test(`${document.shared.model}`)
+          : needsBattery(document, entry)
             ? 'battery'
             : 'notes';
       break;
@@ -448,20 +508,34 @@ export const transition = (
         throw new Error('invalid_action');
       if(state.guided){state.stage=state.singleField?'review':'price';break;}
       state.stage =
-        entry.condition === 'used' && /iphone/i.test(`${document.shared.model}`)
+        needsBattery(document, entry)
           ? 'battery'
           : 'notes';
       break;
-    case 'battery':
-      if(state.guided && input.action==='batteryUnknown'){entry.batteryHealth=null;state.stage=state.singleField?'review':'notes';break;}
-      if (!/^\d{1,3}$/.test(value) || Number(value) < 1 || Number(value) > 100)
-        throw new Error('invalid_battery');
-      entry.batteryHealth = Number(value);
+    case 'battery': {
+      if(state.guided && input.action==='batteryUnknown'){
+        entry.batteryHealth=null;
+        entry.batteryHealthMax=null;
+        state.stage=state.singleField?'review':'notes';
+        break;
+      }
+      const parsed = parseBatteryInput(value);
+      if (!parsed) throw new Error('invalid_battery');
+      entry.batteryHealth = parsed.min;
+      entry.batteryHealthMax = parsed.max;
       state.stage = state.guided && state.singleField ? 'review' : 'notes';
       break;
+    }
     case 'notes':
       if(state.guided){
         if(input.action==='defectType'){state.stage='defects';break;}
+        if(input.action==='gradeAPlus'){
+          const aplus = presets.conditionNotes.find((p) => p.id === 'grade-aplus');
+          entry.conditionNotePresetId = 'grade-aplus';
+          entry.conditionNote = aplus?.text.de ?? 'Zustand A+ (Wie neu): Optisch nahezu neuwertig, keine oder minimale Gebrauchsspuren.';
+          entry.defects = 'Keine sichtbaren Gebrauchsspuren.';
+          state.stage=state.singleField?'review':'accessories';break;
+        }
         if(input.action!=='defectNone' && input.action!=='choose:-' && !text)throw new Error('invalid_action');
         entry.defects=text || 'Keine sichtbaren Mängel gemeldet.';
         entry.conditionNote=entry.defects;
@@ -742,18 +816,28 @@ export const renderConversation = (
       buttons.push(next);
       break;
     }
-    case 'color':
+    case 'color': {
       text = t(
-        '2/7 · Farbe? „-“ falls nicht anwendbar.',
-        '2/7 · Color? Type “-” if not applicable.',
+        '2/7 · Farbe wählen oder eingeben („-“ falls nicht anwendbar).',
+        '2/7 · Choose or type Color (“-” if not applicable).',
       );
+      const colors = [...new Set((doc.variantSuggestions ?? []).map((v) => v.color).filter(Boolean))].slice(0, 8);
+      for (let i = 0; i < colors.length; i += 2) {
+        buttons.push(colors.slice(i, i + 2).map((c) => b(c, `choose:${c}`)));
+      }
       break;
-    case 'storage':
+    }
+    case 'storage': {
       text = t(
-        '2/7 · Speicher, z. B. 256 GB? „-“ falls nicht anwendbar.',
-        '2/7 · Storage, e.g. 256 GB? Type “-” if not applicable.',
+        '2/7 · Speicher wählen oder eingeben, z. B. 256 GB („-“ falls nicht anwendbar).',
+        '2/7 · Choose or type Storage, e.g. 256 GB (“-” if not applicable).',
       );
+      const storages = [...new Set((doc.variantSuggestions ?? []).map((v) => v.storage).filter(Boolean))].slice(0, 8);
+      for (let i = 0; i < storages.length; i += 2) {
+        buttons.push(storages.slice(i, i + 2).map((s) => b(s, `choose:${s}`)));
+      }
       break;
+    }
     case 'configuration':
       text = t(
         'Weitere Version: je Zeile Merkmal: Wert (z. B. RAM: 16 GB). „-“ zum Überspringen.',
@@ -787,9 +871,13 @@ export const renderConversation = (
       break;
     case 'battery':
       text = t(
-        '2/7 · Tatsächliche Batteriekapazität in % (1–100)?',
-        '2/7 · Actual battery health in % (1–100)?',
+        '2/7 · Batteriekapazität in % eingeben (z. B. 92 oder 95-100) oder auswählen:',
+        '2/7 · Enter battery health in % (e.g. 92 or 95-100) or pick below:',
       );
+      buttons = [
+        [b('100%', 'choose:100'), b('95–100%', 'choose:95-100')],
+        [b('90–94%', 'choose:90-94'), b('85–89%', 'choose:85-89')],
+      ];
       break;
     case 'notes':
       text = t(
@@ -920,7 +1008,7 @@ export const renderConversation = (
         text=`2/7 · ${versionLabel(entry)}\n${t('Welche Angabe ändern?','Which detail should change?')}`;
         buttons=[[b(t('Menge','Quantity'),'field:stock'),b(t('Preis','Price'),'field:price')],[b(t('Farbe / Speicher','Color / storage'),'field:color'),b(t('Schäden','Defects'),'field:notes')],[b(t('Zubehör','Accessories'),'field:accessories')]];
         if(state.updateOnly)buttons=buttons.slice(0,1);
-        if(needsBattery(doc) && !state.updateOnly)buttons.push([b(t('Batteriekapazität','Battery health'),'field:battery')]);
+        if(needsBattery(doc,entry) && !state.updateOnly)buttons.push([b(t('Batteriekapazität','Battery health'),'field:battery')]);
         buttons.push([b(t('Zur Vorschau','Back to preview'),'preview')]);break;
       case 'researching':
         if(!state.researchError){text=`⏳ ${doc.shared.brand} ${doc.shared.model}\n\n${t('Offizielle Quellen werden geprüft und Modellversionen vorbereitet. Du musst nichts eingeben. Das Ergebnis erscheint automatisch.','Checking official sources and preparing model versions. No input needed; the result will appear automatically.')}`;buttons=[];}
@@ -932,12 +1020,24 @@ export const renderConversation = (
         const count=state.editing?doc.entries.length:(doc.variantSuggestions??[]).length;
         const pager:Button[]=[];if(state.page>0)pager.push(b('←',`page:${state.page-1}`));if((state.page+1)*8<count)pager.push(b('→',`page:${state.page+1}`));if(pager.length)buttons.push(pager);
         buttons.push([b(t('Version manuell eingeben','Enter version manually'),'add')]);
+        if(!state.editing && doc.entries.some(e=>e.price>0)){
+          for(const e of doc.entries.filter(e=>e.price>0).slice(0,6)){
+            buttons.push([b(`✎ ${versionLabel(e)} · €${e.price} × ${e.stock}`,`entry:${e.id}`)]);
+          }
+          buttons.push([b(t('Zur Übersicht →','To review →'),'next')]);
+        }
         if(state.editing)buttons.push([b(t('Zur Vorschau','Back to preview'),'preview')]);break;
       }
-      case 'battery':buttons=[[b(t('Nicht zugänglich – später ergänzen','Not accessible – complete later'),'batteryUnknown')]];break;
+      case 'battery':
+        buttons.push([b(t('Nicht zugänglich – später ergänzen','Not accessible – complete later'),'batteryUnknown')]);
+        break;
       case 'notes':
-        text=`2/7 · ${t('Sind sichtbare Schäden oder Mängel vorhanden?','Are there any visible defects or damage?')}`;
-        buttons=[[b(t('Keine sichtbaren Schäden','No visible defects'),'defectNone')],[b(t('Schaden beschreiben','Describe a defect'),'defectType')]];break;
+        text=`2/7 · ${t('Zustand & sichtbare Schäden auswählen oder eingeben:','Select or describe condition & visible defects:')}`;
+        buttons=[
+          [b(t('⭐ A+ – Wie neu (Preset)','⭐ A+ – Like new (preset)'),'gradeAPlus')],
+          [b(t('Keine sichtbaren Schäden','No visible defects'),'defectNone')],
+          [b(t('Schaden beschreiben','Describe a defect'),'defectType')],
+        ];break;
       case 'defects':text=t('Beschreibe den sichtbaren Schaden kurz, z. B. Kratzer am Rahmen.','Briefly describe the visible defect, e.g. scratches on the frame.');buttons=[];break;
       case 'accessory_custom':text=t('Welches weitere Zubehör ist tatsächlich dabei?','What other accessory is actually included?');buttons=[];break;
       case 'accessories': {
@@ -959,7 +1059,7 @@ export const renderConversation = (
       case 'review': {
         const names={store:t('Website','Website'),google:'Google Merchant',ebay:'eBay',amazon:'Amazon'};
         const conditionName=(value:string)=>value==='new'?t('Neu / versiegelt','New / sealed'):value==='open_box'?t('Open-Box','Open box'):t('Gebraucht','Used');
-        const versions=doc.entries.slice(0,6).map((e,i)=>`${i+1}. ${[e.color,e.storage,...Object.values(e.configuration??{})].filter(Boolean).join(' · ').slice(0,160)}\n${t('Menge','Qty')}: ${e.stock} · €${e.price.toFixed(2)} · ${conditionName(e.condition)}${e.batteryHealth!=null?` · ${t('Akku','Battery')}: ${e.batteryHealth}%`:''}\n${t('Schäden','Defects')}: ${(e.defects||e.conditionNote||t('Nicht erfasst','Not recorded')).slice(0,100)}\n${t('Zubehör','Accessories')}: ${(e.accessories||t('Keines','None')).slice(0,120)}`).join('\n\n');
+        const versions=doc.entries.slice(0,6).map((e,i)=>{const bat=entryBatteryLabel(e);return `${i+1}. ${[e.color,e.storage,...Object.values(e.configuration??{})].filter(Boolean).join(' · ').slice(0,160)}\n${t('Menge','Qty')}: ${e.stock} · €${e.price.toFixed(2)} · ${conditionName(e.condition)}${bat?` · ${t('Akku','Battery')}: ${bat}`:''}\n${t('Schäden','Defects')}: ${(e.defects||e.conditionNote||t('Nicht erfasst','Not recorded')).slice(0,100)}\n${t('Zubehör','Accessories')}: ${(e.accessories||t('Keines','None')).slice(0,120)}`;}).join('\n\n');
         const blockers=telegramBlockers(doc,l);
         text=[`✅ ${doc.shared.title}\n${t('Entwurfsvorschau – noch nicht veröffentlicht','Draft preview – not published')}`,`1/7 · ${steps[0]}\n${doc.shared.brand} ${doc.shared.model} · ${doc.shared.category}`,`2/7 · ${steps[1]}\n${versions.slice(0,1500)}${doc.entries.length>6?`\n+${doc.entries.length-6} ${t('weitere Versionen','more versions')}`:''}`,`3/7 · ${steps[2]}\n${(doc.shared.description||t('Noch keine Beschreibung. Im Admin ergänzen.','No description yet. Complete it in admin.')).slice(0,450)}`,`4/7 · ${steps[3]}\n${doc.entries.map(e=>`${e.color} ${e.storage}: ${e.photos.filter(p=>p.url).length} ${t('bestätigte Fotos','approved photos')}`).join('\n').slice(0,350)}`,`5/7 · ${steps[4]}\n${(doc.shared.specs??[]).slice(0,4).map(spec=>`${spec.label}: ${spec.value}`).join('\n').slice(0,350)||t('Noch unvollständig.','Still incomplete.')}`,`6/7 · ${steps[5]}\n${[...new Set(doc.entries.flatMap(e=>e.channels))].map(c=>names[c]).join(', ')}`,`7/7 · ${steps[6]}\n${blockers.length?`⚠️ ${blockers.length} ${t('offene Angaben – im Admin prüfbar','missing details – complete in admin')}`:t('Bereit für die Inhaberprüfung.','Ready for owner review.')}`,t('Absenden speichert einen Entwurf zur Inhaberprüfung. Es veröffentlicht nichts.','Submit sends this draft for owner review. It does not publish anything.')].join('\n\n');
         buttons=[[b(t('Zur Inhaberprüfung senden','Submit for owner review'),'submit')],[b(t('✏️ Angaben bearbeiten','✏️ Edit details'),'editMenu')]];
@@ -970,7 +1070,8 @@ export const renderConversation = (
   }
   if(state.guided && ['stock','price','battery','notes','accessories','photos'].includes(state.stage)){
     if(state.stage==='price')text=t('2/7 · Verkaufspreis in €? Zum Beispiel 699,90.','2/7 · Selling price in €? For example 699.90.');
-    text=`${doc.shared.brand} ${doc.shared.model} · ${[entry.color,entry.storage].filter(Boolean).join(' · ')}\n\n${text}`;
+    const qtyTag = state.stage !== 'stock' ? ` · ${t('Menge', 'Qty')}: ${entry.stock}` : '';
+    text=`${doc.shared.brand} ${doc.shared.model} · ${versionLabel(entry)}${qtyTag}\n\n${text}`;
   }
   if (['color', 'price'].includes(state.stage) && !state.updateOnly && !state.guided)
     buttons.unshift([

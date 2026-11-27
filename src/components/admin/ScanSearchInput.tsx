@@ -20,11 +20,11 @@ import {
  * the scanner typed into gets its old value back, so a scan can never change a
  * stock or price field. A code that matches nothing runs the normal search.
  */
-export default function ScanSearchInput({ defaultValue, placeholder, autoFocus = false, locale = "de" }: { defaultValue: string; placeholder: string; autoFocus?: boolean; locale?: "de" | "en" }) {
+export default function ScanSearchInput({ defaultValue, placeholder, autoFocus = false, autoOpen = false, locale = "de" }: { defaultValue: string; placeholder: string; autoFocus?: boolean; autoOpen?: boolean; locale?: "de" | "en" }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const burst = useRef(emptyBurst());
-  const [dialog, setDialog] = useState<{ initial: ScanResult | null } | null>(null);
+  const [dialog, setDialog] = useState<{ initial: ScanResult | null } | null>(() => (autoOpen ? { initial: null } : null));
   const [looking, setLooking] = useState(false);
 
   /** Opens the popup for a code; false when nothing matched. */
@@ -47,6 +47,12 @@ export default function ScanSearchInput({ defaultValue, placeholder, autoFocus =
   useEffect(() => {
     live.current = { open: Boolean(dialog), openFor, search };
   });
+
+  useEffect(() => {
+    const onOpenEvent = () => setDialog({ initial: null });
+    window.addEventListener("admin-scan-open", onOpenEvent);
+    return () => window.removeEventListener("admin-scan-open", onOpenEvent);
+  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

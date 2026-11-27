@@ -217,8 +217,7 @@ describe('shop-floor product conversation', () => {
     apply('variant:0');expect(state.stage).toBe('stock');
     expect(renderConversation(state,document,1).buttons.flat().some(b=>b.action.startsWith('setCondition:'))).toBe(false);
     apply('choose:2');expect(state.stage).toBe('price');
-    apply('text','699.90');if(category==='smartphones'){expect(state.stage).toBe('battery');apply('batteryUnknown');}expect(state.stage).toBe('notes');
-    apply('defectNone');expect(state.stage).toBe('accessories');
+    apply('text','699.90');expect(state.stage).toBe('accessories');
     apply('accessory:box');expect(state.stage).toBe('accessories');
     apply('accessoryDone');expect(state.stage).toBe('photos');
     expect(document.entries[0]).toMatchObject({stock:2,price:699.9,accessories:'Originalkarton',hasRealProductPhotos:false});
@@ -283,5 +282,45 @@ describe('shop-floor product conversation', () => {
       'back',
       'connector',
     ]);
+  });
+
+  it('asks battery health for open_box and non-iPhone used devices, accepts ranges and A+ preset', () => {
+    for (const [category, brand, model, condition] of [
+      ['smartphones', 'Samsung', 'Galaxy S25', 'used'],
+      ['smartphones', 'Apple', 'iPhone 16 Pro', 'open_box'],
+      ['tablets', 'Apple', 'iPad Pro 13', 'open_box'],
+      ['laptops', 'Apple', 'MacBook Air M3', 'used'],
+    ] as const) {
+      let { state, document } = newConversation('en');
+      document.shared.category = category;
+      document.shared.brand = brand;
+      document.shared.model = model;
+      document.shared.title = `${brand} ${model}`;
+      state.condition = condition;
+      state.conditionChosen = true;
+      state.stage = 'versions';
+      document.variantSuggestions = [{ color: 'Black', storage: '256 GB' }];
+      const apply = (action: string, text?: string) => {
+        ({ state, document } = transition(state, document, { action, text }));
+      };
+      apply('variant:0');
+      apply('choose:2');
+      apply('confirmIdentical');
+      expect(state.stage).toBe('price');
+      expect(renderConversation(state, document, 1).text).toContain('Black · 256 GB');
+      apply('text', '799');
+      expect(state.stage).toBe('battery');
+      apply('text', '95-100%');
+      expect(document.entries[0].batteryHealth).toBe(95);
+      expect(document.entries[0].batteryHealthMax).toBe(100);
+      expect(state.stage).toBe('notes');
+      apply('gradeAPlus');
+      expect(document.entries[0].conditionNotePresetId).toBe('grade-aplus');
+      expect(state.stage).toBe('accessories');
+      apply('accessoryNone');
+      expect(state.stage).toBe('photos');
+      apply('photoUnavailable');
+      expect(renderConversation(state, document, 1).text).toContain('95–100%');
+    }
   });
 });

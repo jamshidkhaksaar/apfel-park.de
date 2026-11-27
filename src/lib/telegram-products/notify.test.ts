@@ -7,7 +7,7 @@ vi.mock('node:fs/promises', async (original) => ({
   },
 }));
 
-const { notifyPublished, publishedNoticeText } = await import('./notify');
+const { notifyPublished, notifyProductSold, publishedNoticeText, soldNoticeText } = await import('./notify');
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -67,5 +67,58 @@ describe('published draft notices', () => {
       vi.fn().mockRejectedValue(new Error('connection refused')),
     );
     await expect(notifyPublished('987654321', 'x')).resolves.toBe(false);
+  });
+});
+
+
+describe('barcode sale Persian notifications', () => {
+  it('formats short product summary with فروخته شد in Persian', () => {
+    const caption = soldNoticeText({
+      title: 'Apple iPhone 15 Pro',
+      brand: 'Apple',
+      condition: 'open_box',
+      color: 'Titanium',
+      storage: '256 GB',
+      batteryHealth: 95,
+      batteryHealthRange: { min: 95, max: 100 },
+      salePrice: 849,
+      originalPrice: 899,
+      sku: 'AP-IP15P-256-TI',
+      remainingStock: 2,
+      image: null,
+    });
+    expect(caption).toContain('فروخته شد');
+    expect(caption).toContain('Apple iPhone 15 Pro');
+    expect(caption).toContain('Titanium · 256 GB');
+    expect(caption).toContain('اوپن باکس');
+    expect(caption).toContain('95–100%');
+    expect(caption).toContain('€849');
+    expect(caption).toContain('AP-IP15P-256-TI');
+    expect(caption).toContain('2 عدد');
+  });
+
+  it('broadcasts to every unique active recipient', async () => {
+    vi.stubEnv('TELEGRAM_PRODUCT_BOT_TOKEN', `123456789:${'a'.repeat(35)}`);
+    const fetch = vi.fn().mockResolvedValue(Response.json({ ok: true }));
+    vi.stubGlobal('fetch', fetch);
+
+    const outcome = await notifyProductSold(
+      {
+        title: 'iPhone 14',
+        brand: 'Apple',
+        condition: 'used',
+        color: 'Black',
+        storage: '128 GB',
+        batteryHealth: 92,
+        salePrice: 499,
+        sku: 'AP-IP14-BLK',
+        remainingStock: 0,
+        image: null,
+      },
+      ['11111', '22222'],
+    );
+    expect(outcome).toEqual({ recipients: 2, sent: 2, failed: 0 });
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch.mock.calls[0]?.[0]).toContain('/sendMessage');
   });
 });

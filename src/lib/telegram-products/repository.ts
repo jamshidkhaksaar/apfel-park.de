@@ -19,6 +19,11 @@ import { acceptPhoto } from './photos';
 import { createPhoneDraftInTransaction } from '@/lib/smartphone-editor/repository';
 import { normalizeTelegramOfferDocument } from './offer-content';
 import { readOfferPresets } from '@/lib/product-offer-presets-repository';
+import { readFile } from 'node:fs/promises';
+import sharp from 'sharp';
+import { resolveUploadPath } from '@/lib/blob';
+import { lookupScannedProduct, recordScannedProductSale } from '@/lib/product-scan-sale';
+import { formatBatteryHealth } from '@/lib/product-offer-options';
 import { confirmPhotoCorrection, handleWorkChat } from './chat';
 import { telegramPhotoBlockers } from './photo-policy';
 
@@ -386,7 +391,7 @@ export const validateBotRequest = (input: unknown): BotRequest => {
     !/^[1-9]\d{0,15}$/.test(b.telegramId) ||
     b.chatId !== b.telegramId ||
     typeof b.action !== 'string' ||
-    b.action.length > 100 ||
+    b.action.length > 160 ||
     (b.text !== undefined &&
       (typeof b.text !== 'string' || b.text.length > 2000)) ||
     (b.sessionId !== undefined && !/^[a-f0-9-]{36}$/i.test(b.sessionId)) ||
@@ -398,6 +403,107 @@ export const validateBotRequest = (input: unknown): BotRequest => {
     throw new Error('invalid_input');
   return b;
 };
+const loadScanPreviewBase64 = async (imagePath: string | null): Promise<string | undefined> => {
+  if (!imagePath || !imagePath.startsWith('/uploads/')) return undefined;
+  try {
+    const local = resolveUploadPath(imagePath);
+    if (!local) return undefined;
+    const raw = await readFile(local);
+    const jpeg = await sharp(raw, { limitInputPixels: 25_000_000 })
+      .rotate()
+      .resize({ width: 960, height: 960, fit: 'inside', withoutEnlargement: true })
+      .flatten({ background: '#ffffff' })
+      .jpeg({ quality: 82 })
+      .toBuffer();
+    return jpeg.toString('base64');
+  } catch {
+    return undefined;
+  }
+};
+
+const renderMainMenu = (locale: Locale, hasOpenDraft: boolean): BotView => ({
+  scanMode: false,
+  revision: 1,
+  text: tr(
+    locale,
+    '📋 Hauptmenü · Apfel Park\nWähle eine Aktion:',
+    '📋 Main menu · Apfel Park\nChoose an action:',
+  ),
+  buttons: [
+    ...(hasOpenDraft ? [[{ text: tr(locale, '▶️ Offenen Entwurf fortsetzen', '▶️ Resume open draft'), action: 'resume' }]] : []),
+    [{ text: tr(locale, '📦 Barcode scannen · فروش (-1)', '📦 Scan barcode · فروخته شد (-1)'), action: 'scan_menu' }],
+    [{ text: tr(locale, '➕ Produkt hinzufügen', '➕ Add product'), action: 'new' }],
+    [{ text: tr(locale, '🔄 Bestand / Preis aktualisieren', '🔄 Update stock / price'), action: 'new_update' }],
+    [{ text: tr(locale, '📋 Meine Entwürfe', '📋 My drafts'), action: 'list' }],
+    [{ text: 'Deutsch', action: 'language:de' }, { text: 'English', action: 'language:en' }],
+  ],
+});
+
+const renderScanPrompt = (locale: Locale, note?: string): BotView => ({
+  scanMode: true,
+  revision: 1,
+  text: [
+    note,
+    tr(
+      locale,
+      '📦 Barcode-Scan · فروش سریع (-1)\nSende die SKU, EAN oder Label-Code (z. B. LB-…) als Text/Scanner — oder fotografiere den Barcode.',
+      '📦 Barcode Scan · Quick Sold (-1)\nScan or type SKU, EAN or Label code (e.g. LB-…) — or send a photo of the barcode.',
+    ),
+  ].filter(Boolean).join('\n\n'),
+  buttons: [
+    [{ text: tr(locale, '🏠 Hauptmenü', '🏠 Main menu'), action: 'menu' }],
+  ],
+});
+
+export const verifyTelegramMemberAction = async (
+  body: BotRequest,
+  isMutation: boolean,
+): Promise<{ locale: Locale; memberId: string; replay: boolean }> =>
+  withTransaction(async (client) => {
+    await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [
+      `telegram:${body.telegramId}`,
+    ]);
+    const member = (
+      await client.query(
+        'SELECT id,locale,status FROM telegram_product_members WHERE telegram_id=$1 FOR UPDATE',
+        [body.telegramId],
+      )
+    ).rows[0];
+    if (!member || member.status !== 'active') throw new Error('membership_required');
+    await client.query(
+      'UPDATE telegram_product_members SET last_seen_at=now() WHERE id=$1',
+      [member.id],
+    );
+    let replay = false;
+    if (isMutation) {
+      if (body.updateId === undefined) throw new Error('update_id_required');
+      const prior = (
+        await client.query(
+          'SELECT request_hash FROM telegram_product_updates WHERE telegram_id=$1 AND update_id=$2',
+          [body.telegramId, body.updateId],
+        )
+      ).rows[0];
+      const hash = digest(JSON.stringify(body));
+      if (prior) {
+        if (prior.request_hash !== hash) throw new Error('update_conflict');
+        replay = true;
+      } else {
+        const count = (
+          await client.query(
+            `SELECT count(*)::int AS n FROM telegram_product_updates WHERE telegram_id=$1 AND created_at>now()-interval '1 minute'`,
+            [body.telegramId],
+          )
+        ).rows[0].n;
+        if (count >= 60) throw new Error('too_many_requests');
+        await client.query(
+          'INSERT INTO telegram_product_updates(telegram_id,update_id,request_hash) VALUES($1,$2,$3)',
+          [body.telegramId, body.updateId, hash],
+        );
+      }
+    }
+    return { locale: member.locale as Locale, memberId: String(member.id), replay };
+  });
+
 export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
   if (body.action === 'chat') return handleWorkChat(body);
   if (body.action === 'enroll') {
@@ -417,6 +523,92 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
       revision: 1,
     };
   }
+  if (body.action === 'scan_menu') {
+    const { locale } = await verifyTelegramMemberAction(body, false);
+    return renderScanPrompt(locale);
+  }
+  if (body.action === 'scan_lookup') {
+    const { locale } = await verifyTelegramMemberAction(body, false);
+    const code = body.text?.trim() ?? '';
+    const item = code.length >= 3 ? await lookupScannedProduct(code) : null;
+    if (!item) {
+      return renderScanPrompt(
+        locale,
+        tr(locale, `❌ Kein Produkt für „${code}“ gefunden.`, `❌ No product found for “${code}”.`),
+      );
+    }
+    const bat = formatBatteryHealth(item.batteryHealth, item.batteryHealthRange ?? undefined);
+    const details = [item.color, item.storage, item.condition, bat ? `Akku ${bat}` : ''].filter(Boolean).join(' · ');
+    const summary = [
+      `📦 ${item.title}`,
+      details || null,
+      `🏷 SKU: ${item.sku ?? '—'}`,
+      `💶 €${item.price.toFixed(2)} · 📊 Bestand / Stock: ${item.stock}`,
+      !item.canSell || item.stock <= 0 || !item.sku
+        ? tr(locale, '⚠️ Nicht auf Lager oder kein Lager-SKU.', '⚠️ Out of stock or missing stock SKU.')
+        : tr(locale, 'Zum Buchen von −1 & فروخته شد drücken:', 'Tap below to deduct −1 & notify team (فروخته شد):'),
+    ].filter(Boolean).join('\n');
+    const scanPhoto = await loadScanPreviewBase64(item.image);
+    return {
+      scanMode: true,
+      ...(scanPhoto ? { scanPhoto } : {}),
+      revision: 1,
+      text: summary,
+      buttons: [
+        ...(item.canSell && item.stock > 0 && item.sku
+          ? [[{
+              text: tr(
+                locale,
+                `✅ Verkauft −1 (فروخته شد) · €${item.price.toFixed(2)}`,
+                `✅ Sold −1 (فروخته شد) · €${item.price.toFixed(2)}`,
+              ),
+              action: `scanSell:${item.sku}`,
+            }]]
+          : []),
+        [{ text: tr(locale, '🔍 Nächster Barcode', '🔍 Scan another'), action: 'scan_menu' }],
+        [{ text: tr(locale, '🏠 Hauptmenü', '🏠 Main menu'), action: 'menu' }],
+      ],
+    };
+  }
+  if (body.action.startsWith('scanSell:')) {
+    const sku = body.action.slice(9).trim();
+    const { locale, replay } = await verifyTelegramMemberAction(body, true);
+    if (!sku) throw new Error('invalid_action');
+    if (replay) {
+      return renderScanPrompt(
+        locale,
+        tr(locale, '✅ Verkauf wurde bereits verbucht.', '✅ Sale already recorded.'),
+      );
+    }
+    try {
+      const sale = await recordScannedProductSale({
+        codeOrSku: sku,
+        actor: `telegram:${body.telegramId}`,
+        idempotencyKey: `tg-scan:${body.telegramId}:${body.updateId}`,
+        source: 'telegram_scan',
+        notifyTelegram: true,
+      });
+      const tgInfo = sale.telegram.recipients > 0
+        ? `Telegram ✓ (${sale.telegram.sent}/${sale.telegram.recipients})`
+        : tr(locale, 'Keine aktiven Mitglieder', 'No active members');
+      return renderScanPrompt(
+        locale,
+        tr(
+          locale,
+          `✅ فروخته شد (-1 gebucht)\n${sale.product.title}\nNeuer Bestand: ${sale.snapshot.available} · ${tgInfo}`,
+          `✅ فروخته شد (-1 recorded)\n${sale.product.title}\nNew stock: ${sale.snapshot.available} · ${tgInfo}`,
+        ),
+      );
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'scan_sell_failed';
+      return renderScanPrompt(
+        locale,
+        msg === 'insufficient_stock'
+          ? tr(locale, '⚠️ Ausverkauft (Bestand 0).', '⚠️ Out of stock (0 remaining).')
+          : tr(locale, `❌ Konnte nicht gebucht werden (${msg}).`, `❌ Could not record sale (${msg}).`),
+      );
+    }
+  }
   return withTransaction(async (client) => {
     await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [
       `telegram:${body.telegramId}`,
@@ -434,7 +626,7 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
       [member.id],
     );
     const locale: Locale = member.locale;
-    const mutations = !['status', 'resume', 'list'].includes(body.action);
+    const mutations = !['status', 'resume', 'list', 'menu', 'scan_menu', 'scan_lookup'].includes(body.action);
     let replay = false;
     if (mutations) {
       if (body.updateId === undefined) throw new Error('update_id_required');
@@ -461,6 +653,15 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
           [body.telegramId, body.updateId, hash],
         );
       }
+    }
+    if (body.action === 'menu') {
+      const open = (
+        await client.query(
+          `SELECT id FROM telegram_product_sessions WHERE member_id=$1 AND status IN ('collecting','changes_requested') LIMIT 1`,
+          [member.id],
+        )
+      ).rows[0];
+      return renderMainMenu(locale, Boolean(open));
     }
     if (body.action === 'list') {
       const rows = (
@@ -558,6 +759,12 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
         ),
         revision: 1,
         buttons: [
+          [
+            {
+              text: tr(locale, '📦 Barcode scannen · فروش (-1)', '📦 Scan barcode · فروخته شد (-1)'),
+              action: 'scan_menu',
+            },
+          ],
           [
             {
               text: tr(locale, 'Produkt hinzufügen', 'Add product'),
@@ -713,7 +920,7 @@ export const handleBotAction = async (body: BotRequest): Promise<BotView> => {
     )
       throw new Error('review_pending_photos');
     const result = transition(row.state, row.document, body,
-      row.state.stage==='accessories' || row.state.stage==='accessory_custom' ? await readOfferPresets(client) : undefined);
+      ['price', 'notes', 'accessories', 'accessory_custom'].includes(row.state.stage) ? await readOfferPresets(client) : undefined);
     validateDocument(result.document);
     await client.query(
       `UPDATE smartphone_editor_drafts SET document=$2,revision=revision+1,updated_by=$3,updated_at=now() WHERE id=$1`,
