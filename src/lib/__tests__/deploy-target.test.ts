@@ -3,6 +3,22 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
+
+const cleanGitEnv = (): NodeJS.ProcessEnv => {
+  const env = { ...process.env };
+  for (const key of [
+    'GIT_DIR',
+    'GIT_WORK_TREE',
+    'GIT_INDEX_FILE',
+    'GIT_COMMON_DIR',
+    'GIT_OBJECT_DIRECTORY',
+    'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+  ]) {
+    delete env[key];
+  }
+  return env;
+};
+
 describe.skipIf(process.platform==='win32')('deployment forward-only guard',()=>{
   it('requires an explicit ref before fetching or building',()=>{
     const result=spawnSync('bash',[resolve('deployment/vps/scripts/deploy-app.sh')],{encoding:'utf8'});
@@ -10,12 +26,13 @@ describe.skipIf(process.platform==='win32')('deployment forward-only guard',()=>
   });
   it('allows same/forward releases; rejects rollback and divergence unless explicit',()=>{
     const dir=mkdtempSync(join(tmpdir(),'apfel-deploy-test-'));
-    const git=(...args:string[])=>execFileSync('git',['-C',dir,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
+    const env=cleanGitEnv();
+    const git=(...args:string[])=>execFileSync('git',['-C',dir,...args],{encoding:'utf8',env,stdio:['ignore','pipe','pipe']}).trim();
     try{
       git('init');git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','--allow-empty','-m','base');const base=git('rev-parse','HEAD');
       git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','--allow-empty','-m','live');const live=git('rev-parse','HEAD');
       git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','--allow-empty','-m','next');const next=git('rev-parse','HEAD');
-      const guard=(from:string,to:string,override='0')=>spawnSync('bash',[resolve('deployment/vps/scripts/check-deploy-target.sh'),dir,from,to],{encoding:'utf8',env:{...process.env,ALLOW_NON_FORWARD_DEPLOY:override}}).status;
+      const guard=(from:string,to:string,override='0')=>spawnSync('bash',[resolve('deployment/vps/scripts/check-deploy-target.sh'),dir,from,to],{encoding:'utf8',env:{...env,ALLOW_NON_FORWARD_DEPLOY:override}}).status;
       expect(guard(live,next)).toBe(0);expect(guard(live,live)).toBe(0);expect(guard(live,base)).toBe(1);expect(guard(live,base,'1')).toBe(0);expect(guard('',next)).toBe(0);
       git('checkout','-b','other',base);git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','--allow-empty','-m','divergent');expect(guard(live,git('rev-parse','HEAD'))).toBe(1);
     }finally{rmSync(dir,{recursive:true,force:true});}
