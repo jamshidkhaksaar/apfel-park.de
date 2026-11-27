@@ -493,6 +493,7 @@ const fields = [
   'category',
   'brand',
   'model',
+  'hardwareModel',
   'sku',
   'stock',
   'images',

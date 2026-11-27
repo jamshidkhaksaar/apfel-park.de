@@ -8,6 +8,7 @@ import { prepareResearchPhoto } from '@/lib/product-research-photo';
 import { researchProductFromOfficialPages } from '@/lib/product-research-service';
 import { researchExactEprel } from '@/lib/product-research-eprel';
 import { licensedResearchImages } from '@/lib/product-research-assets';
+import { enrichResearchedProduct } from '@/lib/product-research-enrichment';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const research = await researchProductFromOfficialPages({ query, condition, photo, hardwareModel, category }, signal);
     research.skuSuggestion = `AP-${randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase()}`;
     try {
-      const eprel = await researchExactEprel({ brand: research.brand!, model: research.model!, hardwareModel, eprelId }, signal);
+      const eprel = await researchExactEprel({ brand: research.brand!, model: research.model!, hardwareModel: hardwareModel || research.hardwareModel || '', eprelId }, signal);
       if (eprel) {
         const { source, ...fields } = eprel;
         Object.assign(research, fields);
@@ -68,8 +69,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       else research.researchWarnings?.push('EPREL nicht automatisch bestätigt: exakte Hardware-Modellnummer mit dem Register abgleichen. Es wurde keine Energieklasse geraten.');
     } catch { research.researchWarnings?.push('EPREL ist gerade nicht erreichbar. Energieangaben bitte später anhand des Registers ergänzen.'); }
-    research.gallery = await licensedResearchImages({ brand: research.brand!, model: research.model!, query, color, condition });
-    if (!research.gallery.length) research.researchWarnings?.push('Keine freigegebenen Herstellerbilder für dieses Modell und diese Farbe hinterlegt. Bitte eigene Produktfotos hochladen.');
+    const licensed = await licensedResearchImages({ brand: research.brand!, model: research.model!, query, color, condition });
+    const enriched = await enrichResearchedProduct(research, { condition, color, licensedGallery: licensed, signal });
+    Object.assign(research, enriched);
+    if (!(research.gallery?.length ?? 0)) research.researchWarnings?.push('Keine freigegebenen Herstellerbilder für dieses Modell und diese Farbe hinterlegt. Bitte eigene Produktfotos hochladen.');
     return NextResponse.json({ success: true, research });
   } catch (error) {
     const key = error instanceof Error && ['AbortError', 'TimeoutError'].includes(error.name) ? 'research_timeout' : error instanceof Error && messages[error.message] ? error.message : 'research_failed';

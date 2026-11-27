@@ -2,6 +2,8 @@ import { randomUUID, createHash } from 'node:crypto';
 import { query, withTransaction, type TransactionClient } from '@/lib/db';
 import { uploadProductImage } from '@/lib/blob';
 import { researchProductFromOfficialPages } from '@/lib/product-research-service';
+import { researchExactEprel } from '@/lib/product-research-eprel';
+import { enrichResearchedProduct } from '@/lib/product-research-enrichment';
 import { applyEditorResearch } from '@/lib/smartphone-editor/research';
 import { findModelCatalogCandidates, pickTemplateCandidate } from '@/lib/catalog-offer-resolution';
 import type { ProductResearchResult } from '@/lib/product-research-core';
@@ -198,7 +200,7 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
   try {
     if (job.kind === 'research') {
       const cacheKey = digest(
-        `de-DE-offer-v2|${job.payload.query}|${job.payload.condition}|${job.payload.category}|${process.env.GEMINI_RESEARCH_MODEL ?? ''}`,
+        `de-DE-offer-v3|${job.payload.query}|${job.payload.condition}|${job.payload.category}|${process.env.GEMINI_RESEARCH_MODEL ?? ''}`,
       );
       const cached = (
         await query(
@@ -208,10 +210,29 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
       ).rows[0];
       let result: ProductResearchResult = cached?.result;
       if (!result) {
-        result = await researchProductFromOfficialPages({
+        const researched = await researchProductFromOfficialPages({
           query: job.payload.query!,
           condition: job.payload.condition,
           category: job.payload.category,
+        });
+        try {
+          const eprel = await researchExactEprel({
+            brand: researched.brand!,
+            model: researched.model!,
+            hardwareModel: researched.hardwareModel || '',
+          });
+          if (eprel) {
+            const { source, ...fields } = eprel;
+            Object.assign(researched, fields);
+            researched.researchSources?.push(source);
+          }
+        } catch {
+          // Keep research non-blocking if EPREL register is momentarily unreachable.
+        }
+        result = await enrichResearchedProduct(researched, {
+          condition: job.payload.condition,
+          includePhotos: true,
+          preserveEmptyPackageContentsForUsed: true,
         });
         await query(
           `INSERT INTO telegram_product_research_cache(cache_key,result,expires_at) VALUES($1,$2,now()+interval '1 day') ON CONFLICT(cache_key) DO UPDATE SET result=excluded.result,expires_at=excluded.expires_at`,
@@ -262,6 +283,10 @@ export const runTelegramProductWorkerPass = async (): Promise<void> => {
           if (!doc.shared.euResponsiblePerson?.name && tpl.euResponsiblePerson) doc.shared.euResponsiblePerson = tpl.euResponsiblePerson;
           if (!doc.shared.batteryDetails && tpl.batteryDetails) doc.shared.batteryDetails = tpl.batteryDetails;
           if (!doc.shared.specs?.length && tpl.specs.length) doc.shared.specs = tpl.specs;
+          if (doc.shared.chargerIncluded == null && typeof tpl.chargerIncluded === 'boolean') doc.shared.chargerIncluded = tpl.chargerIncluded;
+          if (doc.shared.chargingPowerMinW == null && tpl.chargingPowerMinW != null) doc.shared.chargingPowerMinW = tpl.chargingPowerMinW;
+          if (doc.shared.chargingPowerMaxW == null && tpl.chargingPowerMaxW != null) doc.shared.chargingPowerMaxW = tpl.chargingPowerMaxW;
+          if (doc.shared.usbPdSupported == null && typeof tpl.usbPdSupported === 'boolean') doc.shared.usbPdSupported = tpl.usbPdSupported;
         }
         row.state.sources = result.researchSources ?? [];
         row.state.warnings = result.researchWarnings ?? [];

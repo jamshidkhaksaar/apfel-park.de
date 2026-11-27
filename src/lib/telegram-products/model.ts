@@ -656,6 +656,22 @@ export const transition = (
       } else throw new Error('invalid_action');
       break;
     case 'photos':
+      if (
+        input.action === 'useResearchPhotos'
+        && entry.condition === 'new'
+        && (document.researchGallery?.length || entry.photos.some((p) => p.url))
+      ) {
+        const urls = entry.photos.some((p) => p.url)
+          ? entry.photos.map((p) => p.url).filter(Boolean).slice(0, 4)
+          : (document.researchGallery ?? []).slice(0, 4);
+        if (urls.length) {
+          entry.photos = urls.map((url) => newPhotoSlot(url));
+          entry.coverId = entry.photos[0].id;
+          state.photoAngles = { ...state.photoAngles, [entry.id]: photoGuide(document).map((a) => a.key) };
+          if (state.guided) review(state, document); else state.stage = 'review';
+          break;
+        }
+      }
       if(state.guided && input.action==='photoRetake'){entry.photos=newPhoneEntry().photos;entry.coverId=entry.photos[0].id;entry.hasRealProductPhotos=false;state.photoAngles={...state.photoAngles,[entry.id]:[]};break;}
       if(state.guided && input.action==='photoUnavailable'){
         if(!state.warnings.includes('Device photos incomplete'))state.warnings.push('Device photos incomplete');
@@ -988,7 +1004,8 @@ export const renderConversation = (
       text = `3/7 · ${doc.shared.title}\n\n${doc.shared.description ?? t('Beschreibung fehlt.', 'Description missing.')}\n\n${t('Beschreibung bei Bedarf eingeben oder weiter.', 'Type a replacement description if needed, or continue.')}`;
       buttons = [next];
       break;
-    case 'photos':
+    case 'photos': {
+      const researchCount = entry.condition === 'new' ? (doc.researchGallery?.length ?? 0) : 0;
       text = t(
         `4/7 · Fotos für ${versionLabel(entry)}. Typ: ${{ device: 'Gerät', box: 'Karton', barcode_label: 'Barcode', about_screen: 'Geräteinformationen', battery_health: 'Akku' }[state.photoKind]}. Kamera/Galerie oder Bilddatei senden. Gerät und Schäden müssen wahrheitsgetreu erkennbar bleiben.`,
         `4/7 · Photos for ${versionLabel(entry)}. Type: ${{ device: 'Device', box: 'Box', barcode_label: 'Barcode', about_screen: 'About screen', battery_health: 'Battery' }[state.photoKind]}. Send camera/gallery photos or an image file. Preserve the real device and any visible wear.`,
@@ -1023,7 +1040,11 @@ export const renderConversation = (
           ]),
         next,
       );
+      if (researchCount > 0) {
+        buttons.unshift([b(t(`✅ ${researchCount} offizielle Fotos übernehmen`, `✅ Use ${researchCount} official photos`), 'useResearchPhotos')]);
+      }
       break;
+    }
     case 'information':
       text = `5/7 · ${t('Produktinformationen', 'Product information')}\n${(
         doc.shared.specs ?? []
@@ -1142,8 +1163,15 @@ export const renderConversation = (
       }
       case 'photos': {
         const guide=photoGuide(doc),done=state.photoAngles?.[entry.id]??[],angle=guide.find(item=>!done.includes(item.key));
+        const researchCount = entry.condition === 'new' ? (doc.researchGallery?.length ?? 0) : 0;
         text=state.photoKind==='box' ? t('📦 Kartonfoto senden. Ein Kartonfoto ersetzt kein echtes Gerätefoto.','📦 Send a box photo. A box photo does not replace actual device photos.') : angle ? `📷 4/7 · ${steps[3]} · ${done.length+1}/${guide.length}\n${angle[l]}\n\n${t('Jetzt ein Foto dieser Seite senden. Danach Vorschau prüfen; anschließend folgt die nächste Seite. Schäden müssen erkennbar bleiben. Keine IMEI oder Seriennummern zeigen.','Send one photo of this side now. Review its preview, then continue to the next side. Keep defects visible. Do not show IMEI or serial numbers.')}` : t('✅ Alle angeforderten Ansichten sind bestätigt.','✅ All requested views are approved.');
+        if (researchCount > 0 && angle) {
+          text = t(`✨ ${researchCount} offizielle Produktfotos wurden automatisch gefunden. Du kannst sie mit einem Klick übernehmen oder eigene Fotos senden.\n\n`, `✨ ${researchCount} verified official product photos are ready. Apply them with one tap or upload your own.\n\n`) + text;
+        }
         buttons=angle?[[b(t('Nur Karton zugänglich','Only the box is accessible'),'photoKind:box')],[b(t('Mit fehlenden Fotos zur Vorschau','Preview with missing device photos'),'photoUnavailable')]]:[[b(t('Vorschau öffnen','Open preview'),'preview')]];
+        if (researchCount > 0 && angle) {
+          buttons.unshift([b(t(`✅ ${researchCount} offizielle Fotos übernehmen`, `✅ Use ${researchCount} official photos`), 'useResearchPhotos')]);
+        }
         if(state.photoKind==='box')buttons.unshift([b(t('Zurück zu Gerätefotos','Back to device photos'),'photoKind:device')]);
         if(state.editing)buttons.push([b(t('Alle Gerätefotos neu aufnehmen','Retake all device photos'),'photoRetake')]);
         break;

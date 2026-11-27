@@ -15,6 +15,8 @@ import { getLicensedManufacturerImages } from "@/lib/product-intake/manufacturer
 import { mergeCoverAndGallery, type WizardCondition, type WizardStep } from "@/lib/product-intake/safi-wizard";
 import { validBatteryHealthRange } from "@/lib/product-offer-options";
 import type { ProductResearchResult } from "@/lib/product-research";
+import { PRODUCT_EXPERIENCE_SECTIONS, type ProductExperienceProfile } from "@/lib/product-experience";
+import { buildAutoProductExperience } from "@/lib/product-experience-autofill";
 import { researchOfferPatch } from "@/lib/product-research-prefill";
 
 type CatalogOption = {
@@ -101,7 +103,14 @@ const emptyListing = {
   manufacturer: null as AdminProductRecord["manufacturer"],
   euResponsiblePerson: null as AdminProductRecord["euResponsiblePerson"],
   safetyWarnings: [] as string[],
+  hardwareModel: "",
   eprelId: "",
+  energyLabel: null as ProductResearchResult["energyLabel"] | null,
+  chargerIncluded: undefined as boolean | undefined,
+  chargingPowerMinW: undefined as number | undefined,
+  chargingPowerMaxW: undefined as number | undefined,
+  usbPdSupported: undefined as boolean | undefined,
+  batteryDetails: null as ProductResearchResult["batteryDetails"] | null,
 };
 
 const parseConfigText = (raw: string): Record<string, string> | undefined => {
@@ -153,6 +162,7 @@ export default function ProductIntakeWizard({
   const [savedId, setSavedId] = useState<string | null>(null);
   const [publishLive, setPublishLive] = useState(true);
   const [aiError, setAiError] = useState("");
+  const [experience, setExperience] = useState<ProductExperienceProfile | null>(null);
 
   const selected = products.find((item) => item.id === productId) ?? null;
   const isGerman = locale === "de";
@@ -218,9 +228,43 @@ export default function ProductIntakeWizard({
             email: research.euResponsiblePerson.email ?? "",
           }
         : current.euResponsiblePerson,
+      hardwareModel: research.hardwareModel ?? current.hardwareModel,
+      energyLabel: research.energyLabel ?? current.energyLabel,
+      chargerIncluded: research.chargerIncluded ?? current.chargerIncluded,
+      chargingPowerMinW: research.chargingPowerMinW ?? current.chargingPowerMinW,
+      chargingPowerMaxW: research.chargingPowerMaxW ?? current.chargingPowerMaxW,
+      usbPdSupported: research.usbPdSupported ?? current.usbPdSupported,
+      batteryDetails: research.batteryDetails ?? current.batteryDetails,
       safetyWarnings: research.safetyWarnings?.length ? research.safetyWarnings : current.safetyWarnings,
-      images: condition === "new" && research.gallery?.length ? [...new Set([...current.images, ...research.gallery])] : current.images,
+      images: research.gallery?.length
+        ? [...new Set([...(current.images ?? []), ...research.gallery])].slice(0, 4)
+        : current.images,
     }));
+    if (research.gallery?.length) {
+      const photos = research.gallery.slice(0, 4);
+      setCover((prev) => prev || photos[0] || null);
+      setExactPhotos((prev) => {
+        const merged = [...new Set([...prev, ...photos])];
+        return merged.slice(1, 4);
+      });
+    }
+    setExperience(
+      research.experienceSuggestion
+        ?? buildAutoProductExperience({
+          category: research.category ?? listing.category,
+          brand: research.brand ?? listing.brand,
+          model: research.model ?? listing.model,
+          title: research.title ?? listing.title,
+          condition,
+          specs: research.specs ?? listing.specs,
+          dimensions: research.dimensions,
+          packageContents: research.packageContents,
+          chargerIncluded: research.chargerIncluded,
+          chargingPowerMaxW: research.chargingPowerMaxW,
+          usbPdSupported: research.usbPdSupported,
+          batteryDetails: research.batteryDetails,
+        }),
+    );
     setAiError("");
   };
 
@@ -242,8 +286,16 @@ export default function ProductIntakeWizard({
       manufacturer: product.manufacturer ?? null,
       euResponsiblePerson: product.euResponsiblePerson ?? null,
       safetyWarnings: product.safetyWarnings ?? [],
+      hardwareModel: "",
       eprelId: product.eprelId ?? "",
+      energyLabel: null,
+      chargerIncluded: undefined,
+      chargingPowerMinW: undefined,
+      chargingPowerMaxW: undefined,
+      usbPdSupported: undefined,
+      batteryDetails: null,
     });
+    setExperience(null);
     setColor(firstVar?.color ?? "");
     setStorage(firstVar?.storage ?? "");
     setGtin(product.gtin || "");
@@ -493,7 +545,15 @@ export default function ProductIntakeWizard({
         manufacturer: listing.manufacturer ?? undefined,
         euResponsiblePerson: listing.euResponsiblePerson ?? undefined,
         safetyWarnings: listing.safetyWarnings,
+        hardwareModel: listing.hardwareModel || undefined,
         eprelId: listing.eprelId,
+        energyLabel: listing.energyLabel ?? undefined,
+        chargerIncluded: listing.chargerIncluded ?? undefined,
+        chargingPowerMinW: listing.chargingPowerMinW ?? undefined,
+        chargingPowerMaxW: listing.chargingPowerMaxW ?? undefined,
+        usbPdSupported: listing.usbPdSupported ?? undefined,
+        batteryDetails: listing.batteryDetails ?? undefined,
+        experience: experience ?? undefined,
         isActive:
           matchPreview?.kind === "exact_offer"
             ? true
@@ -560,7 +620,7 @@ export default function ProductIntakeWizard({
           <label className="block text-sm text-muted">
             <div className="flex items-center justify-between gap-2">
               <span>{mode === "existing" ? copy.pinProduct : copy.templateProduct}</span>
-              <AiFillButton locale={locale} condition={condition} query={listing.model || listing.title || selected?.model || selected?.title || ""} onResult={applyResearch} onError={setAiError} />
+              <AiFillButton locale={locale} condition={condition} color={color.trim() || undefined} hardwareModel={listing.hardwareModel || undefined} query={listing.model || listing.title || selected?.model || selected?.title || ""} onResult={applyResearch} onError={setAiError} />
             </div>
             <select
               value={productId}
@@ -607,7 +667,7 @@ export default function ProductIntakeWizard({
               <label className="block text-sm text-muted md:col-span-2">
                 <div className="flex items-center justify-between gap-2">
                   <span>{isGerman ? "Neues Modell / Produktname" : "New model / product name"}</span>
-                  <AiFillButton locale={locale} condition={condition} query={listing.title || listing.model} onResult={applyResearch} onError={setAiError} />
+                  <AiFillButton locale={locale} condition={condition} color={color.trim() || undefined} hardwareModel={listing.hardwareModel || undefined} query={listing.title || listing.model} onResult={applyResearch} onError={setAiError} />
                 </div>
                 <input
                   type="text"
@@ -760,7 +820,7 @@ export default function ProductIntakeWizard({
           {matchBannerText ? <p className="rounded-xl border border-gold/40 bg-gold/10 px-3 py-2 text-sm text-foreground">{matchBannerText}</p> : null}
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-muted">{copy.autoFillHint}</p>
-            <AiFillButton locale={locale} condition={condition} query={listing.model || listing.title} onResult={applyResearch} onError={setAiError} />
+            <AiFillButton locale={locale} condition={condition} color={color.trim() || undefined} hardwareModel={listing.hardwareModel || undefined} query={listing.model || listing.title} onResult={applyResearch} onError={setAiError} />
           </div>
           <input value={listing.title} onChange={(event) => setListing((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
           <textarea value={listing.description} onChange={(event) => setListing((current) => ({ ...current, description: event.target.value }))} rows={5} className="w-full rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm" />
@@ -771,6 +831,40 @@ export default function ProductIntakeWizard({
               </span>
             ))}
           </div>
+          {(listing.eprelId || listing.manufacturer?.name || listing.usbPdSupported || experience) ? (
+            <div className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-xs space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold text-foreground">
+                  {isGerman ? "✨ KI-Autofill: EU / EPREL & Produktdarstellung" : "✨ AI Auto-Fill: EU / EPREL & Presentation"}
+                </span>
+                <span className="text-muted">
+                  {previewImages.length}/4 {isGerman ? "Fotos" : "photos"}
+                  {listing.energyLabel?.efficiencyClass ? ` Â· EPREL ${listing.energyLabel.efficiencyClass}` : listing.eprelId ? ` Â· EPREL ${listing.eprelId}` : ""}
+                  {listing.chargingPowerMaxW ? ` Â· USB-PD ${listing.chargingPowerMaxW}W` : listing.usbPdSupported ? " Â· USB-C PD" : ""}
+                </span>
+              </div>
+              {listing.euResponsiblePerson?.name ? (
+                <p className="text-muted">EU GPSR: {listing.euResponsiblePerson.name} Â· {listing.chargerIncluded === false ? (isGerman ? "Ohne Netzteil" : "Charger not included") : listing.chargerIncluded === true ? (isGerman ? "Mit Netzteil" : "Charger included") : "EU Standard"}</p>
+              ) : null}
+              {experience ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {PRODUCT_EXPERIENCE_SECTIONS.map((sec) => {
+                    const active = experience.enabledSections[sec];
+                    return (
+                      <button
+                        key={sec}
+                        type="button"
+                        onClick={() => setExperience((prev) => prev ? { ...prev, enabledSections: { ...prev.enabledSections, [sec]: !active } } : prev)}
+                        className={`rounded-full border px-2 py-0.5 transition ${active ? "border-gold/60 bg-gold/20 text-foreground" : "border-border/50 bg-background/40 text-muted"}`}
+                      >
+                        {active ? "✓ " : ""}{sec}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

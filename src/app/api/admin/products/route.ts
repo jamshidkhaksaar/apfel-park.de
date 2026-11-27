@@ -17,6 +17,8 @@ import { conditionDetailsChanged } from "@/lib/product-condition";
 import { eprelAssetRoutes } from "@/lib/eprel";
 import { buildPayload, validatePayload, getMessages, type ProductPayload } from '@/lib/product-write-payload';
 import { deleteCatalogProduct, ProductDeletionError } from '@/lib/product-deletion';
+import { persistProfile } from '@/lib/product-experience-persistence';
+import { buildAutoProductExperience } from '@/lib/product-experience-autofill';
 class DuplicateSkuError extends Error {}
 
 const hasDiscountPrice = (price: number | null, compareAtPrice: number | null) =>
@@ -255,6 +257,7 @@ export async function POST(request: NextRequest) {
           description: payload.description || tpl?.description || "",
           brand: payload.brand || tpl?.brand || "",
           model: payload.model || tpl?.model || "",
+          hardwareModel: payload.hardwareModel || tpl?.hardwareModel || "",
           category: payload.category || tpl?.category || "smartphones",
           sku: generatedSku,
           specs: payload.specs?.length ? payload.specs : tpl?.specs ?? [],
@@ -373,8 +376,8 @@ export async function POST(request: NextRequest) {
         const familyId = await ensureModelFamilyMembership(client, {
           productId,
           category: product.category || "smartphones",
-          brand: product.brand,
-          model: product.model,
+          brand: product.brand ?? undefined,
+          model: product.model ?? undefined,
           title: product.title,
           condition: normCondition,
           color: color || null,
@@ -382,6 +385,23 @@ export async function POST(request: NextRequest) {
           configuration: cleanConfig ?? null,
           existingFamilyId: match.kind === "next_variant" ? match.familyId : null,
         });
+        const autoProfile = payload.experience ?? buildAutoProductExperience({
+          category: product.category || "smartphones",
+          brand: product.brand ?? undefined,
+          model: product.model ?? undefined,
+          title: product.title,
+          condition: normCondition,
+          specs: product.specs,
+          chargerIncluded: product.chargerIncluded,
+          chargingPowerMaxW: product.chargingPowerMaxW,
+          usbPdSupported: product.usbPdSupported,
+          batteryDetails: product.batteryDetails ?? undefined,
+          comparisonProductIds: match.kind === "next_variant" && tpl ? [tpl.id] : [],
+        });
+        await persistProfile(client, productId, autoProfile);
+        if (product.hardwareModel) {
+          await client.query("UPDATE products SET hardware_model = $2 WHERE id = $1 AND (hardware_model IS NULL OR btrim(hardware_model) = '')", [productId, product.hardwareModel]);
+        }
         return {
           ok: true as const,
           id: productId,
@@ -578,6 +598,25 @@ export async function POST(request: NextRequest) {
     }
 
     await syncHomepageFeatured(data.id, product.isHomepageFeatured);
+    await withTransaction(async (client) => {
+      const stdCondition = product.condition === "open_box" ? "open_box" : product.condition === "used" ? "used" : "new";
+      const autoProfile = payload.experience ?? buildAutoProductExperience({
+        category: product.category || "smartphones",
+        brand: product.brand ?? undefined,
+        model: product.model ?? undefined,
+        title: product.title,
+        condition: stdCondition,
+        specs: product.specs,
+        chargerIncluded: product.chargerIncluded,
+        chargingPowerMaxW: product.chargingPowerMaxW,
+        usbPdSupported: product.usbPdSupported,
+        batteryDetails: product.batteryDetails ?? undefined,
+      });
+      await persistProfile(client, data.id, autoProfile);
+      if (product.hardwareModel) {
+        await client.query("UPDATE products SET hardware_model = $2 WHERE id = $1 AND (hardware_model IS NULL OR btrim(hardware_model) = '')", [data.id, product.hardwareModel]);
+      }
+    });
     await syncProductInventory(data.id, product);
 
     const socialPublishing = product.isActive

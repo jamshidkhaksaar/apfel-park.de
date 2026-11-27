@@ -1,3 +1,4 @@
+import type { ProductExperienceProfile } from '@/lib/product-experience';
 import { validatedGtin } from "./product-identifiers";
 import { findSensitiveDataIssues } from './product-intake/redaction';
 
@@ -13,6 +14,8 @@ export type ProductResearchResult = {
   description?: string;
   brand?: string;
   model?: string;
+  hardwareModel?: string;
+  experienceSuggestion?: ProductExperienceProfile;
   category?: string;
   skuSuggestion?: string | null;
   eprelId?: string | null;
@@ -123,6 +126,7 @@ export function sanitizeResearchResult(raw: unknown): ProductResearchResult {
     description: text("description", 5000),
     brand: text("brand", 100),
     model: text("model", 160),
+    hardwareModel: text("hardwareModel", 40),
     category: text("category", 80),
     skuSuggestion: skuRaw || null,
     eprelId: eprelRaw || null,

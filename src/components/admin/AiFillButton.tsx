@@ -8,7 +8,7 @@ import ResearchEvidencePanel from '@/components/admin/ResearchEvidencePanel';
 export default function AiFillButton({ locale, onResult, onError, query, disabled, condition, color, eprelId, category }: {
   locale: 'de' | 'en'; onResult: (research: ProductResearchResult) => void; onError: (message: string) => void;
   query?: string; disabled?: boolean; condition?: string;
-  color?: string; eprelId?: string; category?: string;
+  color?: string; eprelId?: string; hardwareModel?: string; category?: string;
 }): React.ReactNode {
   const de = locale === 'de';
   const fileId = useId();

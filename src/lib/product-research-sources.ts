@@ -1,7 +1,83 @@
 import he from 'he';
 import { deviceModelNeedles } from '@/lib/device-model';
 
-export type ResearchSource = { url: string; title: string; retrievedAt: string; text: string };
+export type ResearchSource = { url: string; title: string; retrievedAt: string; text: string; imageUrls?: string[] };
+
+const OFFICIAL_IMAGE_CDN_HOSTS = [
+  'store.storeimages.cdn-apple.com',
+  'storeimages.cdn-apple.com',
+  'cdsassets.apple.com',
+  'www.apple.com',
+  'images.samsung.com',
+  'img.global.news.samsung.com',
+  'lh3.googleusercontent.com',
+  'storage.googleapis.com',
+  'i01.appmifile.com',
+  'i02.appmifile.com',
+  'cdn.cnbj1.fds.api.mi-img.com',
+  'image01.oneplus.net',
+  'oasis.opstatics.com',
+  'sony.scene7.com',
+];
+
+const IGNORE_IMAGE_HINT = /(?:favicon|sprite|logo|badge|beacon|echo\.png|1x1|pixel|pwa_icon|nav-|gnb|social-share|placeholder|_small\.)/i;
+
+export const isApprovedOfficialImageUrl = (rawUrl: string): boolean => {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return false;
+    if (IGNORE_IMAGE_HINT.test(parsed.pathname + parsed.search)) return false;
+    const host = parsed.hostname.toLowerCase();
+    if (OFFICIAL_IMAGE_CDN_HOSTS.some(allowed => host === allowed || host.endsWith('.' + allowed))) return true;
+    return Boolean(approvedResearchUrl(rawUrl));
+  } catch {
+    return false;
+  }
+};
+
+export const extractOfficialImageUrlsFromHtml = (html: string, baseUrl: string): string[] => {
+  const candidates = new Set<string>();
+  const pushUrl = (raw?: string) => {
+    if (!raw) return;
+    const cleaned = raw.trim().replace(/&amp;/g, '&').split(/\s+/)[0];
+    if (!cleaned || cleaned.startsWith('data:') || /\.svg(?:$|[?#])/i.test(cleaned)) return;
+    try {
+      const normalized = cleaned.startsWith('//') ? 'https:' + cleaned : new URL(cleaned, baseUrl).toString();
+      if (isApprovedOfficialImageUrl(normalized)) candidates.add(normalized);
+    } catch {
+      // Ignore malformed candidate URL.
+    }
+  };
+
+  for (const m of html.matchAll(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["']/gi)) {
+    pushUrl(m[1]);
+  }
+  for (const m of html.matchAll(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/gi)) {
+    pushUrl(m[1]);
+  }
+  for (const m of html.matchAll(/(?:src|data-src|content)=["']((?:https?:)?\/\/[^"'\s>]+\.(?:jpg|jpeg|png|webp)[^"'\s>]*|\/[^"'\s>]+\.(?:jpg|jpeg|png|webp)[^"'\s>]*)["']/gi)) {
+    pushUrl(m[1]);
+  }
+  for (const m of html.matchAll(/https:\/\/(?:store\.storeimages\.cdn-apple\.com|storeimages\.cdn-apple\.com|cdsassets\.apple\.com|images\.samsung\.com|lh3\.googleusercontent\.com)[^"'\s\\<>]+/gi)) {
+    pushUrl(m[0]);
+  }
+  return Array.from(candidates).slice(0, 60);
+};
+
+const SOURCE_CACHE = new Map<string, { expiresAt: number; sources: ResearchSource[] }>();
+export const cacheResearchSources = (key: string, sources: ResearchSource[]) => {
+  if (!key || !sources.length) return;
+  SOURCE_CACHE.set(key.toLowerCase(), { expiresAt: Date.now() + 5 * 60_000, sources });
+  if (SOURCE_CACHE.size > 40) {
+    const oldest = SOURCE_CACHE.keys().next().value;
+    if (oldest) SOURCE_CACHE.delete(oldest);
+  }
+};
+export const getCachedResearchSources = (key: string): ResearchSource[] => {
+  const hit = SOURCE_CACHE.get(key.toLowerCase());
+  if (!hit || hit.expiresAt < Date.now()) return [];
+  return hit.sources;
+};
 
 const manufacturerDomains = [
   'apple.com',
@@ -257,7 +333,7 @@ export const fetchOfficialResearchSource = async (
       const text = officialPageText(raw).slice(0, 45_000);
       if (text.length < 200 || !sourceMatchesModel(text, model, brand)) return null;
       const title = he.decode(raw.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? target.hostname).replace(/\s+/g, ' ').trim().slice(0, 180);
-      return { url: target.toString(), title, retrievedAt: new Date().toISOString(), text };
+      return { url: target.toString(), title, retrievedAt: new Date().toISOString(), text, imageUrls: extractOfficialImageUrlsFromHtml(raw, target.toString()) };
     }
   } catch { return null; }
   return null;

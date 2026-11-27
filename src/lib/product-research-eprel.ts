@@ -1,7 +1,7 @@
 import { query } from '@/lib/db';
-import { eprelAssetRoutes, eprelEndurance, eprelCycles, eprelProductUrl, EPREL_PRODUCT_GROUP } from '@/lib/eprel';
-import { access } from 'node:fs/promises';
-import path from 'node:path';
+import { eprelAssetRoutes, eprelEndurance, eprelCycles, eprelProductUrl, EPREL_PRODUCT_GROUP, type EprelAssetRoutes } from '@/lib/eprel';
+import { resolveKnownEuHardwareModel } from '@/lib/eprel-catalog';
+import { mirrorEprelRegistrationAssets } from '@/lib/eprel-storage';
 import type { ProductResearchResult } from '@/lib/product-research-core';
 
 type EprelRow = {
@@ -44,44 +44,104 @@ export const eprelResearchFields = (row: EprelRow): Pick<ProductResearchResult, 
   };
 };
 
-export const researchExactEprel = async (input: { brand: string; model: string; hardwareModel?: string; eprelId?: string }, signal?: AbortSignal): Promise<(Pick<ProductResearchResult, 'eprelId' | 'energyLabel'> & { source: { url: string; title: string; retrievedAt: string } }) | null> => {
-  const id = input.eprelId?.trim() ?? '';
-  if (id && !/^\d{1,16}$/.test(id)) return null;
-  const identity = normalizeEprelIdentifier(input.hardwareModel || input.model);
-  if (identity.length < 3 || identity.length > 100) return null;
-  const result = await query(`SELECT registration_number,supplier,model_identifier,energy_class,battery_endurance_minutes,
-    battery_endurance_hours,battery_endurance_cycles,repairability_class,reliability_class,ingress_protection
-    FROM eprel_models WHERE ($1<>'' AND registration_number=$1)
-      OR lower(regexp_replace(model_identifier,'[^a-zA-Z0-9]','','g'))=$2 LIMIT 10`, [id, identity]);
-  const cached = selectExactEprelMatch(result.rows as EprelRow[], input);
-  const hardware = input.hardwareModel || cached?.model_identifier;
-  if (!hardware) return null;
-  // Confirm the candidate against today's public register; never call cached values fresh.
-  const url = `https://eprel.ec.europa.eu/api/products/${EPREL_PRODUCT_GROUP}?_page=1&_limit=10&modelIdentifier=${encodeURIComponent(hardware)}`;
-  const response = await fetch(url, { redirect: 'error', cache: 'no-store',
-    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000),
-    headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json, text/plain, */*', Referer: `https://eprel.ec.europa.eu/screen/product/${EPREL_PRODUCT_GROUP}` },
-  });
-  if (!response.ok) return null;
-  const data = await response.json() as { hits?: Array<Record<string, unknown>> };
-  const live = (Array.isArray(data.hits) ? data.hits : []).slice(0, 10).map(hit => ({
-    registration_number: String(hit.eprelRegistrationNumber ?? ''), supplier: String(hit.supplierOrTrademark ?? ''), model_identifier: String(hit.modelIdentifier ?? ''),
-    energy_class: typeof hit.energyClass === 'string' ? hit.energyClass : null,
-    battery_endurance_hours: typeof hit.batteryEndurancePerCycleInHours === 'number' ? hit.batteryEndurancePerCycleInHours : null,
-    battery_endurance_minutes: typeof hit.batteryEndurancePerCycle === 'number' ? hit.batteryEndurancePerCycle : null,
-    battery_endurance_cycles: typeof hit.batteryEnduranceInCycles === 'number' ? hit.batteryEnduranceInCycles : null,
-    repairability_class: typeof hit.repairabilityClass === 'string' ? hit.repairabilityClass : null,
-    reliability_class: typeof hit.repeatedFreeFallReliabilityClass === 'string' ? hit.repeatedFreeFallReliabilityClass : null,
-    ingress_protection: typeof hit.ingressProtectionRating === 'string' ? hit.ingressProtectionRating : null,
-  }));
-  const match = selectExactEprelMatch(live, input);
-  if (!match || !/^\d{1,16}$/.test(match.registration_number)) return null;
-  const fields = eprelResearchFields(match);
-  if (fields.energyLabel) for (const key of ['labelImage','ficheDe','ficheEn'] as const) {
-    const asset = fields.energyLabel[key];
-    if (!asset) continue;
-    try { await access(path.join(process.cwd(), 'public', asset)); }
-    catch { delete fields.energyLabel[key]; }
+const fetchLiveEprelRow = async (
+  input: { brand: string; model: string; hardwareModel?: string; eprelId?: string },
+  signal?: AbortSignal,
+): Promise<EprelRow | null> => {
+  try {
+    const queryParam = input.eprelId
+      ? `registrationNumber=${encodeURIComponent(input.eprelId)}`
+      : input.hardwareModel
+        ? `modelIdentifier=${encodeURIComponent(input.hardwareModel)}`
+        : '';
+    if (!queryParam) return null;
+    const url = `https://eprel.ec.europa.eu/api/products/${EPREL_PRODUCT_GROUP}?_page=1&_limit=10&${queryParam}`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36',
+        Accept: 'application/json, text/plain, */*',
+        Referer: `https://eprel.ec.europa.eu/screen/product/${EPREL_PRODUCT_GROUP}`,
+      },
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(8_000)]) : AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { hits?: Array<Record<string, unknown>> };
+    const hits = (json.hits ?? []).filter(h => String(h.status ?? '').toUpperCase() === 'PUBLISHED');
+    hits.sort((a, b) => Number(b.versionNumber ?? 0) - Number(a.versionNumber ?? 0));
+    const mapped: EprelRow[] = hits.map(hit => ({
+      registration_number: String(hit.eprelRegistrationNumber ?? ''),
+      supplier: String(hit.supplierOrTrademark ?? ''),
+      model_identifier: String(hit.modelIdentifier ?? ''),
+      energy_class: typeof hit.energyClass === 'string' ? hit.energyClass : null,
+      battery_endurance_minutes: typeof hit.batteryEndurancePerCycle === 'number' ? hit.batteryEndurancePerCycle : null,
+      battery_endurance_cycles: typeof hit.batteryEnduranceInCycles === 'number' ? hit.batteryEnduranceInCycles : null,
+      repairability_class: typeof hit.repairabilityClass === 'string' ? hit.repairabilityClass : null,
+      reliability_class: typeof hit.repeatedFreeFallReliabilityClass === 'string' ? hit.repeatedFreeFallReliabilityClass : null,
+      ingress_protection: typeof hit.ingressProtectionRating === 'string' ? hit.ingressProtectionRating : null,
+    }));
+    const targetEprel = input.eprelId?.trim();
+    const picked = targetEprel
+      ? mapped.find(r => r.registration_number === targetEprel) ?? mapped[0] ?? null
+      : selectExactEprelMatch(mapped, { ...input, hardwareModel: input.hardwareModel });
+    if (picked) {
+      await query(
+        `INSERT INTO eprel_models (
+          registration_number, supplier, model_identifier, device_type, energy_class,
+          battery_endurance_minutes, battery_endurance_cycles, repairability_class, reliability_class, ingress_protection
+        ) VALUES ($1,$2,$3,'SMARTPHONE',$4,$5,$6,$7,$8,$9)
+        ON CONFLICT (registration_number) DO UPDATE SET
+          energy_class=excluded.energy_class,
+          battery_endurance_minutes=excluded.battery_endurance_minutes,
+          battery_endurance_cycles=excluded.battery_endurance_cycles,
+          repairability_class=excluded.repairability_class,
+          reliability_class=excluded.reliability_class,
+          ingress_protection=excluded.ingress_protection,
+          synced_at=now()`,
+        [
+          picked.registration_number, picked.supplier, picked.model_identifier, picked.energy_class,
+          picked.battery_endurance_minutes, picked.battery_endurance_cycles, picked.repairability_class,
+          picked.reliability_class, picked.ingress_protection,
+        ],
+      ).catch(() => undefined);
+    }
+    return picked;
+  } catch {
+    return null;
   }
-  return { ...fields, source: { url: eprelProductUrl(match.registration_number), title: `EPREL · ${match.model_identifier}`, retrievedAt: new Date().toISOString() } };
+};
+
+export const researchExactEprel = async (input: { brand: string; model: string; hardwareModel?: string; eprelId?: string }, signal?: AbortSignal): Promise<(Pick<ProductResearchResult, 'eprelId' | 'energyLabel'> & { source: { url: string; title: string; retrievedAt: string } }) | null> => {
+  const knownHardware = resolveKnownEuHardwareModel(input.brand, input.model) ?? undefined;
+  const cached = input.eprelId
+    ? ((await query(
+        `SELECT registration_number, supplier, model_identifier, energy_class, battery_endurance_minutes, battery_endurance_cycles, repairability_class, reliability_class, ingress_protection
+         FROM eprel_models WHERE registration_number = $1 LIMIT 1`,
+        [input.eprelId.trim()],
+      ).catch(() => ({ rows: [] as EprelRow[] }))).rows[0] as EprelRow | undefined) ?? null
+    : null;
+  const hardware = input.hardwareModel?.trim() || knownHardware || cached?.model_identifier;
+  if (!hardware) return null;
+  const rows = (await query(
+    `SELECT registration_number, supplier, model_identifier, energy_class, battery_endurance_minutes, battery_endurance_cycles, repairability_class, reliability_class, ingress_protection
+     FROM eprel_models WHERE regexp_replace(upper(model_identifier), '[^A-Z0-9]', '', 'g') = $1`,
+    [normalizeEprelIdentifier(hardware)],
+  ).catch(() => ({ rows: [] as EprelRow[] }))).rows as EprelRow[];
+  const matched = selectExactEprelMatch(rows, { ...input, hardwareModel: hardware })
+    ?? (await fetchLiveEprelRow({ ...input, hardwareModel: hardware }, signal));
+  if (!matched) return null;
+  const fields = eprelResearchFields(matched);
+  if (fields.eprelId && fields.energyLabel) {
+    const mirrored: Partial<EprelAssetRoutes> = await mirrorEprelRegistrationAssets(fields.eprelId, signal).catch(() => ({}));
+    fields.energyLabel.labelImage = mirrored.labelImage;
+    fields.energyLabel.ficheDe = mirrored.ficheDe;
+    fields.energyLabel.ficheEn = mirrored.ficheEn;
+  }
+  return {
+    ...fields,
+    source: {
+      url: eprelProductUrl(matched.registration_number),
+      title: `EPREL ${matched.supplier} ${matched.model_identifier} (${matched.registration_number})`,
+      retrievedAt: new Date().toISOString().slice(0, 10),
+    },
+  };
 };

@@ -1,3 +1,4 @@
+import type { ProductExperienceProfile } from '@/lib/product-experience';
 import { isValidInputLength, sanitizeInput } from '@/lib/security';
 import { classifyPartSubcategory, classifySubcategory } from '@/lib/product-subcategory';
 import { validatedGtin } from '@/lib/product-identifiers';
@@ -28,6 +29,8 @@ export type ProductPayload = {
   conditionNote?: string;
   brand?: string;
   model?: string;
+  hardwareModel?: string;
+  experience?: ProductExperienceProfile;
   stock?: number;
   sku?: string;
   mpn?: string;
@@ -485,6 +488,7 @@ export const buildPayload = (payload: ProductPayload, slug?: string) => {
     : null;
   const brand = payload.brand ? sanitizeInput(payload.brand) : null;
   const model = payload.model ? sanitizeInput(payload.model) : null;
+  const hardwareModel = typeof payload.hardwareModel === "string" && payload.hardwareModel.trim() ? sanitizeInput(payload.hardwareModel).slice(0, 40) : null;
   const sku = payload.sku ? sanitizeInput(payload.sku) : null;
   const mpn = payload.mpn ? sanitizeInput(payload.mpn) : null;
   const gtinInput = payload.gtin ? sanitizeInput(payload.gtin) : null;
@@ -639,6 +643,7 @@ export const buildPayload = (payload: ProductPayload, slug?: string) => {
     description,
     brand,
     model,
+    hardwareModel,
     sku,
     mpn,
     gtin,

@@ -38,7 +38,8 @@ import EditorExperienceFields from './EditorExperienceFields';
 import EditorChannelFields from './EditorChannelFields';
 import OfferPresetManager from './OfferPresetManager';
 import { defaultOfferPresets, packageItemIcon, type OfferPresets } from '@/lib/product-offer-options';
-import { localizedText } from '@/lib/product-experience';
+import { localizedText, sanitizeProductExperienceProfile } from '@/lib/product-experience';
+import { buildAutoProductExperience } from '@/lib/product-experience-autofill';
 import { offerEditorText, catalogToolsText } from '@/lib/i18n';
 import { formatBatteryHealth } from '@/lib/product-offer-options';
 import ConfirmDeletionDialog from './ConfirmDeletionDialog';
@@ -627,6 +628,7 @@ export default function SmartphoneWizard({
                 category={shared.category}
                 color={document.entries.every(entry => entry.color === document.entries[0]?.color) ? document.entries[0]?.color : undefined}
                 eprelId={shared.eprelId}
+                hardwareModel={shared.hardwareModel || undefined}
                 condition={document.entries.every(entry => entry.condition === document.entries[0]?.condition) ? document.entries[0]?.condition : undefined}
                 onError={setError}
                 onResult={(result) => {
@@ -672,7 +674,12 @@ export default function SmartphoneWizard({
               if (d.entries.some(item => item.condition === 'new' && item.color === suggestion.color && item.storage === suggestion.storage && configurationKey(item.configuration) === configurationKey(suggestion.configuration))) return d;
               const empty = d.entries.find(entry => isResearchPlaceholder(entry, {...d.shared,...d.pendingShared}));
               if (!empty && d.entries.length >= 100) return d;
-              const entry = empty ? { ...empty, ...suggestion, stock: 0 } : { ...newPhoneEntry(donor ?? d.entries[0]), ...suggestion, stock: 0, price: 0 };
+              const autoPhotos = !donor && d.researchGallery?.length && (empty?.condition ?? 'new') === 'new'
+                ? d.researchGallery.slice(0, 4).map(url => ({ id: crypto.randomUUID(), url }))
+                : null;
+              const entry = empty
+                ? { ...empty, ...suggestion, stock: 0, ...(autoPhotos && empty.photos.every(p => !p.url) ? { photos: autoPhotos, coverId: autoPhotos[0].id } : {}) }
+                : { ...newPhoneEntry(donor ?? d.entries[0]), ...suggestion, stock: 0, price: 0, ...(autoPhotos ? { photos: autoPhotos, coverId: autoPhotos[0].id } : {}) };
               return { ...d, entries: empty ? d.entries.map(item => item.id === empty.id ? entry : item) : [...d.entries, entry] };
             })}>{suggestion.color} · {suggestion.storage}{Object.values(suggestion.configuration??{}).length ? ` · ${Object.values(suggestion.configuration??{}).join(' · ')}` : ''}</button>)}</div></section> : null}
             {document.variantSuggestions?.length ? <div className="flex flex-wrap items-center gap-3"><button type="button" className="btn-secondary" disabled={document.entries.length >= 100} onClick={() => { setManualVersion(true); if (!document.entries.some(entry => isResearchPlaceholder(entry, {...document.shared,...document.pendingShared}))) change(d => ({...d,entries:[...d.entries,newPhoneEntry()]})); }}>{cleanup.manualVersion}</button>{!versionEntries.length ? <p className="text-sm text-muted">{cleanup.chooseResearch}</p> : null}</div> : null}
@@ -759,12 +766,39 @@ export default function SmartphoneWizard({
           </>
         ) : null}
         {document.step === 2 ? <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gold/30 bg-gold/5 px-3 py-2">
+            <span className="text-xs text-muted">{locale === 'de' ? 'KI füllt Darstellung, Maße, Lieferumfang, Vorteile & Vergleich automatisch aus.' : 'Auto-fills dimensions, package contents, trust points & comparisons accurately.'}</span>
+            <button type="button" className="btn-secondary" onClick={() => {
+              const targetEntry = document.entries.find(entry => entry.id === experienceEntryId) ?? document.entries[0];
+              const brandLower = (shared.brand ?? '').toLowerCase();
+              const compareIds = candidates
+                .filter(c => c.id !== targetEntry.sourceProductId)
+                .sort((a, b) => Number((b.brand ?? '').toLowerCase() === brandLower) - Number((a.brand ?? '').toLowerCase() === brandLower))
+                .slice(0, 2)
+                .map(c => c.id);
+              const built = buildAutoProductExperience({
+                category: shared.category,
+                brand: shared.brand,
+                model: shared.model,
+                title: shared.title,
+                condition: targetEntry.condition,
+                specs: shared.specs,
+                chargerIncluded: targetEntry.details.chargerIncluded ?? shared.chargerIncluded,
+                chargingPowerMaxW: targetEntry.details.chargingPowerMaxW ?? shared.chargingPowerMaxW,
+                usbPdSupported: targetEntry.details.usbPdSupported ?? shared.usbPdSupported,
+                batteryDetails: targetEntry.details.batteryDetails ?? shared.batteryDetails,
+                comparisonProductIds: compareIds,
+                existing: sanitizeProductExperienceProfile(targetEntry.experience),
+              });
+              updateEntry(targetEntry.id, { experience: built });
+            }}>{locale === 'de' ? '✨ Darstellung automatisch füllen' : '✨ Auto-fill presentation'}</button>
+          </div>
           <label className="block text-sm">{locale === 'de' ? 'Version für Produktdarstellung' : 'Version for product presentation'}<select className={inputClass} value={document.entries.some(e => e.id === experienceEntryId) ? experienceEntryId : document.entries[0].id} onChange={event => setExperienceEntryId(event.target.value)}>
             {document.entries.map(e => <option key={e.id} value={e.id}>{entryLabel(e)}</option>)}
           </select></label>
           {(() => { const e = document.entries.find(entry => entry.id === experienceEntryId) ?? document.entries[0]; return <EditorExperienceFields key={e.id} locale={locale} value={e.experience} family={document.family} candidates={candidates} onChange={experience => updateEntry(e.id, { experience })} onFamilyChange={family => change(d => ({ ...d, family }))} />; })()}
         </section> : null}
-        {document.step === 3 && document.researchGallery?.length ? <div className="rounded-xl border border-border p-4 text-sm">{locale === 'de' ? 'Freigegebene Bilder aus der Recherche: Galerie prüfen und für die passende neue Version übernehmen.' : 'Licensed research images: review the gallery and apply it to the matching new version.'}</div> : null}
+        {document.step === 3 && document.researchGallery?.length ? <div className="rounded-xl border border-border p-4 text-sm">{locale === 'de' ? 'Freigegebene Bilder aus der Recherche: Galerie prüfen und für die passende neue Version übernehmen.' : 'Verified research images (up to 4 photos): automatically applied to matching new versions or click below.'}</div> : null}
         {document.step === 3
           ? document.entries.filter((e, index, entries) => !sharesColorPhotos(e) || !entries.slice(0, index).some(other => sharesColorPhotos(other) && other.color.trim().toLowerCase() === e.color.trim().toLowerCase())).map((e) =>
               card(
